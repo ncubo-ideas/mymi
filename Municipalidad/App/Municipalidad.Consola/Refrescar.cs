@@ -138,7 +138,7 @@ namespace Municipalidad.Consola
 
 			foreach (string rubro in api.RubrosConHistoria())
 			{
-				RegistroDelHistorial historia = api.HistorialDe(rubro);
+				RegistroDelHistorial historia = api.HistorialDe(rubro, ConsultasDelModulo.IdiomaDelRegistro);
 
 				Console.WriteLine("  " + rubro + ": " + historia.EstadoDicho);
 

@@ -85,9 +85,9 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheTwoEmptySeriesCrossTheDoorWithDifferentStates()
 		{
-			RegistroDelHistorial rubroQueNoExiste = api.HistorialDe("cementerio");
-			RegistroDelHistorial rubroSinHistoria = api.HistorialDe(ElRubroSinHistoria);
-			RegistroDelHistorial rubroConHistoria = api.HistorialDe(ElRubroConHistoria);
+			RegistroDelHistorial rubroQueNoExiste = api.HistorialDe("cementerio", "es");
+			RegistroDelHistorial rubroSinHistoria = api.HistorialDe(ElRubroSinHistoria, "es");
+			RegistroDelHistorial rubroConHistoria = api.HistorialDe(ElRubroConHistoria, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -121,11 +121,11 @@ namespace Municipalidad.Dominio.Pruebas
 		public void TheThreeStatesOfTheCrossCheckCrossTheDoorFromOneRecord()
 		{
 			RegistroDePeriodosSinComprobante sinConsulta =
-				api.PeriodosPagadosSinComprobante(UnDiaSinConsulta);
+				api.PeriodosPagadosSinComprobante(UnDiaSinConsulta, "es");
 			RegistroDePeriodosSinComprobante noDestapaNada =
-				api.PeriodosPagadosSinComprobante(LaConsultaQueNoDestapaNada);
+				api.PeriodosPagadosSinComprobante(LaConsultaQueNoDestapaNada, "es");
 			RegistroDePeriodosSinComprobante destapa =
-				api.PeriodosPagadosSinComprobante(LaConsultaQueDestapa);
+				api.PeriodosPagadosSinComprobante(LaConsultaQueDestapa, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -166,7 +166,7 @@ namespace Municipalidad.Dominio.Pruebas
 			{
 				foreach (string rubro in new[] { "cementerio", ElRubroSinHistoria, ElRubroConHistoria })
 				{
-					RegistroDelHistorial serie = api.HistorialDe(rubro);
+					RegistroDelHistorial serie = api.HistorialDe(rubro, "es");
 
 					Assert.That(serie.Estado == "con-historia", Is.EqualTo(serie.Periodo.Length > 0),
 						"HistorialDe('" + rubro + "'): el estado `con-historia` y la presencia de filas "
@@ -176,7 +176,7 @@ namespace Municipalidad.Dominio.Pruebas
 				foreach (DateTime dia in new[]
 					{ UnDiaSinConsulta, LaConsultaQueNoDestapaNada, LaConsultaQueDestapa })
 				{
-					RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(dia);
+					RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(dia, "es");
 
 					Assert.That(
 						cotejo.Estado == "hay-periodos-sin-comprobante",

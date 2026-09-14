@@ -1,10 +1,9 @@
+@inject Textos textos
+
 <div class="aviso aviso--quieta" id="sin-abrir">
-    <h3>Esta pantalla todavía no puede contestar.</h3>
+    <h3>@textos["sinAbrir.titulo"]</h3>
     <div class="aviso__cuerpo">
-        <p>
-            Tu cuenta vive en una carpeta tuya, y esta app no la ha abierto en este navegador. Abrí el
-            inicio, elegí dónde guardarla, y volvé.
-        </p>
-        <p><a class="boton" href="">Ir al inicio</a></p>
+        <p>@textos["sinAbrir.cuerpo"]</p>
+        <p><a class="boton" href="">@textos["sinAbrir.irAlInicio"]</a></p>
     </div>
 </div>

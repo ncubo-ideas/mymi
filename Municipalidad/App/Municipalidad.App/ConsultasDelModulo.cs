@@ -33,6 +33,14 @@ namespace Municipalidad.App
 		public static readonly string[] Declaradas = { Resumen, ListaDeVencimientos };
 
 		/// <summary>
+		/// EL IDIOMA DEL REGISTRO, y lo que esta cara contesta siempre. No sigue al dispositivo a
+		/// proposito: quien lee esto es el asistente, que ya sabe en que idioma le hablo la persona y
+		/// redacta en el suyo. Una frase traducida aca llegaria al modelo sin los nombres con que la
+		/// municipalidad lleva la cuenta, que es lo que el modelo necesita para volver a preguntar.
+		/// </summary>
+		public const string IdiomaDelRegistro = "es";
+
+		/// <summary>
 		/// UNA LINEA DE RESUMEN: el bloque util mas chico, y el que una pantalla pone arriba. Cuenta
 		/// periodos, no plata: cuanto debe la persona hoy lo dice el portal de la municipalidad, que es la
 		/// autoridad sobre su deuda, y esta app existe para lo que el portal no contesta.
@@ -42,9 +50,10 @@ namespace Municipalidad.App
 			ArgumentNullException.ThrowIfNull(api);
 
 			RegistroDeVencimientos porVencer =
-				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso);
+				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso, IdiomaDelRegistro);
 
-			RegistroDeAtrasos vencidos = api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora);
+			RegistroDeAtrasos vencidos =
+				api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora, IdiomaDelRegistro);
 
 			return new
 			{
@@ -73,9 +82,10 @@ namespace Municipalidad.App
 			ArgumentNullException.ThrowIfNull(api);
 
 			RegistroDeVencimientos vencimientos =
-				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso);
+				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso, IdiomaDelRegistro);
 
-			RegistroDeAtrasos atrasos = api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora);
+			RegistroDeAtrasos atrasos =
+				api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora, IdiomaDelRegistro);
 
 			var porVencer = new List<object>();
 

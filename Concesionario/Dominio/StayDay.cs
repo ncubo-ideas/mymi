@@ -45,21 +45,45 @@ namespace Concesionario.Dominio
 			_day = day;
 		}
 
-		/// <summary>Si los dos nombran el mismo dia de calendario.</summary>
+		/// <summary>
+		/// Si los dos nombran el mismo dia de calendario. El otro dia es obligatorio: sin el no hay
+		/// comparacion que hacer.
+		/// </summary>
 		internal bool IsTheSameDayAs(StayDay other)
 		{
+			if (other == null)
+				throw new DomainException(
+					"Se pregunto si un dia de estadia es el mismo que ninguno. Sin el otro dia no "
+					+ "hay comparacion que hacer.");
+
 			return _day == other._day;
 		}
 
-		/// <summary>Si este dia es anterior al otro.</summary>
+		/// <summary>
+		/// Si este dia es anterior al otro. El otro dia es obligatorio: comparar contra nada dejaria
+		/// el orden decidido por el hueco.
+		/// </summary>
 		internal bool IsBefore(StayDay other)
 		{
+			if (other == null)
+				throw new DomainException(
+					"Se pregunto si un dia de estadia es anterior a ninguno. Comparar contra nada "
+					+ "dejaria el orden de los dias decidido por el hueco.");
+
 			return _day < other._day;
 		}
 
-		/// <summary>Si este dia es posterior al otro.</summary>
+		/// <summary>
+		/// Si este dia es posterior al otro. El otro dia es obligatorio, por lo mismo que en
+		/// <see cref="IsBefore"/>.
+		/// </summary>
 		internal bool IsAfter(StayDay other)
 		{
+			if (other == null)
+				throw new DomainException(
+					"Se pregunto si un dia de estadia es posterior a ninguno. Comparar contra nada "
+					+ "dejaria el orden de los dias decidido por el hueco.");
+
 			return _day > other._day;
 		}
 

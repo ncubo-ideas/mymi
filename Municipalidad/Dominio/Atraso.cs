@@ -51,23 +51,6 @@ namespace Municipalidad.Dominio
 		internal Urgencia Urgencia() { return Dominio.Urgencia.Urgente(); }
 
 		/// <summary>
-		/// La frase que una persona lee sobre este atraso: de que periodo y de que rubro, cuando
-		/// vencio, cuanto, cuantos dias lleva a esa fecha, y lo que PROYECTA costar pagarlo tarde a esa
-		/// tasa -- dicho como proyeccion de esta app, que nunca contradice la mora que llega en el
-		/// recibo.
-		/// </summary>
-		internal string Dice(DateTime fecha, decimal tasaAnual)
-		{
-			return "El período " + EtiquetaDelPeriodo + " de " + NombreDelRubro + " venció el "
-				+ Dichos.Dia(Vencio) + " y no está pagado: " + Dichos.Monto(Monto) + ", con "
-				+ DiasDeAtraso(fecha) + " días de atraso al " + Dichos.Dia(fecha)
-				+ ". A una tasa anual de " + Dichos.Porcentaje(tasaAnual) + ", pagarlo ese día proyecta "
-				+ "costar " + Dichos.Monto(CostoDePagarTarde(fecha, tasaAnual)) + " más de mora. Es una "
-				+ "proyección de esta app y no la mora que la municipalidad cobra: la mora real llega "
-				+ "en el recibo.";
-		}
-
-		/// <summary>
 		/// Lo que PROYECTA costar pagarlo tarde, y no una verificacion de lo cobrado: monto por tasa por
 		/// dias de atraso sobre 365, diaria desde el ultimo dia del periodo. La tasa anual entra por
 		/// parametro y no vive aca.

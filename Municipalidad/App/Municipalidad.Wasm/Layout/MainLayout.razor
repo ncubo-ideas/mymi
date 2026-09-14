@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject Textos textos
 
 <header class="marco">
     <div class="marco__banda">
@@ -14,18 +15,18 @@
                 </svg>
             </span>
             <span class="marco__titulos">
-                <span class="marco__nombre">Mi cuenta municipal</span>
-                <span class="marco__apunte">Tu cuenta, en tu carpeta</span>
+                <span class="marco__nombre">@Textos.TituloDelModulo</span>
+                <span class="marco__apunte">@textos["app.apunte"]</span>
             </span>
         </a>
 
         <nav class="marco__nav">
-            <NavLink href="por-que-pago-mas">Por qué pago más</NavLink>
-            <NavLink href="que-se-me-vence">Qué se me vence</NavLink>
-            <NavLink href="cuanto-apartar">Cuánto apartar</NavLink>
-            <NavLink href="sin-comprobante">Sin comprobante</NavLink>
-            <NavLink href="cuanto-he-pagado">Cuánto he pagado</NavLink>
-            <NavLink href="que-tan-al-dia-esta">Qué tan al día</NavLink>
+            <NavLink href="por-que-pago-mas">@textos["porQuePagoMas.titulo"]</NavLink>
+            <NavLink href="que-se-me-vence">@textos["queSeMeVence.titulo"]</NavLink>
+            <NavLink href="cuanto-apartar">@textos["cuantoApartar.titulo"]</NavLink>
+            <NavLink href="sin-comprobante">@textos["sinComprobante.tituloCorto"]</NavLink>
+            <NavLink href="cuanto-he-pagado">@textos["cuantoHePagado.titulo"]</NavLink>
+            <NavLink href="que-tan-al-dia-esta">@textos["queTanAlDia.tituloCorto"]</NavLink>
         </nav>
     </div>
 </header>

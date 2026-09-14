@@ -11,7 +11,8 @@ namespace Municipalidad.Dominio
 	/// El recibo la esconde en un sufijo del nombre del rubro y en nada mas.
 	/// </para>
 	/// <para>
-	/// Conjunto cerrado de dos, comparado por nombre, con resolutor total desde el primitivo.
+	/// Conjunto cerrado de dos, comparado por nombre, con resolutor total desde el primitivo. Cada
+	/// miembro es UNA instancia compartida que su metodo entrega sin volver a armarla.
 	/// </para>
 	/// </summary>
 	internal abstract class LeyDeCalculo
@@ -28,15 +29,17 @@ namespace Municipalidad.Dominio
 		/// la ley y no la hoja de Variacion que la cita: una hoja que la escribiera a mano afirmaria de
 		/// memoria algo que solo esta clase sabe.
 		/// </summary>
-		internal abstract string Dice();
 
 		internal bool Es(LeyDeCalculo otra)
 		{
 			return otra != null && otra.Nombre == Nombre;
 		}
 
-		internal static LeyDeCalculo PorUnidad() { return new TarifaPorUnidad(); }
-		internal static LeyDeCalculo SobreBaseImponible() { return new TarifaSobreBaseImponible(); }
+		private static readonly LeyDeCalculo porUnidad = new TarifaPorUnidad();
+		private static readonly LeyDeCalculo sobreBaseImponible = new TarifaSobreBaseImponible();
+
+		internal static LeyDeCalculo PorUnidad() { return porUnidad; }
+		internal static LeyDeCalculo SobreBaseImponible() { return sobreBaseImponible; }
 
 		internal static LeyDeCalculo PorNombre(string nombre)
 		{
@@ -70,8 +73,6 @@ namespace Municipalidad.Dominio
 	{
 		internal override string Nombre { get { return "por-unidad"; } }
 		internal override bool RespondeAlAvaluo { get { return false; } }
-
-		internal override string Dice() { return "se cobra por unidad"; }
 	}
 
 	/// <summary>
@@ -82,7 +83,5 @@ namespace Municipalidad.Dominio
 	{
 		internal override string Nombre { get { return "sobre-base-imponible"; } }
 		internal override bool RespondeAlAvaluo { get { return true; } }
-
-		internal override string Dice() { return "se cobra sobre la base imponible, que es el valor de la finca"; }
 	}
 }

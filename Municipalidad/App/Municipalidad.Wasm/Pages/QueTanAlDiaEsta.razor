@@ -1,13 +1,11 @@
 @page "/que-tan-al-dia-esta"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Qué tan al día está esto · Mi cuenta municipal</PageTitle>
+<PageTitle>@textos["queTanAlDia.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
-<h1>Qué tan al día está esto</h1>
-<p class="bajada">
-    Hasta dónde leyó esta app lo que tu municipalidad publicó, y qué falta. Tu cuenta es híbrida: ella
-    manda los cobros, los recibos y la mora; vos aportás cuánto querés apartar.
-</p>
+<h1>@textos["queTanAlDia.titulo"]</h1>
+<p class="bajada">@textos["queTanAlDia.bajada"]</p>
 
 @if (!estado.EstaArriba)
 {
@@ -16,29 +14,24 @@
 else
 {
     <section class="bloque" id="hasta-donde-leyo">
-        <h2>Hasta dónde leyó</h2>
+        <h2>@textos["queTanAlDia.hastaDondeLeyo"]</h2>
 
         <article class="tarjeta">
             <dl class="renglones">
-                <dt>Último hecho leído</dt>
+                <dt>@textos["queTanAlDia.ultimoHecho"]</dt>
                 <dd class="cifra">@entrado.UltimoEventoLeido</dd>
-                <dt>Rubros con algún comprobante</dt>
-                <dd>@entrado.RubrosConHistoria de @entrado.Rubros.Count</dd>
-                <dt>Última consulta al portal</dt>
-                <dd>@(entrado.HayAlgunaConsulta ? entrado.DiaDeLaUltimaConsulta : "ninguna")</dd>
+                <dt>@textos["queTanAlDia.rubrosConComprobante"]</dt>
+                <dd>@textos.Con("comun.deTotal", ("cuantos", entrado.RubrosConHistoria.ToString()), ("total", entrado.Rubros.Count.ToString()))</dd>
+                <dt>@textos["queTanAlDia.ultimaConsulta"]</dt>
+                <dd>@(entrado.HayAlgunaConsulta ? entrado.DiaDeLaUltimaConsulta : textos["queTanAlDia.ninguna"])</dd>
             </dl>
 
-            <p class="nota">
-                Ese número sólo sirve comparado consigo mismo: sube cuando entra algo nuevo. Nadie sabe
-                cuántos hechos ha publicado tu municipalidad, así que un número solo no dice si estás al
-                día. Mirálo, apretá <strong>traer lo que haya publicado la institución</strong> en el
-                inicio, y volvé a mirarlo.
-            </p>
+            <p class="nota">@((MarkupString)textos["queTanAlDia.notaDelNumero"])</p>
         </article>
     </section>
 
     <section class="bloque" id="que-llego-de-cada-rubro">
-        <h2>Qué llegó de cada rubro</h2>
+        <h2>@textos["queTanAlDia.queLlego"]</h2>
 
         @foreach (var rubro in entrado.Rubros)
         {
@@ -46,67 +39,58 @@ else
                 <div class="tarjeta__cabeza">
                     <LlaveDelRubro Rubro="@rubro.Nombre" />
                     <span class="sello sello--@(rubro.TieneHistoria ? "nada-sin-comprobante" : "sin-consulta")">
-                        @(rubro.TieneHistoria ? "con comprobantes" : "sin comprobantes")
+                        @(rubro.TieneHistoria ? textos["queTanAlDia.conComprobantes"] : textos["queTanAlDia.sinComprobantes"])
                     </span>
                 </div>
 
                 @if (!rubro.TieneHistoria)
                 {
-                    <p class="nota">
-                        Esta app no ha visto ningún comprobante de este rubro. Eso no quiere decir que no
-                        lo pagués: quiere decir que tus pagos de este rubro todavía no han llegado aquí.
-                    </p>
+                    <p class="nota">@textos["queTanAlDia.rubroSinComprobantes"]</p>
                 }
             </article>
         }
     </section>
 
     <section class="bloque" id="que-falta">
-        <h2>Qué falta</h2>
+        <h2>@textos["queTanAlDia.queFalta"]</h2>
 
         @if (entrado.NoFaltaNadaQueEstaPantallaSepaMirar)
         {
-            <Aviso Tono="quieta" Id="no-falta-nada" Titulo="No falta ninguna de las dos mitades">
-                <p>
-                    Tu municipalidad publicó el avalúo de cada finca, hay una consulta al portal con que
-                    cotejar, y vos ya adoptaste una reserva. Eso no dice que no haya hechos nuevos sin
-                    traer: para eso está el número de arriba.
-                </p>
+            <Aviso Tono="quieta" Id="no-falta-nada" Titulo="@textos["queTanAlDia.noFaltaNada"]">
+                <p>@textos["queTanAlDia.noFaltaNadaCuerpo"]</p>
             </Aviso>
         }
 
         @if (!entrado.HayReservaAdoptada)
         {
-            <Aviso Tono="tibia" Id="falta-la-reserva" Titulo="Falta tu mitad: no has adoptado una reserva">
+            <Aviso Tono="tibia" Id="falta-la-reserva" Titulo="@textos["queTanAlDia.faltaLaReserva"]">
                 <p>
-                    Cuánto querés apartar por mes es lo único que tu municipalidad no puede saber, y es
-                    lo único que esta app te pide. Se adopta en
-                    <a href="cuanto-apartar">cuánto apartar</a>.
+                    @textos["queTanAlDia.faltaLaReservaCuerpo"]
+                    <a href="cuanto-apartar">@textos["queTanAlDia.faltaLaReservaEnlace"]</a>.
                 </p>
             </Aviso>
         }
 
         @if (!entrado.HayAlgunaConsulta)
         {
-            <Aviso Tono="tibia" Id="falta-una-consulta" Titulo="Falta una consulta al portal">
+            <Aviso Tono="tibia" Id="falta-una-consulta" Titulo="@textos["queTanAlDia.faltaUnaConsulta"]">
                 <p>
-                    Sin una consulta registrada no hay con qué cotejar lo que esta app sí vio pagar, así
-                    que <a href="sin-comprobante">qué quedó sin comprobante</a> todavía no puede
-                    contestar. <strong>No poder cotejar no es estar en orden.</strong>
+                    @textos["queTanAlDia.faltaUnaConsultaCuerpo"]
+                    <a href="sin-comprobante">@textos["sinComprobante.titulo"]</a>
+                    @((MarkupString)textos["queTanAlDia.faltaUnaConsultaCierre"])
                 </p>
             </Aviso>
         }
 
         @if (entrado.FincasSinAvaluoPublicado > 0)
         {
-            <Aviso Tono="tibia" Id="falta-un-avaluo" Titulo="Falta la mitad de tu municipalidad: un avalúo">
-                <p>
-                    Hay @entrado.FincasSinAvaluoPublicado de @entrado.Fincas.Fincas.Count
-                    @(entrado.Fincas.Fincas.Count == 1 ? "finca" : "fincas") sin avalúo publicado. El
-                    avalúo lo fija ella y es el valor con que te cobra: sin él, esta app puede decir que
-                    tu cobro de bienes inmuebles subió por un avalúo nuevo, pero no de cuánto a cuánto.
-                    <strong>No hay nada que llenar</strong> — llega solo cuando ella lo publique.
-                </p>
+            <Aviso Tono="tibia" Id="falta-un-avaluo" Titulo="@textos["queTanAlDia.faltaUnAvaluo"]">
+                <p>@((MarkupString)textos.Con(
+                    entrado.Fincas.Fincas.Count == 1
+                        ? "queTanAlDia.faltaUnAvaluoCuerpo.una"
+                        : "queTanAlDia.faltaUnAvaluoCuerpo.varias",
+                    ("cuantas", entrado.FincasSinAvaluoPublicado.ToString()),
+                    ("total", entrado.Fincas.Fincas.Count.ToString())))</p>
             </Aviso>
         }
 
@@ -116,8 +100,8 @@ else
                 <table>
                     <thead>
                         <tr>
-                            <th scope="col">Finca</th>
-                            <th scope="col">Avalúo de tu municipalidad</th>
+                            <th scope="col">@textos["queTanAlDia.finca"]</th>
+                            <th scope="col">@textos["queTanAlDia.avaluoColumna"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -127,8 +111,8 @@ else
                                 <td><span class="llave">@finca.Numero</span></td>
                                 <td>
                                     @(finca.TieneAvaluo
-                                        ? Formato.Monto(finca.Avaluo)
-                                        : "sin avalúo publicado")
+                                        ? Formato.Monto(finca.Avaluo, textos.Idioma)
+                                        : textos["porQuePagoMas.finca.sinAvaluo"])
                                 </td>
                             </tr>
                         }
@@ -138,7 +122,7 @@ else
         }
     </section>
 
-    <p class="nota">Contestado al @entrado.PreguntadoEl.</p>
+    <p class="nota">@textos.Con("comun.contestadoAl", ("dia", entrado.PreguntadoEl))</p>
 }
 
 @code {

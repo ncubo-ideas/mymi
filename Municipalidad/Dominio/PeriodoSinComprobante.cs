@@ -26,16 +26,5 @@ namespace Municipalidad.Dominio
 
 		/// <summary>El periodo, aplanado por la misma razon.</summary>
 		internal string EtiquetaDelPeriodo { get { return Periodo.Etiqueta; } }
-
-		/// <summary>
-		/// La frase que una persona lee sobre este periodo: de que periodo y de que rubro, y que lo que
-		/// falta es EL COMPROBANTE y no el pago. Decirlo al reves acusaria a la persona de no pagar.
-		/// </summary>
-		internal string Dice()
-		{
-			return "La consulta da por pagado el período " + EtiquetaDelPeriodo + " de " + NombreDelRubro
-				+ " y esta app no vio ese recibo. No dice que esté sin pagar: dice que el comprobante no "
-				+ "le llegó a la app.";
-		}
 	}
 }

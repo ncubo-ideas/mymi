@@ -1,14 +1,11 @@
 @page "/por-que-pago-mas"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Por qué pago más · Mi cuenta municipal</PageTitle>
+<PageTitle>@textos["porQuePagoMas.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
-<h1>Por qué pago más</h1>
-<p class="bajada">
-    Entre los dos últimos comprobantes de cada rubro: de cuánto a cuánto cambió, y qué lo explica.
-    Lo que explica un aumento depende de cómo se cobra ese rubro, y ésa es la mitad que el portal no
-    contesta.
-</p>
+<h1>@textos["porQuePagoMas.titulo"]</h1>
+<p class="bajada">@textos["porQuePagoMas.bajada"]</p>
 
 @if (!estado.EstaArriba)
 {
@@ -16,7 +13,9 @@
 }
 else
 {
-    <NumeroSinFirmar Dicho="@($"Un cambio se llama salto cuando pasa el {Formato.Porcentaje(variacion.UmbralDeSalto)}, y por debajo del {Formato.Porcentaje(variacion.Ruido)} se considera ruido.")" />
+    <NumeroSinFirmar Dicho="@textos.Con("porQuePagoMas.umbrales",
+        ("salto", Formato.Porcentaje(variacion.UmbralDeSalto, textos.Idioma)),
+        ("ruido", Formato.Porcentaje(variacion.Ruido, textos.Idioma)))" />
 
     @foreach (var rubro in variacion.Rubros)
     {
@@ -26,7 +25,7 @@ else
                 @if (rubro.SePuedeVer)
                 {
                     <span class="sello sello--@(rubro.EsSalto ? "salto" : "quieto")">
-                        @rubro.Explicacion
+                        @textos.ComoSeDice(rubro.Explicacion)
                     </span>
                 }
             </div>
@@ -36,12 +35,12 @@ else
             @if (rubro.SePuedeVer)
             {
                 <dl class="renglones">
-                    <dt>Períodos</dt>
+                    <dt>@textos["porQuePagoMas.periodos"]</dt>
                     <dd>@rubro.Desde &rarr; @rubro.Hasta</dd>
-                    <dt>Por período</dt>
-                    <dd>@Formato.Monto(rubro.Antes) &rarr; @Formato.Monto(rubro.Ahora)</dd>
-                    <dt>El cambio</dt>
-                    <dd>@Formato.Porcentaje(rubro.Proporcion)</dd>
+                    <dt>@textos["porQuePagoMas.porPeriodo"]</dt>
+                    <dd>@Formato.Monto(rubro.Antes, textos.Idioma) &rarr; @Formato.Monto(rubro.Ahora, textos.Idioma)</dd>
+                    <dt>@textos["porQuePagoMas.elCambio"]</dt>
+                    <dd>@Formato.Porcentaje(rubro.Proporcion, textos.Idioma)</dd>
                 </dl>
             }
         </article>
@@ -49,26 +48,17 @@ else
 
     @if (!variacion.AlgunoSePuedeVer)
     {
-        <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="Todavía no hay ninguna variación que ver.">
-            <p>
-                Una variación necesita dos comprobantes del mismo rubro. Aparecen solas conforme tus
-                pagos vayan llegando a esta app.
-            </p>
+        <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="@textos["porQuePagoMas.sinVariacion.titulo"]">
+            <p>@textos["porQuePagoMas.sinVariacion.cuerpo"]</p>
         </Aviso>
     }
 
     @if (fincas.HayAlguna)
     {
         <section class="bloque" id="el-valor-de-mi-finca">
-            <h2>El valor de tu finca</h2>
+            <h2>@textos["porQuePagoMas.finca.titulo"]</h2>
 
-            <p class="nota">
-                Tres de los cinco rubros se cobran sobre el valor de tu finca. El
-                <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el valor
-                con que te cobra, y es el que se usa arriba para explicar un salto.
-                <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
-                movimientos.
-            </p>
+            <p class="nota">@((MarkupString)textos["porQuePagoMas.finca.nota"])</p>
 
             @foreach (var finca in fincas.Fincas)
             {
@@ -77,20 +67,18 @@ else
                         <LlaveDelRubro Rubro="@finca.Numero" />
                         @if (finca.TieneAvaluo)
                         {
-                            <span class="periodo">avalúo: @Formato.Monto(finca.Avaluo)</span>
+                            <span class="periodo">@textos.Con("porQuePagoMas.finca.avaluo",
+                                ("monto", Formato.Monto(finca.Avaluo, textos.Idioma)))</span>
                         }
                         else
                         {
-                            <span class="periodo">sin avalúo publicado</span>
+                            <span class="periodo">@textos["porQuePagoMas.finca.sinAvaluo"]</span>
                         }
                     </div>
 
                     @if (!finca.TieneAvaluo)
                     {
-                        <p class="nota">
-                            Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega
-                            solo, con el resto de tus movimientos, cuando ella lo publique.
-                        </p>
+                        <p class="nota">@textos["porQuePagoMas.finca.sinAvaluoNota"]</p>
                     }
                 </article>
             }
@@ -98,8 +86,8 @@ else
     }
 
     <p class="nota">
-        Un aumento nunca apura: ya pasó. Lo que apura es lo que vence, y eso está en
-        <a href="que-se-me-vence">qué se me vence</a>.
+        @textos["porQuePagoMas.pie"]
+        <a href="que-se-me-vence">@textos["porQuePagoMas.pieEnlace"]</a>.
     </p>
 }
 

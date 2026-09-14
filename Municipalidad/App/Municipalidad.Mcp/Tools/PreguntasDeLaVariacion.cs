@@ -96,7 +96,7 @@ namespace Municipalidad.Mcp.Tools
 				}
 
 				RegistroDeLaVariacion variacion =
-					api.VariacionDe(rubro, LosJuiciosSinFirmar.UmbralDeSalto, LosJuiciosSinFirmar.Ruido);
+					api.VariacionDe(rubro, LosJuiciosSinFirmar.UmbralDeSalto, LosJuiciosSinFirmar.Ruido, ConsultasDelModulo.IdiomaDelRegistro);
 
 				filas.Add(new VariacionDeUnRubro
 				{
