@@ -391,6 +391,14 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 	Assert("the two languages of a key ask for the same values",
 		discrepancias.Length == 0, string.Join(" | ", discrepancias));
 
+	// A KEY WHOSE TWO LANGUAGES SAY THE SAME THING is almost always a half-finished paste. It
+	// happened while writing this very catalog: the English went into both columns and only one
+	// got translated. Neither of the two checks above sees it -- both columns are full and no
+	// marker is missing -- so the phrase ships in the wrong language looking finished.
+	string[] identicas = [.. Gnothi.Host.Textos.Identicas()];
+	Assert("no key says exactly the same in both languages",
+		identicas.Length == 0, string.Join(" | ", identicas));
+
 	// THE ENROLLMENT PHRASE WITH THE MOST SUBSTITUTION, end to end: three values, and one of
 	// them is itself a phrase from the catalog (what an institution with no declared name is
 	// called). Nothing may be left raw.

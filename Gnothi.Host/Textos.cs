@@ -88,7 +88,11 @@ public static class Textos
 	{
 		get
 		{
-			StringBuilder sb = new("{");
+			// LA PRIMERA CLAVE ES EL IDIOMA MISMO. La pagina la necesita para lo que NO es una
+			// frase -- como se escribe una fecha y un numero -- y pedirsela al catalogo evita que
+			// la adivine por su cuenta, que serian dos verdades sobre lo mismo.
+			StringBuilder sb = new("{\"idioma\":");
+			sb.Append(JsonSerializer.Serialize(Idioma)).Append(',');
 			bool primera = true;
 			foreach ((string clave, string frase) in DelIdioma())
 			{
@@ -134,6 +138,21 @@ public static class Textos
 				+ (faltanEnIngles.Length > 0 ? $"'en' no usa {faltanEnIngles}. " : "")
 				+ (faltanEnEspanol.Length > 0 ? $"'es' no usa {faltanEnEspanol}." : "");
 		}
+	}
+
+	// TODA CLAVE CUYOS DOS IDIOMAS DICEN EXACTAMENTE LO MISMO.
+	//
+	// Casi siempre es un copiar-pegar a medio terminar: alguien pego la frase en ingles en las
+	// dos columnas y tradujo una sola. Ni Faltantes() ni Discrepancias() lo ven -- las dos
+	// columnas estan llenas y ninguna tiene marcadores de menos -- asi que la frase sale en el
+	// idioma equivocado y con cara de estar hecha. Paso escribiendo este mismo catalogo.
+	//
+	// No es un error automatico: un nombre propio o un simbolo pueden ser identicos en los dos.
+	// Por eso DEVUELVE LA LISTA y no un bool: quien la lea decide.
+	public static IEnumerable<string> Identicas()
+	{
+		foreach ((string clave, (string es, string en)) in Catalogo())
+			if (es.Length > 0 && es == en) yield return clave;
 	}
 
 	private static HashSet<string> Marcadores(string frase)

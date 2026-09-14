@@ -9,6 +9,58 @@
 
   "//el-vocabulario": "En la cara se dice INSTITUCIONES, no modulos: es lo que la persona reconoce -su laboratorio, su super-. «Modulo» es vocabulario nuestro y se queda en el protocolo: el manifiesto, gnothi_installed_modules y el campo 'module' del json siguen diciendo modulo.",
 
+  "//la-hoja": "LA HOJA DEL ALTA: lo que Mymi le muestra a la persona sobre un paquete antes de instalarlo. Es la region mas intrincada de ui.html porque las frases se armaban de pedazos opcionales concatenados. Aca los casos estan ENUMERADOS -una clave por frase entera- en vez de pegados: es la regla 7, y es lo que hace que el ingles pueda ordenar las palabras distinto.",
+
+  "//enfasis": "ALGUNAS FRASES LLEVAN <b> ADENTRO. Es enfasis que la frase necesita -«la llave CAMBIO»- y por eso viaja con ella y no alrededor: partirla para sacar el <b> seria volver a los fragmentos. Quien traduzca tiene que conservar las etiquetas; el valor interpolado va aparte y ya viene escapado.",
+
+  "hoja.via.qr":                    { "es": ", del código que escaneaste", "en": ", from the code you scanned" },
+  "hoja.via.pegado":                { "es": ", del enlace que pegaste", "en": ", from the link you pasted" },
+  "hoja.respaldo.sello":            { "es": "El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.", "en": "The package is the one the link sealed: it has not changed since the code was made." },
+  "hoja.respaldo.inseguro":         { "es": "La conexión no va cifrada: así solo sirve en desarrollo.", "en": "The connection is not encrypted: like this it is only good for development." },
+
+  "hoja.archivo.verificado":        { "es": "Llegó como el archivo {archivo}, y {quien} lo respalda: publica exactamente este paquete.", "en": "It arrived as the file {archivo}, and {quien} backs it: they publish exactly this package." },
+  "hoja.archivo.llego":             { "es": "Llegó como el archivo {archivo}.", "en": "It arrived as the file {archivo}." },
+  "hoja.archivo.sin-publicacion":   { "es": "Dice ser de {quien}, pero ese origen no publica cuáles módulos son suyos: no se pudo verificar.", "en": "It says it is from {quien}, but that origin does not publish which modules are its own: it could not be verified." },
+  "hoja.archivo.no-publicado":      { "es": "Dice ser de {quien}, y ese origen <b>no publica este paquete</b> (o publica otra versión).", "en": "It says it is from {quien}, and that origin <b>does not publish this package</b> (or publishes another version)." },
+  "hoja.archivo.sin-origen":        { "es": "No declara de qué origen es: nadie responde por él.", "en": "It declares no origin: nobody answers for it." },
+  "hoja.archivo.sin-ninguno":       { "es": "No viene de ningún origen: nadie responde por él.", "en": "It comes from no origin: nobody answers for it." },
+
+  "hoja.respaldo.verificado":       { "es": "Lo respalda {host}{via}: ese origen publica este módulo y el paquete dice ser suyo.", "en": "{host} backs it{via}: that origin publishes this module and the package says it is theirs." },
+  "hoja.respaldo.sirvio":           { "es": "Lo sirvió {host}{via}.", "en": "{host} served it{via}." },
+  "hoja.respaldo.sin-publicacion":  { "es": "Ese origen no publica cuáles módulos son suyos, así que Mymi no pudo verificarlo: fíjate que lo reconozcas.", "en": "That origin does not publish which modules are its own, so Mymi could not verify it: make sure you recognise it." },
+  "hoja.respaldo.no-publicado":     { "es": "Ese origen publica sus módulos y <b>este no está entre ellos</b>.", "en": "That origin publishes its modules and <b>this one is not among them</b>." },
+  "hoja.respaldo.sin-origen":       { "es": "Ese origen lo publica, pero el paquete no declara de qué origen es: no queda atado del todo.", "en": "That origin publishes it, but the package declares no origin: it is not fully tied down." },
+  "hoja.respaldo.otro-origen":      { "es": "El paquete dice ser de {quien}, y no lo sirvió ese origen.", "en": "The package says it is from {quien}, and that origin did not serve it." },
+  "hoja.respaldo.no-verificado":    { "es": "Mymi no pudo verificar que ese origen sea el de la institución: fíjate que lo reconozcas.", "en": "Mymi could not verify that this origin is the institution's: make sure you recognise it." },
+
+  "hoja.firma.sin-firma":           { "es": "El paquete no viene firmado.", "en": "The package is not signed." },
+  "hoja.firma.publicada.desde":     { "es": "Firmado con la <b>misma llave</b> que la vez pasada (desde {desde}), y su origen la publica.", "en": "Signed with the <b>same key</b> as last time (since {desde}), and its origin publishes it." },
+  "hoja.firma.publicada.primera":   { "es": "Firmado por la llave «{llave}», que su origen publica.", "en": "Signed by the key «{llave}», which its origin publishes." },
+  "hoja.firma.publicada.recordar":  { "es": "Mymi la va a recordar para la próxima vez.", "en": "Mymi will remember it for next time." },
+  "hoja.firma.conocida":            { "es": "Firmado con la <b>misma llave</b> que la vez pasada (desde {desde}).", "en": "Signed with the <b>same key</b> as last time (since {desde})." },
+  "hoja.firma.conocida.detalle":    { "es": "Su origen no contestó, pero la llave ya la conocías.", "en": "Its origin did not answer, but you already knew the key." },
+  "hoja.firma.rotada":              { "es": "Firmado con una <b>llave nueva</b> («{llave}»), que su origen publica.", "en": "Signed with a <b>new key</b> («{llave}»), which its origin publishes." },
+  "hoja.firma.rotada.detalle":      { "es": "No es la de la vez pasada. Mymi va a recordar esta.", "en": "It is not last time's. Mymi will remember this one." },
+  "hoja.firma.desconocida":         { "es": "Firmado por una llave («{llave}») que su origen <b>no publica</b> y que Mymi no conocía.", "en": "Signed by a key («{llave}») that its origin <b>does not publish</b> and Mymi did not know." },
+  "hoja.firma.cambiada":            { "es": "<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva («{llave}»).", "en": "<b>The key changed</b>: it is not the one that signed last time, and its origin does not publish the new one («{llave}»)." },
+
+  "hoja.alerta.cambiada":           { "es": "Viene firmado con otra llave que la vez pasada, y su origen no publica la nueva.", "en": "It is signed with a different key than last time, and its origin does not publish the new one." },
+  "hoja.alerta.otro-origen":        { "es": "Dice ser de otro origen del que lo sirvió.", "en": "It says it is from an origin other than the one that served it." },
+  "hoja.alerta.no-publicado.archivo": { "es": "El origen que dice ser suyo no publica este paquete.", "en": "The origin it claims does not publish this package." },
+  "hoja.alerta.no-publicado.servido": { "es": "El origen que lo sirvió no lo reconoce como suyo.", "en": "The origin that served it does not recognise it as its own." },
+  "hoja.alerta.desconfia":          { "es": "<b>Desconfía de este módulo.</b> {motivo} Si no lo esperabas, «Ahora no».", "en": "<b>Do not trust this module.</b> {motivo} If you were not expecting it, «Not now»." },
+  "hoja.alerta.llave-no-publicada": { "es": "Su origen lo publica, pero viene firmado por una llave que ese origen <b>no publica</b>. Abajo dice más.", "en": "Its origin publishes it, but it is signed by a key that origin <b>does not publish</b>. More below." },
+  "hoja.alerta.sin-respaldo.archivo": { "es": "Este módulo llega <b>sin respaldo verificable</b>: Mymi no pudo confirmar que alguien responda por este archivo. Abajo dice por qué.", "en": "This module arrives <b>with no verifiable backing</b>: Mymi could not confirm that anybody answers for this file. Why, below." },
+  "hoja.alerta.sin-respaldo.host":  { "es": "Este módulo llega <b>sin respaldo verificable</b>: Mymi no pudo confirmar que {host} publique este módulo. Abajo dice por qué.", "en": "This module arrives <b>with no verifiable backing</b>: Mymi could not confirm that {host} publishes this module. Why, below." },
+
+  "hoja.forma.hospedado":           { "es": "Trae la app de la institución, publicada: {archivos} archivos, {peso}.", "en": "It carries the institution's app, published: {archivos} files, {peso}." },
+  "hoja.forma.motor":               { "es": "Con su propio motor adentro ({peso}): un navegador no corre C# sin él.", "en": "With its own engine inside ({peso}): a browser does not run C# without it." },
+  "hoja.forma.cargo":               { "es": "Trae solo su dominio, sin motor propio.", "en": "It carries only its domain, with no engine of its own." },
+  "hoja.forma.cargo.detalle":       { "es": "El motor se lo presta Mymi.", "en": "Mymi lends it the engine." },
+  "hoja.caps.pide-mas":             { "es": "Pide más de lo que un módulo de datos necesita: <b>{lista}</b>.", "en": "It asks for more than a data module needs: <b>{lista}</b>." },
+  "hoja.caps.apagado":              { "es": "Se instala apagado. Tú decides si lo enciendes.", "en": "It is installed switched off. You decide whether to switch it on." },
+  "hoja.caps.no-pide":              { "es": "No pide red, ni micrófono, ni parlante.", "en": "It does not ask for network, microphone or speaker." },
+
   "//el-alta": "LAS FRASES DEL ALTA, que nacen en Gnothi.Movil/Shell.cs y las pinta ui.html. El detalle tecnico que algunas llevan al final -los rechazos de PackageInspector- NO entra aca y se queda en ingles: describe la ESTRUCTURA del paquete -que trae el motor, que trae un installation.json- y eso lo arregla quien lo empaqueto, no quien lo instala. La frase que la persona SI puede accionar es la que la envuelve, y esa es la que esta traducida.",
 
   "//la-pagina": "LAS FRASES DE ui.html, la cara de los dos telefonos. Lo que esta escrito adentro del marcado es el RESPALDO y no la fuente: la autoridad es este archivo, y el texto inline existe para que mock() -la maqueta que se itera en un monitor- siga mostrando algo legible. La suite afirma que toda clave data-i18n existe aca.",

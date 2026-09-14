@@ -1027,81 +1027,77 @@ const gn = {
     // provenance: facts Mymi found out by itself, not what the institution declares. And it
     // says what is NOT checked yet -- that the host that served the package is the institution's.
     const rev = p.revision || {}, pro = p.procedencia || {};
-    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
-    const via = pro.origen === 'qr' ? ', del código que escaneaste'
-              : pro.origen === 'pegado' ? ', del enlace que pegaste' : '';
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
+    const via = pro.origen === 'qr' ? T('hoja.via.qr')
+              : pro.origen === 'pegado' ? T('hoja.via.pegado') : '';
     const host = esc(pro.servido || p.servido || '?');
-    const sello = pro.sello ? '<small>El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.</small>' : '';
+    const sello = pro.sello ? peq(T('hoja.respaldo.sello')) : '';
+    const inseguro = pro.seguro ? '' : peq(T('hoja.respaldo.inseguro'));
 
     // A FILE came from no origin; but the package claims one, and that origin was asked whether
     // it publishes exactly this package. `host` is the file's name here.
     const quien = esc((pro.origenDeclarado || '').replace(/^https?:\/\//, '') || '?');
+    const nHost = fuerte(host), nQuien = fuerte(quien);
+    const llego = T('hoja.archivo.llego', { archivo: nHost });
     const archivoTexto = {
-      'verificado': 'Llegó como el archivo <b>' + host + '</b>, y <b>' + quien + '</b> lo respalda: publica exactamente este paquete.'
-        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
-      'sin-publicacion': 'Llegó como el archivo <b>' + host + '</b>.'
-        + '<small>Dice ser de <b>' + quien + '</b>, pero ese origen no publica cuáles módulos son suyos: no se pudo verificar.</small>',
-      'no-publicado': 'Llegó como el archivo <b>' + host + '</b>.'
-        + '<small>Dice ser de <b>' + quien + '</b>, y ese origen <b>no publica este paquete</b> (o publica otra versión).</small>',
-      'sin-origen-declarado': 'Llegó como el archivo <b>' + host + '</b>.'
-        + '<small>No declara de qué origen es: nadie responde por él.</small>',
+      'verificado': T('hoja.archivo.verificado', { archivo: nHost, quien: nQuien }) + inseguro,
+      'sin-publicacion': llego + peq(T('hoja.archivo.sin-publicacion', { quien: nQuien })),
+      'no-publicado': llego + peq(T('hoja.archivo.no-publicado', { quien: nQuien })),
+      'sin-origen-declarado': llego + peq(T('hoja.archivo.sin-origen')),
     };
 
     // THE ORIGIN CHECK, in the person's words: the origin that served the package was asked
     // whether the package is its own, and the package was asked which origin it claims.
+    const sirvio = T('hoja.respaldo.sirvio', { host: nHost, via: via });
     const respaldoTexto = pro.origen === 'archivo' ? archivoTexto : {
-      'verificado': 'Lo respalda <b>' + host + '</b>' + via + ': ese origen publica este módulo y el paquete dice ser suyo.'
-        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
-      'sin-publicacion': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Ese origen no publica cuáles módulos son suyos, así que Mymi no pudo verificarlo: fijate que lo reconozcas.</small>',
-      'no-publicado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Ese origen publica sus módulos y <b>este no está entre ellos</b>.</small>',
-      'sin-origen-declarado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Ese origen lo publica, pero el paquete no declara de qué origen es: no queda atado del todo.</small>',
-      'otro-origen': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>El paquete dice ser de <b>' + esc(pro.origenDeclarado || '?') + '</b>, y no lo sirvió ese origen.</small>',
+      'verificado': T('hoja.respaldo.verificado', { host: nHost, via: via }) + inseguro,
+      'sin-publicacion': sirvio + peq(T('hoja.respaldo.sin-publicacion')),
+      'no-publicado': sirvio + peq(T('hoja.respaldo.no-publicado')),
+      'sin-origen-declarado': sirvio + peq(T('hoja.respaldo.sin-origen')),
+      'otro-origen': sirvio + peq(T('hoja.respaldo.otro-origen', { quien: fuerte(esc(pro.origenDeclarado || '?')) })),
     };
     const respaldo = (respaldoTexto[pro.respaldo]
       || (pro.origen === 'archivo'
-        ? 'Llegó como el archivo <b>' + host + '</b>.<small>No viene de ningún origen: nadie responde por él.</small>'
-        : 'Lo sirvió <b>' + host + '</b>' + via + '.<small>Mymi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>'))
+        ? llego + peq(T('hoja.archivo.sin-ninguno'))
+        : sirvio + peq(T('hoja.respaldo.no-verificado'))))
       + sello;
 
     // THE SIGNATURE: whose key, and since when Mymi knows it. Continuity, not virtue.
-    const desde = pro.firmaDesde ? new Date(pro.firmaDesde).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const desde = pro.firmaDesde ? dia(pro.firmaDesde) : '';
     const llave = esc(pro.firmante || '?');
     const firma = {
-      'sin-firma': 'El paquete no viene firmado.',
+      'sin-firma': T('hoja.firma.sin-firma'),
       'publicada': desde
-        ? 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + '), y su origen la publica.'
-        : 'Firmado por la llave «' + llave + '», que su origen publica.<small>Mymi la va a recordar para la próxima vez.</small>',
-      'conocida': 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + ').<small>Su origen no contestó, pero la llave ya la conocías.</small>',
-      'rotada': 'Firmado con una <b>llave nueva</b> («' + llave + '»), que su origen publica.<small>No es la de la vez pasada. Mymi va a recordar esta.</small>',
-      'desconocida': 'Firmado por una llave («' + llave + '») que su origen <b>no publica</b> y que Mymi no conocía.',
-      'cambiada': '<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva («' + llave + '»).',
-    }[pro.firma] || 'El paquete no viene firmado.';
+        ? T('hoja.firma.publicada.desde', { desde: desde })
+        : T('hoja.firma.publicada.primera', { llave: llave }) + peq(T('hoja.firma.publicada.recordar')),
+      'conocida': T('hoja.firma.conocida', { desde: desde }) + peq(T('hoja.firma.conocida.detalle')),
+      'rotada': T('hoja.firma.rotada', { llave: llave }) + peq(T('hoja.firma.rotada.detalle')),
+      'desconocida': T('hoja.firma.desconocida', { llave: llave }),
+      'cambiada': T('hoja.firma.cambiada', { llave: llave }),
+    }[pro.firma] || T('hoja.firma.sin-firma');
 
     // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
     // footnote: the warning goes first, and says how bad it is. A changed key is the loudest.
-    const desconfiar = pro.firma === 'cambiada' ? 'Viene firmado con otra llave que la vez pasada, y su origen no publica la nueva.'
-      : pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.'
-      : pro.respaldo === 'no-publicado' ? (pro.origen === 'archivo' ? 'El origen que dice ser suyo no publica este paquete.' : 'El origen que lo sirvió no lo reconoce como suyo.')
+    const desconfiar = pro.firma === 'cambiada' ? T('hoja.alerta.cambiada')
+      : pro.respaldo === 'otro-origen' ? T('hoja.alerta.otro-origen')
+      : pro.respaldo === 'no-publicado' ? T(pro.origen === 'archivo' ? 'hoja.alerta.no-publicado.archivo' : 'hoja.alerta.no-publicado.servido')
       : null;
+    const ojo = t => '<p class="ojo">' + t + '</p>';
     const alerta = desconfiar
-      ? '<p class="ojo"><b>Desconfiá de este módulo.</b> ' + desconfiar + ' Si no lo esperabas, «Ahora no».</p>'
+      ? ojo(T('hoja.alerta.desconfia', { motivo: desconfiar }))
       : pro.respaldo === 'verificado' && pro.firma !== 'desconocida' ? ''
       : pro.respaldo === 'verificado'
-        ? '<p class="ojo">Su origen lo publica, pero viene firmado por una llave que ese origen <b>no publica</b>. Abajo dice más.</p>'
-        : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Mymi no pudo confirmar que '
-          + (pro.origen === 'archivo' ? 'alguien responda por este archivo' : host + ' publique este módulo') + '. Abajo dice por qué.</p>';
+        ? ojo(T('hoja.alerta.llave-no-publicada'))
+        : ojo(pro.origen === 'archivo'
+            ? T('hoja.alerta.sin-respaldo.archivo')
+            : T('hoja.alerta.sin-respaldo.host', { host: host }));
     const forma = rev.forma === 'hospedado'
-      ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
-        + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
-      : 'Trae solo su dominio, sin motor propio.<small>El motor se lo presta Mymi.</small>';
+      ? T('hoja.forma.hospedado', { archivos: (rev.archivos || 0), peso: mb(rev.bytes) })
+        + peq(T('hoja.forma.motor', { peso: mb(rev.motorBytes) }))
+      : T('hoja.forma.cargo') + peq(T('hoja.forma.cargo.detalle'));
     const caps = (rev.excesos && rev.excesos.length)
-      ? 'Pide más de lo que un módulo de datos necesita: <b>' + esc(rev.excesos.join(', ')) + '</b>.'
-        + '<small>Se instala apagado. Vos decidís si lo encendés.</small>'
-      : 'No pide red, ni micrófono, ni parlante.';
+      ? T('hoja.caps.pide-mas', { lista: esc(rev.excesos.join(', ')) }) + peq(T('hoja.caps.apagado'))
+      : T('hoja.caps.no-pide');
 
     // THE PUBLISHER'S IDENTITY, from the brand line: legal name, tax id, version, and the domain it
     // DECLARES next to the host that served it. Three states, like the detail: coincide, no
@@ -1216,7 +1212,7 @@ const gn = {
   // it is a module, the file's name when it is not, and a tag for what happened to it. A row that
   // is a module she does not have yet is the only one that can be tapped.
   hallazgos(h) {
-    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
     gn.sheet(false);
     document.getElementById('propuesta').classList.remove('on');
     const rows = (h.archivos || []).map(a => {
@@ -1338,7 +1334,7 @@ const gn = {
 
     // While a bundle downloads the strip grows into a card with a bar and the megabytes: the
     // shell sends how far it got (progreso, bytes, total) about every quarter megabyte.
-    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
     const pct = a.progreso == null ? null : Math.round(Math.min(1, a.progreso) * 100);
     const cuerpo = a.estado === 'trabajando' && pct != null
       ? '<span class="txt"><b>' + esc(a.detalle) + '</b><small>' + mb(a.bytes) + ' de ' + mb(a.total) + ' · ' + pct + ' %</small></span>'
@@ -1481,7 +1477,7 @@ const gn = {
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
         + (m.signerRevokedAt
             ? '<p class="ojo"><b>Tu institución retiró la llave</b> con la que firmó este módulo'
-              + ' (Mymi lo supo el ' + new Date(m.signerRevokedAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) + ').'
+              + ' (Mymi lo supo el ' + dia(m.signerRevokedAt) + ').'
               + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Mymi va a recordar la llave nueva.</p>'
             : '')
 
@@ -1713,6 +1709,25 @@ function sw(on, fn) {
 // data-i18n existe en el catalogo.
 let TEXTOS = {};
 
+// EL IDIOMA EN CURSO, para lo que NO es una frase: como se escribe un numero y una fecha. Lo
+// dice el catalogo con una clave suya en vez de adivinarlo, asi que no hay dos verdades.
+// Estaba cableado a 'es' en siete sitios -- toLocaleDateString('es') y .replace('.', ',') --,
+// que es la regla 8: el formato viaja con el render.
+let IDIOMA = 'es';
+
+// LA MARCA QUE ENVUELVE UN VALOR DENTRO DE UNA FRASE. Van aca y no adentro del catalogo para
+// que quien traduzca no tenga que cuidar etiquetas alrededor de un hueco; el enfasis que la
+// frase misma necesita -«la llave CAMBIO»- si viaja en la frase, porque partirla para sacarlo
+// seria volver a los fragmentos que la regla 7 prohibe.
+function fuerte(t) { return '<b>' + t + '</b>'; }
+
+// UN NUMERO CON UN DECIMAL, EN EL IDIOMA EN CURSO. Estaba escrito tres veces como el mismo
+// lambda con `.replace('.', ',')` adentro: la coma decimal del espanol, cableada, en una funcion
+// que se copio y pego. En ingles ese numero se escribe con punto.
+function nDecimal(n) { return Number(n).toLocaleString(IDIOMA, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+function dia(iso) { return new Date(iso).toLocaleDateString(IDIOMA, { day: 'numeric', month: 'short', year: 'numeric' }); }
+function peq(t) { return '<small>' + t + '</small>'; }
+
 function T(clave, valores) {
   let frase = TEXTOS[clave];
   if (frase === undefined) return clave;
@@ -1740,8 +1755,8 @@ function esc(s) {
 function attr(s) { return esc(s).replace(/["']/g, ''); }
 function kb(b) {
   if (!b) return '0 KB';
-  return b < 1024*1024 ? (b/1024).toFixed(1).replace('.',',') + ' KB'
-                       : (b/1048576).toFixed(1).replace('.',',') + ' MB';
+  return b < 1024*1024 ? nDecimal(b/1024) + ' KB'
+                       : nDecimal(b/1048576) + ' MB';
 }
 
 // A small markdown renderer — enough for what the model writes: tables, bold, lists,
