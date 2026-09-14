@@ -134,7 +134,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (PublishedFluid each in takes.Fluids)
 			{
-				Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(each.Kind)), each.Kind);
+				Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, each.Kind)), each.Kind);
 				Assert.That(each.Published, Is.EqualTo(each.Kind == "EngineOil"), each.Kind);
 				Assert.That(
 					each.Revision, Is.EqualTo(each.Kind == "EngineOil" ? TheFirstRevision : ""),
@@ -550,7 +550,7 @@ namespace Concesionario.Dominio.Pruebas
 		// posicion de otra.
 		private static string TheTyreSubjectFor(string position)
 		{
-			return "Llanta " + HowACanonNameReads.ATyre(position).ToLowerInvariant();
+			return "Llanta " + HowACanonNameReads.ATyre(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, position).ToLowerInvariant();
 		}
 	}
 }

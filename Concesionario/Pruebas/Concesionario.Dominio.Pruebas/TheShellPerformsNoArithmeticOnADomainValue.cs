@@ -60,7 +60,11 @@ namespace Concesionario.Dominio.Pruebas
 			//
 			// Y SUBIO 24 -> 25 CON EL MENSAJE DEL FEED DE LA PLACA, que es UN archivo: la raiz paso de
 			// 37 a 38 y el margen sigue siendo TRECE. Va en Events/, que es de esta misma raiz.
-			new object[] { TheCodeOfTheShellsAsData.App, 25 },
+			//
+			// Y SUBIO 25 -> 28 CON LOS TRES ARCHIVOS DE Wording/, que son el renderizador y sus dos
+			// catalogos: la raiz paso de 38 a 41 y el margen sigue siendo TRECE. Se mueve POR LO QUE
+			// SE AGREGO y no hasta donde alcance, y subirlo es acto de la tarea que los ESCRIBE.
+			new object[] { TheCodeOfTheShellsAsData.App, 28 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
 			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices
@@ -90,7 +94,10 @@ namespace Concesionario.Dominio.Pruebas
 			// Y SUBIO 26 -> 27 CON EL PORTADOR DE LA PLACA, que es UN archivo: la raiz paso de 29 a 30
 			// y el margen sigue siendo TRES. Tampoco trajo ningun .razor: el bloque es un renglon mas
 			// de la tarjeta de informacion que Vehiculo.razor ya tenia.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 27 },
+			//
+			// Y SUBIO 27 -> 29 CON EL CATALOGO DE LA PANTALLA Y EL APUNTE, que son DOS archivos: la
+			// raiz paso de 30 a 32 y el margen sigue siendo TRES.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 29 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },
@@ -238,20 +245,11 @@ namespace Concesionario.Dominio.Pruebas
 				Snippet = "bytes += new FileInfo(file).Length;",
 				Reason = "Suma de bytes del journal en memoria.",
 			},
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Wasm, File = "Parts/ComoSeLee.cs", Member = "Dia",
-				Snippet = "return day.Day + \" de \" + LosMeses[day.Month - 1] + \" de \" + day.Year;",
-				Reason = "Pone en base cero el indice del nombre del mes. Es FORMATO, que es el "
-					+ "discriminador que las cuatro rebanadas nombran: HowANumberReads dice de si "
-					+ "mismo 'Es formato y no una cuenta'.",
-			},
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Wasm, File = "Parts/ComoSeLee.cs", Member = "DiaCorto",
-				Snippet = "return day.Day + \" \" + LosMeses[day.Month - 1][..3] + \" \" + day.Year;",
-				Reason = "La misma base cero del indice del mes, en la forma corta.",
-			},
+			// AQUI VIVIAN LAS DOS DE Parts/ComoSeLee.cs -- Dia y DiaCorto, que ponian en base cero el
+			// indice del nombre del mes -- y se fueron con la aritmetica, no con el permiso. El nombre
+			// del mes ya no sale de un arreglo indexado: sale del catalogo, con la clave "month." mas el
+			// numero del mes, porque el ORDEN de las partes de una fecha no es el mismo en los dos
+			// idiomas y tenia que vivir donde vive la traduccion.
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.EndPointDeEventos, File = "Program.cs",

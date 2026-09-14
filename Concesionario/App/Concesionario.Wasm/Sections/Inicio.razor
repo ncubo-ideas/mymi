@@ -6,7 +6,7 @@
             <span class="d-top__mark"><SotaventosMark /></span>
             <span>
                 <span class="d-top__name">@Agencia</span>
-                <span class="d-top__kicker">Servicio al propietario</span>
+                <span class="d-top__kicker">@Texts["home.kicker"]</span>
             </span>
         </div>
         <AppearanceToggle />
@@ -14,7 +14,7 @@
 
     <h1 class="d-top__hello">@Saludo</h1>
     <p class="d-top__sub">
-        Tu concesionario lleva este registro y es el único que lo cambia. Aquí lo leés.
+        @Texts["home.sub"]
     </p>
 </div>
 
@@ -22,7 +22,7 @@
 
     <section class="d-card" id="estado">
         <div class="d-card__head">
-            <span class="d-card__title">Estado de tu vehículo</span>
+            <span class="d-card__title">@Texts["home.stateTitle"]</span>
             <span class="@("d-pill d-pill--" + Tono)">@Titular</span>
         </div>
 
@@ -33,7 +33,7 @@
             </div>
             <div class="d-health__body">
                 <p class="d-health__what">
-                    operaciones al día de las que tu concesionario programó
+                    @Texts["home.healthWhat"]
                 </p>
             </div>
         </div>
@@ -41,19 +41,28 @@
         <div class="d-health__counts">
             @if (Overdue > 0)
             {
-                <span class="d-pill d-pill--danger" id="cuenta-vencidos">@Overdue vencid@(Overdue == 1 ? "o" : "os")</span>
+                <span class="d-pill d-pill--danger" id="cuenta-vencidos">
+                    @Texts.With(Overdue == 1 ? "home.overdueOne" : "home.overdueMany",
+                        ("count", Texts.Grouped(Overdue)))
+                </span>
             }
             @if (Due > 0)
             {
-                <span class="d-pill d-pill--warn" id="cuenta-tocan">@Due te toca@(Due == 1 ? "" : "n") ahora</span>
+                <span class="d-pill d-pill--warn" id="cuenta-tocan">
+                    @Texts.With(Due == 1 ? "home.dueOne" : "home.dueMany", ("count", Texts.Grouped(Due)))
+                </span>
             }
             @if (Missed > 0)
             {
-                <span class="d-pill d-pill--mute" id="cuenta-no-hechos">@Missed sin hacer</span>
+                <span class="d-pill d-pill--mute" id="cuenta-no-hechos">
+                    @Texts.With("home.missed", ("count", Texts.Grouped(Missed)))
+                </span>
             }
             @if (AlDia > 0)
             {
-                <span class="d-pill d-pill--ok" id="cuenta-al-dia">@AlDia al día</span>
+                <span class="d-pill d-pill--ok" id="cuenta-al-dia">
+                    @Texts.With("home.upToDate", ("count", Texts.Grouped(AlDia)))
+                </span>
             }
         </div>
     </section>
@@ -63,9 +72,9 @@
             <Glyph Name="@(HayAlgo ? ComoSeLee.Dibujo(Board[Siguiente]) : "check")" Size="22" Stroke="2.4" />
         </span>
         <div>
-            <div class="d-next__kicker">@(HayAlgo ? "Lo que sigue" : "Nada pendiente")</div>
+            <div class="d-next__kicker">@(HayAlgo ? Texts["home.nextKicker"] : Texts["home.nothingPending"])</div>
             <div class="d-next__title">
-                @(HayAlgo ? ComoSeLee.Operacion(Siguiente) : "Tu carro está al día")
+                @(HayAlgo ? ComoSeLee.Operacion(Texts.ThePhrases, Siguiente) : Texts["home.allGood"])
             </div>
 
             @if (HayAlgo)
@@ -73,14 +82,14 @@
                 <div class="d-next__more">
                     <button class="d-link" type="button" id="ver-por-que"
                             @onclick="@(() => porQue = !porQue)">
-                        @(porQue ? "Ocultar el detalle" : "¿Por qué?")
+                        @(porQue ? Texts["home.hideWhy"] : Texts["home.why"])
                     </button>
                 </div>
 
                 @if (porQue)
                 {
                     <div class="d-says" id="por-que-detalle">
-                        <span class="d-says__label">Lo que dice tu registro</span>
+                        <span class="d-says__label">@Texts["home.saysLabel"]</span>
                         @Reasons[Siguiente]
                     </div>
                 }
@@ -90,7 +99,7 @@
                     <a class="d-cta" id="agendar-whatsapp" href="@EnlaceParaAgendar"
                        target="_blank" rel="noopener noreferrer">
                         <Glyph Name="calendar" Size="18" Stroke="2.2" />
-                        Agendar por WhatsApp
+                        @Texts["home.schedule"]
                     </a>
                 }
             }
@@ -98,8 +107,7 @@
             {
                 <div class="d-next__more">
                     <span class="d-note">
-                        Ninguna de las @Programadas operaciones que tu concesionario programó está
-                        vencida ni te toca ahora.
+                        @Texts.With("home.nothingDue", ("count", Texts.Grouped(Programadas)))
                     </span>
                 </div>
             }
@@ -111,19 +119,21 @@
             <div>
                 <span class="d-tile__v">@Odometro</span><span class="d-tile__u">@OdometroUnidad</span>
             </div>
-            <div class="d-tile__k">han recorrido juntos</div>
+            <div class="d-tile__k">@Texts["home.odometerTile"]</div>
         </div>
         <div class="d-tile" id="tile-lectura">
             <div class="d-tile__v" style="font-size:15px;letter-spacing:-.2px">
-                @(ObservadoEl.Length > 0 ? ComoSeLee.DiaCorto(ObservadoEl) : "sin lectura")
+                @(ObservadoEl.Length > 0
+                    ? ComoSeLee.DiaCorto(Texts.ThePhrases, ObservadoEl)
+                    : Texts["home.noReading"])
             </div>
-            <div class="d-tile__k">última lectura que envió tu concesionario</div>
+            <div class="d-tile__k">@Texts["home.readingTile"]</div>
         </div>
     </div>
 
     <div class="d-sec">
-        <span class="d-sec__title">Un vistazo a tu carro</span>
-        <button class="d-link" type="button" id="ir-a-servicios" @onclick="VerServicios">Ver todas</button>
+        <span class="d-sec__title">@Texts["home.glance"]</span>
+        <button class="d-link" type="button" id="ir-a-servicios" @onclick="VerServicios">@Texts["home.seeAll"]</button>
     </div>
 
     <section class="d-card" id="vistazo">
@@ -133,11 +143,11 @@
                 string estado = Board.TryGetValue(kind, out string s) ? s : "";
                 string tono = ComoSeLee.Tono(estado);
 
-                <div class="d-dot" id="@("punto-" + kind)" title="@ComoSeLee.Estado(estado)">
+                <div class="d-dot" id="@("punto-" + kind)" title="@ComoSeLee.Estado(Texts.ThePhrases, estado)">
                     <span class="@("d-dot__ring d-dot__ring--" + tono)">
                         <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="18" Stroke="2.6" />
                     </span>
-                    <span class="d-dot__k">@ComoSeLee.OperacionCorta(kind)</span>
+                    <span class="d-dot__k">@ComoSeLee.OperacionCorta(Texts.ThePhrases, kind)</span>
                 </div>
             }
         </div>
@@ -146,7 +156,7 @@
     @if (HayContacto)
     {
         <div class="d-sec">
-            <span class="d-sec__title">¿Necesitás hablar con el taller?</span>
+            <span class="d-sec__title">@Texts["home.contactTitle"]</span>
         </div>
 
         <div class="d-tiles" id="contacto">
@@ -172,7 +182,7 @@
                         <Glyph Name="phone" Size="18" Stroke="2.2" />
                     </span>
                     <span>
-                        <span style="display:block;font-weight:800;font-size:14px">Llamar</span>
+                        <span style="display:block;font-weight:800;font-size:14px">@Texts["home.call"]</span>
                         <span class="d-tile__k" style="margin:0">@Contacto.Phone</span>
                     </span>
                 </a>
@@ -183,10 +193,11 @@
     <p class="d-note" id="de-donde-sale" style="margin-top:6px">
         <Glyph Name="info" Size="14" Stroke="2" />
         <span>
-            Esta app no le pregunta nada a nadie: lee el registro que tu concesionario ya te envió y
-            que vive en @DondeVive. @(EvaluadoHasta.Length > 0
-                ? "Evaluado al " + EvaluadoHasta + "."
-                : "Todavía sin evaluar.")
+            @Texts.With("home.source",
+                ("where", DondeVive),
+                ("evaluated", EvaluadoHasta.Length > 0
+                    ? Texts.With("home.evaluated", ("day", EvaluadoHasta))
+                    : Texts["home.notEvaluated"]))
         </span>
     </p>
 
@@ -194,12 +205,20 @@
         <button class="btn btn--ghost" type="button" id="traer-novedades" @onclick="Actualizar"
                 disabled="@(Trayendo || Migrada)">
             <Glyph Name="sync" Size="18" />
-            @(Migrada ? "Ya no se actualiza" : Trayendo ? "Trayendo…" : "Traer lo que haya nuevo")
+            @(Migrada
+                ? Texts["home.refreshMigrated"]
+                : Trayendo ? Texts["home.refreshFetching"] : Texts["home.refresh"])
         </button>
     </div>
 </div>
 
 @code {
+    /// <summary>
+    /// El catalogo de esta caratula, en el idioma de la persona. Baja desde la pagina y esta seccion
+    /// no lo lee por su cuenta: lo unico que hace con el es decir sus propias palabras.
+    /// </summary>
+    [CascadingParameter] public Texts Texts { get; set; }
+
     /// <summary>Las nueve operaciones, en el orden en que la duena las ve.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<string> Nueve { get; set; } = new List<string>();
 
@@ -231,7 +250,7 @@
     [Parameter] public string OdometroUnidad { get; set; } = "";
     [Parameter] public string ObservadoEl { get; set; } = "";
     [Parameter] public string EvaluadoHasta { get; set; } = "";
-    [Parameter] public string DondeVive { get; set; } = "esta máquina";
+    [Parameter] public string DondeVive { get; set; } = "";
     [Parameter] public string Agencia { get; set; } = "Sotaventos Motors";
     [Parameter] public DealershipContact Contacto { get; set; } = new();
 
@@ -268,11 +287,12 @@
     {
         get
         {
-            string carro = Modelo.Length > 0 ? Modelo : "carro";
-            string texto =
-                "Hola, quiero agendar " + ComoSeLee.Operacion(Siguiente).ToLowerInvariant()
-                + " para mi " + carro
-                + " (odómetro " + Odometro + " " + OdometroUnidad + ").";
+            string carro = Modelo.Length > 0 ? Modelo : Texts["home.whatsappCar"];
+            string texto = Texts.With("home.whatsappText",
+                ("operation", ComoSeLee.Operacion(Texts.ThePhrases, Siguiente).ToLowerInvariant()),
+                ("car", carro),
+                ("odometer", Odometro),
+                ("unit", OdometroUnidad));
 
             return "https://wa.me/" + Contacto.Whatsapp + "?text=" + System.Uri.EscapeDataString(texto);
         }
@@ -284,19 +304,23 @@
     /// </summary>
     private string Tono => Overdue > 0 ? "danger" : Due > 0 ? "warn" : "ok";
 
-    private string Titular => Overdue > 0 ? "Necesita atención" : Due > 0 ? "Algo por hacer" : "Al día";
+    private string Titular => Overdue > 0
+        ? Texts["home.headlineAttention"]
+        : Due > 0 ? Texts["home.headlineSomething"] : Texts["home.headlineOk"];
 
     private string Saludo
     {
         get
         {
-            string carro = Modelo.Length > 0 ? "Tu " + Modelo : "Tu carro";
+            string carro = Modelo.Length > 0
+                ? Texts.With("home.yourModel", ("model", Modelo))
+                : Texts["home.yourCar"];
 
             return Overdue > 0
-                ? carro + " necesita atención"
+                ? Texts.With("home.greetingAttention", ("car", carro))
                 : Due > 0
-                    ? carro + " tiene algo por hacer"
-                    : carro + " está al día";
+                    ? Texts.With("home.greetingSomething", ("car", carro))
+                    : Texts.With("home.greetingOk", ("car", carro));
         }
     }
 }

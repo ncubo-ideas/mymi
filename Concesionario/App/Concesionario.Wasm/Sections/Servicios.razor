@@ -1,14 +1,14 @@
 @using Concesionario.Wasm.Parts
 
 <div class="d-sec" style="margin-top:4px">
-    <span class="d-sec__note">@Nueve.Count operaciones, primero lo urgente</span>
+    <span class="d-sec__note">@Texts.With("services.count", ("count", Texts.Grouped(Nueve.Count)))</span>
 </div>
 
 @if (Operations is not null)
 {
     <p class="d-note" style="margin-top:0;margin-bottom:10px">
         <Glyph Name="clock" Size="14" Stroke="2" />
-        <span>Lo que falta está medido al @Operations.AskedAt</span>
+        <span>@Texts.With("services.measuredAt", ("instant", Operations.AskedAt))</span>
     </p>
 }
 
@@ -23,8 +23,10 @@
                 <span class="@("d-step__bullet d-step__bullet--" + tono)">
                     <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="11" Stroke="3" />
                 </span>
-                <div class="@("d-step__when d-step__when--" + tono)">@ComoSeLee.Estado(estado)</div>
-                <div class="d-step__title">@ComoSeLee.Operacion(kind)</div>
+                <div class="@("d-step__when d-step__when--" + tono)">
+                    @ComoSeLee.Estado(Texts.ThePhrases, estado)
+                </div>
+                <div class="d-step__title">@ComoSeLee.Operacion(Texts.ThePhrases, kind)</div>
                 <div class="d-step__sub">
                     @if (abierto == kind)
                     {
@@ -32,7 +34,7 @@
                     }
                     else
                     {
-                        <span>@Resumen(kind, estado)</span>
+                        <span>@Texts[Resumen(estado)]</span>
                     }
                 </div>
                 @if (Operations is not null)
@@ -42,14 +44,14 @@
                     if (parada.CountdownRefused)
                     {
                         <div class="d-says" id="@("rechazo-" + kind)">
-                            <span class="d-says__label">No se pudo medir</span>
-                            @TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom
+                            <span class="d-says__label">@Texts["services.refusedLabel"]</span>
+                            @Texts[TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom]
                         </div>
                     }
                     else
                     {
                         <div class="d-says" id="@("falta-" + kind)">
-                            <span class="d-says__label">Lo que falta</span>
+                            <span class="d-says__label">@Texts["services.remainingLabel"]</span>
                             @parada.Says
                         </div>
 
@@ -57,13 +59,13 @@
                             @if (parada.DistanceCanBeSaid)
                             {
                                 <span class="d-pill d-pill--info" id="@("resto-km-" + kind)">
-                                    @ComoSeLee.Miles(parada.DistanceRemaining) @parada.DistanceUnit
+                                    @Texts.Grouped(parada.DistanceRemaining) @parada.DistanceUnit
                                 </span>
                             }
                             @if (parada.DaysCanBeSaid)
                             {
                                 <span class="d-pill d-pill--info" id="@("resto-dias-" + kind)">
-                                    @ComoSeLee.Miles(parada.DaysRemaining) días
+                                    @Texts.Days(parada.DaysRemaining)
                                 </span>
                             }
                         </div>
@@ -73,7 +75,7 @@
                 <div style="margin-top:6px">
                     <button class="d-link" type="button" id="@("por-que-" + kind)"
                             @onclick="@(() => abierto = abierto == kind ? "" : kind)">
-                        @(abierto == kind ? "Ocultar" : "¿Por qué?")
+                        @(abierto == kind ? Texts["services.hide"] : Texts["services.why"])
                     </button>
                 </div>
             </div>
@@ -84,12 +86,17 @@
 <p class="d-note" style="margin-top:14px">
     <Glyph Name="info" Size="14" Stroke="2" />
     <span>
-        El orden lo pone la urgencia, no el calendario: primero lo vencido, después lo que toca, y
-        de último lo que está al día. Las fechas de lo ya hecho todavía no vienen en el registro.
+        @Texts["services.order"]
     </span>
 </p>
 
 @code {
+    /// <summary>
+    /// El catalogo de esta caratula, en el idioma de la persona. Baja desde la pagina y esta seccion
+    /// no lo lee por su cuenta.
+    /// </summary>
+    [CascadingParameter] public Texts Texts { get; set; }
+
     [Parameter, EditorRequired] public IReadOnlyList<string> Nueve { get; set; } = new List<string>();
     [Parameter, EditorRequired] public Dictionary<string, string> Board { get; set; } = new();
     [Parameter, EditorRequired] public Dictionary<string, string> Reasons { get; set; } = new();
@@ -124,18 +131,19 @@
             .Select(x => x.kind);
 
     /// <summary>
-    /// La linea corta que va bajo el nombre cuando el detalle esta cerrado. NO resume la frase del
-    /// dominio -- la reemplaza por lo unico que se puede decir sin leerla: que estado tiene y quien
-    /// lo decidio. Recortar la frase con puntos suspensivos cortaria justo donde estan los numeros.
+    /// La CLAVE de la linea corta que va bajo el nombre cuando el detalle esta cerrado. NO resume la
+    /// frase del dominio -- la reemplaza por lo unico que se puede decir sin leerla: que estado tiene
+    /// y quien lo decidio. Recortar la frase con puntos suspensivos cortaria justo donde estan los
+    /// numeros.
     /// </summary>
-    private static string Resumen(string kind, string estado) => estado switch
+    private static string Resumen(string estado) => estado switch
     {
-        "Overdue" => "Se pasó del intervalo que publicó el fabricante.",
-        "Due" => "Llegó al intervalo que publicó el fabricante.",
-        "DueSoon" => "Está cerca del intervalo que publicó el fabricante.",
-        "Deferred" => "Vos pediste posponerla.",
-        "Missed" => "Pasó su momento sin registrarse.",
-        "NotDue" => "Dentro del intervalo, o sin intervalo programado para este carro.",
-        _ => "Tu registro no le puso un estado a esta operación.",
+        "Overdue" => "services.summaryOverdue",
+        "Due" => "services.summaryDue",
+        "DueSoon" => "services.summaryDueSoon",
+        "Deferred" => "services.summaryDeferred",
+        "Missed" => "services.summaryMissed",
+        "NotDue" => "services.summaryNotDue",
+        _ => "services.summaryUnknown",
     };
 }

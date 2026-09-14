@@ -99,6 +99,23 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Y LOS DOS CATALOGOS DE LA CARATULA, que son lo que la pantalla dice con sus propias palabras
+       desde que habla dos idiomas. Una clave que esta en uno y no en el otro sale a pantalla como
+       {clave} y nada se pone rojo, y una prueba que afirme lo que la persona lee ya no puede leerlo
+       de una constante de C#: el texto vive aqui.
+
+       Viajan como dato y no se leen del wwwroot por una ruta relativa: el artifacts-path reubica el
+       output entero, asi que ninguna cantidad fija de '..' llega de vuelta al modulo. -->
+  <ItemGroup>
+    <None Include="..\..\App\Concesionario.Wasm\wwwroot\text\es-CR.json"
+          Link="texto.es-CR.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Wasm\wwwroot\text\en.json"
+          Link="texto.en.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Y TODO EL MARKUP DE LA CARATULA, desde T10, por una tercera cosa que ninguna prueba veia: que
        NINGUN control de la pantalla le pida a la persona un hecho de su propio vehiculo. El censo de
        parametros de la puerta no lo puede ver, porque un formulario guarda su valor en el estado de

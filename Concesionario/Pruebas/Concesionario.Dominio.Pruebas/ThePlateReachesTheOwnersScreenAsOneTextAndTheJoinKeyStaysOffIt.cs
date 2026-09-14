@@ -246,10 +246,15 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(markup, Does.Contain("Placa.Says"),
 				"El renglon dejo de pintar la frase de la placa.");
 
-			Assert.That(markup, Does.Contain("<span class=\"d-row__k\">Placa</span>"),
+			Assert.That(markup, Does.Contain("<span class=\"d-row__k\">@Texts[\"vehicle.rowPlate\"]</span>"),
 				"La etiqueta del renglon dejo de nombrar de que habla. Es lo que hace para una persona "
 				+ "lo que un nombre de campo hace para un modelo, y sin ella la frase queda suelta "
 				+ "entre el VIN y la fecha de entrega.");
+
+			// Y LA CLAVE SIGUE DICIENDO 'Placa' en el idioma del registro: el markup nombra la CLAVE
+			// desde que la pantalla habla dos idiomas, y una clave que el catalogo no tenga dejaria el
+			// renglon con las llaves a la vista.
+			Assert.That(TheCatalogueOfTheScreen.InSpanish("vehicle.rowPlate"), Is.EqualTo("Placa"));
 		}
 
 		// ===== SIN PLACA HAY FRASE Y NO HUECO, Y EL VIN NO SE METE EN SU LUGAR ============

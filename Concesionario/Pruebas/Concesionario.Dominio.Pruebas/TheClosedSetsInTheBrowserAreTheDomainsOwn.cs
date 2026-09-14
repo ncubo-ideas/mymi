@@ -158,7 +158,7 @@ namespace Concesionario.Dominio.Pruebas
 				{
 					Assert.That(journal.Api.IsFluidPublished(kind), Is.False, $"'{kind}'");
 					Assert.That(journal.Api.ReadFluidRevision(kind), Is.Empty, $"'{kind}'");
-					Assert.That(journal.Api.DescribeFluid(kind), Does.StartWith(HowACanonNameReads.AFluid(kind) + ":"),
+					Assert.That(journal.Api.DescribeFluid(kind), Does.StartWith(HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, kind) + ":"),
 						$"la frase de '{kind}' no nombra a '{kind}'.");
 				}
 
@@ -167,7 +167,7 @@ namespace Concesionario.Dominio.Pruebas
 					Assert.That(journal.Api.IsTyrePublished(position), Is.False, $"'{position}'");
 					Assert.That(journal.Api.ReadTyreRevision(position), Is.Empty, $"'{position}'");
 					Assert.That(
-						journal.Api.DescribeTyre(position), Does.StartWith("Llanta " + HowACanonNameReads.ATyre(position).ToLowerInvariant() + ":"),
+						journal.Api.DescribeTyre(position), Does.StartWith("Llanta " + HowACanonNameReads.ATyre(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, position).ToLowerInvariant() + ":"),
 						$"la frase de '{position}' no nombra a '{position}'.");
 				}
 			}

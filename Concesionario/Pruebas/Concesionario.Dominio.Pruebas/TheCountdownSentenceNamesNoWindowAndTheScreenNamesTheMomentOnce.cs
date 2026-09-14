@@ -125,7 +125,10 @@ namespace Concesionario.Dominio.Pruebas
 			string services = TheSectionAsItIsWritten("Servicios.razor");
 			string sheet = TheSectionAsItIsWritten("Vehiculo.razor");
 
-			Assert.That(TimesItSays(services, "@Operations.AskedAt"), Is.EqualTo(1),
+			// SIN EL '@' DESDE QUE LA FRASE DEL ENCABEZADO SALE DEL CATALOGO: el instante entra como el
+			// valor de un hueco -- ("instant", Operations.AskedAt) -- y ahi ya no lleva el arroba. Lo que
+			// se cuenta sigue siendo el sitio donde la pantalla nombra el momento.
+			Assert.That(TimesItSays(services, "Operations.AskedAt"), Is.EqualTo(1),
 				"La lista de servicios nombra el momento en que se midio " + "una cantidad de veces "
 				+ "distinta de UNA. Ninguna frase de la cuenta atras lo nombra, asi que la pantalla "
 				+ "tiene que decirlo -- y una vez, no por fila.");
@@ -166,7 +169,7 @@ namespace Concesionario.Dominio.Pruebas
 					.Replace("no hay ninguna operación de ", "")
 					.Replace(" agendada para este vehículo", "");
 
-				if (domain != ComoSeLee.Operacion(kind)) disagreeing.Add(kind);
+				if (domain != ComoSeLee.Operacion(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, kind)) disagreeing.Add(kind);
 			}
 
 			Assert.That(disagreeing, Is.EquivalentTo(new[] { "FluidChange", "WearPartReplacement" }),
@@ -177,7 +180,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y LA FORMA DE LA DISCREPANCIA, dicha: la caratula dice una y el dominio otra, y las dos
 			// aparecen en la misma fila de la pantalla.
-			Assert.That(ComoSeLee.Operacion("FluidChange"), Is.EqualTo("Cambio de líquidos"));
+			Assert.That(ComoSeLee.Operacion(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "FluidChange"), Is.EqualTo("Cambio de líquidos"));
 			Assert.That(
 				journal.Api.DescribeCountdown("FluidChange", TheInstantTheScreenAsksAt),
 				Does.Contain("Cambio de fluido"));

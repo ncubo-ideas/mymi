@@ -1,14 +1,14 @@
 <div class="stack stack--inner" id="warranty">
     <section class="block">
         <div class="sect-head" id="envelope-head">
-            <h2>Dónde está parado tu carro</h2>
-            <span class="prov" id="envelope-asked-at">al @Stands.AskedAt</span>
+            <h2>@Texts["warranty.title"]</h2>
+            <span class="prov" id="envelope-asked-at">@Texts.With("warranty.askedAt", ("instant", Stands.AskedAt))</span>
         </div>
 
         @if (Stands.RecordContradictsItself)
         {
             <Notice Tone="danger" Id="record-contradicts-itself">
-                @TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue
+                @Texts[TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue]
             </Notice>
 
             <p class="says says--absent" id="published-envelope-says">@Stands.PublishedSays</p>
@@ -20,7 +20,7 @@
                 <div id="envelope-standing">
                     <span class="chip chip--info">
                         <Glyph Name="shield" Size="13" Stroke="2.2" />
-                        @HowACanonNameReads.AStanding(Stands.Standing)
+                        @HowACanonNameReads.AStanding(Texts.ThePhrases, Stands.Standing)
                     </span>
                 </div>
             }
@@ -30,13 +30,13 @@
             @if (Stands.TheRecordIsMissingAFact)
             {
                 <Notice Tone="info" Id="envelope-incomplete">
-                    @TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet
+                    @Texts[TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet]
                 </Notice>
             }
 
             @if (Stands.EnvelopePublished || Stands.DeliveryRecorded || Stands.OdometerKnown)
             {
-                <div class="block__label" id="measured-against-head">Contra qué se midió eso</div>
+                <div class="block__label" id="measured-against-head">@Texts["warranty.measuredAgainst"]</div>
 
                 <div class="card cardlist" id="measured-against">
                     @if (Stands.EnvelopePublished)
@@ -47,7 +47,7 @@
                             </span>
                             <span class="item__body">
                                 <span class="item__head">
-                                    <span class="item__name">Sobre publicado</span>
+                                    <span class="item__name">@Texts["warranty.envelopePublished"]</span>
                                     <span class="prov">@Stands.PublishedAt</span>
                                 </span>
                             </span>
@@ -62,12 +62,13 @@
                             </span>
                             <span class="item__body">
                                 <span class="item__head">
-                                    <span class="item__name">Entregado</span>
+                                    <span class="item__name">@Texts["warranty.delivered"]</span>
                                     <span class="prov">@Stands.DeliveredAt</span>
                                 </span>
                                 <span class="item__says">
-                                    odómetro de ese día
-                                    @HowANumberReads.Grouped(Stands.DeliveryReading) @Stands.DeliveryUnit
+                                    @Texts.With("warranty.odometerThatDay",
+                                        ("reading", HowANumberReads.Grouped(Texts.ThePhrases, Stands.DeliveryReading)),
+                                        ("unit", Stands.DeliveryUnit))
                                 </span>
                             </span>
                         </div>
@@ -81,12 +82,14 @@
                             </span>
                             <span class="item__body">
                                 <span class="item__head">
-                                    <span class="item__name">Última lectura del odómetro</span>
+                                    <span class="item__name">@Texts["warranty.lastReading"]</span>
                                     <span class="prov">
-                                        @HowANumberReads.Grouped(Stands.Odometer) @Stands.OdometerUnit
+                                        @HowANumberReads.Grouped(Texts.ThePhrases, Stands.Odometer) @Stands.OdometerUnit
                                     </span>
                                 </span>
-                                <span class="item__says">observada el @Stands.OdometerObservedAt</span>
+                                <span class="item__says">
+                                    @Texts.With("warranty.observedOn", ("day", Stands.OdometerObservedAt))
+                                </span>
                             </span>
                         </div>
                     }
@@ -97,18 +100,16 @@
 
     <section class="block">
         <div class="sect-head">
-            <h2>Qué dice el alcance</h2>
+            <h2>@Texts["warranty.scopeTitle"]</h2>
             <span class="prov" id="warranty-provenance">
                 @(Sheet.Coverage.Published
-                    ? "alcance · " + Provenance(Sheet.Coverage.Revision)
-                    : "sin alcance publicado")
+                    ? Texts.With("warranty.scopeProvenance", ("revision", Provenance(Sheet.Coverage.Revision)))
+                    : Texts["warranty.scopeNoProvenance"])
             </span>
         </div>
 
         <p class="note note--tight" id="warranty-scope-note">
-            Abajo está el alcance que el fabricante publicó para el modelo
-            <span class="mono">@Sheet.Model</span>. Dice que está dentro del alcance; nunca dice que
-            una reparación se vaya a pagar.
+            @((MarkupString)Texts.With("warranty.scopeNote", ("model", Sheet.Model)))
         </p>
 
         @if (!Sheet.Coverage.Published)
@@ -121,11 +122,11 @@
                 <p class="says" id="scope-says">@Sheet.Coverage.Says</p>
 
                 <div class="chiprow" id="covered-systems">
-                    <span class="chiprow__label">Declarados adentro</span>
+                    <span class="chiprow__label">@Texts["warranty.declaredInside"]</span>
                     @if (Sheet.Coverage.CoveredSystems.Length == 0)
                     {
                         <span class="chiprow__none">
-                            no se publicó ningún sistema como dentro del alcance
+                            @Texts["warranty.declaredInsideNone"]
                         </span>
                     }
                     else
@@ -138,14 +139,14 @@
                 </div>
 
                 <p class="note note--tight" id="silence-is-not-a-denial">
-                    @TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut
+                    @Texts[TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut]
                 </p>
             </div>
 
             @if (Stands.Systems.Count > 0)
             {
                 <div class="block__label" id="coverage-standings-head">
-                    Dónde está parado tu carro en cada uno
+                    @Texts["warranty.standingsTitle"]
                 </div>
 
                 <div class="card cardlist" id="coverage-standings">
@@ -160,7 +161,7 @@
                                     <span class="item__name">@system.SystemCode</span>
                                     @if (system.Standing.Length > 0)
                                     {
-                                        <span class="prov">@HowACanonNameReads.AStanding(system.Standing)</span>
+                                        <span class="prov">@HowACanonNameReads.AStanding(Texts.ThePhrases, system.Standing)</span>
                                     }
                                 </span>
                                 <span class="item__says">@system.Says</span>
@@ -171,10 +172,10 @@
             }
 
             <div id="exclusions">
-                <div class="block__title">Qué deja afuera</div>
+                <div class="block__title">@Texts["warranty.exclusionsTitle"]</div>
                 @if (Sheet.Coverage.Exclusions.Length == 0)
                 {
-                    <p class="note">No se publicó ninguna exclusión con este alcance.</p>
+                    <p class="note">@Texts["warranty.exclusionsNone"]</p>
                 }
                 else
                 {
@@ -191,7 +192,7 @@
 
     <section class="block" id="servicing-rule">
         <div class="sect-head">
-            <h2>Servicio en otro taller</h2>
+            <h2>@Texts["warranty.elsewhereTitle"]</h2>
             <span class="prov">@Provenance(Sheet.ServicingRule.Revision)</span>
         </div>
 
@@ -204,7 +205,7 @@
             @if (Sheet.ServicingRule.Published)
             {
                 <p class="note note--tight" id="servicing-rule-standing">
-                    @TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord
+                    @Texts[TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord]
                 </p>
             }
         </div>
@@ -212,6 +213,12 @@
 </div>
 
 @code {
+    /// <summary>
+    /// El catalogo de esta caratula, en el idioma de la persona. Baja desde la pagina y esta seccion
+    /// no lo lee por su cuenta.
+    /// </summary>
+    [CascadingParameter] public Texts Texts { get; set; }
+
     /// <summary>La ficha del fabricante, leida en un solo momento. La seccion no lee nada por su cuenta.</summary>
     [Parameter, EditorRequired]
     public WhatTheManufacturerPublished Sheet { get; set; }
@@ -223,5 +230,6 @@
     [Parameter, EditorRequired]
     public WhereThisVehicleStands Stands { get; set; }
 
-    private static string Provenance(string revision) => revision.Length > 0 ? revision : "--";
+    private string Provenance(string revision) =>
+        revision.Length > 0 ? revision : Texts["warranty.unknownRevision"];
 }

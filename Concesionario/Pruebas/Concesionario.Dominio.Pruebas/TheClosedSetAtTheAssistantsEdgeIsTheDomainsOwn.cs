@@ -149,7 +149,7 @@ namespace Concesionario.Dominio.Pruebas
 				// suite entera verde.
 				foreach (PublishedFluid each in sheet.Fluids)
 				{
-					Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(each.Kind)),
+					Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, each.Kind)),
 						$"'{each.Kind}' contesto con la frase de otro fluido.");
 					Assert.That(each.Published, Is.EqualTo(each.Kind == "EngineOil"),
 						$"'{each.Kind}': solo el aceite se publico en esta revision.");
@@ -157,7 +157,7 @@ namespace Concesionario.Dominio.Pruebas
 
 				foreach (PublishedTyre each in sheet.Tyres)
 				{
-					Assert.That(each.Says, Does.StartWith("Llanta " + HowACanonNameReads.ATyre(each.Position).ToLowerInvariant()),
+					Assert.That(each.Says, Does.StartWith("Llanta " + HowACanonNameReads.ATyre(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, each.Position).ToLowerInvariant()),
 						$"'{each.Position}' contesto con la frase de otra posicion.");
 					Assert.That(each.Published, Is.EqualTo(each.Position == "Front"),
 						$"'{each.Position}': solo la delantera se publico en esta revision.");

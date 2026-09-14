@@ -2,13 +2,13 @@
 
 <section class="d-hero" id="hero-vehiculo">
     <img class="d-hero__img" src="img/vehiculo.png"
-         alt="@("Fotografía del " + (Modelo.Length > 0 ? Modelo : "vehículo"))" />
+         alt="@Texts.With("vehicle.photoAlt", ("what", Modelo.Length > 0 ? Modelo : Texts["vehicle.photoAltFallback"]))" />
     <div class="d-hero__cap">
         <div class="d-hero__model">
-            <span class="d-hero__name">@(Modelo.Length > 0 ? Modelo : "Tu vehículo")</span>
+            <span class="d-hero__name">@(Modelo.Length > 0 ? Modelo : Texts["vehicle.yourVehicle"])</span>
             @if (Revision.Length > 0)
             {
-                <span class="d-hero__tag">ficha @Revision</span>
+                <span class="d-hero__tag">@Texts.With("vehicle.sheetTag", ("revision", Revision))</span>
             }
         </div>
         <div class="d-hero__odo">@Odometro @OdometroUnidad</div>
@@ -24,19 +24,19 @@
             class="@(hoja == "informacion" ? "d-subtab d-subtab--on" : "d-subtab")"
             @onclick="@(() => hoja = "informacion")">
         <Glyph Name="car" Size="18" Stroke="2" />
-        Información
+        @Texts["vehicle.tabInfo"]
     </button>
     <button type="button" id="hoja-garantia"
             class="@(hoja == "garantia" ? "d-subtab d-subtab--on" : "d-subtab")"
             @onclick="@(() => hoja = "garantia")">
         <Glyph Name="shield" Size="18" Stroke="2" />
-        Garantía
+        @Texts["vehicle.tabWarranty"]
     </button>
     <button type="button" id="hoja-manual"
             class="@(hoja == "manual" ? "d-subtab d-subtab--on" : "d-subtab")"
             @onclick="@(() => hoja = "manual")">
         <Glyph Name="sheet" Size="18" Stroke="2" />
-        Manual
+        @Texts["vehicle.tabManual"]
     </button>
 </div>
 
@@ -45,52 +45,52 @@
     <section class="d-card" id="informacion">
         <div class="d-rows">
             <div class="d-row">
-                <span class="d-row__k">Modelo</span>
-                <span class="d-row__v">@(Modelo.Length > 0 ? Modelo : "—")</span>
+                <span class="d-row__k">@Texts["vehicle.rowModel"]</span>
+                <span class="d-row__v">@(Modelo.Length > 0 ? Modelo : Texts["vehicle.none"])</span>
             </div>
             <div class="d-row">
-                <span class="d-row__k">VIN</span>
+                <span class="d-row__k">@Texts["vehicle.rowVin"]</span>
                 <span class="d-row__v d-row__v--mono">@Vin</span>
             </div>
             <div class="d-row d-row--stack" id="placa">
-                <span class="d-row__k">Placa</span>
+                <span class="d-row__k">@Texts["vehicle.rowPlate"]</span>
                 <span class="d-row__v" style="font-weight:600;font-size:13px">
-                    @(Placa is not null ? Placa.Says : "—")
+                    @(Placa is not null ? Placa.Says : Texts["vehicle.none"])
                 </span>
             </div>
             <div class="d-row">
-                <span class="d-row__k">Odómetro</span>
+                <span class="d-row__k">@Texts["vehicle.rowOdometer"]</span>
                 <span class="d-row__v">@Odometro @OdometroUnidad</span>
             </div>
             <div class="d-row">
-                <span class="d-row__k">Última lectura</span>
+                <span class="d-row__k">@Texts["vehicle.rowLastReading"]</span>
                 <span class="d-row__v">
                     @(Stands is not null && Stands.OdometerObservedAt.Length > 0
-                        ? ComoSeLee.Dia(Stands.OdometerObservedAt)
-                        : "—")
+                        ? ComoSeLee.Dia(Texts.ThePhrases, Stands.OdometerObservedAt)
+                        : Texts["vehicle.none"])
                 </span>
             </div>
             <div class="d-row">
-                <span class="d-row__k">Entregado</span>
+                <span class="d-row__k">@Texts["vehicle.rowDelivered"]</span>
                 <span class="d-row__v">
                     @(Stands is not null && Stands.DeliveryRecorded
-                        ? ComoSeLee.Dia(Stands.DeliveredAt)
-                        : "sin registrar")
+                        ? ComoSeLee.Dia(Texts.ThePhrases, Stands.DeliveredAt)
+                        : Texts["vehicle.unrecorded"])
                 </span>
             </div>
             @if (Stands is not null && Stands.DeliveryRecorded)
             {
                 <div class="d-row">
-                    <span class="d-row__k">Odómetro ese día</span>
+                    <span class="d-row__k">@Texts["vehicle.rowOdometerThatDay"]</span>
                     <span class="d-row__v">
-                        @ComoSeLee.Miles(Stands.DeliveryReading) @Stands.DeliveryUnit
+                        @Texts.Grouped(Stands.DeliveryReading) @Stands.DeliveryUnit
                     </span>
                 </div>
             }
             <div class="d-row">
-                <span class="d-row__k">Ficha del fabricante</span>
+                <span class="d-row__k">@Texts["vehicle.rowSheet"]</span>
                 <span class="d-row__v">
-                    @(Revision.Length > 0 ? Revision : "sin publicar")
+                    @(Revision.Length > 0 ? Revision : Texts["vehicle.unpublished"])
                 </span>
             </div>
         </div>
@@ -99,8 +99,7 @@
     <p class="d-note" style="margin-top:12px">
         <Glyph Name="info" Size="14" Stroke="2" />
         <span>
-            Estos son los hechos que tu concesionario envió sobre este carro. Lo que no aparece no
-            fue descartado: nunca se mencionó, y eso es otra cosa.
+            @Texts["vehicle.note"]
         </span>
     </p>
 }
@@ -117,7 +116,7 @@ else if (hoja == "garantia")
     <div style="margin-top:12px">
         <button class="d-link" type="button" id="ver-cobertura"
                 @onclick="@(() => detalleGarantia = !detalleGarantia)">
-            @(detalleGarantia ? "Ocultar la cobertura completa" : "Ver la cobertura completa")
+            @(detalleGarantia ? Texts["vehicle.hideCover"] : Texts["vehicle.seeCover"])
         </button>
     </div>
 
@@ -126,7 +125,7 @@ else if (hoja == "garantia")
         <div class="stack stack--page" id="garantia-detalle" style="margin-top:10px">
             @if (Sheet is null || Stands is null)
             {
-                <p class="note">Este registro todavía no se ha leído.</p>
+                <p class="note">@Texts["vehicle.notReadYet"]</p>
             }
             else
             {
@@ -139,7 +138,7 @@ else
 {
     <section class="d-card" id="manual-resumen">
         <div class="d-card__head">
-            <span class="d-card__title">Lo que publicó el fabricante</span>
+            <span class="d-card__title">@Texts["vehicle.manualTitle"]</span>
             @if (Revision.Length > 0)
             {
                 <span class="d-pill d-pill--info">@Revision</span>
@@ -149,10 +148,8 @@ else
         @if (Sheet is null || !Sheet.HasASealedRevision)
         {
             <div class="d-empty">
-                <span class="d-empty__title">Todavía no hay ficha</span>
-                Tu concesionario envía la ficha del fabricante por el mismo camino que trae todo lo
-                demás. Mientras no llegue, aquí no hay nada que citar — y eso no es una pantalla
-                esperando que la llenes.
+                <span class="d-empty__title">@Texts["vehicle.manualNoneTitle"]</span>
+                @Texts["vehicle.manualNoneBody"]
             </div>
         }
         else
@@ -161,21 +158,24 @@ else
                 @foreach (var fluid in Sheet.Fluids.Where(f => f.Published))
                 {
                     <div class="d-row d-row--stack">
-                        <span class="d-row__k">@ComoSeLee.Fluido(fluid.Kind)</span>
+                        <span class="d-row__k">@ComoSeLee.Fluido(Texts.ThePhrases, fluid.Kind)</span>
                         <span class="d-row__v" style="font-weight:600;font-size:13px">@fluid.Says</span>
                     </div>
                 }
                 @foreach (var tyre in Sheet.Tyres.Where(t => t.Published))
                 {
                     <div class="d-row d-row--stack">
-                        <span class="d-row__k">Llantas @ComoSeLee.Llanta(tyre.Position).ToLowerInvariant()</span>
+                        <span class="d-row__k">
+                            @Texts.With("vehicle.manualTyres",
+                                ("position", ComoSeLee.Llanta(Texts.ThePhrases, tyre.Position).ToLowerInvariant()))
+                        </span>
                         <span class="d-row__v" style="font-weight:600;font-size:13px">@tyre.Says</span>
                     </div>
                 }
                 @if (Sheet.Fuel.Published)
                 {
                     <div class="d-row d-row--stack">
-                        <span class="d-row__k">Combustible</span>
+                        <span class="d-row__k">@Texts["vehicle.manualFuel"]</span>
                         <span class="d-row__v" style="font-weight:600;font-size:13px">@Sheet.Fuel.Says</span>
                     </div>
                 }
@@ -184,9 +184,8 @@ else
             @if (!Sheet.Fluids.Any(f => f.Published) && !Sheet.Tyres.Any(t => t.Published) && !Sheet.Fuel.Published)
             {
                 <div class="d-empty">
-                    <span class="d-empty__title">La ficha llegó vacía para este modelo</span>
-                    Hay una revisión sellada (@Revision), pero no publica ni líquidos, ni llantas, ni
-                    combustible.
+                    <span class="d-empty__title">@Texts["vehicle.manualEmptyTitle"]</span>
+                    @Texts.With("vehicle.manualEmptyBody", ("revision", Revision))
                 </div>
             }
         }
@@ -196,7 +195,7 @@ else
     {
         <section class="d-card" id="precios-publicados" style="margin-top:12px">
             <div class="d-card__head">
-                <span class="d-card__title">Precios publicados</span>
+                <span class="d-card__title">@Texts["vehicle.pricesTitle"]</span>
                 @if (Costs.AnyPriceOnRecord)
                 {
                     <span class="d-pill d-pill--info">@Costs.PriceCountOnRecord</span>
@@ -210,7 +209,7 @@ else
                     {
                         <div class="d-row d-row--stack" id="@("precio-" + precio.Operation)">
                             <span class="d-row__k">
-                                @ComoSeLee.Operacion(precio.Operation)
+                                @ComoSeLee.Operacion(Texts.ThePhrases, precio.Operation)
                                 <span class="d-pill">@precio.Milestone</span>
                                 <span class="d-pill d-pill--info">@precio.Revision</span>
                             </span>
@@ -222,9 +221,8 @@ else
             else
             {
                 <div class="d-empty" id="sin-precios">
-                    <span class="d-empty__title">Todavía no hay ningún precio publicado</span>
-                    Tu concesionario manda los precios del fabricante por el mismo camino que trae la
-                    ficha. Mientras no lleguen, aquí no hay nada que citar.
+                    <span class="d-empty__title">@Texts["vehicle.pricesNoneTitle"]</span>
+                    @Texts["vehicle.pricesNoneBody"]
                 </div>
             }
         </section>
@@ -233,7 +231,7 @@ else
     <div style="margin-top:12px">
         <button class="d-link" type="button" id="ver-ficha"
                 @onclick="@(() => detalleFicha = !detalleFicha)">
-            @(detalleFicha ? "Ocultar la ficha completa" : "Ver la ficha completa")
+            @(detalleFicha ? Texts["vehicle.hideSheet"] : Texts["vehicle.seeSheet"])
         </button>
     </div>
 
@@ -242,7 +240,7 @@ else
         <div class="stack stack--page" id="ficha-detalle" style="margin-top:10px">
             @if (Sheet is null)
             {
-                <p class="note">Este registro todavía no se ha leído.</p>
+                <p class="note">@Texts["vehicle.notReadYet"]</p>
             }
             else
             {
@@ -253,6 +251,12 @@ else
 }
 
 @code {
+    /// <summary>
+    /// El catalogo de esta caratula, en el idioma de la persona. Baja desde la pagina y esta seccion
+    /// no lo lee por su cuenta.
+    /// </summary>
+    [CascadingParameter] public Texts Texts { get; set; }
+
     [Parameter] public WhatTheManufacturerPublished Sheet { get; set; }
     [Parameter] public WhereThisVehicleStands Stands { get; set; }
 
@@ -301,12 +305,13 @@ else
     {
         get
         {
-            if (Stands is null) return "Garantía";
-            if (Stands.RecordContradictsItself) return "No se pudo medir";
-            if (!Stands.EnvelopePublished) return "Tu concesionario no ha publicado la garantía";
-            if (!Stands.CanBeEvaluated) return "Garantía publicada, sin medir completa";
+            if (Stands is null) return Texts["vehicle.warrantyTitle"];
+            if (Stands.RecordContradictsItself) return Texts["vehicle.warrantyCannotMeasure"];
+            if (!Stands.EnvelopePublished) return Texts["vehicle.warrantyNotPublished"];
+            if (!Stands.CanBeEvaluated) return Texts["vehicle.warrantyPartlyMeasured"];
 
-            return "Garantía " + ComoSeLee.Postura(Stands.Standing).ToLowerInvariant();
+            return Texts.With("vehicle.warrantyStanding",
+                ("standing", ComoSeLee.Postura(Texts.ThePhrases, Stands.Standing).ToLowerInvariant()));
         }
     }
 
@@ -319,11 +324,11 @@ else
     {
         get
         {
-            if (Stands is null) return "Este registro todavía no se ha leído.";
-            if (Stands.RecordContradictsItself) return TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue;
+            if (Stands is null) return Texts["vehicle.notReadYet"];
+            if (Stands.RecordContradictsItself) return Texts[TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue];
             if (Stands.Says.Length > 0) return Stands.Says;
 
-            return TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet;
+            return Texts[TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet];
         }
     }
 }

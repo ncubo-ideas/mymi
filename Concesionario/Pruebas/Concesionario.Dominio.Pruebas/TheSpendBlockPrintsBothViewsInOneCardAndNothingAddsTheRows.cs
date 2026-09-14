@@ -288,9 +288,16 @@ namespace Concesionario.Dominio.Pruebas
 				+ "que no se dibuja es la que dice menos.");
 			Assert.That(
 				markup,
-				Does.Contain("Lo que salió del banco y lo que el período consumió"),
+				Does.Contain("history.spendLabel"),
 				"La etiqueta de la linea dejo de nombrar LAS DOS vistas. Es lo que hace para una "
 				+ "persona lo que un nombre de campo hace para un modelo.");
+
+			// Y LA CLAVE SIGUE NOMBRANDO LAS DOS VISTAS en el idioma del registro. El markup nombra la
+			// CLAVE desde que la pantalla habla dos idiomas, asi que sin este renglon una etiqueta que
+			// dijera solo una de las dos pasaria.
+			Assert.That(
+				TheCatalogueOfTheScreen.InSpanish("history.spendLabel"),
+				Is.EqualTo("Lo que salió del banco y lo que el período consumió"));
 		}
 
 		// NINGUNA LINEA DEL BLOQUE LLEVA UN OPERADOR ARITMETICO. Es el control negativo de §2.2 hecho
@@ -387,7 +394,7 @@ namespace Concesionario.Dominio.Pruebas
 			// que ya viene con su signo la escribiria por segunda vez, con otras reglas.
 			foreach (string formatter in new[]
 			{
-				"ComoSeLee.Miles(gasto.Money)", "HowANumberReads", "ToString(\"C",
+				"gasto.Money)", "HowANumberReads", "ToString(\"C",
 				"NumberFormatInfo", "Currencysymbol", "CurrencySymbol",
 			})
 			{
@@ -400,7 +407,7 @@ namespace Concesionario.Dominio.Pruebas
 			// EL CONTROL: el mismo bloque SI formatea un numero que NO es dinero -- el odometro de una
 			// fila del ritmo, en el mismo archivo -- asi que la ausencia de arriba no es que este
 			// archivo no formatee nada.
-			Assert.That(markup, Does.Contain("ComoSeLee.Miles(lectura.Value)"),
+			Assert.That(markup, Does.Contain("Texts.Grouped(lectura.Value)"),
 				"El archivo dejo de agrupar el odometro, asi que la ausencia de un formateador de "
 				+ "dinero no dice nada: podria ser que aca no se formatee nunca.");
 		}
@@ -583,12 +590,12 @@ namespace Concesionario.Dominio.Pruebas
 				+ "en pantalla, quien registra los gastos se ve en cada una.");
 
 			Assert.That(
-				TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork),
 				Does.Contain("no quiere decir que este carro no te haya costado nada"),
 				"La frase dejo de decir la lectura equivocada que existe para impedir.");
 
 			Assert.That(
-				TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork),
 				Does.Contain("no hay nada que tengas que llenar vos"),
 				"Y dejo de decir que no hay nada que la persona ponga, que es la mitad que un "
 				+ "formulario contradice.");

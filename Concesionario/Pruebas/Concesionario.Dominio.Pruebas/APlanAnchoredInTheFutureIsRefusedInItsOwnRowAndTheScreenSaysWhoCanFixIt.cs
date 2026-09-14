@@ -233,7 +233,7 @@ namespace Concesionario.Dominio.Pruebas
 				"La fila rechazada no dice nada. Un hueco donde iba la cuenta atras se lee igual que una "
 				+ "operacion que no tiene ninguna que mostrar.");
 
-			string said = TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom;
+			string said = TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom);
 
 			Assert.That(said, Does.Contain("concesionario"),
 				"La frase no dice quien pone la fecha. En una pantalla la persona es la que iria a "

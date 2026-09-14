@@ -520,19 +520,19 @@ namespace Concesionario.Dominio.Pruebas
 					+ "ahi, y es falsa desde que la agencia los manda por comando y por feed.");
 
 			Assert.That(
-				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet),
 				Does.Contain("el sobre de garantía mismo, el día en que se entregó el carro, o una "
 					+ "lectura del odómetro tomada hoy o antes"),
 				"Los tres hechos, dichos enteros. Con solo la palabra 'odometer' adentro, una frase "
 				+ "que dijera que el odometro no hace falta pasaria igual.");
 			Assert.That(
-				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet),
 				Does.Contain("no hay nada que tengas que llenar"),
 				"Y que no hay nada que la persona ponga, dicho entero: es la mitad que un formulario "
 				+ "contradice, y es la que se pierde si esto solo comprobara que aparece la palabra "
 				+ "'dealership'.");
 			Assert.That(
-				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet),
 				Does.Contain("no es lo mismo que un carro sin garantía"),
 				"Y la lectura equivocada mas cara de todas, dicha en voz alta.");
 
@@ -540,13 +540,13 @@ namespace Concesionario.Dominio.Pruebas
 			// la persona, y que solo la agencia los corrige. Sin la primera mitad, la pantalla le pide
 			// a la persona que arregle algo que no rompio.
 			Assert.That(
-				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue),
 				Does.Contain("Ninguno de los dos hechos vino de vos"));
 			Assert.That(
-				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue),
 				Does.Contain("Solo tu concesionario puede corregirlos"));
 			Assert.That(
-				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue),
 				Does.Contain("nada de lo de arriba es una estimación de eso"),
 				"Y que lo que se muestra no es una estimacion de la postura, que es la unica forma de "
 				+ "fallar aca que le cuesta dinero a la persona.");
@@ -554,20 +554,20 @@ namespace Concesionario.Dominio.Pruebas
 			// LA REGLA DE SERVICIO EN OTRO TALLER NO SE MOVIO: le sigue faltando la POSICION, y la
 			// pantalla lo sigue diciendo con los tres conteos nombrados enteros.
 			Assert.That(
-				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord),
 				Does.Contain("no dónde está parado tu carro frente a ella"));
 			Assert.That(
-				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord),
 				Does.Contain("cuántos servicios ha tenido este carro en otro lado, cuántos de esos "
 					+ "tienen comprobante, y cuánto mantenimiento programado se dejó de hacer"));
 			Assert.That(
-				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord),
 				Does.Contain("Quien los pone aquí es tu concesionario"));
 
 			// Y QUE UN SISTEMA QUE LA LISTA NO NOMBRA NO ES UNO QUE EL ALCANCE DEJE AFUERA. En una
 			// pantalla sin buscador esa distincion no la puede hacer un control: solo la frase.
 			Assert.That(
-				TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut),
 				Does.Contain("no quedó descartado aquí"));
 		}
 

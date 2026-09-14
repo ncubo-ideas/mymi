@@ -52,9 +52,15 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			string markup = TheBlockAsItIsWritten();
 
-			Assert.That(markup, Does.Contain("Los días en el taller"),
+			Assert.That(markup, Does.Contain("history.staysTitle"),
 				"El bloque perdio su encabezado. Es lo que hace para una persona lo que el nombre de "
 				+ "un campo hace para un modelo: decir que pregunta contesta lo de abajo.");
+
+			// Y LA CLAVE SIGUE DICIENDO LAS MISMAS PALABRAS en el idioma del registro. El markup nombra
+			// la CLAVE desde que la pantalla habla dos idiomas, asi que sin este renglon una clave que no
+			// este en el catalogo dejaria el encabezado en blanco y esto verde.
+			Assert.That(TheCatalogueOfTheScreen.InSpanish("history.staysTitle"),
+				Is.EqualTo("Los días en el taller"));
 
 			foreach (string half in new[] { "@Stays.FromDay", "@Stays.ToDay", "Stays.FromDay", "Stays.ToDay" })
 				Assert.That(markup, Does.Not.Contain(half),

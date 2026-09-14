@@ -334,9 +334,11 @@ namespace Concesionario.Dominio.Pruebas
 			// Y EL ENCABEZADO LOS DICE, LOS CUATRO.
 			string markup = TheSectionAsItIsWritten();
 
+			// SIN EL '@' DESDE QUE LA FRASE DEL ENCABEZADO SALE DEL CATALOGO: los cuatro limites entran
+			// como valores de huecos -- ("from", Use.From) -- y ahi ya no llevan el arroba.
 			foreach (string bound in new[]
 			{
-				"@Use.From", "@Use.To", "@Use.EarlierFrom", "@Use.EarlierTo",
+				"Use.From", "Use.To", "Use.EarlierFrom", "Use.EarlierTo",
 			})
 				Assert.That(markup, Does.Contain(bound),
 					"El bloque no dice '" + bound + "'. P-11 pide que la ventana este nombrada, y la "
@@ -588,12 +590,12 @@ namespace Concesionario.Dominio.Pruebas
 				+ "en pantalla, quien manda las lecturas se ve en cada una.");
 
 			Assert.That(
-				TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle),
 				Does.Contain("no quiere decir que el carro no se haya movido"),
 				"La frase dejo de decir la lectura equivocada que existe para impedir.");
 
 			Assert.That(
-				TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle),
 				Does.Contain("no hay nada que tengas que llenar vos"),
 				"Y dejo de decir que no hay nada que la persona ponga, que es la mitad que un "
 				+ "formulario contradice.");
