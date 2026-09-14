@@ -58,12 +58,17 @@ dotnet Gnothi.Host/bin/Debug/net9.0/Gnothi.Host.dll <carpeta-de-modulos> < /dev/
 ```
 
 ```
-warning: malo: brand.shortName tiene 49 caracteres y el tope es 28
-warning: malo: brand.logo es '.svg' y solo se aceptan png, jpg y webp -- un svg ejecuta
-warning: malo: about.category 'farmacia' no esta en la lista que el Host conoce
+warning: malo: brand.shortName is 49 characters and the cap is 28
+warning: malo: brand.logo is '.svg' and only png, jpg and webp are accepted -- an svg executes
+warning: malo: about.category 'farmacia' is not in the list the Host knows, so it falls to the generic icon
 ```
 
 El ejemplo de este directorio no produce ninguno.
+
+> **Estos avisos van en inglés a propósito**, y no entran en el catálogo de textos: hablan de
+> `brand.shortName` y de `about.category`, así que son diagnóstico para quien **empaqueta** el
+> módulo, no copy para quien lo usa. Estaban en español dentro de una lista cuyo resto era inglés.
+> Ver [las reglas de localización](../Metodologia/Guias/reglas-de-localizacion.md).
 
 ## `sincronizar-manifiesto.mjs` — el manifiesto, proyectado desde el módulo
 
