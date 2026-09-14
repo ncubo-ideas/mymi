@@ -203,7 +203,7 @@ public sealed record Brand
 	[JsonPropertyName("banner")] public string Banner { get; init; } = "";
 
 	// THE TYPEFACE (2026-09-09): the family the institution's name and slogan are set in, on its
-	// own card and detail, so La Guaria reads like La Guaria and Sotavento like Sotavento. A font
+	// own card and detail, so La Guaria reads like La Guaria and Sotaventos like Sotaventos. A font
 	// file inside the bundle (woff2, woff, ttf or otf), optionally a second one for bold. The Host
 	// embeds it as a data URI under a name of its own: no CSS from the institution ever runs.
 	[JsonPropertyName("font")] public BrandFont? Font { get; init; }
