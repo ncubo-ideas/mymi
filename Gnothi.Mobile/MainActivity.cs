@@ -1,6 +1,7 @@
 using Android.App;
 using Android.OS;
 using Android.Webkit;
+using Gnothi.Host;
 using Gnothi.Movil;
 using System.Text.Json;
 
@@ -144,6 +145,17 @@ public class MainActivity : Activity
 
 		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, no la cascara. adb no puede escribir en el
 		// area privada, y eso es correcto: nadie de afuera instala un modulo.
+		// EL IDIOMA DE LA PERSONA, RESUELTO UNA VEZ Y AQUI, antes de que la cascara componga su
+		// primera frase. Sale del APARATO: no hay selector adentro de Mymi.
+		//
+		// CurrentUICulture sirve porque este proceso es NATIVO -- la advertencia de
+		// Municipalidad.Wasm, que dice de no leer la cultura del proceso, es para wasm, donde
+		// esa cultura es la del runtime y no la de quien usa el telefono. Aca no.
+		//
+		// Y la pagina NO lo resuelve por su cuenta: se lo dice la cascara. Dos resolutores
+		// serian dos fuentes de verdad.
+		Textos.Idioma = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
 		shell = new Shell(
 			new Shell.Paths(
 				Files: FilesDir!.AbsolutePath,

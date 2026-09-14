@@ -112,6 +112,39 @@ public static class Textos
 		}
 	}
 
+	// TODA CLAVE CUYOS DOS IDIOMAS NO PIDEN LOS MISMOS VALORES.
+	//
+	// Es el error clasico de un catalogo y no lo ve ningun compilador: alguien traduce
+	// «ya tienes «{titulo}» en Mymi» y escribe «{title}», o se come el marcador. La frase sale
+	// con un {titulo} crudo en la pantalla, o peor, sale sin el dato y parece correcta.
+	//
+	// Compara CONJUNTOS y no orden: que el orden cambie entre idiomas es justamente por lo que
+	// los valores viajan con nombre.
+	public static IEnumerable<string> Discrepancias()
+	{
+		foreach ((string clave, (string es, string en)) in Catalogo())
+		{
+			var enEs = Marcadores(es);
+			var enEn = Marcadores(en);
+			if (enEs.SetEquals(enEn)) continue;
+
+			string faltanEnIngles = string.Join(", ", enEs.Except(enEn));
+			string faltanEnEspanol = string.Join(", ", enEn.Except(enEs));
+			yield return $"{clave}: "
+				+ (faltanEnIngles.Length > 0 ? $"'en' no usa {faltanEnIngles}. " : "")
+				+ (faltanEnEspanol.Length > 0 ? $"'es' no usa {faltanEnEspanol}." : "");
+		}
+	}
+
+	private static HashSet<string> Marcadores(string frase)
+	{
+		HashSet<string> nombres = new(StringComparer.Ordinal);
+		foreach (System.Text.RegularExpressions.Match m in
+			System.Text.RegularExpressions.Regex.Matches(frase, @"\{([A-Za-z][A-Za-z0-9]*)\}"))
+			nombres.Add(m.Groups[1].Value);
+		return nombres;
+	}
+
 	private static string Frase(string clave) =>
 		DelIdioma().TryGetValue(clave, out string? frase) && frase.Length > 0 ? frase : clave;
 

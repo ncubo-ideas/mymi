@@ -384,6 +384,25 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 	Assert("no key is missing one of its two languages",
 		faltantes.Length == 0, string.Join(" | ", faltantes));
 
+	// THE ONE A COMPILER CANNOT SEE. A translator drops a {titulo} or writes {title}, and the
+	// phrase ships either with a raw marker on screen or -worse- without the datum and looking
+	// fine. Sets, not order: order is exactly why the values travel by name.
+	string[] discrepancias = [.. Gnothi.Host.Textos.Discrepancias()];
+	Assert("the two languages of a key ask for the same values",
+		discrepancias.Length == 0, string.Join(" | ", discrepancias));
+
+	// THE ENROLLMENT PHRASE WITH THE MOST SUBSTITUTION, end to end: three values, and one of
+	// them is itself a phrase from the catalog (what an institution with no declared name is
+	// called). Nothing may be left raw.
+	Gnothi.Host.Textos.Idioma = "es";
+	string colision = Gnothi.Host.Textos.T("alta.error.colision",
+		("modulo", "compras"), ("instalada", "La Guaria"),
+		("entrante", Gnothi.Host.Textos.T("alta.error.otra-institucion")));
+	Assert("a phrase with three values leaves no marker raw",
+		!colision.Contains('{') && colision.Contains("compras")
+			&& colision.Contains("La Guaria") && colision.Contains("otra institución"),
+		colision);
+
 	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
 	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
 	// said nothing about what each face declares.

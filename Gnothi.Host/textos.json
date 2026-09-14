@@ -9,6 +9,28 @@
 
   "//el-vocabulario": "En la cara se dice INSTITUCIONES, no modulos: es lo que la persona reconoce -su laboratorio, su super-. «Modulo» es vocabulario nuestro y se queda en el protocolo: el manifiesto, gnothi_installed_modules y el campo 'module' del json siguen diciendo modulo.",
 
+  "//el-alta": "LAS FRASES DEL ALTA, que nacen en Gnothi.Movil/Shell.cs y las pinta ui.html. El detalle tecnico que algunas llevan al final -los rechazos de PackageInspector- NO entra aca y se queda en ingles: describe la ESTRUCTURA del paquete -que trae el motor, que trae un installation.json- y eso lo arregla quien lo empaqueto, no quien lo instala. La frase que la persona SI puede accionar es la que la envuelve, y esa es la que esta traducida.",
+
+  "alta.error.no-esta":           { "es": "La dirección que dio tu institución ya no tiene el módulo. Pídele el enlace otra vez.", "en": "The address your institution gave no longer has the module. Ask them for the link again." },
+  "alta.error.sin-conexion":      { "es": "No se pudo hablar con tu institución para bajar el módulo. Revisa tu conexión y prueba de nuevo.", "en": "Could not reach your institution to download the module. Check your connection and try again." },
+  "alta.error.tardo":             { "es": "La descarga tardó demasiado y se cortó. Prueba de nuevo.", "en": "The download took too long and stopped. Try again." },
+  "alta.error.enlace-invalido":   { "es": "El enlace no es una dirección válida de módulo.", "en": "The link is not a valid module address." },
+  "alta.error.sello":             { "es": "El paquete no es el que sellaba el enlace: cambió después de que se generó el código. Pídele a tu institución uno nuevo.", "en": "The package is not the one the link sealed: it changed after the code was made. Ask your institution for a new one." },
+  "alta.error.firma":             { "es": "El paquete viene firmado y la firma no cierra: lo tocaron después de firmarlo. Pídele a tu institución uno nuevo.", "en": "The package is signed and the signature does not hold: it was touched after signing. Ask your institution for a new one." },
+  "alta.error.llave-retirada":    { "es": "El paquete viene firmado con una llave que tu institución retiró: no se instala. Pídele un paquete nuevo.", "en": "The package is signed with a key your institution retired: it is not installed. Ask them for a new package." },
+  "alta.error.colision":          { "es": "Ya tienes «{modulo}» instalado, de {instalada}. Este paquete dice ser de {entrante} y no se instala. Si es el mismo, pídele a tu institución su enlace actual.", "en": "You already have «{modulo}» installed, from {instalada}. This package says it is from {entrante} and is not installed. If it is the same one, ask your institution for its current link." },
+  "alta.error.otra-institucion":  { "es": "otra institución", "en": "another institution" },
+  "alta.error.otro-origen":       { "es": "El paquete dice ser de otro origen del que lo sirvió: no se instala. Pídele a tu institución su enlace.", "en": "The package says it is from an origin other than the one that served it: it is not installed. Ask your institution for its link." },
+  "alta.error.no-reconocido":     { "es": "Tu institución no reconoce este paquete como suyo: no se instala. Pídele el enlace o el paquete actual.", "en": "Your institution does not recognise this package as its own: it is not installed. Ask them for the current link or the current package." },
+  "alta.error.no-se-pudo":        { "es": "No se pudo instalar: {detalle}", "en": "Could not install it: {detalle}" },
+
+  "alta.sin-manifiesto":          { "es": "No es un módulo de Mymi: no trae un manifiesto legible.", "en": "This is not a Mymi module: it carries no readable manifest." },
+  "alta.no-instalaria":           { "es": "Mymi no lo instalaría: {detalle}", "en": "Mymi would not install it: {detalle}" },
+  "alta.listo":                   { "es": "Listo: ya tienes «{titulo}» en Mymi.", "en": "Done: «{titulo}» is now in Mymi." },
+  "alta.volvio-la-anterior":      { "es": "La versión nueva de «{titulo}» no contestó; volvió la anterior.", "en": "The new version of «{titulo}» did not answer; the previous one came back." },
+  "alta.codigo-sin-enlace":       { "es": "El código no traía ningún enlace.", "en": "The code carried no link." },
+  "alta.pega-el-enlace":          { "es": "Pega el enlace que te dio tu institución.", "en": "Paste the link your institution gave you." },
+
   "nav.instituciones":            { "es": "Instituciones", "en": "Institutions" },
   "nav.asistente":                { "es": "Asistente", "en": "Assistant" },
   "nav.ajustes":                  { "es": "Ajustes", "en": "Settings" },
