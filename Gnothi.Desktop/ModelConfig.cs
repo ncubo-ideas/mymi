@@ -26,6 +26,11 @@ internal sealed class ModelConfig
         get
         {
             string d = Path.Combine(
+                // "Gnothi" Y NO "Mymi", aunque el producto ya se llame Mymi de cara a la persona.
+                // Esto es una RUTA EN DISCO, no un texto: renombrarla deja el model.cfg y las llaves
+                // de todo el que ya tiene la app en una carpeta que nadie vuelve a leer, y el sintoma
+                // seria «se me borro el proveedor» sin ningun error. Se renombra el dia que alguien
+                // escriba la migracion, no antes.
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Gnothi");
             Directory.CreateDirectory(d);
             return d;

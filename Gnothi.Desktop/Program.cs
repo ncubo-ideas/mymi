@@ -57,7 +57,7 @@ internal static class Program
 		PhotinoBlazorApp app = builder.Build();
 
 		app.MainWindow
-			.SetTitle("Gnothi")
+			.SetTitle("Mymi")
 			.SetUseOsDefaultLocation(true)
 			.SetSize(1000, 740)
 			.SetMinSize(720, 520)
