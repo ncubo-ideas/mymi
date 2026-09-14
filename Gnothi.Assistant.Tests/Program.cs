@@ -470,6 +470,25 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			claves.Length >= 40, $"only {claves.Length} data-i18n keys found in {pagina}");
 		Assert("every data-i18n key in ui.html exists in the catalog",
 			sinCatalogo.Length == 0, $"keys with no phrase: {string.Join(", ", sinCatalogo)}");
+
+		// Y TODA CLAVE QUE PIDE EL JAVASCRIPT, que es la otra mitad y la que no se ve.
+		//
+		// Las de data-i18n fallan suave -- el nodo se queda con el espanol que trae el marcado --
+		// pero un T('clave') mal escrito PINTA LA CLAVE en la pantalla, y solo en la rama que la
+		// alcanza: la hoja de un paquete con la llave cambiada, el aviso de un origen que no
+		// responde. Ramas que nadie abre a mano.
+		//
+		// Es estatica y por eso vale mas que una corrida: cubre TODOS los sitios de llamada, no
+		// los que un render cualquiera toca.
+		string[] pedidas = [.. System.Text.RegularExpressions.Regex
+			.Matches(html, @"\bT\('([a-z0-9.-]+)'")
+			.Select(m => m.Groups[1].Value).Distinct().Order()];
+		string[] huerfanas = [.. pedidas.Where(c => Gnothi.Host.Textos.T(c) == c)];
+
+		Assert("ui.html asks the catalog for a good number of phrases",
+			pedidas.Length >= 60, $"only {pedidas.Length} T() call sites found");
+		Assert("every key the page's JavaScript asks for exists in the catalog",
+			huerfanas.Length == 0, $"keys with no phrase: {string.Join(", ", huerfanas)}");
 	}
 
 	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists

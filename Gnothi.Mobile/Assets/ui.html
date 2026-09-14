@@ -1108,34 +1108,41 @@ const gn = {
     // switches. The publisher's endpoint only moves with her own yes, the checkbox below.
     const up = p.actualizacion;
     const cambio = !up ? '' : (() => {
-      const versiones = up.versionada ? ' de <b>' + esc(up.versionInstalada) + '</b> a <b>' + esc(up.versionNueva) + '</b>' : '';
+      // LOS CASOS ESTAN ENUMERADOS, no pegados de pedazos: cada uno es una frase entera con sus
+      // valores. Antes la version se concatenaba en medio de la oracion y el ingles no puede
+      // ponerla en el mismo lugar.
+      const nueva = esc(up.versionNueva), instalada = esc(up.versionInstalada);
       const cabecera = up.tipo === 'misma'
-          ? '<p class="ojo">Ya tenés <b>exactamente este paquete</b>. Reinstalarlo solo repara la app; tu registro y tus interruptores quedan como están.</p>'
+          ? ojo(T('hoja.cambio.misma'))
         : up.tipo === 'anterior'
-          ? '<p class="ojo"><b>Es más viejo que el que tenés</b>' + (up.versionada ? ': es la ' + esc(up.versionNueva) + ' y tenés la ' + esc(up.versionInstalada) : '') + '. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».</p>'
+          ? ojo(up.versionada ? T('hoja.cambio.anterior.versionada', { nueva: nueva, instalada: instalada }) : T('hoja.cambio.anterior'))
         : up.tipo === 'otro-contenido'
-          ? '<p class="ojo"><b>Misma versión, contenido distinto.</b> La institución cambió el paquete sin subir la versión' + (up.versionada ? ' (' + esc(up.versionNueva) + ')' : '') + '. Abajo dice qué cambia.</p>'
-          : '<p class="ojo suave"><b>Actualización</b>' + versiones + (up.versionada ? '' : '. La institución no versiona sus paquetes; Mymi compara el contenido') + '. Tu registro y tus interruptores quedan como están.</p>';
+          ? ojo(up.versionada ? T('hoja.cambio.otro-contenido.versionada', { version: nueva }) : T('hoja.cambio.otro-contenido'))
+          : '<p class="ojo suave">' + (up.versionada
+              ? T('hoja.cambio.actualizacion', { instalada: instalada, nueva: nueva })
+              : T('hoja.cambio.actualizacion.sin-version')) + '</p>';
       const nombres = ts => ts.map(t => esc(t.titulo || t.nombre)).join(', ');
       const items = [];
-      if (up.consultasNuevas.length)  items.push('<b>Consultas nuevas:</b> ' + nombres(up.consultasNuevas) + '.<small>Entran encendidas: las estás aceptando con esta hoja.</small>');
-      if (up.consultasQuitadas.length) items.push('<b>Consultas que ya no están:</b> ' + nombres(up.consultasQuitadas) + '.');
-      if (up.capacidadesNuevas.length) items.push('<b>Ahora pide más:</b> ' + esc(up.capacidadesNuevas.join(', ')) + '.<small>Se instala apagado. Vos decidís si lo encendés.</small>');
-      if (up.publicadorCambia) items.push('<b>Cambia a dónde habla:</b> de <code>' + esc(up.publicadorInstalado || '(nada)') + '</code> a <code>' + esc(up.publicadorNuevo || '(nada)') + '</code>.'
-        + '<small>Mymi conserva la dirección de antes salvo que aceptés la nueva.</small>'
-        + '<label class="chk"><input type="checkbox" id="pr-publicador"> Aceptar la dirección nueva</label>');
-      if (up.origenCambia) items.push('<b>Cambia el origen que declara:</b> de ' + esc(up.origenInstalado || '(ninguno)') + ' a ' + esc(up.origenNuevo || '(ninguno)') + '.');
-      if (up.registroCambia) items.push('<b>Cambia lo que promete sobre tu registro</b> (retención, tamaño o frecuencia): abajo está lo nuevo.');
-      if (up.sustratoCambia) items.push('<b>Pide otro sustrato:</b> ' + esc(up.sustratoNuevo || '(ninguno)') + '.');
+      const nada = () => T('general.nada'), ninguno = () => T('general.ninguno');
+      if (up.consultasNuevas.length)  items.push(T('hoja.cambio.consultas-nuevas', { lista: nombres(up.consultasNuevas) }) + peq(T('hoja.cambio.consultas-nuevas.detalle')));
+      if (up.consultasQuitadas.length) items.push(T('hoja.cambio.consultas-quitadas', { lista: nombres(up.consultasQuitadas) }));
+      if (up.capacidadesNuevas.length) items.push(T('hoja.cambio.pide-mas', { lista: esc(up.capacidadesNuevas.join(', ')) }) + peq(T('hoja.caps.apagado')));
+      if (up.publicadorCambia) items.push(T('hoja.cambio.publicador', { antes: esc(up.publicadorInstalado || nada()), ahora: esc(up.publicadorNuevo || nada()) })
+        + peq(T('hoja.cambio.publicador.detalle'))
+        + '<label class="chk"><input type="checkbox" id="pr-publicador"> ' + T('hoja.cambio.publicador.aceptar') + '</label>');
+      if (up.origenCambia) items.push(T('hoja.cambio.origen', { antes: esc(up.origenInstalado || ninguno()), ahora: esc(up.origenNuevo || ninguno()) }));
+      if (up.registroCambia) items.push(T('hoja.cambio.registro'));
+      if (up.sustratoCambia) items.push(T('hoja.cambio.sustrato', { sustrato: esc(up.sustratoNuevo || ninguno()) }));
+      const queCambia = '<p>' + fuerte(T('hoja.cambio.que-cambia')) + '</p>';
       const lista = items.length
-        ? '<p><b>Qué cambia</b></p><ul class="pr-tools">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
-        : up.tipo === 'misma' ? '' : '<p><b>Qué cambia</b><br><small>Nada de lo que Mymi compara: consultas, capacidades, publicador, origen, registro. Cambia la app adentro.</small></p>';
+        ? queCambia + '<ul class="pr-tools">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
+        : up.tipo === 'misma' ? '' : '<p>' + fuerte(T('hoja.cambio.que-cambia')) + '<br>' + peq(T('hoja.cambio.nada')) + '</p>';
       // The button says what it does.
-      document.querySelector('#propuesta button.cta').textContent =
-        up.tipo === 'actualizacion' ? 'Actualizar' : up.tipo === 'anterior' ? 'Volver a esa versión' : 'Reinstalar';
+      document.querySelector('#propuesta button.cta').textContent = T(
+        up.tipo === 'actualizacion' ? 'hoja.boton.actualizar' : up.tipo === 'anterior' ? 'hoja.boton.volver' : 'hoja.boton.reinstalar');
       return cabecera + lista;
     })();
-    if (!up) document.querySelector('#propuesta button.cta').textContent = 'Instalar en mi teléfono';
+    if (!up) document.querySelector('#propuesta button.cta').textContent = T('propuesta.instalar');
 
     const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
     const proc = (p.dominio || p.razonSocial)
@@ -1146,10 +1153,10 @@ const gn = {
         + (p.cedula ? ', ' + esc(p.cedula) : '')
         + (p.dominio
             ? '<br>' + (veredicto === 'ok'
-                ? 'Lo sirvió ' + esc(p.servido) + ', el mismo dominio que declara'
+                ? T('hoja.proc.mismo-dominio', { servido: esc(p.servido) })
                 : veredicto === 'duda'
-                  ? 'Declara <b>' + esc(p.dominio) + '</b> y lo sirvió <b>' + esc(p.servido) + '</b>'
-                  : 'Declara ' + esc(p.dominio) + ' · llegó como archivo')
+                  ? T('hoja.proc.distinto', { dominio: esc(p.dominio), servido: esc(p.servido) })
+                  : T('hoja.proc.archivo', { dominio: esc(p.dominio) }))
             : '')
         + (p.version ? ' · v' + esc(p.version) : '')
         + '</span></div>'
@@ -1163,22 +1170,24 @@ const gn = {
           ? '<p class="desc" style="margin:10px 0">' + esc(p.descripcion)
             + (p.noHace ? ' <span class="noHace">' + esc(p.noHace) + '</span>' : '') + '</p>'
           : '')
-      + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
+      + '<p>' + fuerte(T('hoja.que-contesta')) + '</p><ul class="pr-tools">' + tools + '</ul>'
       // LO QUE LA PANTALLA NO PODÍA CONTESTAR: ya decía DÓNDE va a vivir el registro, y no
       // cuánto va a pesar, cada cuánto se actualiza ni por cuánto tiempo lo guardan -- que es
       // lo que la persona pregunta antes de aceptar.
-      + '<p><b>Dónde va a vivir tu registro</b><br><code>' + esc(p.journal) + '</code>'
+      + '<p>' + fuerte(T('hoja.donde-vive')) + '<br><code>' + esc(p.journal) + '</code>'
       + (p.tamano || p.refresco || p.retencion
-          ? '<br><small>' + (p.tamano ? 'Unos ' + esc(p.tamano) + '. ' : '')
-            + (p.refresco ? 'Se actualiza ' + esc(p.refresco) + '. ' : '')
-            + (p.retencion ? 'La institución lo guarda ' + esc(p.retencion) + '.' : '') + '</small>'
+          ? '<br><small>' + [
+              p.tamano ? T('hoja.journal.tamano', { tamano: esc(p.tamano) }) : '',
+              p.refresco ? T('hoja.journal.refresco', { refresco: esc(p.refresco) }) : '',
+              p.retencion ? T('hoja.journal.retencion', { retencion: esc(p.retencion) }) : '',
+            ].filter(Boolean).join(' ') + '</small>'
           : '')
       + '</p>'
-      + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
-      + '<small>Es la única red que va a poder tocar, y la hace Mymi por él.</small></p>'
-      + '<p><b>Lo que Mymi revisó</b></p><ul class="pr-tools">'
+      + '<p>' + fuerte(T('hoja.con-quien')) + '<br><code>' + esc(p.publicador || T('hoja.sin-publicador')) + '</code><br>'
+      + peq(T('hoja.unica-red')) + '</p>'
+      + '<p>' + fuerte(T('hoja.reviso')) + '</p><ul class="pr-tools">'
       + '<li>' + respaldo + '</li><li>' + firma + '</li><li>' + forma + '</li><li>' + caps + '</li>'
-      + '<li>Sin ejecutables ni datos de muestra adentro.</li></ul>';
+      + '<li>' + T('hoja.sin-ejecutables') + '</li></ul>';
 
     document.getElementById('propuesta').classList.add('on');
   },
