@@ -347,6 +347,62 @@ Console.WriteLine("=== THE RECORD'S LANGUAGE RIDES ON FREE-TEXT PARAMETERS ===")
 		"expected null");
 }
 
+// THE CATALOG OF TEXTS IS THERE, IN BOTH LANGUAGES.
+//
+// This is the assertion that pays for itself. textos.json is an EmbeddedResource declared in
+// THREE csproj with the same LogicalName -- Gnothi.Host for the desktop, Gnothi.Mobile and
+// Gnothi.iOS because the phones compile the Host's sources by glob instead of referencing it.
+// Forgetting one of the three does NOT break the build: Textos returns each key as its own text,
+// so the symptom is a screen that says 'instituciones.titulo', found on a phone.
+//
+// What this can check is the assembly it runs in, which is the desktop's. The two phone csproj
+// are checked by reading them: they are text, and a missing line is a missing line.
+Console.WriteLine();
+Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
+{
+	Gnothi.Host.Textos.Idioma = "es";
+	string es = Gnothi.Host.Textos.T("instituciones.titulo");
+	Gnothi.Host.Textos.Idioma = "en";
+	string en = Gnothi.Host.Textos.T("instituciones.titulo");
+
+	Assert("the embedded catalog loads: a known key is not its own name",
+		es != "instituciones.titulo", $"got '{es}' -- the EmbeddedResource is missing from this csproj");
+	Assert("the two languages are different phrases",
+		es == "Tus instituciones" && en == "Your institutions", $"es='{es}' en='{en}'");
+
+	Gnothi.Host.Textos.Idioma = "es";
+	Assert("a value travels by name, not by position",
+		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")) == "3 consultas",
+		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")));
+
+	// A missing key has to be UGLY, not blank: a blank looks like a design decision and ships.
+	Assert("a key that does not exist renders as itself",
+		Gnothi.Host.Textos.T("no.existe.esta.clave") == "no.existe.esta.clave",
+		Gnothi.Host.Textos.T("no.existe.esta.clave"));
+
+	string[] faltantes = [.. Gnothi.Host.Textos.Faltantes()];
+	Assert("no key is missing one of its two languages",
+		faltantes.Length == 0, string.Join(" | ", faltantes));
+
+	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
+	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
+	// said nothing about what each face declares.
+	string raiz = AppContext.BaseDirectory;
+	while (raiz.Length > 1 && !Directory.Exists(Path.Combine(raiz, "Gnothi.Host")))
+		raiz = Path.GetDirectoryName(raiz.TrimEnd(Path.DirectorySeparatorChar)) ?? "/";
+
+	foreach (string cara in new[] { "Gnothi.Mobile", "Gnothi.iOS" })
+	{
+		string csproj = Path.Combine(raiz, cara, cara + ".csproj");
+		string texto = File.Exists(csproj) ? File.ReadAllText(csproj) : "";
+		Assert($"{cara} declares the catalog with the shared LogicalName",
+			texto.Contains("gnothi.textos.json", StringComparison.Ordinal),
+			File.Exists(csproj)
+				? $"{cara}.csproj has no EmbeddedResource for textos.json: that face would start with no catalog"
+				: $"could not read {csproj}");
+	}
+}
+
 Console.WriteLine();
 Console.WriteLine(failures == 0
 	? "=== TODO PASA: el asistente se puede borrar, la compuerta falla cerrada, y las tres puertas coinciden ==="

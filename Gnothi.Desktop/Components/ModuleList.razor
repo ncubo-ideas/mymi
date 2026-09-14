@@ -12,8 +12,8 @@
     it stays the person's explicit act on her file, and "Reload" picks it up.
 *@
 
-<h1>Your modules</h1>
-<p class="sub">What each institution handed you. Gnothi reads what is already on this device.</p>
+<h1>@T("instituciones.titulo")</h1>
+<p class="sub">@T("instituciones.sub")</p>
 
 @if (State.Warnings.Count > 0)
 {
@@ -26,7 +26,7 @@
 @if (State.Catalog.Modules.Count == 0)
 {
     <div class="empty">
-        No modules installed in<br /><code>@State.Root</code>
+        @T("instituciones.vacio")<br /><code>@State.Root</code>
     </div>
 }
 else
@@ -47,17 +47,17 @@ else
                         @m.Manifest.Title
                         @if (!m.Installation.Enabled)
                         {
-                            <text> &middot; <strong>switched off by you</strong></text>
+                            <text> &middot; <strong>@T("instituciones.apagada")</strong></text>
                         }
                         else
                         {
-                            <text> &middot; @CountEnabled(m) quer@(CountEnabled(m) == 1 ? "y" : "ies")</text>
+                            <text> &middot; @Consultas(CountEnabled(m))</text>
                         }
                     </div>
                 </div>
                 @if (m.Installation.Enabled && CountEnabled(m) > 0)
                 {
-                    <button class="small" @onclick="() => Open.InvokeAsync(m.Name)">Open</button>
+                    <button class="small" @onclick="() => Open.InvokeAsync(m.Name)">@T("instituciones.abrir")</button>
                 }
             </div>
         </div>
@@ -65,9 +65,9 @@ else
 }
 
 <p class="crumb" style="margin-top:18px">
-    <button @onclick="Import">Import a module…</button>
-    <button class="ghost" @onclick="Reload">Reload</button>
-    <span class="meta"> &nbsp;re-reads installation.json from disk</span>
+    <button @onclick="Import">@T("instituciones.importar")</button>
+    <button class="ghost" @onclick="Reload">@T("instituciones.recargar")</button>
+    <span class="meta"> &nbsp;@T("instituciones.recargar.nota")</span>
 </p>
 
 @if (message.Length > 0)
@@ -82,6 +82,14 @@ else
     private bool ok = true;
 
     private static int CountEnabled(Module m) => m.EnabledTools().Count();
+
+    // EL PLURAL SON DOS CLAVES, NO UN SUFIJO. Esto decia `quer` + `y`/`ies`, que es el truco que
+    // funciona en ingles y no existe en espanol: «consulta»/«consultas» no comparten el prefijo
+    // que esa concatenacion asume. Regla 7 de las reglas de localizacion: cada clave es una
+    // frase entera.
+    private static string Consultas(int cuantas) => cuantas == 1
+        ? T("instituciones.consultas.una")
+        : T("instituciones.consultas.varias", ("n", cuantas.ToString()));
 
     private void Reload() => State.Reload();
 
@@ -100,13 +108,13 @@ else
         try
         {
             picked = Window.ShowOpenFile(
-                title: "Pick a module package",
+                title: T("instituciones.elegir.titulo"),
                 multiSelect: false,
-                filters: [("Gnothi module", [".gmod"]), ("All files", ["*"])]);
+                filters: [(T("instituciones.elegir.gmod"), [".gmod"]), (T("instituciones.elegir.todos"), ["*"])]);
         }
         catch (Exception e)
         {
-            (ok, message) = (false, $"could not open the file picker: {e.GetType().Name}: {e.Message}");
+            (ok, message) = (false, T("instituciones.elegir.fallo", ("detalle", $"{e.GetType().Name}: {e.Message}")));
             return;
         }
 

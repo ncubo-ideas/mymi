@@ -1,4 +1,6 @@
+using System.Globalization;
 using Gnothi.Desktop.Components;
+using Gnothi.Host;
 using Microsoft.Extensions.DependencyInjection;
 using Photino.Blazor;
 
@@ -28,6 +30,14 @@ internal static class Program
 			: Directory.Exists(beside) ? beside
 			: Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Modulos");
 		modulesRoot = Path.GetFullPath(modulesRoot);
+
+		// EL IDIOMA DE LA PERSONA, RESUELTO UNA VEZ Y AQUI. Sale del APARATO: no hay selector
+		// adentro de Gnothi, y esa es la decision, no una etapa.
+		//
+		// Va antes que HostState.Reload() porque desde ese momento hay texto que se compone.
+		// Y va en UN solo lugar por cara: dos resolutores son dos fuentes de verdad, que es
+		// exactamente lo que el catalogo compartido existe para evitar.
+		Textos.Idioma = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		var state = new HostState(modulesRoot);
 		state.Reload();
