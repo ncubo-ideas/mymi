@@ -96,13 +96,19 @@ namespace Municipalidad.Wasm
 			textos = await CargarAsync(http, Etiqueta);
 		}
 
+		/// <summary>
+		/// Lo que la persona pidio en su dispositivo, en su orden. La lectura entra por un modulo propio
+		/// y nunca por eval: la politica de contenido con que se sirve un modulo hospedado admite
+		/// WebAssembly y no admite eval.
+		/// </summary>
 		private static async Task<string[]> LoQuePidioElDispositivoAsync(IJSRuntime js)
 		{
 			try
 			{
-				return await js.InvokeAsync<string[]>("eval",
-					"(navigator.languages && navigator.languages.length"
-					+ " ? Array.from(navigator.languages) : [navigator.language || ''])");
+				await using IJSObjectReference modulo =
+					await js.InvokeAsync<IJSObjectReference>("import", "./idioma-interop.js");
+
+				return await modulo.InvokeAsync<string[]>("idiomas");
 			}
 			catch (JSException)
 			{
