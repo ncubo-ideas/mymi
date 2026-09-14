@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- THE LANGUAGE MISMATCH, MEASURED THROUGH GATE 2. The manifests and tool descriptions of
+       the demo modules are in Spanish; the person may run Gnothi on a device set to English
+       and ask in English. This spike puts the REAL Host in front of the REAL model with English
+       questions and records three things per question: which tools the model chose, what
+       argument VALUES it passed (the part that fails: "milk" never matches "leche" in the
+       journal), and in which language it answered.
+
+       Unlike Lab.Cruce/Red it goes through the Dispatcher: the tools are the installed
+       modules' and the data is this machine's journal, so a lexical miss is a real miss.
+
+         Run it with dotnet run on this project (the head of Program.cs has the exact command lines).
+         Without a key, the catalog flag prints what the model is shown; with a key it asks the
+         English questions and records the three measurements.
+
+       The BaseOutputPath is because the session's MCP servers hold Gnothi.Host.dll locked; see
+       NotasGnothiHost/46. The key is read like ModelClaude does: ANTHROPIC_API_KEY, or the file
+       GNOTHI_KEYFILE points to, or ~/.gnothi-model-key. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>lab-idioma</AssemblyName>
+    <RootNamespace>Gnothi.Spikes.Idioma</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
+  </ItemGroup>
+
+</Project>

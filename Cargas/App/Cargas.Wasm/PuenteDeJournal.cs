@@ -294,9 +294,12 @@ public sealed class PuenteDeJournal : IDestinoDelJournal, IAsyncDisposable
 	{
 		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);
 
-		ResultadoDeLectura leido = await (await Modulo())
-			.InvokeAsync<ResultadoDeLectura>("leer", ruta);
-
+		// POR EL DESTINO, NO POR EL INTEROP DEL BROWSER. Suelta, el destino es esta misma
+		// clase y la llamada es la de siempre. Hospedada, el destino es Gnothi: la foto
+		// aterriza en la carpeta del modulo, al lado del journal, que es donde el asistente
+		// la puede ver. Medido el 2026-09-11 en un iPhone: con el interop directo, hospedada
+		// no habia carpeta y el boton de la foto nunca se dibujaba.
+		ResultadoDeLectura leido = await destino.Leer(ruta);
 		return leido.Ok ? leido.Contenido : "";
 	}
 
@@ -304,10 +307,9 @@ public sealed class PuenteDeJournal : IDestinoDelJournal, IAsyncDisposable
 	{
 		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);
 		ArgumentNullException.ThrowIfNull(contenido);
-		if (!HayCarpeta) return "no hay carpeta donde guardar";
+		if (!HayDestino) return "no hay carpeta donde guardar";
 
-		ResultadoDeEscritura resultado = await (await Modulo())
-			.InvokeAsync<ResultadoDeEscritura>("escribir", ruta, Convert.ToBase64String(contenido));
+		ResultadoDeEscritura resultado = await destino.Escribir(ruta, Convert.ToBase64String(contenido));
 		return resultado.Ok ? "" : resultado.Motivo;
 	}
 
