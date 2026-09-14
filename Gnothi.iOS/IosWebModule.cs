@@ -263,6 +263,11 @@ internal sealed class IosWebModule : WebModule
 		    escribir:  function (id, path, c)  { send({ op: 'escribir', id: id, a: path, b: c }); },
 		    pull:      function (id, from)     { send({ op: 'pull',     id: id, a: String(from) }); },
 
+		    // The seventh of the contract, and the only one that runs the arrow backwards: a
+		    // HYBRID face asks, and the answer comes from the module's surface in process. No
+		    // module parameter -- a face can only ask about the module it belongs to.
+		    consultar: function (id, tool, a)  { send({ op: 'consultar', id: id, a: tool, b: a || '{}' }); },
+
 		    // The seventh, and the only one no bundle calls: the watchdog Gnothi injects into
 		    // the document reports a refusal back through the same door. See WebModule.Serve.
 		    violation: function (r)            { send({ op: 'violation', id: '', a: r }); }

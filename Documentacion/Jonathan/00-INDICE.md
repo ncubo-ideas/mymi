@@ -46,6 +46,7 @@ Para quien tiene que diseñar. Decisiones y sus razones, sin implementación.
 | [`B4-manifiesto-vs-instalacion.md`](B-arquitectura/B4-manifiesto-vs-instalacion.md) | dos archivos porque son dos autoridades |
 | [`B5-el-browser-y-por-que-no.md`](B-arquitectura/B5-el-browser-y-por-que-no.md) | el camino descartado, y qué sí sirvió de él |
 | [`B6-los-cuatro-caminos-de-la-pwa.md`](B-arquitectura/B6-los-cuatro-caminos-de-la-pwa.md) | **las cuatro formas de que la app de una institución y Gnothi convivan**, comparadas renglón por renglón: cuántas copias del expediente, quién sale a la red, qué le toca hacer a ella. Con el traslado de la app hacia adentro, y **las aserciones de la persona como el único pedazo que no se puede reconstruir** |
+| [`B7-el-canal-de-la-lamina-04.md`](B-arquitectura/B7-el-canal-de-la-lamina-04.md) | **por qué canal le pregunta la cara a Gnothi «¿qué pinto?»** — los once mecanismos con su punto de choque, qué es una TWA y qué implica su APK, `http` contra `https` en loopback, y el hallazgo: **el ícono pelea con el canal** |
 
 ### C · Implementación — *«¿qué hay escrito y cómo?»*
 
@@ -69,6 +70,7 @@ lo escribe el developer de cada institución, y sus preguntas son otras.
 | [`C4-que-es-un-modulo.md`](C-implementacion/modulo/C4-que-es-un-modulo.md) | anatomía, **lo que NO puede tener**, y la lista de conformance |
 | [`C5-la-superficie-que-expone.md`](C-implementacion/modulo/C5-la-superficie-que-expone.md) | las consultas intencionales, y el anti-patrón que dos IAs propusieron |
 | [`C6-el-dominio-y-el-journal.md`](C-implementacion/modulo/C6-el-dominio-y-el-journal.md) | cero dependencias, qué se asienta, y la trampa del determinismo |
+| [`C9-la-forma-hibrida.md`](C-implementacion/modulo/C9-la-forma-hibrida.md) | **la tercera forma: la cara sin motor y la superficie al lado**, con Puppeteer prestado por el Host. 97 KB contra 12 594, las siete costuras, **`[Query]` contra `[View]`: dos públicos, no uno**, la pantalla del laboratorio portada con sus cinco formas, y el **icono en la pantalla de inicio** |
 
 ### D · Configuración — *«¿cómo lo pongo a andar?»*
 

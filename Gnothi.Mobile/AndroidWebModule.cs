@@ -215,6 +215,14 @@ internal sealed class BridgeToModule(AndroidWebModule module) : Java.Lang.Object
 	[Export("pull")]
 	public void Pull(string id, string after) => module.Serve("pull", id, after, null);
 
+	// The seventh of the contract, and the only one that runs the arrow backwards: a HYBRID
+	// face asks, and the answer comes from the module's surface loaded in process. No module
+	// parameter -- a face can only ask about the module it belongs to.
+	[JavascriptInterface]
+	[Export("consultar")]
+	public void Query(string id, string tool, string argumentsJson) =>
+		module.Serve("consultar", id, tool, argumentsJson);
+
 	// The seventh, and the only one no bundle calls: the watchdog Gnothi injects into the
 	// document reports a refusal back through the same door. See WebModule.Serve.
 	[JavascriptInterface]

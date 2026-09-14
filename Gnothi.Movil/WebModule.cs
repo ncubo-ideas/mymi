@@ -158,6 +158,30 @@ internal abstract class WebModule : IWebModule
 
 	internal void Ready() => ready.TrySetResult();
 
+	// LA SUPERFICIE DE ESTE MODULO, cuando corre en proceso. La pone quien abre la cara, y
+	// queda null en un modulo hospedado -- ahi la pagina es la superficie y preguntarle a
+	// Gnothi seria pedirle que se conteste a si misma.
+	//
+	// Es un delegado y no una referencia al despacho a proposito: WebModule no conoce ni al
+	// Dispatcher ni a Module, y no tiene por que. Recibe una funcion que contesta.
+	internal Func<string, string, CancellationToken, Task<string>>? Surface { get; set; }
+
+	// Y DONDE SE DEJA LO QUE EL CARTERO TRAE. Null en un modulo hospedado: ahi la pagina lleva
+	// el motor y asienta ella, que es lo que hace `window.gnothi.deliver`.
+	internal Func<string, CancellationToken, Task<string>>? Entrega { get; set; }
+
+	private Task<string> Consultar(string tool, string argsJson)
+	{
+		if (Surface is null)
+			throw new InvalidOperationException(
+				"este modulo no tiene superficie en proceso: en la forma hospedada la pagina ES "
+				+ "la superficie. 'consultar' solo existe en la forma hibrida.");
+
+		if (tool.Length == 0) throw new ArgumentException("'consultar' sin tool");
+
+		return Surface(tool, argsJson, CancellationToken.None);
+	}
+
 	internal void Evict()
 	{
 		Teardown();
@@ -187,6 +211,19 @@ internal abstract class WebModule : IWebModule
 
 			// The only one that does network, and the reason none of these can be synchronous.
 			case "pull": AttendAsync(id, () => Pull(a ?? "0")); return;
+
+			// THE SEVENTH OF THE CONTRACT, and the only one that runs the arrow backwards.
+			//
+			// In a hosted module the page IS the surface: Gnothi asks it (`window.gnothi.call`)
+			// and it answers. In a HYBRID the page is only the face -- it carries no engine, by
+			// customs rule -- so it asks, and the answer comes from the module's own surface
+			// loaded in process, on Gnothi's engine.
+			//
+			// IT DOES NOT NAME A MODULE, on purpose. The page can only ask about the module it
+			// belongs to. A `module` parameter here would let a face ask about somebody else's
+			// journal, and no rule downstream would stop it -- the Host would see a legitimate
+			// question from a legitimate module.
+			case "consultar": AttendAsync(id, () => Consultar(a ?? "", b ?? "{}")); return;
 
 			// NOT PART OF THE MODULE'S API, even though it arrives by the same door. No bundle
 			// calls this: it is the watchdog Gnothi injects into the document (BundleServer)
@@ -314,7 +351,21 @@ internal abstract class WebModule : IWebModule
 			return JsonSerializer.Serialize(new { events = Array.Empty<object>(), last = from });
 		}
 
-		return await courier.Pull(from);
+		string sobre = await courier.Pull(from);
+
+		// EN LA FORMA HIBRIDA EL SOBRE NO VUELVE A LA PAGINA, y es la unica diferencia de este
+		// camino entre las dos formas.
+		//
+		// La cara no tiene motor: devolverle los eventos seria darle algo que no puede asentar.
+		// Asi que se entregan a la superficie -- el mismo sobre, el mismo cartero, el mismo
+		// endpoint fijado al instalar -- y a la cara se le contesta CUANTO entro, que es lo
+		// unico que necesita para saber si le conviene volver a preguntar.
+		if (Entrega is null) return sobre;
+
+		string resultado = await Entrega(sobre, CancellationToken.None);
+		Log($"{Name}: entrega a la superficie -> {resultado}");
+
+		return JsonSerializer.Serialize(new { entregado = true, resultado });
 	}
 
 	// A module's path CANNOT climb out of its journal. That is Gnothi's responsibility, not
@@ -353,13 +404,29 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 
 	public bool IsLive(string module) => live.ContainsKey(module);
 
-	public async Task<IWebModule> Live(
+	// `cablear` CORRE ENTRE Create Y Start, Y ESE ORDEN ES EL PUNTO.
+	//
+	// Start espera a que la pagina diga `listo()`, y una cara hibrida dice listo y PREGUNTA en el
+	// mismo tick -- no tiene actor que hidratar, asi que no hay nada que la demore. Si la
+	// superficie se cableara despues de Start, esas primeras preguntas llegarian con el delegado
+	// todavia en null y la pantalla abriria con "este modulo no tiene superficie en proceso".
+	// Medido en el telefono el 2026-09-11: las dos tarjetas mostraban justamente eso.
+	// La de la interfaz, para quien no tiene nada que cablear: la cascara, cuando el asistente
+	// pregunta y la cara ni siquiera esta abierta.
+	public Task<IWebModule> Live(
 		string module, string bundle, string journal, string publisher, CancellationToken ct)
+		=> Live(module, bundle, journal, publisher, ct, null);
+
+	public async Task<IWebModule> Live(
+		string module, string bundle, string journal, string publisher, CancellationToken ct,
+		Action<TModule>? cablear)
 	{
 		if (live.TryGetValue(module, out TModule? already)) return already;
 
 		TModule fresh = Create(module, bundle, journal, publisher);
 		if (!live.TryAdd(module, fresh)) { fresh.Evict(); return live[module]; }
+
+		cablear?.Invoke(fresh);
 
 		await fresh.Start(ct);
 		return fresh;
@@ -375,8 +442,54 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 		string bundle = args.Count > 0 ? args[0] : "";
 		string publisher = args.Count > 1 ? args[1] : "";
 
-		await Live(m.Manifest.Module, bundle, m.Installation.GrantedFolder, publisher, ct);
+		bool hibrida = m.Installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase);
+
+		// SE CABLEA ANTES DE ARRANCAR, no despues: una cara hibrida dice `listo()` y pregunta en
+		// el mismo tick, porque no tiene actor que hidratar. Ver Live.
+		await Live(m.Manifest.Module, bundle, m.Installation.GrantedFolder, publisher, ct,
+			fresco => { if (hibrida) Cablear(fresco, m); });
+
 		return live[m.Manifest.Module];
+	}
+
+	// LO QUE UNA CARA HIBRIDA PUEDE PEDIRLE AL HOST, y son dos cosas distintas con reglas
+	// distintas: preguntar por sus vistas, y pedir que el cartero traiga lo nuevo.
+	private static void Cablear(TModule abierto, Gnothi.Host.Module m)
+	{
+		abierto.Surface = async (vista, argsJson, c) =>
+			{
+				// VA POR View Y NO POR Invoke, y esa es la correccion que mas importa de todo
+				// este camino: las tools declaradas son lo que el ASISTENTE puede preguntar
+				// -gruesas, y apagables una por una-, mientras que una pantalla necesita series,
+				// puntos y lineas de referencia. Medido sobre examenes: 2 tools contra 21
+				// lecturas del dominio. Ruteando por Invoke, la cara solo podria pedir las dos, y
+				// jamas podria dibujar una tendencia.
+				//
+				// Y NO PASA POR Allows: apagar una consulta decide que puede preguntar el
+				// asistente, no le prohibe a la institucion mostrarle a la persona su propio
+				// expediente en la pantalla que ella abrio.
+				//
+				// JsonOnly y no lo que la pagina pida: una cara pinta json, y dejarla elegir el
+				// formato le daria una palanca que las otras puertas no le dan.
+				object answer = await m.View(vista, Argumentos(argsJson), Accepts.JsonOnly, c);
+				return answer as string ?? JsonSerializer.Serialize(answer);
+			};
+
+		// Y LA ENTREGA, que NO pasa por Allows y es a proposito: apagar una consulta es decidir
+		// QUE SE CONTESTA, no dejar de recibir lo que la institucion ya publico. Un modulo con
+		// todas sus consultas apagadas sigue siendo el registro de la persona, y seguir
+		// llenandolo es lo que hace que encenderlas de nuevo sirva de algo.
+		abierto.Entrega = (sobre, c) => m.Deliver(sobre, c);
+	}
+
+	// Los argumentos llegan como el json que la página escribió. Un objeto vacío y un json roto
+	// son lo mismo para el despacho: ninguna tool recibe nada.
+	private static IReadOnlyDictionary<string, object?>? Argumentos(string argsJson)
+	{
+		if (string.IsNullOrWhiteSpace(argsJson)) return null;
+
+		try { return JsonSerializer.Deserialize<Dictionary<string, object?>>(argsJson); }
+		catch (JsonException) { return null; }
 	}
 
 	public void Evict(string module)

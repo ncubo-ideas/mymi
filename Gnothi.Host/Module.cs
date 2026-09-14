@@ -48,6 +48,12 @@ public sealed class Module : IAsyncDisposable
 			// nombran JavaScript en un webview como la excepcion-, y por eso en un telefono
 			// "in-process" no se puede publicar aunque funcione.
 			"webview"    => new WebViewShell(name, installation.Shell, installation.GrantedFolder),
+
+			// HIBRIDA: la cara en el WebView y la superficie en proceso, con el motor prestado.
+			// Es la unica de las tres en la que el WebView NO contesta: pregunta. Hereda la
+			// objecion de arriba entera, porque el dll de la institucion corre nativo.
+			"hybrid"     => new HybridShell(name, installation.Shell, installation.GrantedFolder),
+
 			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
 			_            => new StdioShell(name, installation.Shell, installation.GrantedFolder),
 		};
@@ -117,6 +123,20 @@ public sealed class Module : IAsyncDisposable
 	// For the declared-against-real verification.
 	public Task<IReadOnlyList<string>> ActualToolNames(CancellationToken ct)
 		=> shell.ActualTools(ct);
+
+	// LO QUE EL CARTERO TRAJO. Gnothi hizo la red y el modulo lo asienta -- o no puede, y la
+	// cascara lo dice. No pasa por el consentimiento de las tools a proposito: apagar una
+	// consulta decide QUE SE CONTESTA, no si el registro de la persona se sigue llenando.
+	public Task<string> Deliver(string envelopeJson, CancellationToken ct)
+		=> shell.Deliver(envelopeJson, ct);
+
+	// LO QUE PIDE SU PROPIA PANTALLA. No pasa por Allows y no es un descuido: apagar una consulta
+	// decide que puede preguntar EL ASISTENTE sobre la persona, no le prohibe a la institucion
+	// mostrarle su expediente en la pantalla que ella acaba de abrir. Son decisiones con sujetos
+	// distintos.
+	public Task<object> View(
+		string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
+		=> shell.View(name, arguments, accepts, ct);
 
 	// ── LA ADUANA DEL LOGO ──────────────────────────────────────────────────────────────
 	//

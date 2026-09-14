@@ -443,6 +443,15 @@
   .btn{flex:1;border:0;border-radius:12px;padding:11px;font-size:13.5px;font-weight:600;
        background:var(--accent);color:#fff}
   .btn.ghost{background:var(--accent-soft);color:var(--accent-ink)}
+  /* EL ACCESO DIRECTO va en trazo y no en relleno, por la misma razón que Actualizar en la
+     cara del laboratorio: no es el punto de partida de esta pantalla, es una comodidad. */
+  .fijar{width:100%;margin:0 0 14px;border:1px solid var(--line);border-radius:12px;
+         background:transparent;color:var(--muted);padding:10px;font-size:13.5px;font-weight:600;
+         display:flex;align-items:center;justify-content:center;gap:8px}
+  .fijar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;
+             stroke-linecap:round;stroke-linejoin:round}
+  .fijar[disabled]{opacity:.55}
+  .fijar-dicho{margin:-6px 0 14px;font-size:12.5px;color:var(--muted);text-align:center}
   .btn.danger{background:var(--off-soft);color:var(--off)}
   .kv{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:4px 14px;margin-bottom:12px}
   .kv div{display:flex;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
@@ -780,6 +789,26 @@ const gn = {
   // ABRIR EL MODULO: la app de la institucion se dibuja a si misma, adentro de Gnothi
   // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
   abrir(name) { gn.call('abrir', { module: name }); },
+
+  // EL ICONO EN LA PANTALLA DE INICIO. Lo pide ella, nunca se pide solo: Android muestra su
+  // propio diálogo encima, y disparárselo sin que lo haya tocado sería poner un icono en su
+  // teléfono porque instaló algo.
+  //
+  // LO QUE PASA DESPUÉS NO SE PUEDE SABER. `requestPinShortcut` devuelve en cuanto el diálogo
+  // se muestra, no cuando ella acepta, y en MIUI hay además un permiso propio que puede tragarse
+  // el icono en silencio. Por eso el texto dice lo que Gnothi hizo -- pedirlo -- y no promete que
+  // el icono esté.
+  fijar(name) {
+    const b = document.getElementById('fijar');
+    const dicho = document.getElementById('fijar-dicho');
+    const r = gn.call('fijar', { module: name }) || {};
+    if (r.ok) {
+      if (b) { b.disabled = true; b.lastChild.textContent = 'Listo, pedido'; }
+      if (dicho) dicho.textContent = 'Si no aparece, fijate que tu pantalla de inicio acepte accesos directos.';
+      return;
+    }
+    if (dicho) dicho.textContent = r.razon || 'No se pudo poner el acceso directo.';
+  },
 
   // «HAY UNA VERSIÓN NUEVA» (NotasGnothiHost/44 §4): the package the institution publishes is
   // fetched and examined like a link that landed; the update sheet follows, and only her yes
@@ -1285,6 +1314,21 @@ const gn = {
         + '<b style="color:' + acento(m) + (m.brand && m.brand.font && m.brand.font.regular ? ";font-family:'gn-" + attr(m.name) + "'" : '') + '">' + esc(nameOf(m)) + '</b>'
         + '<small>' + esc(taglineOf(m)) + '</small></div></div>'
 
+        // EL ICONO EN LA PANTALLA DE INICIO, y solo si hay algo que abrir: un módulo apagado no
+        // tiene cara, y un acceso directo a una pantalla que no se levanta es una promesa rota.
+        //
+        // El icono lleva el logo y el nombre de la institución, pero lo que abre es GNOTHI: el
+        // launcher le estampa su badge en la esquina y eso no se puede quitar. Está bien que
+        // esté -- dice quién corre el código -- y por eso el rótulo no dice «instalar la app».
+        + (m.enabled
+            ? '<button class="fijar" id="fijar" onclick="gn.fijar(\'' + m.name + '\')">'
+              + '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/>'
+              + '<path d="M9 8h6M9 12h6M9 16h3"/></svg>'
+              + '<span>Ponerlo en tu pantalla de inicio</span></button>'
+              + '<p class="fijar-dicho" id="fijar-dicho">Un icono de ' + esc(m.shortName || m.institution || m.title)
+              + ' que abre esta app acá adentro.</p>'
+            : '')
+
         // The institution retired the key this module was accepted with. Said here, once, and
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
         + (m.signerRevokedAt
@@ -1624,6 +1668,9 @@ const MOCK_PROPUESTA = {
 };
 
 function mock(op, x) {
+  // En el monitor no hay pantalla de inicio donde poner nada, y decirlo es mejor que fingir
+  // que se pudo: el botón queda probable en su camino de error, que es el que más se ve.
+  if (op === 'fijar') return { ok: false, razon: 'Acá no hay pantalla de inicio: esto solo funciona en el teléfono.' };
   if (op === 'altaArchivo') {
     // The mock "picks" three files: two modules -one she already has- and a zip that is not one.
     setTimeout(() => gn.push('hallazgos', '', JSON.stringify({ archivos: [

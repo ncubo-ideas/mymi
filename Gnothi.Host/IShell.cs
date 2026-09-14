@@ -25,4 +25,31 @@ internal interface IShell : IAsyncDisposable
 	// The NAMES of what the module actually exposes, for the declared-versus-actual check.
 	// Names and not protocol objects: names are the only thing being compared.
 	Task<IReadOnlyList<string>> ActualTools(CancellationToken ct);
+
+	// LO QUE EL CARTERO DEJA. Gnothi hizo la red -- con SU credencial, contra el endpoint que
+	// EL fijo -- y le entrega al modulo un sobre ya leido. El modulo decide que hace con el.
+	//
+	// ES OPCIONAL, y por eso tiene cuerpo por omision: un modulo que solo lee no tiene donde
+	// asentar nada, y eso no es una falla suya. Tirar seria decirle a quien lo llama que algo
+	// se rompio; lo que pasa es que no hay a quien entregarle.
+	//
+	// La cascara que SI entrega es la hibrida: ahi la cara no tiene motor y la superficie es la
+	// unica que puede escribir el journal.
+	// LO QUE PIDE LA CARA DE LA INSTITUCION, y es OTRO CONJUNTO que el de las tools.
+	//
+	// Invoke contesta lo que el asistente puede preguntar: lo declarado en el manifiesto, grueso,
+	// y apagable una por una. Esto contesta lo que una PANTALLA necesita para dibujar -- series,
+	// puntos, lineas de referencia --, que ni se declara ni le sirve al modelo. Medido sobre
+	// examenes: 2 contra 21.
+	//
+	// Son dos metodos y no un parametro a proposito: con un solo camino, una consulta de pantalla
+	// podria llegar por la puerta del asistente, y al reves, sin que nada lo impidiera.
+	Task<object> View(string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct) =>
+		throw new NotSupportedException(
+			"this shell has no screen queries: only the hybrid form has a face that asks.");
+
+	Task<string> Deliver(string envelopeJson, CancellationToken ct) =>
+		throw new NotSupportedException(
+			"this shell does not take deliveries: the module has no surface that writes. "
+			+ "In the hosted form the page applies events with the engine it carries.");
 }

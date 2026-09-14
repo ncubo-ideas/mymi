@@ -906,13 +906,48 @@ internal sealed class ModuleEnrollment
 		Publicador? p = manifest.Publicador;
 		string endpoint = keptEndpoint ?? (p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}");
 
+		// QUE CASCARA, Y SALE DE LO QUE EL PAQUETE TRAJO -- la misma regla que la aduana: lo que
+		// trae es lo que es. Hasta acá el teléfono escribía "webview" quemado, y no era un
+		// descuido: en un teléfono no había otra forma posible. El híbrido agrega una.
+		bool traeCara = Directory.Exists(Path.Combine(folder, "web"));
+		bool traeSuperficie = manifest.Load is not null && !string.IsNullOrWhiteSpace(manifest.Load.Entry);
+
+		string tipo = (traeSuperficie, traeCara) switch
+		{
+			(true, true) => "hybrid",
+			(true, false) => "in-process",
+			_ => "webview",
+		};
+
+		// EL ORDEN DE LOS ARGUMENTOS, y en el híbrido no es el que uno escribiría primero.
+		//
+		// La tentación es poner el dll en [0] porque es lo que contesta. Pero [0] y [1] ya los
+		// lee TODO el lado web -- WebViewShell y, sobre todo, WebModuleHost.Open, que abre la
+		// pantalla desde el catálogo-- y ninguno de los dos sabe de formas. Poner el dll ahí
+		// haría que abrir el módulo intentara servir un .dll como si fuera la carpeta del
+		// bundle, y fallaría lejos de acá.
+		//
+		// Así que la cara conserva su lugar y la superficie va al final: es el consumidor nuevo
+		// el que se acomoda, no los que ya andaban.
+		string dll = traeSuperficie
+			? Path.Combine(folder, manifest.Load!.Entry.Replace('/', Path.DirectorySeparatorChar))
+			: "";
+		string web = Path.Combine(folder, "web");
+
+		string[] argumentos = tipo switch
+		{
+			"hybrid" => [web, endpoint, dll],
+			"in-process" => [dll],
+			_ => [web, endpoint],
+		};
+
 		var installation = new
 		{
 			shell = new
 			{
-				type = "webview",
+				type = tipo,
 				command = "",
-				arguments = new[] { Path.Combine(folder, "web"), endpoint },
+				arguments = argumentos,
 			},
 			grantedFolder = Path.Combine(journalsRoot, module),
 			enabled,

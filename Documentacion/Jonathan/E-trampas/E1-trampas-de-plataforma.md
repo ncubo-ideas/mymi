@@ -117,6 +117,41 @@ puede restaurarlo** sin credenciales.
 **Cómo se dribleó:** compilar en la imagen solo lo que usa paquetes públicos, y **copiar el resto ya
 compilado**. Y resulta ser lo correcto igual: una institución te entrega un artefacto, no su código.
 
+### 8b · El otro síntoma del mismo feed: `NU1301` con 403
+
+Y hay un segundo síntoma que **no se parece al primero**, porque no habla de versiones ni de paquetes:
+
+```
+error NU1301: No se puede cargar el índice de servicio del origen
+  https://pkgs.dev.azure.com/ncubo/_packaging/Puppeteer/nuget/v3/index.json
+error NU1301:   Response status code does not indicate success: 403 (Forbidden -
+  User '<guid>' lacks permission to complete this action. You need to have 'ReadPackages'.)
+```
+
+**`NU1103` es «el paquete no está». `NU1301` con 403 es «el feed no te deja entrar».** El primero se
+arregla declarando el feed; el segundo, **no se arregla del lado del repo**: o la identidad no tiene
+`ReadPackages` en el feed, o el token cacheado venció y el restore salió sin credencial.
+
+**Lo que lo dispara sin aviso:** no hay `~/.nuget/plugins`, o sea **el Azure Artifacts Credential Provider
+no está instalado**. El `NuGet.config` avisa que la autenticación la resuelve ese plugin, pero si falta,
+el restore no pide credenciales: **sale anónimo y cobra el 403**. Instalarlo, y después `dotnet restore
+--interactive`.
+
+**Y deja daño colateral:** el restore fallido **reescribe `obj/project.assets.json` vacío** —4 KB, con
+`"targets": {}`— así que después ni `--no-restore` sirve para compilar con lo que ya había.
+
+**La salida de emergencia, sin tocar el repo:** la caché global (`~/.nuget/packages/ncubo.puppeteer`)
+suele tener versiones viejas del motor. Se puede compilar contra una de ellas pasando la propiedad por
+línea de comandos, sin editar `Directory.Build.props`:
+
+```bash
+dotnet publish App/Examenes.Wasm -c Release -o PaginaDeDescarga/publicado \
+  -p:PublishTrimmed=false -p:VersionDelMotor=3.0.0-beta.10029-lector.4
+```
+
+⚠ **Eso produce un artefacto que NO es el que declara el repo.** Sirve para desbloquear una demo; no
+sirve para medir ni para citar cifras. Ver `D3`.
+
 ## 9 · Debian, no alpine
 
 **Síntoma:** `CultureNotFoundException` al **hidratar el actor** — lejos de la causa.

@@ -61,7 +61,7 @@
        entrara por el glob, chocarian dos definiciones de StdioShell y ademas arrastraria el
        SDK de MCP -las dos cosas que el stub existe para evitar. -->
   <Compile Include="..\Gnothi.Host\*.cs"
-           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs" />
+           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs" />
   <Compile Include="..\Gnothi.Assistant\*.cs" />
 
   <!-- LA CASCARA DEL TELEFONO, compartida con iOS. Vivia dentro de MainActivity.cs y se saco

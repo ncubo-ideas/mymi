@@ -24,6 +24,11 @@ internal sealed class InProcessShell : IShell
 	private static readonly string[] ClassMarks = ["McpServerToolTypeAttribute", "ModuleSurfaceAttribute"];
 	private static readonly string[] ToolMarks = ["McpServerToolAttribute", "QueryAttribute"];
 
+	// Y EL OTRO PUBLICO. Lo que pide la pantalla de la institucion, que no es lo mismo que lo
+	// que se publica hacia el asistente: medido sobre examenes, 2 tools declaradas contra 21
+	// lecturas del dominio. Ver ViewAttribute en Gnothi.Contract.
+	private static readonly string[] ViewMarks = ["ViewAttribute"];
+
 	private readonly string name;
 	private readonly string path;
 	private readonly string grantedFolder;
@@ -32,10 +37,24 @@ internal sealed class InProcessShell : IShell
 	private AssemblyLoadContext? context;
 	private Type? marked;
 
-	public InProcessShell(string name, Shell shell, string grantedFolder)
+	// QUEDARSE CARGADO MIENTRAS LA CARA ESTA ABIERTA, y solo la forma hibrida lo pide.
+	//
+	// Por omision este shell evicta despues de contestar, igual que stdio: un modulo vivo tiene
+	// la carpeta del journal abierta, y el asistente pregunta de a ratos. Pero una cara hibrida
+	// pregunta VARIAS VECES SEGUIDAS mientras la persona mira la pantalla, y ademas recibe
+	// entregas en el medio. Cargar y descargar entre cada pintada es caro y, peor, pone dos
+	// actores sobre el mismo journal: el Unload es COOPERATIVO -- no completa si el anterior dejo
+	// referencias vivas --, asi que el lector nuevo abre mientras el viejo todavia no solto.
+	//
+	// Sintoma medido el 2026-09-11 en el telefono: `FileNotFoundException: Temp file not found`
+	// justo despues de una entrega, en la consulta siguiente.
+	private readonly bool keepLoaded;
+
+	public InProcessShell(string name, Shell shell, string grantedFolder, bool keepLoaded = false)
 	{
 		this.name = name;
 		this.grantedFolder = grantedFolder;
+		this.keepLoaded = keepLoaded;
 		// The shell's first argument is the dll. Same field stdio uses, different meaning:
 		// there it is what gets executed, here it is what gets loaded.
 		path = Path.GetFullPath(shell.Arguments.Count > 0 ? shell.Arguments[0] : "");
@@ -119,19 +138,31 @@ internal sealed class InProcessShell : IShell
 				.Where(n => n is not null)
 				.Select(n => n!)]);
 		}
-		finally { Evict(); }
+		finally { if (!keepLoaded) Evict(); }
 	}
 
 	public Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
+		=> Ask(tool, arguments, accepts, ToolMarks);
+
+	// LO QUE PIDE LA CARA, y es OTRO CONJUNTO: los metodos marcados [View].
+	//
+	// Mismo camino, distinto marcador. No se mezcla con Invoke a proposito: si las dos puertas
+	// buscaran en el mismo conjunto, una consulta de pantalla podria llegar por la puerta del
+	// asistente -- y al reves, que es peor -- sin que nada lo impidiera.
+	public Task<object> View(string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts)
+		=> Ask(name, arguments, accepts, ViewMarks);
+
+	private Task<object> Ask(
+		string asked, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, string[] marks)
 	{
 		try
 		{
 			Type t = Start();
 
 			MethodInfo? method = t.GetMethods(Everything)
-				.FirstOrDefault(m => string.Equals(DeclaredName(m), tool, StringComparison.Ordinal));
+				.FirstOrDefault(m => string.Equals(NameUnder(m, marks), asked, StringComparison.Ordinal));
 
-			if (method is null) throw new InvalidOperationException($"module '{name}' does not expose '{tool}'");
+			if (method is null) throw new InvalidOperationException($"module '{name}' does not expose '{asked}'");
 
 			object? instance = method.IsStatic ? null : Build(t, 0);
 			object?[] values = [.. method.GetParameters().Select(p => Bind(p, arguments, accepts))];
@@ -148,20 +179,57 @@ internal sealed class InProcessShell : IShell
 
 			return Task.FromResult<object>(Project(raw) ?? new Dictionary<string, object?>());
 		}
-		finally { Evict(); }
+		finally { if (!keepLoaded) Evict(); }
+	}
+
+	// LA ENTREGA, POR EL MISMO CAMINO QUE UNA CONSULTA: se busca el metodo marcado, se arma la
+	// instancia con la carpeta concedida, se invoca. Lo unico distinto es el marcador y que la
+	// firma es fija -- (string) -> string -- asi que no hay nada que ligar.
+	//
+	// Y NO SE EVICTA AL TERMINAR, a diferencia de Invoke y ActualTools. Ahi descargar el
+	// contexto despues de contestar es correcto: la pregunta termino. Una entrega deja el
+	// journal escrito y lo mas probable es que enseguida venga una consulta a leerlo; descargar
+	// el ensamblado en el medio haria pagar la carga dos veces por una sola interaccion.
+	public Task<string> Deliver(string envelopeJson, CancellationToken ct)
+	{
+		ArgumentNullException.ThrowIfNull(envelopeJson);
+
+		Type t = Start();
+
+		MethodInfo? method = t.GetMethods(Everything).FirstOrDefault(m =>
+			m.GetCustomAttributes(false).Any(a => a.GetType().Name == "DeliverAttribute"));
+
+		if (method is null)
+			throw new NotSupportedException(
+				$"module '{name}' has no method marked with [Deliver]: it is a surface that only reads");
+
+		object? instance = method.IsStatic ? null : Build(t, 0);
+
+		object? raw;
+		try { raw = method.Invoke(instance, [envelopeJson]); }
+		catch (TargetInvocationException e) when (e.InnerException is not null) { throw e.InnerException; }
+
+		return Task.FromResult(raw as string ?? "");
 	}
 
 	private const BindingFlags Everything =
 		BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-	private static string? DeclaredName(MethodInfo m)
+	// EL NOMBRE BAJO EL QUE VIAJA, para el conjunto de marcadores que se le pase.
+	//
+	// Que reciba los marcadores en vez de mirarlos todos es lo que mantiene separados los dos
+	// publicos: ActualTools y el asistente preguntan por ToolMarks, la cara por ViewMarks, y una
+	// consulta de pantalla NO puede llegar por la puerta del asistente ni al reves.
+	private static string? NameUnder(MethodInfo m, string[] marks)
 	{
-		object? mark = m.GetCustomAttributes(false).FirstOrDefault(a => ToolMarks.Contains(a.GetType().Name));
+		object? mark = m.GetCustomAttributes(false).FirstOrDefault(a => marks.Contains(a.GetType().Name));
 		if (mark is null) return null;
-		// Both marks carry a 'Name'. McpServerTool may leave it null (then the method name is
-		// used); Query always has one.
+		// Every mark carries a 'Name'. McpServerTool may leave it null (then the method name is
+		// used); Query and View always have one.
 		return mark.GetType().GetProperty("Name")?.GetValue(mark) as string ?? m.Name;
 	}
+
+	private static string? DeclaredName(MethodInfo m) => NameUnder(m, ToolMarks);
 
 	// THE CONVENTION, and it has to be said out loud because it is the weakest part of this
 	// shell: any string a constructor asks for receives the granted folder. It works on all

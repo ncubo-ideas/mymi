@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonda de canales — PWA hacia Gnothi</title>
+<style>
+  :root { color-scheme: light dark; --l: #d0d3db; --s: #6b7080; --ok: #1d7a4d; --no: #b23a22; --du: #7a5aa8; }
+  body { margin: 0; padding: 14px; font: 14px/1.45 system-ui, sans-serif; }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  .sub { color: var(--s); font-size: 12px; margin-bottom: 14px; }
+  .barra { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  input { font: inherit; padding: 5px 7px; width: 6em; }
+  button { font: inherit; padding: 6px 11px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th, td { border: 1px solid var(--l); padding: 6px 7px; text-align: left; vertical-align: top; }
+  th { background: rgba(128,128,128,.12); font-size: 11px; letter-spacing: .04em; }
+  code, pre { font-family: ui-monospace, monospace; font-size: 11.5px; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; }
+  .v { font-weight: 600; white-space: nowrap; }
+  .v.si { color: var(--ok); } .v.no { color: var(--no); } .v.dd { color: var(--du); }
+  .nav { border: 1px solid var(--no); border-radius: 6px; padding: 10px 12px; margin-top: 16px; }
+  textarea { width: 100%; height: 190px; font-family: ui-monospace, monospace; font-size: 11px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Sonda de canales — de la PWA hacia Gnothi</h1>
+<div class="sub">
+  Mide <strong>dónde choca</strong> cada mecanismo, sirva o no. Un «no» con el error literal y la
+  versión de Chrome no se discute. <strong>Correr esto DENTRO de la PWA instalada</strong> (el ícono),
+  no en una pestaña: el veredicto de varias filas depende del origen y del modo standalone.
+</div>
+
+<div class="barra">
+  <label>puerto de loopback <input id="puerto" value="47623" inputmode="numeric"></label>
+  <button id="correr">Correr las sondas</button>
+  <button id="md">Volcar como markdown</button>
+</div>
+
+<table>
+  <thead><tr><th style="width:14%">mecanismo</th><th style="width:26%">intento</th><th style="width:9%">veredicto</th><th>lo que devolvió, literal</th></tr></thead>
+  <tbody id="filas"></tbody>
+</table>
+
+<div class="nav">
+  <strong>Las que se llevan la página.</strong> Un intent navega, así que destruyen los resultados de
+  arriba: volcá el markdown antes. Y el punto que miden es justamente que <em>no vuelven</em> — la
+  página no recibe nada de vuelta, solo pierde el foco.
+  <div class="barra" style="margin: 10px 0 0">
+    <button data-ir="intent://consulta/examenes#Intent;scheme=gnothi;package=com.ncubo.gnothi.host;end">intent:// al Host</button>
+    <button data-ir="gnothi://consulta/examenes">esquema propio gnothi://</button>
+    <button data-ir="content://com.android.externalstorage.documents/tree/primary%3A">navegar a content://</button>
+  </div>
+</div>
+
+<textarea id="salida" placeholder="el volcado en markdown aparece acá, listo para pegar en F1"></textarea>
+
+<script>
+const filas = document.getElementById('filas');
+const resultados = [];
+
+function fila(mecanismo, intento, veredicto, clase, detalle) {
+  resultados.push({ mecanismo, intento, veredicto, detalle });
+  // A LOGCAT TAMBIEN, y no es decoracion: Chrome manda la consola de la pagina a logcat, asi
+  // que `adb logcat -s chromium` saca la tabla entera del aparato sin capturas de pantalla y
+  // sin DevTools. Es el mismo instrumento que ya hace falta para el texto de los bloqueos.
+  console.log(`SONDA|${mecanismo}|${veredicto}|${String(detalle).replace(/\n/g, ' // ')}`);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${mecanismo}</td><td><pre>${esc(intento)}</pre></td>`
+    + `<td class="v ${clase}">${veredicto}</td><td><pre>${esc(detalle)}</pre></td>`;
+  filas.appendChild(tr);
+}
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const err = e => `${e && e.name ? e.name : typeof e}: ${e && e.message ? e.message : String(e)}`;
+
+// El entorno primero: sin esto ningun veredicto de abajo se puede citar.
+function entorno() {
+  const modo = ['standalone', 'minimal-ui', 'fullscreen', 'browser']
+    .find(m => matchMedia(`(display-mode: ${m})`).matches) || 'desconocido';
+  const chrome = (navigator.userAgent.match(/Chrome\/([\d.]+)/) || [])[1] || '?';
+  fila('entorno', 'display-mode · Chrome · origen',
+    modo === 'standalone' ? 'PWA' : 'PESTAÑA', modo === 'standalone' ? 'si' : 'no',
+    `display-mode=${modo}\nChrome ${chrome}\norigin=${location.origin}\nisSecureContext=${isSecureContext}\nUA=${navigator.userAgent}`);
+}
+
+// 1 · Sockets crudos. Direct Sockets es de Isolated Web Apps; se mide la ausencia, no se cita.
+function sockets() {
+  for (const nombre of ['TCPSocket', 'UDPSocket', 'TCPServerSocket']) {
+    const hay = nombre in self;
+    let detalle = `'${nombre}' in self === ${hay}`;
+    if (hay) { try { new self[nombre]('127.0.0.1', 1); detalle += '\nconstruyo sin tirar'; }
+               catch (e) { detalle += '\n' + err(e); } }
+    fila('sockets crudos', `'${nombre}' in self`, hay ? 'EXISTE' : 'NO EXISTE', hay ? 'si' : 'no', detalle);
+  }
+}
+
+// 2 · WebSocket a loopback. El texto del bloqueo NO llega a JS: sale por logcat -s chromium.
+function ws(puerto) {
+  return new Promise(resolve => {
+    const url = `ws://127.0.0.1:${puerto}/`;
+    let s;
+    try { s = new WebSocket(url); }
+    catch (e) {
+      fila('WebSocket a loopback', `new WebSocket('${url}')`, 'BLOQUEADO', 'no',
+        `tira en el constructor: ${err(e)}\n(el texto completo del bloqueo, en: adb logcat -s chromium)`);
+      return resolve();
+    }
+    const t0 = performance.now();
+    const cerrar = (que, v, c, extra) => {
+      fila('WebSocket a loopback', `new WebSocket('${url}')`, v, c,
+        `${que} a los ${Math.round(performance.now() - t0)} ms · readyState=${s.readyState}\n${extra}`);
+      try { s.close(); } catch {} resolve();
+    };
+    s.onopen  = () => cerrar('open', 'ABRE', 'si', 'habia alguien escuchando y el navegador lo permitio');
+    s.onerror = () => cerrar('error', 'FALLA', 'no',
+      'el evento error no trae motivo por diseño: mixto y "refused" se ven IGUAL desde JS.\n'
+      + 'Lo distingue el TIEMPO de arriba, y el texto exacto: adb logcat -s chromium.\n'
+      + 'Y WebSocket no tiene targetAddressSpace, asi que tampoco hay escotilla que probar.');
+    setTimeout(() => s.readyState <= 1 && cerrar('timeout', 'SIN RESPUESTA', 'dd', '3 s sin open ni error'), 3000);
+  });
+}
+
+// 3 · HTTP a loopback. La mitad del canal se mide SIN servidor: si el error es de red y no de
+// seguridad, el navegador lo dejo pasar. "refused" es un SI del navegador.
+// EL DISCRIMINADOR ES EL TIEMPO, y por eso se mide y se interpreta acá.
+// Un bloqueo por politica se decide ANTES de tocar la red: es inmediato. Un intento real que
+// nadie contesta paga los reintentos de TCP: son cientos de ms o segundos. La corrida de
+// escritorio dio 2026 ms, o sea que fue a la red de verdad.
+function comoLeerlo(ms) {
+  return ms < 100
+    ? `${ms} ms — INMEDIATO: huele a bloqueo por politica, decidido antes de tocar la red`
+    : `${ms} ms — TARDO: el intento salio a la red de verdad y nadie contesto (no fue bloqueo)`;
+}
+
+async function http(puerto) {
+  const base = `http://127.0.0.1:${puerto}/gnothi/ping`;
+
+  // Dos intentos: el normal, y el que pide explicitamente el espacio loopback. El segundo mide
+  // de paso si esta version de Chrome tiene la escotilla de Local Network Access -- que es
+  // justo la que WebSocket NO tiene.
+  for (const [etiqueta, init] of [
+    ['fetch normal', { cache: 'no-store' }],
+    ['fetch con targetAddressSpace:loopback', { cache: 'no-store', targetAddressSpace: 'loopback' }],
+  ]) {
+    const t0 = performance.now();
+    try {
+      const r = await fetch(base, init);
+      const ms = Math.round(performance.now() - t0);
+      fila('HTTP a loopback', `${etiqueta}\n${base}`, 'CONTESTA', 'si',
+        `HTTP ${r.status} en ${ms} ms\n${(await r.text()).slice(0, 200)}`);
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      fila('HTTP a loopback', `${etiqueta}\n${base}`, 'FALLA', 'dd',
+        `${err(e)}\n${comoLeerlo(ms)}\n` +
+        'El texto del motivo NO llega a JS. Instrumento: adb logcat -s chromium');
+    }
+  }
+}
+
+// 4 · content:// — el esquema del ContentProvider, desde contenido web.
+async function contentProvider() {
+  const url = 'content://com.android.externalstorage.documents/tree/primary%3A';
+  try { const r = await fetch(url); fila('content:// (fetch)', `fetch('${url}')`, 'CONTESTA', 'si', `HTTP ${r.status}`); }
+  catch (e) { fila('content:// (fetch)', `fetch('content://...')`, 'NO FETCHABLE', 'no', err(e)); }
+}
+
+// 5 · Shared Storage del W3C. Colision de nombre con el "shared storage" de Android: no es un
+// canal, es Privacy Sandbox. Se mide para poder decirlo con el objeto en la mano.
+function sharedStorage() {
+  const hay = 'sharedStorage' in window;
+  let detalle = `'sharedStorage' in window === ${hay}`;
+  if (hay) {
+    // OJO: la primera version caminaba el prototipo a ciegas y reportaba
+    // "length, name, constructor, apply, bind, call, toString, arguments, caller" --
+    // que es Function.prototype, no la API. Se pregunta por los metodos que importan.
+    const x = window.sharedStorage;
+    detalle += `\ntypeof === ${typeof x}`;
+    detalle += `\nconstructor === ${x && x.constructor ? x.constructor.name : '?'}`;
+    detalle += '\nmetodos: ' + ['set', 'append', 'delete', 'clear', 'get', 'run', 'selectURL', 'worklet']
+      .map(m => `${m}=${x && typeof x[m] !== 'undefined'}`).join(' ');
+  }
+  fila('Shared Storage (W3C)', `'sharedStorage' in window`, hay ? 'EXISTE' : 'NO EXISTE', hay ? 'dd' : 'no',
+    detalle + '\nNo es un canal a otra app: es Privacy Sandbox, con lectura solo por output gates.');
+}
+
+// 6 · Lo que SI tiene hoy: el picker (asi funciona A2/A3) y la deteccion del Host instalado.
+async function loQueSiHay() {
+  fila('File System Access', `typeof showDirectoryPicker`,
+    typeof window.showDirectoryPicker === 'function' ? 'EXISTE' : 'NO EXISTE',
+    typeof window.showDirectoryPicker === 'function' ? 'si' : 'no',
+    `typeof === ${typeof window.showDirectoryPicker}\nEs el mecanismo de A2/A3: la carpeta ES el canal.`);
+
+  if (!navigator.getInstalledRelatedApps) {
+    return fila('getInstalledRelatedApps', 'navigator.getInstalledRelatedApps', 'NO EXISTE', 'no', 'undefined');
+  }
+  try {
+    const apps = await navigator.getInstalledRelatedApps();
+    fila('getInstalledRelatedApps', 'await getInstalledRelatedApps()', apps.length ? 'VE EL HOST' : 'LISTA VACIA',
+      apps.length ? 'si' : 'no',
+      JSON.stringify(apps) + '\nSolo presencia: no lleva ni trae datos. Sirve para el token, no para pintar.');
+  } catch (e) { fila('getInstalledRelatedApps', 'await getInstalledRelatedApps()', 'TIRA', 'no', err(e)); }
+}
+
+async function correr() {
+  filas.innerHTML = ''; resultados.length = 0;
+  const puerto = (document.getElementById('puerto').value || '47623').replace(/\D/g, '');
+  entorno();
+  sockets();
+  sharedStorage();
+  await loQueSiHay();
+  await contentProvider();
+  await http(puerto);
+  await ws(puerto);
+}
+
+document.getElementById('correr').onclick = correr;
+
+document.getElementById('md').onclick = () => {
+  const l = ['| mecanismo | intento | veredicto | lo que devolvió |', '|---|---|---|---|'];
+  for (const r of resultados)
+    l.push(`| ${r.mecanismo} | \`${r.intento}\` | **${r.veredicto}** | ${String(r.detalle).replace(/\n/g, '<br>')} |`);
+  document.getElementById('salida').value = l.join('\n');
+};
+
+for (const b of document.querySelectorAll('[data-ir]'))
+  b.onclick = () => {
+    const destino = b.dataset.ir, t0 = Date.now();
+    // Si la pagina sigue viva al volver, el intent no dio nada de vuelta: eso es la medicion.
+    addEventListener('visibilitychange', function una() {
+      if (document.visibilityState !== 'visible') return;
+      removeEventListener('visibilitychange', una);
+      alert(`volviste a los ${Date.now() - t0} ms.\nLa pagina no recibio NADA: un intent no tiene valor de retorno.`);
+    });
+    location.href = destino;
+  };
+
+correr();
+</script>
+</body>
+</html>

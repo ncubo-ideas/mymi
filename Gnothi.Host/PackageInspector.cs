@@ -23,7 +23,20 @@ namespace Gnothi.Host;
 //
 // WHAT IT DOES NOT DO: authenticate. It says what the package carries, not who stands behind
 // it. That is the origin and signature work, and it is deliberately a separate step.
-public enum PackageForm { Cargo, Hosted }
+// THE THIRD FORM, and it is the one the phone needs: web/ for the FACE, dominio/ for the
+// SURFACE, and no engine anywhere.
+//
+// Cargo lends the engine but brings no screen -- the Host renders view.json. Hosted brings the
+// screen but carries its own engine: measured on examenes, running .NET in a browser is 88,8%
+// of the bundle and the engine another 8,6%, against 188 KB for the same module in process.
+// HYBRID is the two halves that were never allowed to meet: the institution keeps its screen,
+// and the engine is the Host's -- one engine, one owner of the journal.
+//
+// It used to be refused by name ("a module is cargo or hosted, not both"), with a test holding
+// the line. That was a real decision, not an oversight, and what it protected was the shell
+// being decidable from the package alone. A third value keeps that: the form is still read off
+// what the package carries, it is just no longer a binary.
+public enum PackageForm { Cargo, Hosted, Hybrid }
 
 // One file inside the package: its path as the zip names it, and its size.
 public sealed record PackageEntry(string Path, long Length);
@@ -34,8 +47,8 @@ public sealed record PackageInspection
 	public int Files { get; init; }
 	public long Bytes { get; init; }
 
-	// Engine files found inside a hosted package. Always zero for cargo: there they are
-	// rejections, not a count.
+	// Engine files found inside a hosted package. Always zero for cargo AND for hybrid: in
+	// both of those they are rejections, not a count.
 	public int EngineFiles { get; init; }
 	public long EngineBytes { get; init; }
 
@@ -85,15 +98,23 @@ public static class PackageInspector
 		// one module, and one that says neither has nothing Gnothi could run.
 		bool declaresLoad = manifest.Load is not null && !string.IsNullOrWhiteSpace(manifest.Load.Entry);
 		bool carriesWeb = files.Any(f => f.Path.StartsWith("web/", OIC));
-		PackageForm form = declaresLoad ? PackageForm.Cargo : PackageForm.Hosted;
+		// WHAT IT CARRIES IS WHAT IT IS. Declaring load.entry AND carrying web/ used to be the
+		// refusal; now it is the hybrid, and the two checks below stop being alternatives: a
+		// hybrid has to satisfy BOTH, because it has both halves.
+		PackageForm form = (declaresLoad, carriesWeb) switch
+		{
+			(true, true) => PackageForm.Hybrid,
+			(true, false) => PackageForm.Cargo,
+			_ => PackageForm.Hosted,
+		};
 
-		if (declaresLoad && carriesWeb)
-			rejections.Add("declares 'load.entry' AND carries a web/ folder: a module is cargo or hosted, not both");
-		else if (!declaresLoad && !carriesWeb)
+		if (!declaresLoad && !carriesWeb)
 			rejections.Add("declares no 'load.entry' and carries no web/ folder: there is nothing to load");
-		else if (declaresLoad && !files.Any(f => f.Path.Equals(manifest.Load!.Entry.Replace('\\', '/'), OIC)))
+
+		if (declaresLoad && !files.Any(f => f.Path.Equals(manifest.Load!.Entry.Replace('\\', '/'), OIC)))
 			rejections.Add($"'load.entry' names {manifest.Load!.Entry}, which is not in the package");
-		else if (!declaresLoad && !files.Any(f => f.Path.Equals("web/index.html", OIC)))
+
+		if (carriesWeb && !files.Any(f => f.Path.Equals("web/index.html", OIC)))
 			rejections.Add("carries a web/ folder with no web/index.html: the app cannot start");
 
 		int engineFiles = 0;
@@ -122,15 +143,33 @@ public static class PackageInspector
 				rejections.Add($"carries a sample journal: {path}");
 
 			bool insideWeb = path.StartsWith("web/", OIC);
+			bool insideDomain = path.StartsWith("dominio/", OIC);
+
 			if (IsEngine(name))
 			{
-				if (form == PackageForm.Cargo || !insideWeb) rejections.Add($"carries the engine: {path}");
-				else { engineFiles++; engineBytes += f.Length; }
+				// HOSTED IS THE ONLY FORM THAT MAY CARRY IT, and only inside web/: there the
+				// engine runs in the browser, where the Host has none to lend.
+				//
+				// HYBRID EXISTS PRECISELY TO NOT CARRY IT -- that is the whole promise of the
+				// form -- so there it is refused even inside web/. A hybrid whose face brought
+				// its own engine would have two of them over one journal, which is the thing
+				// the form was invented to end.
+				if (form == PackageForm.Hosted && insideWeb) { engineFiles++; engineBytes += f.Length; }
+				else rejections.Add($"carries the engine: {path}");
 			}
-			else if (IsBcl(name) && (form == PackageForm.Cargo || !insideWeb))
+			else if (IsBcl(name) && !insideWeb)
+			{
+				// Unchanged in meaning: cargo cannot carry a web/ at all, so asking about the
+				// form here never said anything the path did not already say.
 				rejections.Add($"carries the BCL: {path}");
-			else if (form == PackageForm.Hosted && !insideWeb && name.EndsWith(".dll", OIC))
-				rejections.Add($"a hosted module loads nothing outside web/: {path}");
+			}
+			else if (!insideWeb && name.EndsWith(".dll", OIC))
+			{
+				if (form == PackageForm.Hosted)
+					rejections.Add($"a hosted module loads nothing outside web/: {path}");
+				else if (form == PackageForm.Hybrid && !insideDomain)
+					rejections.Add($"a hybrid module loads nothing outside web/ and dominio/: {path}");
+			}
 		}
 
 		return new PackageInspection

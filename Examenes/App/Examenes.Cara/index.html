@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mis exámenes</title>
+<link rel="stylesheet" href="cara.css">
+</head>
+<body>
+
+<!--
+  LA CARA DE LA FORMA HIBRIDA, y lo importante es lo que NO tiene.
+
+  No trae motor: la aduana del Host lo rechaza incluso adentro de web/ (PackageInspector), y
+  esa es la promesa entera de la forma. Tampoco trae dominio ni superficie: esos viajan al
+  lado, en dominio/*.dll, y corren sobre el motor que presta Gnothi. Tampoco trae un runtime:
+  la forma hospedada pesa 12,3 MB y el 88,8% de eso es correr .NET en un navegador -- medido.
+
+  ES LA MISMA PANTALLA DE LA APP SUELTA, no una parecida. La portada con sus veredictos, las
+  tarjetas de serie con su chip y su referencia, las CINCO formas de dibujo, y el historial
+  como cronologia de visitas: todo eso salio de Examenes.Wasm/Pages/MisExamenes.razor y de
+  Examenes.Wasm/Formas/*.razor, portado a JS plano. Cuando alguien abre su laboratorio tiene
+  que reconocerlo en un segundo, y que por dentro el motor sea prestado no cambia de quien es
+  la pantalla.
+
+  Y LO QUE PINTA NO SON LAS TOOLS. Las dos tools declaradas son lo que el ASISTENTE puede
+  preguntar; una pantalla necesita series, puntos y lineas de referencia. Eso viaja por [View],
+  que no esta en el manifiesto y el modelo nunca ve.
+-->
+
+<!-- EL BLOQUE DE MARCA. La gota por la muestra, el circulo por el oraculo; solo trazo, nunca
+     relleno. El SVG es el mismo de la pagina, a 40 px -- sobre oscuro va en blanco, y el blanco
+     lo dice el token para que el manual viva en un solo lugar. -->
+<div class="marca">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+         fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" />
+        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+    </svg>
+    <div>
+        <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+        <div class="marca-claim">Al servicio de su salud desde 1987</div>
+    </div>
+</div>
+
+<h1 class="titular">Mis exámenes</h1>
+
+<!-- LA PORTADA, con Actualizar ADENTRO y no en una fila suelta debajo. Es el boton que vuelve a
+     contestar la pregunta que contesta esta tarjeta: si el rotulo dice «hoy», entonces «¿esto es
+     de hoy?» pertenece aca y a ningun otro lado. Suelto le competia el ojo al titular, que es lo
+     unico que alguien tiene que leer si no lee nada mas.
+
+     Aca ademas Actualizar significa otra cosa que en la app suelta: no sale a la red -- no puede
+     y no le hace falta -- sino que le pide a GNOTHI que traiga lo nuevo. El cartero es el. -->
+<section class="portada">
+    <div class="portada-cabeza">
+        <p class="portada-rotulo">tu expediente, hoy</p>
+        <button class="portada-releer" id="releer" aria-busy="false">Actualizar</button>
+    </div>
+
+    <!-- aria-live: este bloque ES la respuesta a Actualizar. Sin esto la unica senial de que la
+         app fue y volvio es una animacion. -->
+    <div class="portada-cuerpo" id="portada" aria-live="polite">
+        <p class="apunte">preguntándole a Gnothi…</p>
+    </div>
+</section>
+
+<!-- EL PEDIDO DEL DATO QUE FALTA. Va antes de las series y no adentro de la portada: no es un
+     veredicto sobre el expediente, es algo que el modulo necesita para poder leerlo. -->
+<div id="pedido"></div>
+
+<h2 class="seccion">Cómo vienen tus valores</h2>
+<div id="series"><p class="apunte">preguntándole a Gnothi…</p></div>
+
+<h2 class="seccion">Tu historial</h2>
+<div id="historial"><p class="apunte">preguntándole a Gnothi…</p></div>
+
+<footer>
+  <p>El registro vive en este dispositivo. Esta pantalla no sale a la red:
+     le pregunta a Gnothi, y Gnothi responde con el motor que le presta.</p>
+  <p class="apunte mono" id="conexion">—</p>
+</footer>
+
+<script src="cara.js"></script>
+</body>
+</html>
