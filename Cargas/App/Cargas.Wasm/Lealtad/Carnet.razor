@@ -10,21 +10,29 @@
    LO QUE LLEVA ES EL NÚMERO DE SOCIA Y NADA MÁS. No la llave con la que la app se baja el
    historial: ésa se cambia por un token, así que un carnet que la llevara sería una
    credencial fotografiable. *@
+@* EL CARNET ES EL PROTAGONISTA DE LEALTAD: por eso lleva su propio degradado teal/petróleo
+   -no el gris de un instrumento más-, la marca de Faro como agua marca (el mismo logo real
+   del header, no uno inventado) y el nivel en una placa ámbar: es el único acento de ese
+   color acá, porque el nivel es el dato "premium" de la tarjeta. Nada de esto toca el QR:
+   ViewBox, Matriz/TrazoSvg y el fill/d de abajo siguen exactamente igual. *@
 @if (lealtad.EstaAfiliada)
 {
     <div class="carnet">
         <div class="carnet-datos">
-            <span class="rotulo">Carnet de socia</span>
+            <div class="carnet-cabeza">
+                <span class="rotulo">Carnet de socia</span>
+                <img class="carnet-marca" src="assets/logo-estaciones-faro.png" alt="" aria-hidden="true" />
+            </div>
             @if (lealtad.NombreDelSocio.Length > 0)
             {
                 <div class="carnet-nombre">@lealtad.NombreDelSocio</div>
             }
             <div class="carnet-numero">@lealtad.NumeroDeSocio</div>
-            <div class="cifra-pie">
-                socia desde @lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)
+            <div class="cifra-pie carnet-pie">
+                <span>socia desde @lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)</span>
                 @if (lealtad.Nivel.Length > 0)
                 {
-                    <text> &middot; nivel <b>@lealtad.Nivel</b></text>
+                    <span class="carnet-nivel">@lealtad.Nivel</span>
                 }
             </div>
         </div>

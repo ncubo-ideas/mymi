@@ -22,10 +22,13 @@
  *     página y lleva un filo de luz arriba: se lee como algo empotrado, no como un
  *     papel encima de un fondo.
  *
- * SIN BOOTSTRAP Y CERO WEBFONTS, igual que antes y por la misma razón medida: con un
- * payload sin trimming de ~35 MB, no agregar descargas de fuentes es una decisión que
- * conviene no romper después «por diseño».
+ * SIN BOOTSTRAP. LA TIPOGRAFÍA YA NO ES CERO WEBFONTS: la pantalla de Inicio pedía una
+ * sans más legible que la del sistema, y Plus Jakarta Sans ya vive AUTOALOJADA en este
+ * mismo monorepo (Examenes.Wasm, Compras.Wasm) — cuatro archivos .woff2 de ~12 KB cada
+ * uno, sin CDN ni Google Fonts. Es el mismo trade que ya hicieron esos proyectos: un
+ * costo chico, conocido y de una sola vez, no una dependencia nueva abierta.
  *
+
  * EL ÁMBAR TIENE UN SOLO TRABAJO: marcar lo que exige atención. El ROJO está RESERVADO
  * y lo produce solo el dominio con la severidad «urgente». Y el semáforo NO pinta la
  * aguja de la autonomía por más que un medidor de gasolina rojo sea idioma universal:
@@ -40,15 +43,21 @@
        que delata que la oscuridad es un CSS y no un producto. */
     color-scheme: dark;
 
-    /* ⚠️ PALETA PROVISIONAL: teal petróleo + cobre, el candidato del brief §3, a la
-       espera de la especificación de Geaninna. Se conservan los valores que ya estaban
-       —lo provisional no es lo que había que rediseñar— y los nombres se enderezaron:
-       el token de marca se llamaba «--azul» y hace rato que no lo es. Cuando llegue la
-       spec, el cambio es este bloque y nada más. */
+    /* ⚠️ PALETA PROVISIONAL: teal petróleo + turquesa, el candidato del brief §3, a la
+       espera de la especificación de Geaninna. El nombre --cobre quedó del cobre
+       original del brief, pero YA NO ES COBRE: es el turquesa de soporte de Faro en
+       toda la app -íconos, enlaces, trazos, foco-, global desde esta ronda y no solo
+       dentro de .inicio. Renombrarlo tocaría 37 usos por un cambio cosmético; el valor
+       es lo que importa, y ya está enderezado. */
     --marca:       #14586b;   /* teal petróleo: el color institucional */
     --marca-viva:  #1d7186;
-    --cobre:       #d9915e;   /* acentos: rótulos vivos, trazos, agujas, enlaces */
+    --cobre:       #5fd8d0;   /* turquesa de soporte: rótulos vivos, trazos, agujas, enlaces */
     --logo:        #ffffff;
+
+    /* EL SPRITE OFICIAL DE ÍCONOS, respaldado en el repo -no en Downloads ni en un
+       adjunto-: wwwroot/assets/sprite-iconos-faro.png. Una sola variable acá para
+       que .faro-icon (más abajo) sea el único lugar que conoce la ruta. */
+    --sprite-faro: url('../assets/sprite-iconos-faro.png');
 
     /* LA SUPERFICIE. El tablero es más oscuro que el fondo de Delfos a propósito: un
        instrumento se lee por contraste, y el teal claro de la marca no da esa base. */
@@ -67,18 +76,24 @@
     --bisel-control: rgba(126, 196, 207, .55);
     --brillo:      rgba(226, 246, 250, .16);   /* la luz que corre por el filo de arriba */
 
-    --tinta:       #e8f4f6;   /* texto principal */
+    --tinta:       #e8f4f6;   /* texto principal: blanco cálido */
     --tenue:       #9dbcc3;   /* texto secundario */
-    --tenue-2:     #6f9199;   /* rótulos, pies, unidades */
+    /* TERCIARIO, PERO LEGIBLE: rótulos, pies, fechas, unidades. Antes #6f9199 daba 5.4:1
+       sobre --fondo y 4.66:1 sobre --cara -pasa AA por poco, y en 11-13px se sentía
+       "apagado"-. #8fb2b8 da 8.06:1 / 6.95:1: mismo teal-gris terciario, con margen real.
+       MEDIDO. */
+    --tenue-2:     #8fb2b8;
 
-    /* La acción: el cobre del brief. Un tablero tiene pocas teclas y todas hacen algo. */
-    --accion:      #c2703d;
-    --accion-viva: #d9814a;
-    /* LA TINTA SOBRE EL COBRE ES OSCURA, no blanca. Blanco sobre --accion da 3.70:1 y sobre
-       el hover 2.92:1 —debajo del AA de 4.5 para texto de 14 px—, y es la primera tecla que ve
-       cualquiera. Oscuro da 5.00:1 y 6.33:1, y además es lo que ya hacían las otras dos teclas
-       de color (ámbar y rojo): la primaria era la única distinta. MEDIDO. */
-    --sobre-cobre: #1f1008;
+    /* AMARILLO FARO: la acción, global -ya no solo dentro de .inicio-. Es lo mismo que
+       pedía la spec como "--amarillo-faro/-hover/-suave"; se ajustaron estos tres
+       ---accion/--accion-viva/--sobre-cobre- en vez de forkear un nombre paralelo, para
+       no tener dos sistemas de "el amarillo" conviviendo. El cobre quemado de antes
+       (#c2703d) leía mostaza; este es un dorado vivo y saturado, no un ámbar sucio. */
+    --accion:      #ffc93d;   /* --amarillo-faro */
+    --accion-viva: #f0b323;   /* --amarillo-faro-hover: más profundo, no más pálido -es "presionado" */
+    /* LA TINTA SOBRE EL AMARILLO ES OSCURA. Blanco encima no pasaría ni cerca del AA;
+       oscuro dio 11.7:1 sobre --accion y 10.1:1 sobre --accion-viva. MEDIDO. */
+    --sobre-cobre: #201404;
 
     /* EL SEMÁFORO, con los valores exactos de la §5 para fondo oscuro. Es lo único que
        Geaninna marcó como no negociable, y sigue igual: lo que cambió es la forma, no
@@ -97,13 +112,130 @@
     --rojo-suave:  rgba(248, 113, 113, .12);
     --rojo-borde:  rgba(248, 113, 113, .35);
 
-    /* DOS FAMILIAS Y NINGUNA SERIF. La sans para lo que se lee, la mono para todo
-       número: en un tablero las cifras son el contenido, no una anotación. */
-    --sans:   "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
-    --cifras: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* EL TURQUESA DE FARO: el acento de SOPORTE -íconos, chips, enlaces, la curva de la
+       chispa- en las pantallas que siguen la dirección visual del mock (por ahora,
+       Inicio). Nunca reemplaza al ámbar, que es el único que dirige una acción. */
+    --aqua:        #5fd8d0;
+    --aqua-suave:  rgba(95, 216, 208, .14);
+    --aqua-borde:  rgba(95, 216, 208, .34);
+
+    /* UNA SOLA FAMILIA PARA TODO LO QUE SE LEE, NINGUNA SERIF. --cifras YA NO ES
+       MONOESPACIADA: era ui-monospace/SFMono, y una cifra en fuente de código lee
+       "terminal", no Faro. Los números siguen alineándose con
+       font-variant-numeric: tabular-nums -Plus Jakarta Sans trae cifras tabulares
+       como feature OpenType-, así que la alineación de columnas no se pierde; lo que
+       cambia es la familia. El nombre --cifras se queda igual a propósito: son ~20
+       reglas en esta hoja las que ya lo usan (montos, fechas, litros, placa...), y
+       renombrar la variable por un cambio de valor sería tocarlas todas para nada. */
+    --sans:   'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI",
+              Roboto, "Helvetica Neue", Arial, sans-serif;
+    --cifras: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI",
+              Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* LA ÚNICA MONOESPACIADA QUE QUEDA: texto técnico de verdad -detalle de un error,
+       un stack trace-, donde el monospace preserva alineación real y además marca
+       "esto es un mensaje del sistema, no la voz de la app". Nunca para un número que
+       la persona lee como dato del carro. */
+    --tecnica: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    /* LA ESCALA TIPOGRÁFICA, en un solo lugar. No reemplaza cada font-size que ya
+       existe en esta hoja -sería un refactor mecánico de cientos de reglas para una
+       ronda que es puramente visual, con el riesgo de romper algo en las cuatro
+       pantallas sin poder revisarlas una por una-, pero es la referencia para toda
+       regla nueva o retocada de acá en adelante, y ya la usan .rotulo, .cifra, .tecla
+       y las reglas de Inicio. Pesos: 700-800 titulares y datos, 600 subtítulos/labels,
+       400-500 cuerpo, 600-700 acciones -igual que pide la jerarquía de Faro-. */
+    --fs-hero:       clamp(26px, 8vw, 32px);
+    --fs-titulo:     19px;   /* título de sección/pantalla */
+    --fs-subtitulo:  16px;   /* título de tarjeta, 15-18px */
+    --fs-dato:       21px;   /* montos, cifras, valores protagonistas */
+    --fs-cuerpo:     15px;   /* texto normal, 14-16px */
+    --fs-secundario: 13px;   /* texto secundario, 12-14px */
+    --fs-label:      12px;   /* rótulos/versalitas, 11-13px */
+
+    --fw-titulo:     800;
+    --fw-subtitulo:  700;
+    --fw-dato:       700;
+    --fw-cuerpo:     400;
+    --fw-label:      600;
+    --fw-accion:     700;
+}
+
+/* CUATRO @font-face, uno por peso -400/500/600/700, los únicos que pide la jerarquía
+   de esta pantalla-. Sin font-display: swap el texto no se ve hasta que carga: con
+   ~12 KB por peso no hace falta, ya que Plus Jakarta Sans no viene instalada en los
+   sistemas operativos. Archivos en wwwroot/fuentes/, copiados tal cual de
+   Examenes.Wasm -misma fuente, mismo autoalojo, sin duplicar la decisión de licencia. */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-400.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-500.woff2') format('woff2');
+    font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-600.woff2') format('woff2');
+    font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-700.woff2') format('woff2');
+    font-weight: 700; font-style: normal; font-display: swap;
 }
 
 * { box-sizing: border-box; }
+
+/* ============================================================================
+   EL SPRITE DE ÍCONOS FARO. Un solo PNG respaldado en el repo
+   (wwwroot/assets/sprite-iconos-faro.png, 2172×724, con transparencia -diseñado
+   para leerse sobre el petróleo oscuro, no sobre blanco-) y una clase base +
+   un modificador por ícono, en vez de cuarenta archivos sueltos.
+
+   POR QUÉ background-position Y NO recortar archivos: la grilla del sprite no es
+   perfectamente uniforme -no todos los íconos miden lo mismo ni caen a distancias
+   iguales-, así que cada modificador lleva su propio background-size/position,
+   medidos una sola vez sobre el PNG real (no a ojo) y no un cálculo por fórmula
+   que asumiría celdas parejas.
+
+   EL COLOR YA VIENE HORNEADO EN EL PNG -no es currentColor-: el sprite fue
+   dibujado con la semántica de la casa ya adentro (ámbar = acción/atención,
+   blanco-gris = neutro, menta = positivo), así que cada ícono se usa donde ESE
+   color ya es el que corresponde; no se fuerza un ícono a un lugar cuyo color no
+   le sirve. Por eso los íconos de las pestañas -que cambian de color solos entre
+   activo/inactivo- siguen siendo SVG con stroke=currentColor: eso un PNG no lo
+   puede hacer. */
+.faro-icon {
+    display: inline-block; flex: none; vertical-align: middle;
+    background-image: var(--sprite-faro);
+    background-repeat: no-repeat;
+}
+
+.faro-icon--alerta      { width: 17.4px;  height: 16px; background-size: 609.68px 203.23px; background-position: -21.05px -129.68px; }
+.faro-icon--confirmado  { width: 16.47px; height: 16px; background-size: 511.06px 170.35px; background-position: -85.18px -107.53px; }
+.faro-icon--carro       { width: 21.15px; height: 16px; background-size: 589.02px 196.34px; background-position: -57.76px -21.69px; }
+.faro-icon--actualizar  { width: 17px;    height: 17px; background-size: 659.36px 219.79px; background-position: -111.71px -23.98px; }
+.faro-icon--rendimiento { width: 13.9px;  height: 13px; background-size: 486.83px 162.28px; background-position: -115.43px -45.95px; }
+.faro-icon--odometro    { width: 19.09px; height: 16px; background-size: 609.68px 203.23px; background-position: -101.89px -57.54px; }
+.faro-icon--flecha      { width: 6.6px;   height: 12px; background-size: 651.6px  217.2px;  background-position: -386.4px -103.5px; }
+.faro-icon--combustible { width: 12.85px; height: 16px; background-size: 489.46px 163.15px; background-position: -16.23px  -16.45px; }
+.faro-icon--gasto       { width: 21.53px; height: 18px; background-size: 766.59px 255.53px; background-position: -232.94px -73.76px; }
+.faro-icon--ultimacarga { width: 14.46px; height: 18px; background-size: 698.14px 232.71px; background-position: -120.54px -108px; }
+.faro-icon--carnet      { width: 24.76px; height: 20px; background-size: 689.52px 229.84px; background-position: -300.63px -24.13px; }
+.faro-icon--inicio      { width: 18.72px; height: 18.4px; background-size: 689.05px 229.68px; background-position: -163.38px -24.43px; }
+.faro-icon--cargas      { width: 14.77px; height: 18.4px; background-size: 562.88px 187.63px; background-position: -18.66px  -18.92px; }
+.faro-icon--exportar    { width: 15.21px; height: 17px; background-size: 647.79px 215.93px; background-position: -241.58px -100.21px; }
+.faro-icon--importar    { width: 15.74px; height: 17px; background-size: 683.78px 227.93px; background-position: -302.85px -106.41px; }
+.faro-icon--documento   { width: 17.38px; height: 20px; background-size: 712.13px 237.38px; background-position: -217.70px -25.25px; }
+.faro-icon--estrella    { width: 18.89px; height: 18px; background-size: 640.92px 213.64px; background-position: -237.25px -59.31px; }
+.faro-icon--premio      { width: 17.38px; height: 18px; background-size: 674.07px 224.69px; background-position: -343.24px -63.62px; }
+.faro-icon--boleto      { width: 20.62px; height: 16px; background-size: 772.27px 257.42px; background-position: -445.16px -75.38px; }
+@media (max-width: 767.98px) {
+    .faro-icon--inicio { width: 21.97px; height: 21.6px; background-size: 808.88px 269.63px; background-position: -191.79px -28.68px; }
+    .faro-icon--cargas { width: 17.34px; height: 21.6px; background-size: 660.78px 220.26px; background-position: -21.9px  -22.21px; }
+}
 
 html { background: var(--fondo); }
 
@@ -130,11 +262,14 @@ h1:focus, h1:focus-visible { outline: none; }
 
 .tablero { max-width: 74rem; margin: 0 auto; padding: 22px 22px 72px; }
 
-/* Versalita espaciada: el rótulo de un instrumento no compite con su cifra. */
+/* Versalita espaciada: el rótulo de un instrumento no compite con su cifra.
+   10.5px ERA DEMASIADO CHICO -por debajo de cualquier guía de legibilidad-; --fs-label
+   (12px) es el piso de la escala para texto en mayúsculas, y el tracking baja de .155em
+   a .1em: espaciado excesivo entre letras hace más lento el escaneo, no más elegante. */
 .rotulo {
     display: block;
-    font-size: 10.5px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .155em;
+    font-size: var(--fs-label); font-weight: var(--fw-label);
+    text-transform: uppercase; letter-spacing: .1em;
     color: var(--tenue-2);
 }
 
@@ -143,8 +278,8 @@ h1:focus, h1:focus-visible { outline: none; }
    tiene que leerse como tal. En Mi carro todo eran rótulos de 10.5 px y no había ningún
    nivel entre la marca y los campos. */
 .seccion-titulo {
-    margin: 26px 0 10px; font-size: 15px; font-weight: 600; line-height: 1.3;
-    color: var(--tinta); letter-spacing: 0;
+    margin: 26px 0 10px; font-size: var(--fs-subtitulo); font-weight: var(--fw-subtitulo);
+    line-height: 1.3; color: var(--tinta); letter-spacing: 0;
 }
 .seccion-titulo:first-child { margin-top: 0; }
 
@@ -156,7 +291,7 @@ h1:focus, h1:focus-visible { outline: none; }
     overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
 }
 
-.apunte { color: var(--tenue); font-size: 13.5px; }
+.apunte { color: var(--tenue); font-size: var(--fs-secundario); line-height: 1.45; }
 /* LA PROSA TIENE TOPE. Los apuntes de Mi carro y Lealtad corrían a los 74 rem de la página:
    más de 150 caracteres por línea, y el ojo pierde el renglón al volver. 60ch es la medida de
    lectura; los instrumentos no la necesitan porque no son prosa. Solo en bloque: el .apunte
@@ -190,11 +325,9 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 }
 
 .marca { display: flex; align-items: center; gap: 10px; }
-.marca svg { width: 30px; height: 30px; flex: none; }
-.marca-nombre {
-    font-size: 14.5px; font-weight: 600; letter-spacing: .02em; color: var(--tinta);
-    line-height: 1.2;
-}
+/* EL LOGO OFICIAL. El archivo ya es "ESTACIONES FARO" como imagen -no hace falta
+   repetir el nombre al lado-, así que la marca queda en logo + claim. */
+.marca-logo { height: 34px; width: auto; display: block; }
 .marca-claim { font-size: 11px; color: var(--tenue-2); letter-spacing: .06em; }
 
 /* LA PLACA, con forma de placa. Es el «de quién es este tablero» y no hacía falta
@@ -204,7 +337,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     padding: 4px 11px; border-radius: 5px;
     background: var(--cara-honda); border: 1px solid var(--bisel-vivo);
     font-family: var(--cifras); font-variant-numeric: tabular-nums;
-    font-size: 13px; letter-spacing: .09em; color: var(--tinta);
+    font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--tinta);
 }
 .placa .apodo {
     font-family: var(--sans); letter-spacing: 0; font-size: 13px; color: var(--tenue);
@@ -227,6 +360,18 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 .placa--selector:hover { border-color: var(--cobre); }
 .placa--selector:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
 .placa--selector option { background: var(--cara); color: var(--tinta); }
+
+/* EL ÍCONO DE CARRO, acceso directo a Mi carro desde el capó -sin esperar a que la
+   navegación se simplifique para adelantar el acceso rápido que pide esa dirección.
+   Ícono del sprite -viene en ámbar, "acción/selección"- y no el SVG a mano. */
+.capo-icono {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 999px; flex: none;
+    border: 1px solid var(--bisel); text-decoration: none;
+    transition: border-color .12s ease;
+}
+.capo-icono:hover { border-color: var(--cobre); }
+.capo-icono:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
 
 /* ------------------------------------------------------------------ las pestañas
 
@@ -252,16 +397,26 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 .pestana:hover { color: var(--tinta); background: rgba(126, 196, 207, .08); }
 .pestana:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
 
-/* La clase `active` la pone NavLink de Blazor; no hay modificador propio. */
+/* La clase `active` la pone NavLink de Blazor; no hay modificador propio.
+   EL SUBRAYADO ACTIVO VA EN ÁMBAR -"amarillo Faro"-, no en --cobre: es la pestaña en la
+   que estás, y ese es el único trabajo del ámbar en esta barra. */
 .pestana.active { color: var(--tinta); }
 .pestana.active::after {
     content: "";
     position: absolute; left: 13px; right: 13px; bottom: -15px;
     height: 3px; border-radius: 3px 3px 0 0;
-    background: var(--cobre);
+    background: var(--ambar);
 }
 
-.pestana-icono { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; }
+/* LOS ÍCONOS DEL SPRITE EN LA BARRA: vienen en ámbar horneado en el PNG -no
+   currentColor-, así que "inactivo" se resuelve apagándolos con un filtro y no
+   recoloreándolos: gris claro y apenas visible cuando no es la pestaña activa, a todo
+   color -su ámbar de siempre- en la que sí lo es. Es la misma semántica que el resto de
+   la casa (ámbar = acción/selección) lograda con la única herramienta que un PNG
+   horneado permite. */
+.pestana .faro-icon { filter: grayscale(1) opacity(.6); transition: filter .12s ease; }
+.pestana:hover .faro-icon { filter: grayscale(1) opacity(.85); }
+.pestana.active .faro-icon { filter: none; }
 
 /* EL BADGE DE LOS TRAMOS BLOQUEADOS. Va en ámbar porque es exactamente lo que el ámbar
    significa en esta app -algo que espera un dato tuyo- y nunca en rojo, que está reservado
@@ -346,11 +501,29 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 .instrumento--apagado { background: transparent; border-style: dashed; }
 .instrumento--apagado .cifra { color: var(--tenue-2); }
 
+/* PUNTOS + BOLETOS DE LEALTAD, EN UN SOLO BLOQUE. Antes eran dos .instrumento --dos cajas
+   con su propio borde-, y entre el carnet y el primer sorteo real se sentían como dos
+   instrumentos más de un tablero técnico. Acá comparten una sola cara; la jerarquía la
+   sigue dando la cifra grande, no una caja por dato. */
+.cuadro-puntos { display: flex; gap: 24px; margin-bottom: 22px; }
+.cuadro-puntos-col { flex: 1 1 0; min-width: 0; }
+.cuadro-puntos-col + .cuadro-puntos-col { padding-left: 24px; border-left: 1px solid var(--bisel); }
+.cuadro-puntos-col--apagado .cifra { color: var(--tenue-2); }
+.cuadro-puntos-rotulo { display: flex; align-items: center; gap: 6px; }
+@media (max-width: 480px) {
+    .cuadro-puntos { flex-direction: column; gap: 16px; }
+    .cuadro-puntos-col + .cuadro-puntos-col {
+        padding-left: 0; border-left: 0; padding-top: 16px; border-top: 1px solid var(--bisel);
+    }
+}
+
 /* --------------------------------------------------------------------- cifras */
 
 .cifra {
+    /* PESO 700, no 600: es el dato importante de cada instrumento -el que la persona
+       vino a leer-, y tiene que pesar más que su propio rótulo y su pie. */
     font-family: var(--cifras); font-variant-numeric: tabular-nums;
-    font-size: clamp(27px, 3.6vw, 36px); font-weight: 600;
+    font-size: clamp(27px, 3.6vw, 36px); font-weight: var(--fw-dato);
     line-height: 1; letter-spacing: -.02em; color: #ffffff;
 }
 .cifra .unidad {
@@ -358,7 +531,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     color: var(--tenue); margin-left: .35em;
 }
 .cifra--chica { font-size: clamp(21px, 2.5vw, 26px); }
-.cifra-pie { font-size: 12.5px; color: var(--tenue-2); line-height: 1.4; margin-top: -2px; }
+.cifra-pie { font-size: var(--fs-secundario); color: var(--tenue-2); line-height: 1.4; margin-top: -1px; }
 .cifra-pie b { color: var(--tenue); font-weight: 600; }
 
 /* EL DELTA contra el nivel de siempre. La flecha y el signo son de la PRESENTACIÓN y se
@@ -452,18 +625,40 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
    propio de este dominio (la ausencia que bloquea un cálculo) estaba subordinado a un
    layout que venía de otro. */
 
-.ruta-cabeza {
-    display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
-    margin: 0 0 14px;
+.ruta-cabeza { margin: 0 0 4px; }
+/* TÍTULO DE VERDAD, no un rótulo chico: esta es la pantalla donde se trabaja el
+   historial completo, y "Mis cargas" tiene que leerse como tal -no como una versalita
+   más al lado de un apunte. */
+.ruta-titulo {
+    margin: 0; font-size: clamp(24px, 7vw, 28px); font-weight: var(--fw-titulo);
+    letter-spacing: -.01em; color: var(--tinta); line-height: 1.2;
 }
+.ruta-resumen { margin: 4px 0 0; font-size: 15px; font-weight: 500; color: var(--tenue); }
+
 .ruta { list-style: none; margin: 0; padding: 0; }
 
-/* LA ACCIÓN DE LOTE, debajo de la cabeza y no dentro: la cabeza es un rótulo. */
-.ruta-acciones {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
-    margin: -4px 0 16px; font-size: 13.5px; color: var(--tenue);
+/* EL RESUMEN DE PENDIENTES: compacto y AL INICIO, no compite con el historial de abajo.
+   completitud.Expresada y tanquesEstimados.Count son los mismos datos reales de
+   siempre -ver Ruta.razor-, solo que la acción de lote pasa a ser un control
+   SECUNDARIO -contorno, texto chico- y no el protagonista de la pantalla. */
+.ruta-pendientes {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
+    margin: 14px 0 18px; padding: 13px 15px; border-radius: 12px;
+    background: var(--cara); border: 1px solid var(--bisel);
 }
-.ruta-acciones b { color: var(--tinta); font-weight: 600; }
+.ruta-pendientes-texto { flex: 1 1 14rem; }
+.ruta-pendientes-titulo { margin: 0; font-size: 15px; font-weight: 700; color: var(--tinta); }
+.ruta-pendientes-pie { margin: 2px 0 0; font-size: var(--fs-secundario); color: var(--tenue-2); }
+.ruta-pendientes-cta { font-size: var(--fs-secundario); padding: 7px 14px; }
+
+/* EL MES: versalita, no una carga más -no lleva riel ni punto-. Separa la ruta en
+   tramos legibles con el mismo dato que ya ordena cada parada (parada.Fecha): no hay
+   agrupación nueva que inventar. */
+.ruta-mes {
+    margin: 22px 0 8px; font-size: var(--fs-label); font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--cobre);
+}
+.ruta-mes:first-child { margin-top: 4px; }
 
 .eslabon { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 14px; }
 .eslabon-riel { position: relative; }
@@ -487,34 +682,108 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 }
 .parada--pendiente .parada-punto { border-color: var(--ambar); }
 
-.parada-cabeza { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+/* EL RESUMEN: el único control de la fila colapsada -tocarlo en cualquier parte lo
+   abre-, con las tres líneas que hacen falta para escanear: fecha+monto, litros/tipo/
+   surtidor, y el chip. Todo lo demás vive en .parada-detalle. */
+.parada-resumen {
+    display: block; width: 100%; text-align: left;
+    font: inherit; background: transparent; border: 0; padding: 2px 26px 2px 0;
+    position: relative; cursor: pointer;
+}
+.parada-resumen-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .parada-fecha {
     font-family: var(--cifras); font-variant-numeric: tabular-nums;
-    font-size: 14.5px; font-weight: 600; color: var(--tinta); letter-spacing: .01em;
+    font-size: 16.5px; font-weight: 700; color: var(--tinta); letter-spacing: .01em;
 }
-.parada-tanque {
-    font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
-    color: var(--tenue-2);
+.parada-monto {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 16.5px; font-weight: 700; color: var(--tinta);
 }
-/* LA PUERTA PARA CAMBIAR UN TANQUE YA DICHO (ver Ruta). Es un enlace chico al lado de la
-   versalita, no una tecla: la corrección no puede pesar lo que pesa el camino normal. */
-.parada-cambiar {
-    font: inherit; font-size: 11.5px; color: var(--cobre);
-    background: transparent; border: 0; padding: 0 2px; cursor: pointer;
-    text-decoration: underline; text-underline-offset: 3px;
+.parada-resumen-datos { display: block; margin-top: 2px; font-size: 14.5px; color: var(--tenue); }
+.parada-resumen-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+/* LA FLECHA GIRA, no cambia de ícono: el mismo sprite de siempre, solo rotado -el PNG
+   trae un solo dibujo, y una rotación CSS no le pide un segundo. */
+.parada-chevron {
+    position: absolute; right: 0; top: 50%; margin-top: -6px;
+    opacity: .55; transition: transform .15s ease;
 }
-.parada-cambiar:hover { color: var(--accion-viva); }
-.parada-cambiar:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; border-radius: 3px; }
+.parada-resumen[aria-expanded="true"] .parada-chevron { transform: rotate(90deg); }
 
-.parada-datos {
-    display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px;
-    font-size: 13.5px; color: var(--tenue);
+/* LOS CHIPS DEL RESUMEN: "faltan datos"/"falta el kilometraje" (ámbar) es lo único en
+   esta fila que todavía pide algo, así que manda. El tanque -ya un hecho conocido,
+   confirmado o estimado- pierde peso CUANDO CONVIVE con un pendiente -dos chips igual
+   de fuertes competían por la misma atención-, y lo recupera solo cuando la carga ya
+   está completa (sin .parada--pendiente). */
+.parada-tanque {
+    display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px;
+    font-size: var(--fs-label); font-weight: 600;
+    color: var(--bien); background: var(--bien-suave); border: 1px solid var(--bien-borde);
 }
-.parada-datos .n {
+.parada-tanque--parcial { color: var(--ambar); background: var(--ambar-suave); border-color: var(--ambar-borde); }
+.parada--pendiente .parada-tanque {
+    color: var(--tenue-2); background: transparent; border-color: var(--bisel);
+}
+.parada-alerta {
+    display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px;
+    font-size: var(--fs-label); font-weight: 700;
+    color: var(--accion); background: var(--ambar-suave); border: 1px solid var(--ambar-borde);
+}
+
+/* EL DETALLE: se abre al tocar el resumen. Ya no es "el formulario viejo adentro de la
+   lista nueva": adentro hay un RECAP chico (lo que ya se sabe) y, si hace falta, UNA
+   tarea (ver .parada-tarea) -nunca los dos con el mismo peso-. */
+.parada-detalle { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bisel); }
+
+/* EL RECAP: kilometraje ya anotado y el estado del tanque cuando YA no es la tarea
+   pendiente. Una frase legible -"Tanque lleno (estimado)."- con su corrección al lado,
+   no un link aislado que nadie entendía de qué hablaba. */
+.parada-recap {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
+    font-size: 14.5px; color: var(--tenue);
+}
+.parada-recap .n {
     font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
 }
 /* Lo que puso ella, en cobre: la otra procedencia del mismo hecho (ver Ruta). */
-.parada-datos .aporte { color: var(--cobre); }
+.parada-recap .aporte { color: var(--cobre); font-weight: 600; }
+.parada-recap-tanque { color: var(--bien); font-weight: 600; }
+.parada-corregir {
+    font: inherit; font-size: var(--fs-secundario); font-weight: 600; color: var(--cobre);
+    background: transparent; border: 0; padding: 0 2px; margin-left: 2px; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+}
+.parada-corregir:hover { color: var(--accion-viva); }
+.parada-corregir:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; border-radius: 3px; }
+
+.parada-ver-foto { margin-top: 10px; }
+
+/* LA TAREA: una sola por carga (ver Ruta.razor), con su propia jerarquía tipográfica y
+   SIN caja -ni borde ni fondo propio: "evitar card dentro de card dentro de card"-. El
+   amarillo Faro queda para el eyebrow y el CTA, que son la acción; todo lo demás es
+   texto normal, más tenue cuanto más secundario. */
+.parada-tarea { margin-top: 14px; }
+.parada-tarea-eyebrow {
+    display: block; margin: 0 0 4px; font-size: var(--fs-label); font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--accion);
+}
+.parada-tarea-titulo { margin: 0; font-size: 16.5px; font-weight: 700; line-height: 1.35; color: var(--tinta); }
+.parada-tarea-texto { margin: 4px 0 0; font-size: 14px; line-height: 1.45; color: var(--tenue); }
+/* .campo.parada-tarea-campo y no .parada-tarea-campo sola: .campo ya trae su propio
+   max-width (9em, pensado para convivir al lado de una tecla) y con la misma
+   especificidad -una clase cada una- ganaba el que estuviera después en el archivo. Acá
+   el campo es dueño de su fila entera, así que necesita pisarlo de verdad. */
+.campo.parada-tarea-campo { display: block; width: 100%; max-width: none; margin-top: 12px; }
+/* EL CTA, A TODO EL ANCHO: es la única acción que hace falta resolver desde acá, y
+   tiene que sentirse como tal -ni al lado del campo, compitiendo por espacio, ni del
+   mismo tamaño que "Foto del odómetro". */
+.parada-tarea-cta {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; margin-top: 10px; padding: 13px; font-size: 15px; font-weight: 700;
+}
+.parada-tarea-apunte { margin: 8px 0 0; }
+.parada-tarea-secundaria { margin-top: 10px; }
+.parada-tarea-acciones { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.parada-tarea-acciones .tecla { width: 100%; }
 
 /* EL TRECHO: lo que se recorrió entre dos paradas, que es el objeto de todo esto. La
    cifra que manda es km/L; los kilómetros y el costo la acompañan. */
@@ -568,35 +837,14 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     margin-top: 6px; font-size: 12.5px; color: var(--cobre);
 }
 
-/* LA PENDIENTE PLEGADA: una línea, no un formulario. Dice qué falta y qué verbo la abre.
-   Con nueve cargas sin aportes, nueve formularios abiertos eran dieciocho teclas ámbar. */
-.falta-plegada {
-    display: inline-flex; align-items: baseline; gap: 8px; margin: 6px 12px 0 0; padding: 2px 0;
-    font: inherit; font-size: 13px; color: var(--ambar);
-    background: transparent; border: 0; cursor: pointer; text-align: left;
-}
-.falta-plegada .accion { color: var(--cobre); text-decoration: underline; text-underline-offset: 3px; }
-.falta-plegada:hover .accion { color: var(--accion-viva); }
-.falta-plegada:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; border-radius: 4px; }
-
-/* LA SUPOSICIÓN que se pide confirmar. Va con el peso de una afirmación y no de un apunte
-   tenue: es lo que la persona tiene que leer para poder contestar, y si se lee como una
-   nota al pie, los dos botones de abajo vuelven a quedar sin referente. */
-.suposicion { margin: 0; font-size: 14.5px; color: var(--tinta); }
-
-/* LO QUE FALTA, con el control ahí mismo. El campo llega PRELLENADO con la proyección
-   —«¿unos 42 900?»— para que confirmar sea más fácil que recordar y teclear. Un campo
-   POR CARGA y nunca uno compartido: con uno solo, los nueve formularios mostraban el
-   mismo número y el que se tecleaba para una carga aparecía en las otras ocho. */
-.falta { margin-top: 10px; }
 .campo {
     font-family: var(--cifras); font-variant-numeric: tabular-nums;
-    font-size: 15px; max-width: 9em; padding: 7px 10px;
+    font-size: 16px; max-width: 9em; padding: 9px 12px;
     background: var(--cara-honda); color: var(--tinta);
-    border: 1px solid var(--bisel-control); border-radius: 6px;
+    border: 1px solid var(--bisel-control); border-radius: 7px;
 }
 .campo:focus-visible { outline: 2px solid var(--cobre); outline-offset: 1px; }
-.campo::placeholder { color: var(--tenue-2); font-family: var(--sans); font-size: 13px; }
+.campo::placeholder { color: var(--tenue-2); font-family: var(--sans); font-size: var(--fs-secundario); }
 
 /* Lo que se desbloqueó, en la parada donde se anotó el dato. */
 .parada-logro { margin: 10px 0 0; }
@@ -610,14 +858,25 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     /* inline-flex y no inline-block: es lo que permite darle un alto mínimo táctil en
        teléfono (abajo) sin que la etiqueta quede pegada al borde de arriba. */
     display: inline-flex; align-items: center; justify-content: center;
-    font: inherit; font-size: 14px; font-weight: 600;
+    font: inherit; font-size: 14px; font-weight: var(--fw-accion);
     padding: 8px 16px; border-radius: 7px; cursor: pointer;
     background: var(--accion); color: var(--sobre-cobre); border: 1px solid transparent;
     transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
 .tecla:hover:not(:disabled) { background: var(--accion-viva); }
 .tecla:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
-.tecla:disabled { opacity: .5; cursor: progress; }
+/* DESHABILITADA, NO "AMARILLO SUCIO": antes era el mismo amarillo vivo a mitad de
+   opacidad, y a media opacidad sobre un fondo oscuro un amarillo vivo se ve mostaza,
+   no "apagado" -parece un botón activo con un color feo, exactamente lo contrario de
+   lo que un disabled tiene que comunicar-. Ahora es un color propio, sólido, integrado
+   con la superficie -la misma ventanilla hundida que un input-, y no una versión
+   desteñida del amarillo: el amarillo Faro significa ACCIÓN DISPONIBLE, y un botón
+   deshabilitado no ofrece ninguna. La especificidad de :disabled (dos clases) le gana
+   al fondo propio de --alerta/--contorno sin tener que repetir la regla en cada una. */
+.tecla:disabled {
+    background: var(--cara-honda); color: var(--tenue-2);
+    border-color: var(--bisel-control); cursor: not-allowed;
+}
 
 .tecla--contorno { background: transparent; color: var(--tinta); border-color: var(--bisel-control); }
 .tecla--contorno:hover:not(:disabled) { background: transparent; border-color: var(--cobre); }
@@ -627,6 +886,10 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     padding: 2px 0; text-decoration: underline; text-underline-offset: 3px;
 }
 .tecla--texto:hover:not(:disabled) { background: transparent; color: var(--accion-viva); }
+/* LA TECLA DE TEXTO ES UN ENLACE, NO UNA CAJA: deshabilitada se queda sin fondo ni
+   borde -heredar la ventanilla hundida de arriba la convertiría en un botón que nunca
+   quiso ser-, solo se apaga el color del texto (ya lo hace .tecla:disabled). */
+.tecla--texto:disabled { background: transparent; border-color: transparent; text-decoration: none; }
 
 /* Una tecla con icono dibujado al lado de la etiqueta: el icono hereda el color. */
 .tecla--icono { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -634,20 +897,24 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 
 .tecla--alerta { background: var(--ambar); color: #26200a; }
 .tecla--alerta:hover:not(:disabled) { background: #ffdd85; }
-/* Apagada por campo vacío, no por estar ocupada: el cursor de «esperá» mentiría. */
-.tecla--alerta:disabled { cursor: not-allowed; }
 
 .tecla--problema { background: var(--rojo); color: #2b0d0d; }
 
 /* LA TECLA DE REFRESCAR es tenue y vive al otro extremo del capó: la app se pone al día
    sola al abrir, así que esto es «volvé a chequear AHORA» y no el punto de partida de
-   la pantalla. */
+   la pantalla. Ícono del sprite -gris, "acción neutral"-, no el SVG a mano; el borde
+   sigue dando el aviso de hover ya que un PNG no responde a `color`. */
 .tecla--releer {
     margin-left: auto;
-    background: transparent; color: var(--tenue); border-color: var(--bisel);
-    font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; padding: 0; border-radius: 999px;
+    background: transparent; border-color: var(--bisel);
 }
-.tecla--releer:hover:not(:disabled) { background: transparent; color: var(--tinta); border-color: var(--cobre); }
+.tecla--releer:hover:not(:disabled) { background: transparent; border-color: var(--cobre); }
+/* Gira MIENTRAS refresca -disabled es exactamente Refrescando-, así el ícono solo
+   dice "actualizar" reemplaza al texto sin perder el aviso de que está en curso. */
+.tecla--releer:disabled .faro-icon { animation: gira .9s linear infinite; }
+@keyframes gira { to { transform: rotate(360deg); } }
 
 /* ------------------------------------------------------------------ los partes
 
@@ -663,7 +930,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 .parte p { margin: 0 0 8px; }
 .parte p:last-child { margin-bottom: 0; }
 .parte pre {
-    font-family: var(--cifras); font-size: 12px; color: var(--tenue);
+    font-family: var(--tecnica); font-size: 12px; color: var(--tenue);
     white-space: pre-wrap; word-break: break-word; margin: 8px 0 0;
 }
 
@@ -777,29 +1044,43 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     font-size: 15px; font-weight: 600; color: var(--tinta); margin-right: 8px;
 }
 .sorteo-relato { margin-top: 5px; font-size: 13px; color: var(--tenue); }
-.sorteo-premio { margin: 10px 0 0; font-size: 13.5px; color: var(--tenue); }
+.sorteo-premio {
+    display: flex; align-items: flex-start; gap: 7px;
+    margin: 10px 0 0; font-size: 13.5px; color: var(--tenue);
+}
+.sorteo-premio .faro-icon { margin-top: 2px; }
 .sorteo-premio b { color: var(--cobre); font-weight: 600; }
 
 /* DE DÓNDE SALIERON. Es lo que el tiquete de la bomba no dice. Una tabla y no una lista de
-   oraciones: nueve veces la misma frase se lee una por una; en columnas, de un vistazo. */
+   oraciones: nueve veces la misma frase se lee una por una; en columnas, de un vistazo.
+   TEXTO Y RELLENO MÁS GENEROSOS -13.5px/8px pasaron a 14.5px/11px- porque en el teléfono
+   esta tabla se lee con el pulgar, no con el mouse; sigue siendo tres columnas angostas,
+   nunca la rejilla ancha de un reporte de escritorio. La fila par lleva un fondo apenas
+   más claro para que el ojo no salte de línea al bajar. */
 .explicaciones {
-    width: 100%; max-width: 34rem; margin: 10px 0 0; border-collapse: collapse;
-    font-size: 13.5px; color: var(--tenue);
+    width: 100%; max-width: 34rem; margin: 12px 0 0; border-collapse: collapse;
+    font-size: 14.5px; color: var(--tenue);
 }
 .explicaciones th, .explicaciones td {
-    padding: 8px 10px 8px 0; text-align: left; border-top: 1px solid var(--bisel);
+    padding: 11px 12px 11px 0; text-align: left; border-top: 1px solid var(--bisel);
 }
 .explicaciones thead th {
     border-top: 0; padding-top: 0;
-    font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--tenue-2);
+    font-size: var(--fs-label); font-weight: var(--fw-label); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--tenue-2);
 }
+.explicaciones tbody tr:nth-child(even) { background: rgba(232, 244, 246, .025); }
 .explicaciones .num { text-align: right; padding-right: 18px; }
 .explicaciones .n {
-    font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
+    font-family: var(--cifras); font-variant-numeric: tabular-nums; font-weight: 600;
+    color: var(--tinta);
 }
 /* La que no cuadra se marca en ámbar, no en rojo: es un dato que falta, no una deuda. */
 .explicacion--dudosa { color: var(--ambar); }
+@media (max-width: 480px) {
+    .explicaciones { font-size: 13.5px; }
+    .explicaciones th, .explicaciones td { padding: 10px 8px 10px 0; }
+}
 
 /* --------------------------------------------------------------------- la ficha
 
@@ -807,19 +1088,50 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
    en teléfono; el alias y el rendimiento ocupan la fila entera porque su etiqueta no
    entra en media. */
 
+/* LA TARJETA RESUMEN. «¿Qué carro tengo configurado?» de un vistazo, antes de bajar al
+   formulario. Mismo lenguaje que .tarjeta-acceso (ícono en círculo + texto) pero sin
+   enlace: acá no se navega a ningún lado, solo se lee. */
+.resumen-vehiculo {
+    display: flex; align-items: center; gap: 13px;
+    margin: 10px 0 22px; padding: 15px 16px; border-radius: 14px;
+    background: var(--cara); border: 1px solid var(--bisel);
+}
+.resumen-vehiculo-nombre { font-size: 17px; font-weight: 700; color: var(--tinta); }
+.resumen-vehiculo-pie {
+    display: flex; align-items: baseline; gap: 7px; margin-top: 4px;
+    font-size: var(--fs-secundario); color: var(--tenue-2);
+}
+.resumen-vehiculo-pie .placa { font-size: 12px; padding: 3px 9px; }
+
+/* LOS GRUPOS DE MI CARRO. Identidad, cómo lo mirás y dónde vive la bitácora eran tres
+   bloques sueltos separados solo por un h2; agruparlos en su propia cara los distingue
+   de un vistazo, sobre todo en el teléfono donde todo cae en una sola columna. */
+.tarjeta-grupo {
+    margin: 0 0 20px; padding: 16px 17px 18px; border-radius: 14px;
+    background: var(--cara); border: 1px solid var(--bisel);
+}
+.seccion-titulo--en-grupo {
+    display: flex; align-items: center; gap: 9px; margin-top: 0;
+}
+.seccion-titulo--en-grupo .faro-icon { flex: none; }
+
+/* PASAR A GNOTHI ES SECUNDARIO: la misma tarjeta pero punteada y sin relleno, para que se
+   lea como un paso ocasional de la cuenta y no como un cuarto grupo del carro. */
+.tarjeta-grupo--secundario { background: transparent; border-style: dashed; }
+
 .ficha {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 16px; max-width: 40rem; margin-top: 12px;
+    gap: 12px 16px; max-width: 40rem; margin-top: 4px;
 }
 .ficha-campo { display: flex; flex-direction: column; gap: 5px; }
 .ficha-campo--ancho { grid-column: 1 / -1; }
 .ficha-campo > span {
-    font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--tenue-2);
+    font-size: var(--fs-label); font-weight: var(--fw-label); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--tenue-2);
 }
 .ficha-nota {
     grid-column: 1 / -1; margin: -6px 0 0;
-    font-size: 12.5px; color: var(--tenue-2);
+    font-size: var(--fs-secundario); color: var(--tenue-2);
 }
 
 /* La placa en la ficha: una placa, no un campo apagado. */
@@ -840,17 +1152,33 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
    EL RELLENO ES TEAL, NO COBRE. Con el cobre de la tecla primaria, la unidad elegida se
    leía como una acción pendiente de apretar. El cobre queda para lo que hace algo; el
    teal de la marca dice «esto es lo que está puesto». */
-.unidades { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 10px; }
+.segmentado { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 4px; }
 .unidad-grupo { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 7px; }
 .unidad-grupo legend {
     padding: 0 0 6px; width: 100%;
-    font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--tenue-2);
+    font-size: var(--fs-label); font-weight: var(--fw-label); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--tenue-2);
 }
-.tecla--elegida {
-    background: var(--marca); color: #ffffff; border-color: var(--marca-viva);
+
+/* EL SEGMENTADO DE UNIDADES: propio, no .tecla--contorno/.tecla--elegida -esas dos son
+   de botones de ACCIÓN en el resto de la app, y acá el amarillo tiene otro significado:
+   «esto es lo que está elegido», no «esto hace algo». La opción sin elegir lleva borde
+   teal y texto claro -legible, pero claramente no seleccionada-; la elegida se llena de
+   amarillo Faro. Nunca es solo color: aria-pressed va siempre en el botón. */
+.tecla-segmento {
+    padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+    background: transparent; color: var(--tenue);
+    border: 1px solid var(--aqua-borde);
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
-.tecla--elegida:hover:not(:disabled) { background: var(--marca-viva); border-color: var(--marca-viva); }
+.tecla-segmento:hover:not(:disabled) { border-color: var(--cobre); color: var(--tinta); }
+.tecla-segmento:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+.tecla-segmento--elegida {
+    background: var(--accion); color: var(--sobre-cobre); border-color: var(--accion);
+    font-weight: 700;
+}
+.tecla-segmento--elegida:hover:not(:disabled) { background: var(--accion-viva); border-color: var(--accion-viva); }
 
 .otros-carros { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; }
 .otros-carros li { padding: 7px 0; border-top: 1px solid var(--bisel); color: var(--tenue); }
@@ -904,7 +1232,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 .blazor-error-boundary { background: #7f1d1d; color: #fff; padding: 1rem 1.25rem; }
 .blazor-error-boundary::after { content: "Ocurrió un error."; }
 
-code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
+code { font-family: var(--tecnica); font-size: .9em; color: var(--cobre); }
 
 /* -------------------------------------------------------------------- angosto
 
@@ -950,7 +1278,6 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
         padding: 9px 4px 8px; font-size: 11px; letter-spacing: .01em;
     }
     .pestana:hover { background: transparent; }
-    .pestana-icono { width: 1.35rem; height: 1.35rem; }
 
     /* LA MISMA RAYA, ESPEJADA: la barra está al pie, así que su canto interior es el de
        arriba. */
@@ -966,16 +1293,14 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
     /* EL COLCHÓN para que la barra fija no tape la última fila de la ruta. */
     .tablero { padding-bottom: 6rem; }
 
-    /* OBJETIVOS TÁCTILES. MEDIDO a 375 px: la pendiente plegada daba 24 px de alto, las
-       teclas y el campo 34. O sea que el toque más frecuente de la app —anotar el
-       kilometraje en la bomba, con una mano— era el más chico de la pantalla. 44 px es el
-       mínimo de Apple y el AAA de WCAG; 24 apenas el AA de 2.2. En escritorio se quedan
-       como están: ahí el puntero es fino y el alto se lo come a los instrumentos. */
+    /* OBJETIVOS TÁCTILES. MEDIDO a 375 px: las teclas y el campo daban 34 px de alto. 44 px
+       es el mínimo de Apple y el AAA de WCAG. En escritorio se quedan como están: ahí el
+       puntero es fino y el alto se lo come a los instrumentos. */
     .tecla, .campo { min-height: 44px; }
-    .falta-plegada { min-height: 44px; align-items: center; margin-top: 0; }
-    /* «cambiar» agranda su área de toque sin agrandar la fila: el margen negativo devuelve
-       lo que el padding se lleva, y la versalita de al lado no se mueve. */
-    .parada-cambiar { padding: 12px 8px; margin: -12px -6px; }
+    .parada-resumen { min-height: 44px; }
+    /* «corregir» agranda su área de toque sin agrandar la fila: el margen negativo
+       devuelve lo que el padding se lleva, y la frase de al lado no se mueve. */
+    .parada-corregir { padding: 12px 8px; margin: -12px -6px; }
 }
 
 @media (max-width: 600px) {
@@ -1028,7 +1353,8 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 /* Quien pidió que no se mueva, no se mueve. */
 @media (prefers-reduced-motion: reduce) {
     .instrumento, .medidor .aguja, .medidor .carga,
-    .chispa .trazo, .chispa .punto, .trecho-barra .relleno, .parte--pasajero {
+    .chispa .trazo, .chispa .punto, .trecho-barra .relleno, .parte--pasajero,
+    .tecla--releer:disabled .faro-icon {
         animation: none;
     }
 }
@@ -1050,9 +1376,26 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 .carnet-datos { flex: 1 1 12rem; min-width: 0; }
 .carnet-nombre { margin-top: 6px; font-size: 17px; font-weight: 600; color: var(--tinta); }
 .carnet-numero {
-    margin: 2px 0 6px; font-family: var(--cifras);
-    font-size: 21px; letter-spacing: .06em; color: var(--logo);
+    margin: 2px 0 6px; font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 21px; font-weight: 700; letter-spacing: .06em; color: var(--logo);
     overflow-wrap: anywhere;
+}
+
+/* LA MARCA DE FARO EN EL CARNET: el mismo logo real del header (assets/logo-estaciones-faro.png),
+   chico y tenue junto al rótulo -dentro de la columna de datos, lejos del QR- para que se
+   sienta la casa sin competir con el número ni con el código. */
+.carnet-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.carnet-marca { height: 16px; width: auto; opacity: .6; flex: none; }
+
+/* EL NIVEL ES EL ÚNICO ACENTO ÁMBAR DEL CARNET: es el dato "premium" de la tarjeta -el
+   resto es identidad (número, QR), esto es estatus-, así que lleva el mismo color que en
+   el resto de la casa marca lo que no es una lectura neutra. */
+.carnet-pie { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.carnet-nivel {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    background: var(--ambar-suave); border: 1px solid var(--ambar-borde);
+    color: var(--ambar); font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase;
 }
 
 /* El QR va sobre blanco y con su propio margen de silencio: un código sobre el fondo
@@ -1065,3 +1408,254 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 .carnet-apunte { margin: 0 0 18px; }
 
 .carnet--sin { background: transparent; border-style: dashed; }
+
+/* ============================================================================
+   INICIO — misma superficie oscura que el resto del tablero, ya no una excepción.
+   El amarillo vivo y el turquesa de soporte que antes solo regían acá viven ahora en
+   :root (ronda de tipografía/contraste): toda la casa -Inicio, Mis cargas, Lealtad, Mi
+   carro- usa la misma identidad Faro, no una paleta por pantalla. Este selector se
+   queda vacío de variables a propósito -no se borra: sigue siendo el contenedor que
+   Tablero.razor envuelve, y .inicio-bienvenida y el @media de abajo lo necesitan-. */
+.inicio { }
+
+/* ---------------------------------------------------------------- la bienvenida
+   Estado sin cargas: nada de instrumentos apagados, un solo mensaje y una acción. */
+.inicio-bienvenida { text-align: center; padding: 34px 10px 6px; }
+.inicio-bienvenida svg { width: 42px; height: 42px; stroke: var(--cobre); }
+.inicio-bienvenida h2 {
+    margin: 16px 0 6px; font-size: 19px; font-weight: 600; color: var(--tinta);
+}
+.inicio-bienvenida p { margin: 0 auto; max-width: 32ch; color: var(--tenue); font-size: 14.5px; }
+
+/* -------------------------------------------------------------------- el hero
+   EL RENDIMIENTO, protagonista. Reemplaza a la franja + la caja de "Rendimiento" del
+   tablero viejo: acá es lo primero que se lee y no una caja más entre seis.
+
+   TARJETA PROPIA, CON PROFUNDIDAD: era texto flotando directo sobre el fondo de
+   Inicio, y por eso se sentía vacío por más jerarquía tipográfica que tuviera. Un
+   degradado sutil (--cara hacia --fondo) más un resplandor radial en turquesa -el
+   mismo recurso de "el resplandor detrás del cuadro" que ya usa <body>- le dan
+   la profundidad que pedía el mock, sin fabricar una foto del auto que no existe
+   como asset real. Altura contenida: menos padding vertical que antes. */
+.hero {
+    position: relative; overflow: hidden;
+    padding: 20px 18px 18px; border-radius: 16px; margin-bottom: 18px;
+    background: linear-gradient(155deg, var(--cara) 0%, var(--fondo) 130%);
+    border: 1px solid var(--bisel);
+}
+.hero::before {
+    content: ""; position: absolute; top: -55%; right: -25%; width: 75%; height: 170%;
+    background: radial-gradient(circle, var(--aqua-suave) 0%, transparent 70%);
+    pointer-events: none;
+}
+.hero > * { position: relative; }
+/* VERSALITA ESPACIADA, como .rotulo: es el eyebrow del mock -chico, tenue, mayúsculas
+   con aire entre letras- y no un subtítulo más. */
+.hero-titulo {
+    display: flex; align-items: center; gap: 6px; margin: 0 0 10px;
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .12em; color: var(--tenue);
+}
+.hero-fila { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.hero-cifra {
+    /* --aqua (turquesa Faro) y no --tinta: el número es la identidad de la pantalla, y
+       el resto del texto -incluido el veredicto, que lleva su propio color
+       semántico- se lee alrededor de él. --marca (petróleo oscuro) leía bien sobre el
+       fondo claro de la ronda anterior, pero sobre el navy profundo de este mock un
+       teal tan oscuro casi no se ve: --aqua es la misma identidad, legible acá. */
+    font-size: clamp(44px, 13vw, 58px); font-weight: 800; letter-spacing: -.02em;
+    color: var(--aqua);
+}
+.hero-cifra .unidad { font-size: .34em; font-weight: 500; color: var(--tenue); margin-left: .3em; }
+/* EL VEREDICTO, ADENTRO DEL HERO, ES UNA PALABRA Y NO UNA ETIQUETA. .sello en el resto
+   de la casa (Mis cargas, Lealtad) sigue siendo un chip con borde -ahí SÍ conviven
+   varios sellos entre otros elementos y necesitan leerse como control-, pero acá es el
+   único; el borde y el fondo eran justo la caja que "menos cajas" pedía sacar. Sin
+   tocar color: .sello--bien/--atencion/--problema/--dudoso siguen poniendo el semántico,
+   y por especificidad (dos clases) esta regla no lo pisa con nada. */
+.hero .sello {
+    padding: 0; border: none; background: none; border-radius: 0;
+    font-size: 15px; font-weight: 700; letter-spacing: 0; text-transform: none;
+}
+.hero-vacio-rotulo {
+    margin: 0; font-size: clamp(24px, 7vw, 30px); font-weight: 800; line-height: 1.28;
+    letter-spacing: -.01em; color: var(--tinta); text-wrap: balance;
+}
+/* LA EXPLICACIÓN, TENUE Y NO EN TINTA: es apoyo del titular, no otra afirmación al
+   mismo volumen -por eso también es más chica cuando hay cifra (arriba). */
+.hero-frase { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--tenue); text-wrap: balance; }
+.hero-accion {
+    display: inline-block; margin-top: 10px; padding: 5px 11px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; color: var(--ambar);
+    background: var(--ambar-suave); border: 1px solid var(--ambar-borde);
+}
+.hero .chispa { margin-top: 14px; max-width: 260px; }
+
+/* ---------------------------------------------------------------- el pendiente
+   EL SIGUIENTE PASO ACCIONABLE, una sola vez, nunca la lista entera de faltantes. Es
+   la traducción a flujo guiado de lo que antes eran varias tarjetas "Necesito X..." en
+   Cargas: acá vive solo el próximo, con su porqué y su acción; el resto se nombra
+   -nunca se esconde- y se resuelve en Mis cargas.
+
+   UNA TARJETA OSCURA INTEGRADA AL FONDO, no la tarjeta amarilla de antes: --cara es
+   apenas más clara que --fondo y el borde es --bisel, el mismo tratamiento que
+   .resumen y .ultima-carga -no un radio ni un contorno nuevo-. El amarillo Faro queda
+   reservado al ícono y a la tecla, que son la acción; nunca al bloque entero. */
+.pendiente {
+    margin-top: 20px; padding: 18px 18px 16px; border-radius: 14px;
+    background: var(--cara); border: 1px solid var(--bisel);
+}
+.pendiente-cabeza { display: flex; align-items: flex-start; gap: 11px; }
+.pendiente-icono {
+    flex: none; width: 26px; height: 26px; margin-top: 1px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ambar-suave);
+}
+.pendiente-titulo { margin: 0; font-size: 17px; font-weight: 700; color: var(--tinta); }
+.pendiente-texto { margin: 3px 0 0; font-size: 14px; line-height: 1.4; color: var(--tenue); }
+.pendiente-campo { margin-top: 14px; }
+.pendiente-campo-fila { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+/* EL ÍCONO DE ODÓMETRO, PREFIJO DEL CAMPO -como una lupa en un buscador-: el input
+   se reconoce sin leer el placeholder, y el ícono no roba una celda del flex.
+   FECHA E INPUT, LIGERAMENTE MÁS GRANDES que antes -son la mitad accionable del
+   bloque, y tenían menos presencia que el título de arriba-. */
+.pendiente-input { position: relative; flex: 1 1 8rem; min-width: 0; display: flex; align-items: center; }
+.pendiente-input .faro-icon { position: absolute; left: 12px; pointer-events: none; }
+.pendiente-campo input {
+    /* --cara-honda y no --cara: el campo tiene que distinguirse de la tarjeta que lo
+       contiene, no fundirse con ella -es la misma "ventanilla hundida" del odómetro. */
+    width: 100%; min-width: 0; padding: 12px 14px 12px 39px; border-radius: 9px;
+    border: 1px solid var(--bisel-control); background: var(--cara-honda); color: var(--tinta);
+    font: inherit; font-size: 16px; transition: border-color .12s ease;
+}
+.pendiente-campo input::placeholder { color: var(--tenue-2); }
+/* EL FOCO ES TURQUESA -mismo sistema que .campo en Mis cargas-: el amarillo queda
+   reservado a la tecla, que es la acción; el campo solo necesita avisar que está listo
+   para teclear. */
+.pendiente-campo input:focus-visible {
+    outline: 2px solid var(--cobre); outline-offset: 1px; border-color: var(--cobre);
+}
+/* EL CTA, PROTAGONISTA: a todo el ancho y en su propia fila -no comparte espacio con
+   el campo-, más alto y con más peso que cualquier otra tecla del bloque. */
+.pendiente-cta {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; padding: 14px; font-size: 15.5px; font-weight: 700;
+}
+.pendiente-apunte { margin: 8px 0 0; font-size: 12.5px; color: var(--tenue); }
+.pendiente-acciones { display: flex; align-items: center; gap: 8px; margin-top: 13px; flex-wrap: wrap; }
+/* LA FECHA, EN TURQUESA: es lectura de apoyo -cuándo fue la carga-, no la acción ni el
+   estado, así que lleva --cobre (el teal apagado de Inicio) y no el amarillo. */
+.pendiente-fecha {
+    flex: none; display: inline-flex; align-items: center; padding: 5px 11px;
+    border-radius: 999px; font-size: 13px; font-weight: 600;
+    color: var(--cobre); background: var(--cara-honda);
+}
+/* EL RESTO, COMPACTO Y SECUNDARIO: la cuenta real de cuánto falta (CompletitudDeDatos)
+   y el enlace a Mis cargas, pero al pie y más chico -no compite con la acción de
+   arriba, que es la única que hace falta resolver desde acá. */
+.pendiente-resto {
+    margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--bisel);
+    font-size: 12px; color: var(--tenue-2);
+}
+.pendiente-resto a { display: inline-flex; align-items: center; gap: 4px; color: var(--tenue); font-weight: 600; }
+
+/* EL PROGRESO: qué ya tenemos de ESTA carga, no un wizard. Se muestra solo cuando hay
+   más de un paso real que contar; con uno solo, el título del pendiente ya lo dice.
+   VERTICAL, como una lista de pasos -es la forma que pide el mock de Faro-. */
+.checklist { display: flex; flex-direction: column; gap: 9px; margin: 16px 0 0; }
+.checklist-item {
+    display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--tenue);
+}
+.checklist-item svg { flex: none; width: 15px; height: 15px; }
+.checklist-item--hecho { color: var(--bien); }
+.checklist-item--hecho svg { stroke: var(--bien); }
+.checklist-item--falta svg { stroke: var(--tenue-2); }
+
+/* --------------------------------------------------------------------- el resumen
+   AUTONOMÍA + PRÓXIMA CARGA + COSTO + ODÓMETRO + GASTO, como una sola lista compacta y
+   no seis cajas: comparten insumos (capacidad, rendimiento habitual, ritmo), y puestos
+   uno al lado del otro sin conexión visual invitan a leerlos como seis medidas
+   independientes cuando son, en los hechos, la misma historia contada de tres formas. */
+.resumen {
+    margin-top: 18px; border-radius: 14px; background: var(--cara);
+    border: 1px solid var(--bisel); overflow: hidden;
+}
+.resumen-fila {
+    display: flex; align-items: center; gap: 12px; padding: 13px 15px;
+}
+.resumen-fila + .resumen-fila { border-top: 1px solid var(--bisel); }
+.resumen-icono {
+    flex: none; width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--cara-honda);
+}
+.resumen-icono svg { width: 17px; height: 17px; stroke: var(--cobre); }
+.resumen-cuerpo { flex: 1 1 auto; min-width: 0; }
+.resumen-rotulo { font-size: 12.5px; font-weight: 600; color: var(--tenue); }
+.resumen-valor {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 17px; font-weight: 600; color: var(--tinta);
+}
+.resumen-valor .unidad { font-size: .68em; font-weight: 500; color: var(--tenue); margin-left: .25em; }
+.resumen-pie { margin-top: 1px; font-size: 12px; color: var(--tenue-2); line-height: 1.35; }
+.resumen-pie b { color: var(--tenue); font-weight: 600; }
+
+/* La barra de autonomía: un trazo, no un medidor circular — "menos gauges" pedido a
+   propósito. El relleno es SIEMPRE cobre/teal (lectura, no juicio): ver el mismo
+   argumento en MedidorDeAutonomia.razor, que sigue existiendo para Mis cargas. */
+.resumen-barra {
+    margin-top: 7px; height: 6px; border-radius: 999px; background: var(--cara-honda);
+    overflow: hidden;
+}
+.resumen-barra > span {
+    display: block; height: 100%; border-radius: 999px; background: var(--cobre);
+}
+
+/* ------------------------------------------------------------ la tarjeta de acceso
+   EL PATRÓN COMPARTIDO de Gasto del mes, Última carga y Mi carnet Faro: ícono en
+   círculo + rótulo + valor protagonista + pie, con una flecha al borde -toda la
+   tarjeta es el enlace, no un texto "ver más" aparte compitiendo con el resto-.
+   Misma superficie que .resumen y .pendiente (--cara sobre --fondo, borde --bisel):
+   ninguna de las tres es más importante que las otras, así que ninguna lleva más
+   contraste que las otras. */
+.tarjeta-acceso {
+    display: flex; align-items: center; gap: 13px;
+    margin-top: 14px; padding: 15px 16px; border-radius: 14px;
+    background: var(--cara); border: 1px solid var(--bisel);
+    text-decoration: none; transition: border-color .12s ease;
+}
+.tarjeta-acceso:hover { border-color: var(--cobre); }
+.tarjeta-acceso-icono {
+    flex: none; width: 40px; height: 40px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--cara-honda);
+}
+/* EL CARNET ES EL ÚNICO EN ÁMBAR: es lealtad, no una lectura neutra -mismo criterio
+   que el resto de la casa, el amarillo marca lo que no es "solo información". */
+.tarjeta-acceso-icono--ambar { background: var(--ambar-suave); }
+.tarjeta-acceso-cuerpo { flex: 1 1 auto; min-width: 0; }
+.tarjeta-acceso-rotulo { font-size: 13px; font-weight: 600; color: var(--tenue); }
+.tarjeta-acceso-valor {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 21px; font-weight: 700; color: var(--tinta); margin-top: 1px;
+}
+.tarjeta-acceso-valor .unidad { font-size: .55em; font-weight: 500; color: var(--tenue); margin-left: .3em; }
+.tarjeta-acceso-pie { margin-top: 3px; font-size: 12.5px; color: var(--tenue-2); line-height: 1.35; }
+.tarjeta-acceso-pie b { color: var(--tenue); font-weight: 600; }
+.tarjeta-acceso-flecha { flex: none; opacity: .5; }
+
+/* LOS DATOS DE ÚLTIMA CARGA -volumen, surtidor, tanque, kilometraje, foto- siguen
+   siendo chips en fila adentro del pie, igual que antes. */
+.ultima-carga-datos { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.ultima-carga-datos .n { font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta); }
+.ultima-carga-datos .aporte { color: var(--cobre); font-weight: 600; }
+.ultima-carga-tanque {
+    display: inline-block; padding: 1px 8px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; border: 1px solid var(--bien-borde);
+    color: var(--bien); background: var(--bien-suave);
+}
+.ultima-carga-tanque--parcial { color: var(--ambar); background: var(--ambar-suave); border-color: var(--ambar-borde); }
+
+@media (max-width: 480px) {
+    .inicio { border-radius: 16px; padding: 16px 13px 6px; }
+}

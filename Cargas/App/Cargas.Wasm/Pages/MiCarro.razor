@@ -31,74 +31,103 @@ else
        instrumento, y la pantalla no tenía ningún nivel entre la marca y los campos. *@
     <h2 class="seccion-titulo">@(enFoco.TieneFicha ? "Tu carro" : "Ponele nombre a tu carro")</h2>
 
+    @* LA TARJETA RESUMEN. Responde de un vistazo «¿qué carro tengo configurado?» sin leer
+       el formulario entero. Solo con datos reales: si marca/modelo están vacíos, cae al
+       alias -que sí existe si TieneFicha-, nunca inventa algo como «Toyota Yaris». *@
+    <div class="resumen-vehiculo">
+        <span class="tarjeta-acceso-icono">
+            <span class="faro-icon faro-icon--carro" aria-hidden="true"></span>
+        </span>
+        <div class="resumen-vehiculo-cuerpo">
+            <div class="resumen-vehiculo-nombre">
+                @(enFoco.TieneFicha ? NombreDelVehiculo() : "Todavía sin nombre")
+            </div>
+            <div class="resumen-vehiculo-pie">
+                @if (enFoco.Anio > 0)
+                {
+                    <text>@enFoco.Anio &middot; </text>
+                }
+                <span class="placa">@enFoco.Placa</span>
+            </div>
+        </div>
+    </div>
+
     @* LA FICHA. CompletarFicha existía desde el principio y ninguna pantalla lo llamaba,
        así que un segundo carro no se podía ni nombrar: la app lo mostraba por su placa
        para siempre.
 
        SOLO EL ALIAS ES OBLIGATORIO. Lo demás es de la persona y no hace falta para nada
        de lo que la app calcula — pedirlo entero antes de dejarla seguir sería pedirle
-       trabajo por prolijidad nuestra. *@
-    <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
-        <label class="ficha-campo ficha-campo--ancho">
-            <span>Cómo le decís</span>
-            <input class="campo campo--texto" @bind="alias" maxlength="40"
-                   placeholder="el Corolla, la camioneta…" />
-        </label>
+       trabajo por prolijidad nuestra.
 
-        @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
-        <div class="ficha-campo">
-            <span>Placa</span>
-            <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
-        </div>
-        <p id="porque-la-placa" class="ficha-nota">
-            La placa la pone la estación con cada carga: no es tuya para cambiar.
-        </p>
+       SIGUE SIENDO UN FORMULARIO SIEMPRE EDITABLE: no hay hoy una separación lectura/edición
+       que reusar, y agregar una tocaría el mecanismo de guardado sin necesidad. Lo que
+       cambia acá es solo la envoltura -una tarjeta con título propio- para que se lea como
+       un grupo y no como una lista suelta de campos. *@
+    <div class="tarjeta-grupo">
+        <h3 class="seccion-titulo seccion-titulo--en-grupo">Identidad del vehículo</h3>
+        <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
+            <label class="ficha-campo ficha-campo--ancho">
+                <span>Cómo le decís</span>
+                <input class="campo campo--texto" @bind="alias" maxlength="40"
+                       placeholder="el Corolla, la camioneta…" />
+            </label>
 
-        <label class="ficha-campo">
-            <span>Marca</span>
-            <input class="campo campo--texto" @bind="marca" maxlength="30" />
-        </label>
-        <label class="ficha-campo">
-            <span>Modelo</span>
-            <input class="campo campo--texto" @bind="modelo" maxlength="30" />
-        </label>
-        @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
-           y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
-           dice qué va, y el cero vuelve a ser la ausencia al guardar.
+            @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
+            <div class="ficha-campo">
+                <span>Placa</span>
+                <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
+            </div>
+            <p id="porque-la-placa" class="ficha-nota">
+                La placa la pone la estación con cada carga: no es tuya para cambiar.
+            </p>
 
-           Y EL PLACEHOLDER SE DECLARA EJEMPLO. «2019» pelado, en un campo numérico del mismo
-           ancho que su valor, se leía como un año ya cargado —en 375 px no se distinguía— y
-           alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
-           de confundirlo con un valor. *@
-        <label class="ficha-campo">
-            <span>Año</span>
-            <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
-                   placeholder="p. ej. 2019" />
-        </label>
-        <label class="ficha-campo">
-            <span>Color</span>
-            <input class="campo campo--texto" @bind="color" maxlength="20" />
-        </label>
+            <label class="ficha-campo">
+                <span>Marca</span>
+                <input class="campo campo--texto" @bind="marca" maxlength="30" />
+            </label>
+            <label class="ficha-campo">
+                <span>Modelo</span>
+                <input class="campo campo--texto" @bind="modelo" maxlength="30" />
+            </label>
+            @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
+               y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
+               dice qué va, y el cero vuelve a ser la ausencia al guardar.
 
-        <label class="ficha-campo ficha-campo--ancho">
-            <span>Rendimiento de fábrica</span>
-            <input class="campo" type="number" step="0.1" inputmode="decimal"
-                   @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
-                   placeholder="p. ej. 14.5" />
-        </label>
-        @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
-           contra lo que el carro está dando de verdad. *@
-        <p id="porque-el-rendimiento" class="ficha-nota">
-            En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
-            que tu carro está dando. Dejalo vacío si no lo sabés.
-        </p>
+               Y EL PLACEHOLDER SE DECLARA EJEMPLO. «2019» pelado, en un campo numérico del mismo
+               ancho que su valor, se leía como un año ya cargado —en 375 px no se distinguía— y
+               alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
+               de confundirlo con un valor. *@
+            <label class="ficha-campo">
+                <span>Año</span>
+                <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
+                       placeholder="p. ej. 2019" />
+            </label>
+            <label class="ficha-campo">
+                <span>Color</span>
+                <input class="campo campo--texto" @bind="color" maxlength="20" />
+            </label>
 
-        <div class="fila ficha-campo--ancho">
-            <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
-                @(enFoco.TieneFicha ? "Guardar los cambios" : "Ponerle nombre")
-            </button>
-        </div>
-    </form>
+            <label class="ficha-campo ficha-campo--ancho">
+                <span>Rendimiento de fábrica</span>
+                <input class="campo" type="number" step="0.1" inputmode="decimal"
+                       @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
+                       placeholder="p. ej. 14.5" />
+            </label>
+            @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
+               contra lo que el carro está dando de verdad. *@
+            <p id="porque-el-rendimiento" class="ficha-nota">
+                En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
+                que tu carro está dando. Dejalo vacío si no lo sabés.
+            </p>
+
+            <div class="fila ficha-campo--ancho">
+                <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
+                    @(enFoco.TieneFicha ? "Guardar los cambios" : "Ponerle nombre")
+                </button>
+            </div>
+        </form>
+    </div>
 
     @if (otros.Count > 0)
     {
@@ -119,102 +148,124 @@ else
     }
 }
 
-<h2 class="seccion-titulo">Cómo lo mirás</h2>
+<div class="tarjeta-grupo">
+    <h2 class="seccion-titulo seccion-titulo--en-grupo">
+        <span class="faro-icon faro-icon--rendimiento" aria-hidden="true"></span>
+        Cómo lo mirás
+    </h2>
 
-@* LAS UNIDADES VAN AL JOURNAL, no a este navegador. Es la única preferencia que lo hace,
-   y la razón es que cambia lo que la app DICE y no solo lo que se ve: guardada en el
-   browser, la pantalla mostraría mpg mientras tu asistente te sigue contestando en km/L
-   sobre la misma bitácora.
+    @* LAS UNIDADES VAN AL JOURNAL, no a este navegador. Es la única preferencia que lo hace,
+       y la razón es que cambia lo que la app DICE y no solo lo que se ve: guardada en el
+       browser, la pantalla mostraría mpg mientras tu asistente te sigue contestando en km/L
+       sobre la misma bitácora.
 
-   La MONEDA no está acá y no es un olvido: no es una preferencia, es un dato que viene con
-   cada carga desde la estación. Convertirla obligaría a inventar un tipo de cambio, que es
-   justo lo que este producto no hace en ninguna otra parte. Por eso hay un instrumento de
-   gasto por moneda en vez de un selector. *@
-<div class="unidades">
-    <fieldset class="unidad-grupo">
-        <legend>Rendimiento</legend>
-        @foreach ((string simbolo, string comoSeLee) in FormasDeMirarElRendimiento)
-        {
-            <button type="button" @key="@simbolo"
-                    class="tecla tecla--contorno @(unidades.Rendimiento == simbolo ? "tecla--elegida" : "")"
-                    aria-pressed="@(unidades.Rendimiento == simbolo)"
-                    @onclick="() => ElegirRendimiento(simbolo)">
-                @comoSeLee
-            </button>
-        }
-    </fieldset>
+       La MONEDA no está acá y no es un olvido: no es una preferencia, es un dato que viene con
+       cada carga desde la estación. Convertirla obligaría a inventar un tipo de cambio, que es
+       justo lo que este producto no hace en ninguna otra parte. Por eso hay un instrumento de
+       gasto por moneda en vez de un selector.
 
-    <fieldset class="unidad-grupo">
-        <legend>Distancia</legend>
-        @foreach ((string simbolo, string comoSeLee) in FormasDeMirarLaDistancia)
-        {
-            <button type="button" @key="@simbolo"
-                    class="tecla tecla--contorno @(unidades.Distancia == simbolo ? "tecla--elegida" : "")"
-                    aria-pressed="@(unidades.Distancia == simbolo)"
-                    @onclick="() => ElegirDistancia(simbolo)">
-                @comoSeLee
-            </button>
-        }
-    </fieldset>
+       EL SEGMENTADO ES SU PROPIA CLASE, no .tecla--contorno/.tecla--elegida: esas dos las
+       usan botones de acción en media app, y acá el amarillo significa «esto es lo que está
+       elegido», no «esto hace algo». Mezclarlas habría corrido el amarillo a pantallas donde
+       ese color ya quiere decir otra cosa. *@
+    <div class="segmentado">
+        <fieldset class="unidad-grupo">
+            <legend>Rendimiento</legend>
+            @foreach ((string simbolo, string comoSeLee) in FormasDeMirarElRendimiento)
+            {
+                <button type="button" @key="@simbolo"
+                        class="tecla-segmento @(unidades.Rendimiento == simbolo ? "tecla-segmento--elegida" : "")"
+                        aria-pressed="@(unidades.Rendimiento == simbolo)"
+                        @onclick="() => ElegirRendimiento(simbolo)">
+                    @comoSeLee
+                </button>
+            }
+        </fieldset>
+
+        <fieldset class="unidad-grupo">
+            <legend>Distancia</legend>
+            @foreach ((string simbolo, string comoSeLee) in FormasDeMirarLaDistancia)
+            {
+                <button type="button" @key="@simbolo"
+                        class="tecla-segmento @(unidades.Distancia == simbolo ? "tecla-segmento--elegida" : "")"
+                        aria-pressed="@(unidades.Distancia == simbolo)"
+                        @onclick="() => ElegirDistancia(simbolo)">
+                    @comoSeLee
+                </button>
+            }
+        </fieldset>
+    </div>
+
+    <p class="apunte" style="margin-top:10px">
+        Cambiar la unidad cambia cómo se dice tu rendimiento, nunca el veredicto: si tu carro
+        empeoró, empeoró en las tres.
+    </p>
 </div>
 
-<p class="apunte" style="margin-top:8px">
-    Cambiar la unidad cambia cómo se dice tu rendimiento, nunca el veredicto: si tu carro
-    empeoró, empeoró en las tres.
-</p>
+@* NO HAY UN ÍCONO DE CARPETA EN EL SPRITE OFICIAL -se revisó pieza por pieza-, así que el
+   título usa el de documento: es el más cercano a «dónde vive tu bitácora» sin inventar un
+   dibujo nuevo fuera del sistema de íconos ya establecido. *@
+<div class="tarjeta-grupo">
+    <h2 class="seccion-titulo seccion-titulo--en-grupo">
+        <span class="faro-icon faro-icon--documento" aria-hidden="true"></span>
+        Dónde vive tu bitácora
+    </h2>
 
-<h2 class="seccion-titulo">Dónde vive tu bitácora</h2>
+    @if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
+    {
+        <p class="apunte">
+            En la carpeta &laquo;@Estado.NombreDeLaCarpeta&raquo;, y se guarda después de cada
+            cambio. <b>Es el único modo en el que tu asistente la puede leer.</b>
+        </p>
+    }
+    else if (Estado.EnAlmacenamientoDelNavegador)
+    {
+        <p class="apunte">
+            En este navegador. Sobrevive al cerrar, pero <b>tu asistente no la puede leer</b>:
+            para eso hace falta una carpeta tuya.
+        </p>
+    }
+    else
+    {
+        <p class="apunte">
+            <strong>En ningún lado.</strong> La bitácora vive solo en memoria y se pierde al cerrar.
+        </p>
+    }
 
-@if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
-{
-    <p class="apunte">
-        En la carpeta &laquo;@Estado.NombreDeLaCarpeta&raquo;, y se guarda después de cada
-        cambio. <b>Es el único modo en el que tu asistente la puede leer.</b>
-    </p>
-}
-else if (Estado.EnAlmacenamientoDelNavegador)
-{
-    <p class="apunte">
-        En este navegador. Sobrevive al cerrar, pero <b>tu asistente no la puede leer</b>:
-        para eso hace falta una carpeta tuya.
-    </p>
-}
-else
-{
-    <p class="apunte">
-        <strong>En ningún lado.</strong> La bitácora vive solo en memoria y se pierde al cerrar.
-    </p>
-}
+    @* HASTA DÓNDE LEYÓ. Antes iba en la cabeza de la Ruta, en mono, como si fuera del carro.
+       Es de la app: dice hasta qué evento de la estación llegó la bitácora, y sirve para
+       saber si un Actualizar trajo algo. Acá, al lado de dónde vive, es donde se entiende. *@
+    <p class="apunte mono">leída hasta el evento @ultimoEvento de la estación</p>
 
-@* HASTA DÓNDE LEYÓ. Antes iba en la cabeza de la Ruta, en mono, como si fuera del carro.
-   Es de la app: dice hasta qué evento de la estación llegó la bitácora, y sirve para
-   saber si un Actualizar trajo algo. Acá, al lado de dónde vive, es donde se entiende. *@
-<p class="apunte mono">leída hasta el evento @ultimoEvento de la estación</p>
-
-@* IMPORTAR TAMBIÉN DESDE ACÁ. Exportar vivía en esta pantalla e importar solo en la de
-   arranque, así que traer una bitácora con la app ya abierta obligaba a cerrarla. Pero
-   importar REEMPLAZA el expediente y rearranca el actor, así que va en dos pasos: el
-   primero dice qué va a pasar y el segundo abre el selector. No es un diálogo del browser
-   porque el aviso tiene que decir qué se pierde, y un confirm() no tiene dónde. *@
-@if (porImportar)
-{
-    <div class="parte parte--atencion fila">
-        <div class="crece">
-            <strong>Importar reemplaza tu bitácora actual</strong> por la del archivo que elijas.
-            Lo que la estación publicó se vuelve a pedir al abrir; tus kilometrajes y
-            confirmaciones de hoy solo sobreviven si están en ese archivo. Exportá antes si
-            querés conservarlos.
+    @* IMPORTAR TAMBIÉN DESDE ACÁ. Exportar vivía en esta pantalla e importar solo en la de
+       arranque, así que traer una bitácora con la app ya abierta obligaba a cerrarla. Pero
+       importar REEMPLAZA el expediente y rearranca el actor, así que va en dos pasos: el
+       primero dice qué va a pasar y el segundo abre el selector. No es un diálogo del browser
+       porque el aviso tiene que decir qué se pierde, y un confirm() no tiene dónde. *@
+    @if (porImportar)
+    {
+        <div class="parte parte--atencion fila">
+            <div class="crece">
+                <strong>Importar reemplaza tu bitácora actual</strong> por la del archivo que elijas.
+                Lo que la estación publicó se vuelve a pedir al abrir; tus kilometrajes y
+                confirmaciones de hoy solo sobreviven si están en ese archivo. Exportá antes si
+                querés conservarlos.
+            </div>
+            <button class="tecla tecla--alerta" @onclick="Importar">Sí, elegir el archivo</button>
+            <button class="tecla tecla--contorno" @onclick="() => porImportar = false">Cancelar</button>
         </div>
-        <button class="tecla tecla--alerta" @onclick="Importar">Sí, elegir el archivo</button>
-        <button class="tecla tecla--contorno" @onclick="() => porImportar = false">Cancelar</button>
-    </div>
-}
+    }
 
-<div class="fila" style="margin-top:12px">
-    <button class="tecla tecla--contorno" @onclick="Exportar">Exportar a un archivo</button>
-    <button class="tecla tecla--texto" @onclick="() => porImportar = true" disabled="@porImportar">
-        Importar una bitácora
-    </button>
+    <div class="fila" style="margin-top:12px">
+        <button class="tecla tecla--contorno tecla--icono" @onclick="Exportar">
+            <span class="faro-icon faro-icon--exportar" aria-hidden="true"></span>
+            Exportar a un archivo
+        </button>
+        <button class="tecla tecla--texto tecla--icono" @onclick="() => porImportar = true" disabled="@porImportar">
+            <span class="faro-icon faro-icon--importar" aria-hidden="true"></span>
+            Importar una bitácora
+        </button>
+    </div>
 </div>
 
 @* PASAR LAS ANOTACIONES A GNOTHI (especificación 13 §5). Cuando esta app pase a vivir
@@ -226,52 +277,58 @@ else
 
    Va por la hoja de compartir y no por el enlace porque no cabe: medido con el guion de
    28 cargas, el sobre pesa ~21 KB escapado para una URL. Las fotos se quedan: el journal
-   tiene el nombre y el archivo vive en la carpeta; pasar el nombre sin el archivo mentiría. *@
-<h2 class="seccion-titulo">Pasar tus anotaciones a Gnothi</h2>
+   tiene el nombre y el archivo vive en la carpeta; pasar el nombre sin el archivo mentiría.
 
-@if (Estado.HayTraspasoPendiente)
-{
-    <div class="parte parte--atencion">
-        <strong>Llegaron anotaciones de tu otra copia y están esperando a sus cargas.</strong>
-        Se asientan solas en cuanto la estación las publique acá.
-    </div>
-}
+   ES SECUNDARIO A PROPÓSITO: la tarjeta punteada y sin relleno la separa visualmente de
+   los tres grupos de arriba -que son sobre el carro-, porque esto es sobre la cuenta y es
+   un paso ocasional, no algo que se mire cada vez que se entra a Mi carro. *@
+<div class="tarjeta-grupo tarjeta-grupo--secundario">
+    <h2 class="seccion-titulo seccion-titulo--en-grupo">Pasar tus anotaciones a Gnothi</h2>
 
-@if (traspaso.HayAlgoQuePasar)
-{
-    <p class="apunte">
-        Lo que la estación publicó, Gnothi lo vuelve a pedir solo. Lo que anotaste vos no:
-        <b>@Piezas(traspaso)</b>. Esto se lo pasa a Gnothi de una vez, sin tu credencial, y
-        repetirlo no duplica nada.
-        @if (traspaso.FotosQueSeQuedan > 0)
-        {
-            <text> @(traspaso.FotosQueSeQuedan == 1 ? "La foto del tablero se queda" : $"Las {traspaso.FotosQueSeQuedan} fotos del tablero se quedan") en tu carpeta: no viaja@(traspaso.FotosQueSeQuedan == 1 ? "" : "n") con esto.</text>
-        }
-    </p>
-    <div class="fila">
-        <button class="tecla" @onclick="CompartirConGnothi">
-            @(puedeCompartir == true ? "Pasar mis anotaciones a Gnothi" : "Guardar mis anotaciones para Gnothi")
-        </button>
-        @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha por
-           script se trata como pegar la URL en la barra y nunca abre la app; en Android,
-           sin gesto Chrome se va derecho al fallback. *@
-        <a class="tecla tecla--texto" href="@enlaceAGnothi">Abrir Gnothi</a>
-    </div>
-    @if (puedeCompartir == false)
+    @if (Estado.HayTraspasoPendiente)
+    {
+        <div class="parte parte--atencion">
+            <strong>Llegaron anotaciones de tu otra copia y están esperando a sus cargas.</strong>
+            Se asientan solas en cuanto la estación las publique acá.
+        </div>
+    }
+
+    @if (traspaso.HayAlgoQuePasar)
     {
         <p class="apunte">
-            Este navegador no tiene hoja de compartir, así que el archivo se descarga: lo
-            abrís después desde Gnothi.
+            Lo que la estación publicó, Gnothi lo vuelve a pedir solo. Lo que anotaste vos no:
+            <b>@Piezas(traspaso)</b>. Esto se lo pasa a Gnothi de una vez, sin tu credencial, y
+            repetirlo no duplica nada.
+            @if (traspaso.FotosQueSeQuedan > 0)
+            {
+                <text> @(traspaso.FotosQueSeQuedan == 1 ? "La foto del tablero se queda" : $"Las {traspaso.FotosQueSeQuedan} fotos del tablero se quedan") en tu carpeta: no viaja@(traspaso.FotosQueSeQuedan == 1 ? "" : "n") con esto.</text>
+            }
+        </p>
+        <div class="fila">
+            <button class="tecla" @onclick="CompartirConGnothi">
+                @(puedeCompartir == true ? "Pasar mis anotaciones a Gnothi" : "Guardar mis anotaciones para Gnothi")
+            </button>
+            @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha por
+               script se trata como pegar la URL en la barra y nunca abre la app; en Android,
+               sin gesto Chrome se va derecho al fallback. *@
+            <a class="tecla tecla--texto" href="@enlaceAGnothi">Abrir Gnothi</a>
+        </div>
+        @if (puedeCompartir == false)
+        {
+            <p class="apunte">
+                Este navegador no tiene hoja de compartir, así que el archivo se descarga: lo
+                abrís después desde Gnothi.
+            </p>
+        }
+    }
+    else
+    {
+        <p class="apunte">
+            Todavía no anotaste nada que haya que pasar: los kilometrajes, los tanques y la
+            ficha aparecen acá cuando los cargues.
         </p>
     }
-}
-else
-{
-    <p class="apunte">
-        Todavía no anotaste nada que haya que pasar: los kilometrajes, los tanques y la
-        ficha aparecen acá cuando los cargues.
-    </p>
-}
+</div>
 
 @code {
     private VehiculoEnLista? enFoco;
@@ -306,6 +363,14 @@ else
     // el formulario tiene que recargarse: si no, se estaria editando un carro con los
     // datos tecleados para otro.
     private string cargadaPara = "";
+
+    // Marca+modelo si hay; si no, el alias -que si TieneFicha, siempre existe-. Nunca un
+    // nombre de fábrica inventado: si el campo está vacío, se dice lo que sí se sabe.
+    private string NombreDelVehiculo()
+    {
+        string marcaModelo = $"{enFoco!.Marca} {enFoco.Modelo}".Trim();
+        return marcaModelo.Length > 0 ? marcaModelo : enFoco.Alias;
+    }
 
     protected override void Releer()
     {

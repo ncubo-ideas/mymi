@@ -27,17 +27,12 @@
        Geaninna; lo que no espera es la estructura. El faro va de un solo trazo -torre y
        haz-, nunca relleno, legible a 24 px. *@
     <div class="capo-dentro">
+        @* EL LOGO OFICIAL, como imagen -no se recrea con CSS-. El archivo ya dice
+           "Estaciones Faro"; repetirlo al lado sería el mismo nombre dos veces, así
+           que la marca queda con el logo + el claim, y el nombre vive en el alt. *@
         <div class="marca">
-            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
-                 fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
-                <path d="M16 34 L18 12 h4 L24 34 z" />
-                <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
-                <path d="M26 8 l6 -2.5 M26 11 l7 0" />
-            </svg>
-            <div>
-                <div class="marca-nombre">Estaciones Faro</div>
-                <div class="marca-claim">Tu camino, claro</div>
-            </div>
+            <img class="marca-logo" src="assets/logo-estaciones-faro.png" alt="Estaciones Faro" />
+            <span class="marca-claim">Tu camino, claro</span>
         </div>
 
         @* DE QUIEN ES ESTE TABLERO. Con un carro es una placa y nada mas; con varios se
@@ -71,77 +66,72 @@
             </select>
         }
 
-        @* LAS CUATRO PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion: pestañas
-           a la derecha del capo en escritorio, barra fija al pie en telefono. El markup es uno solo
-           y el CSS decide donde se paran. Es el patron de Compras, textual.
+        @* EL ACCESO A "MI CARRO" POR ÍCONO. No reemplaza a la pestaña -eso es el
+           movimiento de navegación de la próxima ronda, y necesita su propia revisión
+           de dependencias-, la adelanta: hoy conviven las dos rutas al mismo lugar,
+           ninguna ruta ni funcionalidad se pierde. *@
+        @if (estado.EstaArriba)
+        {
+            <a class="capo-icono" href="mi-carro" aria-label="Mi carro" title="Mi carro">
+                @* Ícono del sprite oficial de Faro -reemplaza al SVG dibujado a mano-. *@
+                <span class="faro-icon faro-icon--carro" aria-hidden="true"></span>
+            </a>
+        }
 
-           LOS ICONOS SE DIBUJAN, no se escriben: un glifo cae en otra familia con otras metricas
-           justo al lado de la etiqueta. Y `stroke="currentColor"` para que hereden el color
-           del estado activo sin repetir la paleta.
+        @* LA NAVEGACIÓN PRINCIPAL, SIMPLIFICADA A DOS DESTINOS. Lealtad y Mi carro dejaron
+           de ser pestañas permanentes -la dirección de Faro es una barra chica, no cuatro
+           destinos del mismo peso-, pero SIGUEN existiendo enteras: su ruta, su página, su
+           lógica, sus datos. Lealtad no tiene todavía otro acceso (llega en una ronda
+           posterior, como tarjeta en Inicio); Mi carro ya lo tiene, el ícono de carro del
+           capó de arriba.
 
-           EL BADGE DE CARGAS NO ES ADORNO. Antes de las pestañas, la ausencia que bloquea un
-           calculo se veia porque estaba en la misma pantalla que los instrumentos. Partida en
-           pestañas se esconde, y partir sin avisar seria una regresion: la cuenta de lo que
-           espera un dato suyo viaja hasta la pestaña. *@
+           EL "+" DE REGISTRAR CARGA NO VA ACÁ TODAVÍA: hoy no existe ningún flujo real de
+           alta manual de una carga -las cargas entran solas desde la estación, y lo único
+           que la app deja completar son datos que faltan en una que ya llegó-. Poner un "+"
+           que no abre nada sería inventar una función que no existe. Vuelve cuando ese flujo
+           exista de verdad; el layout de dos pestañas ya reparte el espacio parejo para
+           correrse a tres el día que haya un tercer destino real.
+
+           ÍCONOS DEL SPRITE, no ya dibujados a mano: vienen en ámbar -el color de acción
+           de Faro- y se apagan a gris con un filtro CSS cuando la pestaña no es la activa
+           (ver .pestana .faro-icon en app.css); un PNG no puede responder a currentColor,
+           así que la selección se resuelve con opacidad/escala de grises y no con color.
+
+           EL BADGE DE PENDIENTES SIGUE VIVO, ahora sobre "Mis cargas": es la misma cuenta
+           de antes (Estado.Faltantes), solo que la pestaña que la lleva cambió de nombre. *@
         @if (estado.EstaArriba)
         {
         <nav class="pestanas">
             <div class="pestanas-dentro">
                 <NavLink class="pestana" href="" Match="NavLinkMatch.All">
-                    @* El medidor: un arco y su aguja. *@
-                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3.6 14.4a6.4 6.4 0 0 1 12.8 0" />
-                        <path d="M10 14.4 13.4 10.8" />
-                    </svg>
-                    Tablero
+                    <span class="faro-icon faro-icon--inicio" aria-hidden="true"></span>
+                    Inicio
                 </NavLink>
 
                 <NavLink class="pestana" href="cargas">
-                    @* El surtidor: el cuerpo, la ventanilla y la manguera. *@
-                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <rect x="3.6" y="3.4" width="8.2" height="13.2" rx="1.2" />
-                        <path d="M5.8 6h3.8v3.2H5.8z" />
-                        <path d="M11.8 8.2h1.6a1.4 1.4 0 0 1 1.4 1.4v4.2a1.1 1.1 0 0 0 2.2 0V8.6l-1.8-1.8" />
-                    </svg>
-                    Cargas
+                    <span class="faro-icon faro-icon--cargas" aria-hidden="true"></span>
+                    Mis cargas
                     @if (pendientes > 0)
                     {
                         <span class="pestana-badge"
                               aria-label="@pendientes datos esperando que los completes">@pendientes</span>
                     }
                 </NavLink>
-
-                <NavLink class="pestana" href="lealtad">
-                    @* El boleto, con su linea de corte. *@
-                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <rect x="2.8" y="5.6" width="14.4" height="8.8" rx="1.6" />
-                        <path d="M12.4 5.6v8.8" stroke-dasharray="1.6 1.5" />
-                    </svg>
-                    Lealtad
-                </NavLink>
-
-                <NavLink class="pestana" href="mi-carro">
-                    @* El carro, de perfil. *@
-                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3.4 13.2v-2.4l1.8-4h9.6l1.8 4v2.4" />
-                        <path d="M3.4 10.8h13.2" />
-                        <circle cx="6.6" cy="13.4" r="1.4" />
-                        <circle cx="13.4" cy="13.4" r="1.4" />
-                    </svg>
-                    Mi carro
-                </NavLink>
             </div>
         </nav>
 
         @* La tecla va DESPUES de las pestañas: en escritorio queda al borde derecho, donde
            no compite con la navegacion. Es tenue a proposito -la app se pone al dia sola al
-           abrir-, asi que esto es "volve a chequear AHORA" y no el punto de partida. *@
-        <button class="tecla tecla--releer" @onclick="Refrescar" disabled="@estado.Refrescando">
-            @(estado.Refrescando ? "Actualizando…" : "Actualizar")
+           abrir-, asi que esto es "volve a chequear AHORA" y no el punto de partida.
+
+           EN ÍCONO, no en texto: menos ruido en el capó. La etiqueta sigue existiendo
+           -aria-label y title-, así que quien usa lector de pantalla o mouse con
+           tooltip la sigue leyendo igual que antes. *@
+        <button class="tecla tecla--releer" @onclick="Refrescar" disabled="@estado.Refrescando"
+                aria-label="@(estado.Refrescando ? "Actualizando…" : "Actualizar")"
+                title="@(estado.Refrescando ? "Actualizando…" : "Actualizar")">
+            @* Ícono del sprite oficial de Faro -reemplaza al SVG dibujado a mano-. *@
+            <span class="faro-icon faro-icon--actualizar" aria-hidden="true"></span>
         </button>
         }
     </div>
