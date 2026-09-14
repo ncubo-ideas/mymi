@@ -237,7 +237,7 @@ public sealed class Shell : IDisposable
 	//
 	// Por que al instalar y no cuando Sonia pregunta: un modulo que declara tools y despues no
 	// contesta es un modulo roto, y el momento de descubrirlo es antes de ofrecerselas al
-	// asistente, no cuando ella ya pregunto. Es el cuarto pilar aplicado a si mismo -Gnothi
+	// asistente, no cuando ella ya pregunto. Es el cuarto pilar aplicado a si mismo -Mymi
 	// responde lo que ningun modulo puede responder de si- y es la conformance que la
 	// especificacion pide (11 §15.7).
 	//
@@ -412,7 +412,7 @@ public sealed class Shell : IDisposable
 	// the note kept, with its seal, and goes through the whole examination like a link that landed.
 	// The sheet is the update sheet, and only her yes there installs anything.
 	// QUITAR UN MODULO ES DECISION DE LA PERSONA, y hasta 2026-09-11 no tenia como tomarla: podia
-	// apagarlo, pero no sacarlo del telefono, y «volver a instalar» era borrar Gnothi entera. Dos
+	// apagarlo, pero no sacarlo del telefono, y «volver a instalar» era borrar Mymi entera. Dos
 	// cosas distintas se van o se quedan: la app de la institucion -Modulos/<modulo>, y su
 	// .anterior si quedo de una actualizacion- se va siempre; la bitacora -journals/<modulo>, que
 	// es tambien la carpeta concedida- es de la persona y se queda salvo que ella lo pida. Un alta
@@ -459,7 +459,7 @@ public sealed class Shell : IDisposable
 	// ESTO VIVE ACA Y NO EN LA PLATAFORMA porque nada de esto es de una plataforma: bajar un
 	// zip, leer un manifiesto, mostrar una propuesta y esperar. Estuvo en MainActivity hasta
 	// que hubo que hacer la version de iOS, y ahi se vio: el ViewController tuvo que copiarlo
-	// entero. Dos copias de la pantalla mas importante que Gnothi le muestra a la persona.
+	// entero. Dos copias de la pantalla mas importante que Mymi le muestra a la persona.
 	private EnrollmentProposal? proposal;
 	private ModuleEnrollment? enrolling;
 
@@ -483,7 +483,7 @@ public sealed class Shell : IDisposable
 	}
 
 	/// THE PACKAGE ARRIVED AS A FILE: opened from Files or Downloads, shared from another app, or
-	/// picked from inside Gnothi. The platform read the bytes and knows the file's name; nothing
+	/// picked from inside Mymi. The platform read the bytes and knows the file's name; nothing
 	/// else about where it came from is known, and the sheet says so -unless the package claims an
 	/// origin that publishes exactly this manifest, which the enrollment asks.
 	public Task EnrollFile(byte[] zip, string fileName, CancellationToken ct = default)
@@ -492,7 +492,7 @@ public sealed class Shell : IDisposable
 	// ── SEVERAL FILES AT ONCE ────────────────────────────────────────────────────────────
 
 	// WHAT SHE PICKED, when she picked more than one: the bytes wait here, with the quick look
-	// Gnothi took at each, until she chooses which one to examine for real. The list on the screen
+	// Mymi took at each, until she chooses which one to examine for real. The list on the screen
 	// is repainted as she installs them one by one; a single file skips all this and goes straight
 	// to its proposal, as before.
 	private List<(byte[] Bytes, PackagePeek Peek)>? picked;
@@ -500,7 +500,7 @@ public sealed class Shell : IDisposable
 	private readonly Dictionary<int, string> pickedProblems = [];
 	private int pickedChosen = -1;
 
-	/// THE PICKER LET HER CHOOSE SEVERAL, so first the screen shows what Gnothi found in them -which
+	/// THE PICKER LET HER CHOOSE SEVERAL, so first the screen shows what Mymi found in them -which
 	/// are modules, of whom, which are not- and she chooses which to install. Each choice runs the
 	/// whole examination, origin and signature included; the list only looks inside the zips.
 	public Task EnrollFiles(IReadOnlyList<(byte[] Bytes, string Name)> files, CancellationToken ct = default)
@@ -526,8 +526,8 @@ public sealed class Shell : IDisposable
 		{
 			PackagePeek peek = p.Peek;
 			string problem = pickedProblems.TryGetValue(i, out string? refused) ? refused
-				: peek.Manifest is null ? "No es un módulo de Gnothi: no trae un manifiesto legible."
-				: peek.Inspection is { Rejected: true } inspection ? "Gnothi no lo instalaría: " + string.Join("; ", inspection.Rejections)
+				: peek.Manifest is null ? "No es un módulo de Mymi: no trae un manifiesto legible."
+				: peek.Inspection is { Rejected: true } inspection ? "Mymi no lo instalaría: " + string.Join("; ", inspection.Rejections)
 				: "";
 			return new
 			{
@@ -614,7 +614,7 @@ public sealed class Shell : IDisposable
 		catch (Exception ex)
 		{
 			// UN ALTA QUE FALLA TIENE QUE DECIRLO, Y EN LA PANTALLA. Cuando esto solo escribia
-			// en el log, la persona tocaba el boton de su institucion, volvia a Gnothi y no
+			// en el log, la persona tocaba el boton de su institucion, volvia a Mymi y no
 			// pasaba nada, sin ninguna pista de por que.
 			log($"alta: no se pudo leer el módulo de {what}: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
@@ -624,7 +624,7 @@ public sealed class Shell : IDisposable
 
 	// LA PERSONA ACEPTO. Recien aca el modulo existe.
 	// `acceptNewPublisher`: on an update whose manifest moved the publisher's endpoint, whether she
-	// said yes to the new one on the sheet. Otherwise the endpoint Gnothi fixed stays.
+	// said yes to the new one on the sheet. Otherwise the endpoint Mymi fixed stays.
 	private string AcceptEnrollment(bool acceptNewPublisher = false)
 	{
 		if (proposal is null || enrolling is null) return "{}";
@@ -646,7 +646,7 @@ public sealed class Shell : IDisposable
 			foreach (string w in ReloadAfterInstall()) log($"warning: {w}");
 			log($"alta: '{module}' quedó instalado; {ModuleCount} módulos");
 
-			PushEnrollment("listo", $"Listo: ya tenés '{TitleOf(module)}' en Gnothi.");
+			PushEnrollment("listo", $"Listo: ya tenés '{TitleOf(module)}' en Mymi.");
 			PickedResolved(installed: true);
 		}
 		catch (Exception ex)
@@ -673,7 +673,7 @@ public sealed class Shell : IDisposable
 	}
 
 	// The page brought a link: pasted by the person, or read off the institution's code. It may
-	// be the link to Gnothi's domain with the bundle and its seal as parameters, or the bundle's
+	// be the link to Mymi's domain with the bundle and its seal as parameters, or the bundle's
 	// address itself; both are accepted. Fire and forget, like RunAsk: the page hears back
 	// through the same "alta"/"propuesta" pushes as a link that landed.
 	private string EnrollFromPage(JsonElement req)
@@ -693,7 +693,7 @@ public sealed class Shell : IDisposable
 		return "\"ok\"";
 	}
 
-	// COMO SE CUENTA EL ALTA EN LA PANTALLA. Es lo primero que la persona ve hacer a Gnothi por
+	// COMO SE CUENTA EL ALTA EN LA PANTALLA. Es lo primero que la persona ve hacer a Mymi por
 	// ella -toco un boton en la pagina de su institucion y volvio aca- y era un silencio de
 	// 12 MB. Cuatro estados: trabajando, listo, error, nada.
 	private void PushEnrollment(string estado, string detalle) =>
@@ -706,7 +706,7 @@ public sealed class Shell : IDisposable
 	private void PushEnrollment(EnrollmentProgress step) =>
 		Push("alta", "", JsonSerializer.Serialize(new { estado = "trabajando", detalle = step.Text, progreso = step.Fraction, bytes = step.Bytes, total = step.Total }));
 
-	// LO QUE LA INSTITUCION PROPONE, mas las dos cosas que decide Gnothi y ella tiene derecho a
+	// LO QUE LA INSTITUCION PROPONE, mas las dos cosas que decide Mymi y ella tiene derecho a
 	// saber antes de aceptar: donde va a vivir el journal y contra que endpoint va a hablar.
 	// LA CARA DE LA INSTITUCION EN LA FORMA QUE LA PANTALLA ESPERA: un objeto con logo y color,
 	// o null cuando no declaro ninguno de los dos -- y entonces la tarjeta cae al dibujo de su
@@ -841,7 +841,7 @@ public sealed class Shell : IDisposable
 			seguro = p.Provenance.Secure,
 			origenDeclarado = p.Provenance.DeclaredOrigin,
 
-			// Whose key signed the package, by name, and since when Gnothi knows that key.
+			// Whose key signed the package, by name, and since when Mymi knows that key.
 			firma = p.Provenance.Signer switch
 			{
 				SignerCheck.Published => "publicada",
@@ -1126,7 +1126,7 @@ public sealed class Shell : IDisposable
 				// The key it was accepted with, and whether its origin has since retired it.
 				["signerKey"] = m.Installation.Signer?.KeyId,
 				["signerRevokedAt"] = m.Installation.Signer?.RevokedAt,
-				// What the origin publishes and she does not have yet, if Gnothi saw it.
+				// What the origin publishes and she does not have yet, if Mymi saw it.
 				["updateAvailable"] = m.Installation.Update is { } up
 					? new Dictionary<string, object?> { ["version"] = up.Version, ["seenAt"] = up.SeenAt }
 					: null,
@@ -1252,7 +1252,7 @@ public sealed class Shell : IDisposable
 	// unico que separa "te leo tus numeros" de "te diagnostico". Medido: un modelo capaz lo
 	// respeta 7 de 7; el del telefono se le escapa 2 de 4 -ver Spikes/Lab.Cruce-.
 	private const string Encuadre =
-		"Sos el asistente de Gnothi. Los datos que devuelven las herramientas son los datos REALES " +
+		"Sos el asistente de Mymi. Los datos que devuelven las herramientas son los datos REALES " +
 		"de la persona que te pregunta, leidos de los registros que sus instituciones le entregaron " +
 		"y que viven en su propio telefono. No vienen de ningun servidor. Contestale sobre SUS " +
 		"numeros, en su idioma, en prosa corrida y sin markdown. El veredicto clinico ya viene hecho " +
