@@ -575,8 +575,8 @@
     <div id="alta"></div>
 
     <div class="hola">
-      <div class="t"><b data-t="inicio.titulo">Mis conexiones</b><small id="home-sub"></small></div>
-      <button class="addbtn" onclick="gn.sheet(true)"><span>+</span><span data-t="inicio.conectar">Conectar</span></button>
+      <div class="t"><b data-i18n="inicio.titulo">Mis conexiones</b><small id="home-sub"></small></div>
+      <button class="addbtn" onclick="gn.sheet(true)"><span>+</span><span data-i18n="inicio.conectar">Conectar</span></button>
     </div>
     <div class="grid" id="mods"></div>
 
@@ -599,10 +599,10 @@
         <div class="halo" aria-hidden="true"></div>
         <img class="nada-mymi" src="img/mymi-hub.png" alt="">
       </div>
-      <h2 data-t="inicio.vacio.titulo">Todo lo tuyo, en un solo lugar</h2>
-      <p data-t="inicio.vacio.cuerpo">Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.</p>
-      <button class="cta" onclick="gn.sheet(true)"><span>+</span><span data-t="inicio.conectar">Conectar</span></button>
-      <small class="lema" data-t="inicio.lema">Your world, together</small>
+      <h2 data-i18n="inicio.vacio.titulo">Todo lo tuyo, en un solo lugar</h2>
+      <p data-i18n="inicio.vacio.cuerpo">Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.</p>
+      <button class="cta" onclick="gn.sheet(true)"><span>+</span><span data-i18n="inicio.conectar">Conectar</span></button>
+      <small class="lema" data-i18n="inicio.lema">Your world, together</small>
     </div>
     <style id="brand-fonts"></style>
   </div>
@@ -611,7 +611,7 @@
 <!-- ═══ DETALLE ═══ -->
 <div class="view" id="v-detail">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('home')">‹ Inicio</div>
+    <div class="back" onclick="gn.nav('home')">‹ <span data-i18n="nav.inicio">Inicio</span></div>
     <div id="detail"></div>
   </div>
 </div>
@@ -620,12 +620,12 @@
 <div class="view" id="v-chat">
   <div class="chat-head">
     <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v2M5.6 5.6l1.4 1.4M18.4 5.6L17 7M12 7a5 5 0 0 1 5 5v4a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-4a5 5 0 0 1 5-5z"/><circle cx="10" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="14" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></div>
-    <div><b>Asistente</b><small>tus módulos responden; el modelo redacta</small></div>
+    <div><b data-i18n="asistente.titulo">Asistente</b><small data-i18n="asistente.sub">tus módulos responden; el modelo redacta</small></div>
   </div>
-  <div id="msgs"><div class="empty" id="chat-empty">Preguntale a tus módulos.<br>
-    <i>«¿cómo vienen mis exámenes?»<br>«mirá mis exámenes y mis compras juntos»</i></div></div>
+  <div id="msgs"><div class="empty" id="chat-empty"><span data-i18n="asistente.vacio">Preguntale a tus módulos.</span><br>
+    <i><span data-i18n="chat.ejemplo1">«¿cómo vienen mis exámenes?»</span><br><span data-i18n="chat.ejemplo2">«mirá mis exámenes y mis compras juntos»</span></i></div></div>
   <div class="inbar">
-    <input id="q" type="text" placeholder="Escribí tu pregunta…" autocomplete="off">
+    <input id="q" type="text" placeholder="Escribí tu pregunta…" data-i18n="asistente.placeholder" data-i18n-attr="placeholder" autocomplete="off">
     <button id="send" onclick="gn.ask()">➤</button>
   </div>
 </div>
@@ -633,9 +633,9 @@
 <!-- ═══ JOURNAL ═══ -->
 <div class="view" id="v-journal">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Datos de tus instituciones</h2>
-    <p class="qlead">Información que Mymi mantiene en este dispositivo. Nadie más la lee: al preguntar,
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="journal.titulo">Datos de tus instituciones</h2>
+    <p class="qlead" data-i18n="journal.lead">Información que Mymi mantiene en este dispositivo. Nadie más la lee: al preguntar,
     al asistente viaja solo lo que la consulta elegida devuelve.</p>
     <div id="journal"></div>
   </div>
@@ -644,44 +644,44 @@
 <!-- ═══ AJUSTES ═══ -->
 <div class="view" id="v-set">
   <div class="scroll">
-    <div class="top"><div class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></div><b>Ajustes</b></div>
+    <div class="top"><div class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></div><b data-i18n="ajustes.titulo">Ajustes</b></div>
 
-    <h3 class="cap">Datos en este teléfono</h3>
+    <h3 class="cap" data-i18n="ajustes.cap.datos">Datos en este teléfono</h3>
     <div class="srow" onclick="gn.nav('journal')">
       <div class="ico"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
-      <div class="t"><b>Datos de tus instituciones</b><small id="set-datos-sub"></small></div><span class="chev">›</span>
+      <div class="t"><b data-i18n="journal.titulo">Datos de tus instituciones</b><small id="set-datos-sub"></small></div><span class="chev">›</span>
     </div>
 
-    <h3 class="cap">Asistente</h3>
+    <h3 class="cap" data-i18n="asistente.titulo">Asistente</h3>
     <div class="srow tall" onclick="gn.nav('prov')">
       <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/></svg></div>
-      <div class="t"><b>Proveedor de IA</b>
+      <div class="t"><b data-i18n="ajustes.proveedor-ia">Proveedor de IA</b>
         <small id="set-prov-sub"></small><small id="set-key-sub"></small></div>
       <span class="chev">›</span>
     </div>
 
-    <h3 class="cap">Información técnica</h3>
+    <h3 class="cap" data-i18n="ajustes.cap.tecnica">Información técnica</h3>
     <div class="kv tech" id="set-host"></div>
 
-    <p class="hint" style="margin-top:22px">Tus datos permanecen en este dispositivo.</p>
+    <p class="hint" style="margin-top:22px" data-i18n="ajustes.permanecen">Tus datos permanecen en este dispositivo.</p>
   </div>
 </div>
 
 <!-- ═══ PROVEEDOR DE IA ═══ -->
 <div class="view" id="v-prov">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Proveedor de IA</h2>
-    <p class="qlead">Todos hablan el mismo formato. El asistente le manda solo lo que la consulta elegida devuelve.</p>
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="ajustes.proveedor-ia">Proveedor de IA</h2>
+    <p class="qlead" data-i18n="prov.lead">Todos hablan el mismo formato. El asistente le manda solo lo que la consulta elegida devuelve.</p>
     <div class="kv" id="set-model"></div>
 
-    <h3 class="cap">Acceso</h3>
+    <h3 class="cap" data-i18n="prov.cap.acceso">Acceso</h3>
     <!-- The key card: state and actions, and an editor that NEVER echoes the stored value. -->
     <div class="key" id="set-key"></div>
-    <p class="hint">Sirve cualquier clave del proveedor — gratuita o de pago. Se guarda solo en este teléfono
+    <p class="hint" data-i18n="prov.hint">Sirve cualquier clave del proveedor — gratuita o de pago. Se guarda solo en este teléfono
     y no viaja a ningún lado salvo al proveedor.</p>
 
-    <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)">Cambiar proveedor</button>
+    <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)" data-i18n="prov.cambiar">Cambiar proveedor</button>
   </div>
 </div>
 
@@ -694,8 +694,8 @@
   <div class="card">
     <div id="pr-h" class="hero pr-hero"></div>
     <div id="pr-cuerpo"></div>
-    <button class="cta" onclick="gn.altaAceptar()">Instalar en mi teléfono</button>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()">Ahora no</button>
+    <button class="cta" onclick="gn.altaAceptar()" data-i18n="propuesta.instalar">Instalar en mi teléfono</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()" data-i18n="propuesta.ahora-no">Ahora no</button>
   </div>
 </div>
 
@@ -707,12 +707,12 @@
      le dice con todas las letras antes de que lo marque. -->
 <div id="quitar" class="osheet" onclick="if(event.target===this)gn.quitarCerrar()">
   <div class="card">
-    <h4 id="q-titulo">Quitar</h4>
+    <h4 id="q-titulo" data-i18n="quitar.titulo">Quitar</h4>
     <p id="q-cuerpo"></p>
-    <label class="chk"><input id="q-journal" type="checkbox"> Borrar también mi bitácora de este teléfono</label>
+    <label class="chk"><input id="q-journal" type="checkbox"> <span data-i18n="quitar.borrar-bitacora">Borrar también mi bitácora de este teléfono</span></label>
     <p id="q-aviso" class="hint"></p>
-    <button class="cta" onclick="gn.quitarConfirmar()">Quitar</button>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.quitarCerrar()">Cancelar</button>
+    <button class="cta" onclick="gn.quitarConfirmar()" data-i18n="quitar.titulo">Quitar</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.quitarCerrar()" data-i18n="general.cancelar">Cancelar</button>
   </div>
 </div>
 
@@ -729,8 +729,8 @@
   <video id="cam" autoplay playsinline muted></video>
   <div class="scan-ui">
     <div class="scan-box"></div>
-    <p id="scan-msg">Apuntá al código de tu institución</p>
-    <button onclick="gn.scan.stop()">Cancelar</button>
+    <p id="scan-msg" data-i18n="scan.apunta">Apuntá al código de tu institución</p>
+    <button onclick="gn.scan.stop()" data-i18n="general.cancelar">Cancelar</button>
   </div>
 </div>
 
@@ -741,36 +741,36 @@
      "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
-    <h4>Tus instituciones, siempre contigo.</h4>
-    <p>Tu laboratorio, tu supermercado, tu emisor de facturas te dan un módulo. Agregalo y llevá con
+    <h4 data-i18n="agregar.titulo">Tus instituciones, siempre contigo.</h4>
+    <p data-i18n="agregar.lead">Tu laboratorio, tu supermercado, tu emisor de facturas te dan un módulo. Agregalo y llevá con
     vos su información y sus servicios. Mymi lo revisa y te muestra qué trae antes de instalar nada.</p>
     <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
          row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
     <div class="vias">
       <button class="via" id="alta-scan" onclick="gn.scan.start()">
         <span class="vi"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M17 20h3M14 20h.5"/></svg></span>
-        <span class="vt"><b>Escanear su código</b><small>el QR de su página, o el de tu hoja de resultados</small></span>
+        <span class="vt"><b data-i18n="agregar.escanear">Escanear su código</b><small data-i18n="agregar.escanear.sub">el QR de su página, o el de tu hoja de resultados</small></span>
         <span class="chev">›</span>
       </button>
       <button class="via" id="alta-link" onclick="gn.altaMostrarEnlace()">
         <span class="vi"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
-        <span class="vt"><b>Pegar su enlace</b><small>el que te llegó por correo o por WhatsApp</small></span>
+        <span class="vt"><b data-i18n="agregar.pegar">Pegar su enlace</b><small data-i18n="agregar.pegar.sub">el que te llegó por correo o por WhatsApp</small></span>
         <span class="chev">›</span>
       </button>
       <div id="alta-enlace" class="enlace">
         <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
-        <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
+        <button class="cta" onclick="gn.altaDesdeEnlace()" data-i18n="inicio.conectar">Conectar</button>
       </div>
       <button class="via" id="alta-file" onclick="gn.altaArchivo()">
         <span class="vi"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></span>
-        <span class="vt"><b>Elegir archivos en mi teléfono</b><small>se abre en Descargas; podés elegir varios</small></span>
+        <span class="vt"><b data-i18n="agregar.archivos">Elegir archivos en mi teléfono</b><small data-i18n="agregar.archivos.sub">se abre en Descargas; podés elegir varios</small></span>
         <span class="chev">›</span>
       </button>
     </div>
     <div id="alta-hint" style="min-height:18px;margin:8px 4px 0;font-size:13px;color:#8E2A1F"></div>
-    <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Mymi:
+    <p id="alta-noscan" style="display:none"><small data-i18n="agregar.sin-lector">Este teléfono no puede leer códigos desde Mymi:
     pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
-    <p style="margin-top:8px"><small>Si estás en la página de tu institución, su botón «Agregar a Mymi» hace lo mismo.</small></p>
+    <p style="margin-top:8px"><small data-i18n="agregar.boton-pagina">Si estás en la página de tu institución, su botón «Agregar a Mymi» hace lo mismo.</small></p>
   </div>
 </div>
 
@@ -780,35 +780,35 @@
      the list comes back with the row marked, so she goes on with the next. -->
 <div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
   <div class="card">
-    <h4>Esto encontré en lo que elegiste</h4>
-    <p>Tocá el módulo que querés agregar. Mymi te muestra qué trae antes de instalarlo, y después
+    <h4 data-i18n="hallazgos.titulo">Esto encontré en lo que elegiste</h4>
+    <p data-i18n="hallazgos.lead">Tocá el módulo que querés agregar. Mymi te muestra qué trae antes de instalarlo, y después
     podés seguir con el siguiente.</p>
     <div id="ha-lista"></div>
-    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()">Listo</button>
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()" data-i18n="general.listo">Listo</button>
   </div>
 </div>
 
 <!-- the provider picker: choose, then just paste that provider's key -->
 <div id="psheet" class="osheet" onclick="if(event.target===this)gn.psheet(false)">
   <div class="card">
-    <h4>Elegí el proveedor del modelo</h4>
-    <p>Todos hablan el mismo formato. Elegí uno y pegá <b>su</b> llave — gratuita o de pago.</p>
+    <h4 data-i18n="prov.elegir.titulo">Elegí el proveedor del modelo</h4>
+    <p data-i18n="prov.elegir.lead">Todos hablan el mismo formato. Elegí uno y pegá su llave — gratuita o de pago.</p>
     <div id="plist"></div>
     <div id="pcustom" style="display:none">
       <input id="cu-url" autocomplete="off" spellcheck="false" placeholder="https://servidor/v1">
-      <input id="cu-model" autocomplete="off" spellcheck="false" placeholder="nombre-del-modelo">
-      <button class="cta" onclick="gn.saveCustom()">Usar este</button>
+      <input id="cu-model" autocomplete="off" spellcheck="false" placeholder="nombre-del-modelo" data-i18n="prov.nombre-del-modelo" data-i18n-attr="placeholder">
+      <button class="cta" onclick="gn.saveCustom()" data-i18n="prov.usar-este">Usar este</button>
     </div>
   </div>
 </div>
 
 <nav>
   <button id="n-home" class="on" onclick="gn.nav('home')">
-    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>Inicio</button>
+    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg><span data-i18n="nav.inicio">Inicio</span></button>
   <button id="n-chat" onclick="gn.nav('chat')">
-    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L3 20l1.1-4.1a8 8 0 0 1-1.1-4.4A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>Asistente</button>
+    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L3 20l1.1-4.1a8 8 0 0 1-1.1-4.4A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg><span data-i18n="asistente.titulo">Asistente</span></button>
   <button id="n-set" onclick="gn.nav('set')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Ajustes</button>
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg><span data-i18n="nav.ajustes">Ajustes</span></button>
 </nav>
 
 <script>
@@ -1397,9 +1397,9 @@ const gn = {
     const ms = [...gn.state.modules].sort((a, b) => String(b.installedAt || '').localeCompare(String(a.installedAt || '')));
 
     document.getElementById('home-sub').textContent =
-      ms.length === 0 ? t('inicio.sin-ninguna')
-      : ms.length === 1 ? t('inicio.una')
-      : t('inicio.varias', { n: ms.length });
+      ms.length === 0 ? T('inicio.sin-ninguna')
+      : ms.length === 1 ? T('inicio.una')
+      : T('inicio.varias', { n: ms.length });
 
     const vacio = document.getElementById('home-empty');
     vacio.hidden = ms.length > 0;
@@ -1696,6 +1696,42 @@ function sw(on, fn) {
   return '<label class="sw"><input type="checkbox"' + (on ? ' checked' : '')
        + ' onchange="' + fn + '"><i></i></label>';
 }
+// ── LO QUE ESTA PANTALLA DICE, EN EL IDIOMA DE LA PERSONA ─────────────────────────────
+//
+// El catalogo es el mismo que usa el C# del Host: Gnothi.Host/textos.json, servido por el
+// puente con el op 'textos'. Se PIDE al arrancar y no se espera un push, porque el puente es
+// sincrono: asi no hay un instante en que la pantalla este pintada en el idioma equivocado.
+// Y no se puede ir a buscar el archivo -- esta pagina se carga como file:// y un fetch a otro
+// file:// lo rechaza el navegador en las dos plataformas.
+//
+// LOS VALORES VIAJAN CON NOMBRE, nunca por posicion: el orden de las palabras cambia entre los
+// dos idiomas y un {0} que se mueve compila, corre y miente.
+//
+// EL TEXTO QUE ESTA ESCRITO EN EL HTML ES EL RESPALDO, no la fuente. La autoridad es el
+// catalogo; lo de adentro del marcado existe para que mock() -- la maqueta que se itera en un
+// monitor, sin telefono -- siga mostrando algo legible. La suite afirma que toda clave
+// data-i18n existe en el catalogo.
+let TEXTOS = {};
+
+function T(clave, valores) {
+  let frase = TEXTOS[clave];
+  if (frase === undefined) return clave;
+  if (valores) for (const nombre in valores) frase = frase.split('{' + nombre + '}').join(valores[nombre]);
+  return frase;
+}
+
+// Repinta lo que esta escrito en el marcado. Un nodo lleva data-i18n con su clave; si ademas
+// lleva data-i18n-attr, lo que se cambia es ese atributo y no el texto.
+function pintarTextos() {
+  for (const el of document.querySelectorAll('[data-i18n]')) {
+    const clave = el.getAttribute('data-i18n');
+    if (!(clave in TEXTOS)) continue;
+    const attr = el.getAttribute('data-i18n-attr');
+    if (attr) el.setAttribute(attr, TEXTOS[clave]);
+    else el.textContent = TEXTOS[clave];
+  }
+}
+
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -1822,6 +1858,17 @@ const MOCK_PROPUESTA = {
 };
 
 function mock(op, x) {
+  // LA MAQUETA NO TIENE CATALOGO, y devuelve uno vacio a proposito en vez de inventar uno.
+  //
+  // Consecuencia, y conviene saberla antes de abrir esto en un monitor: lo que esta escrito en
+  // el MARCADO se sigue viendo -- es el respaldo -- y lo que arma el JavaScript sale como su
+  // clave, «alta.paso.revisando» en vez de la frase. La maqueta existe para iterar CSS y
+  // disposicion, y eso sigue sirviendo; para leer copy hay que abrirla en el telefono.
+  //
+  // La alternativa era repetir el espanol aca, y dos copias del mismo texto es exactamente lo
+  // que el catalogo existe para evitar.
+  if (op === 'textos') return {};
+
   if (op === 'altaArchivo') {
     // The mock "picks" three files: two modules -one she already has- and a zip that is not one.
     setTimeout(() => gn.push('hallazgos', '', JSON.stringify({ archivos: [
@@ -1908,27 +1955,16 @@ if (!gn.scan.supported()) {
   document.getElementById('alta-noscan').style.display = '';
 }
 
-// LAS FRASES DE ESTA CARA SALEN DEL CATALOGO DEL HOST -Gnothi.Host/textos.json-, el mismo que
-// leen el escritorio y las frases del alta. La pagina NO elige idioma: la cascara lo resolvio del
-// aparato al arrancar y manda las frases ya resueltas. Dos resolutores serian dos verdades.
+// EL IDIOMA PRIMERO, Y DESPUES EL ESTADO. Las dos llamadas son sincronas, asi que para cuando
+// se pinta la primera tarjeta la pantalla ya esta en el idioma del aparato.
 //
-// El texto que quedo escrito en el marcado es el espanol, y hace de respaldo si una clave faltara.
-// `gn.call` ya devuelve el json parseado, asi que aca no se vuelve a parsear.
-const MYMI_T = gn.call('textos') || {};
-
-// `t('clave')` devuelve la frase entera; `t('clave', {n: 3})` rellena sus huecos con NOMBRE y
-// nunca por posicion, que es la regla del catalogo. Una clave que falta se ve tal cual en
-// pantalla: fea, que es como uno quiere encontrarla.
-function t(clave, vars) {
-  let frase = MYMI_T[clave];
-  if (frase === undefined) return clave;
-  if (vars) for (const k in vars) frase = frase.split('{' + k + '}').join(vars[k]);
-  return frase;
-}
-document.querySelectorAll('[data-t]').forEach(e => {
-  const v = MYMI_T[e.getAttribute('data-t')];
-  if (v !== undefined) e.textContent = v;
-});
+// ACA HUBO DOS LECTORES POR UNAS HORAS. Geaninna escribio `t()`/`data-t`/`MYMI_T` para la
+// pantalla de inicio vacio el mismo dia que esta rama escribia `T()`/`data-i18n`/`TEXTOS` para
+// la pagina entera; los dos leian este mismo catalogo por este mismo puente. Queda uno -- el que
+// cubre las 124 llamadas -- y las seis etiquetas de ella entraron a el sin tocar su pantalla.
+TEXTOS = gn.call('textos') || {};
+IDIOMA = TEXTOS['idioma'] || 'es';
+pintarTextos();
 
 const first = gn.call('modules');
 if (first && !first.loading) { gn.state = first; gn.paint(); }

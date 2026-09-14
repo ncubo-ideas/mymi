@@ -441,6 +441,29 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 		}
 	}
 
+	// TODA CLAVE data-i18n DE ui.html EXISTE EN EL CATALOGO.
+	//
+	// Es lo que hace segura la estrategia del respaldo: la pagina lleva el espanol escrito
+	// adentro del marcado para que la maqueta siga siendo legible, y el catalogo lo PISA cuando
+	// llega. Una clave mal escrita no rompe nada visible -- el nodo simplemente se queda en
+	// espanol -- asi que en ingles esa sola frase saldria en espanol y nadie lo notaria hasta
+	// verlo en un telefono. Aca se nota al compilar.
+	{
+		string pagina = Path.Combine(raiz, "Gnothi.Mobile", "Assets", "ui.html");
+		string html = File.Exists(pagina) ? File.ReadAllText(pagina) : "";
+		string[] claves = [.. System.Text.RegularExpressions.Regex
+			.Matches(html, @"data-i18n=""([^""]+)""")
+			.Select(m => m.Groups[1].Value).Distinct().Order()];
+
+		Gnothi.Host.Textos.Idioma = "es";
+		string[] sinCatalogo = [.. claves.Where(c => Gnothi.Host.Textos.T(c) == c)];
+
+		Assert("ui.html tags at least the static markup",
+			claves.Length >= 40, $"only {claves.Length} data-i18n keys found in {pagina}");
+		Assert("every data-i18n key in ui.html exists in the catalog",
+			sinCatalogo.Length == 0, $"keys with no phrase: {string.Join(", ", sinCatalogo)}");
+	}
+
 	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
 	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
 	// said nothing about what each face declares.

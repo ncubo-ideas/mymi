@@ -11,6 +11,56 @@
 
   "//el-alta": "LAS FRASES DEL ALTA, que nacen en Gnothi.Movil/Shell.cs y las pinta ui.html. El detalle tecnico que algunas llevan al final -los rechazos de PackageInspector- NO entra aca y se queda en ingles: describe la ESTRUCTURA del paquete -que trae el motor, que trae un installation.json- y eso lo arregla quien lo empaqueto, no quien lo instala. La frase que la persona SI puede accionar es la que la envuelve, y esa es la que esta traducida.",
 
+  "//la-pagina": "LAS FRASES DE ui.html, la cara de los dos telefonos. Lo que esta escrito adentro del marcado es el RESPALDO y no la fuente: la autoridad es este archivo, y el texto inline existe para que mock() -la maqueta que se itera en un monitor- siga mostrando algo legible. La suite afirma que toda clave data-i18n existe aca.",
+
+  "//modulo-en-prosa": "En la CARA la lista se rotula «instituciones», y eso no cambia. Pero donde la frase habla del PAQUETE que la institucion entrega -«toca el modulo que quieres agregar»- la palabra sigue siendo modulo, porque ahi el sujeto es la cosa y no quien la manda. Si el equipo prefiere otra palabra para eso, se cambia en estas claves y en ningun otro lado.",
+
+  "nav.inicio":                   { "es": "Inicio", "en": "Home" },
+  "general.cancelar":             { "es": "Cancelar", "en": "Cancel" },
+  "general.listo":                { "es": "Listo", "en": "Done" },
+
+  "chat.ejemplo1":                { "es": "«¿cómo vienen mis exámenes?»", "en": "«how are my lab results going?»" },
+  "chat.ejemplo2":                { "es": "«mira mis exámenes y mis compras juntos»", "en": "«look at my lab results and my shopping together»" },
+
+  "journal.titulo":               { "es": "Datos de tus instituciones", "en": "Your institutions' data" },
+  "journal.lead":                 { "es": "Información que Mymi mantiene en este dispositivo. Nadie más la lee: al preguntar, al asistente viaja solo lo que la consulta elegida devuelve.", "en": "Information Mymi keeps on this device. Nobody else reads it: when you ask, only what the chosen query returns travels to the assistant." },
+
+  "ajustes.cap.datos":            { "es": "Datos en este teléfono", "en": "Data on this phone" },
+  "ajustes.cap.tecnica":          { "es": "Información técnica", "en": "Technical information" },
+  "ajustes.proveedor-ia":         { "es": "Proveedor de IA", "en": "AI provider" },
+  "ajustes.permanecen":           { "es": "Tus datos permanecen en este dispositivo.", "en": "Your data stays on this device." },
+
+  "prov.lead":                    { "es": "Todos hablan el mismo formato. El asistente le manda solo lo que la consulta elegida devuelve.", "en": "They all speak the same format. The assistant sends it only what the chosen query returns." },
+  "prov.cap.acceso":              { "es": "Acceso", "en": "Access" },
+  "prov.hint":                    { "es": "Sirve cualquier clave del proveedor — gratuita o de pago. Se guarda solo en este teléfono y no viaja a ningún lado salvo al proveedor.", "en": "Any key from the provider works — free or paid. It is kept on this phone only and goes nowhere except to the provider." },
+  "prov.cambiar":                 { "es": "Cambiar proveedor", "en": "Change provider" },
+  "prov.elegir.titulo":           { "es": "Elige el proveedor del modelo", "en": "Pick the model's provider" },
+  "prov.elegir.lead":             { "es": "Todos hablan el mismo formato. Elige uno y pega su llave — gratuita o de pago.", "en": "They all speak the same format. Pick one and paste its key — free or paid." },
+  "prov.usar-este":               { "es": "Usar este", "en": "Use this one" },
+  "prov.nombre-del-modelo":       { "es": "nombre-del-modelo", "en": "model-name" },
+
+  "propuesta.instalar":           { "es": "Instalar en mi teléfono", "en": "Install on my phone" },
+  "propuesta.ahora-no":           { "es": "Ahora no", "en": "Not now" },
+
+  "quitar.titulo":                { "es": "Quitar", "en": "Remove" },
+  "quitar.borrar-bitacora":       { "es": "Borrar también mi bitácora de este teléfono", "en": "Also delete my record from this phone" },
+
+  "scan.apunta":                  { "es": "Apunta al código de tu institución", "en": "Point at your institution's code" },
+
+  "agregar.titulo":               { "es": "Tus instituciones, siempre contigo.", "en": "Your institutions, always with you." },
+  "agregar.lead":                 { "es": "Tu laboratorio, tu supermercado, tu emisor de facturas te dan un módulo. Agrégalo y lleva contigo su información y sus servicios. Mymi lo revisa y te muestra qué trae antes de instalar nada.", "en": "Your lab, your supermarket, your invoice issuer each hand you a module. Add it and carry their information and services with you. Mymi checks it and shows you what it carries before installing anything." },
+  "agregar.escanear":             { "es": "Escanear su código", "en": "Scan their code" },
+  "agregar.escanear.sub":         { "es": "el QR de su página, o el de tu hoja de resultados", "en": "the QR on their page, or the one on your results sheet" },
+  "agregar.pegar":                { "es": "Pegar su enlace", "en": "Paste their link" },
+  "agregar.pegar.sub":            { "es": "el que te llegó por correo o por WhatsApp", "en": "the one you got by email or WhatsApp" },
+  "agregar.archivos":             { "es": "Elegir archivos en mi teléfono", "en": "Pick files on my phone" },
+  "agregar.archivos.sub":         { "es": "se abre en Descargas; puedes elegir varios", "en": "opens in Downloads; you can pick several" },
+  "agregar.sin-lector":           { "es": "Este teléfono no puede leer códigos desde Mymi: pega el enlace, o escanea el código con la cámara del sistema.", "en": "This phone cannot read codes from inside Mymi: paste the link, or scan the code with the system camera." },
+  "agregar.boton-pagina":         { "es": "Si estás en la página de tu institución, su botón «Agregar a Mymi» hace lo mismo.", "en": "If you are on your institution's page, its «Add to Mymi» button does the same." },
+
+  "hallazgos.titulo":             { "es": "Esto encontré en lo que elegiste", "en": "This is what I found in what you picked" },
+  "hallazgos.lead":               { "es": "Toca el módulo que quieres agregar. Mymi te muestra qué trae antes de instalarlo, y después puedes seguir con el siguiente.", "en": "Tap the module you want to add. Mymi shows you what it carries before installing it, and then you can go on with the next one." },
+
   "alta.paso.bajando":            { "es": "Bajando el módulo de {host}…", "en": "Downloading the module from {host}…" },
   "alta.paso.revisando":          { "es": "Revisando qué trae…", "en": "Checking what it carries…" },
   "alta.paso.preguntando":        { "es": "Preguntándole a {host} si este paquete es suyo…", "en": "Asking {host} whether this package is theirs…" },

@@ -979,13 +979,22 @@ public sealed class Shell : IDisposable
 
 			return op switch
 			{
-				"modules" => StateJson(),
+				// LO QUE LA PAGINA DICE CON SUS PROPIAS PALABRAS, en el idioma que la cascara ya
+				// resolvio del aparato. La pagina lo PIDE al arrancar en vez de esperar un push, y
+				// eso no es una preferencia: el puente es SINCRONO -- window.prompt devuelve ahi
+				// mismo -- asi que pidiendolo no hay un instante en que la pantalla este pintada en
+				// el idioma equivocado.
+				//
+				// Tampoco puede ir a buscar el archivo: ui.html se carga como file:// en las dos
+				// plataformas, y un fetch a otro file:// lo rechaza el navegador. El escritorio no
+				// pasa por aca: lee Textos.T directo, por referencia de proyecto.
+				//
+				// ESTA RAMA ESTUVO DUPLICADA unas horas, con el mismo nombre y el mismo cuerpo:
+				// Geaninna la agrego para la pantalla de inicio vacio el mismo dia que esta rama la
+				// agregaba para la pagina entera. Es la misma necesidad, y ahora es una sola.
+				"textos" => Textos.Json,
 
-				// EL CATALOGO, PARA LA CARA DE LOS TELEFONOS. El escritorio lee `Textos.T` por
-				// referencia de proyecto; la pagina no puede, y `fetch` de un `file://` tampoco.
-				// Por eso `Textos.Json` existe y por eso se entrega por el mismo puente que todo
-				// lo demas, ya resuelto al idioma que la plataforma fijo al arrancar.
-				"textos" => Gnothi.Host.Textos.Json,
+				"modules" => StateJson(),
 				"setTool" => SetConsent(
 					req.GetProperty("module").GetString() ?? "",
 					req.GetProperty("tool").GetString(),
