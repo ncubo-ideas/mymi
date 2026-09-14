@@ -1,6 +1,12 @@
 using Foundation;
 using Gnothi.Assistant;
-using Gnothi.Host;
+// EL CATALOGO DE TEXTOS, por alias y no importando el namespace entero: `Gnothi.Host`
+// tambien declara un `Shell` -- el bloque de installation.json -- y este archivo usa el
+// `Shell` de Gnothi.Movil. Importar los dos namespaces deja el nombre ambiguo y el iOS deja
+// de compilar. Es el MISMO error que 898edec arreglo en MainActivity, y aca sobrevivio porque
+// el SDK de iOS exige una version exacta de Xcode y el build ni empieza: hay que pasarle
+// -p:ValidateXcodeVersion=false, que esta en la receta del equipo y no en el camino de nadie.
+using Textos = Gnothi.Host.Textos;
 using Gnothi.Movil;
 using UIKit;
 using WebKit;
