@@ -31,42 +31,45 @@ namespace Municipalidad.Consola
 
 			Paso("la finca", api.IncorporarFinca("F-1"));
 			Paso("la finca otra vez", api.IncorporarFinca("F-1"));
-			Paso("el avaluo de 2023", api.FijarAvaluoDeFinca("F-1", new DateTime(2023, 1, 15), 20000000m));
-			Paso("el avaluo de 2025", api.FijarAvaluoDeFinca("F-1", new DateTime(2025, 1, 20), 36000000m));
-			Paso("el mismo avaluo otra vez", api.FijarAvaluoDeFinca("F-1", new DateTime(2025, 1, 20), 36000000m));
-			Paso("el valor de la finca", api.DeclararValorDeFinca("F-1", new DateTime(2025, 1, 15), 60000000m));
+			Paso("el avaluo de 2024", api.FijarAvaluoDeFinca("F-1", new DateTime(2024, 1, 15), 20000000m));
+			Paso("el avaluo de 2026", api.FijarAvaluoDeFinca("F-1", new DateTime(2026, 1, 20), 36000000m));
+			Paso("el mismo avaluo otra vez", api.FijarAvaluoDeFinca("F-1", new DateTime(2026, 1, 20), 36000000m));
+			Paso("el valor de la finca", api.DeclararValorDeFinca("F-1", new DateTime(2026, 1, 15), 60000000m));
 
-			Paso("recibo R-1", api.RegistrarPago("R-1", new DateTime(2024, 3, 31), 0m));
-			Paso("  basura 2024.03", api.AgregarLineaAlPago("R-1", "recoleccion-de-basura", "2024.03", 5000m, 0m));
-			Paso("  policia 2024.03", api.AgregarLineaAlPago("R-1", "servicio-policia", "2024.03", 6000m, 0m));
-			Paso("  bienes inmuebles 2024.01 -primer trimestre-", api.AgregarLineaAlPago("R-1", "bienes-inmuebles", "2024.01", 20000m, 0m));
-			Paso("  un rubro que no existe", api.AgregarLineaAlPago("R-1", "cementerio", "2024.03", 1000m, 0m));
-			Paso("  un trimestre que no existe", api.AgregarLineaAlPago("R-1", "bienes-inmuebles", "2024.05", 20000m, 0m));
+			Paso("recibo R-1", api.RegistrarPago("R-1", new DateTime(2025, 3, 31), 0m));
+			Paso("  basura 2025.03", api.AgregarLineaAlPago("R-1", "recoleccion-de-basura", "2025.03", 5000m, 0m));
+			Paso("  limpieza 2025.03", api.AgregarLineaAlPago("R-1", "limpieza-de-calles", "2025.03", 2500m, 0m));
+			Paso("  policia 2025.03", api.AgregarLineaAlPago("R-1", "servicio-policia", "2025.03", 6000m, 0m));
+			Paso("  bienes inmuebles 2025.01 -primer trimestre-", api.AgregarLineaAlPago("R-1", "bienes-inmuebles", "2025.01", 20000m, 0m));
+			Paso("  un rubro que no existe", api.AgregarLineaAlPago("R-1", "cementerio", "2025.03", 1000m, 0m));
+			Paso("  un trimestre que no existe", api.AgregarLineaAlPago("R-1", "bienes-inmuebles", "2025.05", 20000m, 0m));
 
-			Paso("recibo R-2", api.RegistrarPago("R-2", new DateTime(2024, 6, 30), 0m));
-			Paso("  basura 2024.06 -tres meses-", api.AgregarLineaAlPago("R-2", "recoleccion-de-basura", "2024.06", 15000m, 0m));
-			Paso("  policia 2024.06", api.AgregarLineaAlPago("R-2", "servicio-policia", "2024.06", 18000m, 0m));
-			Paso("  bienes inmuebles 2024.02", api.AgregarLineaAlPago("R-2", "bienes-inmuebles", "2024.02", 20000m, 0m));
-			Paso("  basura 2024.05, que ya esta cubierta", api.AgregarLineaAlPago("R-2", "recoleccion-de-basura", "2024.05", 5000m, 0m));
+			Paso("recibo R-2", api.RegistrarPago("R-2", new DateTime(2025, 6, 30), 0m));
+			Paso("  basura 2025.06 -tres meses-", api.AgregarLineaAlPago("R-2", "recoleccion-de-basura", "2025.06", 15000m, 0m));
+			Paso("  limpieza 2025.06 -tres meses, cambio menor-", api.AgregarLineaAlPago("R-2", "limpieza-de-calles", "2025.06", 8100m, 0m));
+			Paso("  policia 2025.06", api.AgregarLineaAlPago("R-2", "servicio-policia", "2025.06", 18000m, 0m));
+			Paso("  bienes inmuebles 2025.02", api.AgregarLineaAlPago("R-2", "bienes-inmuebles", "2025.02", 20000m, 0m));
+			Paso("  basura 2025.05, que ya esta cubierta", api.AgregarLineaAlPago("R-2", "recoleccion-de-basura", "2025.05", 5000m, 0m));
 
-			Paso("recibo R-3", api.RegistrarPago("R-3", new DateTime(2025, 6, 30), 0m));
-			Paso("recibo R-3 otra vez", api.RegistrarPago("R-3", new DateTime(2025, 6, 30), 0m));
-			Paso("  basura 2025.06 -doce meses, tarifa nueva-", api.AgregarLineaAlPago("R-3", "recoleccion-de-basura", "2025.06", 96000m, 310m));
-			Paso("  policia 2025.06", api.AgregarLineaAlPago("R-3", "servicio-policia", "2025.06", 73200m, 240m));
-			Paso("  bienes inmuebles 2025.02 -cuatro trimestres, avaluo nuevo-", api.AgregarLineaAlPago("R-3", "bienes-inmuebles", "2025.02", 144000m, 470m));
+			Paso("recibo R-3", api.RegistrarPago("R-3", new DateTime(2026, 6, 30), 0m));
+			Paso("recibo R-3 otra vez", api.RegistrarPago("R-3", new DateTime(2026, 6, 30), 0m));
+			Paso("  basura 2026.06 -doce meses, tarifa nueva-", api.AgregarLineaAlPago("R-3", "recoleccion-de-basura", "2026.06", 96000m, 310m));
+			Paso("  policia 2026.06", api.AgregarLineaAlPago("R-3", "servicio-policia", "2026.06", 73200m, 240m));
+			Paso("  bienes inmuebles 2026.02 -cuatro trimestres, avaluo nuevo-", api.AgregarLineaAlPago("R-3", "bienes-inmuebles", "2026.02", 144000m, 470m));
 
-			DateTime consulta = new DateTime(2025, 9, 3);
+			DateTime consulta = new DateTime(2026, 9, 3);
 			Paso("la consulta del 3 de setiembre", api.RegistrarConsulta(consulta));
-			Paso("  pendiente basura 2025.09", api.AgregarPendiente(consulta, "recoleccion-de-basura", "2025.09", 24000m, 45m));
-			Paso("  pendiente policia 2025.09", api.AgregarPendiente(consulta, "servicio-policia", "2025.09", 18300m, 34m));
-			Paso("  pendiente bienes inmuebles 2025.03", api.AgregarPendiente(consulta, "bienes-inmuebles", "2025.03", 36000m, 0m));
+			Paso("  pendiente basura 2026.09 -un mes: julio y agosto quedan sin comprobante-", api.AgregarPendiente(consulta, "recoleccion-de-basura", "2026.09", 8000m, 45m));
+			Paso("  pendiente policia 2026.09", api.AgregarPendiente(consulta, "servicio-policia", "2026.09", 18300m, 34m));
+			Paso("  pendiente bienes inmuebles 2026.03", api.AgregarPendiente(consulta, "bienes-inmuebles", "2026.03", 36000m, 0m));
 
-			Paso("al cobro basura 2025.10", api.PonerAlCobro("recoleccion-de-basura", "2025.10", 8000m, new DateTime(2025, 10, 1)));
-			Paso("al cobro basura 2025.10 otra vez", api.PonerAlCobro("recoleccion-de-basura", "2025.10", 8000m, new DateTime(2025, 10, 1)));
-			Paso("al cobro basura 2025.09, que el pendiente ya puso", api.PonerAlCobro("recoleccion-de-basura", "2025.09", 24000m, new DateTime(2025, 10, 1)));
-			Paso("al cobro un trimestre que no existe", api.PonerAlCobro("bienes-inmuebles", "2025.05", 36000m, new DateTime(2025, 10, 1)));
+			Paso("al cobro limpieza 2026.07 -ya vencido y sin pagar-", api.PonerAlCobro("limpieza-de-calles", "2026.07", 2700m, new DateTime(2026, 7, 1)));
+			Paso("al cobro basura 2026.10", api.PonerAlCobro("recoleccion-de-basura", "2026.10", 8000m, new DateTime(2026, 10, 1)));
+			Paso("al cobro basura 2026.10 otra vez", api.PonerAlCobro("recoleccion-de-basura", "2026.10", 8000m, new DateTime(2026, 10, 1)));
+			Paso("al cobro basura 2026.09, que el pendiente ya puso", api.PonerAlCobro("recoleccion-de-basura", "2026.09", 8000m, new DateTime(2026, 10, 1)));
+			Paso("al cobro un trimestre que no existe", api.PonerAlCobro("bienes-inmuebles", "2026.05", 36000m, new DateTime(2026, 10, 1)));
 
-			Paso("la reserva que la persona adopto", api.AdoptarReserva(30000m, new DateTime(2025, 8, 1)));
+			Paso("la reserva que la persona adopto -por debajo de lo propuesto-", api.AdoptarReserva(20000m, new DateTime(2026, 8, 1)));
 
 			Paso("el dispositivo", api.RegistrarDispositivo("DISPOSITIVO-DEMO-1"));
 			Paso("el dispositivo otra vez", api.RegistrarDispositivo("DISPOSITIVO-DEMO-1"));
@@ -81,7 +84,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine("  " + api.EstadoDeLaCuenta());
 			Console.WriteLine();
 
-			Console.WriteLine("  lo pagado en 2025 : " + api.LoPagadoEn(2025));
+			Console.WriteLine("  lo pagado en 2026 : " + api.LoPagadoEn(2026));
 			Console.WriteLine();
 
 			Console.WriteLine("  la serie de basura -con cuantos periodos cubre cada linea, inferido-:");
@@ -106,7 +109,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine();
 
 			Console.WriteLine("  que se me vence, al 25 de setiembre, con 7 dias de aviso -la ausencia-:");
-			RegistroDeVencimientos vencimientos = api.VencimientosAl(new DateTime(2025, 9, 25), 7);
+			RegistroDeVencimientos vencimientos = api.VencimientosAl(new DateTime(2026, 9, 25), 7);
 			for (int fila = 0; fila < vencimientos.Rubro.Length; fila++)
 			{
 				Console.WriteLine("    " + vencimientos.Rubro[fila]
@@ -120,7 +123,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine();
 
 			Console.WriteLine("  los atrasos al 5 de octubre, con el costo proyectado a 6,2 %:");
-			RegistroDeAtrasos atrasos = api.AtrasosAl(new DateTime(2025, 10, 5), 0.062m);
+			RegistroDeAtrasos atrasos = api.AtrasosAl(new DateTime(2026, 10, 5), 0.062m);
 			for (int fila = 0; fila < atrasos.Rubro.Length; fila++)
 			{
 				Console.WriteLine("    " + atrasos.Rubro[fila]
@@ -135,10 +138,10 @@ namespace Municipalidad.Consola
 			Console.WriteLine();
 
 			Console.WriteLine("  se puede proyectar : " + api.SePuedeProyectar());
-			Console.WriteLine("  la reserva que la app propone para 2025:");
+			Console.WriteLine("  la reserva que la app propone para 2026:");
 			if (api.SePuedeProyectar())
 			{
-				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(2025);
+				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(2026);
 				Console.WriteLine("    anio " + propuesta.Anio
 					+ "  proyeccion " + propuesta.Proyeccion
 					+ "  propuesto por mes " + propuesta.PropuestoPorMes);
@@ -155,7 +158,7 @@ namespace Municipalidad.Consola
 			if (api.SePuedeVerElFaltanteDeReserva())
 			{
 				RegistroDelFaltanteDeReserva faltante =
-					api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m);
+					api.FaltanteDeReservaAl(new DateTime(2026, 9, 15), 0.10m);
 				Console.WriteLine("    propuesto " + faltante.Propuesto
 					+ "  declarado " + faltante.Declarado
 					+ "  faltante " + faltante.Faltante
@@ -185,9 +188,9 @@ namespace Municipalidad.Consola
 			}
 			Console.WriteLine();
 
-			Console.WriteLine("  y el mismo cotejo un dia sin consulta -1 de enero de 2025-:");
+			Console.WriteLine("  y el mismo cotejo un dia sin consulta -1 de enero de 2026-:");
 			RegistroDePeriodosSinComprobante sinConsulta =
-				api.PeriodosPagadosSinComprobante(new DateTime(2025, 1, 1));
+				api.PeriodosPagadosSinComprobante(new DateTime(2026, 1, 1));
 			Console.WriteLine("    estado: " + sinConsulta.Estado);
 			Console.WriteLine("    dice:   " + sinConsulta.EstadoDicho);
 			Console.WriteLine();
@@ -204,12 +207,12 @@ namespace Municipalidad.Consola
 			foreach (string numeroDeFinca in api.NumerosDeLasFincas())
 			{
 				Console.WriteLine("    el avaluo de " + numeroDeFinca + " al 30 de junio : "
-					+ (api.TieneAvaluoLaFinca(numeroDeFinca, new DateTime(2025, 6, 30))
-						? api.AvaluoDeFincaAl(numeroDeFinca, new DateTime(2025, 6, 30)).ToString()
+					+ (api.TieneAvaluoLaFinca(numeroDeFinca, new DateTime(2026, 6, 30))
+						? api.AvaluoDeFincaAl(numeroDeFinca, new DateTime(2026, 6, 30)).ToString()
 						: "sin avaluo publicado a esa fecha"));
 				Console.WriteLine("    el valor de " + numeroDeFinca + " al 30 de junio : "
-					+ (api.TieneValorDeclaradoLaFinca(numeroDeFinca, new DateTime(2025, 6, 30))
-						? api.ValorDeFincaAl(numeroDeFinca, new DateTime(2025, 6, 30)).ToString()
+					+ (api.TieneValorDeclaradoLaFinca(numeroDeFinca, new DateTime(2026, 6, 30))
+						? api.ValorDeFincaAl(numeroDeFinca, new DateTime(2026, 6, 30)).ToString()
 						: "sin valor declarado a esa fecha"));
 			}
 			Console.WriteLine();

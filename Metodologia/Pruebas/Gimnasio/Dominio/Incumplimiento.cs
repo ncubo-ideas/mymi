@@ -17,8 +17,22 @@ namespace Gimnasio.Dominio
 		internal int DiasEsperados { get; }
 		internal int DiasQueFue { get; }
 
+		// CUANTOS DIAS NO SE ESPERARON POR MORA (juicio N2 del v2). Viaja al lado de los
+		// otros dos numeros para que el actor pueda decir "esperaba 27, no 39, porque
+		// estuviste dos semanas en mora": el numero al lado de la palabra, capitulo 0 §8.
+		// Cero cuando no hubo mora, que es lo que el v1 asumia siempre.
+		internal int DiasDescontadosPorInactividad { get; }
+
 		internal Incumplimiento(int diasEsperados, int diasQueFue)
+			: this(diasEsperados, diasQueFue, 0) { }
+
+		internal Incumplimiento(int diasEsperados, int diasQueFue, int diasDescontadosPorMora)
 		{
+			if (diasDescontadosPorMora < 0)
+				throw new ArgumentOutOfRangeException(nameof(diasDescontadosPorMora), diasDescontadosPorMora,
+					"No se pueden descontar dias negativos.");
+			DiasDescontadosPorInactividad = diasDescontadosPorMora;
+
 			if (diasEsperados < 0)
 				throw new ArgumentOutOfRangeException(nameof(diasEsperados), diasEsperados,
 					"No se pueden esperar dias negativos.");

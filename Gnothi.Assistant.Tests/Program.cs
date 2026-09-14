@@ -214,6 +214,34 @@ Console.WriteLine("=== --install WRITES THE CODEX TABLE AND KEEPS THE REST ===")
 }
 
 // ============================================================================================
+// --install READS AN EMPTY JSON CONFIG AS EMPTY, NOT AS BROKEN.
+//
+// Antigravity leaves a 0-byte mcp_config.json on a fresh install (seen on a Mac, 2026-09-10).
+// JsonNode.Parse("") throws, and the installer took that for a corrupt file and sent the person
+// to register by hand. Whitespace is {}; comments and trailing commas are tolerated because
+// Claude Desktop's own file may carry them; garbage still throws, so the file is not touched.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== --install READS AN EMPTY JSON CONFIG AS EMPTY, NOT AS BROKEN ===");
+{
+	Assert("a 0-byte file reads as {}", Gnothi.Host.HostInstaller.ReadConfig("").Count == 0, "");
+	Assert("whitespace reads as {}", Gnothi.Host.HostInstaller.ReadConfig(" \r\n\t\n").Count == 0, "");
+
+	var kept = Gnothi.Host.HostInstaller.ReadConfig("{ \"mcpServers\": { \"other\": { \"command\": \"node\" } }, \"theme\": \"dark\" }");
+	Assert("what is there is kept, key by key",
+		kept.Count == 2 && kept["mcpServers"]?["other"]?["command"]?.GetValue<string>() == "node" && kept["theme"]?.GetValue<string>() == "dark",
+		kept.ToJsonString());
+
+	var lenient = Gnothi.Host.HostInstaller.ReadConfig("{ // the app's own comment\n \"a\": 1, }");
+	Assert("comments and trailing commas are tolerated", lenient["a"]?.GetValue<int>() == 1, lenient.ToJsonString());
+
+	bool threw = false;
+	try { Gnothi.Host.HostInstaller.ReadConfig("{ not json"); } catch (System.Text.Json.JsonException) { threw = true; }
+	Assert("garbage still throws, so the file is left alone", threw, "");
+}
+
+// ============================================================================================
 // EL INSTALADOR ESCRIBE UN installation.json QUE EL HOST PUEDE LEER.
 //
 // Regresion. El refactor a JSON sin reflexion (88e0b95) dejo a --install-module serializando
@@ -263,6 +291,59 @@ if (modulos.Length > 0)
 			try { Directory.Delete(temp, recursive: true); } catch { /* temp, best effort */ }
 		}
 	}
+}
+
+// ============================================================================================
+// THE LANGUAGE OF THE RECORD TRAVELS WITH EVERY FREE-TEXT PARAMETER, AND ONLY WITH THOSE.
+//
+// Measured 2026-09-11 (NotasGnothiHost/46): a free-text value in the person's language ("milk")
+// against a journal in the institution's language ("leche") finds nothing, and the model had no
+// way to know which language the record is in. about.locale is that way. The hint lives in the
+// shared schema, so asserting it here covers Gate 1, Gate 2 and the on-device catalog at once.
+Console.WriteLine();
+Console.WriteLine("=== THE RECORD'S LANGUAGE RIDES ON FREE-TEXT PARAMETERS ===");
+{
+	var tool = new Gnothi.Host.DeclaredTool
+	{
+		Name = "consumo_de",
+		Input =
+		[
+			new Gnothi.Host.DeclaredParameter { Name = "termino", Type = "string", Description = "A product text." },
+			new Gnothi.Host.DeclaredParameter { Name = "analito", Type = "string", Description = "Which analyte.", Enum = ["ColesterolTotal", "Hemoglobina"] },
+			new Gnothi.Host.DeclaredParameter { Name = "cuantas", Type = "number", Description = "How many." },
+			new Gnothi.Host.DeclaredParameter { Name = "vacio", Type = "string", Description = "" },
+		],
+	};
+
+	string Description(IReadOnlyDictionary<string, object> schema, string parameter) =>
+		(string)((Dictionary<string, object>)((Dictionary<string, object>)schema["properties"])[parameter])["description"];
+
+	string hint = Gnothi.Host.ToolIndex.RecordLanguageHint("es-CR");
+	var withLocale = Gnothi.Host.ToolIndex.InputSchema(tool, "es-CR");
+	var without = Gnothi.Host.ToolIndex.InputSchema(tool, null);
+	var legacy = Gnothi.Host.ToolIndex.InputSchema(tool);
+
+	Assert("a free-text parameter carries the record's locale, after its own description",
+		Description(withLocale, "termino") == "A product text. " + hint,
+		Description(withLocale, "termino"));
+	Assert("the hint names the module's locale, not a language of the Host",
+		hint.Contains("es-CR") && Gnothi.Host.ToolIndex.RecordLanguageHint("en-US").Contains("en-US"),
+		hint);
+	Assert("an enum parameter carries NO hint: its values are already closed",
+		Description(withLocale, "analito") == "Which analyte.",
+		Description(withLocale, "analito"));
+	Assert("a numeric parameter carries NO hint",
+		Description(withLocale, "cuantas") == "How many.",
+		Description(withLocale, "cuantas"));
+	Assert("an empty description becomes just the hint, without a stray period",
+		Description(withLocale, "vacio") == hint,
+		Description(withLocale, "vacio"));
+	Assert("a module that declares no locale gets nothing: the model keeps guessing, as before",
+		Description(without, "termino") == "A product text." && Description(legacy, "termino") == "A product text.",
+		Description(without, "termino"));
+	Assert("a Host tool has no module and therefore no record locale",
+		Gnothi.Host.ToolIndex.RecordLocaleOf(null) is null,
+		"expected null");
 }
 
 Console.WriteLine();

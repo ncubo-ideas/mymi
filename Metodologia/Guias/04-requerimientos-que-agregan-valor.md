@@ -235,6 +235,13 @@ origen. Sin ese detalle, *"la salmuera que te sube la presión"* es imposible de
 **Pocas clases, mucho detalle.** Textual: *"parece que hay 30 exámenes; en realidad se modelan 2 o
 3"*. La riqueza va en profundidad, no en cantidad.
 
+> **Precisado el 2026-09-07, porque leído solo este párrafo mandaba a colapsar lo que la regla manda a
+> nombrar.** *"2 o 3"* son las **familias** —`ExamenDeSangre`, `ExamenDeOrina`, `ExamenDeHeces`—, no las
+> clases. Debajo de cada familia, **cada examen que opina por sí mismo** —tiene su rango, su dirección,
+> elige su severidad— es una clase con nombre, aunque hoy sólo difiera de su hermano en los valores; el
+> que sólo parametriza una operación compartida es una fila del catálogo. La regla completa, con la
+> frontera y el piso, está en la pasada 4 de [la columna vertebral](columna-vertebral.md).
+
 **Los cálculos paramétricos quemados están bien para el demo.** Edad 60, rangos por edad. No son
 deuda: están ahí para **demostrar que la regla vive en el dominio y no en los datos**.
 

@@ -11,7 +11,8 @@ namespace Gnothi.Host;
 //
 // Three assistants, two file shapes: Claude Desktop and Antigravity keep a JSON with an
 // "mcpServers" object; Codex -and the ChatGPT desktop app through it- keeps a TOML table.
-// Each one is found by looking for its folder, never by assuming a path.
+// Each one is found by looking for its folder, never by assuming a path. One machine may have
+// several -a Mac with Claude Desktop and the ChatGPT app has two-, so "all of them" is an option.
 //
 // Run it once, from the PUBLISHED executable:  Gnothi.Host.exe --install [modules-folder]
 //
@@ -98,16 +99,28 @@ internal static class HostInstaller
 		Console.Error.WriteLine("Assistants I found:");
 		for (int i = 0; i < found.Count; i++)
 			Console.Error.WriteLine($"  {i + 1}. {found[i].Name}");
-		Console.Error.WriteLine($"  {found.Count + 1}. none for now");
 
-		int chosen = Ask(found.Count + 1);
-		if (chosen > found.Count)
+		// ONE MACHINE, SEVERAL ASSISTANTS. A Mac with Claude Desktop and the ChatGPT app has two
+		// destinations, and asking the person to run --install once per assistant is asking them
+		// to know how many there are. "All of them" registers in every one found, each with its
+		// own preview and its own "Write it?", so a no to one is not a no to the rest.
+		int all = found.Count > 1 ? found.Count + 1 : 0;
+		int none = all > 0 ? all + 1 : found.Count + 1;
+		if (all > 0) Console.Error.WriteLine($"  {all}. all of them");
+		Console.Error.WriteLine($"  {none}. none for now");
+
+		int chosen = Ask(none);
+		if (chosen == none)
 		{
 			Console.Error.WriteLine("Done. Gnothi is installed and unregistered.");
 			return 0;
 		}
 
-		return Register(found[chosen - 1], self, modulesFolder);
+		IEnumerable<Assistant> targets = chosen == all ? found : [found[chosen - 1]];
+		int worst = 0;
+		foreach (Assistant target in targets)
+			worst = Math.Max(worst, Register(target, self, modulesFolder));
+		return worst;
 	}
 
 	// ─────────────────────────────────────────────────────────── where each config lives
@@ -174,21 +187,28 @@ internal static class HostInstaller
 				"ChatGPT desktop app (Codex and Work tabs) and Codex CLI",
 				Path.Combine(codexHome, "config.toml"), "mcp_servers", ConfigFormat.CodexToml));
 
-		// GOOGLE'S AGENT: ANTIGRAVITY, the IDE and the CLI, which share ~/.gemini/config/mcp_config.json
-		// (the SDK too). Its shape is the SAME as Claude Desktop's -an "mcpServers" object, one entry
-		// per server with command and args- so the JSON path above serves it unchanged. Measured
-		// 2026-09-10 (NotasGnothiHost/45 §9): the IDE reads the file at startup, launches the Host from
-		// its language server and answers through the tools, cross-module included, with no extra
-		// lines. It does NOT re-read the file while running: it has to be restarted. The Gemini app
-		// itself -web, phone, the Windows one- is not this: it only takes remote URLs.
+		// GOOGLE'S AGENT: ANTIGRAVITY, the IDE and the CLI, which share an mcp_config.json under
+		// ~/.gemini (the SDK too). Its shape is the SAME as Claude Desktop's -an "mcpServers" object,
+		// one entry per server with command and args- so the JSON path above serves it unchanged.
+		// Measured 2026-09-10 (NotasGnothiHost/45 §9): the IDE reads the file at startup, launches the
+		// Host from its language server and answers through the tools, cross-module included, with
+		// no extra lines. It does NOT re-read the file while running: it has to be restarted. The
+		// Gemini app itself -web, phone, the Windows one- is not this: it only takes remote URLs.
 		//
-		// The folder is the evidence, as with Codex; the app creates ~/.gemini/config on first run.
-		string geminiConfig = Path.Combine(
-			Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".gemini", "config");
-		if (Directory.Exists(geminiConfig))
-			hits.Add(new Assistant(
-				"Antigravity (Google): IDE and CLI",
-				Path.Combine(geminiConfig, "mcp_config.json"), "mcpServers"));
+		// The folder is the evidence, as with Codex, but WHICH folder depends on the install: on
+		// Windows, 2026-09-10, the IDE read ~/.gemini/config/mcp_config.json; a Mac where Antigravity
+		// was installed in 2025-11 has ~/.gemini/antigravity/mcp_config.json and no config/ at all.
+		// Both are searched and each one found is offered, with its folder in the name, so the
+		// person picks -or takes them all- and nothing is guessed.
+		string gemini = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".gemini");
+		foreach (string sub in new[] { "config", "antigravity" })
+		{
+			string folder = Path.Combine(gemini, sub);
+			if (Directory.Exists(folder))
+				hits.Add(new Assistant(
+					$"Antigravity (Google): IDE and CLI  (~/.gemini/{sub})",
+					Path.Combine(folder, "mcp_config.json"), "mcpServers"));
+		}
 
 		return hits;
 	}
@@ -207,17 +227,8 @@ internal static class HostInstaller
 		string original = "";
 		try
 		{
-			if (File.Exists(assistant.Config))
-			{
-				original = File.ReadAllText(assistant.Config);
-				// EVERYTHING IS READ AND KEPT. What is not ours is not touched.
-				root = JsonNode.Parse(original, documentOptions: new JsonDocumentOptions
-				{
-					CommentHandling = JsonCommentHandling.Skip,
-					AllowTrailingCommas = true,
-				}) as JsonObject ?? [];
-			}
-			else root = [];
+			if (File.Exists(assistant.Config)) original = File.ReadAllText(assistant.Config);
+			root = ReadConfig(original);
 		}
 		catch (JsonException e)
 		{
@@ -272,6 +283,23 @@ internal static class HostInstaller
 		return 0;
 	}
 
+	// EVERYTHING IS READ AND KEPT. What is not ours is not touched.
+	//
+	// An EMPTY file is a config with nothing in it, not a broken one. Antigravity leaves a 0-byte
+	// mcp_config.json behind on a fresh install (seen on a Mac, 2026-09-10), and the parser calls
+	// that an error -"the input does not contain any JSON tokens"- which sent the person to
+	// register by hand for no reason. Whitespace-only reads as {}. Anything else that does not
+	// parse IS an error, and the file is left alone.
+	internal static JsonObject ReadConfig(string text)
+	{
+		if (string.IsNullOrWhiteSpace(text)) return [];
+		return JsonNode.Parse(text, documentOptions: new JsonDocumentOptions
+		{
+			CommentHandling = JsonCommentHandling.Skip,
+			AllowTrailingCommas = true,
+		}) as JsonObject ?? [];
+	}
+
 	// THE SAME THREE CARES, IN TOML. The table itself -and why it has four lines and not two-
 	// lives in CodexTable, which is pure text and is what the suite tests. Here: read, show,
 	// ask, back up, write.
@@ -313,7 +341,9 @@ internal static class HostInstaller
 		File.WriteAllText(assistant.Config, updated, new UTF8Encoding(false));
 
 		Console.Error.WriteLine();
-		Console.Error.WriteLine("Done. Restart the ChatGPT app -or, in its Codex tab, Settings > MCP servers > Restart-");
+		// The three surfaces switch with Alt+1/2/3 on Windows and Ctrl+1/2/3 on a Mac (spec 04, R13).
+		string codexTab = OperatingSystem.IsMacOS() ? "Ctrl+3" : "Alt+3";
+		Console.Error.WriteLine($"Done. Restart the ChatGPT app -or, in its Codex tab ({codexTab}), Settings > MCP servers > Restart-");
 		Console.Error.WriteLine("and in a NEW Codex or Work chat ask it what modules you have installed.");
 		Console.Error.WriteLine("(The Chat tab does not launch local servers; that is OpenAI's, not ours.)");
 		return 0;

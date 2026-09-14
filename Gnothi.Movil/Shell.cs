@@ -252,6 +252,11 @@ public sealed class Shell : IDisposable
 	{
 		if (dispatcher is null || catalog is null) return;
 
+		// A NEW VERSION THAT DOES NOT ANSWER GOES BACK (44 §3.5): while the update kept the
+		// previous version parked next to it, a failed check puts that one back and the catalog
+		// is reloaded. Collected here and applied after the loop, which is over the catalog's list.
+		List<string> rolledBack = [];
+
 		foreach (Module m in catalog.Modules)
 		{
 			string mark = Path.Combine(m.Directory, "comprobado.json");
@@ -282,7 +287,24 @@ public sealed class Shell : IDisposable
 				// Un modulo que no pasa la comprobacion NO se desinstala solo: eso es decision
 				// de Sonia. Queda dicho, y sin marca, asi que se vuelve a intentar.
 				log($"comprobación de {m.Manifest.Module} FALLÓ: {ex.GetType().Name}: {ex.Message}");
+
+				// SALVO que sea una version nueva con la anterior todavia al lado: entonces la
+				// que no contesta se va y vuelve la que contestaba. La comprobacion de la que
+				// vuelve ya esta hecha (su marca viajo con la carpeta), asi que no se repite.
+				if (ModuleEnrollment.Rollback(catalog.Root, m.Manifest.Module, log))
+				{
+					CloseModule?.Invoke(m.Manifest.Module);
+					rolledBack.Add(m.Manifest.Module);
+				}
 			}
+		}
+
+		if (rolledBack.Count > 0)
+		{
+			foreach (string w in catalog.Load()) log($"warning: {w}");
+			PushState();
+			foreach (string module in rolledBack)
+				PushEnrollment("error", $"La versión nueva de '{TitleOf(module)}' no contestó; volvió la anterior.");
 		}
 	}
 
@@ -411,6 +433,12 @@ public sealed class Shell : IDisposable
 	// entero. Dos copias de la pantalla mas importante que Gnothi le muestra a la persona.
 	private EnrollmentProposal? proposal;
 	private ModuleEnrollment? enrolling;
+
+	/// CLOSE A MODULE IF IT IS OPEN, and say whether it was. An update moves the module's folder
+	/// aside while its WebView may be sitting on it (44 §3.6), so the screen has to let go first.
+	/// The platform wires it where it registers its host of WebViews -Android and iOS each have
+	/// one-; the Shell only names it, so that this file compiles wherever the suite compiles it.
+	public Func<string, bool>? CloseModule { get; set; }
 
 	/// LO QUE LLEGA DEL ENLACE DE LA INSTITUCION. Baja el bundle y lee su manifiesto; NO
 	/// instala nada. La persona decide despues, y hasta entonces el bundle vive en un temporal.
@@ -574,6 +602,14 @@ public sealed class Shell : IDisposable
 
 		try
 		{
+			// ON AN UPDATE the module may be open: its WebView sits on the folder about to move
+			// aside. It is evicted first; opening it again loads the new version (44 §3.6).
+			enrolling.BeforeReplacing = m =>
+			{
+				if (CloseModule?.Invoke(m) == true)
+					log($"alta: '{m}' estaba abierto; se cerró antes de reemplazarlo");
+			};
+
 			string module = enrolling.Accept(proposal, acceptNewPublisher);
 			proposal = null;
 

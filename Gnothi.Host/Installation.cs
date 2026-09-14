@@ -59,6 +59,14 @@ public sealed record Installation
 	// relee esas dos y no toca esto.
 	[JsonPropertyName("provenance")] public Provenance? Provenance { get; init; }
 
+	// THE ACTS ACCUMULATE (NotasGnothiHost/44 §3.7). 'provenance' above is the LATEST act and keeps
+	// its shape, so every reader that knows only that field goes on working; this list is every
+	// act so far, oldest first, the latest one repeated at the end. It is what lets the detail say
+	// "you accepted 2.4.0 on September 9 and this is 2.5.0". Empty for modules installed before
+	// the list existed: absent in the JSON reads as empty, never as null (HostJson.cs, the trap
+	// noted in the memory of the .deps.json).
+	[JsonPropertyName("acts")] public IReadOnlyList<Provenance> Acts { get; init; } = [];
+
 	// THE KEY THIS MODULE WAS ACCEPTED WITH, when its package came signed: the pin. Written at
 	// the first install and kept while the key stays the same, so the next package can be
 	// answered with "signed with the same key as last time" -- or with "the key changed", which

@@ -711,14 +711,41 @@ internal sealed class ModuleEnrollment
 	// are kept for the tools that survive, the ones that went are dropped, the new ones enter on
 	// -she accepted the sheet that listed them-, and the publisher's endpoint Gnothi fixed the first
 	// time does not move unless she said yes to the new one (`acceptNewPublisher`).
+	//
+	// AND THE REPLACEMENT IS SAFE (44 §3.4-3.6). It used to delete the installed folder and then
+	// move the new one in: a failure between the two left an empty folder and nothing to go back
+	// to. Now the installed version is MOVED ASIDE to `<module>.anterior` -whole, with its
+	// manifest, installation and web- and the new one takes its place; if that second move fails
+	// the previous one comes back and nothing happened. The previous version stays parked until
+	// the next update, so that a new version that does not answer can be put back (Rollback). The
+	// catalog knows to skip that folder. Before any of it, the journal is copied when the
+	// institution did not say it can be rebuilt, and the module is closed if it is open: its
+	// WebView is sitting on the folder about to move.
+	internal Action<string>? BeforeReplacing { get; set; }
+
 	internal string Accept(EnrollmentProposal proposal, bool acceptNewPublisher = false)
 	{
 		string module = proposal.Manifest.Module;
 		string destination = Path.Combine(modulesRoot, module);
+		string previous = destination + ModuleCatalog.PreviousSuffix;
 
-		if (Directory.Exists(destination)) Directory.Delete(destination, recursive: true);
 		Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-		Directory.Move(proposal.Folder, destination);
+		if (Directory.Exists(destination))
+		{
+			BeforeReplacing?.Invoke(module);
+			KeepJournalCopy(module, proposal.Manifest);
+
+			if (Directory.Exists(previous)) Directory.Delete(previous, recursive: true);
+			Directory.Move(destination, previous);
+			try { Directory.Move(proposal.Folder, destination); }
+			catch
+			{
+				Directory.Move(previous, destination);
+				throw;
+			}
+			log($"alta: '{module}': la versión anterior queda en {Path.GetFileName(previous)} hasta la próxima actualización");
+		}
+		else Directory.Move(proposal.Folder, destination);
 
 		// The act records the HOST that served the bundle; a file came from no server, and there
 		// the act says so with an empty string rather than the file's name.
@@ -731,13 +758,62 @@ internal sealed class ModuleEnrollment
 		string? keptEndpoint = prior is not null && proposal.Update.PublisherChanged && !acceptNewPublisher && prior.Shell.Arguments.Count > 1
 			? prior.Shell.Arguments[1] : null;
 
-		WriteInstallation(destination, module, proposal.Manifest, enabled, disabledTools, keptEndpoint, proposal.Signer, servedBy);
+		WriteInstallation(destination, module, proposal.Manifest, enabled, disabledTools, keptEndpoint, proposal.Signer, servedBy, prior?.Acts ?? []);
 
 		log($"alta: '{module}' instalado en {destination}");
 		if (proposal.Update.Kind != UpdateKind.Fresh)
 			log($"alta: '{module}': {proposal.Update.Describe()}" + (keptEndpoint is null ? "" : "; el publicador fijado se conserva"));
 		return module;
 	}
+
+	// THE JOURNAL IS NEVER TOUCHED BY AN UPDATE, and still it gets a copy when the institution did
+	// not say it can be rebuilt from the publisher (`journal.reconstruible` true). Null is "the
+	// institution did not say", and that is not the same as "it can be rebuilt": a copy is cheap,
+	// and it is the only net against a new version that misreads its own record. It sits next to
+	// the journal as `<module>.anterior`, one copy, replaced at the next update. Nothing restores
+	// it on its own: the new version may have appended events that a blind restore would lose.
+	private void KeepJournalCopy(string module, Manifest manifest)
+	{
+		if (manifest.Journal?.Reconstruible == true) return;
+
+		string journal = Path.Combine(journalsRoot, module);
+		if (!Directory.Exists(journal) || !Directory.EnumerateFileSystemEntries(journal).Any()) return;
+
+		string copy = journal + ModuleCatalog.PreviousSuffix;
+		if (Directory.Exists(copy)) Directory.Delete(copy, recursive: true);
+		CopyTree(journal, copy);
+		log($"alta: '{module}': copia del registro en {Path.GetFileName(copy)} (la institución no dijo que se pueda reconstruir)");
+	}
+
+	private static void CopyTree(string from, string to)
+	{
+		Directory.CreateDirectory(to);
+		foreach (string file in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
+		{
+			string target = Path.Combine(to, Path.GetRelativePath(from, file));
+			Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+			File.Copy(file, target, overwrite: true);
+		}
+	}
+
+	// THE NEW VERSION DID NOT ANSWER: PUT THE PREVIOUS ONE BACK (44 §3.5). Only possible while the
+	// parked folder exists, which is until the next update. Static, because the check that finds
+	// out runs at start-up too, when no enrollment is in flight. The journal copy is left where it
+	// is: the folder that comes back reads the same journal it always did.
+	internal static bool Rollback(string modulesRoot, string module, Action<string> log)
+	{
+		string destination = Path.Combine(modulesRoot, module);
+		string previous = destination + ModuleCatalog.PreviousSuffix;
+		if (!Directory.Exists(previous)) return false;
+
+		if (Directory.Exists(destination)) Directory.Delete(destination, recursive: true);
+		Directory.Move(previous, destination);
+		log($"alta: '{module}': la versión nueva no contestó; volvió la anterior");
+		return true;
+	}
+
+	internal static bool HasPrevious(string modulesRoot, string module) =>
+		Directory.Exists(Path.Combine(modulesRoot, module) + ModuleCatalog.PreviousSuffix);
 
 	// THE PERSON SAID NO, and then nothing is left: no folder, no journal, no entry in the
 	// catalog. Downloading the bundle was not installing it.
@@ -901,7 +977,11 @@ internal sealed class ModuleEnrollment
 	//
 	// `keptEndpoint` is the publisher's endpoint fixed at an earlier install when the new manifest
 	// moved it and the person did not accept the move: what Gnothi fixed stays fixed.
-	private void WriteInstallation(string folder, string module, Manifest manifest, bool enabled, IReadOnlyList<string> disabledTools, string? keptEndpoint, PackageSigner? signer, string servedBy)
+	//
+	// `priorActs` are the acts of the versions accepted before: the list accumulates (44 §3.7),
+	// oldest first, and `provenance` stays the latest one so that every reader of that field goes
+	// on working.
+	private void WriteInstallation(string folder, string module, Manifest manifest, bool enabled, IReadOnlyList<string> disabledTools, string? keptEndpoint, PackageSigner? signer, string servedBy, IReadOnlyList<Gnothi.Host.Provenance> priorActs)
 	{
 		Publicador? p = manifest.Publicador;
 		string endpoint = keptEndpoint ?? (p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}");
@@ -957,12 +1037,10 @@ internal sealed class ModuleEnrollment
 			// declaro --, cuando la persona acepto, y que version acepto. Se escribe una vez y
 			// no se vuelve a tocar: es lo que le permite al detalle del modulo contrastar
 			// despues lo que la institucion declara contra lo que de verdad paso.
-			provenance = new
-			{
-				servedBy,
-				at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				version = manifest.Publisher?.Version ?? "",
-			},
+			provenance = act,
+
+			// Y EL ACTA SE ACUMULA: las anteriores tal como quedaron escritas, y esta al final.
+			acts = priorActs.Select(a => new { servedBy = a.ServedBy, at = a.At, version = a.Version }).Append(act).ToArray(),
 			signer = signer is null ? null : new { keyId = signer.KeyId, @public = signer.Public, since = signer.Since },
 		};
 

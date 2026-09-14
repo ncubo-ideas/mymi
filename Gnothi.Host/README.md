@@ -25,7 +25,7 @@ compilador garantiza que no se colara semántica de dominio.
 | `Program.cs` | El arranque y la **Puerta 1**. Traduce y delega, nada más |
 | `ToolBridge.cs` | Contesta `tools/list` y `tools/call`. El `inputSchema` sale del manifiesto |
 | `Dispatcher.cs` | El núcleo: `Catalog()` y `Serve()`. **No sabe que existe MCP** |
-| `ToolIndex.cs` | El índice de tools publicadas, **compartido por las dos Puertas** |
+| `ToolIndex.cs` | El índice de tools publicadas, **compartido por las dos Puertas**. Al proyectar el `inputSchema`, a cada parámetro de texto libre le anexa el idioma del registro que el módulo declara en `about.locale` («This module's record is written in es-CR…»), para que el modelo pase «leche» y no «milk» a un journal en español; enums y numéricos no lo llevan, y un módulo sin `locale` queda como antes |
 | `IShell.cs` | La costura hacia el módulo. **No nombra un solo tipo de MCP** |
 | `StdioShell.cs` | Cáscara por proceso hijo con MCP sobre stdio |
 | `InProcessShell.cs` | Cáscara por reflexión: el dll cargado en su propio contexto, sin proceso |
@@ -61,12 +61,20 @@ UNA SALIDA, dos cascaras, elegida por modulo en su instalacion.json:
 
 ### La Puerta 1 con ChatGPT y con Antigravity
 
-**Antigravity, el agente de Google** (IDE y CLI), lee `~/.gemini/config/mcp_config.json`, que tiene
-la misma forma que el JSON de Claude Desktop, así que `--install` lo ofrece como destino y le
-escribe la entrada con el mismo código. Medido el 2026-09-10: el IDE lee el archivo al arrancar
-—no en caliente—, lanza el Host desde su servidor de lenguaje y contesta por las tools, incluido
-el cruce entre exámenes y compras, sin líneas extra. La app de Gemini no es esto: solo acepta URLs
-remotas.
+**Antigravity, el agente de Google** (IDE y CLI), lee un `mcp_config.json` bajo `~/.gemini` que
+tiene la misma forma que el JSON de Claude Desktop, así que `--install` lo ofrece como destino y le
+escribe la entrada con el mismo código. Medido el 2026-09-10 en Windows: el IDE lee
+`~/.gemini/config/mcp_config.json` al arrancar —no en caliente—, lanza el Host desde su servidor
+de lenguaje y contesta por las tools, incluido el cruce entre exámenes y compras, sin líneas extra.
+**La carpeta no es la misma en todas las instalaciones:** una Mac con el Antigravity de
+noviembre de 2025 tiene `~/.gemini/antigravity/mcp_config.json` y ninguna `config/`, así que
+`--install` busca las dos y ofrece cada una que encuentra, con su carpeta en el nombre. Ese archivo
+además puede existir **vacío** (0 bytes, visto en esa Mac): se lee como `{}`, no como roto. La app
+de Gemini no es esto: solo acepta URLs remotas.
+
+Una misma máquina puede tener varios asistentes —una Mac con Claude Desktop y la app de ChatGPT
+tiene dos—, y `--install` ofrece **«all of them»** además de elegir uno: registra en cada uno,
+mostrando y preguntando `Write it?` por archivo, así que un «no» a uno no es un «no» al resto.
 
 La app de escritorio de ChatGPT lleva adentro a Codex y a Work desde julio de 2026, y las dos
 pestañas lanzan los servidores MCP locales declarados en `~/.codex/config.toml`, el archivo que

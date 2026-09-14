@@ -29,6 +29,10 @@ public sealed class ModuleCatalog : IAsyncDisposable
 	public IReadOnlyList<Module> Modules => modules;
 	public string Root { get; }
 
+	// The folder an update parks the previous version in: `<module>.anterior`, next to the live
+	// one. Named here because the catalog must skip it and the enrollment must write it.
+	public const string PreviousSuffix = ".anterior";
+
 	public ModuleCatalog(string root) => Root = root;
 
 	public IReadOnlyList<string> Load()
@@ -51,6 +55,13 @@ public sealed class ModuleCatalog : IAsyncDisposable
 
 		foreach (string dir in Directory.EnumerateDirectories(Root).OrderBy(d => d))
 		{
+			// THE PREVIOUS VERSION AN UPDATE KEPT (NotasGnothiHost/44 §3.5). It is a complete module
+			// folder -manifest, installation, web- parked next to the live one until the next update,
+			// so that a new version that does not answer can be put back. It is NOT a module: loading
+			// it would publish the same tools twice under the same name. Skipped without a warning,
+			// because it is not a mistake; it is the safety net doing its job.
+			if (Path.GetFileName(dir).EndsWith(PreviousSuffix, StringComparison.Ordinal)) continue;
+
 			string manifestPath = Path.Combine(dir, "manifest.json");
 			string installationPath = Path.Combine(dir, "installation.json");
 

@@ -337,6 +337,11 @@ internal static class Enrollment
 			assert("the very same package again is Same, and already there", same.Update.Kind == UpdateKind.Same && same.AlreadyThere, same.Update.Describe());
 			enrolling.Discard(same);
 
+			// The journal has something in it, and the manifest does not say it can be rebuilt.
+			string journalDir = Path.Combine(root, "journals", "actualizable");
+			Directory.CreateDirectory(journalDir);
+			File.WriteAllText(Path.Combine(journalDir, "journal_000001.bin"), "eventos de la persona");
+
 			EnrollmentProposal up = enrolling.Examine(v2, EnrollmentSource.Link, Delfos);
 			assert("a newer version is an update, and the plan lists the change",
 				up.Update.Kind == UpdateKind.Update && up.Update.Versioned && up.Update.InstalledVersion == "1.0.0" && up.Update.IncomingVersion == "1.1.0"
@@ -350,6 +355,40 @@ internal static class Enrollment
 				after1.Enabled && after1.DisabledTools.SequenceEqual(["resumen"]), string.Join(",", after1.DisabledTools));
 			assert("the publisher's endpoint Gnothi fixed stays unless she accepts the new one",
 				after1.Shell.Arguments.Count > 1 && after1.Shell.Arguments[1].StartsWith("https://delfos.cr/eventos/|"), string.Join(" ", after1.Shell.Arguments));
+
+			// 44 §3.4-3.7: the update is safe. The previous version is parked whole next to the new
+			// one, the journal got a copy, the acts accumulate, and the catalog does not mistake the
+			// parked folder for a second module.
+			string modules = Path.Combine(root, "Modulos");
+			string parked = Path.Combine(modules, "actualizable" + ModuleCatalog.PreviousSuffix);
+			assert("an update parks the previous version next to the new one, whole",
+				Directory.Exists(parked) && File.Exists(Path.Combine(parked, "installation.json"))
+					&& File.ReadAllText(Path.Combine(parked, "web", "index.html")).Contains("v1")
+					&& File.ReadAllText(Path.Combine(modules, "actualizable", "web", "index.html")).Contains("v2"),
+				parked);
+			assert("the journal gets a copy when the institution did not say it can be rebuilt",
+				File.Exists(Path.Combine(root, "journals", "actualizable" + ModuleCatalog.PreviousSuffix, "journal_000001.bin"))
+					&& File.Exists(Path.Combine(journalDir, "journal_000001.bin")),
+				journalDir);
+			assert("the acts accumulate and provenance stays the latest",
+				after1.Acts.Select(a => a.Version).SequenceEqual(["1.0.0", "1.1.0"]) && after1.Provenance?.Version == "1.1.0",
+				string.Join(",", after1.Acts.Select(a => a.Version)));
+			var reloaded = new ModuleCatalog(modules);
+			reloaded.Load();
+			assert("the catalog skips the parked version: one 'actualizable', none '.anterior'",
+				reloaded.Modules.Count(m => m.Name == "actualizable") == 1 && reloaded.Modules.All(m => !m.Directory.EndsWith(ModuleCatalog.PreviousSuffix)),
+				string.Join(",", reloaded.Modules.Select(m => m.Name)));
+
+			// And the way back: the new version did not answer, the previous one returns.
+			bool back1 = ModuleEnrollment.Rollback(modules, "actualizable", _ => { });
+			assert("rollback puts the previous version back and clears the parking",
+				back1 && !Directory.Exists(parked)
+					&& File.ReadAllText(Path.Combine(modules, "actualizable", "web", "index.html")).Contains("v1")
+					&& Installation.Read(updatable).Provenance?.Version == "1.0.0",
+				File.ReadAllText(Path.Combine(modules, "actualizable", "web", "index.html")));
+			assert("rollback with nothing parked does nothing", !ModuleEnrollment.Rollback(modules, "actualizable", _ => { }), "");
+			enrolling.Accept(enrolling.Examine(v2, EnrollmentSource.Link, Delfos));
+			after1 = Installation.Read(updatable);
 
 			EnrollmentProposal up2 = enrolling.Examine(v2b, EnrollmentSource.Link, Delfos);
 			assert("the same version over other content is said as such",

@@ -4,10 +4,14 @@ El dominio se construyó el **2026-08-28** con [`Preguntas.md`](Preguntas.md) en
 a preguntarle nada a nadie**. Cada vez que hubo que decidir algo que el archivo no decía, se anotó acá
 con la decisión que se tomó para poder seguir.
 
-**Catorce huecos.** Que aparezcan no invalida el método: **doce se descubrieron construyendo, no
-discutiendo** —nueve al modelar, dos al atarlo al perform y uno al revisar la Parte 1 contra las
-clases—, y eso era justamente lo que se quería saber. Los otros dos venían **declarados sin firmar**
-desde la entrevista.
+**Catorce huecos en el v1, uno más que el v2 descubrió, y once que el papel del v3 abrió.** Que aparezcan
+no invalida el método: **doce se descubrieron construyendo, no discutiendo** —nueve al modelar, dos al
+atarlo al perform y uno al revisar la Parte 1 contra las clases—, y eso era justamente lo que se quería
+saber. Los otros dos venían **declarados sin firmar** desde la entrevista. **El v2 (2026-09-07) cerró el
+9 y el 12** —la membresía— y abrió el 15. **El v3 (2026-09-08) cerró el 15 y abrió del 16 al 26**: casi
+todos son *"el recorte no lo muestra"*, con dueño Jorge y su teléfono. **Al firmar, Jorge cerró el 17 y el
+23 de palabra y abrió el 27. Con once respuestas más, esa noche, cerró del 16 al 27 salvo el 18a y el 22; y con tres más, esos dos.
+Del v3 no queda ningún hueco abierto.**
 
 > **Este archivo cambió de forma el 2026-09-01**, cuando el `HUECOS.md` pasó a ser doctrina en el
 > [capítulo 3](../../Guias/03-construir-la-app.md) §8 bis. Dos cosas:
@@ -17,9 +21,10 @@ desde la entrevista.
 > - **Los hallazgos sobre el motor se fueron a las guías**, que es donde le sirven a los demás
 >   negocios. Abajo quedan los punteros y lo que todavía es de acá.
 
-> **El estado del modelo:** 19 clases, todas `internal`, cero dependencias, **46 comprobaciones en
-> verde**, ni una referencia al reloj, y el ciclo con journal **corrido dos veces sin que los
-> números se muevan**.
+> **El estado del modelo — v3, 2026-09-08:** 38 clases, todas `internal`, cero dependencias, **130
+> comprobaciones en verde** (69 del v2 + 61 de lo que el papel y Jorge trajeron), ni una constante
+> numérica nueva, ni una referencia al reloj, y el ciclo con journal **corrido dos veces sin que los
+> números se muevan**. El v2 (`gimnasio-v2`) tenía 25 y 69; el v1 (`gimnasio-v1`), 19 y 46.
 
 ---
 
@@ -36,13 +41,26 @@ como propuesta en el bloque 5. La define el [capítulo 3](../../Guias/03-constru
 | **3** | Cuántos **días de gracia** hay entre el fin de un plan y su medición | descubierto | `Trayectoria.PlanesQueTerminaronSinMedicion` | Entra **por parámetro**. Sin él, la ausencia no se puede calcular |
 | **4** | Qué pasa con **dos metas sobre la misma medida** | descubierto | `Objetivo.Agregar` | Se **rechaza la segunda**. Es honesto; si es correcto lo decide el negocio |
 | **5** | Qué pasa si **una medida no tiene meta** | descubierto | `Objetivo.DireccionPara` | **Revienta.** No se inventa una dirección — pero eso deja la medida sin tendencia |
-| **6** | Qué se hace con la **semana incompleta** de un plan | descubierto | `Plan.SemanasQueDuro` | División entera: **13 semanas y 4 días son 13 semanas**. Esos 4 días desaparecen del incumplimiento |
+| **6** | Qué se hace con la **semana incompleta** de un plan | descubierto | `Plan.SemanasQueDuro`, y desde el v2 `Plan.DiasEsperadosDescontando` | División entera: **13 semanas y 4 días son 13 semanas**. Esos 4 días desaparecen del incumplimiento. **El v2 descuenta la mora con la misma ley** —15 días en mora son 2 semanas—, a propósito: una sola fuga en una sola dirección, no dos |
 | **7** | Qué pasa con las **asistencias fuera de todo plan**, y con **planes que se solapan** | descubierto | `Trayectoria.IncumplimientoDe` | Un día que cae en dos planes **cuenta para los dos**; uno que no cae en ninguno **no lo cuenta nadie** |
 | **8** | Si un **plan sin ejercicios prescritos** es válido | descubierto | `Plan` | Se **permite**. Un plan puede ser sólo frecuencia |
-| **9** | Si un período **suspendido por atraso de pago** cuenta como incumplimiento | descubierto | `Trayectoria.IncumplimientoDe` | **No se modeló**, y hoy se sabe por qué: la membresía entera se descartó. Ver el hueco 12 |
+| ~~9~~ | ~~Si un período **suspendido por atraso de pago** cuenta como incumplimiento~~ — **CERRADO el 2026-09-07, v2.** No cuenta: los días en mora dentro del plan se descuentan de lo esperado, en semanas enteras | descubierto | `Trayectoria.IncumplimientoDe`, `Plan.DiasEsperadosDescontando`, `Membresia.DiasEnMoraEntre` | Medido contra el mismo plan del v1: *esperaba 39, faltaron 9* → *esperaba 33, descontó 6, faltaron 3*. Seis de los nueve días no eran incumplimiento. Juicio 10 del `Preguntas.md`, **firmado por Jorge el 2026-09-07** en sus tres partes |
 | **10** | **Cómo se identifica un plan.** El gimnasio no le pone nombre al papel | descubierto | `Trayectoria.PlanQueEmpezo` | Se usa la **fecha de inicio**. Si dos planes empezaran el mismo día, se cae — y nada lo impide |
 | **11** | Que las cuatro medidas necesitaban un **resolutor total** para poder nombrarse desde un comando | descubierto | `Medida.Crear` | Se agregó. No se ve modelando en C#; sólo aparece al atarlo al perform |
-| **12** | **La membresía no está modelada**, estando declarada en la Parte 1 | descubierto | no muerde en ninguna clase: **no hay ninguna** | Abierto. Es la causa del hueco 9, y de él salió la corrección del bloque 1 del [punto de partida](../../Guias/punto-de-partida.md) |
+| ~~12~~ | ~~**La membresía no está modelada**, estando declarada en la Parte 1~~ — **CERRADO el 2026-09-07, v2.** Entró con la regla del descarte corregida: `Membresia`, `EstadoDeMembresia`, `CambioDeEstado`, `Pago`, `Cobro`, `PeriodoEnMora` | descubierto | antes no mordía en ninguna clase; ahora `Trayectoria.Membresia` | De él salió la corrección del bloque 1 del [punto de partida](../../Guias/punto-de-partida.md), y del v2 salió el hueco 15 |
+| ~~15~~ | ~~**¿La bandera del gimnasio llega con la fecha en que cambió, o sólo como estado actual?**~~ — **CERRADO por el papel del v3, 2026-09-08, en la dirección incómoda:** la pantalla dice *"Tu plan está: Activo"* y **ninguna fecha**. Es una foto | descubierto — al leer la respuesta a N1 | `CambioDeEstado.Fecha`, y todo `PeriodoEnMora` que sale de ella | El dominio **sigue recibiendo la fecha por parámetro**: quien la sepa —el evento del feed, si existe; si no, el importador que leyó la pantalla ese día— la pasa. El dominio no lee el reloj; el importador sí puede, y es su trabajo (N9) | — |
+| ~~16~~ | ~~**La casilla de *hecho* por ejercicio** — ¿viaja en el feed?~~ — **CERRADO por Jorge el 2026-09-08: queda en el teléfono.** El gimnasio no se entera | descubierto — al leer el papel D | `Preguntas.md`, *lo que NADIE tiene* | **No se modela.** *Qué hizo adentro* sigue siendo lo que nadie tiene, ahora con respaldo | — |
+| ~~17~~ | ~~**El papel no trae peso prescrito**~~ — **CERRADO por Jorge el 2026-09-08:** el plan **sí** tiene el peso, **cuando la máquina lo requiere**. El recorte no lo mostraba; la entrevista no lo había inventado | descubierto — el recorte, no el papel, lo escondía | `EjercicioPrescrito.PesoIndicado`, `Trayectoria.CuantoSubioLoIndicado` | La forma que quedó es la correcta: **opcional por ejercicio**, guardado, con `IndicarPeso` aparte. La pregunta 2 tiene las dos lecturas | — |
+| ~~18~~ | ~~**Conjuntos cerrados de los que el papel mostró un solo miembro**~~ — **CERRADO por Jorge el 2026-09-08, en dos tandas:** *Pagado* para el cobro, y **"No Activa"** para la membresía. El producto sigue siendo texto: se vio uno y no hace falta más | descubierto — al escribir los resolutores | `EstadoDeMembresia` → *activo* / *no-activa*; `EstadoDeCobro` → *abierto* / *pagado* | **La mora cambió de nombre:** la app no dice por qué la membresía no está activa, así que el período derivado, el descuento del plan y sus consultas pasaron de *mora* a **inactividad** (`PeriodoInactivo`, `DiasDescontadosPorInactividad`). El juicio 10 se conserva con alcance ampliado | — |
+| ~~19~~ | ~~**El IMC tiene dos fuentes**~~ — **CERRADO por Jorge el 2026-09-08: manda el del gimnasio**, que tiene máquinas más especializadas | descubierto — al agregar `IndiceDeMasaCorporal` | `Peso`, `IndiceDeMasaCorporal` | `Peso` **dejó de convertirse a IMC** y de leerse contra un rango propio (`ElAparatoLaEvalua`). Conserva su serie | — |
+| ~~20~~ | ~~***Didn't reach goals*: ¿quién fijó la meta del aparato?**~~ — **CERRADO por Jorge el 2026-09-08: "no hagas caso a eso, sólo vamos a tener la medida"** | descubierto — al leer las cuatro palabras | `EvaluacionDelAparato` | **La palabra salió del conjunto**: quedan *increased, insufficient, high*. El metabolismo basal entra como valor sin evaluación. Leído como *la evaluación contra una meta no entra*; si Jorge quiso decir *ninguna evaluación entra*, N7 cambia | — |
+| ~~21~~ | ~~**El número de máquina viene en dos colores**~~ — **CERRADO por Jorge el 2026-09-08: "no uses los números de la máquina, ignorá ese dato"** | descubierto — papel D | ~~`EjercicioPrescrito.NumeroDeMaquina`~~ | **Salió del modelo**, con su comando. El papel manda qué existe; la persona manda qué entra | — |
+| ~~22~~ | ~~**Dos cobros que cubran el mismo día.**~~ — **CERRADO por Jorge el 2026-09-08: es un error** | descubierto — al escribir `CobroQueCubre` | `Membresia.PuedeAnunciarCobro`, `Cobro.SeSolapaCon` | El segundo **se rechaza** al anunciar, y el `Check` lo dice. La fuga de los planes solapados (hueco 7) sigue abierta: nadie la decidió | — |
+| ~~23~~ | ~~**La frecuencia y las fechas del plan no se ven en el recorte.**~~ — **CERRADO por Jorge el 2026-09-08:** la cabecera del plan las tiene | descubierto — papel D | `Plan.Inicio`, `Plan.Fin`, `Plan.DiasEsperadosPorSemana` | Se conservan; ahora con respaldo en el artefacto | — |
+| ~~24~~ | ~~**La moneda del monto**~~ — **CERRADO por Jorge el 2026-09-08: dólares.** Y con una frase que pesa más que la moneda: *"el cobro no es tan importante para esta app; es cliente-céntrica del gimnasio"* | descubierto — papel A y B | `Cobro.Monto`, `Pago.Monto` | Se anota, no se modela: un solo tipo de monto. **El lado del cobro no crece más**; N12 se descarta | — |
+| ~~25~~ | ~~**La fecha de la medición del aparato** no está en el recorte~~ — **CERRADO por Jorge el 2026-09-08: sí la tiene** | descubierto — papel C | `Medicion.Fecha` | Entra por parámetro, con respaldo | — |
+| ~~27~~ | ~~**Una tercera forma de prescribir: repeticiones y tiempo.**~~ Jorge la nombró al firmar N8 y la retiró el mismo día: *"olvidá ese método, no lo usemos por ahora"* — **CERRADO** | declarado — de palabra, 2026-09-08 | `Prescripcion` | Dos formas, como el papel | — |
+| ~~26~~ | ~~**La cintura no está en el papel y la masa muscular no se ve.**~~ — **CERRADO por Jorge el 2026-09-08:** la cintura **sí se mide**, con cinta, fuera del aparato; la masa muscular **el aparato no la manda** | descubierto — papel C | `Cintura`, `MasaMuscular` | `Cintura` sigue por parámetro, con respaldo. `MasaMuscular` se queda como la entrevista la dio, **sin fuente en ningún papel** — si nadie la mide, es la próxima en salir | — |
 | **13** | **Cuándo una medición no es creíble** — juicio 2 | **declarado** | `Referencia` | Valores de un experto IA, por parámetro. ⚠️ **Sin firmar**: nadie del gimnasio los validó |
 | **14** | **Qué es ruido y qué merece aviso** — juicio 4 | **declarado** | `Referencia`, `Urgencia` | Igual que el 13. ⚠️ **Sin firmar** |
 
@@ -123,7 +141,7 @@ cuatro veces seguidas.
 | Qué pasó | Dónde vive ahora |
 |---|---|
 | El parámetro `@genero` tapó al tipo `Genero`, y el error acusaba a `String` | [Regla 10](../../Guias/reglas-del-substrato.md#10--un-parámetro-le-puede-robar-el-nombre-a-un-tipo) — **ya lo decía**, ver abajo |
-| Un `ToString()` sobrescrito no se llama solo desde el `print` | [Regla 13](../../Guias/reglas-del-substrato.md#13--el-print-proyecta-un-solo-nivel), último punto |
+| Un `ToString()` sobrescrito no se llama solo desde el `print` | [Regla 13](../../Guias/reglas-del-substrato.md#13--el-print-emite-valores-no-material), último punto |
 | Tres journals envenenados: el `Check` preguntaba **otra cosa** que la que el dominio rechazaba | [Regla 17](../../Guias/reglas-del-substrato.md#17--el-check-tiene-que-preguntar-exactamente-lo-que-el-dominio-rechaza) |
 | `Asistio` no podía fallar, no llevaba `Check`, y contó los mismos 30 días dos veces | [Regla 18](../../Guias/reglas-del-substrato.md#18--todo-comando-necesita-check-incluso-el-que-no-puede-fallar) |
 
