@@ -941,12 +941,11 @@ const gn = {
     gn.quitando = name;
     const quien = m.shortName || m.institution || m.title;
     const dia = m.diary || {};
-    document.getElementById('q-titulo').textContent = 'Quitar ' + quien;
-    document.getElementById('q-cuerpo').textContent =
-      'La app de ' + quien + ' sale de este teléfono. Tu bitácora se queda: si volvés a agregar el módulo, la encuentra.';
+    document.getElementById('q-titulo').textContent = T('quitar.de', { quien: quien });
+    document.getElementById('q-cuerpo').textContent = T('quitar.cuerpo', { quien: quien });
     document.getElementById('q-journal').checked = false;
     document.getElementById('q-aviso').textContent = dia.reconstruible === false
-      ? 'Tu bitácora lleva cosas que pusiste vos. Si la borrás, no hay de dónde recuperarlas.'
+      ? T('quitar.irrecuperable')
       : '';
     document.getElementById('quitar').classList.add('on');
   },
@@ -994,7 +993,7 @@ const gn = {
     if (kind === 'state')  { gn.state = JSON.parse(payload); gn.paint(); return; }
     if (kind === 'trace')  { gn.traceLine(payload); return; }
     if (kind === 'answer') { gn.answer(payload, false); return; }
-    if (kind === 'fail')   { gn.answer('No pude contestar: ' + payload, true); return; }
+    if (kind === 'fail')   { gn.answer(T('chat.no-pude', { detalle: payload }), true); return; }
     if (kind === 'alta')   { if (JSON.parse(payload).estado === 'nada') { document.getElementById('alta').innerHTML = ''; return; } gn.alta(JSON.parse(payload)); return; }
     if (kind === 'propuesta') { gn.verPropuesta(JSON.parse(payload)); return; }
     if (kind === 'hallazgos') { gn.hallazgos(JSON.parse(payload)); return; }
@@ -1016,9 +1015,10 @@ const gn = {
       // The shell sends the proposal's brand as `marca`; the state uses `brand`. Take either.
       iconOf({ name: p.modulo, brand: p.brand || p.marca })
       + '<div><b>' + esc(p.institucion || p.titulo) + '</b>'
-      + '<small>' + esc((p.actualizacion && p.actualizacion.tipo === 'actualizacion' ? 'Actualizar '
-                         : p.actualizacion && p.actualizacion.tipo === 'anterior' ? 'Volver a una versión anterior de '
-                         : p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo) + '</small></div>';
+      + '<small>' + T(p.actualizacion && p.actualizacion.tipo === 'actualizacion' ? 'hoja.cabecera.actualizar'
+                       : p.actualizacion && p.actualizacion.tipo === 'anterior' ? 'hoja.cabecera.anterior'
+                       : p.yaEstaba ? 'hoja.cabecera.reinstalar' : 'hoja.cabecera.agregar',
+                       { titulo: esc(p.titulo) }) + '</small></div>';
 
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
@@ -1207,7 +1207,7 @@ const gn = {
   altaDesdeEnlace() {
     const inp = document.getElementById('alta-url'), hint = document.getElementById('alta-hint');
     const url = (inp.value || '').trim();
-    if (!url) { hint.textContent = 'Pegá el enlace primero.'; inp.focus(); return; }
+    if (!url) { hint.textContent = T('alta.pega-primero'); inp.focus(); return; }
     hint.textContent = '';
     gn.sheet(false);
     inp.value = '';
@@ -1229,11 +1229,11 @@ const gn = {
       const nombre = esModulo ? (a.nombreCorto || a.institucion || a.titulo) : a.archivo;
       const linea = esModulo
         ? ((a.institucion && a.nombreCorto && a.institucion !== a.nombreCorto) ? a.institucion + ' · ' : '')
-          + a.archivo + ' · ' + mb(a.bytes) + (a.firmado ? ' · firmado' : '')
+          + a.archivo + ' · ' + mb(a.bytes) + (a.firmado ? ' · ' + T('alta.firmado') : '')
         : a.archivo + ' · ' + mb(a.bytes);
-      const tag = a.instalado ? '<span class="tag ok">instalado</span>'
-        : a.problema ? '<span class="tag no">no entra</span>'
-        : a.yaEstaba ? '<span class="tag">ya lo tenés</span>'
+      const tag = a.instalado ? '<span class="tag ok">' + T('alta.tag.instalado') + '</span>'
+        : a.problema ? '<span class="tag no">' + T('alta.tag.no-entra') + '</span>'
+        : a.yaEstaba ? '<span class="tag">' + T('alta.tag.ya-lo-tienes') + '</span>'
         : '<span class="chev">›</span>';
       const bloqueado = !!a.problema || a.instalado;
       return '<button class="hallazgo' + (a.problema ? ' mal' : '') + '"'
@@ -1242,7 +1242,7 @@ const gn = {
         + '<div class="ht"><b>' + esc(nombre) + '</b><small>' + esc(a.problema || linea) + '</small></div>'
         + tag + '</button>';
     }).join('');
-    document.getElementById('ha-lista').innerHTML = rows || '<p>No encontré ningún módulo en lo que elegiste.</p>';
+    document.getElementById('ha-lista').innerHTML = rows || '<p>' + T('alta.nada-encontrado') + '</p>';
     document.getElementById('hallazgos').classList.add('on');
   },
   altaElegido(i) { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaElegido', { indice: i }); },
@@ -1251,7 +1251,7 @@ const gn = {
   altaArchivo() {
     const hint = document.getElementById('alta-hint');
     const r = gn.call('altaArchivo');
-    if (!r || r.ok !== true) { hint.textContent = 'En este teléfono todavía no se puede elegir un archivo: pegá el enlace.'; return; }
+    if (!r || r.ok !== true) { hint.textContent = T('alta.sin-selector'); return; }
     hint.textContent = '';
     gn.sheet(false);
   },
@@ -1282,7 +1282,7 @@ const gn = {
 
     async start() {
       const hint = document.getElementById('alta-hint');
-      if (!gn.scan.supported()) { hint.textContent = 'Este teléfono no puede leer códigos desde Mymi.'; return; }
+      if (!gn.scan.supported()) { hint.textContent = T('scan.sin-lector'); return; }
       hint.textContent = '';
 
       // The platform grants or denies the camera here (Android asks the person the first time).
@@ -1292,14 +1292,14 @@ const gn = {
         gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
       } catch (e) {
         hint.textContent = e && e.name === 'NotAllowedError'
-          ? 'Mymi no tiene permiso para usar la cámara.'
-          : 'No se pudo abrir la cámara: ' + (e && e.message || e);
+          ? T('scan.sin-permiso')
+          : T('scan.no-abre', { detalle: (e && e.message || e) });
         return;
       }
 
       gn.sheet(false);
       const video = document.getElementById('cam'), msg = document.getElementById('scan-msg');
-      msg.textContent = 'Apuntá al código de tu institución';
+      msg.textContent = T('scan.apunta');
       video.srcObject = gn.scan.stream;
       document.getElementById('scan').classList.add('on');
 
@@ -1313,7 +1313,7 @@ const gn = {
           const scale = Math.min(1, 960 / video.videoWidth);
           const text = await gn.scan.decode(video, Math.round(video.videoWidth * scale), Math.round(video.videoHeight * scale));
           if (text) gn.scan.found(text);
-        } catch (e) { msg.textContent = 'No se pudo leer: ' + (e && e.message || e); }
+        } catch (e) { msg.textContent = T('scan.no-se-pudo-leer', { detalle: (e && e.message || e) }); }
         busy = false;
       }, 250);
     },
@@ -1346,7 +1346,7 @@ const gn = {
     const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
     const pct = a.progreso == null ? null : Math.round(Math.min(1, a.progreso) * 100);
     const cuerpo = a.estado === 'trabajando' && pct != null
-      ? '<span class="txt"><b>' + esc(a.detalle) + '</b><small>' + mb(a.bytes) + ' de ' + mb(a.total) + ' · ' + pct + ' %</small></span>'
+      ? '<span class="txt"><b>' + esc(a.detalle) + '</b>' + peq(T('alta.progreso', { hechos: mb(a.bytes), total: mb(a.total), pct: pct })) + '</span>'
         + '<div class="bar"><i style="width:' + pct + '%"></i></div>'
       : '<span>' + esc(a.detalle) + '</span>';
     caja.innerHTML = '<div class="alta ' + a.estado + '">' + adorno + cuerpo + '</div>';
@@ -1372,7 +1372,7 @@ const gn = {
   // context; inside the app the page is file:// and it may be missing, so the old textarea trick
   // stays as the fallback.
   copy(btn, text) {
-    const done = () => { const was = btn.textContent; btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = was, 1400); };
+    const done = () => { const was = btn.textContent; btn.textContent = T('general.copiado'); setTimeout(() => btn.textContent = was, 1400); };
     const legacy = () => {
       const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
       ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
@@ -1455,7 +1455,7 @@ const gn = {
         + (m.updateAvailable ? '<button class="perm nueva" onclick="event.stopPropagation();gn.actualizar(\'' + m.name + '\')">Hay una versión nueva</button>' : '')
         + '<button class="perm" onclick="event.stopPropagation();gn.detail(\'' + m.name + '\')">'
         + '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
-        + on + (on === 1 ? ' permiso activo' : ' permisos activos') + '</button>'
+        + (on === 1 ? T('detalle.permiso.uno') : T('detalle.permiso.varios', { n: on })) + '</button>'
         + (m.enabled ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">Abrir <span>→</span></button>'
                      : '<span class="off-tag">Apagado</span>')
         + '</div></div>';
@@ -1485,19 +1485,18 @@ const gn = {
         // The institution retired the key this module was accepted with. Said here, once, and
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
         + (m.signerRevokedAt
-            ? '<p class="ojo"><b>Tu institución retiró la llave</b> con la que firmó este módulo'
-              + ' (Mymi lo supo el ' + dia(m.signerRevokedAt) + ').'
-              + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Mymi va a recordar la llave nueva.</p>'
+            ? ojoDetalle(T('detalle.llave-retirada', { dia: dia(m.signerRevokedAt) }))
             : '')
 
         // The origin publishes a newer package than the one she has (NotasGnothiHost/44 §4). A note
         // and a door: nothing downloads until she taps, and the update sheet says what changes.
         + (m.updateAvailable
-            ? '<div class="ojo suave"><b>Hay una versión nueva.</b> ' + esc(m.shortName || m.institution || m.title) + ' publicó '
-              + (m.updateAvailable.version ? 'la ' + esc(m.updateAvailable.version) : 'otro paquete')
-              + (m.publisher && m.publisher.version ? '; tenés la ' + esc(m.publisher.version) : '') + '.'
-              + ' Nada se instala solo: primero vas a ver qué cambia.'
-              + '<button class="btn" style="width:100%;margin-top:10px" onclick="gn.actualizar(\'' + m.name + '\')">Ver qué cambia</button></div>'
+            ? '<div class="ojo suave">' + T('detalle.hay-version', {
+                quien: esc(m.shortName || m.institution || m.title),
+                que: m.updateAvailable.version ? T('detalle.version.numero', { version: esc(m.updateAvailable.version) }) : T('detalle.version.otro-paquete'),
+                tienes: m.publisher && m.publisher.version ? T('detalle.version.tienes', { version: esc(m.publisher.version) }) : '',
+              })
+              + '<button class="btn" style="width:100%;margin-top:10px" onclick="gn.actualizar(\'' + m.name + '\')">' + T('detalle.ver-que-cambia') + '</button></div>'
             : '')
 
         // WHAT THE CARD PROMISED: the queries, first. This is the point of entry to what the
@@ -1534,10 +1533,10 @@ const gn = {
               + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
               + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
               + (veredicto === 'ok'
-                  ? '<br>lo bajaste de ' + esc(org.servedBy) + ', el dominio que declara'
+                  ? '<br>' + T('detalle.proc.mismo-dominio', { servido: esc(org.servedBy) })
                   : veredicto === 'duda'
-                    ? '<br>declara <b>' + esc(proc.domain) + '</b> y lo bajaste de <b>' + esc(org.servedBy) + '</b>'
-                    : proc.domain ? '<br>declara ' + esc(proc.domain) + ' · lo importaste de un archivo' : '')
+                    ? '<br>' + T('detalle.proc.distinto', { dominio: esc(proc.domain), servido: esc(org.servedBy) })
+                    : proc.domain ? '<br>' + T('detalle.proc.archivo', { dominio: esc(proc.domain) }) : '')
               + (org.version ? ' · v' + esc(org.version) : proc.version ? ' · v' + esc(proc.version) : '')
               + '</span></div>'
             : '')
@@ -1556,10 +1555,11 @@ const gn = {
         // `reconstruible: false` es el dato que pesa: ese diario lleva aportes de la persona y
         // borrarlo pierde datos.
         + (dia.retention || dia.updates || dia.reconstruible === false
-            ? '<p class="hint">' + (dia.retention ? 'Lo guarda ' + esc(dia.retention) + '. ' : '')
-              + (dia.updates ? 'Se actualiza ' + esc(dia.updates) + '. ' : '')
-              + (dia.reconstruible === false ? 'Lleva cosas que pusiste vos: si se borra, se pierden.' : '')
-              + '</p>'
+            ? '<p class="hint">' + [
+                dia.retention ? T('detalle.journal.guarda', { retencion: esc(dia.retention) }) : '',
+                dia.updates ? T('detalle.journal.actualiza', { refresco: esc(dia.updates) }) : '',
+                dia.reconstruible === false ? T('detalle.journal.irrecuperable') : '',
+              ].filter(Boolean).join(' ') + '</p>'
             : '')
 
         // QUITAR, al final y con el mismo aspecto que «Abrir»: es una acción sobre el módulo, no
@@ -1574,13 +1574,14 @@ const gn = {
     document.getElementById('journal').innerHTML = ms.map(m => {
       return '<div class="row" onclick="gn.detail(\'' + m.name + '\')">'
         + iconOf(m)
-        + '<div class="t"><b>' + esc(nameOf(m)) + '</b><small>' + kb(m.journalBytes) + ' · ' + m.journalFiles + (m.journalFiles === 1 ? ' archivo' : ' archivos') + '</small></div>'
+        + '<div class="t"><b>' + esc(nameOf(m)) + '</b><small>' + kb(m.journalBytes) + ' · ' + (m.journalFiles === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: m.journalFiles })) + '</small></div>'
         + '<span class="chev">›</span>'
         + '</div>';
     }).join('');
     const files = ms.reduce((a, m) => a + (m.journalFiles || 0), 0);
     document.getElementById('set-datos-sub').textContent =
-      ms.length + (ms.length === 1 ? ' módulo' : ' módulos') + ' · ' + files + (files === 1 ? ' archivo' : ' archivos');
+      (ms.length === 1 ? T('journal.modulo.uno') : T('journal.modulo.varios', { n: ms.length }))
+      + ' · ' + (files === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: files }));
 
     const s = gn.state.settings || {};
     document.getElementById('set-model').innerHTML =
@@ -1621,7 +1622,7 @@ const gn = {
       const cur = (gn.state && gn.state.settings) ? gn.state.settings.name : '';
       document.getElementById('plist').innerHTML = PROV.map((p, i) =>
         '<div class="prow" onclick="gn.pickProvider(' + i + ')">'
-        + '<div class="t"><b>' + esc(p.name) + '</b><small>' + esc(p.note) + '</small></div>'
+        + '<div class="t"><b>' + esc(p.name) + '</b>' + peq(T(p.nota)) + '</div>'
         + (cur === p.name ? '<span class="cur">✓</span>' : '') + '</div>').join('')
         + '<div class="prow" onclick="document.getElementById(\'pcustom\').style.display=\'block\'">'
         + '<div class="t"><b>Otro</b><small>URL propia — LM Studio en tu red, etc.</small></div></div>';
@@ -1736,6 +1737,7 @@ function fuerte(t) { return '<b>' + t + '</b>'; }
 function nDecimal(n) { return Number(n).toLocaleString(IDIOMA, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
 function dia(iso) { return new Date(iso).toLocaleDateString(IDIOMA, { day: 'numeric', month: 'short', year: 'numeric' }); }
 function peq(t) { return '<small>' + t + '</small>'; }
+function ojoDetalle(t) { return '<p class="ojo">' + t + '</p>'; }
 
 function T(clave, valores) {
   let frase = TEXTOS[clave];
@@ -1809,12 +1811,12 @@ function inline(s) {
 
 // THE PROVIDERS ON OFFER. Adding one is adding a line; all speak the OpenAI shape.
 const PROV = [
-  { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', note:'gratis · sin tarjeta · rápido' },
-  { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         note:'la llave de tu cuenta de OpenAI' },
-  { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     note:'la llave de tu Console' },
-  { name:'Cerebras',          url:'https://api.cerebras.ai/v1',      model:'llama-3.3-70b',       note:'gratis · 1M tokens por día' },
-  { name:'Gemini (Google)',   url:'https://generativelanguage.googleapis.com/v1beta/openai', model:'gemini-2.0-flash', note:'gratis · sin tarjeta' },
-  { name:'OpenRouter',        url:'https://openrouter.ai/api/v1',    model:'meta-llama/llama-3.3-70b-instruct:free', note:'muchos modelos gratis con una llave' },
+  { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', nota:'prov.nota.groq' },
+  { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         nota:'prov.nota.openai' },
+  { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     nota:'prov.nota.claude' },
+  { name:'Cerebras',          url:'https://api.cerebras.ai/v1',      model:'llama-3.3-70b',       nota:'prov.nota.cerebras' },
+  { name:'Gemini (Google)',   url:'https://generativelanguage.googleapis.com/v1beta/openai', model:'gemini-2.0-flash', nota:'prov.nota.gemini' },
+  { name:'OpenRouter',        url:'https://openrouter.ai/api/v1',    model:'meta-llama/llama-3.3-70b-instruct:free', nota:'prov.nota.openrouter' },
 ];
 
 // THE DESKTOP MOCK. Never reached inside the app: there, prompt() always answers. It mirrors

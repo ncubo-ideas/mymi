@@ -480,9 +480,14 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 		//
 		// Es estatica y por eso vale mas que una corrida: cubre TODOS los sitios de llamada, no
 		// los que un render cualquiera toca.
+		// Los literales T('clave'), MAS las claves que se declaran como dato y se resuelven en
+		// tiempo de ejecucion -- hoy la nota de cada proveedor, `nota:'prov.nota.groq'`, que
+		// llega a T(p.nota) y que un regex sobre la llamada no puede ver. Una clave dinamica que
+		// nadie declara cerca es una que esta suite no puede cuidar: por eso se declaran asi.
 		string[] pedidas = [.. System.Text.RegularExpressions.Regex
-			.Matches(html, @"\bT\('([a-z0-9.-]+)'")
-			.Select(m => m.Groups[1].Value).Distinct().Order()];
+			.Matches(html, @"\bT\('([a-z0-9.-]+)'|\bnota:\s*'([a-z0-9.-]+)'")
+			.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value)
+			.Distinct().Order()];
 		string[] huerfanas = [.. pedidas.Where(c => Gnothi.Host.Textos.T(c) == c)];
 
 		Assert("ui.html asks the catalog for a good number of phrases",

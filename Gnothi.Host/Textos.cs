@@ -152,8 +152,18 @@ public static class Textos
 	public static IEnumerable<string> Identicas()
 	{
 		foreach ((string clave, (string es, string en)) in Catalogo())
-			if (es.Length > 0 && es == en) yield return clave;
+			if (es.Length > 0 && es == en && !Declarada(clave)) yield return clave;
 	}
+
+	// UNA CLAVE PUEDE DECLARAR QUE SUS DOS IDIOMAS SON IGUALES A PROPOSITO, y lo hace con un
+	// campo "igual" cuyo VALOR ES LA RAZON: «el lema de la marca no se traduce, igual que el
+	// nombre». La excepcion vive al lado de la frase y no en una lista aparte, que es donde las
+	// excepciones se quedan viejas sin que nadie se entere.
+	//
+	// Un `true` pelado habria bastado para el compilador y no para quien lo lea en un ano.
+	private static bool Declarada(string clave) => igualAProposito.Contains(clave);
+
+	private static readonly HashSet<string> igualAProposito = new(StringComparer.Ordinal);
 
 	private static HashSet<string> Marcadores(string frase)
 	{
@@ -213,6 +223,7 @@ public static class Textos
 			// The '//' notes of the file, same convention as every other json in this repo.
 			if (entrada.Name.StartsWith("//", StringComparison.Ordinal)) continue;
 			d[entrada.Name] = (Texto(entrada.Value, Espanol), Texto(entrada.Value, Ingles));
+			if (Texto(entrada.Value, "igual").Length > 0) igualAProposito.Add(entrada.Name);
 		}
 
 		return catalogo = d;

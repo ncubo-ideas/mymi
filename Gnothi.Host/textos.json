@@ -13,6 +13,65 @@
 
   "//enfasis": "ALGUNAS FRASES LLEVAN <b> ADENTRO. Es enfasis que la frase necesita -«la llave CAMBIO»- y por eso viaja con ella y no alrededor: partirla para sacar el <b> seria volver a los fragmentos. Quien traduzca tiene que conservar las etiquetas; el valor interpolado va aparte y ya viene escapado.",
 
+  "quitar.de":                      { "es": "Quitar {quien}", "en": "Remove {quien}" },
+  "quitar.cuerpo":                  { "es": "La app de {quien} sale de este teléfono. Tu bitácora se queda: si vuelves a agregar el módulo, la encuentra.", "en": "{quien}'s app leaves this phone. Your record stays: if you add the module again, it finds it." },
+  "quitar.irrecuperable":           { "es": "Tu bitácora lleva cosas que pusiste tú. Si la borras, no hay de dónde recuperarlas.", "en": "Your record carries things you put there yourself. If you delete it, there is nowhere to get them back from." },
+
+  "hoja.cabecera.actualizar":       { "es": "Actualizar {titulo}", "en": "Update {titulo}" },
+  "hoja.cabecera.anterior":         { "es": "Volver a una versión anterior de {titulo}", "en": "Go back to an earlier version of {titulo}" },
+  "hoja.cabecera.reinstalar":       { "es": "Reinstalar {titulo}", "en": "Reinstall {titulo}" },
+  "hoja.cabecera.agregar":          { "es": "Agregar {titulo}", "en": "Add {titulo}" },
+
+  "detalle.llave-retirada":         { "es": "<b>Tu institución retiró la llave</b> con la que firmó este módulo (Mymi lo supo el {dia}). Lo que ya tienes sigue siendo tuyo. Pídele un paquete nuevo y vuelve a agregarlo: Mymi va a recordar la llave nueva.", "en": "<b>Your institution retired the key</b> it signed this module with (Mymi learned it on {dia}). What you already have is still yours. Ask them for a new package and add it again: Mymi will remember the new key." },
+  "detalle.hay-version":            { "es": "<b>Hay una versión nueva.</b> {quien} publicó {que}{tienes}. Nada se instala solo: primero vas a ver qué cambia.", "en": "<b>There is a new version.</b> {quien} published {que}{tienes}. Nothing installs on its own: you will see what changes first." },
+  "detalle.version.numero":         { "es": "la {version}", "en": "version {version}" },
+  "detalle.version.otro-paquete":   { "es": "otro paquete", "en": "another package" },
+  "detalle.version.tienes":         { "es": "; tienes la {version}", "en": "; you have {version}" },
+  "detalle.ver-que-cambia":         { "es": "Ver qué cambia", "en": "See what changes" },
+
+  "detalle.proc.mismo-dominio":     { "es": "lo bajaste de {servido}, el dominio que declara", "en": "you downloaded it from {servido}, the domain it declares" },
+  "detalle.proc.distinto":          { "es": "declara <b>{dominio}</b> y lo bajaste de <b>{servido}</b>", "en": "it declares <b>{dominio}</b> and you downloaded it from <b>{servido}</b>" },
+  "detalle.proc.archivo":           { "es": "declara {dominio} · lo importaste de un archivo", "en": "it declares {dominio} · you imported it from a file" },
+
+  "detalle.journal.guarda":         { "es": "Lo guarda {retencion}.", "en": "They keep it {retencion}." },
+  "detalle.journal.actualiza":      { "es": "Se actualiza {refresco}.", "en": "It updates {refresco}." },
+  "detalle.journal.irrecuperable":  { "es": "Lleva cosas que pusiste tú: si se borra, se pierden.", "en": "It carries things you put there yourself: if it is deleted, they are lost." },
+
+  "//los-proveedores": "LA LINEA DE CADA PROVEEDOR DE MODELO. El NOMBRE no entra al catalogo -Groq, Claude (Anthropic), Gemini (Google) son nombres propios- pero la nota si: es texto nuestro describiendole a la persona que le va a costar cada uno.",
+
+  "prov.nota.groq":                 { "es": "gratis · sin tarjeta · rápido", "en": "free · no card · fast" },
+  "prov.nota.openai":               { "es": "la llave de tu cuenta de OpenAI", "en": "the key from your OpenAI account" },
+  "prov.nota.claude":               { "es": "la llave de tu Console", "en": "the key from your Console" },
+  "prov.nota.cerebras":             { "es": "gratis · 1M tokens por día", "en": "free · 1M tokens a day" },
+  "prov.nota.gemini":               { "es": "gratis · sin tarjeta", "en": "free · no card" },
+  "prov.nota.openrouter":           { "es": "muchos modelos gratis con una llave", "en": "many free models with one key" },
+
+  "alta.progreso":                  { "es": "{hechos} de {total} · {pct} %", "en": "{hechos} of {total} · {pct}%" },
+  "alta.pega-primero":              { "es": "Pega el enlace primero.", "en": "Paste the link first." },
+  "alta.sin-selector":              { "es": "En este teléfono todavía no se puede elegir un archivo: pega el enlace.", "en": "On this phone you cannot pick a file yet: paste the link." },
+  "alta.nada-encontrado":           { "es": "No encontré ningún módulo en lo que elegiste.", "en": "I found no module in what you picked." },
+  "alta.tag.instalado":             { "es": "instalado", "en": "installed" },
+  "alta.tag.no-entra":              { "es": "no entra", "en": "refused" },
+  "alta.tag.ya-lo-tienes":          { "es": "ya lo tienes", "en": "you have it" },
+  "alta.firmado":                   { "es": "firmado", "en": "signed" },
+
+  "scan.sin-lector":                { "es": "Este teléfono no puede leer códigos desde Mymi.", "en": "This phone cannot read codes from inside Mymi." },
+  "scan.sin-permiso":               { "es": "Mymi no tiene permiso para usar la cámara.", "en": "Mymi does not have permission to use the camera." },
+  "scan.no-abre":                   { "es": "No se pudo abrir la cámara: {detalle}", "en": "Could not open the camera: {detalle}" },
+  "scan.no-se-pudo-leer":           { "es": "No se pudo leer: {detalle}", "en": "Could not read it: {detalle}" },
+
+  "chat.no-pude":                   { "es": "No pude contestar: {detalle}", "en": "I could not answer: {detalle}" },
+  "general.copiado":                { "es": "Copiado", "en": "Copied" },
+
+  "//los-plurales": "CADA PLURAL SON DOS CLAVES, no un sufijo pegado al numero. El patron que habia -«ms.length + (ms.length === 1 ? ' conectada' : ' conectadas')»- funciona mientras el prefijo se comparta, y en ingles «1 institution» / «2 institutions» tambien; pero la frase entera es lo unico que sobrevive a un idioma donde el numero no va delante. Regla 7.",
+
+  "detalle.permiso.uno":            { "es": "1 permiso activo", "en": "1 permission on" },
+  "detalle.permiso.varios":         { "es": "{n} permisos activos", "en": "{n} permissions on" },
+  "journal.archivo.uno":            { "es": "1 archivo", "en": "1 file" },
+  "journal.archivo.varios":         { "es": "{n} archivos", "en": "{n} files" },
+  "journal.modulo.uno":             { "es": "1 módulo", "en": "1 module" },
+  "journal.modulo.varios":          { "es": "{n} módulos", "en": "{n} modules" },
+
   "general.nada":                   { "es": "(nada)", "en": "(none)" },
   "general.ninguno":                { "es": "(ninguno)", "en": "(none)" },
 
@@ -191,7 +250,7 @@
   "inicio.conectar":              { "es": "Conectar", "en": "Connect" },
   "inicio.vacio.titulo":          { "es": "Todo lo tuyo, en un solo lugar", "en": "Everything that\u2019s yours, in one place." },
   "inicio.vacio.cuerpo":          { "es": "Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.", "en": "Your institutions deliver your records directly to you. They stay on your device and are only accessed when you allow it." },
-  "inicio.lema":                  { "es": "Your world, together", "en": "Your world, together" },
+  "inicio.lema":                  { "es": "Your world, together", "en": "Your world, together", "igual": "el lema de la marca no se traduce, igual que el nombre" },
 
   "nav.instituciones":            { "es": "Instituciones", "en": "Institutions" },
   "nav.asistente":                { "es": "Asistente", "en": "Assistant" },
