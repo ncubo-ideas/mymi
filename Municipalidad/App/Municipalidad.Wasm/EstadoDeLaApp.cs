@@ -66,13 +66,20 @@ namespace Municipalidad.Wasm
 
 		public bool EnElNavegador => Modo == "opfs";
 
-		public string UltimoMensaje { get; private set; } = "";
+		/// <summary>Lo ultimo que hizo esta app, como apunte para que la pantalla lo diga en su idioma.</summary>
+		public Apunte Apunte { get; private set; } = Apunte.Ninguno;
 
-		/// <summary>No vacio cuando una escritura a la carpeta fallo. Nunca se traga en silencio.</summary>
-		public string NoSeEstaGuardando { get; private set; } = "";
+		/// <summary>
+		/// Lo que contesto la institucion al abrir, como apunte propio y no pegado al de arriba: son dos
+		/// pasos y una frase que los junta no podria decir cual de los dos fallo.
+		/// </summary>
+		public Apunte ApunteDelFeed { get; private set; } = Apunte.Ninguno;
 
-		/// <summary>No vacio cuando no se pudo alcanzar la institucion. Abrir igual es lo correcto.</summary>
-		public string NoSeAlcanzaLaInstitucion { get; private set; } = "";
+		/// <summary>Hay algo que decir cuando una escritura a la carpeta fallo. Nunca se traga en silencio.</summary>
+		public Apunte NoSeEstaGuardando { get; private set; } = Apunte.Ninguno;
+
+		/// <summary>Hay algo que decir cuando no se pudo alcanzar la institucion. Abrir igual es lo correcto.</summary>
+		public Apunte NoSeAlcanzaLaInstitucion { get; private set; } = Apunte.Ninguno;
 
 		public string DondeEstaElFeed => http.BaseAddress?.ToString() ?? "(sin configurar)";
 
@@ -96,7 +103,7 @@ namespace Municipalidad.Wasm
 		{
 			ResultadoDeCarpeta resultado = await puente.RecuperarCarpetaAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = $"recuperar carpeta: {resultado}";
+			Apuntar("arranque.apunte.recuperarCarpeta", resultado);
 			return resultado;
 		}
 
@@ -104,7 +111,7 @@ namespace Municipalidad.Wasm
 		{
 			ResultadoDeCarpeta resultado = await puente.ElegirCarpetaAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = $"conectar carpeta: {resultado}";
+			Apuntar("arranque.apunte.conectarCarpeta", resultado);
 
 			if (resultado.Ok) SoltarElActor();
 			return resultado;
@@ -113,7 +120,7 @@ namespace Municipalidad.Wasm
 		public async ValueTask<ResultadoDeCarpeta> PedirPermisoAsync()
 		{
 			ResultadoDeCarpeta resultado = await puente.PedirPermisoAsync();
-			UltimoMensaje = $"pedir permiso: {resultado}";
+			Apuntar("arranque.apunte.pedirPermiso", resultado);
 
 			if (resultado.Ok) SoltarElActor();
 			return resultado;
@@ -123,7 +130,7 @@ namespace Municipalidad.Wasm
 		{
 			ResultadoDeCarpeta resultado = await puente.UsarOpfsAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = $"almacenamiento del navegador: {resultado}";
+			Apuntar("arranque.apunte.usarNavegador", resultado);
 
 			if (resultado.Ok) SoltarElActor();
 			return resultado;
@@ -133,7 +140,22 @@ namespace Municipalidad.Wasm
 		{
 			await puente.OlvidarCarpetaAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = "se olvidó la carpeta guardada; no se tocó nada de lo que hay adentro";
+			Apunte = Apunte.De("arranque.apunte.olvidoLaCarpeta");
+			ApunteDelFeed = Apunte.Ninguno;
+		}
+
+		/// <summary>
+		/// Lo que contesto el navegador, como apunte de la accion que se le pidio. Son dos claves por
+		/// accion porque un si y un no son dos frases enteras, no una con un matiz adentro.
+		/// </summary>
+		private void Apuntar(string clave, ResultadoDeCarpeta resultado)
+		{
+			Apunte = resultado.Ok
+				? Apunte.De(clave + ".ok", ("carpeta", resultado.Nombre), ("permiso", resultado.Permiso))
+				: Apunte.De(clave + ".no",
+					("motivo", resultado.Motivo.Length > 0 ? resultado.Motivo : resultado.Permiso));
+
+			ApunteDelFeed = Apunte.Ninguno;
 		}
 
 		/// <summary>
@@ -172,28 +194,36 @@ namespace Municipalidad.Wasm
 
 			try { await BajarAsync(); } catch (EscrituraRechazadaException) { }
 
-			UltimoMensaje = modo.Hospedada
-				? $"arriba, hospedada en Gnothi. {precargados} archivos precargados"
-				: puente.HayCarpeta
-					? $"arriba. {precargados} archivos precargados de '{puente.NombreDeLaCarpeta}'"
-					: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
+			string cuantos = precargados == 1 ? ".uno" : ".varios";
+
+			Apunte = modo.Hospedada
+				? Apunte.De("arranque.apunte.arribaHospedada" + cuantos,
+					("precargados", precargados.ToString()))
+				: EnElNavegador
+					? Apunte.De("arranque.apunte.arribaEnElNavegador" + cuantos,
+						("precargados", precargados.ToString()))
+					: puente.HayCarpeta
+						? Apunte.De("arranque.apunte.arribaEnCarpeta" + cuantos,
+							("precargados", precargados.ToString()), ("carpeta", puente.NombreDeLaCarpeta))
+						: Apunte.De("arranque.apunte.arribaSinCarpeta");
 
 			try
 			{
 				ResultadoDeRefresh alAbrir = await bucle.Ejecutar(CancellationToken.None);
 				await BajarAsync();
-				NoSeAlcanzaLaInstitucion = "";
-				UltimoMensaje += $" | al abrir: {alAbrir}";
+				NoSeAlcanzaLaInstitucion = Apunte.Ninguno;
+				ApunteDelFeed = Apunte.De("arranque.apunte.alAbrir", ("resultado", alAbrir.ToString()));
 			}
 			catch (EscrituraRechazadaException)
 			{
-				UltimoMensaje += " | la institución contestó, pero la carpeta rechazó la escritura";
+				ApunteDelFeed = Apunte.De("arranque.apunte.carpetaRechazoAlAbrir");
 			}
 			catch (Exception ex)
 			{
-				NoSeAlcanzaLaInstitucion =
-					$"No se pudo alcanzar {DondeEstaElFeed} ({ex.GetType().Name}: {ex.Message}).";
-				UltimoMensaje += " | " + NoSeAlcanzaLaInstitucion;
+				NoSeAlcanzaLaInstitucion = Apunte.De("arranque.noSeAlcanza",
+					("donde", DondeEstaElFeed), ("tipo", ex.GetType().Name), ("detalle", ex.Message));
+
+				ApunteDelFeed = NoSeAlcanzaLaInstitucion;
 			}
 
 			if (modo.Hospedada) await puenteDeGnothi.ListoAsync();
@@ -221,8 +251,9 @@ namespace Municipalidad.Wasm
 
 			ResultadoDeRefresh resultado = await bucle.Ejecutar(ct);
 
-			NoSeAlcanzaLaInstitucion = "";
-			UltimoMensaje = $"actualización: {resultado}";
+			NoSeAlcanzaLaInstitucion = Apunte.Ninguno;
+			Apunte = Apunte.De("arranque.apunte.actualizacion", ("resultado", resultado.ToString()));
+			ApunteDelFeed = Apunte.Ninguno;
 
 			await BajarAsync();
 			return resultado;
@@ -265,7 +296,8 @@ namespace Municipalidad.Wasm
 
 			ResultadoDeRefresh resultado = await unaVez.Ejecutar(ct);
 
-			UltimoMensaje = $"entrega de Gnothi: {resultado}";
+			Apunte = Apunte.De("arranque.apunte.entregaDeGnothi", ("resultado", resultado.ToString()));
+			ApunteDelFeed = Apunte.Ninguno;
 			return resultado;
 		}
 
@@ -278,11 +310,11 @@ namespace Municipalidad.Wasm
 			try
 			{
 				await puente.BajarDeMemfsAsync();
-				NoSeEstaGuardando = "";
+				NoSeEstaGuardando = Apunte.Ninguno;
 			}
 			catch (EscrituraRechazadaException ex)
 			{
-				NoSeEstaGuardando = ex.Message;
+				NoSeEstaGuardando = ex.Apunte;
 				throw;
 			}
 		}
@@ -301,7 +333,10 @@ namespace Municipalidad.Wasm
 				await BajarAsync();
 
 				if (rechazo.Length > 0)
-					UltimoMensaje = "no se pudo registrar esta instalación: " + rechazo;
+				{
+					Apunte = Apunte.De("arranque.apunte.noSeRegistroLaInstalacion", ("rechazo", rechazo));
+					ApunteDelFeed = Apunte.Ninguno;
+				}
 			}
 
 			string actual = api.TokenGuardado();
@@ -318,7 +353,8 @@ namespace Municipalidad.Wasm
 			if (refresco.Length > 0)
 			{
 				Credencial rotada = await new ProveedorDeToken(http).Rotar(refresco, ct);
-				if (rotada is not null) return await GuardarAsync(rotada, "credencial rotada con el token de refresco");
+				if (rotada is not null)
+					return await GuardarAsync(rotada, Apunte.De("arranque.apunte.credencialRotada"));
 			}
 
 			return await PedirUnaCredencialNuevaAsync(ct);
@@ -329,17 +365,20 @@ namespace Municipalidad.Wasm
 			Credencial nueva = await new ProveedorDeToken(http)
 				.Pedir(api.ClaveDeDispositivoGuardada(), ajustes.Recurso, ajustes.Id, ct);
 
-			return await GuardarAsync(nueva, $"credencial nueva (alcance {nueva.Scope})");
+			return await GuardarAsync(nueva,
+				Apunte.De("arranque.apunte.credencialNueva", ("alcance", nueva.Scope)));
 		}
 
-		private async Task<string> GuardarAsync(Credencial credencial, string quePaso)
+		private async Task<string> GuardarAsync(Credencial credencial, Apunte quePaso)
 		{
 			string rechazo = api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
 			await BajarAsync();
 
-			UltimoMensaje = rechazo.Length > 0
-				? "no se pudo guardar la credencial: " + rechazo
+			Apunte = rechazo.Length > 0
+				? Apunte.De("arranque.apunte.noSeGuardoLaCredencial", ("rechazo", rechazo))
 				: quePaso;
+
+			ApunteDelFeed = Apunte.Ninguno;
 
 			return credencial.AccessToken;
 		}
@@ -476,7 +515,8 @@ namespace Municipalidad.Wasm
 			}
 			catch (Exception ex)
 			{
-				return LoQueDijoElAporte.NoSePudo(LoQueSePuedeDecirDe(ex));
+				return LoQueDijoElAporte.NoSePudoPorLaApp(Apunte.De("cuantoApartar.falloLaApp",
+					("tipo", ex.GetType().Name), ("detalle", ex.Message)));
 			}
 
 			if (rechazo.Length > 0) return LoQueDijoElAporte.NoSePudo(Desenvolver(rechazo));
@@ -487,7 +527,7 @@ namespace Municipalidad.Wasm
 			}
 			catch (EscrituraRechazadaException ex)
 			{
-				return LoQueDijoElAporte.QuedoSinGuardar(ex.Message);
+				return LoQueDijoElAporte.QuedoSinGuardar(ex.Apunte);
 			}
 
 			return LoQueDijoElAporte.Entro();
@@ -518,14 +558,6 @@ namespace Municipalidad.Wasm
 
 			return rechazo;
 		}
-
-		/// <summary>
-		/// Lo que se le puede decir a una persona de una falla que no es un rechazo del dominio. Nombra
-		/// el tipo porque sin el nadie puede diagnosticarla, y no pretende explicarla.
-		/// </summary>
-		private static string LoQueSePuedeDecirDe(Exception ex) =>
-			$"La app falló al intentar guardarlo, y eso no es algo que hayas hecho vos: "
-			+ $"{ex.GetType().Name}: {ex.Message}";
 
 		/// <summary>
 		/// El instante que esta app le manda a un COMANDO. Es monotono dentro de la sesion, y es de

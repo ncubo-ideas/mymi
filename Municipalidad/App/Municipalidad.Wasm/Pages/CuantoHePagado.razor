@@ -29,7 +29,7 @@ else
 
             <dl class="renglones">
                 <dt>@textos.Con("cuantoHePagado.pagadoEn", ("anio", pagado.Anio.ToString()))</dt>
-                <dd class="cifra">@Formato.Monto(pagado.TotalDelAnio, textos.Idioma)</dd>
+                <dd class="cifra">@textos.Monto(pagado.TotalDelAnio)</dd>
             </dl>
 
             @if (!pagado.HayAlgunComprobante)
@@ -81,10 +81,10 @@ else
                                             <span class="sello sello--inferido">@textos["cuantoHePagado.inferido"]</span>
                                         }
                                     </td>
-                                    <td class="tabla__cifra">@Formato.Monto(linea.Monto, textos.Idioma)</td>
-                                    <td class="tabla__cifra">@Formato.Monto(linea.Mora, textos.Idioma)</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.Monto)</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.Mora)</td>
                                     <td class="tabla__cifra">@linea.Cubre</td>
-                                    <td class="tabla__cifra">@Formato.Monto(linea.PorPeriodo, textos.Idioma)</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.PorPeriodo)</td>
                                 </tr>
                             }
                         </tbody>

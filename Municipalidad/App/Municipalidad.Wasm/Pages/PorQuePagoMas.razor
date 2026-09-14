@@ -14,8 +14,8 @@
 else
 {
     <NumeroSinFirmar Dicho="@textos.Con("porQuePagoMas.umbrales",
-        ("salto", Formato.Porcentaje(variacion.UmbralDeSalto, textos.Idioma)),
-        ("ruido", Formato.Porcentaje(variacion.Ruido, textos.Idioma)))" />
+        ("salto", textos.Porcentaje(variacion.UmbralDeSalto)),
+        ("ruido", textos.Porcentaje(variacion.Ruido)))" />
 
     @foreach (var rubro in variacion.Rubros)
     {
@@ -38,9 +38,9 @@ else
                     <dt>@textos["porQuePagoMas.periodos"]</dt>
                     <dd>@rubro.Desde &rarr; @rubro.Hasta</dd>
                     <dt>@textos["porQuePagoMas.porPeriodo"]</dt>
-                    <dd>@Formato.Monto(rubro.Antes, textos.Idioma) &rarr; @Formato.Monto(rubro.Ahora, textos.Idioma)</dd>
+                    <dd>@textos.Monto(rubro.Antes) &rarr; @textos.Monto(rubro.Ahora)</dd>
                     <dt>@textos["porQuePagoMas.elCambio"]</dt>
-                    <dd>@Formato.Porcentaje(rubro.Proporcion, textos.Idioma)</dd>
+                    <dd>@textos.Porcentaje(rubro.Proporcion)</dd>
                 </dl>
             }
         </article>
@@ -68,7 +68,7 @@ else
                         @if (finca.TieneAvaluo)
                         {
                             <span class="periodo">@textos.Con("porQuePagoMas.finca.avaluo",
-                                ("monto", Formato.Monto(finca.Avaluo, textos.Idioma)))</span>
+                                ("monto", textos.Monto(finca.Avaluo)))</span>
                         }
                         else
                         {

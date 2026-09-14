@@ -68,6 +68,14 @@ namespace Municipalidad.Wasm
 		}
 
 		/// <summary>
+		/// La frase de un apunte que compuso una capa sin catalogo. La ausencia entra como
+		/// <see cref="Apunte.Ninguno"/> y sale como la cadena vacia, nunca como una clave vacia entre
+		/// llaves.
+		/// </summary>
+		public string Diga(Apunte apunte) =>
+			apunte.HayQueDecirlo ? Con(apunte.Clave, apunte.Huecos) : "";
+
+		/// <summary>
 		/// COMO SE DICE EL NOMBRE DE UN ESTADO que el dominio eligio de una lista cerrada. NO es dato del
 		/// registro: `cambio-de-tarifa` y `sin-consulta` los eligio el dominio, no la municipalidad, y en
 		/// pantalla son indistinguibles a ojo de un rubro que si vino del registro. El codigo sigue
@@ -75,9 +83,24 @@ namespace Municipalidad.Wasm
 		/// </summary>
 		public string ComoSeDice(string codigo)
 		{
-			return Municipalidad.App.Frases.LaRedaccion.Etiqueta(
-				Municipalidad.App.Frases.Frases.De(Idioma), codigo);
+			return Municipalidad.App.Frases.LaRedaccion.Etiqueta(LasFrases, codigo);
 		}
+
+		/// <summary>
+		/// EL MISMO RENDERIZADOR con que la puerta compone las frases del dominio. Una cifra se escribe
+		/// en UN solo lugar: la de una tabla y la de la frase de al lado son la misma pantalla, y dos
+		/// implementaciones de la coma decimal son la frase rival en pequeno.
+		/// </summary>
+		private Municipalidad.App.Frases.Frases LasFrases => Municipalidad.App.Frases.Frases.De(Idioma);
+
+		/// <summary>Un monto, con los digitos que trae su columna y sin simbolo de moneda.</summary>
+		public string Monto(decimal monto) => LasFrases.Monto(monto);
+
+		/// <summary>Una proporcion dicha como porcentaje.</summary>
+		public string Porcentaje(decimal proporcion) => LasFrases.Porcentaje(proporcion);
+
+		/// <summary>Cuantos dias, dicho entero para que "1 dias" no aparezca en ningun idioma.</summary>
+		public string Dias(int dias) => LasFrases.Dias(dias);
 
 		/// <summary>
 		/// Lee lo que la persona eligio en su dispositivo y carga el catalogo que le corresponde. Si la
@@ -94,6 +117,31 @@ namespace Municipalidad.Wasm
 			AtendioLaEleccion = pedidas.Length > 0
 				&& SubetiquetaPrimaria(pedidas[0]) == SubetiquetaPrimaria(Etiqueta);
 			textos = await CargarAsync(http, Etiqueta);
+
+			await FijarElIdiomaDelDocumentoAsync(js);
+		}
+
+		/// <summary>
+		/// Le dice al documento en que idioma quedo, que es lo que leen el lector de pantalla y el
+		/// guionado. Se fija DESPUES de negociar y nunca en el HTML: el documento se sirve igual para
+		/// los dos idiomas, asi que una etiqueta escrita a mano seria falsa para la mitad de quienes lo
+		/// abren.
+		/// </summary>
+		private async Task FijarElIdiomaDelDocumentoAsync(IJSRuntime js)
+		{
+			try
+			{
+				await using IJSObjectReference modulo =
+					await js.InvokeAsync<IJSObjectReference>("import", "./idioma-interop.js");
+
+				await modulo.InvokeVoidAsync("fijarIdiomaDelDocumento", Etiqueta);
+			}
+			catch (JSException)
+			{
+			}
+			catch (InvalidOperationException)
+			{
+			}
 		}
 
 		/// <summary>

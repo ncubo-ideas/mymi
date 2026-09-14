@@ -68,6 +68,7 @@
     "guardando": "Saving…",
     "notaDelAporte": "It is yours and not the municipality's: nobody reviews it and it does not change what you are billed. It can be adopted once a day, and the last one you enter is the one that stands.",
     "sinRespaldo": "It was recorded and NOT saved.",
+    "falloLaApp": "The app failed while trying to save it, and that is not something you did ({tipo}: {detalle}).",
     "entro": "Done, it is yours.",
     "entroCuerpo": "Your reserve was recorded and saved in your folder.",
     "rechazado": "It was not recorded, and this is why.",
@@ -149,7 +150,6 @@
     "noAbrio": "The app could not be opened.",
     "sinInstitucion": "Could not reach the institution.",
     "sinInstitucionCuerpo": "What is already in your folder looks the same: that is what it is yours for.",
-    "navegadorDijoNo": "The browser said no.",
     "sinHttps": "This page is not on a secure connection.",
     "sinHttpsCuerpo": "No browser will let it save anything. Open it over <span class=\"mono\">https</span>, or over <span class=\"mono\">localhost</span>.",
     "navegadorSinAlmacenamiento": "This browser cannot save anything for this app.",
@@ -197,8 +197,90 @@
     "credencialSi": "stored",
     "credencialNo": "none",
     "aQuienSeLePide": "Who it asks",
+    "feed": "Feed",
     "deDondeSale": "It comes from <span class=\"mono\">wwwroot/appsettings.json</span>, not from a compiled constant.",
-    "ventanaDeEscritura": "The record is written down to the folder after every command. Between the actor confirming and the folder receiving there is an instant in which an abrupt close loses entries: that window is as narrow as it can be made, and it is not transactional durability."
+    "ventanaDeEscritura": "The record is written down to the folder after every command. Between the actor confirming and the folder receiving there is an instant in which an abrupt close loses entries: that window is as narrow as it can be made, and it is not transactional durability.",
+
+    "noSeAlcanza": "{donde} could not be reached ({tipo}: {detalle}).",
+
+    "sinRespaldo": {
+      "faltaPermiso": "There is no write permission on “{carpeta}”. The browser grants it separately from the permission to choose the folder, and takes it back when the app opens again. Granting it again restores it; until then nothing you see is being saved.",
+      "fallaronArchivos": {
+        "uno": "Nothing could be saved in “{carpeta}”: {fallaron} file of {total} failed. {detalle}",
+        "varios": "Nothing could be saved in “{carpeta}”: {fallaron} files of {total} failed. {detalle}"
+      }
+    },
+
+    "navegadorDijoNo": {
+      "titulo": "The browser said no.",
+      "denegado": {
+        "elegirCarpeta": "The browser refused to choose that folder, without asking you. Either file editing permission for this site is blocked — open the padlock next to the address, reset this site's permissions, reload and choose the folder again — or this browser does not offer file editing at all, which is normal in an embedded browser. If there is no padlock to open, it is the second one.",
+        "darPermiso": "The browser refused to grant you write permission on that folder, without asking you. Either file editing permission for this site is blocked — open the padlock next to the address, reset this site's permissions, reload and choose the folder again — or this browser does not offer file editing at all, which is normal in an embedded browser. If there is no padlock to open, it is the second one.",
+        "usarNavegador": "The browser refused to use its own storage, without asking you. Either this site's permission is blocked — open the padlock next to the address, reset this site's permissions and reload — or this browser does not offer storage at all, which is normal in an embedded browser. If there is no padlock to open, it is the second one."
+      },
+      "otro": {
+        "elegirCarpeta": "That folder could not be chosen. The browser said: {motivo}",
+        "darPermiso": "Write permission on that folder could not be obtained. The browser said: {motivo}",
+        "usarNavegador": "This browser's storage could not be used. The browser said: {motivo}"
+      }
+    },
+
+    "falla": {
+      "paso": {
+        "elegirCarpeta": "Choosing a folder failed.",
+        "darPermiso": "Granting permission on the folder failed.",
+        "usarNavegador": "Saving in this browser failed.",
+        "olvidarCarpeta": "Forgetting the stored folder failed.",
+        "abrirLaApp": "Opening the app failed.",
+        "traerDeLaInstitucion": "Fetching whatever the institution published failed."
+      }
+    },
+
+    "apunte": {
+      "recuperarCarpeta": {
+        "ok": "The folder “{carpeta}” was recovered (permission {permiso}).",
+        "no": "The stored folder could not be recovered: {motivo}"
+      },
+      "conectarCarpeta": {
+        "ok": "The folder “{carpeta}” is now connected (permission {permiso}).",
+        "no": "No folder could be connected: {motivo}"
+      },
+      "pedirPermiso": {
+        "ok": "Permission on “{carpeta}” is now granted (permission {permiso}).",
+        "no": "Permission could not be obtained: {motivo}"
+      },
+      "usarNavegador": {
+        "ok": "It is now saving in this browser's storage (permission {permiso}).",
+        "no": "This browser's storage could not be used: {motivo}"
+      },
+      "olvidoLaCarpeta": "The stored folder was forgotten; nothing inside it was touched.",
+      "arribaHospedada": {
+        "uno": "The app is up, hosted in Gnothi, with {precargados} file preloaded.",
+        "varios": "The app is up, hosted in Gnothi, with {precargados} files preloaded."
+      },
+      "arribaEnCarpeta": {
+        "uno": "The app is up, with {precargados} file preloaded from “{carpeta}”.",
+        "varios": "The app is up, with {precargados} files preloaded from “{carpeta}”."
+      },
+      "arribaEnElNavegador": {
+        "uno": "The app is up, with {precargados} file preloaded from this browser's storage.",
+        "varios": "The app is up, with {precargados} files preloaded from this browser's storage."
+      },
+      "arribaSinCarpeta": "The app is up, but with NO folder: the record lives only in memory and is lost on closing.",
+      "alAbrir": "On opening, the institution answered: {resultado}",
+      "carpetaRechazoAlAbrir": "On opening, the institution answered, but the folder refused the write.",
+      "actualizacion": "Whatever the institution published was fetched: {resultado}",
+      "entregaDeGnothi": "Gnothi delivered an envelope: {resultado}",
+      "noSeRegistroLaInstalacion": "This installation could not be registered: {rechazo}",
+      "credencialRotada": "The credential was rotated with the refresh token.",
+      "credencialNueva": "A new credential was obtained, with scope {alcance}.",
+      "noSeGuardoLaCredencial": "The credential could not be saved: {rechazo}"
+    }
+  },
+
+  "noEncontrado": {
+    "titulo": "Not found",
+    "cuerpo": "There is nothing at this address."
   },
 
   "sinAbrir": {
