@@ -42,4 +42,21 @@
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
   </ItemGroup>
 
+  <!-- `dotnet test` SOBRE ESTE PROYECTO TAMBIEN CORRE LA SUITE. Sin esto, `dotnet test` sobre
+       un Exe sin framework de pruebas sale con codigo 0 sin ejecutar ni una asercion: verde sin
+       haber probado nada, que es exactamente lo que esta suite existe para impedir. La forma
+       canonica sigue siendo `dotnet run` sobre este proyecto (asi la corre CI);
+       esto hace que la forma equivocada haga lo correcto en vez de mentir.
+
+       Se engancha ANTES del target VSTest del SDK, que es el que `dotnet test` invoca. Depende
+       de Build salvo cuando se pide sin build (VSTestNoBuild), igual que VSTest. El exit code
+       del ejecutable es el de la suite, asi que si una asercion falla, `dotnet test` falla. -->
+  <PropertyGroup>
+    <_LaSuiteDependeDe Condition="'$(VSTestNoBuild)' != 'true'">Build</_LaSuiteDependeDe>
+  </PropertyGroup>
+  <Target Name="LaSuiteCorreTambienConDotnetTest" BeforeTargets="VSTest" DependsOnTargets="$(_LaSuiteDependeDe)">
+    <Message Importance="high" Text="Gnothi.Assistant.Tests no usa un framework de pruebas: es un ejecutable que afirma y devuelve un exit code. Corriendolo." />
+    <Exec Command="dotnet &quot;$(TargetPath)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
 </Project>

@@ -88,8 +88,9 @@ Spikes/Lab.Siri/build/
 Spikes/Lab.Agente/out/
 Spikes/Lab.Sonda/out/
 
-# El banco de pruebas del Host en ESTA maquina: un root de modulos paralelo a Modulos/, con
-# installation.json apuntando a los dll construidos aca y a los journals de la persona. Los de
-# Modulos/ estan versionados y traen las rutas de la maquina donde se armo el POC, asi que
-# en cualquier otra publican el catalogo y fallan al llamar. Lo arma Modulos.local/armar.sh.
+# Un banco de pruebas del Host propio de ESTA maquina: un root de modulos paralelo a Modulos/,
+# con installation.json apuntando a los journals reales de la persona. Ya no hace falta para
+# arrancar: los installation.json de Modulos/ apuntan RELATIVO a su carpeta al bin/Debug de cada
+# modulo, asi que el banco versionado arranca donde sea que se hayan compilado. Este queda para
+# quien quiera correr la suite contra sus datos: dotnet run --project Gnothi.Assistant.Tests -- Modulos.local
 Modulos.local/

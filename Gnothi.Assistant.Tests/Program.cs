@@ -124,9 +124,10 @@ Assert("Request carries no caller identity -- Dispatcher.Serve still does not kn
 // ============================================================================================
 
 // Un argumento manda: `dotnet run --project Gnothi.Assistant.Tests -- Modulos.local` corre la
-// suite contra el banco de ESTA maquina. Sin argumento busca ./Modulos, que esta versionado y
-// trae las rutas de la maquina donde se armo el POC: ahi el catalogo se compara igual, pero
-// ningun modulo arranca y la primera aserción de la conformance lo dice.
+// suite contra un banco propio (por ejemplo, uno que apunte a los journals reales de la persona).
+// Sin argumento busca ./Modulos, que esta versionado y apunta, RELATIVO a cada carpeta, al
+// bin/Debug de cada modulo: arranca en cualquier maquina que los haya compilado. Si no estan
+// compilados, la primera asercion de la conformance lo dice y dice que compilar.
 string modulos = args.Length > 0 && Directory.Exists(args[0])
 	? Path.GetFullPath(args[0])
 	: Gnothi.Conformance.Conformance.FindModules();

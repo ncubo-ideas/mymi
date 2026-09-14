@@ -1,10 +1,12 @@
-﻿{
+{
   "//": "ESTE ARCHIVO ES DEL HOST. Separado del manifiesto a proposito: son dos autoridades.",
+
+  "//paths": "Con barras normales. Y RELATIVA A ESTA CARPETA cuando no es absoluta: shell.arguments[0] es el dll que se carga, y el Host lo ancla a la carpeta de este installation.json. Asi el banco versionado en Modulos/ arranca en cualquier maquina que haya compilado el modulo (dotnet build Compras/App/Compras.Mcp), en vez de traer el disco de quien armo el POC. El instalador real sigue escribiendo rutas absolutas: el dll queda dentro de la carpeta del modulo y las dos formas nombran lo mismo.",
   "shell": {
     "type": "in-process",
     "command": "dotnet",
     "arguments": [
-      "C:/Users/edgar/Documents/Game/Gnothi/Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll"
+      "../../Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll"
     ]
   },
   "grantedFolder": "C:/Gnothi/compras",

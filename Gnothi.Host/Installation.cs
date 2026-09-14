@@ -87,8 +87,38 @@ public sealed record Installation
 	// Por HostJson y no por Deserialize<T>: el lector se genera al compilar, sin reflexion.
 	// Ver HostJson.cs -- de eso depende que el Host pueda embeberse bajo NativeAOT.
 	public static Installation Read(string path)
-		=> JsonSerializer.Deserialize(File.ReadAllText(path), HostJson.Default.Installation)
-		   ?? throw new InvalidDataException($"empty or unreadable installation: {path}");
+	{
+		Installation read = JsonSerializer.Deserialize(File.ReadAllText(path), HostJson.Default.Installation)
+			?? throw new InvalidDataException($"empty or unreadable installation: {path}");
+		return read.AnchoredAt(Path.GetDirectoryName(Path.GetFullPath(path)) ?? "");
+	}
+
+	// A NON-ROOTED shell.arguments[0] IS RELATIVE TO THE FOLDER OF THE installation.json THAT
+	// NAMES IT. The first argument is the thing the shell runs or loads -the dll for stdio and
+	// in-process, the web folder for webview- and it is the one path in this file that points at
+	// code rather than at the person's data.
+	//
+	// Why this rule and not "relative to the working directory": the shells used to call
+	// Path.GetFullPath on it, which resolves against wherever the process happened to start, so
+	// a relative path worked from one directory and not from the next. And why relative at all:
+	// the versioned Modulos/ bench carried the absolute paths of the machine where the POC was
+	// assembled, so on every other machine -and in CI- no module could start and the conformance
+	// suite verified nothing. The installer keeps writing absolute paths (the dll lives inside
+	// the module's folder, so both forms name the same file); the bench in the repo writes
+	// relative ones, and this is where the two meet.
+	//
+	// Only arguments[0] is anchored. The rest are the shell's own flags, and the granted folder
+	// never travels here: the shells append it themselves.
+	private Installation AnchoredAt(string folder)
+	{
+		if (Shell.Arguments.Count == 0) return this;
+		string first = Shell.Arguments[0];
+		if (first.Length == 0 || Path.IsPathRooted(first)) return this;
+
+		string[] arguments = [.. Shell.Arguments];
+		arguments[0] = Path.GetFullPath(Path.Combine(folder, first));
+		return this with { Shell = Shell with { Arguments = arguments } };
+	}
 }
 
 // THE FRONT THAT IS ALLOWED TO SPEAK FOR A MODULE, as data. The Host core declares WHO is
