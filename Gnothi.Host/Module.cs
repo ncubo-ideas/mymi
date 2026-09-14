@@ -130,6 +130,10 @@ public sealed class Module : IAsyncDisposable
 	public Task<string> Deliver(string envelopeJson, CancellationToken ct)
 		=> shell.Deliver(envelopeJson, ct);
 
+	// HASTA DONDE YA LEYO. Tampoco pasa por el consentimiento, y por la misma razon que la
+	// entrega: es el cursor del registro de la persona, no una consulta sobre ella.
+	public Task<long> Cursor(CancellationToken ct) => shell.Cursor(ct);
+
 	// LO QUE PIDE SU PROPIA PANTALLA. No pasa por Allows y no es un descuido: apagar una consulta
 	// decide que puede preguntar EL ASISTENTE sobre la persona, no le prohibe a la institucion
 	// mostrarle su expediente en la pantalla que ella acaba de abrir. Son decisiones con sujetos

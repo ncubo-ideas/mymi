@@ -1,0 +1,38 @@
+/* LO POCO QUE LA CARA AGREGA A LAS HOJAS DE LA INSTITUCION.
+ *
+ * `app.css` y `dueno.css` VIAJAN TAL CUAL, sin tocar una regla. Antes esta hoja tenia copiados a
+ * mano los bloques de `dueno.css` que me parecia que hacian falta, y elegir cuales era decidir
+ * como se ve Sotavento. Copiar los archivos enteros saca esa decision de aca.
+ *
+ * SON LAS DOS, y no solo la del dueño: `dueno.css` da el vocabulario `d-*` de esta pantalla, pero
+ * el reset, el cuerpo y la tipografia los pone `app.css`. Llevar una sola dejaba la pantalla sin
+ * piso.
+ *
+ * Y NO CUESTA LO QUE PARECE: las dos juntas son 44 KB sin comprimir contra 409 KB de dominio en
+ * dll. En el paquete, el css no es el que pesa.
+ *
+ * Lo unico que va aca es lo que ninguna de las dos tiene, porque en la app suelta no existe: el
+ * estado del cartero. */
+
+/* EL PIE CON LO QUE HIZO EL CARTERO. En la app suelta esto no existe porque la app sabe si pudo o
+   no. Aca la cara le PIDE a Gnothi, y sin decir como le fue, «no hay nada» y «el cartero no pudo»
+   se ven exactamente igual. */
+footer {
+    max-width: 30rem; margin: 0 auto; padding: 8px 18px 40px;
+    color: var(--d-muted-2); font-size: 12.5px;
+}
+footer p { margin: 0 0 6px; }
+footer .malo { color: var(--d-danger-ink); }
+
+/* La tecla de refresco va en el capo oscuro, asi que su contorno es blanco y no el azul de
+   accion: sobre el navy, un boton azul desaparece. */
+.d-releer {
+    font: inherit; font-size: 13px; font-weight: 600;
+    padding: 6px 14px; cursor: pointer; white-space: nowrap;
+    background: transparent; color: #fff;
+    border: 1px solid rgba(255, 255, 255, .45); border-radius: 999px;
+    transition: border-color .12s ease, background .12s ease;
+}
+.d-releer:hover:not(:disabled) { border-color: #fff; background: rgba(255, 255, 255, .10); }
+.d-releer:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.d-releer:disabled { opacity: .55; cursor: progress; }

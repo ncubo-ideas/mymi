@@ -1,0 +1,23 @@
+/* LO POCO QUE LA CARA AGREGA A LA HOJA DE LA INSTITUCION.
+ *
+ * `css/app.css` VIAJA TAL CUAL, sin tocar una regla. Es la hoja mas liviana de los cinco modulos:
+ * 830 lineas y ni una fuente ni una imagen, asi que en el paquete no se nota.
+ *
+ * Lo unico que va aca es lo que la app suelta resuelve con su ROUTER y esta cara no tiene: mostrar
+ * una sola pregunta a la vez. */
+
+/* SEIS PREGUNTAS, UNA A LA VEZ. La app suelta tiene seis paginas y un router; una cara hibrida es
+   un solo index.html. Aplanar las seis en una pagina larga habria sido mas facil de escribir y
+   habria perdido lo que la institucion decidio que es su app: que son seis preguntas separadas, y
+   que se entra a UNA.
+   El switch lo hace el JS con este atributo; el resto del estilo lo pone la hoja de ella. */
+.pregunta[hidden] { display: none; }
+
+/* El pie con lo que hizo el cartero. En la app suelta no existe porque la app sabe sola si pudo o
+   no; aca la cara le PIDE a Gnothi, y sin decir como le fue, «no hay nada» y «el cartero no pudo»
+   se ven exactamente igual. */
+footer {
+    max-width: 60rem; margin: 0 auto; padding: 0 1.5rem 3rem;
+    font-size: .8rem; opacity: .75;
+}
+footer p { margin: 0 0 .4rem; max-width: 60ch; }

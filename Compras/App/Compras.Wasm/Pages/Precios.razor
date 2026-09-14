@@ -98,7 +98,7 @@ else
     private static string Porcentaje(decimal proporcion) =>
         Math.Abs(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
-    private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
+    private static string Foto(string sku) => Compras.App.Vistas.Fotos.De(sku);
 
     private static string Colones(decimal monto) => Plata.Colones(monto);
 }

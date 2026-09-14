@@ -2,7 +2,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using Gnothi.Host;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 
 namespace Gnothi.Tests;
 

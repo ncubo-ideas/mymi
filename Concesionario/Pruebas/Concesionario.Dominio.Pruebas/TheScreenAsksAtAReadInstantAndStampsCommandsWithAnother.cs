@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 

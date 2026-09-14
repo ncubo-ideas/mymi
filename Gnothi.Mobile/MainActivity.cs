@@ -1,7 +1,7 @@
 using Android.App;
 using Android.OS;
 using Android.Webkit;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 using System.Text.Json;
 
 // QUE PUEDE HABLAR GNOTHI EN CLARO: solo el loopback, que es donde aterriza un tunel de
@@ -41,7 +41,7 @@ namespace Gnothi.Mobile;
 // Y esa decision se pago sola el dia de iOS: como la cara es un HTML, es EL MISMO archivo alla.
 // Lo unico que cambia entre plataformas es quien monta el WebView y como se traduce
 // window.prompt(). Todo lo demas -el estado, el consentimiento, la llave, el proveedor, la
-// pregunta- vive en Gnothi.Movil/Shell.cs y se comparte tal cual.
+// pregunta- vive en Gnothi.MobileShared/Shell.cs y se comparte tal cual.
 //
 // WHAT THIS FILE OWNS: the screen and the lifecycle (installing what was downloaded). The
 // catalog, the consent and the dispatch are the Host's -- the same files the desktop runs.
@@ -172,7 +172,7 @@ public class MainActivity : Activity
 
 
 	// EL ARRANQUE. Lo que quedo aca despues de que el refactor de master mudara el nucleo a
-	// Gnothi.Movil/Shell.cs: alla viven instalar, descubrir, el dispatcher, el vigilante del
+	// Gnothi.MobileShared/Shell.cs: alla viven instalar, descubrir, el dispatcher, el vigilante del
 	// consentimiento y la comprobacion de los modulos nuevos. Aca solo lo que sabe de Android,
 	// y lo que tiene que pasar DESPUES de que el Host levante.
 	private async Task Start()

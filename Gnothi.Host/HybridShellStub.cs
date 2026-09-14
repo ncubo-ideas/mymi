@@ -9,7 +9,7 @@ namespace Gnothi.Host;
 // mensaje claro es mejor que no compilar: mantiene el codigo del Host IDENTICO en las dos
 // plataformas, y deja dicha la imposibilidad donde alguien la buscaria.
 //
-// El archivo se llama HybridShellStub.cs para no chocar con el HybridShell.cs de Gnothi.Movil,
+// El archivo se llama HybridShellStub.cs para no chocar con el HybridShell.cs de Gnothi.MobileShared,
 // que es el de verdad. Gnothi.Mobile EXCLUYE este archivo de su glob; si algun dia entraran
 // los dos, chocarian dos definiciones y esa es la senal correcta.
 internal sealed class HybridShell : IShell

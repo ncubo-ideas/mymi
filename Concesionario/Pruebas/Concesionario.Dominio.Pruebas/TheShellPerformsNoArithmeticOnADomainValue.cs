@@ -60,7 +60,11 @@ namespace Concesionario.Dominio.Pruebas
 			//
 			// Y SUBIO 24 -> 25 CON EL MENSAJE DEL FEED DE LA PLACA, que es UN archivo: la raiz paso de
 			// 37 a 38 y el margen sigue siendo TRECE. Va en Events/, que es de esta misma raiz.
-			new object[] { TheCodeOfTheShellsAsData.App, 25 },
+			// Y SUBIO 25 -> 33 CON LAS OCHO VISTAS QUE SE MUDARON DESDE Wasm, que son proyecciones del
+			// dominio y no de la pantalla: viven en App\Views para que la superficie de carga pueda
+			// leerlas sin arrastrar la UI. La raiz paso de 41 a 49 y el margen sigue siendo DIECISEIS.
+			// Se mueve por lo que ENTRO, no hasta donde alcance, que es la convencion de abajo.
+			new object[] { TheCodeOfTheShellsAsData.App, 33 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
 			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices
@@ -90,7 +94,14 @@ namespace Concesionario.Dominio.Pruebas
 			// Y SUBIO 26 -> 27 CON EL PORTADOR DE LA PLACA, que es UN archivo: la raiz paso de 29 a 30
 			// y el margen sigue siendo TRES. Tampoco trajo ningun .razor: el bloque es un renglon mas
 			// de la tarjeta de informacion que Vehiculo.razor ya tenia.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 27 },
+			// Y BAJO 27 -> 23 CON LAS OCHO VISTAS QUE SE FUERON A App\Views. Es la primera vez que este
+			// piso BAJA, y baja por la misma regla que lo hacia subir: se mueve por lo que cambio en la
+			// raiz, no hasta donde alcance. La raiz paso de 30 a 26 y el margen sigue siendo TRES.
+			//
+			// Que un piso baje es raro y hay que decir por que: no es que la raiz se haya vaciado -- es
+			// que esos ocho archivos no eran de la pantalla. Son proyecciones del dominio, y la forma
+			// hibrida las necesita del lado que la superficie de carga puede leer.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 23 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },

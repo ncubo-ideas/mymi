@@ -1,4 +1,5 @@
 using System;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 

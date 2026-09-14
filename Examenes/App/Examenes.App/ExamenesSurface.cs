@@ -26,7 +26,7 @@ namespace Examenes.App
 	// question. That bought less than it looked: both are the same PerformanceV2 over the same
 	// domain, so "a query cannot write" was discipline either way. The only structural part was
 	// not emitting the seed -- and the seed turned out to be REQUIRED, because it creates the
-	// globals the DSL addresses. See Actor().
+	// globals the DSL addresses. See `app`.
 	//
 	// What really closes the writes is the doors: [Deliver] is found by the shell through its own
 	// marker, is not in the manifest, the assistant never sees it, and `consultar` only reaches
@@ -36,7 +36,7 @@ namespace Examenes.App
 	// InProcessShell convention. The module never opens the journal on its own nor chooses the
 	// folder.
 	[ModuleSurface]
-	public sealed class ExamenesSurface
+	public sealed class ExamenesSurface : IDisposable
 	{
 		private const string ActorName = "examenes";
 
@@ -47,6 +47,7 @@ namespace Examenes.App
 			if (string.IsNullOrWhiteSpace(grantedFolder))
 				throw new ArgumentException("the granted folder is required", nameof(grantedFolder));
 			folder = Path.GetFullPath(grantedFolder);
+			app = new Lazy<ExamenesApp>(Arrancar);
 		}
 
 		private bool HasJournal => Directory.Exists(Path.Combine(folder, ActorName, "journal"));
@@ -231,7 +232,7 @@ namespace Examenes.App
 			ArgumentNullException.ThrowIfNull(sobreJson);
 
 			// EL MISMO ACTOR QUE CONTESTA LAS VISTAS. No hay uno para leer y otro para escribir:
-			// es uno solo, vivo, y por eso no hay dos abriendo el journal a la vez. Ver Actor().
+			// es uno solo, vivo, y por eso no hay dos abriendo el journal a la vez. Ver `app`.
 			//
 			// Y ES EL PUPPET DE VERDAD, con su semilla. La semilla no es solo una entrada en el
 			// journal: es lo que CREA los globales -`expediente` y `bitacora`- que el DSL
@@ -243,13 +244,22 @@ namespace Examenes.App
 			//
 			// No duplica nada: la guarda de `upgrade('semilla')` es una-vez-por-actor.
 			var unaVez = new BucleDeRefresh(
-				new ExamenesAPI(Actor()),
+				new ExamenesAPI(app.Value),
 				new FuenteDeEventosPorGnothi((_, _) => Task.FromResult(sobreJson), "gnothi.deliver"),
 				RutaDeExamenes.Rutear);
 
 			ResultadoDeRefresh resultado = unaVez.Ejecutar().GetAwaiter().GetResult();
 			return resultado.ToString();
 		}
+
+		// HASTA DONDE YA LEYO, para que el cartero pida de ahi en adelante y no el historial entero.
+		// Sale del MISMO actor que asienta, que es lo que lo hace confiable: es el cursor real del
+		// journal, no una cuenta que lleve la pantalla.
+		//
+		// Cero cuando todavia no hay journal, y cero significa «traeme todo»: la primera vez es
+		// exactamente lo que hay que hacer.
+		[Cursor]
+		public long HastaDondeLei() => !HasJournal ? 0L : Read(api => api.UltimoEventoProcesado());
 
 		private object NoData() => ConsultasDelModulo.SinDatos(folder);
 
@@ -278,38 +288,57 @@ namespace Examenes.App
 		// [Deliver] lo busca la cascara por su propio marcador, no esta en el manifiesto, no lo
 		// ve el asistente, y `consultar` solo llega a [View].
 		//
-		// Estatico porque la cascara reconstruye ESTA clase en cada llamada: el actor tiene que
-		// sobrevivir a la instancia, no a la inversa. Vive mientras el ensamblado este cargado,
-		// que en la forma hibrida es mientras la cara este abierta.
-		private static readonly object candado = new();
-		private static ExamenesApp vivo;
-		private static string carpetaDelVivo;
+		// UN CAMPO NORMAL, Y ESA ES LA CORRECCION.
+		//
+		// Esto fue `static ExamenesApp vivo` con su `candado`, su `carpetaDelVivo` y un
+		// `GracefulExit` defensivo por si la carpeta cambiaba. Era estatico por una razon que no
+		// era de esta institucion: la cascara reconstruia ESTA clase en cada llamada, asi que el
+		// actor -- arrancarlo es rehidratar el journal entero -- estaba obligado a sobrevivir a
+		// la instancia. Y un estatico perezoso desde varios hilos obliga a un candado.
+		//
+		// LAS CINCO INSTITUCIONES COPIARON EL MISMO PARCHE, que es como se supo que no era de
+		// ninguna: era un hueco de la cascara. Ahora `InProcessShell` guarda la instancia, asi
+		// que la vida del actor es la vida de este objeto y no hay nada que compartir entre
+		// llamadas. La carpeta tampoco puede cambiar: llega por el constructor.
+		//
+		// LA PEREZA LA DA `Lazy<T>`, no un doble chequeo escrito a mano. Y hace falta que sea
+		// perezoso: `ActualTools` -- la comprobacion de modulos, al instalar y al arrancar --
+		// construye esta clase sin preguntarle nada, y rehidratar el journal para listar dos
+		// nombres seria pagar de mas. `Lazy<T>` publica una sola vez por omision
+		// (ExecutionAndPublication), asi que esto es una linea donde habia cuatro campos.
+		//
+		// Y NO HAY NINGUN CANDADO MAS PORQUE NO HACE FALTA: dos preguntas simultaneas sobre el
+		// mismo actor las ordena el motor, con el ReaderWriterLockSlim de ActorHandler --
+		// PerformQry toma el de lectura, PerformCmd el de escritura. Una entrega escribiendo y
+		// una vista leyendo no se pisan.
+		private readonly Lazy<ExamenesApp> app;
 
-		private ExamenesApp Actor()
+		private ExamenesApp Arrancar()
 		{
-			lock (candado)
-			{
-				// Si cambio la carpeta concedida, el actor anterior ya no sirve: es otro journal.
-				if (vivo is not null && string.Equals(carpetaDelVivo, folder, StringComparison.Ordinal))
-					return vivo;
-
-				if (vivo is not null)
-				{
-					try { vivo.Actor.GracefulExit(); } catch { /* already going away */ }
-					vivo = null;
-				}
-
-				var arrancando = new ExamenesApp(ActorName);
-				arrancando.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
-				arrancando.Start();
-
-				vivo = arrancando;
-				carpetaDelVivo = folder;
-				return vivo;
-			}
+			var arrancando = new ExamenesApp(ActorName);
+			arrancando.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
+			arrancando.Start();
+			return arrancando;
 		}
 
-		private T Read<T>(Func<ExamenesAPI, T> question) => question(new ExamenesAPI(Actor()));
+		private T Read<T>(Func<ExamenesAPI, T> question) => question(new ExamenesAPI(app.Value));
+
+		// Y SE CIERRA CUANDO LA CASCARA DESALOJA. No es cortesia: el `Unload` del contexto es
+		// COOPERATIVO y no completa si quedaron referencias vivas -- y el actor es justo quien
+		// las deja. Sin este cierre, actualizar un modulo abierto dejaba el ensamblado viejo
+		// cargado con su actor encima del mismo journal.
+		//
+		// Por IDisposable y no por una etiqueta de Gnothi: `InProcessShell.Evict` pregunta por la
+		// interfaz de la BCL. Una institucion que no tiene nada que cerrar no implementa nada.
+		//
+		// `IsValueCreated` para no ARRANCAR un actor con tal de apagarlo: si nadie pregunto nada,
+		// no hay nada que cerrar.
+		public void Dispose()
+		{
+			if (!app.IsValueCreated) return;
+
+			try { app.Value.Actor.GracefulExit(); } catch { /* already going away */ }
+		}
 
 
 		// NO HAY UNA CLASE "Escribible" ACA, y la hubo: un PerformanceV2 con OnHydrated vacio,

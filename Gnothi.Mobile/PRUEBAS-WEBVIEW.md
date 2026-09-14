@@ -724,10 +724,10 @@ alcanzar al publicador y el motor se lo niega, mientras Gnothi lo alcanza sin pr
 > corrida. Para repetir esa mitad hay que volver a poner la sonda.
 
 Lo que **sí** se puede mirar ahora es la política que se le sirve, en `BundleServer`
-([../Gnothi.Movil/BundleServer.cs](../Gnothi.Movil/BundleServer.cs)): `connect-src 'self'`, con
+([../Gnothi.MobileShared/BundleServer.cs](../Gnothi.MobileShared/BundleServer.cs)): `connect-src 'self'`, con
 el hash del script inline calculado al servir. Si ahí dijera `*`, no habría contención.
 
-Y ahora vive en `Gnothi.Movil`, o sea que **es literalmente la misma cadena que sirve iOS**,
+Y ahora vive en `Gnothi.MobileShared`, o sea que **es literalmente la misma cadena que sirve iOS**,
 calculada por el mismo código. Antes era `ServidorDelBundle` en `ModulosWeb.cs`, de este
 proyecto.
 

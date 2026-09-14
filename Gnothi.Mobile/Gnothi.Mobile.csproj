@@ -73,7 +73,7 @@
        y en MainActivity.cs solo lo que sabe de WebView, de hilos de UI y del log del sistema.
 
        Gnothi.iOS incluye este MISMO glob. Si algo se agrega aca, aparece en los dos. -->
-  <Compile Include="..\Gnothi.Movil\*.cs" />
+  <Compile Include="..\Gnothi.MobileShared\*.cs" />
 </ItemGroup>
 <ItemGroup>
   <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />

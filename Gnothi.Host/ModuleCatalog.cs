@@ -48,7 +48,7 @@ public sealed class ModuleCatalog : IAsyncDisposable
 			// que dejaba el catalogo vacio; con el reemplazo hay que decirlo explicitamente o
 			// una carpeta que desaparece dejaria en pie la lista anterior -- modulos que ya no
 			// estan, contestando.
-			modules = cargados;
+			Publish(cargados);
 			warnings.Add($"the modules directory does not exist: {Root}");
 			return warnings;
 		}
@@ -141,11 +141,45 @@ public sealed class ModuleCatalog : IAsyncDisposable
 			}
 		}
 
-		// LA PUBLICACION, y es la unica linea que el resto del programa ve: hasta aca la lista
-		// vieja seguia siendo la buena.
-		modules = cargados;
+		Publish(cargados);
 
 		return warnings;
+	}
+
+	// LA PUBLICACION, y es la unica linea que el resto del programa ve: hasta aca la lista vieja
+	// seguia siendo la buena.
+	//
+	// Y LOS QUE SALIERON SE SUELTAN, que es lo que faltaba. Reemplazar la lista los sacaba de
+	// circulacion pero no los cerraba: un Module hibrido tiene adentro el AssemblyLoadContext de
+	// la institucion y, con `keepLoaded`, su actor abierto sobre la carpeta del journal. Sin esto,
+	// ACTUALIZAR UN MODULO dejaba el DLL viejo cargado con su actor encima del MISMO journal que
+	// el nuevo acababa de abrir -- la carpeta concedida se conserva entre versiones a proposito --,
+	// que es exactamente el caso de dos actores sobre un journal que `keepLoaded` existe para
+	// evitar.
+	//
+	// COMPARADOS POR REFERENCIA, no por nombre: una recarga construye Module nuevos aunque la
+	// carpeta no haya cambiado, asi que TODOS los anteriores se sueltan. Es el mismo precio que ya
+	// se paga por releer el catalogo entero, y la alternativa -- adivinar cuales siguen siendo «el
+	// mismo» -- es como empiezan las dos verdades.
+	//
+	// FUERA DE LA PUBLICACION Y SIN ESPERAR: la lista nueva ya es la buena y quien tomo la vieja
+	// termina de recorrerla. Cerrar puede tardar -- el Unload es COOPERATIVO y ademas hay que
+	// darle GracefulExit al actor -- y a esto lo llama una pantalla justo despues de un alta.
+	private void Publish(List<Module> cargados)
+	{
+		List<Module> salientes = modules;
+		modules = cargados;
+
+		Module[] cerrando = [.. salientes.Where(v => !cargados.Any(n => ReferenceEquals(n, v)))];
+		if (cerrando.Length == 0) return;
+
+		_ = Task.Run(async () =>
+		{
+			foreach (Module m in cerrando)
+			{
+				try { await m.DisposeAsync(); } catch { /* ya se estaba yendo */ }
+			}
+		});
 	}
 
 	// HOT RELOAD OF CONSENT.

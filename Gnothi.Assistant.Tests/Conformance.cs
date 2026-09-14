@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Gnothi.Assistant;
 using Gnothi.Host;
-using Gnothi.Movil;   // Snapshot: la foto que lee la App Intent de Siri
+using Gnothi.MobileShared;   // Snapshot: la foto que lee la App Intent de Siri
 
 namespace Gnothi.Conformance;
 

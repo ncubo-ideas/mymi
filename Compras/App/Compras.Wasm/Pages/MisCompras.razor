@@ -1544,7 +1544,7 @@ else
     // TOTAL: un sku sin foto devuelve vacio y la ficha dibuja un hueco del mismo alto, que
     // es lo que mantiene la rejilla derecha. Con las veinte nuevas ya casi no queda hueco:
     // de los 29 productos del catalogo, 28 tienen imagen.
-    private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
+    private static string Foto(string sku) => Compras.App.Vistas.Fotos.De(sku);
 
     // El remate de la bajada del hero: vacio si no se mueve, o nada que decir todavia.
     private string Sucursales() =>

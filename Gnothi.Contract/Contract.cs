@@ -78,3 +78,28 @@ public sealed class ViewAttribute : Attribute
 public sealed class DeliverAttribute : Attribute
 {
 }
+
+// HASTA DONDE YA LEYO EL MODULO, para que el cartero pida de ahi en adelante y no todo de nuevo.
+//
+// POR QUE HACE FALTA UN MARCADOR Y NO ALCANZA CON PREGUNTARLE A LA PAGINA. En la forma hospedada
+// la pagina ES la superficie: tiene el actor, sabe su cursor, y lo manda. En la HIBRIDA la cara no
+// tiene motor ni actor -- no puede saberlo. Mandaba cero, y el cartero bajaba el historial entero
+// en cada refresco: medido en el telefono el 2026-09-14, `leidos=114 aplicados=0 rechazados=114`.
+// La guarda Check hacia que no se duplicara nada, y por eso el sintoma no era un dato malo sino
+// trafico y bateria.
+//
+// Y HAY UNA SEGUNDA RAZON, que es la que decide el diseño: si el cursor lo pusiera la cara,
+// SERIA DE LA CARA. Una pagina podria pedir desde cero -bajarse todo- o desde un numero alto
+// -saltearse eventos que nunca se aplicarian-. Con el cursor del lado de la superficie, la cara
+// no tiene con que moverlo: pide "traeme lo nuevo" y lo que sea nuevo lo decide quien lleva el
+// registro.
+//
+// LA FIRMA que el Host busca es () -> long. Cero es una respuesta valida y significa "todavia no
+// lei nada": la primera vez el cartero trae todo, que es lo correcto.
+//
+// OPCIONAL. Un modulo que no lo marque sigue funcionando: el Host pide desde cero, que es lo que
+// hacia antes de que esto existiera.
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class CursorAttribute : Attribute
+{
+}

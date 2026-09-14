@@ -349,6 +349,17 @@ if ($SoloManifiesto) {
 
         New-Item -ItemType Directory -Path "$armado/web" -Force | Out-Null
         Copy-Item -Recurse "$caraHibrida/*" "$armado/web/"
+
+        # EL PUENTE LO PONE EL HOST, no la institucion, y es el unico archivo de web/ que no
+        # escribio ella. El protocolo -- que la respuesta vuelve por callback y no por retorno,
+        # que `consultar` no lleva el nombre del modulo -- es de Gnothi: pedirle a cada
+        # institucion que le acierte sola es pedirle que reimplemente una regla de seguridad.
+        #
+        # Va DESPUES de copiar la cara a proposito: si el paquete trae su propio puente.js, este
+        # lo pisa. La version que corre es siempre la del Host.
+        $puente = "$PSScriptRoot/cara/puente.js"
+        if (-not (Test-Path $puente)) { throw "falta el puente de la cara hibrida en $puente" }
+        Copy-Item -Force $puente "$armado/web/puente.js"
     }
     elseif (-not $esCargo) {
         # `dotnet publish` de un Blazor Wasm deja la app en wwwroot/ y al lado deja los dll del

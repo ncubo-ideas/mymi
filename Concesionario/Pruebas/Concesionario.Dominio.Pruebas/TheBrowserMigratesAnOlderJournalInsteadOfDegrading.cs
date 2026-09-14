@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Choreography.Theater;
 using Concesionario.App;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 using Puppeteer;

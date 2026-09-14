@@ -1,6 +1,7 @@
 using Choreography.Theater;
 using Municipalidad.App;
 using Municipalidad.App.Events;
+using Municipalidad.App.Vistas;
 using Municipalidad.Wasm.Vistas;
 using Puppeteer;
 using Puppets.Portador;

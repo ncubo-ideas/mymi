@@ -1,6 +1,6 @@
 using Foundation;
 using Gnothi.Assistant;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 using UIKit;
 using WebKit;
 

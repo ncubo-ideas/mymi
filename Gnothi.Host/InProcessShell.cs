@@ -37,6 +37,23 @@ internal sealed class InProcessShell : IShell
 	private AssemblyLoadContext? context;
 	private Type? marked;
 
+	// LA SUPERFICIE, UNA SOLA, VIVA MIENTRAS EL ENSAMBLADO LO ESTE -- y esto es una correccion,
+	// no una optimizacion. Antes se hacia `Build(t, 0)` EN CADA LLAMADA: la clase de la
+	// institucion se reconstruia para contestar cada pregunta.
+	//
+	// Y ESO LE COSTABA UN CANDADO A CADA INSTITUCION. Si la instancia no sobrevive entre
+	// llamadas, lo que si tiene que sobrevivir -- el actor, porque arrancarlo es rehidratar el
+	// journal entero -- esta obligado a ser `static`. Un `static` construido perezosamente desde
+	// varios hilos obliga a un doble chequeo con candado, y las CINCO superficies terminaron
+	// copiando el mismo parche a mano. Que se copiara cinco veces es la prueba de que no era
+	// decision de nadie: era un hueco de esta cascara.
+	//
+	// Con la instancia aca, una superficie vuelve a ser un objeto normal con campos normales, y
+	// no escribe una sola linea de concurrencia. Lo que queda repartido queda donde corresponde:
+	// esta cascara decide que hay UNA superficie, y el actor se defiende de sus llamadores con su
+	// propio ReaderWriterLockSlim, que ya existe (Puppeteer, ActorHandler).
+	private object? live;
+
 	// QUEDARSE CARGADO MIENTRAS LA CARA ESTA ABIERTA, y solo la forma hibrida lo pide.
 	//
 	// Por omision este shell evicta despues de contestar, igual que stdio: un modulo vivo tiene
@@ -127,6 +144,27 @@ internal sealed class InProcessShell : IShell
 		finally { gate.Release(); }
 	}
 
+	// LA INSTANCIA SE PUBLICA UNA SOLA VEZ, y esa es la parte que hay que no hacer mal: si se
+	// construyera perezosamente SIN el candado, la carrera del primer uso -- dos llamadas
+	// simultaneas sobre un modulo recien abierto, construyendo dos superficies y con ellas dos
+	// actores sobre un journal -- no desapareceria del sistema: se mudaria del modulo a esta
+	// clase, que es peor, porque aca ya nadie la esta mirando.
+	//
+	// Mismo doble chequeo que `Start()` y el MISMO candado, sin anidarlos: `Start()` ya lo solto
+	// cuando esto corre.
+	//
+	// NO SE CONSTRUYE ADENTRO DE `Start()`, a proposito. `ActualTools` tambien llama a `Start()`,
+	// y es lo que corre la comprobacion de modulos al instalar y al arrancar: construir ahi haria
+	// que LISTAR LOS NOMBRES DE LAS TOOLS rehidratara el journal de cada modulo hibrido. La
+	// instancia nace cuando alguien pregunta de verdad.
+	private object Instance(Type t)
+	{
+		if (live is not null) return live;
+		gate.Wait();
+		try { return live ??= Build(t, 0); }
+		finally { gate.Release(); }
+	}
+
 	public Task<IReadOnlyList<string>> ActualTools(CancellationToken ct)
 	{
 		try
@@ -164,7 +202,7 @@ internal sealed class InProcessShell : IShell
 
 			if (method is null) throw new InvalidOperationException($"module '{name}' does not expose '{asked}'");
 
-			object? instance = method.IsStatic ? null : Build(t, 0);
+			object? instance = method.IsStatic ? null : Instance(t);
 			object?[] values = [.. method.GetParameters().Select(p => Bind(p, arguments, accepts))];
 
 			object? raw;
@@ -203,13 +241,42 @@ internal sealed class InProcessShell : IShell
 			throw new NotSupportedException(
 				$"module '{name}' has no method marked with [Deliver]: it is a surface that only reads");
 
-		object? instance = method.IsStatic ? null : Build(t, 0);
+		object? instance = method.IsStatic ? null : Instance(t);
 
 		object? raw;
 		try { raw = method.Invoke(instance, [envelopeJson]); }
 		catch (TargetInvocationException e) when (e.InnerException is not null) { throw e.InnerException; }
 
 		return Task.FromResult(raw as string ?? "");
+	}
+
+	// HASTA DONDE YA LEYO, por el mismo camino que la entrega: se busca el metodo marcado, se arma
+	// la instancia con la carpeta concedida, se invoca. La firma es fija -- () -> long -- asi que
+	// tampoco hay nada que ligar.
+	//
+	// CERO CUANDO NO HAY MARCADOR, y no es un error: un modulo que no declara su cursor recibe el
+	// historial entero, que es exactamente lo que pasaba antes de que esto existiera. Lo mismo
+	// cuando el journal esta vacio y el propio modulo contesta cero.
+	//
+	// Y TAMPOCO EVICTA, por la misma razon que Deliver: preguntar el cursor es el primer paso de
+	// un refresco, y lo que sigue es la entrega. Descargar el ensamblado en el medio haria pagar
+	// la carga dos veces por una sola interaccion.
+	public Task<long> Cursor(CancellationToken ct)
+	{
+		Type t = Start();
+
+		MethodInfo? method = t.GetMethods(Everything).FirstOrDefault(m =>
+			m.GetCustomAttributes(false).Any(a => a.GetType().Name == "CursorAttribute"));
+
+		if (method is null) return Task.FromResult(0L);
+
+		object? instance = method.IsStatic ? null : Instance(t);
+
+		object? raw;
+		try { raw = method.Invoke(instance, []); }
+		catch (TargetInvocationException e) when (e.InnerException is not null) { throw e.InnerException; }
+
+		return Task.FromResult(raw is long ya && ya > 0 ? ya : 0L);
 	}
 
 	private const BindingFlags Everything =
@@ -326,6 +393,22 @@ internal sealed class InProcessShell : IShell
 		gate.Wait();
 		try
 		{
+			// Y LA SUPERFICIE SE CIERRA ANTES, porque esta cascara es su duena: la construyo, la
+			// guardo entre llamadas, y soltarla es parte de desalojar. Sin esto, «desalojar» no
+			// descargaba nada -- el Unload es cooperativo y el ACTOR de la institucion es justo
+			// quien deja las referencias vivas.
+			//
+			// Por IDisposable y no por un marcador nuevo del contrato: una institucion que tiene
+			// algo que cerrar ya sabe como decirlo en C#, y la que no, no implementa nada. El
+			// contrato de Gnothi no crece por esto.
+			//
+			// Y NO TIRA: se esta yendo igual. Un Dispose que falla no puede impedir la descarga.
+			if (live is IDisposable cerrable)
+			{
+				try { cerrable.Dispose(); } catch { /* ya se estaba yendo */ }
+			}
+			live = null;
+
 			marked = null;
 			try { context?.Unload(); } catch { /* already going away */ }
 			context = null;
@@ -333,8 +416,17 @@ internal sealed class InProcessShell : IShell
 		finally { gate.Release(); }
 	}
 
+	// Y SE PUEDE LLAMAR DOS VECES, que ahora pasa de verdad: una actualizacion cierra el modulo
+	// ANTES de mover su carpeta, y despues el catalogo relee y suelta lo que salio de la lista --
+	// el mismo objeto. Sin esta guarda el segundo `Evict()` haria `gate.Wait()` sobre un semaforo
+	// ya dispuesto y saldria un ObjectDisposedException por una llamada que no hace nada.
+	private bool disposed;
+
 	public ValueTask DisposeAsync()
 	{
+		if (disposed) return ValueTask.CompletedTask;
+		disposed = true;
+
 		Evict();
 		gate.Dispose();
 		return ValueTask.CompletedTask;

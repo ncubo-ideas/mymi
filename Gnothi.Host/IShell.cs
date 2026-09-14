@@ -52,4 +52,11 @@ internal interface IShell : IAsyncDisposable
 		throw new NotSupportedException(
 			"this shell does not take deliveries: the module has no surface that writes. "
 			+ "In the hosted form the page applies events with the engine it carries.");
+
+	// HASTA DONDE YA LEYO EL MODULO, para que el cartero pida de ahi en adelante.
+	//
+	// CERO POR OMISION, y cero no es un error: significa «traeme todo», que es lo que el cartero
+	// hacia antes de que esto existiera. Solo la forma hibrida lo contesta de verdad, porque es la
+	// unica donde la pagina no tiene actor con que saberlo.
+	Task<long> Cursor(CancellationToken ct) => Task.FromResult(0L);
 }

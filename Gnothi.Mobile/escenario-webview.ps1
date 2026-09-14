@@ -188,13 +188,31 @@ if (-not (Test-Path $apk)) {
 # INSTALL_FAILED_INSUFFICIENT_STORAGE ("Failed to override installation location") even with room
 # to spare; `pm uninstall -k` -keep data and cache- followed by a plain install gets the new build in
 # with the modules, journals and pins of the previous one untouched (measured 2026-09-09).
-$instalado = (& $adb install -r $apk 2>&1 | Select-Object -Last 1)
-if ("$instalado" -notmatch 'Success') {
-    Write-Host "    install -r no pudo ($instalado); reinstalando sin perder los datos..."
+#
+# Y SE MIRA EL CODIGO DE SALIDA, NO LA PALABRA «Success». Esto decia
+# `if ("$instalado" -notmatch 'Success')`, y adb 36 NO IMPRIME ESA PALABRA: contesta
+# «Install command complete in 3323 ms». Con eso, un install -r que FUNCIONO se leia como
+# fallado y el guion caia SIEMPRE al desinstalar -- que es justo lo que el camino de abajo
+# existe para evitar.
+#
+# Y el precio no eran unos segundos: desinstalar el paquete le BORRA AL LANZADOR SUS ACCESOS
+# FIJADOS. `pm uninstall -k` conserva modulos y journals -- son datos de la app -- pero los
+# iconos de la pantalla de inicio no son datos de la app, son del lanzador, y se van con el
+# paquete. Medido el 2026-09-14: despues de una corrida, `dumpsys shortcut` ya no nombraba a
+# com.ncubo.gnothi.host.
+#
+# El comentario de arriba decia «con los pins de la anterior intactos (medido 2026-09-09)».
+# Era cierto cuando se midio, con un adb que decia Success.
+& $adb install -r $apk | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "    install -r no pudo (codigo $LASTEXITCODE); reinstalando sin perder los datos..."
+    Write-Host "    OJO: esto BORRA los accesos fijados en la pantalla de inicio; hay que volver a fijarlos."
     & $adb shell pm uninstall -k $paquete 2>&1 | Out-Null
     Start-Sleep -Seconds 3
-    $instalado = (& $adb install $apk 2>&1 | Select-Object -Last 1)
+    & $adb install $apk | Out-Null
+    $instalado = if ($LASTEXITCODE -eq 0) { "reinstalado (se perdieron los accesos fijados)" } else { "FALLO (codigo $LASTEXITCODE)" }
 }
+else { $instalado = "actualizado en el lugar; los accesos fijados siguen" }
 Write-Host "apk        : $instalado"
 
 # EL DOMINIO, APROBADO A MANO. Chrome solo le entrega un enlace https a una app cuando esa app

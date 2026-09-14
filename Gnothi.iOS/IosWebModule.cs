@@ -1,14 +1,14 @@
 using CoreFoundation;
 using CoreGraphics;
 using Foundation;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 using System.Text.Json;
 using UIKit;
 using WebKit;
 
 namespace Gnothi.iOS;
 
-// THE iOS TWIN OF THE WEB MODULE HOST. Everything that is a decision is in Gnothi.Movil; what
+// THE iOS TWIN OF THE WEB MODULE HOST. Everything that is a decision is in Gnothi.MobileShared; what
 // is here is how WebKit is talked to, and nothing else.
 internal sealed class IosWebModuleHost(UIViewController owner, ISecretStore store, Action<string> log)
 	: WebModuleHost<IosWebModule>
@@ -20,7 +20,7 @@ internal sealed class IosWebModuleHost(UIViewController owner, ISecretStore stor
 // A WEB MODULE ON iOS: its WKWebView, its origin, its CSP and its bridge.
 //
 // FOUR THINGS DIFFER FROM ANDROID, AND ONLY FOUR. Everything else -- the CSP, the journal,
-// the cursor, the bridge protocol, the dispatch -- is the same code in Gnothi.Movil:
+// the cursor, the bridge protocol, the dispatch -- is the same code in Gnothi.MobileShared:
 //
 //   1. THE ORIGIN. Android intercepts a virtual `https` host before the network. WebKit does
 //      NOT let anyone handle http or https -- `SetUrlSchemeHandler` throws for reserved
