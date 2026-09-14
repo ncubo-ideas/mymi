@@ -37,6 +37,17 @@
   "alta.codigo-sin-enlace":       { "es": "El código no traía ningún enlace.", "en": "The code carried no link." },
   "alta.pega-el-enlace":          { "es": "Pega el enlace que te dio tu institución.", "en": "Paste the link your institution gave you." },
 
+  "//el-inicio-vacio": "LA PRIMERA PANTALLA DE QUIEN NO TIENE NADA TODAVIA. Es la unica de la cara que habla antes de que exista un solo registro, asi que aca se dice lo que Mymi es y no lo que hace. El lema de la marca no se traduce, igual que el nombre.",
+
+  "inicio.titulo":                { "es": "Mis conexiones", "en": "My Connections" },
+  "inicio.sin-ninguna":           { "es": "Aún no tienes conexiones", "en": "No connections yet" },
+  "inicio.una":                   { "es": "1 conectada", "en": "1 connected" },
+  "inicio.varias":                { "es": "{n} conectadas", "en": "{n} connected" },
+  "inicio.conectar":              { "es": "Conectar", "en": "Connect" },
+  "inicio.vacio.titulo":          { "es": "Todo lo tuyo, en un solo lugar", "en": "Everything that\u2019s yours, in one place." },
+  "inicio.vacio.cuerpo":          { "es": "Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.", "en": "Your institutions deliver your records directly to you. They stay on your device and are only accessed when you allow it." },
+  "inicio.lema":                  { "es": "Your world, together", "en": "Your world, together" },
+
   "nav.instituciones":            { "es": "Instituciones", "en": "Institutions" },
   "nav.asistente":                { "es": "Asistente", "en": "Assistant" },
   "nav.ajustes":                  { "es": "Ajustes", "en": "Settings" },

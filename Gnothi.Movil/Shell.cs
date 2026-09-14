@@ -980,6 +980,12 @@ public sealed class Shell : IDisposable
 			return op switch
 			{
 				"modules" => StateJson(),
+
+				// EL CATALOGO, PARA LA CARA DE LOS TELEFONOS. El escritorio lee `Textos.T` por
+				// referencia de proyecto; la pagina no puede, y `fetch` de un `file://` tampoco.
+				// Por eso `Textos.Json` existe y por eso se entrega por el mismo puente que todo
+				// lo demas, ya resuelto al idioma que la plataforma fijo al arrancar.
+				"textos" => Gnothi.Host.Textos.Json,
 				"setTool" => SetConsent(
 					req.GetProperty("module").GetString() ?? "",
 					req.GetProperty("tool").GetString(),
