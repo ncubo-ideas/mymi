@@ -403,13 +403,47 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			&& colision.Contains("La Guaria") && colision.Contains("otra institución"),
 		colision);
 
-	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
-	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
-	// said nothing about what each face declares.
+	// LA RAIZ DEL REPO, para las dos comprobaciones que leen archivos que ningun proyecto de esta
+	// maquina compila.
 	string raiz = AppContext.BaseDirectory;
 	while (raiz.Length > 1 && !Directory.Exists(Path.Combine(raiz, "Gnothi.Host")))
 		raiz = Path.GetDirectoryName(raiz.TrimEnd(Path.DirectorySeparatorChar)) ?? "/";
 
+	// LO QUE LAS DOS CASCARAS DE PLATAFORMA LE PIDEN A Shell, COMPROBADO SIN COMPILARLAS.
+	//
+	// MainActivity.cs y ViewController.cs no los compila NINGUN proyecto que corra en una Mac
+	// cualquiera: Android necesita un workload que puede no estar, y el SDK de iOS exige una
+	// version exacta de Xcode. Pero los dos llaman a Shell, que esta suite si compila -- asi que
+	// el borde se puede comprobar aunque las cascaras no.
+	//
+	// Lo que atrapa: renombrar un metodo de Shell y actualizar una sola de las dos, que es
+	// exactamente lo que pasa cuando el compilador no esta mirando. Ya paso una vez en sentido
+	// contrario: ReportEnrollmentError recibia la FRASE y las dos la escribian identica.
+	{
+		string[] caras = ["Gnothi.Mobile/MainActivity.cs", "Gnothi.iOS/ViewController.cs"];
+		var deShell = typeof(Gnothi.Movil.Shell)
+			.GetMembers(BindingFlags.Public | BindingFlags.Instance)
+			.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
+
+		foreach (string cara in caras)
+		{
+			string archivo = Path.Combine(raiz, cara);
+			string texto = File.Exists(archivo) ? File.ReadAllText(archivo) : "";
+			string[] pedidos = [.. System.Text.RegularExpressions.Regex
+				.Matches(texto, @"shell\??\.([A-Z][A-Za-z0-9]*)")
+				.Select(m => m.Groups[1].Value).Distinct().Order()];
+			string[] huerfanos = [.. pedidos.Where(n => !deShell.Contains(n))];
+
+			Assert($"{cara.Split('/')[1]} only asks Shell for members it has",
+				texto.Length > 0 && huerfanos.Length == 0,
+				texto.Length == 0 ? $"could not read {archivo}"
+					: $"calls that do not exist on Shell: {string.Join(", ", huerfanos)}");
+		}
+	}
+
+	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
+	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
+	// said nothing about what each face declares.
 	foreach (string cara in new[] { "Gnothi.Mobile", "Gnothi.iOS" })
 	{
 		string csproj = Path.Combine(raiz, cara, cara + ".csproj");

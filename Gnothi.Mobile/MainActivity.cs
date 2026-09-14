@@ -451,7 +451,7 @@ public class MainActivity : Activity
 		catch (Exception ex)
 		{
 			Log($"alta: no se pudo leer el archivo '{name}': {ex.GetType().Name}: {ex.Message}");
-			shell?.ReportEnrollmentError($"No se pudo leer el archivo {name}.");
+			shell?.ReportUnreadableFile(name);
 			return null;
 		}
 	}

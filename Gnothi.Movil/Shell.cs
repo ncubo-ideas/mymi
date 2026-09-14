@@ -584,9 +584,16 @@ public sealed class Shell : IDisposable
 		PushPicked();
 	}
 
-	/// Something the platform could not turn into an enrollment -a picked file that could not be
-	/// read- said on the screen, in the person's words. Same strip as any failed enrollment.
-	public void ReportEnrollmentError(string message) => PushEnrollment("error", message);
+	/// EL ARCHIVO QUE LA PLATAFORMA NO PUDO LEER, dicho en la pantalla del alta. Misma tira roja
+	/// que cualquier alta fallida.
+	///
+	/// RECIBE EL HECHO -que archivo- Y NO LA FRASE, y ese es el cambio que importa: cuando
+	/// recibia un `message`, las dos plataformas llamaban con el MISMO literal escrito dos veces,
+	/// una en MainActivity y otra en ViewController. Era el unico sitio del repo donde una
+	/// cascara de plataforma escribia texto de pantalla, y por lo tanto el unico que habria que
+	/// traducir dos veces. La frase se compone aca, una vez, desde el catalogo.
+	public void ReportUnreadableFile(string fileName) =>
+		PushEnrollment("error", Textos.T("alta.no-se-pudo-leer", ("archivo", fileName)));
 
 	private Task Enroll(string bundle, EnrollmentSource source, string? seal, CancellationToken ct)
 		=> Propose(e => e.Examine(bundle, source, seal, ct, PushEnrollment), bundle);

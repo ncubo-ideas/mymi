@@ -11,6 +11,12 @@
 
   "//el-alta": "LAS FRASES DEL ALTA, que nacen en Gnothi.Movil/Shell.cs y las pinta ui.html. El detalle tecnico que algunas llevan al final -los rechazos de PackageInspector- NO entra aca y se queda en ingles: describe la ESTRUCTURA del paquete -que trae el motor, que trae un installation.json- y eso lo arregla quien lo empaqueto, no quien lo instala. La frase que la persona SI puede accionar es la que la envuelve, y esa es la que esta traducida.",
 
+  "alta.paso.bajando":            { "es": "Bajando el módulo de {host}…", "en": "Downloading the module from {host}…" },
+  "alta.paso.revisando":          { "es": "Revisando qué trae…", "en": "Checking what it carries…" },
+  "alta.paso.preguntando":        { "es": "Preguntándole a {host} si este paquete es suyo…", "en": "Asking {host} whether this package is theirs…" },
+  "alta.rechazado":               { "es": "Mymi rechazó el paquete: {detalle}", "en": "Mymi refused the package: {detalle}" },
+  "alta.no-se-pudo-leer":         { "es": "No se pudo leer el archivo {archivo}.", "en": "Could not read the file {archivo}." },
+
   "alta.error.no-esta":           { "es": "La dirección que dio tu institución ya no tiene el módulo. Pídele el enlace otra vez.", "en": "The address your institution gave no longer has the module. Ask them for the link again." },
   "alta.error.sin-conexion":      { "es": "No se pudo hablar con tu institución para bajar el módulo. Revisa tu conexión y prueba de nuevo.", "en": "Could not reach your institution to download the module. Check your connection and try again." },
   "alta.error.tardo":             { "es": "La descarga tardó demasiado y se cortó. Prueba de nuevo.", "en": "The download took too long and stopped. Try again." },
