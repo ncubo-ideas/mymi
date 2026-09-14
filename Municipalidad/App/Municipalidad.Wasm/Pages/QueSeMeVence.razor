@@ -13,7 +13,7 @@
 }
 else
 {
-    <NumeroSinFirmar Dicho="@textos.Con("queSeMeVence.umbrales", ("dias", Formato.Dias(vence.DiasDeAviso, textos.Idioma)), ("tasa", Formato.Porcentaje(vence.TasaConQueSeProyecto, textos.Idioma)))" />
+    <NumeroSinFirmar Dicho="@textos.Con("queSeMeVence.umbrales", ("dias", textos.Dias(vence.DiasDeAviso)), ("tasa", textos.Porcentaje(vence.TasaConQueSeProyecto)))" />
 
     <section class="bloque" id="por-vencer">
         <h2>@textos["queSeMeVence.porVencer"]</h2>
@@ -22,7 +22,7 @@ else
         {
             <p class="nota">@textos.Con("queSeMeVence.nadaPorVencer",
                 ("dia", vence.PreguntadoEl),
-                ("dias", Formato.Dias(vence.DiasDeAviso, textos.Idioma)))</p>
+                ("dias", textos.Dias(vence.DiasDeAviso)))</p>
         }
 
         @foreach (var periodo in vence.PorVencer)
@@ -40,9 +40,9 @@ else
                     <dt>@textos["queSeMeVence.vence"]</dt>
                     <dd>@periodo.Vence</dd>
                     <dt>@textos["queSeMeVence.faltan"]</dt>
-                    <dd>@Formato.Dias(periodo.Faltan, textos.Idioma)</dd>
+                    <dd>@textos.Dias(periodo.Faltan)</dd>
                     <dt>@textos["queSeMeVence.monto"]</dt>
-                    <dd>@Formato.Monto(periodo.Monto, textos.Idioma)</dd>
+                    <dd>@textos.Monto(periodo.Monto)</dd>
                 </dl>
             </article>
         }
@@ -71,11 +71,11 @@ else
                     <dt>@textos["queSeMeVence.vencio"]</dt>
                     <dd>@periodo.Vencio</dd>
                     <dt>@textos["queSeMeVence.deAtraso"]</dt>
-                    <dd>@Formato.Dias(periodo.Dias, textos.Idioma)</dd>
+                    <dd>@textos.Dias(periodo.Dias)</dd>
                     <dt>@textos["queSeMeVence.monto"]</dt>
-                    <dd>@Formato.Monto(periodo.Monto, textos.Idioma)</dd>
+                    <dd>@textos.Monto(periodo.Monto)</dd>
                     <dt>@textos["queSeMeVence.proyeccionDeMora"]</dt>
-                    <dd>@Formato.Monto(periodo.CostoProyectado, textos.Idioma)</dd>
+                    <dd>@textos.Monto(periodo.CostoProyectado)</dd>
                 </dl>
             </article>
         }

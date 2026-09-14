@@ -111,7 +111,7 @@ else
                                 <td><span class="llave">@finca.Numero</span></td>
                                 <td>
                                     @(finca.TieneAvaluo
-                                        ? Formato.Monto(finca.Avaluo, textos.Idioma)
+                                        ? textos.Monto(finca.Avaluo)
                                         : textos["porQuePagoMas.finca.sinAvaluo"])
                                 </td>
                             </tr>

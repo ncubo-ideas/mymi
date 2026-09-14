@@ -23,9 +23,9 @@ else
             {
                 <dl class="renglones">
                     <dt>@textos.Con("cuantoApartar.proyeccionDe", ("anio", reserva.Anio.ToString()))</dt>
-                    <dd>@Formato.Monto(reserva.ProyeccionDelAnio, textos.Idioma)</dd>
+                    <dd>@textos.Monto(reserva.ProyeccionDelAnio)</dd>
                     <dt>@textos["cuantoApartar.porMes"]</dt>
-                    <dd class="cifra">@Formato.Monto(reserva.PropuestoPorMes, textos.Idioma)</dd>
+                    <dd class="cifra">@textos.Monto(reserva.PropuestoPorMes)</dd>
                 </dl>
             }
         </article>
@@ -45,18 +45,18 @@ else
             {
                 <dl class="renglones">
                     <dt>@textos["cuantoApartar.adoptadoPorMes"]</dt>
-                    <dd class="cifra">@Formato.Monto(reserva.AdoptadoPorMes, textos.Idioma)</dd>
+                    <dd class="cifra">@textos.Monto(reserva.AdoptadoPorMes)</dd>
                     <dt>@textos["cuantoApartar.leFalta"]</dt>
-                    <dd>@Formato.Monto(reserva.Faltante, textos.Idioma) (@Formato.Porcentaje(reserva.ProporcionDelFaltante, textos.Idioma))</dd>
+                    <dd>@textos.Monto(reserva.Faltante) (@textos.Porcentaje(reserva.ProporcionDelFaltante))</dd>
                     <dt>@textos["cuantoApartar.venceEsteMes"]</dt>
-                    <dd>@Formato.Monto(reserva.VenceEsteMes, textos.Idioma)</dd>
+                    <dd>@textos.Monto(reserva.VenceEsteMes)</dd>
                 </dl>
             }
         </article>
 
         <NumeroSinFirmar Firmado="true"
                          Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
-                         Dicho="@textos.Con("cuantoApartar.umbral", ("umbral", Formato.Porcentaje(reserva.UmbralConQueSeAvisa, textos.Idioma)))" />
+                         Dicho="@textos.Con("cuantoApartar.umbral", ("umbral", textos.Porcentaje(reserva.UmbralConQueSeAvisa)))" />
 
         <div class="aporte" id="adoptar">
             <label for="monto-a-apartar">@textos["cuantoApartar.etiquetaDelAporte"]</label>
