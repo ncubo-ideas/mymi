@@ -1,7 +1,11 @@
 using Android.App;
 using Android.OS;
 using Android.Webkit;
-using Gnothi.Host;
+// EL CATALOGO DE TEXTOS, por alias y no importando el namespace entero: `Gnothi.Host`
+// tambien declara un `Shell` -- el bloque de installation.json -- y este archivo usa el
+// `Shell` de Gnothi.Movil diez veces. Importar los dos namespaces deja el nombre ambiguo
+// y el Android deja de compilar; el alias trae lo unico que hace falta de alli.
+using Textos = Gnothi.Host.Textos;
 using Gnothi.Movil;
 using System.Text.Json;
 
