@@ -177,9 +177,19 @@ desde `~/Gnothi`. La carpeta de módulos es la que quieras registrar; el banco l
 máquina es `Modulos.local` (ver `Modulos.local/README.md`):
 
 ```bash
-dotnet publish Gnothi.Host -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true -o ~/Gnothi
+Gnothi.Host/publicar-mac.sh
 ~/Gnothi/Gnothi.Host --install ~/DevProjects/ncubo/Gnothi/Modulos.local
 ```
+
+El script hace ese `dotnet publish` y además **firma** el binario. No es cosmético: sin firma
+queda adhoc, sin Team ID, y TCC guarda el permiso contra ruta + cdhash. Como cada publicación
+cambia el cdhash, macOS ve una app nueva y el `--install` de abajo vuelve a pedir *«Gnothi.Host
+would like to access data from other apps»* aunque ya se lo hayas concedido. Firmado, el
+designated requirement pasa a ser el identificador más el certificado y el permiso sobrevive.
+
+> Ese diálogo es legítimo y no se puede esquivar: para registrarse en Claude Desktop hay que
+> abrir su `claude_desktop_config.json`, que es Application Support de otra app. Solo sale en
+> `--install`; sirviendo preguntas el Host no toca nada de ahí.
 
 **Tenés que ver** primero `modules there : N` con la cuenta de módulos de esa carpeta (un `0`
 casi siempre es una ruta mal pegada), y después la lista de **asistentes que encontró**. Hoy busca

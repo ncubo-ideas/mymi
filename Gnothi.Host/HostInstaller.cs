@@ -136,8 +136,13 @@ internal static class HostInstaller
 
 		// Packaged Claude Desktop (MSIX). This is the path that is hard to find, and the one the
 		// app itself opens from its own "edit config" button.
+		//
+		// WINDOWS-ONLY, AND SAID SO. LocalApplicationData is ~/Library/Application Support on a
+		// Mac, so without the guard this probe stats another app's data territory looking for a
+		// Packages/ folder that only exists on Windows. It costs nothing and finds nothing, but
+		// it is a gratuitous knock on the door macOS gates behind "access data from other apps".
 		string packages = Path.Combine(local, "Packages");
-		if (Directory.Exists(packages))
+		if (OperatingSystem.IsWindows() && Directory.Exists(packages))
 			foreach (string dir in Directory.EnumerateDirectories(packages, "Claude_*"))
 			{
 				string cfg = Path.Combine(dir, "LocalCache", "Roaming", "Claude", "claude_desktop_config.json");

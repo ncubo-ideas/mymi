@@ -11,7 +11,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Gnothi</title>
+<title>Mymi</title>
 <style>
   :root{
     --paper:#F5F3FB; --card:#FFFFFF; --ink:#241F3D; --muted:#6F6B85; --line:#E7E4F2;
@@ -55,7 +55,7 @@
   .logo.mark{background:none;overflow:hidden;border-radius:10px}
   .logo.mark img{width:34px;height:34px;display:block}
   .top b{font-size:21px;font-weight:800;letter-spacing:-.02em;flex:1}
-  /* THE HIERARCHY (review 2026-09-08): Gnothi + its promise, «Tus instituciones · N conectadas», the
+  /* THE HIERARCHY (review 2026-09-08): Mymi + its promise, «Tus instituciones · N conectadas», the
      cards. The greeting is gone: the space belongs to the modules, and the Assistant has its tab. */
   .top .tt{flex:1;min-width:0}
   .top .tt b{display:block;line-height:1.15}
@@ -67,7 +67,7 @@
   .chev{color:var(--muted);font-size:20px;flex:none}
 
   /* «HOLA, SONIA» + «AGREGAR MÓDULO» (mockup 2026-09-09): the greeting is the section head, and the
-     action that grows Gnothi sits next to it, in the Host's violet -- and STAYS on screen while the
+     action that grows Mymi sits next to it, in the Host's violet -- and STAYS on screen while the
      list scrolls, whether Sonia has five modules or thirty. The connect card left the grid. */
   .hola{display:flex;align-items:flex-end;gap:12px;margin:0 -16px 4px;padding:2px 18px 6px;
        position:sticky;top:0;z-index:5;background:var(--paper)}
@@ -110,7 +110,7 @@
   /* THE TYPOGRAPHY (Geaninna, 2026-09-09): Manrope for everything; the institution's typeface ONLY
      on its brand name, and moderate. «LABORATORIO CLÍNICO» small caps 10-11 px; the name 20-21 px,
      26 on the hero; the slogan 12-13 px in Manrope. The brand is the protagonist, the slogan is
-     secondary, and the chip and «Abrir» are Gnothi's -- identical on every card. */
+     secondary, and the chip and «Abrir» are Mymi's -- identical on every card. */
   .mod.photo .nm .pre{display:block;font-size:10px;font-weight:500;opacity:.85;letter-spacing:.08em;
        text-transform:uppercase;line-height:1.3}
   .mod.photo .nm b{display:block;font-family:var(--font,inherit);font-size:21px;font-weight:700;line-height:1.05;
@@ -203,7 +203,7 @@
   .chip.no{color:var(--off)}
 
   /* the ghost card: adding a module is part of the product, so the grid says so */
-  /* CONNECTING AN INSTITUTION is the action that grows Gnothi: a card unlike the brand ones (dashed
+  /* CONNECTING AN INSTITUTION is the action that grows Mymi: a card unlike the brand ones (dashed
      accent border, soft background, no stripe). */
   .mod.add{background:linear-gradient(160deg,#F1ECFF,#E6E0FA);box-shadow:none;border:1.5px dashed #C4B7F2;border-top-width:1.5px;
        color:var(--muted);align-items:center;text-align:center;justify-content:center;gap:8px;--brand:var(--accent);min-height:196px}
@@ -252,7 +252,7 @@
   .osheet.on{display:flex}
   .osheet .card{background:var(--card);border-radius:22px 22px 0 0;padding:24px 22px 30px;
        width:100%;max-height:78vh;overflow-y:auto}
-  /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Gnothi fija. */
+  /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Mymi fija. */
   .pr-hero{margin-bottom:16px}
   /* LA FRANJA DE PROCEDENCIA. Verde cuando el dominio que la institución declara se
      corresponde con el host del que bajó el bundle, ámbar cuando no, y neutra cuando no hay
@@ -317,7 +317,7 @@
   .master span{flex:1;font-weight:600;font-size:14.5px}
   /* THE CHEVRON IS NOT A COLUMN. `.master span` above reaches <span class="chev"> too, and beats
      .chev{flex:none} on specificity, so text and arrow split the row in halves: the arrow landed
-     mid-line with «adentro de Gnothi» wrapping under it (measured on the 13 Pro, 2026-09-11). */
+     mid-line with «adentro de Mymi» wrapping under it (measured on the 13 Pro, 2026-09-11). */
   .master .chev{flex:none;font-weight:400}
 
   h3.cap{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -464,12 +464,12 @@
       <!-- THE MARK (identidad visual v1.0, 2025): four petals around a four-point star -- your
            institutions around you, your information in the centre. Rebuilt as geometry from the
            brand board until the designer's vector arrives. -->
-      <div class="logo mark"><img alt="Gnothi" src="img/gnothi-mark.png"></div>
-      <div class="tt"><b>Gnothi</b></div>
+      <div class="logo mark"><img alt="Mymi" src="img/gnothi-mark.png"></div>
+      <div class="tt"><b>Mymi</b></div>
       <div class="ava">S</div>
     </div>
 
-    <!-- EL ALTA, MIENTRAS PASA. Es lo primero que Sonia ve hacer a Gnothi por ella: tocó un
+    <!-- EL ALTA, MIENTRAS PASA. Es lo primero que Sonia ve hacer a Mymi por ella: tocó un
          botón en la página de su institución y volvió acá. Sin esto son 12 MB de silencio. -->
     <div id="alta"></div>
 
@@ -509,7 +509,7 @@
   <div class="scroll">
     <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
     <h2 class="qtitle" style="margin-top:0">Datos de tus instituciones</h2>
-    <p class="qlead">Información que Gnothi mantiene en este dispositivo. Nadie más la lee: al preguntar,
+    <p class="qlead">Información que Mymi mantiene en este dispositivo. Nadie más la lee: al preguntar,
     al asistente viaja solo lo que la consulta elegida devuelve.</p>
     <div id="journal"></div>
   </div>
@@ -560,7 +560,7 @@
 </div>
 
 <!-- ═══ EL ALTA: LO QUE LA INSTITUCIÓN PROPONE ═══
-     Instalar un módulo es el acto más grande que Sonia hace en Gnothi: le da a una
+     Instalar un módulo es el acto más grande que Sonia hace en Mymi: le da a una
      institución una carpeta suya y un endpoint registrado. Hasta el 2026-09-04 pasaba sola,
      como efecto de tocar un enlace. Acá se le muestra QUÉ trae y QUÉ va a poder hacer, y
      recién si acepta el módulo ocupa un lugar. Cancelar no deja nada. -->
@@ -575,7 +575,7 @@
 
 <!-- ═══ QUITAR UN MÓDULO ═══
      Hasta 2026-09-11 no había forma: la persona podía apagar un módulo, pero no sacarlo del
-     teléfono, y «volver a instalar» era borrar Gnothi entera. La app de la institución y la
+     teléfono, y «volver a instalar» era borrar Mymi entera. La app de la institución y la
      bitácora son dos cosas: la app se va siempre; la bitácora es de la persona y se queda salvo
      que ella marque lo contrario, y si el manifiesto dice que no se puede reconstruir, acá se
      le dice con todas las letras antes de que lo marque. -->
@@ -592,8 +592,8 @@
 
 <!-- ═══ THE CODE READER ═══
      The institution's page shows a QR with the SAME link as its button, for the person who reads
-     the page on a computer and has Gnothi on her phone. Here it is read with the phone's camera,
-     inside Gnothi. Decoding is jsQR (jsqr.js next to this file, Apache-2.0): pure JavaScript that
+     the page on a computer and has Mymi on her phone. Here it is read with the phone's camera,
+     inside Mymi. Decoding is jsQR (jsqr.js next to this file, Apache-2.0): pure JavaScript that
      ships with the page, so it reads the same on every phone and nothing leaves it. The WebView's
      own BarcodeDetector is only a fallback: the emulator offered it and Play Services never
      downloaded the barcode module behind it, so detect() returned nothing, forever, silently.
@@ -610,14 +610,14 @@
 
 <!-- ═══ ADDING A MODULE: THE WAYS IN ═══
      Until 2026-09-08 this sheet only explained and closed with "Entendido": every enrollment
-     began OUTSIDE, on the institution's link. Now the person can paste that link here. Gnothi
+     began OUTSIDE, on the institution's link. Now the person can paste that link here. Mymi
      downloads it, inspects it and shows what it carries before installing anything -- the same
      "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
     <h4>Tus instituciones, siempre contigo.</h4>
     <p>Tu laboratorio, tu supermercado, tu emisor de facturas te dan un módulo. Agregalo y llevá con
-    vos su información y sus servicios. Gnothi lo revisa y te muestra qué trae antes de instalar nada.</p>
+    vos su información y sus servicios. Mymi lo revisa y te muestra qué trae antes de instalar nada.</p>
     <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
          row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
     <div class="vias">
@@ -642,20 +642,20 @@
       </button>
     </div>
     <div id="alta-hint" style="min-height:18px;margin:8px 4px 0;font-size:13px;color:#8E2A1F"></div>
-    <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Gnothi:
+    <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Mymi:
     pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
-    <p style="margin-top:8px"><small>Si estás en la página de tu institución, su botón «Agregar a Gnothi» hace lo mismo.</small></p>
+    <p style="margin-top:8px"><small>Si estás en la página de tu institución, su botón «Agregar a Mymi» hace lo mismo.</small></p>
   </div>
 </div>
 
-<!-- ═══ WHAT SHE PICKED: the modules Gnothi found among the files, to choose from ═══
+<!-- ═══ WHAT SHE PICKED: the modules Mymi found among the files, to choose from ═══
      Several files come from the picker; each got a quick look (manifest, inspection, signed or not)
      and nothing else. Tapping one runs the whole examination and opens its proposal; when that ends
      the list comes back with the row marked, so she goes on with the next. -->
 <div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
   <div class="card">
     <h4>Esto encontré en lo que elegiste</h4>
-    <p>Tocá el módulo que querés agregar. Gnothi te muestra qué trae antes de instalarlo, y después
+    <p>Tocá el módulo que querés agregar. Mymi te muestra qué trae antes de instalarlo, y después
     podés seguir con el siguiente.</p>
     <div id="ha-lista"></div>
     <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()">Listo</button>
@@ -690,7 +690,7 @@
 
 // THE BRAND COMES FROM THE BUNDLE (2026-09-08). Until now the icon was the Host's: a small map keyed
 // by module name, and the institution went in grey small print under «Mis exámenes». Institutions
-// put their module in Gnothi so Sonia sees THEIR brand, so the icon and the color come from the
+// put their module in Mymi so Sonia sees THEIR brand, so the icon and the color come from the
 // manifest.webmanifest they publish inside the bundle (BrandAssets.cs reads it and it travels in
 // the state as `brand`). The map below stays as a FALLBACK: a module without a brand falls to its
 // glyph, and an unknown one to the indigo box.
@@ -772,7 +772,7 @@ function legible(hex) {
   }
   return 'var(--ink)';
 }
-// El color de este módulo ya corregido, o el acento de Gnothi si no declaró ninguno. Las
+// El color de este módulo ya corregido, o el acento de Mymi si no declaró ninguno. Las
 // pantallas piden esto y no `m.brand.color`: así ninguna se olvida de la corrección.
 //
 // El fondo sale del `tint(hex, a)` de más arriba, que ya estaba y es más general que el que
@@ -798,7 +798,7 @@ const sobre = c => {
 const gn = {
   state: null, open: null, busy: false, seq: 0,
 
-  // ABRIR EL MODULO: la app de la institucion se dibuja a si misma, adentro de Gnothi
+  // ABRIR EL MODULO: la app de la institucion se dibuja a si misma, adentro de Mymi
   // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
   abrir(name) { gn.call('abrir', { module: name }); },
 
@@ -877,7 +877,7 @@ const gn = {
   // EL ALTA, MIENTRAS PASA. "listo" se va solo a los 6 segundos porque ya se ve la tarjeta
   // nueva abajo; "error" SE QUEDA, porque si no la persona vuelve a quedarse sin saber por qué.
   // LO QUE LA INSTITUCIÓN PROPONE, antes de que exista nada. Se le muestra a Sonia lo que el
-  // manifiesto DECLARA -quién es, qué consultas ofrece- y las dos cosas que decide Gnothi y
+  // manifiesto DECLARA -quién es, qué consultas ofrece- y las dos cosas que decide Mymi y
   // ella tiene derecho a saber: dónde va a vivir el registro y contra qué endpoint va a hablar.
   propuesta: null,
   verPropuesta(p) {
@@ -898,7 +898,7 @@ const gn = {
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
 
     // WHAT GNOTHI CHECKED before showing anything. It comes from the package inspection and the
-    // provenance: facts Gnothi found out by itself, not what the institution declares. And it
+    // provenance: facts Mymi found out by itself, not what the institution declares. And it
     // says what is NOT checked yet -- that the host that served the package is the institution's.
     const rev = p.revision || {}, pro = p.procedencia || {};
     const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
@@ -927,7 +927,7 @@ const gn = {
       'verificado': 'Lo respalda <b>' + host + '</b>' + via + ': ese origen publica este módulo y el paquete dice ser suyo.'
         + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
       'sin-publicacion': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Ese origen no publica cuáles módulos son suyos, así que Gnothi no pudo verificarlo: fijate que lo reconozcas.</small>',
+        + '<small>Ese origen no publica cuáles módulos son suyos, así que Mymi no pudo verificarlo: fijate que lo reconozcas.</small>',
       'no-publicado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
         + '<small>Ese origen publica sus módulos y <b>este no está entre ellos</b>.</small>',
       'sin-origen-declarado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
@@ -938,20 +938,20 @@ const gn = {
     const respaldo = (respaldoTexto[pro.respaldo]
       || (pro.origen === 'archivo'
         ? 'Llegó como el archivo <b>' + host + '</b>.<small>No viene de ningún origen: nadie responde por él.</small>'
-        : 'Lo sirvió <b>' + host + '</b>' + via + '.<small>Gnothi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>'))
+        : 'Lo sirvió <b>' + host + '</b>' + via + '.<small>Mymi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>'))
       + sello;
 
-    // THE SIGNATURE: whose key, and since when Gnothi knows it. Continuity, not virtue.
+    // THE SIGNATURE: whose key, and since when Mymi knows it. Continuity, not virtue.
     const desde = pro.firmaDesde ? new Date(pro.firmaDesde).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
     const llave = esc(pro.firmante || '?');
     const firma = {
       'sin-firma': 'El paquete no viene firmado.',
       'publicada': desde
         ? 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + '), y su origen la publica.'
-        : 'Firmado por la llave «' + llave + '», que su origen publica.<small>Gnothi la va a recordar para la próxima vez.</small>',
+        : 'Firmado por la llave «' + llave + '», que su origen publica.<small>Mymi la va a recordar para la próxima vez.</small>',
       'conocida': 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + ').<small>Su origen no contestó, pero la llave ya la conocías.</small>',
-      'rotada': 'Firmado con una <b>llave nueva</b> («' + llave + '»), que su origen publica.<small>No es la de la vez pasada. Gnothi va a recordar esta.</small>',
-      'desconocida': 'Firmado por una llave («' + llave + '») que su origen <b>no publica</b> y que Gnothi no conocía.',
+      'rotada': 'Firmado con una <b>llave nueva</b> («' + llave + '»), que su origen publica.<small>No es la de la vez pasada. Mymi va a recordar esta.</small>',
+      'desconocida': 'Firmado por una llave («' + llave + '») que su origen <b>no publica</b> y que Mymi no conocía.',
       'cambiada': '<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva («' + llave + '»).',
     }[pro.firma] || 'El paquete no viene firmado.';
 
@@ -966,12 +966,12 @@ const gn = {
       : pro.respaldo === 'verificado' && pro.firma !== 'desconocida' ? ''
       : pro.respaldo === 'verificado'
         ? '<p class="ojo">Su origen lo publica, pero viene firmado por una llave que ese origen <b>no publica</b>. Abajo dice más.</p>'
-        : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Gnothi no pudo confirmar que '
+        : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Mymi no pudo confirmar que '
           + (pro.origen === 'archivo' ? 'alguien responda por este archivo' : host + ' publique este módulo') + '. Abajo dice por qué.</p>';
     const forma = rev.forma === 'hospedado'
       ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
         + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
-      : 'Trae solo su dominio, sin motor propio.<small>El motor se lo presta Gnothi.</small>';
+      : 'Trae solo su dominio, sin motor propio.<small>El motor se lo presta Mymi.</small>';
     const caps = (rev.excesos && rev.excesos.length)
       ? 'Pide más de lo que un módulo de datos necesita: <b>' + esc(rev.excesos.join(', ')) + '</b>.'
         + '<small>Se instala apagado. Vos decidís si lo encendés.</small>'
@@ -993,21 +993,21 @@ const gn = {
           ? '<p class="ojo"><b>Es más viejo que el que tenés</b>' + (up.versionada ? ': es la ' + esc(up.versionNueva) + ' y tenés la ' + esc(up.versionInstalada) : '') + '. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».</p>'
         : up.tipo === 'otro-contenido'
           ? '<p class="ojo"><b>Misma versión, contenido distinto.</b> La institución cambió el paquete sin subir la versión' + (up.versionada ? ' (' + esc(up.versionNueva) + ')' : '') + '. Abajo dice qué cambia.</p>'
-          : '<p class="ojo suave"><b>Actualización</b>' + versiones + (up.versionada ? '' : '. La institución no versiona sus paquetes; Gnothi compara el contenido') + '. Tu registro y tus interruptores quedan como están.</p>';
+          : '<p class="ojo suave"><b>Actualización</b>' + versiones + (up.versionada ? '' : '. La institución no versiona sus paquetes; Mymi compara el contenido') + '. Tu registro y tus interruptores quedan como están.</p>';
       const nombres = ts => ts.map(t => esc(t.titulo || t.nombre)).join(', ');
       const items = [];
       if (up.consultasNuevas.length)  items.push('<b>Consultas nuevas:</b> ' + nombres(up.consultasNuevas) + '.<small>Entran encendidas: las estás aceptando con esta hoja.</small>');
       if (up.consultasQuitadas.length) items.push('<b>Consultas que ya no están:</b> ' + nombres(up.consultasQuitadas) + '.');
       if (up.capacidadesNuevas.length) items.push('<b>Ahora pide más:</b> ' + esc(up.capacidadesNuevas.join(', ')) + '.<small>Se instala apagado. Vos decidís si lo encendés.</small>');
       if (up.publicadorCambia) items.push('<b>Cambia a dónde habla:</b> de <code>' + esc(up.publicadorInstalado || '(nada)') + '</code> a <code>' + esc(up.publicadorNuevo || '(nada)') + '</code>.'
-        + '<small>Gnothi conserva la dirección de antes salvo que aceptés la nueva.</small>'
+        + '<small>Mymi conserva la dirección de antes salvo que aceptés la nueva.</small>'
         + '<label class="chk"><input type="checkbox" id="pr-publicador"> Aceptar la dirección nueva</label>');
       if (up.origenCambia) items.push('<b>Cambia el origen que declara:</b> de ' + esc(up.origenInstalado || '(ninguno)') + ' a ' + esc(up.origenNuevo || '(ninguno)') + '.');
       if (up.registroCambia) items.push('<b>Cambia lo que promete sobre tu registro</b> (retención, tamaño o frecuencia): abajo está lo nuevo.');
       if (up.sustratoCambia) items.push('<b>Pide otro sustrato:</b> ' + esc(up.sustratoNuevo || '(ninguno)') + '.');
       const lista = items.length
         ? '<p><b>Qué cambia</b></p><ul class="pr-tools">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
-        : up.tipo === 'misma' ? '' : '<p><b>Qué cambia</b><br><small>Nada de lo que Gnothi compara: consultas, capacidades, publicador, origen, registro. Cambia la app adentro.</small></p>';
+        : up.tipo === 'misma' ? '' : '<p><b>Qué cambia</b><br><small>Nada de lo que Mymi compara: consultas, capacidades, publicador, origen, registro. Cambia la app adentro.</small></p>';
       // The button says what it does.
       document.querySelector('#propuesta button.cta').textContent =
         up.tipo === 'actualizacion' ? 'Actualizar' : up.tipo === 'anterior' ? 'Volver a esa versión' : 'Reinstalar';
@@ -1053,8 +1053,8 @@ const gn = {
           : '')
       + '</p>'
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
-      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>'
-      + '<p><b>Lo que Gnothi revisó</b></p><ul class="pr-tools">'
+      + '<small>Es la única red que va a poder tocar, y la hace Mymi por él.</small></p>'
+      + '<p><b>Lo que Mymi revisó</b></p><ul class="pr-tools">'
       + '<li>' + respaldo + '</li><li>' + firma + '</li><li>' + forma + '</li><li>' + caps + '</li>'
       + '<li>Sin ejecutables ni datos de muestra adentro.</li></ul>';
 
@@ -1062,7 +1062,7 @@ const gn = {
   },
 
   // On an update that moved the publisher's endpoint, the checkbox on the sheet is her yes to the
-  // move; without it Gnothi keeps the endpoint it fixed the first time.
+  // move; without it Mymi keeps the endpoint it fixed the first time.
   altaAceptar()   {
     const publicadorNuevo = !!(document.getElementById('pr-publicador') || {}).checked;
     document.getElementById('propuesta').classList.remove('on');
@@ -1151,7 +1151,7 @@ const gn = {
 
     async start() {
       const hint = document.getElementById('alta-hint');
-      if (!gn.scan.supported()) { hint.textContent = 'Este teléfono no puede leer códigos desde Gnothi.'; return; }
+      if (!gn.scan.supported()) { hint.textContent = 'Este teléfono no puede leer códigos desde Mymi.'; return; }
       hint.textContent = '';
 
       // The platform grants or denies the camera here (Android asks the person the first time).
@@ -1161,7 +1161,7 @@ const gn = {
         gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
       } catch (e) {
         hint.textContent = e && e.name === 'NotAllowedError'
-          ? 'Gnothi no tiene permiso para usar la cámara.'
+          ? 'Mymi no tiene permiso para usar la cámara.'
           : 'No se pudo abrir la cámara: ' + (e && e.message || e);
         return;
       }
@@ -1289,7 +1289,7 @@ const gn = {
     }
     grid.innerHTML = ms.map((m, i) => {
       const c = colorOf(m), b = m.brand || {};
-      // Enabled: touching the card opens the institution's app inside Gnothi. Disabled: nothing to
+      // Enabled: touching the card opens the institution's app inside Mymi. Disabled: nothing to
       // open, so it goes to the detail, which is where it gets switched on.
       const onTap = m.enabled ? "gn.abrir('" + m.name + "')" : "gn.detail('" + m.name + "')";
       const nm = tiers(m), on = (m.tools || []).filter(t => t.enabled).length;
@@ -1337,8 +1337,8 @@ const gn = {
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
         + (m.signerRevokedAt
             ? '<p class="ojo"><b>Tu institución retiró la llave</b> con la que firmó este módulo'
-              + ' (Gnothi lo supo el ' + new Date(m.signerRevokedAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) + ').'
-              + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Gnothi va a recordar la llave nueva.</p>'
+              + ' (Mymi lo supo el ' + new Date(m.signerRevokedAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) + ').'
+              + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Mymi va a recordar la llave nueva.</p>'
             : '')
 
         // The origin publishes a newer package than the one she has (NotasGnothiHost/44 §4). A note
@@ -1368,7 +1368,7 @@ const gn = {
             : '')
 
         // LA PROCEDENCIA: lo que la institución DECLARA -- su dominio -- al lado de lo que
-        // Gnothi OBSERVÓ al dar el alta, y guardó. Es la única cosa de toda la marca que el
+        // Mymi OBSERVÓ al dar el alta, y guardó. Es la única cosa de toda la marca que el
         // Host puede comprobar solo, y por eso es la que le da sentido al logo: sin esto, un
         // logo es un dibujo que cualquiera copia.
         //
@@ -1398,7 +1398,7 @@ const gn = {
 
         + (m.enabled
             ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>Abrir ' + esc(m.shortName || m.institution || m.title) + '</b><br>'
-              + '<small>la app de tu institución, adentro de Gnothi</small></span><span class="chev">›</span></div>'
+              + '<small>la app de tu institución, adentro de Mymi</small></span><span class="chev">›</span></div>'
             : '')
 
 
@@ -1686,7 +1686,7 @@ function mock(op, x) {
       { indice: 1, archivo: 'examenes.gmod', bytes: 13027208, modulo: 'examenes', titulo: 'Tus examenes, al dia', institucion: 'Laboratorio Clínico Delfos',
         nombreCorto: 'Delfos', eslogan: 'Tu salud, en tus manos', color: '#0e2f55', categoria: 'laboratorio', firmado: true, problema: '', instalado: false, yaEstaba: true },
       { indice: 2, archivo: 'fotos-vacaciones.zip', bytes: 40210000, modulo: '', titulo: '', institucion: '', nombreCorto: '', eslogan: '', color: '', categoria: '',
-        firmado: false, problema: 'No es un módulo de Gnothi: no trae un manifiesto legible.', instalado: false, yaEstaba: false },
+        firmado: false, problema: 'No es un módulo de Mymi: no trae un manifiesto legible.', instalado: false, yaEstaba: false },
     ] })), 400);
     return { ok: true };
   }
@@ -1757,7 +1757,7 @@ function mock(op, x) {
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') gn.ask(); });
 document.getElementById('alta-url').addEventListener('keydown', e => { if (e.key === 'Enter') gn.altaDesdeEnlace(); });
 
-// A phone that cannot read codes from inside Gnothi (no BarcodeDetector, no camera API) is told
+// A phone that cannot read codes from inside Mymi (no BarcodeDetector, no camera API) is told
 // so, instead of being shown a button that does nothing.
 if (!gn.scan.supported()) {
   document.getElementById('alta-scan').style.display = 'none';
