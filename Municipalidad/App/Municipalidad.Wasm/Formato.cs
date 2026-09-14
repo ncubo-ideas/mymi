@@ -8,23 +8,31 @@ namespace Municipalidad.Wasm
 	/// frase de al lado -- es la frase rival en pequeno.
 	/// <para>
 	/// Ninguna depende de la cultura de la maquina, y ninguna inventa un simbolo de moneda: este
-	/// producto no tiene un tipo de moneda y una caratula no es quien para ponerle uno.
+	/// producto no tiene un tipo de moneda y una caratula no es quien para ponerle uno. El idioma entra
+	/// por parametro, igual que en el dominio, y por la misma razon: quien elige es la persona.
 	/// </para>
 	/// </summary>
 	public static class Formato
 	{
 		/// <summary>Un monto, con los mismos digitos que trae su columna y sin simbolo de moneda.</summary>
-		public static string Monto(decimal monto) =>
-			ConComaDecimal(monto.ToString("0.##", CultureInfo.InvariantCulture));
+		public static string Monto(decimal monto, string idioma) =>
+			ConElSeparador(monto.ToString("0.##", CultureInfo.InvariantCulture), idioma);
 
-		/// <summary>Una proporcion dicha como porcentaje, con una decimal a lo sumo: 0,8 es "80 %".</summary>
-		public static string Porcentaje(decimal proporcion) =>
-			ConComaDecimal(
-				Math.Round(proporcion * 100m, 1).ToString("0.##", CultureInfo.InvariantCulture)) + " %";
+		/// <summary>Una proporcion dicha como porcentaje: 0,8 es "80 %" en espanol y "80%" en ingles.</summary>
+		public static string Porcentaje(decimal proporcion, string idioma) =>
+			ConElSeparador(
+				Math.Round(proporcion * 100m, 1).ToString("0.##", CultureInfo.InvariantCulture), idioma)
+			+ (EsEspanol(idioma) ? " %" : "%");
 
-		/// <summary>Cuantos dias, dicho en palabras para que "1 días" no aparezca nunca.</summary>
-		public static string Dias(int dias) => dias == 1 ? "1 día" : dias + " días";
+		/// <summary>Cuantos dias, dicho en palabras para que "1 dias" no aparezca nunca.</summary>
+		public static string Dias(int dias, string idioma) => EsEspanol(idioma)
+			? (dias == 1 ? "1 día" : dias + " días")
+			: (dias == 1 ? "1 day" : dias + " days");
 
-		private static string ConComaDecimal(string dicho) => dicho.Replace('.', ',');
+		private static string ConElSeparador(string dicho, string idioma) =>
+			EsEspanol(idioma) ? dicho.Replace('.', ',') : dicho;
+
+		private static bool EsEspanol(string idioma) =>
+			!string.IsNullOrWhiteSpace(idioma) && !idioma.Trim().ToLowerInvariant().StartsWith("en");
 	}
 }

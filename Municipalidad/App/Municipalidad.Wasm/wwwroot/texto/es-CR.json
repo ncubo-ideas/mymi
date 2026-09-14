@@ -1,0 +1,214 @@
+{
+  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Las frases que compone el dominio NO estan aca: esas las trae la puerta ya dichas, en el idioma que se le pidio. El espanol de este archivo es de Costa Rica y es voseo -pagues, adoptaste, mirala-: no lo pases a tuteo. Los nombres de los rubros y los periodos son del registro de la municipalidad y no se traducen. {clave} es un hueco que el codigo llena.",
+
+  "app": {
+    "apunte": "Tu cuenta, en tu carpeta"
+  },
+
+  "comun": {
+    "contestadoAl": "Contestado al {dia}.",
+    "deTotal": "{cuantos} de {total}"
+  },
+
+  "porQuePagoMas": {
+    "titulo": "Por qué pago más",
+    "bajada": "Entre los dos últimos comprobantes de cada rubro: de cuánto a cuánto cambió, y qué lo explica. Lo que explica un aumento depende de cómo se cobra ese rubro, y ésa es la mitad que el portal no contesta.",
+    "umbrales": "Un cambio se llama salto cuando pasa el {salto}, y por debajo del {ruido} se considera ruido.",
+    "periodos": "Períodos",
+    "porPeriodo": "Por período",
+    "elCambio": "El cambio",
+    "sinVariacion": {
+      "titulo": "Todavía no hay ninguna variación que ver.",
+      "cuerpo": "Una variación necesita dos comprobantes del mismo rubro. Aparecen solas conforme tus pagos vayan llegando a esta app."
+    },
+    "finca": {
+      "titulo": "El valor de tu finca",
+      "nota": "Tres de los cinco rubros se cobran sobre el valor de tu finca. El <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el valor con que te cobra, y es el que se usa arriba para explicar un salto. <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus movimientos.",
+      "avaluo": "avalúo: {monto}",
+      "sinAvaluo": "sin avalúo publicado",
+      "sinAvaluoNota": "Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega solo, con el resto de tus movimientos, cuando ella lo publique."
+    },
+    "pie": "Un aumento nunca apura: ya pasó. Lo que apura es lo que vence, y eso está en",
+    "pieEnlace": "qué se me vence",
+    "sinNingunComprobante": "Tu app no ha visto ni un comprobante de este rubro, así que no hay nada que comparar. Eso no quiere decir que no lo pagués: quiere decir que tus pagos de este rubro todavía no han llegado aquí.",
+    "conUnSoloComprobante": "De este rubro hay un solo período con comprobante, y para ver una variación hacen falta dos. No es que el cobro no haya cambiado: es que todavía no hay contra qué compararlo."
+  },
+
+  "queSeMeVence": {
+    "titulo": "Qué se me vence",
+    "bajada": "Ésta es la pregunta que tu portal no contesta. El portal te dice cuánto debés hoy; esto te dice qué está por vencerse y qué ya se venció.",
+    "umbrales": "Se avisa {dias} antes del vencimiento, y el costo de pagar tarde se proyecta a una tasa anual del {tasa}.",
+    "porVencer": "Por vencer",
+    "nadaPorVencer": "Al {dia} no hay nada dentro de la ventana de aviso. Eso no dice que no tengás nada que pagar más adelante: dice que nada cae dentro de los próximos {dias}.",
+    "vence": "Vence",
+    "faltan": "Faltan",
+    "monto": "Monto",
+    "yaVencidos": "Ya vencidos",
+    "nadaVencido": "No hay nada vencido sin pagar en lo que esta app ha visto. Eso no es una constancia de estar al día con la municipalidad: tu portal es la autoridad sobre eso.",
+    "vencio": "Venció",
+    "deAtraso": "De atraso",
+    "proyeccionDeMora": "Proyección de mora",
+    "noSeSuman": "Las dos listas no se suman",
+    "noSeSumanCuerpo": "Un período por vencer y uno vencido son situaciones distintas, y un total que los mezcle no es un número que nadie haya calculado. Si querés saber cuánto debés en total, eso lo dice tu portal."
+  },
+
+  "cuantoApartar": {
+    "titulo": "Cuánto apartar",
+    "bajada": "Dos cosas de dos dueños: lo que <strong>esta app propone</strong> a partir de lo que ya pagaste, y lo que <strong>vos adoptaste</strong>. Que no coincidan no es un error.",
+    "laPropuesta": "Lo que esta app propone",
+    "proyeccionDe": "Proyección de {anio}",
+    "porMes": "Por mes",
+    "loAdoptado": "Lo que vos adoptaste",
+    "adoptadoPorMes": "Adoptado por mes",
+    "leFalta": "Le falta",
+    "venceEsteMes": "Vence este mes",
+    "umbral": "Se te avisa cuando lo adoptado queda más de un {umbral} por debajo de lo propuesto.",
+    "etiquetaDelAporte": "Adoptar una reserva, en colones por mes",
+    "adoptar": "Adoptar",
+    "guardando": "Guardando…",
+    "notaDelAporte": "Es tuyo y no de la municipalidad: nadie lo revisa y no cambia lo que te cobran. Se puede adoptar una vez por día, y el último que pongás es el que rige.",
+    "sinRespaldo": "Quedó registrado y NO se guardó.",
+    "entro": "Listo, quedó tuyo.",
+    "entroCuerpo": "Tu reserva quedó registrada y guardada en tu carpeta.",
+    "rechazado": "No se registró, y ésta es la razón.",
+    "sinUnPago": "Tu app todavía no ha visto ningún comprobante, así que no hay de dónde proyectar lo que vas a pagar este año. En cuanto entre el primer pago, esta propuesta aparece sola.",
+    "sinReservaAdoptada": "Todavía no adoptaste una reserva, así que no hay con qué comparar la propuesta. Adoptar una es tuyo y no de la municipalidad: es cuánto decidís apartar cada mes.",
+    "sinNingunaDeLasDos": "Sin un pago del que proyectar y sin una reserva adoptada, no hay dos mitades que comparar. Las dos entran solas: la propuesta con el primer comprobante, la adoptada cuando la pongás."
+  },
+
+  "sinComprobante": {
+    "titulo": "Qué quedó sin comprobante",
+    "tituloCorto": "Sin comprobante",
+    "bajada": "Los períodos que tu portal da por pagados y de los que esta app nunca vio un recibo. Se dice, no se tapa: un hueco nombrado es una respuesta, y uno callado se ve igual que no tener huecos.",
+    "sinConsulta": "Todavía no se puede cotejar",
+    "sinConsultaCuerpo": "<strong>No poder cotejar no es estar en orden.</strong> Es una tercera respuesta, y cambia en cuanto entre una consulta al portal.",
+    "cotejadoContra": "cotejado contra el {dia}",
+    "noEsDeuda": "Esto no es una deuda",
+    "noEsDeudaCuerpo": "Tu portal da esos períodos por saldados; lo que falta es el respaldo aquí, casi siempre porque se pagaron por un camino que no deja comprobante digital —la ventanilla, por ejemplo. No los sumés a nada que se te venza.",
+    "fotoConFecha": "La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana dice otra cosa. El cotejo es contra el {dia} y no contra hoy.",
+    "nuncaHuboConsulta": "Tu app no tiene ninguna consulta al portal registrada, así que no hay con qué cotejar lo que sí vio pagar. Esto NO dice que todo esté en orden: dice que la pregunta todavía no se puede contestar, y se va a poder en cuanto entre una consulta."
+  },
+
+  "cuantoHePagado": {
+    "titulo": "Cuánto he pagado",
+    "bajada": "Lo que pagaste en un año, y la serie de comprobantes de cada rubro. El total trae la mora adentro, porque es lo que pagaste de verdad.",
+    "totalDelAnio": "El total del año",
+    "anio": "Año",
+    "pagadoEn": "Pagado en {anio}",
+    "sinNingunComprobante": "Esta app todavía no ha visto ningún comprobante tuyo, así que no hay serie que mostrar y el total viene en cero. Llegan solos, con el resto de tus movimientos.",
+    "anioSinComprobantes": "De {anio} esta app no tiene ningún comprobante. Un total en cero no es un año sin pagos: puede ser que los recibos de ese año todavía no hayan llegado aquí. Los años de los que sí hay están en la lista de arriba.",
+    "incluyeLaMora": "El total incluye la mora",
+    "incluyeLaMoraCuerpo": "Es lo que pagaste de verdad, no el precio del servicio. Cada línea trae la mora en su propia columna si querés verlas aparte, y no hay que restar un total de otro.",
+    "periodo": "Período",
+    "monto": "Monto",
+    "mora": "Mora",
+    "cubre": "Cubre",
+    "porPeriodo": "Por período",
+    "inferido": "inferido",
+    "loQueSeInfirio": "Las líneas marcadas «inferido» las dedujo esta app",
+    "loQueSeInfirioCuerpo": "Cuando una línea es la primera de un rubro no hay una anterior con que saber cuántos períodos cubre, así que esta app supone uno. Es una suposición suya y no un dato de tu recibo.",
+    "pie": "Una línea puede cubrir varios períodos, así que comparar montos de líneas distintas no compara nada: para eso está la columna <strong>por período</strong>. Las series vienen enteras y el año no las recorta, para que se vea de qué años sí hay comprobantes."
+  },
+
+  "queTanAlDia": {
+    "titulo": "Qué tan al día está esto",
+    "tituloCorto": "Qué tan al día",
+    "bajada": "Hasta dónde leyó esta app lo que tu municipalidad publicó, y qué falta. Tu cuenta es híbrida: ella manda los cobros, los recibos y la mora; vos aportás cuánto querés apartar.",
+    "hastaDondeLeyo": "Hasta dónde leyó",
+    "ultimoHecho": "Último hecho leído",
+    "rubrosConComprobante": "Rubros con algún comprobante",
+    "ultimaConsulta": "Última consulta al portal",
+    "ninguna": "ninguna",
+    "notaDelNumero": "Ese número sólo sirve comparado consigo mismo: sube cuando entra algo nuevo. Nadie sabe cuántos hechos ha publicado tu municipalidad, así que un número solo no dice si estás al día. Mirálo, apretá <strong>traer lo que haya publicado la institución</strong> en el inicio, y volvé a mirarlo.",
+    "queLlego": "Qué llegó de cada rubro",
+    "conComprobantes": "con comprobantes",
+    "sinComprobantes": "sin comprobantes",
+    "rubroSinComprobantes": "Esta app no ha visto ningún comprobante de este rubro. Eso no quiere decir que no lo pagués: quiere decir que tus pagos de este rubro todavía no han llegado aquí.",
+    "queFalta": "Qué falta",
+    "noFaltaNada": "No falta ninguna de las dos mitades",
+    "noFaltaNadaCuerpo": "Tu municipalidad publicó el avalúo de cada finca, hay una consulta al portal con que cotejar, y vos ya adoptaste una reserva. Eso no dice que no haya hechos nuevos sin traer: para eso está el número de arriba.",
+    "faltaLaReserva": "Falta tu mitad: no has adoptado una reserva",
+    "faltaLaReservaCuerpo": "Cuánto querés apartar por mes es lo único que tu municipalidad no puede saber, y es lo único que esta app te pide. Se adopta en",
+    "faltaLaReservaEnlace": "cuánto apartar",
+    "faltaUnaConsulta": "Falta una consulta al portal",
+    "faltaUnaConsultaCuerpo": "Sin una consulta registrada no hay con qué cotejar lo que esta app sí vio pagar, así que",
+    "faltaUnaConsultaCierre": "todavía no puede contestar. <strong>No poder cotejar no es estar en orden.</strong>",
+    "faltaUnAvaluo": "Falta la mitad de tu municipalidad: un avalúo",
+    "faltaUnAvaluoCuerpo": {
+      "una": "Hay {cuantas} de {total} finca sin avalúo publicado. El avalúo lo fija ella y es el valor con que te cobra: sin él, esta app puede decir que tu cobro de bienes inmuebles subió por un avalúo nuevo, pero no de cuánto a cuánto. <strong>No hay nada que llenar</strong> — llega solo cuando ella lo publique.",
+      "varias": "Hay {cuantas} de {total} fincas sin avalúo publicado. El avalúo lo fija ella y es el valor con que te cobra: sin él, esta app puede decir que tu cobro de bienes inmuebles subió por un avalúo nuevo, pero no de cuánto a cuánto. <strong>No hay nada que llenar</strong> — llega solo cuando ella lo publique."
+    },
+    "finca": "Finca",
+    "avaluoColumna": "Avalúo de tu municipalidad"
+  },
+
+  "arranque": {
+    "bajada": "Tu municipalidad te dice cuánto debés. Esta app te ayuda a entenderlo, anticiparlo y administrarlo, con tu cuenta guardada en una carpeta tuya.",
+    "noSeGuarda": "Lo que ves NO se está guardando.",
+    "pasoFallido": "No se pudo completar el paso.",
+    "noAbrio": "No se pudo abrir la app.",
+    "sinInstitucion": "No se pudo hablar con la institución.",
+    "sinInstitucionCuerpo": "Lo que ya está en tu carpeta se ve igual: para eso es tuya.",
+    "navegadorDijoNo": "El navegador dijo que no.",
+    "sinHttps": "Esta página no está en una conexión segura.",
+    "sinHttpsCuerpo": "Ningún navegador la va a dejar guardar nada. Abrila por <span class=\"mono\">https</span>, o por <span class=\"mono\">localhost</span>.",
+    "navegadorSinAlmacenamiento": "Este navegador no puede guardar nada para esta app.",
+    "navegadorSinAlmacenamientoCuerpo": "No tiene ni selector de carpetas ni almacenamiento propio. La salida es abrir la app en otro.",
+    "dondeGuardar": "Dónde guardar",
+    "reotorgar": "Tu carpeta es <strong>&laquo;{carpeta}&raquo;</strong>. El navegador te vuelve a pedir el permiso de escritura cada vez que la app se abre.",
+    "darPermiso": "Dar permiso a «{carpeta}»",
+    "elegirOtraCarpeta": "Elegir otra carpeta",
+    "olvidarCarpeta": "Olvidar esta carpeta",
+    "elegirCarpeta": "Elegir una carpeta",
+    "guardarEnLaApp": "Guardar dentro de esta app",
+    "guardarEnElNavegador": "Guardar en este navegador",
+    "abrirSinGuardar": "Abrir sin guardar nada",
+    "notaDeLaCarpeta": "Una carpeta tuya es la opción que hace que valga la pena: el servidor MCP la lee desde afuera del navegador, y el almacenamiento del navegador no. Abrir sin guardar deja el registro solo en memoria, y se pierde al cerrar.",
+    "traer": "Traer lo que haya publicado la institución",
+    "trayendo": "Trayendo…",
+    "enlace": {
+      "porQuePagoMas": "Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.",
+      "queSeMeVence": "Lo que está por vencerse y lo que ya venció. Tu portal no contesta esto.",
+      "cuantoApartar": "Lo que esta app propone por mes, y lo que vos adoptaste.",
+      "sinComprobante": "Lo que tu portal da por pagado y aquí no tiene recibo.",
+      "cuantoHePagado": "El total de un año, con la mora adentro, y la serie de cada rubro.",
+      "queTanAlDia": "Hasta dónde leyó esta app lo que publicó tu municipalidad, y qué falta."
+    },
+    "loQueContestaElPortal": "Cuánto debés hoy, cuánto sería el año entero y si estás atrasado los contesta tu portal, que es la autoridad sobre tu deuda. Esta app muestra lo otro.",
+    "plomeria": "Cómo quedó guardada tu cuenta",
+    "dondeVive": "Dónde vive el registro",
+    "modo": "Modo",
+    "modoCarpeta": "una carpeta tuya",
+    "modoNavegador": "el almacenamiento de este navegador",
+    "modoMemoria": "solo memoria",
+    "carpeta": "Carpeta",
+    "permiso": "Permiso",
+    "enMemfs": "En MEMFS",
+    "memfs": {
+      "uno": "{archivos} archivo, {bytes} bytes",
+      "varios": "{archivos} archivos, {bytes} bytes"
+    },
+    "queDiceElJournal": "Qué dice el journal",
+    "entradas": "Entradas",
+    "ultimoEvento": "Último evento leído",
+    "estaInstalacion": "Esta instalación",
+    "sinRegistrar": "sin registrar",
+    "credencial": "Credencial",
+    "credencialSi": "guardada",
+    "credencialNo": "no hay",
+    "aQuienSeLePide": "A quién se le pide",
+    "deDondeSale": "Sale de <span class=\"mono\">wwwroot/appsettings.json</span>, no de una constante compilada.",
+    "ventanaDeEscritura": "El registro se baja a la carpeta después de cada comando. Entre que el actor confirma y la carpeta recibe hay un instante en que un cierre abrupto pierde entradas: es lo más angosta que se puede hacer esa ventana, y no es durabilidad transaccional."
+  },
+
+  "sinAbrir": {
+    "titulo": "Esta pantalla todavía no puede contestar.",
+    "cuerpo": "Tu cuenta vive en una carpeta tuya, y esta app no la ha abierto en este navegador. Abrí el inicio, elegí dónde guardarla, y volvé.",
+    "irAlInicio": "Ir al inicio"
+  },
+
+  "numeroSinFirmar": {
+    "firmado": "firmado el {dia}",
+    "sinFirmar": "nadie lo ha firmado todavía"
+  }
+}

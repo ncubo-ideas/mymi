@@ -50,29 +50,25 @@ namespace Municipalidad.Dominio
 		internal abstract bool EsSalto { get; }
 
 		/// <summary>
-		/// La frase que una persona lee sobre este cambio: de que rubro, entre que dos periodos, de
-		/// cuanto a cuanto por periodo, cuanto cambio, y POR QUE. El por que lo pone cada hoja.
+		/// LA DIRECCION DEL CAMBIO, como nombre de una clausula y no como frase. La magnitud va aparte,
+		/// en <c>Proporcion</c>: quien redacta decide si la dice con signo o con palabras.
 		/// </summary>
-		internal string Dice()
-		{
-			return "En " + NombreDelRubro + ", un período pasó de " + Dichos.Monto(MontoAnteriorPorPeriodo)
-				+ " en " + EtiquetaDelPeriodoAnterior + " a " + Dichos.Monto(MontoActualPorPeriodo)
-				+ " en " + EtiquetaDelPeriodoActual + ": " + ElCambio + ". " + LaExplicacion;
-		}
-
-		/// <summary>La direccion y la magnitud del cambio, en palabras y no solo con el signo.</summary>
-		private string ElCambio
+		internal string ClaveDelCambio
 		{
 			get
 			{
-				if (Proporcion > 0m) return "un " + Dichos.Porcentaje(Proporcion) + " más";
-				if (Proporcion < 0m) return "un " + Dichos.Porcentaje(-Proporcion) + " menos";
-				return "exactamente lo mismo";
+				if (Proporcion > 0m) return "mas";
+				if (Proporcion < 0m) return "menos";
+				return "igual";
 			}
 		}
 
-		/// <summary>La clausula que explica el cambio. Cada hoja dice la suya y ninguna dice la ajena.</summary>
-		protected abstract string LaExplicacion { get; }
+		/// <summary>
+		/// EL NOMBRE DE LA LEY DE CALCULO DEL RUBRO, que es la clausula que explica POR QUE este salto se
+		/// explica como se explica. La dice la ley y no esta hoja: una hoja que la escribiera afirmaria
+		/// de memoria algo que solo esa clase sabe.
+		/// </summary>
+		internal string NombreDeLaLey { get { return Rubro.Ley.Nombre; } }
 
 		/// <summary>El nombre del rubro, aplanado para que el print lo alcance en un solo nivel.</summary>
 		internal string NombreDelRubro { get { return Rubro.Nombre; } }
@@ -94,6 +90,20 @@ namespace Municipalidad.Dominio
 		/// avaluo no explica nada dice que no aplica, y no una razon que seria de otro rubro.
 		/// </summary>
 		internal virtual string EtiquetaDelAvaluo { get { return "no-aplica"; } }
+
+		/// <summary>La finca de la que habla la clausula del avaluo, o vacio donde no hay una.</summary>
+		internal virtual string NumeroDeLaFincaDelAvaluo { get { return ""; } }
+
+		/// <summary>Cuantas fincas impiden leer el avaluo, o cero donde la pregunta no es esa.</summary>
+		internal virtual int CuantasFincasDelAvaluo { get { return 0; } }
+
+		/// <summary>
+		/// LOS DOS AVALUOS DEL SALTO -- el del periodo anterior y el del actual -- o NINGUNO donde esta
+		/// app no puede decir con cual se cobro. TOTAL, y la ausencia se dice con cero filas y nunca con
+		/// un cero: un cero se leeria como una finca que no vale nada, que es afirmar lo que nadie
+		/// publico. Quien redacta lee su largo, que es la misma pregunta que <c>SePuedeDecirElAvaluo</c>.
+		/// </summary>
+		internal virtual decimal[] LosAvaluosDelSalto { get { return new decimal[0]; } }
 
 		/// <summary>
 		/// UN AUMENTO NO ES URGENTE: ya paso y no se puede evitar. Lo urgente es lo que vence, y quien lo
@@ -149,22 +159,6 @@ namespace Municipalidad.Dominio
 
 		internal override string Etiqueta { get { return SuperaElRuido ? "cambio-menor" : "sin-cambio"; } }
 		internal override bool EsSalto { get { return false; } }
-
-		/// <summary>
-		/// Una clausula por etiqueta y no una con un matiz: un cambio menor SI cambio y no se explica;
-		/// un sin-cambio no cambio.
-		/// </summary>
-		protected override string LaExplicacion
-		{
-			get
-			{
-				return SuperaElRuido
-					? "Cambió, pero por debajo del umbral con que se preguntó, así que esta app no lo "
-						+ "explica como un salto."
-					: "Queda por debajo del ruido con que se preguntó, así que esta app no lo cuenta "
-						+ "como un cambio y no hay nada que explicar.";
-			}
-		}
 	}
 
 	/// <summary>
@@ -177,15 +171,6 @@ namespace Municipalidad.Dominio
 
 		internal override string Etiqueta { get { return "cambio-de-tarifa"; } }
 		internal override bool EsSalto { get { return true; } }
-
-		protected override string LaExplicacion
-		{
-			get
-			{
-				return "Es un salto, y este rubro " + Rubro.Ley.Dice() + ": lo que cambió fue la tarifa, "
-					+ "porque la municipalidad actualizó lo que cobra por el servicio.";
-			}
-		}
 	}
 
 	/// <summary>
@@ -218,17 +203,17 @@ namespace Municipalidad.Dominio
 
 		internal override string EtiquetaDelAvaluo { get { return elAvaluo.Etiqueta; } }
 
-		/// <summary>
-		/// La clausula dice el salto, dice que lo que cambio fue el valor de la finca, y le deja al
-		/// estado del avaluo decir de cuanto a cuanto — o por que no se puede decir. Nunca un numero
-		/// supuesto.
-		/// </summary>
-		protected override string LaExplicacion
+		internal override string NumeroDeLaFincaDelAvaluo { get { return elAvaluo.NumeroDeLaFinca; } }
+
+		internal override int CuantasFincasDelAvaluo { get { return elAvaluo.CuantasFincas; } }
+
+		internal override decimal[] LosAvaluosDelSalto
 		{
 			get
 			{
-				return "Es un salto, y este rubro " + Rubro.Ley.Dice() + ": lo que cambió fue el valor "
-					+ "de la finca. " + elAvaluo.Dice();
+				return elAvaluo.SePuedeDecir
+					? new[] { elAvaluo.AvaluoAnterior, elAvaluo.AvaluoActual }
+					: new decimal[0];
 			}
 		}
 	}

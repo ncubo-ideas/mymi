@@ -52,7 +52,7 @@ namespace Municipalidad.Wasm.Vistas
 
 		/// <summary>Las dos mitades leidas en un solo momento, para que hablen del mismo dia.</summary>
 		public static LoQueEntroYLoQueFalta LeerPor(
-			MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho)
+			MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho, Textos textos)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 

@@ -29,7 +29,6 @@ namespace Municipalidad.Dominio
 		/// la ley y no la hoja de Variacion que la cita: una hoja que la escribiera a mano afirmaria de
 		/// memoria algo que solo esta clase sabe.
 		/// </summary>
-		internal abstract string Dice();
 
 		internal bool Es(LeyDeCalculo otra)
 		{
@@ -74,8 +73,6 @@ namespace Municipalidad.Dominio
 	{
 		internal override string Nombre { get { return "por-unidad"; } }
 		internal override bool RespondeAlAvaluo { get { return false; } }
-
-		internal override string Dice() { return "se cobra por unidad"; }
 	}
 
 	/// <summary>
@@ -86,7 +83,5 @@ namespace Municipalidad.Dominio
 	{
 		internal override string Nombre { get { return "sobre-base-imponible"; } }
 		internal override bool RespondeAlAvaluo { get { return true; } }
-
-		internal override string Dice() { return "se cobra sobre la base imponible, que es el valor de la finca"; }
 	}
 }

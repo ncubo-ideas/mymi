@@ -24,22 +24,26 @@ namespace Municipalidad.Wasm
 		private MunicipalidadAPI api;
 		private BucleDeRefresh bucle;
 
+		private readonly Textos textos;
+
 		private DateTime ultimoSelloMandado = DateTime.MinValue;
 
 		public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, AjustesDeLaMunicipalidad ajustes,
-			ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi)
+			ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi, Textos textos)
 		{
 			ArgumentNullException.ThrowIfNull(puente);
 			ArgumentNullException.ThrowIfNull(http);
 			ArgumentNullException.ThrowIfNull(ajustes);
 			ArgumentNullException.ThrowIfNull(modo);
 			ArgumentNullException.ThrowIfNull(puenteDeGnothi);
+			ArgumentNullException.ThrowIfNull(textos);
 
 			this.puente = puente;
 			this.http = http;
 			this.ajustes = ajustes;
 			this.modo = modo;
 			this.puenteDeGnothi = puenteDeGnothi;
+			this.textos = textos;
 		}
 
 		public bool EstaArriba => app is not null;
@@ -364,7 +368,7 @@ namespace Municipalidad.Wasm
 		public LaVariacionDeCadaRubro LeerLaVariacionDeCadaRubro()
 		{
 			Exigir();
-			return LaVariacionDeCadaRubro.LeerPor(api);
+			return LaVariacionDeCadaRubro.LeerPor(api, textos);
 		}
 
 		/// <summary>
@@ -377,7 +381,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia));
+			return LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), textos);
 		}
 
 		/// <summary>
@@ -390,7 +394,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia));
+			return LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), textos);
 		}
 
 		/// <summary>
@@ -410,7 +414,7 @@ namespace Municipalidad.Wasm
 		public LoSinComprobante LeerLoSinComprobante()
 		{
 			Exigir();
-			return LoSinComprobante.LeerPor(api);
+			return LoSinComprobante.LeerPor(api, textos);
 		}
 
 		/// <summary>
@@ -425,7 +429,7 @@ namespace Municipalidad.Wasm
 
 			int elAnio = loEligioLaPersona ? anio : ElInstanteEnQueLaPantallaPregunta().Year;
 
-			return LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligioLaPersona);
+			return LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligioLaPersona, textos);
 		}
 
 		/// <summary>
@@ -438,7 +442,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LoQueEntroYLoQueFalta.LeerPor(api, alDia, ElDiaDe(alDia));
+			return LoQueEntroYLoQueFalta.LeerPor(api, alDia, ElDiaDe(alDia), textos);
 		}
 
 		/// <summary>

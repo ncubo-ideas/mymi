@@ -37,10 +37,14 @@ namespace Municipalidad.Dominio
 		/// <summary>
 		/// El ultimo dia dicho como dia de calendario, en anio-mes-dia. Sin hora: un periodo cierra
 		/// un dia y no un instante, y ninguna zona horaria entra en este dominio.
+		/// <para>
+		/// NO cambia con el idioma, y por eso se queda aca cuando la redaccion se fue: anio-mes-dia no
+		/// se puede leer al reves, asi que es una llave de calendario y no una forma de decir una fecha.
+		/// </para>
 		/// </summary>
 		internal string UltimoDiaDicho
 		{
-			get { return Dichos.Dia(UltimoDia); }
+			get { return UltimoDia.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture); }
 		}
 
 		/// <summary>

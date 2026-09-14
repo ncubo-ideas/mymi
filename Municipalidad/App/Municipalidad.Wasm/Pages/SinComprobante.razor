@@ -1,13 +1,11 @@
 @page "/sin-comprobante"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Qué quedó sin comprobante · Mi cuenta municipal</PageTitle>
+<PageTitle>@textos["sinComprobante.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
-<h1>Qué quedó sin comprobante</h1>
-<p class="bajada">
-    Los períodos que tu portal da por pagados y de los que esta app nunca vio un recibo. Se dice, no
-    se tapa: un hueco nombrado es una respuesta, y uno callado se ve igual que no tener huecos.
-</p>
+<h1>@textos["sinComprobante.titulo"]</h1>
+<p class="bajada">@textos["sinComprobante.bajada"]</p>
 
 @if (!estado.EstaArriba)
 {
@@ -17,20 +15,17 @@ else
 {
     @if (!cotejo.HayAlgunaConsulta)
     {
-        <Aviso Tono="tibia" Id="sin-consulta" Titulo="Todavía no se puede cotejar">
+        <Aviso Tono="tibia" Id="sin-consulta" Titulo="@textos["sinComprobante.sinConsulta"]">
             <Frase Dice="@cotejo.Dice" Apagada="true" />
-            <p>
-                <strong>No poder cotejar no es estar en orden.</strong> Es una tercera respuesta, y
-                cambia en cuanto entre una consulta al portal.
-            </p>
+            <p>@((MarkupString)textos["sinComprobante.sinConsultaCuerpo"])</p>
         </Aviso>
     }
     else
     {
         <article class="tarjeta" id="el-estado">
             <div class="tarjeta__cabeza">
-                <span class="sello sello--@cotejo.Estado">@cotejo.Estado</span>
-                <span class="periodo">cotejado contra el @cotejo.DiaDeLaConsulta</span>
+                <span class="sello sello--@cotejo.Estado">@textos.ComoSeDice(cotejo.Estado)</span>
+                <span class="periodo">@textos.Con("sinComprobante.cotejadoContra", ("dia", cotejo.DiaDeLaConsulta))</span>
             </div>
 
             <Frase Dice="@cotejo.Dice" />
@@ -50,19 +45,12 @@ else
 
         @if (cotejo.Periodos.Count > 0)
         {
-            <Aviso Tono="quieta" Id="no-es-una-deuda" Titulo="Esto no es una deuda">
-                <p>
-                    Tu portal da esos períodos por saldados; lo que falta es el respaldo aquí, casi
-                    siempre porque se pagaron por un camino que no deja comprobante digital —la
-                    ventanilla, por ejemplo. No los sumés a nada que se te venza.
-                </p>
+            <Aviso Tono="quieta" Id="no-es-una-deuda" Titulo="@textos["sinComprobante.noEsDeuda"]">
+                <p>@textos["sinComprobante.noEsDeudaCuerpo"]</p>
             </Aviso>
         }
 
-        <p class="nota">
-            La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana dice
-            otra cosa. El cotejo es contra el @cotejo.DiaDeLaConsulta y no contra hoy.
-        </p>
+        <p class="nota">@textos.Con("sinComprobante.fotoConFecha", ("dia", cotejo.DiaDeLaConsulta))</p>
     }
 }
 

@@ -1,14 +1,16 @@
+@inject Textos textos
+
 <p class="sin-firmar">
     @Dicho&nbsp;
     @if (Firmado)
     {
         <span class="sin-firmar__estado sin-firmar__estado--firmado">
-            firmado el @Dia
+            @textos.Con("numeroSinFirmar.firmado", ("dia", Dia))
         </span>
     }
     else
     {
-        <span class="sin-firmar__estado">nadie lo ha firmado todavía</span>
+        <span class="sin-firmar__estado">@textos["numeroSinFirmar.sinFirmar"]</span>
     }
 </p>
 

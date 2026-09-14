@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using LasFrases = Municipalidad.App.Frases.Frases;
+using LaRedaccion = Municipalidad.App.Frases.LaRedaccion;
 using NUnit.Framework;
 
 namespace Municipalidad.Dominio.Pruebas
@@ -116,32 +118,202 @@ namespace Municipalidad.Dominio.Pruebas
 			};
 		}
 
-		// TODA FRASE DE ESTE DOMINIO, en un solo lugar, para las afirmaciones que valen para todas.
-		private static IEnumerable<KeyValuePair<string, string>> TodasLasFrases()
+		// TODA FRASE SE DICE EN LOS DOS IDIOMAS, Y LAS DOS MITADES SON DISTINTAS.
+		//
+		// El defecto que esta prueba impide es el unico que el tipo Idioma no puede impedir solo: una
+		// clausula que se agrega al espanol y se copia tal cual al ingles -- o al reves -- deja una
+		// frase mitad traducida y NADA se pone rojo, porque la frase sigue llegando entera. Afirmar
+		// que llega no prueba nada; hay que afirmar que las dos mitades NO son la misma.
+		//
+		// La comparacion es por frase y no por conjunto: dos frases que se cruzaran entre portadores
+		// darian un conjunto distinto igual.
+		[Test]
+		public void CadaFraseSeDiceEnLosDosIdiomasYNoSonLaMisma()
 		{
-			yield return Una("CambioDeTarifa", ElSaltoDeBasura().Dice());
-			yield return Una("CambioDeAvaluo", ElSaltoDeBienesInmuebles().Dice());
-			yield return Una("SinSalto cambio-menor", UnCambioMenor().Dice());
-			yield return Una("SinSalto sin-cambio", UnSinCambio().Dice());
-			yield return Una("Atraso", UnAtraso().Dice(ElDiaDeCorte, 0.062m));
-			yield return Una("VencimientoProximo", UnVencimiento().Dice(new DateTime(2025, 10, 1), 7));
-			yield return Una("FaltanteDeReserva", UnFaltante().Dice(0.10m));
-			yield return Una("ReservaPropuesta", new ReservaPropuesta(2025, 144000m).Dice());
-			yield return Una("PeriodoSinComprobante",
-				new PeriodoSinComprobante(Rubro.Basura(), new Mes(2024, 7)).Dice());
+			List<KeyValuePair<string, string>> enEspanol =
+				new List<KeyValuePair<string, string>>(TodasLasFrases("es"));
+			List<KeyValuePair<string, string>> enIngles =
+				new List<KeyValuePair<string, string>>(TodasLasFrases("en"));
+
+			Assert.That(enIngles.Count, Is.EqualTo(enEspanol.Count),
+				"Los dos idiomas tienen que componer la misma cantidad de frases.");
+
+			for (int fila = 0; fila < enEspanol.Count; fila++)
+			{
+				string portador = enEspanol[fila].Key;
+
+				Assert.That(enIngles[fila].Key, Is.EqualTo(portador),
+					"El orden de los portadores tiene que ser el mismo en los dos idiomas.");
+
+				Assert.That(enEspanol[fila].Value, Is.Not.Empty, portador + " no dice nada en espanol.");
+				Assert.That(enIngles[fila].Value, Is.Not.Empty, portador + " no dice nada en ingles.");
+
+				Assert.That(enIngles[fila].Value, Is.Not.EqualTo(enEspanol[fila].Value),
+					portador + " dice lo mismo en los dos idiomas: la mitad inglesa quedo sin traducir.");
+			}
+		}
+
+		// UNA ETIQUETA QUE ESTA APP NO HABLA CAE AL IDIOMA DEL REGISTRO, y no a una frase vacia ni a
+		// una excepcion: una consulta no refuta una pregunta legitima por el nombre de un idioma.
+		[Test]
+		public void UnaEtiquetaDesconocidaCaeAlIdiomaDelRegistro()
+		{
+			foreach (string etiqueta in new[] { "", "   ", "fr", "de-DE", "xx" })
+				Assert.That(LasFrases.De(etiqueta), Is.SameAs(LasFrases.De("es")),
+					"La etiqueta '" + etiqueta + "' tiene que caer al idioma del registro.");
+
+			foreach (string etiqueta in new[] { "es", "es-CR", "ES-cr" })
+				Assert.That(LasFrases.De(etiqueta), Is.SameAs(LasFrases.De("es")));
+
+			foreach (string etiqueta in new[] { "en", "en-US", "EN-gb" })
+				Assert.That(LasFrases.De(etiqueta), Is.SameAs(LasFrases.De("en")));
+		}
+
+		// TODA FRASE QUE ESTA APP COMPONE, en un solo lugar, para las afirmaciones que valen para todas.
+		//
+		// LA REDACCION YA NO ES DEL DOMINIO. El dominio entrega su CLAVE y sus VALORES, y App/Frases la
+		// redacta. Esta fixture renderiza por ese mismo camino, asi que sigue afirmando lo mismo que
+		// antes -- que cada frase nombra SU sujeto -- sobre el texto que la persona lee de verdad.
+		private static IEnumerable<KeyValuePair<string, string>> TodasLasFrases(string idioma)
+		{
+			LasFrases f = LasFrases.De(idioma);
+
+			yield return Una("CambioDeTarifa", LaFraseDe(ElSaltoDeBasura(), f));
+			yield return Una("CambioDeAvaluo", LaFraseDe(ElSaltoDeBienesInmuebles(), f));
+			yield return Una("SinSalto cambio-menor", LaFraseDe(UnCambioMenor(), f));
+			yield return Una("SinSalto sin-cambio", LaFraseDe(UnSinCambio(), f));
+
+			Atraso elAtraso = UnAtraso();
+			yield return Una("Atraso", LaRedaccion.Atraso(f,
+				elAtraso.EtiquetaDelPeriodo, elAtraso.NombreDelRubro, f.Dia(elAtraso.Vencio),
+				elAtraso.Monto, elAtraso.DiasDeAtraso(ElDiaDeCorte), ElDiaDeCorte, 0.062m,
+				elAtraso.CostoDePagarTarde(ElDiaDeCorte, 0.062m)));
+
+			VencimientoProximo elVencimiento = UnVencimiento();
+			DateTime alDia = new DateTime(2025, 10, 1);
+			yield return Una("VencimientoProximo", LaRedaccion.Vencimiento(f,
+				elVencimiento.EtiquetaDelPeriodo, elVencimiento.NombreDelRubro, f.Dia(elVencimiento.Vence),
+				elVencimiento.Monto, elVencimiento.Urgencia(alDia, 7).Etiqueta,
+				elVencimiento.DiasQueFaltan(alDia), alDia, 7));
+
+			FaltanteDeReserva elFaltante = UnFaltante();
+			yield return Una("FaltanteDeReserva", LaRedaccion.Faltante(f,
+				elFaltante.PropuestoPorMes, elFaltante.DeclaradoPorMes,
+				elFaltante.ClaveDeLoQueFalta, elFaltante.Faltante, elFaltante.Proporcion,
+				elFaltante.ClaveDelAviso(0.10m), 0.10m,
+				elFaltante.ClaveDeLoQueVence(0.10m), elFaltante.VenceEsteMes));
+
+			ReservaPropuesta laPropuesta = new ReservaPropuesta(2025, 144000m);
+			yield return Una("ReservaPropuesta", LaRedaccion.ReservaPropuesta(f,
+				laPropuesta.Anio, laPropuesta.ProyeccionDelAnio, laPropuesta.MontoMensual));
+
+			PeriodoSinComprobante elPeriodo = new PeriodoSinComprobante(Rubro.Basura(), new Mes(2024, 7));
+			yield return Una("PeriodoSinComprobante", LaRedaccion.PeriodoSinComprobante(f,
+				elPeriodo.EtiquetaDelPeriodo, elPeriodo.NombreDelRubro));
+
 			yield return Una("ElRubroNoExiste",
-				EstadoDeLaSerie.De("cementerio", new List<LineaPagada>()).Dice());
+				LaFraseDe(EstadoDeLaSerie.De("cementerio", new List<LineaPagada>()), f));
 			yield return Una("ElRubroNoTieneHistoria",
-				EstadoDeLaSerie.De("parques-y-zonas-verdes", new List<LineaPagada>()).Dice());
+				LaFraseDe(EstadoDeLaSerie.De("parques-y-zonas-verdes", new List<LineaPagada>()), f));
 			yield return Una("ElRubroTieneHistoria",
-				EstadoDeLaSerie.De(ElRubroPorUnidad, DosLineasDeBasura()).Dice());
-			yield return Una("NoHayConsultaDeEseDia", ElCotejo(false, 0).Dice());
-			yield return Una("LaConsultaNoDestapaNada", ElCotejo(true, 0).Dice());
-			yield return Una("LaConsultaDestapaPeriodos", ElCotejo(true, 2).Dice());
-			yield return Una("ElAvaluoExplicaElSalto", ConLosDosAvaluosPublicados().Dice());
-			yield return Una("LaMunicipalidadNoPublicoElAvaluo", SinAvaluoPublicado().Dice());
-			yield return Una("LaCuentaNoTieneNingunaFinca", SinNingunaFinca().Dice());
-			yield return Una("ElReciboNoDiceDeCualFinca", ConVariasFincas().Dice());
+				LaFraseDe(EstadoDeLaSerie.De(ElRubroPorUnidad, DosLineasDeBasura()), f));
+
+			yield return Una("NoHayConsultaDeEseDia", LaFraseDe(ElCotejo(false, 0), f));
+			yield return Una("LaConsultaNoDestapaNada", LaFraseDe(ElCotejo(true, 0), f));
+			yield return Una("LaConsultaDestapaPeriodos", LaFraseDe(ElCotejo(true, 2), f));
+
+			yield return Una("ElAvaluoExplicaElSalto", LaFraseDelAvaluoDe(ConLosDosAvaluosPublicados(), f));
+			yield return Una("LaMunicipalidadNoPublicoElAvaluo", LaFraseDelAvaluoDe(SinAvaluoPublicado(), f));
+			yield return Una("LaCuentaNoTieneNingunaFinca", LaFraseDelAvaluoDe(SinNingunaFinca(), f));
+			yield return Una("ElReciboNoDiceDeCualFinca", LaFraseDelAvaluoDe(ConVariasFincas(), f));
+		}
+
+		// LO QUE LA PERSONA LEE, por el mismo camino que la puerta: la clave y los valores del portador,
+		// redactados en App/Frases. Una sobrecarga por portador, y el idioma del registro, que es el que
+		// estas afirmaciones citan palabra por palabra.
+		private static string Dicha(Variacion v)
+		{
+			return LaFraseDe(v, LasFrases.De("es"));
+		}
+
+		private static string Dicha(EstadoDeLaSerie e)
+		{
+			return LaFraseDe(e, LasFrases.De("es"));
+		}
+
+		private static string Dicha(EstadoDeLosPeriodosSinComprobante e)
+		{
+			return LaFraseDe(e, LasFrases.De("es"));
+		}
+
+		private static string Dicha(ReservaPropuesta r)
+		{
+			return LaRedaccion.ReservaPropuesta(LasFrases.De("es"), r.Anio, r.ProyeccionDelAnio, r.MontoMensual);
+		}
+
+		private static string Dicha(PeriodoSinComprobante p)
+		{
+			return LaRedaccion.PeriodoSinComprobante(LasFrases.De("es"), p.EtiquetaDelPeriodo, p.NombreDelRubro);
+		}
+
+		private static string Dicha(Atraso a, DateTime fecha, decimal tasaAnual)
+		{
+			LasFrases f = LasFrases.De("es");
+			return LaRedaccion.Atraso(f, a.EtiquetaDelPeriodo, a.NombreDelRubro, f.Dia(a.Vencio),
+				a.Monto, a.DiasDeAtraso(fecha), fecha, tasaAnual, a.CostoDePagarTarde(fecha, tasaAnual));
+		}
+
+		private static string Dicha(VencimientoProximo v, DateTime fecha, int diasDeAviso)
+		{
+			LasFrases f = LasFrases.De("es");
+			return LaRedaccion.Vencimiento(f, v.EtiquetaDelPeriodo, v.NombreDelRubro, f.Dia(v.Vence),
+				v.Monto, v.Urgencia(fecha, diasDeAviso).Etiqueta, v.DiasQueFaltan(fecha), fecha, diasDeAviso);
+		}
+
+		private static string Dicha(FaltanteDeReserva elFaltante, decimal umbral)
+		{
+			return LaRedaccion.Faltante(LasFrases.De("es"),
+				elFaltante.PropuestoPorMes, elFaltante.DeclaradoPorMes,
+				elFaltante.ClaveDeLoQueFalta, elFaltante.Faltante, elFaltante.Proporcion,
+				elFaltante.ClaveDelAviso(umbral), umbral,
+				elFaltante.ClaveDeLoQueVence(umbral), elFaltante.VenceEsteMes);
+		}
+
+		// EL MISMO CAMINO QUE LA PUERTA: la clave y los valores del portador, redactados en App/Frases.
+		private static string LaFraseDe(Variacion v, LasFrases f)
+		{
+			return LaRedaccion.Variacion(f,
+				v.NombreDelRubro, v.EtiquetaDelPeriodoAnterior, v.EtiquetaDelPeriodoActual,
+				v.MontoAnteriorPorPeriodo, v.MontoActualPorPeriodo, v.Proporcion,
+				v.ClaveDelCambio, v.Etiqueta, v.NombreDeLaLey,
+				v.EtiquetaDelAvaluo, v.NumeroDeLaFincaDelAvaluo, v.CuantasFincasDelAvaluo,
+				v.LosAvaluosDelSalto);
+		}
+
+		private static string LaFraseDe(EstadoDeLaSerie e, LasFrases f)
+		{
+			return LaRedaccion.EstadoDeLaSerie(f, e.Etiqueta, e.NombreDelRubro, e.CuantasLineas,
+				string.Join(", ", Rubro.LosQueHay()));
+		}
+
+		private static string LaFraseDe(EstadoDeLosPeriodosSinComprobante e, LasFrases f)
+		{
+			return LaRedaccion.Cotejo(f, e.Etiqueta, e.DiaDeLaConsulta, e.CuantosPeriodos);
+		}
+
+		// EL ESTADO DEL AVALUO SOLO, sin el salto que lo cita: la clausula tiene que nombrar su finca
+		// por si misma, y envuelta en la frase de la variacion no se veria cual de las dos la nombro.
+		private static string LaFraseDelAvaluoDe(EstadoDelAvaluo e, LasFrases f)
+		{
+			decimal[] avaluos = e.SePuedeDecir
+				? new[] { e.AvaluoAnterior, e.AvaluoActual }
+				: new decimal[0];
+
+			return LaRedaccion.Variacion(f,
+				ElRubroSobreBase, e.EtiquetaDelPeriodoAnterior, e.EtiquetaDelPeriodoActual,
+				20000m, 36000m, 0.8m,
+				"mas", "cambio-de-avaluo", "sobre-base-imponible",
+				e.Etiqueta, e.NumeroDeLaFinca, e.CuantasFincas, avaluos);
 		}
 
 		private static KeyValuePair<string, string> Una(string portador, string frase)
@@ -186,7 +358,7 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			Assert.Multiple(() =>
 			{
-				foreach (KeyValuePair<string, string> cada in TodasLasFrases())
+				foreach (KeyValuePair<string, string> cada in TodasLasFrases("es"))
 				{
 					Assert.That(cada.Value, Is.Not.Null.And.Not.Empty, cada.Key + ": tiene frase");
 					Assert.That(cada.Value, Does.Contain(" "),
@@ -207,7 +379,7 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			Assert.Multiple(() =>
 			{
-				foreach (KeyValuePair<string, string> cada in TodasLasFrases())
+				foreach (KeyValuePair<string, string> cada in TodasLasFrases("es"))
 					Assert.That(cada.Value, Does.Match("[áéíóúñÁÉÍÓÚÑ]"),
 						cada.Key + ": la frase que una persona lee lleva sus acentos");
 			});
@@ -218,8 +390,8 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheSameFigureIsSaidTheSameWayByEveryCarrierThatSaysIt()
 		{
-			string elAtraso = UnAtraso().Dice(ElDiaDeCorte, 0.062m);
-			string elVencimiento = UnVencimiento().Dice(new DateTime(2025, 10, 1), 7);
+			string elAtraso =Dicha(UnAtraso(), ElDiaDeCorte, 0.062m);
+			string elVencimiento =Dicha(UnVencimiento(), new DateTime(2025, 10, 1), 7);
 
 			Assert.Multiple(() =>
 			{
@@ -237,7 +409,7 @@ namespace Municipalidad.Dominio.Pruebas
 						"VencimientoProximo: tampoco");
 				}
 
-				Assert.That(ElSaltoDeBasura().Dice(), Does.Contain("80 %"),
+				Assert.That(Dicha(ElSaltoDeBasura()), Does.Contain("80 %"),
 					"una proporcion se dice como porcentaje y no como 0,8");
 			});
 		}
@@ -249,8 +421,8 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheSameJumpSaysTariffInOneRubroAndAssessedValueInTheOtherAndNeitherNamesTheOthersRubro()
 		{
-			string basura = ElSaltoDeBasura().Dice();
-			string ibi = ElSaltoDeBienesInmuebles().Dice();
+			string basura =Dicha(ElSaltoDeBasura());
+			string ibi =Dicha(ElSaltoDeBienesInmuebles());
 
 			Assert.Multiple(() =>
 			{
@@ -295,7 +467,7 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheAssessedValueLeafSaysFromWhatToWhatOnceTheMunicipalityHasPublishedIt()
 		{
-			string ibi = ElSaltoDeBienesInmuebles().Dice();
+			string ibi =Dicha(ElSaltoDeBienesInmuebles());
 
 			Assert.Multiple(() =>
 			{
@@ -315,9 +487,9 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheThreeLeavesThatCannotSayTheAssessedValueEachSayADifferentReasonAndNoneSaysZero()
 		{
-			string sinAvaluo = ElSaltoDeBienesInmueblesCon(SinAvaluoPublicado()).Dice();
-			string sinFinca = ElSaltoDeBienesInmueblesCon(SinNingunaFinca()).Dice();
-			string variasFincas = ElSaltoDeBienesInmueblesCon(ConVariasFincas()).Dice();
+			string sinAvaluo =Dicha(ElSaltoDeBienesInmueblesCon(SinAvaluoPublicado()));
+			string sinFinca =Dicha(ElSaltoDeBienesInmueblesCon(SinNingunaFinca()));
+			string variasFincas =Dicha(ElSaltoDeBienesInmueblesCon(ConVariasFincas()));
 
 			Assert.Multiple(() =>
 			{
@@ -385,12 +557,12 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(menor.Etiqueta, Is.EqualTo("cambio-menor"), "el de arriba del ruido");
 				Assert.That(quieto.Etiqueta, Is.EqualTo("sin-cambio"), "y el de abajo del ruido");
 
-				Assert.That(menor.Dice(), Does.Contain("umbral"),
+				Assert.That(Dicha(menor), Does.Contain("umbral"),
 					"el cambio menor dice que quedo por debajo del UMBRAL, asi que cambio");
-				Assert.That(quieto.Dice(), Does.Contain("ruido"),
+				Assert.That(Dicha(quieto), Does.Contain("ruido"),
 					"y el sin-cambio dice que quedo por debajo del RUIDO, asi que no cambio");
 
-				Assert.That(menor.Dice(), Is.Not.EqualTo(quieto.Dice()),
+				Assert.That(Dicha(menor), Is.Not.EqualTo(Dicha(quieto)),
 					"Y las dos frases no son la misma frase. Con una sola, la etiqueta diria dos cosas "
 					+ "que la frase no distingue.");
 			});
@@ -404,7 +576,7 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheOverdueSentenceMarksItsProjectionAsAProjectionAndNamesItsOwnPeriod()
 		{
-			string frase = UnAtraso().Dice(ElDiaDeCorte, 0.062m);
+			string frase =Dicha(UnAtraso(), ElDiaDeCorte, 0.062m);
 
 			Assert.Multiple(() =>
 			{
@@ -435,9 +607,9 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			VencimientoProximo vence = UnVencimiento();
 
-			string elDia = vence.Dice(new DateTime(2025, 10, 31), 7);
-			string dentroDelAviso = vence.Dice(new DateTime(2025, 10, 28), 7);
-			string todaviaNo = vence.Dice(new DateTime(2025, 10, 1), 7);
+			string elDia =Dicha(vence, new DateTime(2025, 10, 31), 7);
+			string dentroDelAviso =Dicha(vence, new DateTime(2025, 10, 28), 7);
+			string todaviaNo =Dicha(vence, new DateTime(2025, 10, 1), 7);
 
 			Assert.Multiple(() =>
 			{
@@ -473,7 +645,7 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheReserveShortfallSentenceSaysWhichHalfIsTheAppsAndWhichIsThePersons()
 		{
-			string frase = UnFaltante().Dice(0.10m);
+			string frase =Dicha(UnFaltante(), 0.10m);
 
 			Assert.Multiple(() =>
 			{
@@ -509,22 +681,22 @@ namespace Municipalidad.Dominio.Pruebas
 			{
 				Assert.That(loCubre.Urgencia(0.10m).Etiqueta, Is.EqualTo("ninguna"),
 					"13000 adoptados cubren 12000 propuestos y 5000 vencen: no apura");
-				Assert.That(loCubre.Dice(0.10m), Does.Contain("lo que apartás alcanza a cubrir"));
-				Assert.That(loCubre.Dice(0.10m), Does.Not.Contain("urgente"),
+				Assert.That(Dicha(loCubre, 0.10m), Does.Contain("lo que apartás alcanza a cubrir"));
+				Assert.That(Dicha(loCubre, 0.10m), Does.Not.Contain("urgente"),
 					"y la frase no dice urgente");
 
 				Assert.That(soloVenceDeMas.Urgencia(0.10m).Etiqueta, Is.EqualTo("ninguna"),
 					"con 30000 venciendo pero sin faltante, el juicio 6 NO lo vuelve urgente");
-				Assert.That(soloVenceDeMas.Dice(0.10m), Does.Contain("30000"),
+				Assert.That(Dicha(soloVenceDeMas, 0.10m), Does.Contain("30000"),
 					"la frase dice el hecho: este mes vence mas de lo apartado");
-				Assert.That(soloVenceDeMas.Dice(0.10m), Does.Contain("Por sí solo eso no lo vuelve urgente"),
+				Assert.That(Dicha(soloVenceDeMas, 0.10m), Does.Contain("Por sí solo eso no lo vuelve urgente"),
 					"y dice que ese hecho SOLO no alcanza. Es la clausula que contradecia la columna");
-				Assert.That(soloVenceDeMas.Dice(0.10m), Does.Not.Contain("eso es lo que lo vuelve urgente"),
+				Assert.That(Dicha(soloVenceDeMas, 0.10m), Does.Not.Contain("eso es lo que lo vuelve urgente"),
 					"y nunca la del caso urgente");
 
 				Assert.That(lasDos.Urgencia(0.10m).Etiqueta, Is.EqualTo("urgente"),
 					"con faltante Y con lo del mes por encima, si apura");
-				Assert.That(lasDos.Dice(0.10m), Does.Contain("eso es lo que lo vuelve urgente"),
+				Assert.That(Dicha(lasDos, 0.10m), Does.Contain("eso es lo que lo vuelve urgente"),
 					"y ahi la frase dice QUE lo vuelve urgente");
 			});
 		}
@@ -548,7 +720,7 @@ namespace Municipalidad.Dominio.Pruebas
 				foreach (decimal[] caso in losCuatroCasos)
 				{
 					FaltanteDeReserva faltante = new FaltanteDeReserva(caso[0], caso[1], caso[2]);
-					bool loDice = faltante.Dice(0.10m).Contains("eso es lo que lo vuelve urgente");
+					bool loDice =Dicha(faltante, 0.10m).Contains("eso es lo que lo vuelve urgente");
 
 					Assert.That(loDice, Is.EqualTo(faltante.Urgencia(0.10m).EsUrgente()),
 						"propuesto " + caso[0] + ", declarado " + caso[1] + ", vence " + caso[2]
@@ -563,8 +735,8 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheGeneralHalfSaysItselfWithoutThePersonsFigureAndTheComposedSentenceDoesNotRepeatIt()
 		{
-			string laPropuestaSola = new ReservaPropuesta(2025, 144000m).Dice();
-			string elFaltante = UnFaltante().Dice(0.10m);
+			string laPropuestaSola =Dicha(new ReservaPropuesta(2025, 144000m));
+			string elFaltante =Dicha(UnFaltante(), 0.10m);
 
 			Assert.Multiple(() =>
 			{
@@ -592,7 +764,7 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheMissingReceiptSentenceSaysTheReceiptIsMissingAndNotThePayment()
 		{
-			string frase = new PeriodoSinComprobante(Rubro.Basura(), new Mes(2024, 7)).Dice();
+			string frase =Dicha(new PeriodoSinComprobante(Rubro.Basura(), new Mes(2024, 7)));
 
 			Assert.Multiple(() =>
 			{
@@ -614,9 +786,9 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheThreeSeriesStatesEachSayASentenceAndEachNamesTheRubroItWasAskedAbout()
 		{
-			string noExiste = EstadoDeLaSerie.De("cementerio", new List<LineaPagada>()).Dice();
-			string sinHistoria = EstadoDeLaSerie.De("parques-y-zonas-verdes", new List<LineaPagada>()).Dice();
-			string conHistoria = EstadoDeLaSerie.De(ElRubroPorUnidad, DosLineasDeBasura()).Dice();
+			string noExiste =Dicha(EstadoDeLaSerie.De("cementerio", new List<LineaPagada>()));
+			string sinHistoria =Dicha(EstadoDeLaSerie.De("parques-y-zonas-verdes", new List<LineaPagada>()));
+			string conHistoria =Dicha(EstadoDeLaSerie.De(ElRubroPorUnidad, DosLineasDeBasura()));
 
 			Assert.Multiple(() =>
 			{
@@ -650,9 +822,9 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheTwoZeroRowCrossCheckStatesSayOppositeThingsAndBothNameTheirOwnDay()
 		{
-			string sinConsulta = ElCotejo(false, 0).Dice();
-			string nadaDestapado = ElCotejo(true, 0).Dice();
-			string destapa = ElCotejo(true, 2).Dice();
+			string sinConsulta =Dicha(ElCotejo(false, 0));
+			string nadaDestapado =Dicha(ElCotejo(true, 0));
+			string destapa =Dicha(ElCotejo(true, 2));
 
 			Assert.Multiple(() =>
 			{
@@ -689,7 +861,7 @@ namespace Municipalidad.Dominio.Pruebas
 			{
 				foreach (string enBlanco in new[] { "", "   ", null })
 				{
-					string frase = EstadoDeLaSerie.De(enBlanco, new List<LineaPagada>()).Dice();
+					string frase =Dicha(EstadoDeLaSerie.De(enBlanco, new List<LineaPagada>()));
 
 					Assert.That(frase, Does.Contain("No se pidió ningún rubro"),
 						"un nombre en blanco dice que no se pidio ninguno, no «» entre comillas");
