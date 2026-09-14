@@ -315,6 +315,10 @@
   .master{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
        padding:14px;display:flex;align-items:center;gap:10px;margin:16px 0 4px}
   .master span{flex:1;font-weight:600;font-size:14.5px}
+  /* THE CHEVRON IS NOT A COLUMN. `.master span` above reaches <span class="chev"> too, and beats
+     .chev{flex:none} on specificity, so text and arrow split the row in halves: the arrow landed
+     mid-line with «adentro de Gnothi» wrapping under it (measured on the 13 Pro, 2026-09-11). */
+  .master .chev{flex:none;font-weight:400}
 
   h3.cap{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
        color:var(--muted);margin:18px 4px 8px}
@@ -569,6 +573,23 @@
   </div>
 </div>
 
+<!-- ═══ QUITAR UN MÓDULO ═══
+     Hasta 2026-09-11 no había forma: la persona podía apagar un módulo, pero no sacarlo del
+     teléfono, y «volver a instalar» era borrar Gnothi entera. La app de la institución y la
+     bitácora son dos cosas: la app se va siempre; la bitácora es de la persona y se queda salvo
+     que ella marque lo contrario, y si el manifiesto dice que no se puede reconstruir, acá se
+     le dice con todas las letras antes de que lo marque. -->
+<div id="quitar" class="osheet" onclick="if(event.target===this)gn.quitarCerrar()">
+  <div class="card">
+    <h4 id="q-titulo">Quitar</h4>
+    <p id="q-cuerpo"></p>
+    <label class="chk"><input id="q-journal" type="checkbox"> Borrar también mi bitácora de este teléfono</label>
+    <p id="q-aviso" class="hint"></p>
+    <button class="cta" onclick="gn.quitarConfirmar()">Quitar</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.quitarCerrar()">Cancelar</button>
+  </div>
+</div>
+
 <!-- ═══ THE CODE READER ═══
      The institution's page shows a QR with the SAME link as its button, for the person who reads
      the page on a computer and has Gnothi on her phone. Here it is read with the phone's camera,
@@ -786,6 +807,32 @@ const gn = {
   // there installs it.
   actualizar(name) { gn.call('actualizar', { module: name }); },
 
+  // QUITAR: pedir, confirmar, cerrar. El nombre corto de la institución en el título, para que
+  // la persona lea «Quitar Faro» y no «Quitar cargas», que es la llave técnica.
+  quitarPedir(name) {
+    const m = gn.state.modules.find(x => x.name === name);
+    if (!m) return;
+    gn.quitando = name;
+    const quien = m.shortName || m.institution || m.title;
+    const dia = m.diary || {};
+    document.getElementById('q-titulo').textContent = 'Quitar ' + quien;
+    document.getElementById('q-cuerpo').textContent =
+      'La app de ' + quien + ' sale de este teléfono. Tu bitácora se queda: si volvés a agregar el módulo, la encuentra.';
+    document.getElementById('q-journal').checked = false;
+    document.getElementById('q-aviso').textContent = dia.reconstruible === false
+      ? 'Tu bitácora lleva cosas que pusiste vos. Si la borrás, no hay de dónde recuperarlas.'
+      : '';
+    document.getElementById('quitar').classList.add('on');
+  },
+  quitarCerrar() { document.getElementById('quitar').classList.remove('on'); gn.quitando = null; },
+  quitarConfirmar() {
+    const name = gn.quitando, journal = document.getElementById('q-journal').checked;
+    gn.quitarCerrar();
+    if (!name) return;
+    const s = gn.call('quitar', { module: name, journal });
+    if (s) { gn.state = s; gn.nav('home'); gn.paint(); }
+  },
+
   sheet(on) {
     document.getElementById('sheet').classList.toggle('on', on);
     if (!on) document.getElementById('alta-enlace').classList.remove('on');
@@ -801,6 +848,7 @@ const gn = {
   // home it answers false so Android does its own thing (the app steps aside).
   back() {
     if (document.getElementById('sheet').classList.contains('on')) { gn.sheet(false); return true; }
+    if (document.getElementById('quitar').classList.contains('on')) { gn.quitarCerrar(); return true; }
     for (const sub of ['journal', 'prov'])
       if (document.getElementById('v-' + sub).classList.contains('on')) { gn.nav('set'); return true; }
     if (!document.getElementById('v-home').classList.contains('on')) { gn.nav('home'); return true; }
@@ -1363,7 +1411,13 @@ const gn = {
               + (dia.updates ? 'Se actualiza ' + esc(dia.updates) + '. ' : '')
               + (dia.reconstruible === false ? 'Lleva cosas que pusiste vos: si se borra, se pierden.' : '')
               + '</p>'
-            : '');
+            : '')
+
+        // QUITAR, al final y con el mismo aspecto que «Abrir»: es una acción sobre el módulo, no
+        // un ajuste. La confirmación es un sheet propio y no confirm(): en el WebView del Host
+        // confirm() no tiene quién lo atienda y contesta false sin mostrar nada.
+        + '<div class="master" onclick="gn.quitarPedir(\'' + m.name + '\')"><span><b>Quitar ' + esc(m.shortName || m.institution || m.title) + '</b><br>'
+          + '<small>la app de tu institución sale de este teléfono; tu bitácora se queda</small></span><span class="chev">›</span></div>';
     }
 
     // DATOS EN ESTE TELÉFONO: one row per institution, with its logo, what its record weighs and how
@@ -1680,6 +1734,7 @@ function mock(op, x) {
   if (op === 'setTool')   { const m = MOCK.modules.find(m => m.name === x.module);
                             const t = m.tools.find(t => t.name === x.tool); t.enabled = x.enabled; return MOCK; }
   if (op === 'setModule') { MOCK.modules.find(m => m.name === x.module).enabled = x.enabled; return MOCK; }
+  if (op === 'quitar')    { MOCK.modules = MOCK.modules.filter(m => m.name !== x.module); return MOCK; }
   if (op === 'setProvider') { MOCK.settings.name = x.name; MOCK.settings.model = x.model;
                               MOCK.settings.provider = x.url.split('//').pop().split('/')[0];
                               MOCK.settings.keyPresent = false; return MOCK; }

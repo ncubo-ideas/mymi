@@ -367,6 +367,11 @@ public sealed record About
 	// donde solo lo lee la IA. Aca lo lee la persona.
 	[JsonPropertyName("doesNotDo")] public string DoesNotDo { get; init; } = "";
 
+	// THE LANGUAGE OF THE RECORD -- a BCP 47 tag such as es-CR or en-US. It is a fact about the
+	// institution's journal, not an instruction: the products, the analytes and the sentences
+	// the domain composes are written in it. ToolIndex reads it and tells the model, on every
+	// free-text parameter, in which language to pass its values; without it the model guesses
+	// from the prose, and a guess of "milk" against a journal that says "leche" finds nothing.
 	[JsonPropertyName("locale")] public string Locale { get; init; } = "";
 
 	// LA MONEDA, y es el hueco mas concreto que este grupo cierra. La unica tool de facturas

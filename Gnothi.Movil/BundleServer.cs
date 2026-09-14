@@ -36,8 +36,16 @@ internal sealed class BundleServer
 	// `window.location = '...'` is a top-level navigation, and `navigate-to` was proposed and
 	// never standardised. That half is closed per platform -- OnlyItsOwnOrigin on iOS,
 	// ShouldOverrideUrlLoading on Android.
+	//
+	// img-src ADMITS data: AND blob:, and that is not a hole: an image cannot carry anything OUT.
+	// Both schemes are bytes the page already holds -- a photo the person just attached, a QR the
+	// module draws, a chart -- shown to her without leaving the page. Without this line the module
+	// stores the photo fine and then shows an empty frame: measured 2026-09-11 on an iPhone with
+	// Cargas' odometer photo, `REFUSED by img-src -- data` in the log and nothing on screen.
+	// Remote images stay refused: 'self' is the module's own origin, and that is all.
 	private const string CspWithoutScript =
 		"default-src 'self'; " +
+		"img-src 'self' data: blob:; " +
 		"style-src 'self' 'unsafe-inline'; " +
 		"connect-src 'self'; " +
 		"form-action 'self'; " +

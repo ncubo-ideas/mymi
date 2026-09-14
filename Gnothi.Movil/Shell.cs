@@ -411,6 +411,35 @@ public sealed class Shell : IDisposable
 	// SHE TAPPED «HAY UNA VERSIÓN NUEVA»: the package the origin publishes is fetched from the address
 	// the note kept, with its seal, and goes through the whole examination like a link that landed.
 	// The sheet is the update sheet, and only her yes there installs anything.
+	// QUITAR UN MODULO ES DECISION DE LA PERSONA, y hasta 2026-09-11 no tenia como tomarla: podia
+	// apagarlo, pero no sacarlo del telefono, y «volver a instalar» era borrar Gnothi entera. Dos
+	// cosas distintas se van o se quedan: la app de la institucion -Modulos/<modulo>, y su
+	// .anterior si quedo de una actualizacion- se va siempre; la bitacora -journals/<modulo>, que
+	// es tambien la carpeta concedida- es de la persona y se queda salvo que ella lo pida. Un alta
+	// posterior la encuentra ahi, igual que una actualizacion. El modulo vivo se cierra antes,
+	// por la misma razon que en una actualizacion: su WebView esta parado sobre la carpeta.
+	private string RemoveModule(string module, bool journalToo)
+	{
+		Module? m = Find(module);
+		if (m is null) return StateJson();
+
+		if (CloseModule?.Invoke(module) == true)
+			log($"quitar: '{module}' estaba vivo; se cerró antes de borrarlo");
+
+		string folder = Path.Combine(paths.Files, "Modulos", module);
+		string previous = folder + ModuleCatalog.PreviousSuffix;
+		string journal = Path.Combine(paths.Files, "journals", module);
+
+		if (Directory.Exists(previous)) Directory.Delete(previous, recursive: true);
+		if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+		if (journalToo && Directory.Exists(journal)) Directory.Delete(journal, recursive: true);
+
+		log($"quitar: '{module}' fuera del teléfono" + (journalToo ? ", con su bitácora" : "; la bitácora se queda"));
+
+		foreach (string w in ReloadAfterInstall()) log($"warning: {w}");
+		return StateJson();
+	}
+
 	private string StartUpdate(string module)
 	{
 		Module? m = Find(module);
@@ -973,6 +1002,9 @@ public sealed class Shell : IDisposable
 				// THE CARD'S «HAY UNA VERSIÓN NUEVA»: fetch what the origin publishes and open the
 				// update sheet. Her yes on that sheet is what installs, as with any package.
 				"actualizar" => StartUpdate(req.GetProperty("module").GetString() ?? ""),
+				"quitar" => RemoveModule(
+					req.GetProperty("module").GetString() ?? "",
+					req.TryGetProperty("journal", out JsonElement qj) && qj.ValueKind == JsonValueKind.True),
 
 				_ => "{}",
 			};

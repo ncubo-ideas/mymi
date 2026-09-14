@@ -77,22 +77,46 @@ public sealed class ToolIndex
 	// The execution side already tolerated this: InProcessShell.Bind runs Convert.ChangeType
 	// for a numeric C# parameter and Enum.Parse for an enum one, whatever the schema said. So
 	// this change only sharpens what the model SEES; it cannot break how a value is bound.
-	public static IReadOnlyDictionary<string, object> InputSchema(DeclaredTool declared)
+	//
+	// THE LANGUAGE OF THE RECORD TRAVELS WITH EVERY FREE-TEXT PARAMETER. Measured 2026-09-11
+	// (NotasGnothiHost/46): the model reaches a Spanish tool from an English question without
+	// trouble, but a free-text value it passes ("milk") is matched by the module with IndexOf
+	// against a journal written in Spanish, so it finds nothing and the person hears "you never
+	// buy milk". Whether the model translates before asking was a guess it made from the prose
+	// around the tool; nothing told it. Now the manifest's about.locale does, per module: a
+	// Spanish supermarket and an English dealership installed side by side each get their own
+	// line, and a module that declares no locale gets nothing -- the model keeps guessing, as
+	// before. Enum and numeric parameters carry no hint: their values are already closed.
+	//
+	// It goes HERE, in the shared schema, and not in a gate: Gate 1 (MCP), Gate 2 on desktop and
+	// on the phones, and the on-device model on iOS all read this same property description.
+	public static IReadOnlyDictionary<string, object> InputSchema(Entry entry) =>
+		InputSchema(entry.Tool, RecordLocaleOf(entry.Module));
+
+	public static IReadOnlyDictionary<string, object> InputSchema(DeclaredTool declared) =>
+		InputSchema(declared, recordLocale: null);
+
+	public static IReadOnlyDictionary<string, object> InputSchema(DeclaredTool declared, string? recordLocale)
 	{
 		Dictionary<string, object> properties = [];
 
 		foreach (DeclaredParameter p in declared.Input)
 		{
+			bool closed = p.Enum is { Count: > 0 };
+			string type = JsonSchemaType(p.Type);
+
 			Dictionary<string, object> property = new()
 			{
-				["type"] = JsonSchemaType(p.Type),
-				["description"] = p.Description,
+				["type"] = type,
+				["description"] = type == "string" && !closed && recordLocale is not null
+					? WithRecordLanguage(p.Description, recordLocale)
+					: p.Description,
 			};
 
 			// A real enum, not the values hidden in the prose. The C# side still Enum.Parses
 			// whatever arrives, so a value outside the list is caught there, not here.
-			if (p.Enum is { Count: > 0 })
-				property["enum"] = p.Enum.ToArray();
+			if (closed)
+				property["enum"] = p.Enum!.ToArray();
 
 			properties[p.Name] = property;
 		}
@@ -107,6 +131,27 @@ public sealed class ToolIndex
 			schema["required"] = declared.Input.Select(p => p.Name).ToArray();
 
 		return schema;
+	}
+
+	// The locale the module DECLARES for its record, or null when it declares none. Host tools
+	// have no module and no record, so they never carry the hint.
+	public static string? RecordLocaleOf(Module? module)
+	{
+		string locale = Manifest.Txt(module?.Manifest.About?.Locale).Trim();
+		return locale.Length == 0 ? null : locale;
+	}
+
+	// One sentence, in the language of the code: the model reads it either way, and the value it
+	// carries is the module's, not the Host's. Public so the suite can assert the exact text.
+	public static string RecordLanguageHint(string recordLocale) =>
+		$"This module's record is written in {recordLocale}; pass free-text values in that language.";
+
+	private static string WithRecordLanguage(string description, string recordLocale)
+	{
+		string d = Manifest.Txt(description).TrimEnd();
+		string hint = RecordLanguageHint(recordLocale);
+		if (d.Length == 0) return hint;
+		return d.EndsWith('.') ? $"{d} {hint}" : $"{d}. {hint}";
 	}
 
 	// The manifest's 'type' string, mapped to a JSON Schema primitive. Anything unknown or empty
