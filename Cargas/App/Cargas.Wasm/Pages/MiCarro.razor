@@ -5,7 +5,17 @@
 
 <PageTitle>Mi carro · Estaciones Faro</PageTitle>
 
-<h1 class="solo-para-lectores">Mi carro</h1>
+@* EL H1 AHORA SE DIBUJA: en el resto de la app el título vive escondido porque la marca
+   ya está en el capó, pero Mi carro se abre desde el ícono del capó o desde otra
+   pantalla -no tiene destino propio en la barra- y necesita decir dónde estás. La flecha
+   vuelve a Inicio, que es de donde sale ese ícono. Es el mismo faro-icon--flecha que ya
+   usa "ver en Mis cargas", solo rotado. *@
+<div class="pantalla-cabeza">
+    <a href="" class="pantalla-volver" aria-label="Volver a Inicio" title="Volver a Inicio">
+        <span class="faro-icon faro-icon--flecha pantalla-volver-flecha" aria-hidden="true"></span>
+    </a>
+    <h1 class="pantalla-titulo">Mi carro</h1>
+</div>
 
 @* LA PESTAÑA DE AJUSTES. Es del carro que se está mirando -el que elige el selector del
    capó- y no de todos: con la ficha de tres carros en la misma pantalla no se sabe cuál
@@ -27,13 +37,10 @@
 }
 else
 {
-    @* LOS TÍTULOS DE SECCIÓN SON TÍTULOS. Todos eran .rotulo de 10.5 px, el mismo de un
-       instrumento, y la pantalla no tenía ningún nivel entre la marca y los campos. *@
-    <h2 class="seccion-titulo">@(enFoco.TieneFicha ? "Tu carro" : "Ponele nombre a tu carro")</h2>
-
-    @* LA TARJETA RESUMEN. Responde de un vistazo «¿qué carro tengo configurado?» sin leer
-       el formulario entero. Solo con datos reales: si marca/modelo están vacíos, cae al
-       alias -que sí existe si TieneFicha-, nunca inventa algo como «Toyota Yaris». *@
+    @* EL HERO. Responde «¿qué carro tengo configurado?» de un vistazo, sin leer el
+       formulario. Solo con datos reales: si marca/modelo están vacíos, cae al alias -que
+       sí existe si TieneFicha-, nunca inventa algo como «Toyota Yaris». Sin foto: no hay
+       ningún campo de imagen en VehiculoEnLista, así que es el ícono de carro del sprite. *@
     <div class="resumen-vehiculo">
         <span class="tarjeta-acceso-icono">
             <span class="faro-icon faro-icon--carro" aria-hidden="true"></span>
@@ -52,81 +59,156 @@ else
         </div>
     </div>
 
-    @* LA FICHA. CompletarFicha existía desde el principio y ninguna pantalla lo llamaba,
-       así que un segundo carro no se podía ni nombrar: la app lo mostraba por su placa
-       para siempre.
+    @* IDENTIDAD DEL VEHÍCULO. CompletarFicha existía desde el principio y ninguna pantalla
+       lo llamaba, así que un segundo carro no se podía ni nombrar: la app lo mostraba por
+       su placa para siempre. SOLO EL ALIAS ES OBLIGATORIO.
 
-       SOLO EL ALIAS ES OBLIGATORIO. Lo demás es de la persona y no hace falta para nada
-       de lo que la app calcula — pedirlo entero antes de dejarla seguir sería pedirle
-       trabajo por prolijidad nuestra.
-
-       SIGUE SIENDO UN FORMULARIO SIEMPRE EDITABLE: no hay hoy una separación lectura/edición
-       que reusar, y agregar una tocaría el mecanismo de guardado sin necesidad. Lo que
-       cambia acá es solo la envoltura -una tarjeta con título propio- para que se lea como
-       un grupo y no como una lista suelta de campos. *@
+       MODO LECTURA ES EL DEFAULT SIEMPRE, tenga o no tenga ficha todavía -antes esto
+       arrancaba en modo lectura SOLO si TieneFicha, así que un carro recién llegado
+       (sin alias puesto) caía derecho al formulario y "Editar información" nunca se
+       veía: exactamente el caso más común la primera vez que se abre la pantalla. Ahora
+       la lectura manda siempre; lo que cambia es que sin ficha, sus filas están vacías
+       ("—") salvo Placa, que siempre es real. "Editar información" solo cambia una
+       bandera local (editandoFicha); Guardar() sigue siendo exactamente el mismo
+       CompletarFicha de siempre, mismos parámetros, mismo camino. *@
     <div class="tarjeta-grupo">
-        <h3 class="seccion-titulo seccion-titulo--en-grupo">Identidad del vehículo</h3>
-        <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
-            <label class="ficha-campo ficha-campo--ancho">
-                <span>Cómo le decís</span>
-                <input class="campo campo--texto" @bind="alias" maxlength="40"
-                       placeholder="el Corolla, la camioneta…" />
-            </label>
-
-            @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
-            <div class="ficha-campo">
-                <span>Placa</span>
-                <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
-            </div>
-            <p id="porque-la-placa" class="ficha-nota">
-                La placa la pone la estación con cada carga: no es tuya para cambiar.
-            </p>
-
-            <label class="ficha-campo">
-                <span>Marca</span>
-                <input class="campo campo--texto" @bind="marca" maxlength="30" />
-            </label>
-            <label class="ficha-campo">
-                <span>Modelo</span>
-                <input class="campo campo--texto" @bind="modelo" maxlength="30" />
-            </label>
-            @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
-               y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
-               dice qué va, y el cero vuelve a ser la ausencia al guardar.
-
-               Y EL PLACEHOLDER SE DECLARA EJEMPLO. «2019» pelado, en un campo numérico del mismo
-               ancho que su valor, se leía como un año ya cargado —en 375 px no se distinguía— y
-               alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
-               de confundirlo con un valor. *@
-            <label class="ficha-campo">
-                <span>Año</span>
-                <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
-                       placeholder="p. ej. 2019" />
-            </label>
-            <label class="ficha-campo">
-                <span>Color</span>
-                <input class="campo campo--texto" @bind="color" maxlength="20" />
-            </label>
-
-            <label class="ficha-campo ficha-campo--ancho">
-                <span>Rendimiento de fábrica</span>
-                <input class="campo" type="number" step="0.1" inputmode="decimal"
-                       @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
-                       placeholder="p. ej. 14.5" />
-            </label>
-            @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
-               contra lo que el carro está dando de verdad. *@
-            <p id="porque-el-rendimiento" class="ficha-nota">
-                En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
-                que tu carro está dando. Dejalo vacío si no lo sabés.
-            </p>
-
-            <div class="fila ficha-campo--ancho">
-                <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
-                    @(enFoco.TieneFicha ? "Guardar los cambios" : "Ponerle nombre")
+        <div class="tarjeta-grupo-cabeza">
+            <h3 class="seccion-titulo seccion-titulo--en-grupo">Identidad del vehículo</h3>
+            @if (!editandoFicha)
+            {
+                <button type="button" class="tecla tecla--texto" @onclick="() => editandoFicha = true">
+                    Editar información
                 </button>
-            </div>
-        </form>
+            }
+        </div>
+
+        @if (!editandoFicha)
+        {
+            @* INFORMACIÓN, NO UN FORMULARIO ABIERTO. Filas limpias: rótulo a la izquierda,
+               valor real a la derecha. Lo que no se completó es un guion -"—"-, la ausencia
+               como dato y no un espacio en blanco que parezca un error de layout. *@
+            <dl class="identidad-lista">
+                <div class="identidad-fila">
+                    <dt>Cómo le decís</dt>
+                    <dd class="@(enFoco.Alias.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Alias.Length > 0 ? enFoco.Alias : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>Placa</dt>
+                    <dd><span class="placa">@enFoco.Placa</span></dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>Marca</dt>
+                    <dd class="@(enFoco.Marca.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Marca.Length > 0 ? enFoco.Marca : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>Modelo</dt>
+                    <dd class="@(enFoco.Modelo.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Modelo.Length > 0 ? enFoco.Modelo : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>Año</dt>
+                    <dd class="@(enFoco.Anio == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Anio > 0 ? enFoco.Anio.ToString() : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>Color</dt>
+                    <dd class="@(enFoco.Color.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Color.Length > 0 ? enFoco.Color : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>Rendimiento de fábrica</dt>
+                    <dd class="@(enFoco.RendimientoDeFabrica == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.RendimientoDeFabrica > 0 ? $"{enFoco.RendimientoDeFabrica:0.#} km/L" : "—")
+                    </dd>
+                </div>
+            </dl>
+        }
+        else
+        {
+            @if (!enFoco.TieneFicha)
+            {
+                <p class="apunte" style="margin-top:4px">
+                    Todavía no le pusiste nombre a este carro. Con eso alcanza para empezar
+                    -lo demás es opcional y lo podés completar cuando quieras.
+                </p>
+            }
+            <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
+                <label class="ficha-campo ficha-campo--ancho">
+                    <span>Cómo le decís</span>
+                    <input class="campo campo--texto" @bind="alias" maxlength="40"
+                           placeholder="el Corolla, la camioneta…" />
+                </label>
+
+                @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
+                <div class="ficha-campo">
+                    <span>Placa</span>
+                    <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
+                </div>
+                <p id="porque-la-placa" class="ficha-nota">
+                    La placa la pone la estación con cada carga: no es tuya para cambiar.
+                </p>
+
+                <label class="ficha-campo">
+                    <span>Marca</span>
+                    <input class="campo campo--texto" @bind="marca" maxlength="30" />
+                </label>
+                <label class="ficha-campo">
+                    <span>Modelo</span>
+                    <input class="campo campo--texto" @bind="modelo" maxlength="30" />
+                </label>
+                @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
+                   y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
+                   dice qué va, y el cero vuelve a ser la ausencia al guardar.
+
+                   Y EL PLACEHOLDER SE DECLARA EJEMPLO. «2019» pelado, en un campo numérico del mismo
+                   ancho que su valor, se leía como un año ya cargado —en 375 px no se distinguía— y
+                   alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
+                   de confundirlo con un valor. *@
+                <label class="ficha-campo">
+                    <span>Año</span>
+                    <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
+                           placeholder="p. ej. 2019" />
+                </label>
+                <label class="ficha-campo">
+                    <span>Color</span>
+                    <input class="campo campo--texto" @bind="color" maxlength="20" />
+                </label>
+
+                <label class="ficha-campo ficha-campo--ancho">
+                    <span>Rendimiento de fábrica</span>
+                    <input class="campo" type="number" step="0.1" inputmode="decimal"
+                           @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
+                           placeholder="p. ej. 14.5" />
+                </label>
+                @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
+                   contra lo que el carro está dando de verdad. *@
+                <p id="porque-el-rendimiento" class="ficha-nota">
+                    En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
+                    que tu carro está dando. Dejalo vacío si no lo sabés.
+                </p>
+
+                <div class="fila ficha-campo--ancho">
+                    <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
+                        @(enFoco.TieneFicha ? "Guardar los cambios" : "Ponerle nombre")
+                    </button>
+                    @* CANCELAR SIEMPRE DISPONIBLE EN EDICIÓN, tenga o no ficha: el modo
+                       lectura ahora es el default también sin ficha, así que entrar a
+                       "Editar información" en un carro sin nombre tiene que poder volver
+                       atrás igual que en uno que ya lo tiene -CargarCampos ya sabe volver
+                       a los valores reales, vacíos o no-. *@
+                    <button class="tecla tecla--contorno" type="button" @onclick="CancelarEdicion">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        }
     </div>
 
     @if (otros.Count > 0)
@@ -364,6 +446,11 @@ else
     // datos tecleados para otro.
     private string cargadaPara = "";
 
+    // SI EL BLOQUE DE IDENTIDAD MUESTRA LA INFORMACIÓN O EL FORMULARIO. Arranca en lectura
+    // -false- cada vez que se cambia de carro (ver Releer): abrir Mi carro no puede dejar
+    // el formulario de otro carro abierto por accidente.
+    private bool editandoFicha;
+
     // Marca+modelo si hay; si no, el alias -que si TieneFicha, siempre existe-. Nunca un
     // nombre de fábrica inventado: si el campo está vacío, se dice lo que sí se sabe.
     private string NombreDelVehiculo()
@@ -396,14 +483,31 @@ else
         if (cargadaPara != enFoco.Placa)
         {
             cargadaPara = enFoco.Placa;
+            editandoFicha = false;
             Listo.Borrar();
-            alias = enFoco.Alias;
-            marca = enFoco.Marca;
-            modelo = enFoco.Modelo;
-            anio = enFoco.Anio > 0 ? enFoco.Anio : null;
-            color = enFoco.Color;
-            rendimientoDeFabrica = enFoco.RendimientoDeFabrica > 0 ? enFoco.RendimientoDeFabrica : null;
+            CargarCampos(enFoco);
         }
+    }
+
+    // Un solo lugar para "los campos del formulario son los del vehículo real": lo usa
+    // Releer al cambiar de carro y CancelarEdicion al salir de editar sin guardar.
+    private void CargarCampos(VehiculoEnLista v)
+    {
+        alias = v.Alias;
+        marca = v.Marca;
+        modelo = v.Modelo;
+        anio = v.Anio > 0 ? v.Anio : null;
+        color = v.Color;
+        rendimientoDeFabrica = v.RendimientoDeFabrica > 0 ? v.RendimientoDeFabrica : null;
+    }
+
+    // CANCELAR vuelve a lo guardado, no a lo vacío: descarta lo tecleado y no llamado
+    // Guardar, y vuelve al modo lectura. No es async ni pasa por Intentar -no toca el
+    // actor, es puro estado de esta pantalla.
+    private void CancelarEdicion()
+    {
+        if (enFoco is not null) CargarCampos(enFoco);
+        editandoFicha = false;
     }
 
     private Task Guardar() => Intentar("guardar la ficha", async () =>
@@ -414,6 +518,7 @@ else
             modelo.Trim(), anio ?? 0, color.Trim(), rendimientoDeFabrica ?? 0m);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
+        editandoFicha = false;
         MostrarListo($"Listo: ahora le decimos «{alias.Trim()}».");
     });
 

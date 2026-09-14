@@ -41,6 +41,15 @@ else
        primero que se lee. Con lectura o sin ella, la frase es siempre la del dominio
        (rendimiento.ParaSonia): nunca se inventa un texto que la reemplace. *@
     <div class="hero">
+        @* LA FOTO OFICIAL DE ESTACIONES FARO (wwwroot/images/faro/hero-estaciones-faro.jpg,
+           asset del repo, no una URL externa). Va como background-image de un div propio
+           -no un <img> rectangular pegado-: así se puede recortar/posicionar como
+           composición, y si el archivo no cargara, un background-image que falla
+           simplemente no pinta nada -sin ícono roto- y el hero se queda legible sobre su
+           propio degradado petróleo de base (la regla .hero de más arriba). *@
+        <div class="hero-fondo-imagen" aria-hidden="true"></div>
+        <div class="hero-velo" aria-hidden="true"></div>
+
         @* El ícono del sprite refuerza qué mide este bloque de un vistazo -no es
            decoración: es la misma jerarquía que ya da el eyebrow, con un apoyo visual. *@
         <span class="hero-titulo">

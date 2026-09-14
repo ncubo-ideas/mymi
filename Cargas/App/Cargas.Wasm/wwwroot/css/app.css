@@ -429,6 +429,29 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     font-size: 11px; font-weight: 700; line-height: 1;
 }
 
+/* EL "+" CENTRAL. NO es una tercera pestaña -por eso no es flex:1 1 0 como .pestana, no
+   lleva texto visible, no comparte su tipografía-: es un círculo amarillo Faro vivo, la
+   acción protagonista de la barra, no un destino más del mismo peso que Inicio o Mis
+   cargas. El símbolo + se dibuja con dos pseudo-elementos -mismo criterio que el resto de
+   la casa: un glifo genérico y sin estado propio no necesita el sprite ni un SVG a mano-. */
+.pestana-mas {
+    position: relative; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; margin: 0 4px; border-radius: 999px; border: none;
+    background: var(--accion); cursor: pointer;
+    transition: background .12s ease, transform .12s ease;
+}
+.pestana-mas:hover { background: var(--accion-viva); }
+.pestana-mas:active { transform: scale(.94); }
+.pestana-mas:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+.pestana-mas::before, .pestana-mas::after {
+    content: ""; position: absolute; top: 50%; left: 50%;
+    background: var(--sobre-cobre); border-radius: 2px;
+    transform: translate(-50%, -50%);
+}
+.pestana-mas::before { width: 16px; height: 3px; }
+.pestana-mas::after { width: 3px; height: 16px; }
+
 /* ------------------------------------------------------------------ la franja
 
    EL CENTRO DE MENSAJES. Lo primero de la pantalla es la frase del dominio, y en un
@@ -1088,6 +1111,23 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
    en teléfono; el alias y el rendimiento ocupan la fila entera porque su etiqueta no
    entra en media. */
 
+/* EL ENCABEZADO DE PANTALLA: flecha atrás + título, para pantallas que no tienen destino
+   propio en la barra -Mi carro se abre desde el ícono del capó, no desde una pestaña, y
+   sin esto no decía dónde estás. La flecha es faro-icon--flecha rotada 180°: ya es el
+   chevron "hacia adelante" de la casa (ver .tarjeta-acceso-flecha), y ahora también hace
+   de "atrás" sin pedirle un recorte nuevo al sprite. */
+.pantalla-cabeza { display: flex; align-items: center; gap: 8px; margin: 0 0 18px; }
+.pantalla-volver {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 999px; flex: none;
+    color: var(--tenue); text-decoration: none;
+    transition: background .12s ease, color .12s ease;
+}
+.pantalla-volver:hover { background: rgba(126, 196, 207, .1); color: var(--tinta); }
+.pantalla-volver:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+.pantalla-volver-flecha { transform: rotate(180deg); }
+.pantalla-titulo { margin: 0; font-size: var(--fs-titulo); font-weight: var(--fw-titulo); color: var(--tinta); }
+
 /* LA TARJETA RESUMEN. «¿Qué carro tengo configurado?» de un vistazo, antes de bajar al
    formulario. Mismo lenguaje que .tarjeta-acceso (ícono en círculo + texto) pero sin
    enlace: acá no se navega a ningún lado, solo se lee. */
@@ -1115,9 +1155,33 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 }
 .seccion-titulo--en-grupo .faro-icon { flex: none; }
 
+/* CUANDO EL TÍTULO DEL GRUPO LLEVA UNA ACCIÓN AL LADO -"Editar información"-: el título
+   a la izquierda, la acción al borde derecho, misma fila. */
+.tarjeta-grupo-cabeza {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.tarjeta-grupo-cabeza .seccion-titulo--en-grupo { margin-bottom: 0; }
+
 /* PASAR A GNOTHI ES SECUNDARIO: la misma tarjeta pero punteada y sin relleno, para que se
    lea como un paso ocasional de la cuenta y no como un cuarto grupo del carro. */
 .tarjeta-grupo--secundario { background: transparent; border-style: dashed; }
+
+/* IDENTIDAD EN MODO LECTURA: filas rótulo+valor, no siete campos abiertos. EL VALOR VA A
+   LA DERECHA -mismo patrón que .otros-carros y .explicaciones-, así el ojo baja por una
+   sola columna de valores. "sin dato" y no un espacio en blanco: la ausencia es un hecho,
+   no un casillero vacío del layout. */
+.identidad-lista { margin: 4px 0 0; }
+.identidad-fila {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    padding: 11px 0; border-top: 1px solid var(--bisel);
+}
+.identidad-fila:first-child { border-top: 0; padding-top: 2px; }
+.identidad-fila dt { margin: 0; font-size: var(--fs-secundario); color: var(--tenue); }
+.identidad-fila dd {
+    margin: 0; font-size: var(--fs-cuerpo); font-weight: 600; color: var(--tinta);
+    text-align: right; overflow-wrap: anywhere;
+}
+.identidad-vacio { color: var(--tenue-2); font-weight: 400; font-style: italic; }
 
 .ficha {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1289,6 +1353,18 @@ code { font-family: var(--tecnica); font-size: .9em; color: var(--cobre); }
 
     /* El badge no cabe al lado de la etiqueta en columna: va sobre el icono. */
     .pestana-badge { position: absolute; top: 4px; left: 50%; margin-left: 6px; }
+
+    /* EL "+" SE ELEVA SOBRE LA BARRA, como el botón central de una app con cámara: es la
+       acción protagonista y tiene que sentirse fuera de la fila de pestañas, no metido
+       adentro de ella. 58 px -dentro del rango 54-60 pedido-, con sombra propia para que
+       se lea flotando y no como una pestaña más alta que las otras. */
+    .pestana-mas {
+        width: 58px; height: 58px; margin: 0 6px;
+        transform: translateY(-16px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+    }
+    .pestana-mas::before { width: 22px; height: 4px; }
+    .pestana-mas::after { width: 4px; height: 22px; }
 
     /* EL COLCHÓN para que la barra fija no tape la última fila de la ruta. */
     .tablero { padding-bottom: 6rem; }
@@ -1490,6 +1566,33 @@ code { font-family: var(--tecnica); font-size: .9em; color: var(--cobre); }
     background: var(--ambar-suave); border: 1px solid var(--ambar-borde);
 }
 .hero .chispa { margin-top: 14px; max-width: 260px; }
+
+/* LA FOTO Y SU VELO. La estación Faro va a la derecha -"imagen hacia la derecha, texto
+   hacia la izquierda" del mock-, parcialmente visible y no como una foto entera pegada:
+   background-image de un div propio, recortada con background-position y atenuada con
+   opacity, nunca un <img> rectangular suelto.
+
+   EL VELO ES QUIEN GARANTIZA EL AA, no la opacidad de la foto: es un div propio, pintado
+   DESPUÉS de la imagen y ANTES del texto (mismo truco que .hero > * ya usa para separar
+   capas por orden de aparición), así que el texto siempre queda arriba de todo sin
+   importar cuánto se cargue la foto del lado derecho -y si la foto no carga, el degradado
+   propio de .hero (arriba) ya deja el hero legible por su cuenta: nada depende del asset
+   para el contraste. */
+.hero-fondo-imagen {
+    position: absolute; inset: 0;
+    background-image: url('../images/faro/hero-estaciones-faro.jpg');
+    background-size: cover; background-position: 76% center; background-repeat: no-repeat;
+    opacity: .8; pointer-events: none;
+}
+.hero-velo {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--cara) 0%, var(--cara) 40%, rgba(8, 38, 47, .58) 60%, transparent 88%);
+    pointer-events: none;
+}
+@media (max-width: 480px) {
+    .hero-fondo-imagen { background-position: 82% center; opacity: .7; }
+    .hero-velo { background: linear-gradient(90deg, var(--cara) 0%, var(--cara) 54%, rgba(8, 38, 47, .62) 70%, transparent 92%); }
+}
 
 /* ---------------------------------------------------------------- el pendiente
    EL SIGUIENTE PASO ACCIONABLE, una sola vez, nunca la lista entera de faltantes. Es
