@@ -35,6 +35,18 @@ namespace Municipalidad.Dominio
 			return Numero == 1 ? new Trimestre(Anio - 1, 4) : new Trimestre(Anio, Numero - 1);
 		}
 
-		internal override string Etiqueta { get { return Anio + "-T" + Numero; } }
+		/// <summary>
+		/// El periodo dicho como lo escribe el recibo. La cultura es invariante y no la de la maquina:
+		/// este dominio no lee ninguna, y un formato de numero ajeno escribiria otra etiqueta para el
+		/// mismo trimestre.
+		/// </summary>
+		internal override string Etiqueta
+		{
+			get
+			{
+				return Anio.ToString(System.Globalization.CultureInfo.InvariantCulture)
+					+ "-T" + Numero.ToString(System.Globalization.CultureInfo.InvariantCulture);
+			}
+		}
 	}
 }

@@ -20,8 +20,15 @@ namespace Municipalidad.App.Frases
 	/// </summary>
 	public sealed class Frases
 	{
-		/// <summary>El idioma del registro de la municipalidad, y al que cae toda etiqueta desconocida.</summary>
+		/// <summary>
+		/// EL IDIOMA DEL REGISTRO de la municipalidad, y al que cae toda etiqueta desconocida. Vive aca
+		/// y en ningun otro lado: es la subetiqueta con la que se elige catalogo, asi que escribirla dos
+		/// veces seria dejar que las dos copias dejen de decir lo mismo sin que nada avise.
+		/// </summary>
 		public const string IdiomaDelRegistro = "es";
+
+		/// <summary>El otro idioma que esta app habla. El alcance son dos y no hay un tercero.</summary>
+		public const string ElOtroIdioma = "en";
 
 		private readonly IReadOnlyDictionary<string, string> catalogo;
 		private readonly bool esEspanol;
@@ -41,14 +48,14 @@ namespace Municipalidad.App.Frases
 		/// </summary>
 		public static Frases De(string idioma)
 		{
-			return SubetiquetaPrimaria(idioma) == "en" ? enIngles : enEspanol;
+			return SubetiquetaPrimaria(idioma) == ElOtroIdioma ? enIngles : enEspanol;
 		}
 
 		/// <summary>Si esta app habla el idioma de esa etiqueta, para quien quiera distinguir la caida.</summary>
 		public static bool EsUnaEtiquetaConocida(string idioma)
 		{
 			string primaria = SubetiquetaPrimaria(idioma);
-			return primaria == "es" || primaria == "en";
+			return primaria == IdiomaDelRegistro || primaria == ElOtroIdioma;
 		}
 
 		/// <summary>

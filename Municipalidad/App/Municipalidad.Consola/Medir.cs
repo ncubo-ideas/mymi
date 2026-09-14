@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using Municipalidad.App;
 using Puppeteer;
@@ -201,7 +202,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine("    hay alguna consulta     : " + api.HayAlgunaConsulta());
 			Console.WriteLine("    la mas reciente         : "
 				+ (api.HayAlgunaConsulta()
-					? api.ConsultaMasReciente().ToString("yyyy-MM-dd")
+					? api.ConsultaMasReciente().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
 					: "ninguna todavia"));
 			Console.WriteLine("    las fincas              : " + string.Join(", ", api.NumerosDeLasFincas()));
 			foreach (string numeroDeFinca in api.NumerosDeLasFincas())
