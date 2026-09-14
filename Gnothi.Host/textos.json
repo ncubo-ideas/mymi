@@ -60,8 +60,8 @@
     "en": "Your institutions"
   },
   "instituciones.sub": {
-    "es": "Lo que cada institución te entregó. Gnothi lee lo que ya está en este aparato.",
-    "en": "What each institution handed you. Gnothi reads what is already on this device."
+    "es": "Lo que cada institución te entregó. Mymi lee lo que ya está en este aparato.",
+    "en": "What each institution handed you. Mymi reads what is already on this device."
   },
   "instituciones.vacio": {
     "es": "Todavía no hay ninguna institución en",
@@ -100,8 +100,8 @@
     "en": "Pick an institution package"
   },
   "instituciones.elegir.gmod": {
-    "es": "Institución de Gnothi",
-    "en": "Gnothi institution"
+    "es": "Institución de Mymi",
+    "en": "Mymi institution"
   },
   "instituciones.elegir.todos": {
     "es": "Todos los archivos",

@@ -50,9 +50,16 @@
     // EL lang DEL DOCUMENTO, desde el idioma que ya resolvio C#. No se cablea en index.html:
     // estaba en "en" mientras tres de las cinco pantallas hablaban espanol, y un lang mentido lo
     // paga quien usa lector de pantalla, no quien lo escribio.
+    //
+    // Entra por un modulo propio y NO por eval, igual que en Municipalidad.Wasm: la politica de
+    // contenido con que se sirve un modulo hospedado no admite eval, y un patron que anda en esta
+    // ventana es un patron que alguien copia donde no anda.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) await JS.InvokeVoidAsync("eval", $"document.documentElement.lang='{Textos.Idioma}'");
+        if (!firstRender) return;
+        await using IJSObjectReference modulo =
+            await JS.InvokeAsync<IJSObjectReference>("import", "./idioma-interop.js");
+        await modulo.InvokeVoidAsync("fijarIdioma", Textos.Idioma);
     }
 
     private enum View { Modules, Asistente, Ajustes }
