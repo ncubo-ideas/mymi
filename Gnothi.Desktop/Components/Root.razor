@@ -1,4 +1,5 @@
 @inject HostState State
+@inject IJSRuntime JS
 
 @*
     THE ROOT. Three faces now: the modules (list or one module's screen), the assistant, and
@@ -8,14 +9,17 @@
 *@
 
 <header>
-    <span class="brand">Gnothi</span>
+    @* LA MARCA. «Mymi» es el nombre del producto de cara a la persona desde 051beb6; en el
+       codigo, los ensamblados y el protocolo sigue siendo Gnothi. No sale del catalogo de textos
+       -- un nombre propio no se traduce. *@
+    <span class="brand">Mymi</span>
     <span class="path">@State.Root</span>
 </header>
 
 <nav class="tabs">
-    <button class="@Cls(View.Modules)" @onclick="() => view = View.Modules">Módulos</button>
-    <button class="@Cls(View.Asistente)" @onclick="() => view = View.Asistente">Asistente</button>
-    <button class="@Cls(View.Ajustes)" @onclick="() => view = View.Ajustes">Ajustes</button>
+    <button class="@Cls(View.Modules)" @onclick="() => view = View.Modules">@T("nav.instituciones")</button>
+    <button class="@Cls(View.Asistente)" @onclick="() => view = View.Asistente">@T("nav.asistente")</button>
+    <button class="@Cls(View.Ajustes)" @onclick="() => view = View.Ajustes">@T("nav.ajustes")</button>
 </nav>
 
 <main>
@@ -29,7 +33,7 @@
             else
             {
                 <p class="crumb">
-                    <button @onclick="() => open = null">&larr; Todos tus módulos</button>
+                    <button @onclick="() => open = null">&larr; @T("nav.volver")</button>
                 </p>
                 <ModuleScreen Name="@open" />
             }
@@ -46,6 +50,21 @@
 </main>
 
 @code {
+    // EL lang DEL DOCUMENTO, desde el idioma que ya resolvio C#. No se cablea en index.html:
+    // estaba en "en" mientras tres de las cinco pantallas hablaban espanol, y un lang mentido lo
+    // paga quien usa lector de pantalla, no quien lo escribio.
+    //
+    // Entra por un modulo propio y NO por eval, igual que en Municipalidad.Wasm: la politica de
+    // contenido con que se sirve un modulo hospedado no admite eval, y un patron que anda en esta
+    // ventana es un patron que alguien copia donde no anda.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await using IJSObjectReference modulo =
+            await JS.InvokeAsync<IJSObjectReference>("import", "./idioma-interop.js");
+        await modulo.InvokeVoidAsync("fijarIdioma", Textos.Idioma);
+    }
+
     private enum View { Modules, Asistente, Ajustes }
 
     private View view = View.Modules;

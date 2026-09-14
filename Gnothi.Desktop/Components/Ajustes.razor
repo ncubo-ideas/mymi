@@ -8,17 +8,17 @@
     proveedor responde), y no va a ningun log.
 *@
 
-<h1>Ajustes</h1>
-<p class="sub">El modelo que redacta las respuestas del asistente. La llave es tuya.</p>
+<h1>@T("ajustes.titulo")</h1>
+<p class="sub">@T("ajustes.sub")</p>
 
 <div class="card">
-    <div class="title">Proveedor</div>
+    <div class="title">@T("ajustes.proveedor")</div>
     <div class="meta" style="margin:4px 0 10px">
         @name · <strong>@model</strong>
         <br /><span style="font-family:ui-monospace,Consolas,monospace">@url</span>
     </div>
 
-    <label class="field">Elegí un proveedor</label>
+    <label class="field">@T("ajustes.proveedor.elegir")</label>
     <select @onchange="OnPreset">
         @foreach (ModelConfig.Preset p in ModelConfig.Presets)
         {
@@ -28,32 +28,32 @@
 </div>
 
 <div class="card">
-    <div class="title">Llave de @name</div>
+    <div class="title">@T("ajustes.llave.de", ("proveedor", name))</div>
     @if (needsKey)
     {
         <div class="meta" style="margin:4px 0 10px">
             @if (Config.KeyPresent)
             {
-                <text>✓ Hay una llave guardada (no se muestra).</text>
+                <text>@T("ajustes.llave.hay")</text>
             }
             else
             {
-                <text>Todavía no hay llave para este proveedor.</text>
+                <text>@T("ajustes.llave.no-hay")</text>
             }
         </div>
-        <label class="field">Pegá tu API key</label>
+        <label class="field">@T("ajustes.llave.pegar")</label>
         <input type="password" @bind="keyDraft" placeholder="sk-…" />
         <div style="margin-top:10px">
-            <button class="small" disabled="@(keyDraft.Trim().Length == 0)" @onclick="SaveKey">Guardar</button>
+            <button class="small" disabled="@(keyDraft.Trim().Length == 0)" @onclick="SaveKey">@T("ajustes.llave.guardar")</button>
             @if (Config.KeyPresent)
             {
-                <button class="small ghost" @onclick="ClearKey">Borrar</button>
+                <button class="small ghost" @onclick="ClearKey">@T("ajustes.llave.borrar")</button>
             }
         </div>
     }
     else
     {
-        <div class="meta" style="margin:4px 0">Este proveedor es local — no necesita llave, nada sale de la máquina.</div>
+        <div class="meta" style="margin:4px 0">@T("ajustes.local")</div>
     }
 
     @if (saved.Length > 0)
@@ -63,23 +63,22 @@
 </div>
 
 <div class="card">
-    <div class="title">Modelo</div>
+    <div class="title">@T("ajustes.modelo")</div>
     <div class="meta" style="margin:4px 0 10px">
-        En uso: <strong>@model</strong>. Cargá los modelos que ofrece @name y elegí el que quieras;
-        ese es el que usa cada pregunta.
+        @T("ajustes.modelo.en-uso", ("modelo", model)) @T("ajustes.modelo.explicacion", ("proveedor", name))
     </div>
 
     <button class="small" disabled="@(loadingModels || (needsKey && !Config.KeyPresent))" @onclick="LoadModels">
-        @(loadingModels ? "Cargando…" : "Cargar modelos disponibles")
+        @(loadingModels ? T("ajustes.modelo.cargando") : T("ajustes.modelo.cargar"))
     </button>
     @if (needsKey && !Config.KeyPresent)
     {
-        <div class="meta" style="margin-top:8px">Poné primero la llave para poder consultar los modelos.</div>
+        <div class="meta" style="margin-top:8px">@T("ajustes.modelo.primero-llave")</div>
     }
 
     @if (models.Count > 0)
     {
-        <label class="field" style="margin-top:12px">Modelo (@models.Count disponibles)</label>
+        <label class="field" style="margin-top:12px">@T("ajustes.modelo.disponibles", ("n", models.Count.ToString()))</label>
         <select @onchange="OnModelChange">
             @foreach (string mid in models)
             {
@@ -129,13 +128,13 @@
     {
         Config.SetKey(keyDraft);
         keyDraft = "";
-        saved = "Llave guardada. Ya podés cargar los modelos.";
+        saved = T("ajustes.llave.guardada");
     }
 
     private void ClearKey()
     {
         Config.ClearKey();
-        saved = "Llave borrada.";
+        saved = T("ajustes.llave.borrada");
         models = new();
         modelsError = "";
     }
@@ -165,7 +164,7 @@
             else
             {
                 models = new();
-                modelsError = r.Error ?? "No se pudieron cargar los modelos.";
+                modelsError = r.Error ?? T("ajustes.error.no-se-pudo");
             }
         }
         catch (OperationCanceledException) { /* reemplazado por otra carga */ }

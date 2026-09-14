@@ -347,6 +347,115 @@ Console.WriteLine("=== THE RECORD'S LANGUAGE RIDES ON FREE-TEXT PARAMETERS ===")
 		"expected null");
 }
 
+// THE CATALOG OF TEXTS IS THERE, IN BOTH LANGUAGES.
+//
+// This is the assertion that pays for itself. textos.json is an EmbeddedResource declared in
+// THREE csproj with the same LogicalName -- Gnothi.Host for the desktop, Gnothi.Mobile and
+// Gnothi.iOS because the phones compile the Host's sources by glob instead of referencing it.
+// Forgetting one of the three does NOT break the build: Textos returns each key as its own text,
+// so the symptom is a screen that says 'instituciones.titulo', found on a phone.
+//
+// What this can check is the assembly it runs in, which is the desktop's. The two phone csproj
+// are checked by reading them: they are text, and a missing line is a missing line.
+Console.WriteLine();
+Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
+{
+	Gnothi.Host.Textos.Idioma = "es";
+	string es = Gnothi.Host.Textos.T("instituciones.titulo");
+	Gnothi.Host.Textos.Idioma = "en";
+	string en = Gnothi.Host.Textos.T("instituciones.titulo");
+
+	Assert("the embedded catalog loads: a known key is not its own name",
+		es != "instituciones.titulo", $"got '{es}' -- the EmbeddedResource is missing from this csproj");
+	Assert("the two languages are different phrases",
+		es == "Tus instituciones" && en == "Your institutions", $"es='{es}' en='{en}'");
+
+	Gnothi.Host.Textos.Idioma = "es";
+	Assert("a value travels by name, not by position",
+		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")) == "3 consultas",
+		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")));
+
+	// A missing key has to be UGLY, not blank: a blank looks like a design decision and ships.
+	Assert("a key that does not exist renders as itself",
+		Gnothi.Host.Textos.T("no.existe.esta.clave") == "no.existe.esta.clave",
+		Gnothi.Host.Textos.T("no.existe.esta.clave"));
+
+	string[] faltantes = [.. Gnothi.Host.Textos.Faltantes()];
+	Assert("no key is missing one of its two languages",
+		faltantes.Length == 0, string.Join(" | ", faltantes));
+
+	// THE ONE A COMPILER CANNOT SEE. A translator drops a {titulo} or writes {title}, and the
+	// phrase ships either with a raw marker on screen or -worse- without the datum and looking
+	// fine. Sets, not order: order is exactly why the values travel by name.
+	string[] discrepancias = [.. Gnothi.Host.Textos.Discrepancias()];
+	Assert("the two languages of a key ask for the same values",
+		discrepancias.Length == 0, string.Join(" | ", discrepancias));
+
+	// THE ENROLLMENT PHRASE WITH THE MOST SUBSTITUTION, end to end: three values, and one of
+	// them is itself a phrase from the catalog (what an institution with no declared name is
+	// called). Nothing may be left raw.
+	Gnothi.Host.Textos.Idioma = "es";
+	string colision = Gnothi.Host.Textos.T("alta.error.colision",
+		("modulo", "compras"), ("instalada", "La Guaria"),
+		("entrante", Gnothi.Host.Textos.T("alta.error.otra-institucion")));
+	Assert("a phrase with three values leaves no marker raw",
+		!colision.Contains('{') && colision.Contains("compras")
+			&& colision.Contains("La Guaria") && colision.Contains("otra institución"),
+		colision);
+
+	// LA RAIZ DEL REPO, para las dos comprobaciones que leen archivos que ningun proyecto de esta
+	// maquina compila.
+	string raiz = AppContext.BaseDirectory;
+	while (raiz.Length > 1 && !Directory.Exists(Path.Combine(raiz, "Gnothi.Host")))
+		raiz = Path.GetDirectoryName(raiz.TrimEnd(Path.DirectorySeparatorChar)) ?? "/";
+
+	// LO QUE LAS DOS CASCARAS DE PLATAFORMA LE PIDEN A Shell, COMPROBADO SIN COMPILARLAS.
+	//
+	// MainActivity.cs y ViewController.cs no los compila NINGUN proyecto que corra en una Mac
+	// cualquiera: Android necesita un workload que puede no estar, y el SDK de iOS exige una
+	// version exacta de Xcode. Pero los dos llaman a Shell, que esta suite si compila -- asi que
+	// el borde se puede comprobar aunque las cascaras no.
+	//
+	// Lo que atrapa: renombrar un metodo de Shell y actualizar una sola de las dos, que es
+	// exactamente lo que pasa cuando el compilador no esta mirando. Ya paso una vez en sentido
+	// contrario: ReportEnrollmentError recibia la FRASE y las dos la escribian identica.
+	{
+		string[] caras = ["Gnothi.Mobile/MainActivity.cs", "Gnothi.iOS/ViewController.cs"];
+		var deShell = typeof(Gnothi.Movil.Shell)
+			.GetMembers(BindingFlags.Public | BindingFlags.Instance)
+			.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
+
+		foreach (string cara in caras)
+		{
+			string archivo = Path.Combine(raiz, cara);
+			string texto = File.Exists(archivo) ? File.ReadAllText(archivo) : "";
+			string[] pedidos = [.. System.Text.RegularExpressions.Regex
+				.Matches(texto, @"shell\??\.([A-Z][A-Za-z0-9]*)")
+				.Select(m => m.Groups[1].Value).Distinct().Order()];
+			string[] huerfanos = [.. pedidos.Where(n => !deShell.Contains(n))];
+
+			Assert($"{cara.Split('/')[1]} only asks Shell for members it has",
+				texto.Length > 0 && huerfanos.Length == 0,
+				texto.Length == 0 ? $"could not read {archivo}"
+					: $"calls that do not exist on Shell: {string.Join(", ", huerfanos)}");
+		}
+	}
+
+	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
+	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
+	// said nothing about what each face declares.
+	foreach (string cara in new[] { "Gnothi.Mobile", "Gnothi.iOS" })
+	{
+		string csproj = Path.Combine(raiz, cara, cara + ".csproj");
+		string texto = File.Exists(csproj) ? File.ReadAllText(csproj) : "";
+		Assert($"{cara} declares the catalog with the shared LogicalName",
+			texto.Contains("gnothi.textos.json", StringComparison.Ordinal),
+			File.Exists(csproj)
+				? $"{cara}.csproj has no EmbeddedResource for textos.json: that face would start with no catalog"
+				: $"could not read {csproj}");
+	}
+}
+
 Console.WriteLine();
 Console.WriteLine(failures == 0
 	? "=== TODO PASA: el asistente se puede borrar, la compuerta falla cerrada, y las tres puertas coinciden ==="
