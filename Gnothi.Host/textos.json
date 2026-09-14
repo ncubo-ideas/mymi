@@ -9,6 +9,52 @@
 
   "//el-vocabulario": "En la cara se dice INSTITUCIONES, no modulos: es lo que la persona reconoce -su laboratorio, su super-. «Modulo» es vocabulario nuestro y se queda en el protocolo: el manifiesto, gnothi_installed_modules y el campo 'module' del json siguen diciendo modulo.",
 
+  "nav.instituciones":            { "es": "Instituciones", "en": "Institutions" },
+  "nav.asistente":                { "es": "Asistente", "en": "Assistant" },
+  "nav.ajustes":                  { "es": "Ajustes", "en": "Settings" },
+  "nav.volver":                   { "es": "Todas tus instituciones", "en": "All your institutions" },
+
+  "pantalla.no-existe":           { "es": "No hay ninguna institución llamada {nombre}.", "en": "No institution called {nombre}." },
+  "pantalla.consultar":           { "es": "Consultar", "en": "Run" },
+  "pantalla.consultando":         { "es": "consultando…", "en": "asking…" },
+
+  "asistente.titulo":             { "es": "Asistente", "en": "Assistant" },
+  "asistente.sub":                { "es": "Tus instituciones responden; el modelo redacta.", "en": "Your institutions answer; the model writes." },
+  "asistente.sin-llave":          { "es": "Todavía no hay una llave para {proveedor}. Ponla en Ajustes para usar el asistente.", "en": "There is no key for {proveedor} yet. Add it in Settings to use the assistant." },
+  "asistente.sin-llave.accion":   { "es": "Ir a Ajustes", "en": "Go to Settings" },
+  "asistente.vacio":              { "es": "Pregunta algo sobre tus instituciones.", "en": "Ask something about your institutions." },
+  "asistente.traza":              { "es": "· qué pasó por debajo", "en": "· what happened underneath" },
+  "asistente.pensando":           { "es": "pensando…", "en": "thinking…" },
+  "asistente.placeholder":        { "es": "Escribe tu pregunta…", "en": "Type your question…" },
+  "asistente.enviar":             { "es": "Enviar", "en": "Send" },
+
+  "ajustes.titulo":               { "es": "Ajustes", "en": "Settings" },
+  "ajustes.sub":                  { "es": "El modelo que redacta las respuestas del asistente. La llave es tuya.", "en": "The model that writes the assistant's answers. The key is yours." },
+  "ajustes.proveedor":            { "es": "Proveedor", "en": "Provider" },
+  "ajustes.proveedor.elegir":     { "es": "Elige un proveedor", "en": "Pick a provider" },
+  "ajustes.llave.de":             { "es": "Llave de {proveedor}", "en": "{proveedor} key" },
+  "ajustes.llave.hay":            { "es": "✓ Hay una llave guardada (no se muestra).", "en": "✓ A key is saved (it is not shown)." },
+  "ajustes.llave.no-hay":         { "es": "Todavía no hay llave para este proveedor.", "en": "No key for this provider yet." },
+  "ajustes.llave.pegar":          { "es": "Pega tu API key", "en": "Paste your API key" },
+  "ajustes.llave.guardar":        { "es": "Guardar", "en": "Save" },
+  "ajustes.llave.borrar":         { "es": "Borrar", "en": "Delete" },
+  "ajustes.llave.guardada":       { "es": "Llave guardada. Ya puedes cargar los modelos.", "en": "Key saved. You can load the models now." },
+  "ajustes.llave.borrada":        { "es": "Llave borrada.", "en": "Key deleted." },
+  "ajustes.local":                { "es": "Este proveedor es local — no necesita llave, nada sale de la máquina.", "en": "This provider is local — it needs no key, nothing leaves the machine." },
+  "ajustes.modelo":               { "es": "Modelo", "en": "Model" },
+  "ajustes.modelo.en-uso":        { "es": "En uso: {modelo}.", "en": "In use: {modelo}." },
+  "ajustes.modelo.explicacion":   { "es": "Carga los modelos que ofrece {proveedor} y elige el que quieras; ese es el que usa cada pregunta.", "en": "Load the models {proveedor} offers and pick the one you want; that is the one every question uses." },
+  "ajustes.modelo.cargar":        { "es": "Cargar modelos disponibles", "en": "Load available models" },
+  "ajustes.modelo.cargando":      { "es": "Cargando…", "en": "Loading…" },
+  "ajustes.modelo.primero-llave": { "es": "Pon primero la llave para poder consultar los modelos.", "en": "Add the key first to be able to query the models." },
+  "ajustes.modelo.disponibles":   { "es": "Modelo ({n} disponibles)", "en": "Model ({n} available)" },
+
+  "ajustes.error.sin-llave":      { "es": "Pon primero la API key de este proveedor.", "en": "Add this provider's API key first." },
+  "ajustes.error.respondio":      { "es": "El proveedor respondió {codigo}. Revisa la llave.", "en": "The provider answered {codigo}. Check the key." },
+  "ajustes.error.ilegible":       { "es": "El proveedor no devolvió una lista de modelos reconocible.", "en": "The provider did not return a recognisable list of models." },
+  "ajustes.error.vacia":          { "es": "El proveedor no listó modelos.", "en": "The provider listed no models." },
+  "ajustes.error.no-se-pudo":     { "es": "No se pudieron cargar los modelos.", "en": "Could not load the models." },
+
   "instituciones.titulo": {
     "es": "Tus instituciones",
     "en": "Your institutions"

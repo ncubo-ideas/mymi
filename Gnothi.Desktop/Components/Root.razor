@@ -1,4 +1,5 @@
 @inject HostState State
+@inject IJSRuntime JS
 
 @*
     THE ROOT. Three faces now: the modules (list or one module's screen), the assistant, and
@@ -13,9 +14,9 @@
 </header>
 
 <nav class="tabs">
-    <button class="@Cls(View.Modules)" @onclick="() => view = View.Modules">Módulos</button>
-    <button class="@Cls(View.Asistente)" @onclick="() => view = View.Asistente">Asistente</button>
-    <button class="@Cls(View.Ajustes)" @onclick="() => view = View.Ajustes">Ajustes</button>
+    <button class="@Cls(View.Modules)" @onclick="() => view = View.Modules">@T("nav.instituciones")</button>
+    <button class="@Cls(View.Asistente)" @onclick="() => view = View.Asistente">@T("nav.asistente")</button>
+    <button class="@Cls(View.Ajustes)" @onclick="() => view = View.Ajustes">@T("nav.ajustes")</button>
 </nav>
 
 <main>
@@ -29,7 +30,7 @@
             else
             {
                 <p class="crumb">
-                    <button @onclick="() => open = null">&larr; Todos tus módulos</button>
+                    <button @onclick="() => open = null">&larr; @T("nav.volver")</button>
                 </p>
                 <ModuleScreen Name="@open" />
             }
@@ -46,6 +47,14 @@
 </main>
 
 @code {
+    // EL lang DEL DOCUMENTO, desde el idioma que ya resolvio C#. No se cablea en index.html:
+    // estaba en "en" mientras tres de las cinco pantallas hablaban espanol, y un lang mentido lo
+    // paga quien usa lector de pantalla, no quien lo escribio.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("eval", $"document.documentElement.lang='{Textos.Idioma}'");
+    }
+
     private enum View { Modules, Asistente, Ajustes }
 
     private View view = View.Modules;
