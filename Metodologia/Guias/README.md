@@ -42,6 +42,7 @@ Aparte del orden, y se lee cuando haga falta:
 |---|---|
 | [0 · La arquitectura clientecéntrica](00-arquitectura-clientecentrica.md) | Dónde corre todo, de quién es el journal, el Host y los módulos. **Contexto, no requisito**: se puede hacer el paso 1 sin haberlo leído |
 | [Las reglas del substrato](reglas-del-substrato.md) | Las 18 cosas que el motor hace y ninguna documentación dice. **Referencia, no tutorial**: si ya sabés lo que hacés, entrás por acá y no por el paso 5 |
+| [Las reglas de la localización](reglas-de-localizacion.md) | Qué texto se traduce y qué texto no, y quién es el dueño de cada uno. **Se lee antes de tocar el Host, una carátula, un dominio o un manifiesto** si hay texto en el medio. El alcance es `es`/`en` |
 | [Glosario](glosario.md) | Cada término que estas guías acuñaron, al lado del nombre con que la literatura ya lo conoce, la fuente y un **estado** — adoptado, en debate o propio. Las guías siguen en lenguaje llano; acá es donde se ve que *la columna de contraste* es una *value ascription* y *el test del Curador* es *Replace Subclass with Fields* |
 | [Investigación](../Investigacion/README.md) | El *porqué* de todo esto, con bibliografía. No hace falta para construir; hace falta para debatir qué se adopta y qué no |
 | [Herramientas](../Herramientas/) | Los chequeos que se corren solos **sobre estas guías**. Hoy uno: que ningún enlace ni ancla apunte a la nada |
