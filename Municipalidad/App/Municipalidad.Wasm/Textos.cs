@@ -68,6 +68,14 @@ namespace Municipalidad.Wasm
 		}
 
 		/// <summary>
+		/// La frase de un apunte que compuso una capa sin catalogo. La ausencia entra como
+		/// <see cref="Apunte.Ninguno"/> y sale como la cadena vacia, nunca como una clave vacia entre
+		/// llaves.
+		/// </summary>
+		public string Diga(Apunte apunte) =>
+			apunte.HayQueDecirlo ? Con(apunte.Clave, apunte.Huecos) : "";
+
+		/// <summary>
 		/// COMO SE DICE EL NOMBRE DE UN ESTADO que el dominio eligio de una lista cerrada. NO es dato del
 		/// registro: `cambio-de-tarifa` y `sin-consulta` los eligio el dominio, no la municipalidad, y en
 		/// pantalla son indistinguibles a ojo de un rubro que si vino del registro. El codigo sigue

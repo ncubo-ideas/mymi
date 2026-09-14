@@ -76,7 +76,7 @@ else
             @if (loQuePaso.QuedoSinRespaldo)
             {
                 <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="@textos["cuantoApartar.sinRespaldo"]">
-                    <p>@loQuePaso.Dice</p>
+                    <p>@textos.Diga(loQuePaso.Apunte)</p>
                 </Aviso>
             }
             else if (loQuePaso.QuedoRegistrado)
@@ -88,7 +88,7 @@ else
             else
             {
                 <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="@textos["cuantoApartar.rechazado"]">
-                    <p>@loQuePaso.Dice</p>
+                    <p>@(loQuePaso.Dice.Length > 0 ? loQuePaso.Dice : textos.Diga(loQuePaso.Apunte))</p>
                 </Aviso>
             }
         }

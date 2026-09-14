@@ -2,6 +2,7 @@ const BASE_DE_DATOS = 'municipalidad';
 const ALMACEN = 'handles';
 const CLAVE_DE_CARPETA = 'carpeta-del-journal';
 const CLAVE_DE_MODO = 'modo-de-persistencia';
+const CODIGO_DEL_ALMACENAMIENTO_DEL_NAVEGADOR = 'opfs';
 
 let carpeta = null;
 let modo = 'ninguno';
@@ -30,7 +31,7 @@ export function modoActual() {
 }
 
 export function nombreDeLaCarpeta() {
-    if (modo === 'opfs') return 'el almacenamiento de este navegador';
+    if (modo === 'opfs') return CODIGO_DEL_ALMACENAMIENTO_DEL_NAVEGADOR;
     return carpeta ? carpeta.name : '';
 }
 
@@ -53,7 +54,7 @@ function enTransaccion(modoDeTransaccion, accion) {
 }
 
 export async function elegirCarpeta() {
-    if (!estaSoportado()) return { ok: false, motivo: 'este browser no tiene showDirectoryPicker' };
+    if (!estaSoportado()) return { ok: false, motivo: 'sin-selector-de-carpetas' };
 
     try {
         carpeta = await window.showDirectoryPicker({ mode: 'readwrite', id: 'municipalidad-journal' });
@@ -66,16 +67,16 @@ export async function elegirCarpeta() {
 
         return { ok: permiso === 'granted', nombre: carpeta.name, permiso };
     } catch (e) {
-        return { ok: false, motivo: e.name === 'AbortError' ? 'la persona cancelo' : `${e.name}: ${e.message}` };
+        return { ok: false, motivo: e.name === 'AbortError' ? 'cancelado-por-la-persona' : `${e.name}: ${e.message}` };
     }
 }
 
 export async function recuperarCarpeta() {
-    if (!estaSoportado()) return { ok: false, motivo: 'este browser no tiene showDirectoryPicker' };
+    if (!estaSoportado()) return { ok: false, motivo: 'sin-selector-de-carpetas' };
 
     try {
         const guardada = await enTransaccion('readonly', almacen => almacen.get(CLAVE_DE_CARPETA));
-        if (!guardada) return { ok: false, motivo: 'no hay carpeta guardada todavia' };
+        if (!guardada) return { ok: false, motivo: 'sin-carpeta-guardada' };
 
         carpeta = guardada;
         modo = 'carpeta';
@@ -87,7 +88,7 @@ export async function recuperarCarpeta() {
 }
 
 export async function pedirPermiso() {
-    if (!carpeta) return { ok: false, motivo: 'no hay carpeta recuperada' };
+    if (!carpeta) return { ok: false, motivo: 'sin-carpeta-recuperada' };
 
     try {
         const permiso = await carpeta.requestPermission({ mode: 'readwrite' });
@@ -98,7 +99,7 @@ export async function pedirPermiso() {
 }
 
 export async function usarOpfs() {
-    if (!opfsSoportado()) return { ok: false, motivo: 'este navegador no tiene almacenamiento persistente' };
+    if (!opfsSoportado()) return { ok: false, motivo: 'sin-almacenamiento-del-navegador' };
 
     try {
         carpeta = await navigator.storage.getDirectory();
@@ -153,7 +154,7 @@ async function recorrer(directorio, prefijo, salida) {
 }
 
 export async function listar() {
-    if (!carpeta) return { ok: false, rutas: [], motivo: 'no hay carpeta' };
+    if (!carpeta) return { ok: false, rutas: [], motivo: 'sin-carpeta' };
 
     try {
         const salida = [];
@@ -166,7 +167,7 @@ export async function listar() {
             ok: false,
             rutas: [],
             motivo: colgando
-                ? 'la carpeta ya no existe: fue movida, renombrada o borrada'
+                ? 'la-carpeta-ya-no-existe'
                 : `${e.name}: ${e.message}`,
         };
     }
@@ -181,7 +182,7 @@ async function directorioDe(ruta, crear) {
 }
 
 export async function leer(ruta) {
-    if (!carpeta) return { ok: false, contenido: '', motivo: 'no hay carpeta' };
+    if (!carpeta) return { ok: false, contenido: '', motivo: 'sin-carpeta' };
     try {
         const directorio = await directorioDe(ruta, false);
         const archivo = await (await directorio.getFileHandle(ruta.split('/').pop())).getFile();
@@ -192,7 +193,7 @@ export async function leer(ruta) {
 }
 
 export async function escribir(ruta, base64) {
-    if (!carpeta) return { ok: false, motivo: 'no hay carpeta' };
+    if (!carpeta) return { ok: false, motivo: 'sin-carpeta' };
 
     let ultimo = null;
     for (let intento = 1; intento <= 2; intento++) {
