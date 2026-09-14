@@ -41,7 +41,7 @@
     </div>
 }
 
-@if (!estado.EstaArriba)
+@if (!estado.EstaArriba && !estado.Hospedada)
 {
     @if (sinAlmacenamiento == "inseguro")
     {
@@ -206,6 +206,8 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
+		if (estado.Hospedada) { await AbrirAsync(); return; }
+
 		haySelector = await estado.HaySelectorDeCarpetasAsync();
 		hayNavegador = await estado.HayAlmacenamientoDelNavegadorAsync();
 		instalada = await estado.CorreComoAppInstaladaAsync();
