@@ -116,27 +116,27 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(rows.Says, Has.Length.EqualTo(3));
 
-			int inspection = Array.IndexOf(rows.Milestone, "10000 km");
-			int fluid = Array.IndexOf(rows.Milestone, "20000 km");
-			int repair = Array.IndexOf(rows.Milestone, "30000 mi");
+			int inspection = Array.IndexOf(rows.Milestone, "10.000 km");
+			int fluid = Array.IndexOf(rows.Milestone, "20.000 km");
+			int repair = Array.IndexOf(rows.Milestone, "30.000 mi");
 
 			Assert.That(rows.Says[inspection], Is.EqualTo(
-				"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
-				+ "Al 2025-09-01 esa vigencia está rigiendo. "
+				"Revisión a los 10.000 km: ₡145,00, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
+				+ "Al 1 de setiembre de 2025 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(rows.Revision[inspection], Is.EqualTo(TheSecondRevision));
 			Assert.That(rows.Operation[inspection], Is.EqualTo("Inspection"));
 
 			Assert.That(rows.Says[fluid], Is.EqualTo(
-				"Cambio de fluido a los 20000 km: ₡340.00, vigente del 2025-01-01 al 2025-06-30. "
-				+ "Al 2025-09-01 esa vigencia ya pasó, así que este precio no es el vigente. "
+				"Cambio de fluido a los 20.000 km: ₡340,00, vigente del 1 de enero de 2025 al 30 de junio de 2025. "
+				+ "Al 1 de setiembre de 2025 esa vigencia ya pasó, así que este precio no es el vigente. "
 				+ "Publicado en la revisión REV-2025-01."));
 			Assert.That(rows.Revision[fluid], Is.EqualTo(TheFirstRevision));
 			Assert.That(rows.Operation[fluid], Is.EqualTo("FluidChange"));
 
 			Assert.That(rows.Says[repair], Is.EqualTo(
-				"Reparación a los 30000 mi: $900.00, vigente del 2025-01-01 al 2025-12-31. "
-				+ "Al 2025-09-01 esa vigencia está rigiendo. "
+				"Reparación a los 30.000 mi: $900,00, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
+				+ "Al 1 de setiembre de 2025 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(rows.Revision[repair], Is.EqualTo(TheSecondRevision));
 			Assert.That(rows.Operation[repair], Is.EqualTo("Repair"));
@@ -159,7 +159,7 @@ namespace Concesionario.Dominio.Pruebas
 						operation, TheLanguage.OfTheRecord), Is.Not.Empty,
 					"La columna no sirvio como direccion: la puerta no acepto ese nombre de vuelta.");
 
-			Assert.That(rows.Says[Array.IndexOf(rows.Milestone, "10000 km")],
+			Assert.That(rows.Says[Array.IndexOf(rows.Milestone, "10.000 km")],
 				Does.StartWith("Revisión a los "));
 		}
 
@@ -175,7 +175,7 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.PublishedServicePricesAsOf(
 					AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 
-			Assert.That(rows.Milestone, Is.EquivalentTo(new[] { "10000 km", "20000 km", "30000 mi" }));
+			Assert.That(rows.Milestone, Is.EquivalentTo(new[] { "10.000 km", "20.000 km", "30.000 mi" }));
 
 			foreach (string each in rows.Milestone)
 				Assert.That(each, Does.Not.Contain("UnitA").And.Not.Contain("UnitB"),
@@ -264,7 +264,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Inspection", 10000, "UnitA", TheLanguage.OfTheRecord);
 
 			Assert.That(said, Is.EqualTo(
-				"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
+				"Revisión a los 10.000 km: ₡145,00, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
 				+ "Publicado en la revisión REV-2025-02."));
 
 			Assert.That(said, Does.Not.Contain(" Al "));

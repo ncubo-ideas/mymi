@@ -96,6 +96,12 @@ namespace Concesionario.App.Wording
 				["canon.fuelStanding.Permitted"] = "permitted",
 				["canon.fuelStanding.Prohibited"] = "prohibited",
 
+				["canon.costClassification.Recurring"] = "Recurring",
+				["canon.costClassification.Durable"] = "Durable",
+
+				["canon.currency.CRC"] = "₡",
+				["canon.currency.USD"] = "$",
+
 				["canon.standing.Inside"] = "Inside",
 				["canon.standing.Reached"] = "Reached",
 				["canon.standing.NotPublished"] = "Not published",
@@ -366,6 +372,75 @@ namespace Concesionario.App.Wording
 					"Limits in force: {limits}. This vehicle is inside them.",
 				["coverage.reason.OutsideTheLimits"] =
 					"Limits in force: {limits}. This vehicle is outside them.",
+
+				["money.Named"] = "{symbol}{amount}",
+				["money.NotNamed"] = "{amount} {code}",
+
+				["sheet.subject.ServicePrice"] =
+					"Price of the {operation} service at the milestone asked",
+
+				["price.said"] =
+					"{operation} at {milestone}: {money}, valid from {from} to {until}.",
+				["price.NotAsked"] = "{said}",
+				["price.InForce"] = "{said} On {asked} that validity is in force.",
+				["price.NotYetStarted"] =
+					"{said} On {asked} that validity has not started yet, so this is not the price in "
+					+ "force.",
+				["price.AlreadyPassed"] =
+					"{said} On {asked} that validity has passed, so this is not the price in force.",
+
+				["spend.NoCostOnRecord"] =
+					"Between {from} and {to} there is no spend on record for this vehicle.",
+				["spend.NoCostOnRecord.perCurrency"] =
+					"Between {from} and {to} there is no spend on record for this vehicle, so there is "
+					+ "no currency to say it in.",
+				["spend.SaidInOneCurrency"] = "Between {from} and {to}: {currencies}",
+				["spend.SaidInOneCurrency.perCurrency"] =
+					"Between {from} and {to} the whole spend is said in a single currency: "
+					+ "{currencies}",
+				["spend.NotSaidAcrossCurrencies"] =
+					"Between {from} and {to} the spend is in {count} different currencies, so there is "
+					+ "no total across them and each one is said on its own. {currencies}",
+				["spend.NotSaidAcrossCurrencies.perCurrency"] =
+					"Between {from} and {to} the spend is in {count} different currencies, so there is "
+					+ "no total across them and each one is said on its own. {currencies}",
+				["spend.twoPeriods"] = "First period: {first} Second period: {second}",
+
+				["spend.views.BothViews"] =
+					"{cashOut} left the bank and the period consumed {consumed}.{shares}",
+				["spend.views.TheCashOutAlone"] =
+					"{cashOut} left the bank and the period has consumed none of it yet.{shares}",
+				["spend.views.TheConsumedAlone"] =
+					"Nothing left the bank in this period and the period consumed {consumed}.{shares}",
+				["spend.share"] =
+					"Of that: {whole} on {subject}, in a straight line over {life} from {incurredAt}: "
+					+ "this period's share is {share}.",
+
+				["costEntry.Recurring"] =
+					"{money} on {subject} on {incurredAt}. {classification}: consumed in the period it "
+					+ "was incurred in.",
+				["costEntry.Durable"] =
+					"{money} on {subject} on {incurredAt}. {classification}: spread in a straight line "
+					+ "over {life} from that date.",
+
+				["costPerDistance.said"] =
+					"Between {from} and {to}, since the period's first odometer reading -- the one on "
+					+ "{anchor} -- the vehicle travelled {distance}: {figures} {rule}",
+				["costPerDistance.rule"] =
+					"What was paid at that reading or before paid for the earlier distance and does "
+					+ "not count here.",
+				["costPerDistance.Measured"] = "what was spent after it works out at {figures}.",
+				["costPerDistance.figure"] = "{money} per {unit}",
+				["costPerDistance.betweenTwoFigures"] = " and ",
+				["costPerDistance.NothingSpentAfterTheAnchor"] =
+					"nothing was spent after that reading.",
+				["costPerDistance.NoDistanceTravelled"] =
+					"there is no distance travelled to divide what was spent after that reading by, "
+					+ "and that is not a cost of zero per {unit}.",
+				["costPerDistance.NoSpanOfUse"] =
+					"Between {from} and {to} there is no span of use to divide the spend by, so how "
+					+ "much the distance costs cannot be said. What the odometer series says about "
+					+ "this period: {why}",
 			};
 		}
 	}

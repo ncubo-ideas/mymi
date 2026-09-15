@@ -532,7 +532,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribePublishedServicePrice(
 					"FluidChange", TenThousandUnits, "UnitA", TheLanguage.OfTheRecord),
-				Does.Contain("$75.50").And.Not.Contain(" Al "));
+				Does.Contain("$75,50").And.Not.Contain(" Al "));
 		}
 
 		// LAS SEIS DE LA SERIE DEL ODOMETRO QUE TRAJO OD-2, CADA UNA EN LOS DOS ESTADOS DEL REGISTRO.
@@ -606,15 +606,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			// SIN NINGUNA ENTRADA: las siete corren igual y ninguna rechaza.
 			Assert.That(journal.Api.HasAnyCostBetween(from, to), Is.False);
-			Assert.That(journal.Api.DescribeSpendBetween(from, to), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeSpendBetween(from, to, TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(journal.Api.IsSpendSaidInOneCurrencyBetween(from, to), Is.False);
-			Assert.That(journal.Api.DescribeSpendPerCurrencyBetween(from, to), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeSpendPerCurrencyBetween(from, to, TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(
-				journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Is.Not.Empty);
 			Assert.That(journal.Api.CostEntryCountBetween(from, to), Is.EqualTo(0));
-			Assert.That(journal.Api.CostEntriesBetween(from, to).Says, Is.Empty);
+			Assert.That(journal.Api.CostEntriesBetween(from, to, TheLanguage.OfTheRecord).Says, Is.Empty);
 
 			// CON UNA DURADERA Y UNA RECURRENTE EN DOS MONEDAS: las mismas siete, y ahora contestando.
 			journal.Api.RecordDurableCost(
@@ -626,20 +625,19 @@ namespace Concesionario.Dominio.Pruebas
 				"Lavado premium");
 
 			Assert.That(journal.Api.HasAnyCostBetween(from, to), Is.True);
-			Assert.That(journal.Api.DescribeSpendBetween(from, to), Does.Contain("₡240000.00"));
+			Assert.That(journal.Api.DescribeSpendBetween(from, to, TheLanguage.OfTheRecord), Does.Contain("₡240.000,00"));
 			Assert.That(journal.Api.IsSpendSaidInOneCurrencyBetween(from, to), Is.False);
 			Assert.That(
-				journal.Api.DescribeSpendPerCurrencyBetween(from, to),
+				journal.Api.DescribeSpendPerCurrencyBetween(from, to, TheLanguage.OfTheRecord),
 				Does.Contain("2 monedas distintas"));
 			Assert.That(
-				journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Does.Contain("Segundo período: Entre el 2025-01-01 00:00:00"),
 				"Y los CUATRO extremos del script de la comparacion atan por separado: el segundo "
 				+ "periodo es otro anio y no tiene ningun gasto que decir.");
 			Assert.That(journal.Api.CostEntryCountBetween(from, to), Is.EqualTo(2));
 			Assert.That(
-				journal.Api.CostEntriesBetween(from, to).Classification,
+				journal.Api.CostEntriesBetween(from, to, TheLanguage.OfTheRecord).Classification,
 				Is.EqualTo(new[] { "Durable", "Recurring" }),
 				"Y las SEIS lineas del script del registro atan sus seis Out en una sola consulta.");
 		}
@@ -722,7 +720,7 @@ namespace Concesionario.Dominio.Pruebas
 			// SIN NINGUNA LECTURA NI NINGUN GASTO: la rama ELSE, y el && corta en su primer operando.
 			Assert.That(journal.Api.CanCostPerDistanceBeSaid(from, to), Is.False);
 			Assert.That(
-				journal.Api.DescribeCostPerDistanceBetween(from, to),
+				journal.Api.DescribeCostPerDistanceBetween(from, to, TheLanguage.OfTheRecord),
 				Does.Contain("no hay un tramo de uso"),
 				"Y la rama else compone la frase del ritmo adentro de la del costo.");
 
@@ -745,8 +743,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.CanCostPerDistanceBeSaid(from, to), Is.True);
 			Assert.That(
-				journal.Api.DescribeCostPerDistanceBetween(from, to),
-				Does.Contain("₡80.00 por km"),
+				journal.Api.DescribeCostPerDistanceBetween(from, to, TheLanguage.OfTheRecord),
+				Does.Contain("₡80,00 por km"),
 				"240000 sobre los 3000 km que la serie dice son 80.00, y el 'km' sale del codigo de "
 				+ "unidad que cruzo TIPADO de una global a la otra: si hubiera cruzado como NOMBRE, la "
 				+ "llamada no habria ligado.");
@@ -1181,7 +1179,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Y los tres hechos avanzan el punto de control en el MISMO comando que el hecho.");
 
 			CostLedgerRecord record =
-				journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo);
+				journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(record.Classification, Is.EqualTo(new[] { "Durable", "Recurring", "Recurring" }),
 				"UNA duradera y DOS recurrentes, y en ese orden: es lo unico que separa el script del "
@@ -1323,7 +1321,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServicePrice(
 					"FluidChange", TenThousandUnits, "UnitA", ThePublication, TheLanguage.OfTheRecord),
-				Does.Contain("$75.50"));
+				Does.Contain("$75,50"));
 			Assert.That(
 				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
 				Is.EqualTo(TheRevision));

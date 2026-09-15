@@ -23,10 +23,19 @@ namespace Concesionario.Dominio
 			return CostClassification.Recurring;
 		}
 
-		/// <summary>Ninguna: una recurrente se consume en su periodo y no tiene vida util.</summary>
-		internal override string HowItsExpectedLifeIsSaid()
+		/// <summary>No: una recurrente se consume en su periodo y no tiene vida util.</summary>
+		internal override bool SpreadsItselfOverTime()
 		{
-			return "";
+			return false;
+		}
+
+		/// <summary>
+		/// Cero, y quien lo dice es la clasificacion y no este cero: una recurrente no tiene vida
+		/// util.
+		/// </summary>
+		internal override int TheMonthsOfItsExpectedLife()
+		{
+			return 0;
 		}
 
 		/// <summary>Si se incurrio adentro: es el mismo periodo que la consume.</summary>
@@ -35,7 +44,8 @@ namespace Concesionario.Dominio
 			return WasIncurredBetween(from, to);
 		}
 
-		/// <summary>El gasto entero, porque el periodo en que se incurrio lo consume todo.</summary>
+		/// <summary>El gasto entero, porque el periodo en que se incurrio lo consume
+		/// todo.</summary>
 		internal override Money TheMoneyItConsumedBetween(DateTime from, DateTime to)
 		{
 			if (!ConsumesAnythingBetween(from, to))
@@ -50,16 +60,12 @@ namespace Concesionario.Dominio
 		/// Ninguna: no hay regla que hacer visible. Un gasto que se consume en su propio periodo ya
 		/// esta dicho entero por las dos cifras del periodo.
 		/// </summary>
-		internal override string TheClauseOfItsConsumptionBetween(DateTime from, DateTime to)
+		internal override AnAmortizedShare TheShareItGivesBetween(DateTime from, DateTime to)
 		{
-			return "";
-		}
-
-		/// <summary>La entrada dicha entera, con su clase y con lo que su clase significa.</summary>
-		internal override string Describe()
-		{
-			return TheSpendClause() + ". " + Classification().HowItIsSaid
-				+ ": se consumió en el período en que se incurrió.";
+			throw new DomainException(
+				"Se pidio la parte que un periodo consumio del gasto en " + Subject.Value + ", que es "
+				+ "recurrente y se consume entero en el periodo en que se incurrio: hay que preguntar "
+				+ "antes si se reparte. Una parte inventada aqui seria una regla que nadie aplico.");
 		}
 	}
 }

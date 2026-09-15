@@ -241,9 +241,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(refused.Message, Does.Contain("no va para atras"));
 
 			Assert.That(
-				ACostPerDistance.Of(
-					TheStart, TheEnd, TheStart, 0, DistanceUnit.UnitA, new List<ACostEntry>())
-					.Describe(),
+				TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+					ACostPerDistance.Of(
+						TheStart, TheEnd, TheStart, 0, DistanceUnit.UnitA, new List<ACostEntry>())
+						.TheClauseItComposes(),
+					TheLanguage.OfTheRecord),
 				Is.Not.Empty,
 				"Y cero no se rechaza: es un tramo en el que el vehiculo no se movio, que es un hecho.");
 		}

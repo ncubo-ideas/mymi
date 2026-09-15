@@ -578,11 +578,67 @@ namespace Concesionario.App
 		/// y lo que el periodo consumio -- o la constancia con nombre de que no hay ninguno. TOTAL, y
 		/// ninguna lectura contesta una vista sola.
 		/// </summary>
-		public string DescribeSpendBetween(DateTime from, DateTime to)
+		public string DescribeSpendBetween(DateTime from, DateTime to, string language)
 		{
-			return AText(
-				"@says = ledger.DescribeSpendBetween(@from, @to);", "says",
-				APeriodOfInstants(from, to));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					spend         = ledger.TheSpendClauseBetween(@from, @to);
+					@asked        = spend.HowItWasAsked();
+					@shapes       = spend.TheShapesOfItsPeriods();
+					@startsAt     = spend.TheInstantsEachPeriodStartsAt();
+					@endsAt       = spend.TheInstantsEachPeriodEndsAt();
+					@counts       = spend.TheCurrencyCountOfEachPeriod();
+					@periodOf     = spend.ThePeriodOfEachCurrency();
+					@views        = spend.TheViewsOfEachCurrency();
+					@cashShapes   = spend.TheShapesOfEachCashOut();
+					@cashAmounts  = spend.TheCashOutsAsSaid();
+					@cashCodes    = spend.TheCodesOfEachCashOut();
+					@usedShapes   = spend.TheShapesOfEachConsumed();
+					@usedAmounts  = spend.TheConsumedAsSaid();
+					@usedCodes    = spend.TheCodesOfEachConsumed();
+					@shareOf      = spend.TheCurrencyOfEachShare();
+					@wholeShapes  = spend.TheShapesOfEachWhole();
+					@wholeAmounts = spend.TheWholesAsSaid();
+					@wholeCodes   = spend.TheCodesOfEachWhole();
+					@subjects     = spend.TheSubjectsOfEachShare();
+					@lives        = spend.TheMonthsEachShareIsSpreadOver();
+					@instants     = spend.TheInstantsEachShareWasIncurred();
+					@shareShapes  = spend.TheShapesOfEachShare();
+					@shareAmounts = spend.TheSharesAsSaid();
+					@shareCodes   = spend.TheCodesOfEachShare();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "asked",        typeof(string)]   = default;
+					p[Parameter.Out, "shapes",       typeof(string[])] = default;
+					p[Parameter.Out, "startsAt",     typeof(string[])] = default;
+					p[Parameter.Out, "endsAt",       typeof(string[])] = default;
+					p[Parameter.Out, "counts",       typeof(int[])]    = default;
+					p[Parameter.Out, "periodOf",     typeof(int[])]    = default;
+					p[Parameter.Out, "views",        typeof(string[])] = default;
+					p[Parameter.Out, "cashShapes",   typeof(string[])] = default;
+					p[Parameter.Out, "cashAmounts",  typeof(string[])] = default;
+					p[Parameter.Out, "cashCodes",    typeof(string[])] = default;
+					p[Parameter.Out, "usedShapes",   typeof(string[])] = default;
+					p[Parameter.Out, "usedAmounts",  typeof(string[])] = default;
+					p[Parameter.Out, "usedCodes",    typeof(string[])] = default;
+					p[Parameter.Out, "shareOf",      typeof(int[])]    = default;
+					p[Parameter.Out, "wholeShapes",  typeof(string[])] = default;
+					p[Parameter.Out, "wholeAmounts", typeof(string[])] = default;
+					p[Parameter.Out, "wholeCodes",   typeof(string[])] = default;
+					p[Parameter.Out, "subjects",     typeof(string[])] = default;
+					p[Parameter.Out, "lives",        typeof(int[])]    = default;
+					p[Parameter.Out, "instants",     typeof(string[])] = default;
+					p[Parameter.Out, "shareShapes",  typeof(string[])] = default;
+					p[Parameter.Out, "shareAmounts", typeof(string[])] = default;
+					p[Parameter.Out, "shareCodes",   typeof(string[])] = default;
+					p["from", typeof(DateTime)] = InUtc(from);
+					p["to",   typeof(DateTime)] = InUtc(to);
+				})
+				.PerformQuery();
+
+				return TheSpendSaid(rented, language);
+			}
 		}
 
 		/// <summary>
@@ -601,11 +657,67 @@ namespace Concesionario.App
 		/// una y no hay total entre ellas. TOTAL. El dinero no se convierte: agrupar por moneda es de
 		/// quien consulta.
 		/// </summary>
-		public string DescribeSpendPerCurrencyBetween(DateTime from, DateTime to)
+		public string DescribeSpendPerCurrencyBetween(DateTime from, DateTime to, string language)
 		{
-			return AText(
-				"@says = ledger.DescribeSpendPerCurrencyBetween(@from, @to);", "says",
-				APeriodOfInstants(from, to));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					spend         = ledger.TheSpendPerCurrencyClauseBetween(@from, @to);
+					@asked        = spend.HowItWasAsked();
+					@shapes       = spend.TheShapesOfItsPeriods();
+					@startsAt     = spend.TheInstantsEachPeriodStartsAt();
+					@endsAt       = spend.TheInstantsEachPeriodEndsAt();
+					@counts       = spend.TheCurrencyCountOfEachPeriod();
+					@periodOf     = spend.ThePeriodOfEachCurrency();
+					@views        = spend.TheViewsOfEachCurrency();
+					@cashShapes   = spend.TheShapesOfEachCashOut();
+					@cashAmounts  = spend.TheCashOutsAsSaid();
+					@cashCodes    = spend.TheCodesOfEachCashOut();
+					@usedShapes   = spend.TheShapesOfEachConsumed();
+					@usedAmounts  = spend.TheConsumedAsSaid();
+					@usedCodes    = spend.TheCodesOfEachConsumed();
+					@shareOf      = spend.TheCurrencyOfEachShare();
+					@wholeShapes  = spend.TheShapesOfEachWhole();
+					@wholeAmounts = spend.TheWholesAsSaid();
+					@wholeCodes   = spend.TheCodesOfEachWhole();
+					@subjects     = spend.TheSubjectsOfEachShare();
+					@lives        = spend.TheMonthsEachShareIsSpreadOver();
+					@instants     = spend.TheInstantsEachShareWasIncurred();
+					@shareShapes  = spend.TheShapesOfEachShare();
+					@shareAmounts = spend.TheSharesAsSaid();
+					@shareCodes   = spend.TheCodesOfEachShare();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "asked",        typeof(string)]   = default;
+					p[Parameter.Out, "shapes",       typeof(string[])] = default;
+					p[Parameter.Out, "startsAt",     typeof(string[])] = default;
+					p[Parameter.Out, "endsAt",       typeof(string[])] = default;
+					p[Parameter.Out, "counts",       typeof(int[])]    = default;
+					p[Parameter.Out, "periodOf",     typeof(int[])]    = default;
+					p[Parameter.Out, "views",        typeof(string[])] = default;
+					p[Parameter.Out, "cashShapes",   typeof(string[])] = default;
+					p[Parameter.Out, "cashAmounts",  typeof(string[])] = default;
+					p[Parameter.Out, "cashCodes",    typeof(string[])] = default;
+					p[Parameter.Out, "usedShapes",   typeof(string[])] = default;
+					p[Parameter.Out, "usedAmounts",  typeof(string[])] = default;
+					p[Parameter.Out, "usedCodes",    typeof(string[])] = default;
+					p[Parameter.Out, "shareOf",      typeof(int[])]    = default;
+					p[Parameter.Out, "wholeShapes",  typeof(string[])] = default;
+					p[Parameter.Out, "wholeAmounts", typeof(string[])] = default;
+					p[Parameter.Out, "wholeCodes",   typeof(string[])] = default;
+					p[Parameter.Out, "subjects",     typeof(string[])] = default;
+					p[Parameter.Out, "lives",        typeof(int[])]    = default;
+					p[Parameter.Out, "instants",     typeof(string[])] = default;
+					p[Parameter.Out, "shareShapes",  typeof(string[])] = default;
+					p[Parameter.Out, "shareAmounts", typeof(string[])] = default;
+					p[Parameter.Out, "shareCodes",   typeof(string[])] = default;
+					p["from", typeof(DateTime)] = InUtc(from);
+					p["to",   typeof(DateTime)] = InUtc(to);
+				})
+				.PerformQuery();
+
+				return TheSpendSaid(rented, language);
+			}
 		}
 
 		/// <summary>
@@ -614,11 +726,105 @@ namespace Concesionario.App
 		/// los dos sale por ninguna lectura como numero.
 		/// </summary>
 		public string DescribeTwoPeriodsOfSpendCompared(
-			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
+			DateTime from1, DateTime to1, DateTime from2, DateTime to2, string language)
 		{
-			return AText(@"
-				@says = ledger.DescribeTwoPeriodsOfSpendCompared(@from1, @to1, @from2, @to2);
-			", "says", TwoPeriodsOfInstants(from1, to1, from2, to2));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					spend         = ledger.TheTwoPeriodsOfSpendComparedClause(
+						@from1, @to1, @from2, @to2);
+					@asked        = spend.HowItWasAsked();
+					@shapes       = spend.TheShapesOfItsPeriods();
+					@startsAt     = spend.TheInstantsEachPeriodStartsAt();
+					@endsAt       = spend.TheInstantsEachPeriodEndsAt();
+					@counts       = spend.TheCurrencyCountOfEachPeriod();
+					@periodOf     = spend.ThePeriodOfEachCurrency();
+					@views        = spend.TheViewsOfEachCurrency();
+					@cashShapes   = spend.TheShapesOfEachCashOut();
+					@cashAmounts  = spend.TheCashOutsAsSaid();
+					@cashCodes    = spend.TheCodesOfEachCashOut();
+					@usedShapes   = spend.TheShapesOfEachConsumed();
+					@usedAmounts  = spend.TheConsumedAsSaid();
+					@usedCodes    = spend.TheCodesOfEachConsumed();
+					@shareOf      = spend.TheCurrencyOfEachShare();
+					@wholeShapes  = spend.TheShapesOfEachWhole();
+					@wholeAmounts = spend.TheWholesAsSaid();
+					@wholeCodes   = spend.TheCodesOfEachWhole();
+					@subjects     = spend.TheSubjectsOfEachShare();
+					@lives        = spend.TheMonthsEachShareIsSpreadOver();
+					@instants     = spend.TheInstantsEachShareWasIncurred();
+					@shareShapes  = spend.TheShapesOfEachShare();
+					@shareAmounts = spend.TheSharesAsSaid();
+					@shareCodes   = spend.TheCodesOfEachShare();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "asked",        typeof(string)]   = default;
+					p[Parameter.Out, "shapes",       typeof(string[])] = default;
+					p[Parameter.Out, "startsAt",     typeof(string[])] = default;
+					p[Parameter.Out, "endsAt",       typeof(string[])] = default;
+					p[Parameter.Out, "counts",       typeof(int[])]    = default;
+					p[Parameter.Out, "periodOf",     typeof(int[])]    = default;
+					p[Parameter.Out, "views",        typeof(string[])] = default;
+					p[Parameter.Out, "cashShapes",   typeof(string[])] = default;
+					p[Parameter.Out, "cashAmounts",  typeof(string[])] = default;
+					p[Parameter.Out, "cashCodes",    typeof(string[])] = default;
+					p[Parameter.Out, "usedShapes",   typeof(string[])] = default;
+					p[Parameter.Out, "usedAmounts",  typeof(string[])] = default;
+					p[Parameter.Out, "usedCodes",    typeof(string[])] = default;
+					p[Parameter.Out, "shareOf",      typeof(int[])]    = default;
+					p[Parameter.Out, "wholeShapes",  typeof(string[])] = default;
+					p[Parameter.Out, "wholeAmounts", typeof(string[])] = default;
+					p[Parameter.Out, "wholeCodes",   typeof(string[])] = default;
+					p[Parameter.Out, "subjects",     typeof(string[])] = default;
+					p[Parameter.Out, "lives",        typeof(int[])]    = default;
+					p[Parameter.Out, "instants",     typeof(string[])] = default;
+					p[Parameter.Out, "shareShapes",  typeof(string[])] = default;
+					p[Parameter.Out, "shareAmounts", typeof(string[])] = default;
+					p[Parameter.Out, "shareCodes",   typeof(string[])] = default;
+					p["from1", typeof(DateTime)] = InUtc(from1);
+					p["to1",   typeof(DateTime)] = InUtc(to1);
+					p["from2", typeof(DateTime)] = InUtc(from2);
+					p["to2",   typeof(DateTime)] = InUtc(to2);
+				})
+				.PerformQuery();
+
+				return TheSpendSaid(rented, language);
+			}
+		}
+
+		/// <summary>
+		/// LO QUE LAS TRES LECTURAS DEL GASTO LEEN DE VUELTA, una sola vez: el mismo renderizador y el
+		/// mismo marco, para que las tres no puedan decir cosas distintas del mismo dinero. Lo que si
+		/// esta tres veces es la ATADURA de cada salida, inline en su propia consulta, que es donde el
+		/// censo de la puerta la puede leer.
+		/// </summary>
+		private static string TheSpendSaid(RentedParameter rented, string language)
+		{
+			return Wording.TheWording.TheSpend(
+				Wording.Phrases.Of(language),
+				rented["asked"].GetValue<string>(),
+				rented["shapes"].GetValue<string[]>(),
+				rented["startsAt"].GetValue<string[]>(),
+				rented["endsAt"].GetValue<string[]>(),
+				rented["counts"].GetValue<int[]>(),
+				rented["periodOf"].GetValue<int[]>(),
+				rented["views"].GetValue<string[]>(),
+				rented["cashShapes"].GetValue<string[]>(),
+				rented["cashAmounts"].GetValue<string[]>(),
+				rented["cashCodes"].GetValue<string[]>(),
+				rented["usedShapes"].GetValue<string[]>(),
+				rented["usedAmounts"].GetValue<string[]>(),
+				rented["usedCodes"].GetValue<string[]>(),
+				rented["shareOf"].GetValue<int[]>(),
+				rented["wholeShapes"].GetValue<string[]>(),
+				rented["wholeAmounts"].GetValue<string[]>(),
+				rented["wholeCodes"].GetValue<string[]>(),
+				rented["subjects"].GetValue<string[]>(),
+				rented["lives"].GetValue<int[]>(),
+				rented["instants"].GetValue<string[]>(),
+				rented["shareShapes"].GetValue<string[]>(),
+				rented["shareAmounts"].GetValue<string[]>(),
+				rented["shareCodes"].GetValue<string[]>());
 		}
 
 		/// <summary>
@@ -627,19 +833,73 @@ namespace Concesionario.App
 		/// frase con que el dominio la dice, en columnas paralelas y en orden del instante en que se
 		/// incurrieron. TOTAL, y contesta CERO filas donde no hay ninguna.
 		/// </summary>
-		public CostLedgerRecord CostEntriesBetween(DateTime from, DateTime to)
+		public CostLedgerRecord CostEntriesBetween(DateTime from, DateTime to, string language)
 		{
-			string[][] columns = TheTextColumns(@"
-				@incurredAt     = ledger.CostEntryInstantsBetween(@from, @to);
-				@subject        = ledger.CostEntrySubjectsBetween(@from, @to);
-				@money          = ledger.CostEntryMoniesBetween(@from, @to);
-				@classification = ledger.CostEntryClassificationsBetween(@from, @to);
-				@expectedLife   = ledger.CostEntryExpectedLivesBetween(@from, @to);
-				@says           = ledger.DescribeEachCostEntryBetween(@from, @to);
-			", TheColumnsOfACostLedgerRecord, APeriodOfInstants(from, to));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					@incurredAt     = ledger.CostEntryInstantsBetween(@from, @to);
+					@subject        = ledger.CostEntrySubjectsBetween(@from, @to);
+					@currencyShape  = ledger.CostEntryCurrencyShapesBetween(@from, @to);
+					@amount         = ledger.CostEntryAmountsBetween(@from, @to);
+					@currencyCode   = ledger.CostEntryCurrencyCodesBetween(@from, @to);
+					@classification = ledger.CostEntryClassificationsBetween(@from, @to);
+					@expectedLife   = ledger.CostEntryExpectedLivesBetween(@from, @to);
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "incurredAt",     typeof(string[])] = default;
+					p[Parameter.Out, "subject",        typeof(string[])] = default;
+					p[Parameter.Out, "currencyShape",  typeof(string[])] = default;
+					p[Parameter.Out, "amount",         typeof(string[])] = default;
+					p[Parameter.Out, "currencyCode",   typeof(string[])] = default;
+					p[Parameter.Out, "classification", typeof(string[])] = default;
+					p[Parameter.Out, "expectedLife",   typeof(int[])]    = default;
+					p["from", typeof(DateTime)] = InUtc(from);
+					p["to",   typeof(DateTime)] = InUtc(to);
+				})
+				.PerformQuery();
+
+				return TheLedgerRows(
+					Wording.Phrases.Of(language),
+					rented["incurredAt"].GetValue<string[]>(),
+					rented["subject"].GetValue<string[]>(),
+					rented["currencyShape"].GetValue<string[]>(),
+					rented["amount"].GetValue<string[]>(),
+					rented["currencyCode"].GetValue<string[]>(),
+					rented["classification"].GetValue<string[]>(),
+					rented["expectedLife"].GetValue<int[]>());
+			}
+		}
+
+		/// <summary>
+		/// Las filas del libro compuestas una por una en ese idioma: el dinero con su moneda, la vida
+		/// util o nada, y la frase entera de cada entrada. La frase de una fila es la misma que la de
+		/// la lectura del periodo -- el mismo renderizador y el mismo marco --, para que la tabla y la
+		/// respuesta suelta no puedan decir cosas distintas del mismo gasto.
+		/// </summary>
+		private static CostLedgerRecord TheLedgerRows(
+			Wording.Phrases phrases, string[] incurredAt, string[] subject, string[] currencyShape,
+			string[] amount, string[] currencyCode, string[] classification, int[] expectedLife)
+		{
+			string[] money = new string[incurredAt.Length];
+			string[] life = new string[incurredAt.Length];
+			string[] says = new string[incurredAt.Length];
+
+			for (int row = 0; row < incurredAt.Length; row++)
+			{
+				money[row] = Wording.TheWording.TheMoney(
+					phrases, currencyShape[row], amount[row], currencyCode[row]);
+
+				life[row] = Wording.TheWording.TheExpectedLife(
+					phrases, classification[row], expectedLife[row]);
+
+				says[row] = Wording.TheWording.TheCostEntry(
+					phrases, classification[row], currencyShape[row], amount[row],
+					currencyCode[row], subject[row], incurredAt[row], expectedLife[row]);
+			}
 
 			return CostLedgerRecord.Of(
-				columns[0], columns[1], columns[2], columns[3], columns[4], columns[5]);
+				incurredAt, subject, money, classification, life, says);
 		}
 
 		/// <summary>
@@ -664,19 +924,70 @@ namespace Concesionario.App
 		/// sale por ninguna lectura como numero.
 		/// </para>
 		/// </summary>
-		public string DescribeCostPerDistanceBetween(DateTime from, DateTime to)
+		public string DescribeCostPerDistanceBetween(DateTime from, DateTime to, string language)
 		{
-			return AText(@"
-				if (schedule.CanARateOfUseBeSaid(@from, @to)) {
-					@clause = ledger.DescribeCostPerDistance(@from, @to,
-						schedule.FirstReadingInstantBetween(@from, @to),
-						schedule.DistanceTravelledBetween(@from, @to),
-						schedule.UnitOfTravelBetween(@from, @to));
-				} else {
-					@clause = ledger.DescribeCostPerDistanceWithNoSpan(@from, @to,
-						schedule.DescribeRateOfUse(@from, @to));
-				}
-			", "clause", APeriodOfInstants(from, to));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					if (schedule.CanARateOfUseBeSaid(@from, @to)) {
+						measured      = ledger.TheCostPerDistanceClause(@from, @to,
+							schedule.FirstReadingInstantBetween(@from, @to),
+							schedule.DistanceTravelledBetween(@from, @to),
+							schedule.UnitOfTravelBetween(@from, @to));
+						@shape        = measured.TheShapeItHas();
+						@startsAt     = measured.TheInstantItStartsAt();
+						@endsAt       = measured.TheInstantItEndsAt();
+						@anchor       = measured.TheInstantOfTheAnchor();
+						@distance     = measured.TheDistanceTravelled();
+						@unit         = measured.TheUnitTheDistanceIsIn();
+						@why          = measured.WhyTheRateCannotBeSaid();
+						@figureShapes = measured.TheShapesOfEachFigure();
+						@figures      = measured.TheFiguresAsSaid();
+						@figureCodes  = measured.TheCodesOfEachFigure();
+					} else {
+						noSpan        = ledger.TheCostPerDistanceClauseWithNoSpan(@from, @to,
+							schedule.DescribeRateOfUse(@from, @to));
+						@shape        = noSpan.TheShapeItHas();
+						@startsAt     = noSpan.TheInstantItStartsAt();
+						@endsAt       = noSpan.TheInstantItEndsAt();
+						@anchor       = noSpan.TheInstantOfTheAnchor();
+						@distance     = noSpan.TheDistanceTravelled();
+						@unit         = noSpan.TheUnitTheDistanceIsIn();
+						@why          = noSpan.WhyTheRateCannotBeSaid();
+						@figureShapes = noSpan.TheShapesOfEachFigure();
+						@figures      = noSpan.TheFiguresAsSaid();
+						@figureCodes  = noSpan.TheCodesOfEachFigure();
+					}
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",        typeof(string)]   = default;
+					p[Parameter.Out, "startsAt",     typeof(string)]   = default;
+					p[Parameter.Out, "endsAt",       typeof(string)]   = default;
+					p[Parameter.Out, "anchor",       typeof(string)]   = default;
+					p[Parameter.Out, "distance",     typeof(int)]      = default;
+					p[Parameter.Out, "unit",         typeof(string)]   = default;
+					p[Parameter.Out, "why",          typeof(string)]   = default;
+					p[Parameter.Out, "figureShapes", typeof(string[])] = default;
+					p[Parameter.Out, "figures",      typeof(string[])] = default;
+					p[Parameter.Out, "figureCodes",  typeof(string[])] = default;
+					p["from", typeof(DateTime)] = InUtc(from);
+					p["to",   typeof(DateTime)] = InUtc(to);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheCostPerDistance(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["startsAt"].GetValue<string>(),
+					rented["endsAt"].GetValue<string>(),
+					rented["anchor"].GetValue<string>(),
+					rented["distance"].GetValue<int>(),
+					rented["unit"].GetValue<string>(),
+					rented["why"].GetValue<string>(),
+					rented["figureShapes"].GetValue<string[]>(),
+					rented["figures"].GetValue<string[]>(),
+					rented["figureCodes"].GetValue<string[]>());
+			}
 		}
 
 		/// <summary>
@@ -1282,18 +1593,34 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.TheServicePriceAnswer(
+					answer         = specification.TheServicePriceAnswer(
 						@kind, @milestoneDistance, @milestoneUnit, @asOf);
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					@publication   = answer.ThePublicationShape();
+					@revision      = answer.TheRevisionItCameFrom();
+					@operation     = answer.TheOperationItIsAbout();
+					@milestone     = answer.TheMilestoneDistance();
+					@milestoneIn   = answer.TheUnitTheMilestoneIsIn();
+					@currencyShape = answer.TheShapeOfItsCurrency();
+					@amount        = answer.TheAmountAsSaid();
+					@currencyCode  = answer.TheCodeOfItsCurrency();
+					@validFrom     = answer.TheDayItsValidityStarts();
+					@validUntil    = answer.TheDayItsValidityEnds();
+					@validity      = answer.WhereTheInstantAskedFalls();
+					@askedOn       = answer.TheDayItWasAskedOn();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication",   typeof(string)] = default;
+					p[Parameter.Out, "revision",      typeof(string)] = default;
+					p[Parameter.Out, "operation",     typeof(string)] = default;
+					p[Parameter.Out, "milestone",     typeof(int)]    = default;
+					p[Parameter.Out, "milestoneIn",   typeof(string)] = default;
+					p[Parameter.Out, "currencyShape", typeof(string)] = default;
+					p[Parameter.Out, "amount",        typeof(string)] = default;
+					p[Parameter.Out, "currencyCode",  typeof(string)] = default;
+					p[Parameter.Out, "validFrom",     typeof(string)] = default;
+					p[Parameter.Out, "validUntil",    typeof(string)] = default;
+					p[Parameter.Out, "validity",      typeof(string)] = default;
+					p[Parameter.Out, "askedOn",       typeof(string)] = default;
 					p["kind",              typeof(Enum)]     = WireName.OperationKind(kind);
 					p["milestoneDistance", typeof(int)]      = milestoneDistance;
 					p["milestoneUnit",     typeof(Enum)]     =
@@ -1302,13 +1629,31 @@ namespace Concesionario.App
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
-					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
-					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+				return ThePriceSaid(rented, language);
 			}
+		}
+
+		/// <summary>
+		/// LO QUE LAS DOS LECTURAS CON CLAVE DEL PRECIO LEEN DE VUELTA, una sola vez: el mismo
+		/// renderizador y el mismo marco, para que citar un precio y situarlo en un instante no puedan
+		/// decir cosas distintas del mismo precio.
+		/// </summary>
+		private static string ThePriceSaid(RentedParameter rented, string language)
+		{
+			return Wording.TheWording.ThePrice(
+				Wording.Phrases.Of(language),
+				rented["publication"].GetValue<string>(),
+				rented["revision"].GetValue<string>(),
+				rented["operation"].GetValue<string>(),
+				rented["milestone"].GetValue<int>(),
+				rented["milestoneIn"].GetValue<string>(),
+				rented["currencyShape"].GetValue<string>(),
+				rented["amount"].GetValue<string>(),
+				rented["currencyCode"].GetValue<string>(),
+				rented["validFrom"].GetValue<string>(),
+				rented["validUntil"].GetValue<string>(),
+				rented["validity"].GetValue<string>(),
+				rented["askedOn"].GetValue<string>());
 		}
 
 		/// <summary>De que revision salio el precio de esa operacion en ese hito. TOTAL.</summary>
@@ -1337,18 +1682,34 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.ThePublishedServicePriceAnswer(
+					answer         = specification.ThePublishedServicePriceAnswer(
 						@kind, @milestoneDistance, @milestoneUnit);
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					@publication   = answer.ThePublicationShape();
+					@revision      = answer.TheRevisionItCameFrom();
+					@operation     = answer.TheOperationItIsAbout();
+					@milestone     = answer.TheMilestoneDistance();
+					@milestoneIn   = answer.TheUnitTheMilestoneIsIn();
+					@currencyShape = answer.TheShapeOfItsCurrency();
+					@amount        = answer.TheAmountAsSaid();
+					@currencyCode  = answer.TheCodeOfItsCurrency();
+					@validFrom     = answer.TheDayItsValidityStarts();
+					@validUntil    = answer.TheDayItsValidityEnds();
+					@validity      = answer.WhereTheInstantAskedFalls();
+					@askedOn       = answer.TheDayItWasAskedOn();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication",   typeof(string)] = default;
+					p[Parameter.Out, "revision",      typeof(string)] = default;
+					p[Parameter.Out, "operation",     typeof(string)] = default;
+					p[Parameter.Out, "milestone",     typeof(int)]    = default;
+					p[Parameter.Out, "milestoneIn",   typeof(string)] = default;
+					p[Parameter.Out, "currencyShape", typeof(string)] = default;
+					p[Parameter.Out, "amount",        typeof(string)] = default;
+					p[Parameter.Out, "currencyCode",  typeof(string)] = default;
+					p[Parameter.Out, "validFrom",     typeof(string)] = default;
+					p[Parameter.Out, "validUntil",    typeof(string)] = default;
+					p[Parameter.Out, "validity",      typeof(string)] = default;
+					p[Parameter.Out, "askedOn",       typeof(string)] = default;
 					p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
 					p["milestoneDistance", typeof(int)]  = milestoneDistance;
 					p["milestoneUnit",     typeof(Enum)] =
@@ -1356,12 +1717,7 @@ namespace Concesionario.App
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
-					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
-					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+				return ThePriceSaid(rented, language);
 			}
 		}
 
@@ -1392,37 +1748,82 @@ namespace Concesionario.App
 		/// </summary>
 		public PublishedPriceRecord PublishedServicePricesAsOf(DateTime asOf, string language)
 		{
-			string[][] columns = TheTextColumns(@"
-				@operation = specification.PublishedPriceOperationsAsOf(@asOf);
-				@milestone = specification.PublishedPriceMilestonesAsOf(@asOf);
-				@shape     = specification.PublishedPriceShapesAsOf(@asOf);
-				@clause    = specification.PublishedPriceClausesAsOf(@asOf);
-				@revision  = specification.PublishedPriceRevisionsAsOf(@asOf);
-			", TheColumnsOfAPublishedPriceRecord, p => {
-				p["asOf", typeof(DateTime)] = InUtc(asOf);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					@operation     = specification.PublishedPriceOperationsAsOf(@asOf);
+					@milestone     = specification.PublishedPriceMilestoneDistancesAsOf(@asOf);
+					@milestoneIn   = specification.PublishedPriceMilestoneUnitsAsOf(@asOf);
+					@publication   = specification.PublishedPriceShapesAsOf(@asOf);
+					@currencyShape = specification.PublishedPriceCurrencyShapesAsOf(@asOf);
+					@amount        = specification.PublishedPriceAmountsAsOf(@asOf);
+					@currencyCode  = specification.PublishedPriceCurrencyCodesAsOf(@asOf);
+					@validFrom     = specification.PublishedPriceValidFromAsOf(@asOf);
+					@validUntil    = specification.PublishedPriceValidUntilAsOf(@asOf);
+					@validity      = specification.PublishedPriceValiditiesAsOf(@asOf);
+					@askedOn       = specification.PublishedPriceDaysAskedOnAsOf(@asOf);
+					@revision      = specification.PublishedPriceRevisionsAsOf(@asOf);
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "operation",     typeof(string[])] = default;
+					p[Parameter.Out, "milestone",     typeof(int[])]    = default;
+					p[Parameter.Out, "milestoneIn",   typeof(string[])] = default;
+					p[Parameter.Out, "publication",   typeof(string[])] = default;
+					p[Parameter.Out, "currencyShape", typeof(string[])] = default;
+					p[Parameter.Out, "amount",        typeof(string[])] = default;
+					p[Parameter.Out, "currencyCode",  typeof(string[])] = default;
+					p[Parameter.Out, "validFrom",     typeof(string[])] = default;
+					p[Parameter.Out, "validUntil",    typeof(string[])] = default;
+					p[Parameter.Out, "validity",      typeof(string[])] = default;
+					p[Parameter.Out, "askedOn",       typeof(string[])] = default;
+					p[Parameter.Out, "revision",      typeof(string[])] = default;
+					p["asOf", typeof(DateTime)] = InUtc(asOf);
+				})
+				.PerformQuery();
 
-			return PublishedPriceRecord.Of(
-				columns[0], columns[1],
-				EachPriceSaid(language, columns[2], columns[3], columns[4]), columns[4]);
+				return ThePriceRows(
+					Wording.Phrases.Of(language),
+					rented["operation"].GetValue<string[]>(),
+					rented["milestone"].GetValue<int[]>(),
+					rented["milestoneIn"].GetValue<string[]>(),
+					rented["publication"].GetValue<string[]>(),
+					rented["currencyShape"].GetValue<string[]>(),
+					rented["amount"].GetValue<string[]>(),
+					rented["currencyCode"].GetValue<string[]>(),
+					rented["validFrom"].GetValue<string[]>(),
+					rented["validUntil"].GetValue<string[]>(),
+					rented["validity"].GetValue<string[]>(),
+					rented["askedOn"].GetValue<string[]>(),
+					rented["revision"].GetValue<string[]>());
+			}
 		}
 
 		/// <summary>
-		/// Lo que dice cada fila de precio, compuesto una por una en ese idioma. La frase de una fila
-		/// es la misma que la de la lectura con clave: el mismo renderizador y el mismo marco, para
-		/// que la tabla y la respuesta suelta no puedan decir cosas distintas del mismo precio.
+		/// Las filas de precios compuestas una por una en ese idioma. La frase de una fila es la misma
+		/// que la de la lectura con clave: el mismo renderizador y el mismo marco, para que la tabla y
+		/// la respuesta suelta no puedan decir cosas distintas del mismo precio.
 		/// </summary>
-		private static string[] EachPriceSaid(
-			string language, string[] shapes, string[] clauses, string[] revisions)
+		private static PublishedPriceRecord ThePriceRows(
+			Wording.Phrases phrases, string[] operation, int[] milestone, string[] milestoneIn,
+			string[] publication, string[] currencyShape, string[] amount, string[] currencyCode,
+			string[] validFrom, string[] validUntil, string[] validity, string[] askedOn,
+			string[] revision)
 		{
-			Wording.Phrases phrases = Wording.Phrases.Of(language);
-			string[] said = new string[shapes.Length];
+			string[] milestoneSaid = new string[operation.Length];
+			string[] says = new string[operation.Length];
 
-			for (int row = 0; row < shapes.Length; row++)
-				said[row] = Wording.TheWording.TheSpecificationAnswer(
-					phrases, shapes[row], revisions[row], clauses[row], "");
+			for (int row = 0; row < operation.Length; row++)
+			{
+				milestoneSaid[row] = Wording.TheWording.TheMilestone(
+					phrases, milestone[row], milestoneIn[row]);
 
-			return said;
+				says[row] = Wording.TheWording.ThePrice(
+					phrases, publication[row], revision[row], operation[row], milestone[row],
+					milestoneIn[row], currencyShape[row], amount[row], currencyCode[row],
+					validFrom[row], validUntil[row], validity[row], askedOn[row]);
+			}
+
+			return PublishedPriceRecord.Of(operation, milestoneSaid, says, revision);
 		}
 
 		/// <summary>Si hay alcance de garantia publicado. TOTAL.</summary>
@@ -3582,27 +3983,11 @@ namespace Concesionario.App
 			{ "kind", "completedAt", "reading", "says" };
 
 		/// <summary>
-		/// Los nombres de las cuatro columnas del registro de precios publicados, en el orden en que
-		/// el DTO las recibe.
-		/// </summary>
-		private static readonly string[] TheColumnsOfAPublishedPriceRecord =
-			{ "operation", "milestone", "shape", "clause", "revision" };
-
-		/// <summary>
 		/// Los nombres de las tres columnas de las exclusiones publicadas, en el orden en que la
 		/// clausula de una exclusion las pide.
 		/// </summary>
 		private static readonly string[] TheColumnsOfThePublishedExclusions =
 			{ "excludedOf", "excluded", "conditions" };
-
-		/// <summary>
-		/// Los nombres de las seis columnas del registro del libro de costos, en el orden en que el
-		/// DTO las recibe. No hay columna de identidad ni de la parte que a un periodo le toca.
-		/// </summary>
-		private static readonly string[] TheColumnsOfACostLedgerRecord =
-		{
-			"incurredAt", "subject", "money", "classification", "expectedLife", "says",
-		};
 
 		/// <summary>
 		/// La clase por la que se pregunta, exigida como nombre de miembro ANTES de que haya consulta.

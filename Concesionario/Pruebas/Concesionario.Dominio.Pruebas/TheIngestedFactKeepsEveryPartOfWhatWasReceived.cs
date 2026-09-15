@@ -224,7 +224,7 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.DescribeServicePrice(
 					"FluidChange", 10000, "UnitA",
 					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), TheLanguage.OfTheRecord),
-				Does.Contain("vigente del 2025-08-15 al 2026-12-31"),
+				Does.Contain("vigente del 15 de agosto de 2025 al 31 de diciembre de 2026"),
 				"El desde es el desde y el hasta es el hasta.");
 		}
 
@@ -395,7 +395,7 @@ namespace Concesionario.Dominio.Pruebas
 					() => journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord)),
 				("la presión de la llanta", "presión en frío 2,4 bar",
 					() => journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord)),
-				("el monto del precio", "$89.90",
+				("el monto del precio", "$89,90",
 					() => journal.Api.DescribeServicePrice(
 						"FluidChange", 10000, "UnitA",
 						new DateTime(

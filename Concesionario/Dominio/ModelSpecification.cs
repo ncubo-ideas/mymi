@@ -334,7 +334,7 @@ namespace Concesionario.Dominio
 		/// La misma ley para el precio de una operacion en un hito, con su vigencia y sin decir
 		/// todavia si rige: eso necesita un instante que la presencia y la procedencia no piden.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal APriceClause ARevisionAppliesForward(
 			OperationKindCode kind, PublishedMilestone milestone)
 		{
 			MaintenanceOperationKind operation = MaintenanceOperationKind.OfCode(kind);
@@ -346,11 +346,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicePrice(operation, milestone)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServicePrice(operation, milestone));
+				return candidate.TheServicePriceClause(operation, milestone);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind));
+			return APriceClause.OfNothingPublished(operation);
 		}
 
 		/// <summary>
@@ -359,7 +358,7 @@ namespace Concesionario.Dominio
 		/// el codigo del wire y delega: el cuerpo es uno solo, y es el que la enumeracion tambien
 		/// recorre.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal APriceClause ARevisionAppliesForward(
 			OperationKindCode kind, PublishedMilestone milestone, DateTime asOf)
 		{
 			return ARevisionAppliesForward(
@@ -371,7 +370,7 @@ namespace Concesionario.Dominio
 		/// precio de un hito en un instante: la lectura llaveada llega envuelta y la enumeracion
 		/// llega derecho, asi que las dos dicen lo mismo porque no hay dos sitios que decirlo.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal APriceClause ARevisionAppliesForward(
 			MaintenanceOperationKind operation, PublishedMilestone milestone, DateTime asOf)
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
@@ -381,11 +380,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicePrice(operation, milestone)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServicePrice(operation, milestone, asOf));
+				return candidate.TheServicePriceClause(operation, milestone, asOf);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(operation));
+			return APriceClause.OfNothingPublished(operation);
 		}
 
 		/// <summary>
@@ -610,12 +608,12 @@ namespace Concesionario.Dominio
 		/// Cuanto cuesta esa operacion en ese hito, con su moneda, su vigencia, si esa vigencia rige
 		/// en el instante recibido, y la revision. TOTAL.
 		/// </summary>
-		internal SpecificationAnswer TheServicePriceAnswer(
+		internal APriceClause TheServicePriceAnswer(
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit,
 			DateTime asOf)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind));
+				return APriceClause.OfNothingPublished(MaintenanceOperationKind.OfCode(kind));
 
 			return ARevisionAppliesForward(
 				kind, TheMilestone(milestoneDistance, milestoneUnit), asOf);
@@ -626,10 +624,11 @@ namespace Concesionario.Dominio
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind)).RevisionCode();
+				return APriceClause.OfNothingPublished(
+					MaintenanceOperationKind.OfCode(kind)).TheRevisionItCameFrom();
 
 			return ARevisionAppliesForward(
-				kind, TheMilestone(milestoneDistance, milestoneUnit)).RevisionCode();
+				kind, TheMilestone(milestoneDistance, milestoneUnit)).TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -637,11 +636,11 @@ namespace Concesionario.Dominio
 		/// decir si rige: eso necesita un instante, y quien no tenga ninguno que aportar igual puede
 		/// citar lo que el fabricante publico. TOTAL.
 		/// </summary>
-		internal SpecificationAnswer ThePublishedServicePriceAnswer(
+		internal APriceClause ThePublishedServicePriceAnswer(
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind));
+				return APriceClause.OfNothingPublished(MaintenanceOperationKind.OfCode(kind));
 
 			return ARevisionAppliesForward(
 				kind, TheMilestone(milestoneDistance, milestoneUnit));
@@ -682,17 +681,33 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// A que hito se publico cada precio, dicho con su unidad, una por fila y en el mismo orden.
-		/// TOTAL.
+		/// A que distancia esta el hito de cada precio, tal como se publico, una por fila y en el
+		/// mismo orden. TOTAL, y va siempre con su unidad: una distancia suelta no nombra ningun
+		/// hito.
 		/// </summary>
-		internal string[] PublishedPriceMilestonesAsOf(DateTime asOf)
+		internal int[] PublishedPriceMilestoneDistancesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			int[] said = new int[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheMilestoneDistance();
+
+			return said;
+		}
+
+		/// <summary>
+		/// La unidad de esa distancia, como se dice, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceMilestoneUnitsAsOf(DateTime asOf)
 		{
 			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
 
 			string[] said = new string[rows.Count];
 
 			for (int row = 0; row < rows.Count; row++)
-				said[row] = rows[row].TheMilestoneItWasPublishedAt();
+				said[row] = rows[row].TheClauseItCarries().TheUnitTheMilestoneIsIn();
 
 			return said;
 		}
@@ -708,22 +723,116 @@ namespace Concesionario.Dominio
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheShapeOfItsAnswer();
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().ThePublicationShape();
 
 			return said;
 		}
 
 		/// <summary>
-		/// Lo que cada precio publicado tiene que decir -- su monto, su moneda, su vigencia y si rige
-		/// en el instante preguntado --, una por fila y en el mismo orden. TOTAL.
+		/// La forma de la moneda de cada precio, por su codigo, una por fila y en el mismo orden.
+		/// TOTAL, y va junto con los digitos y el codigo: un monto sin ellos no se puede leer.
 		/// </summary>
-		internal string[] PublishedPriceClausesAsOf(DateTime asOf)
+		internal string[] PublishedPriceCurrencyShapesAsOf(DateTime asOf)
 		{
 			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheClauseItCarries();
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheShapeOfItsCurrency();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Los digitos de cada precio, en cultura invariante, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceAmountsAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheAmountAsSaid();
+
+			return said;
+		}
+
+		/// <summary>
+		/// El codigo de la moneda de cada precio, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceCurrencyCodesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheCodeOfItsCurrency();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Desde que dia rige cada precio, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceValidFromAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheDayItsValidityStarts();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Hasta que dia rige cada uno, en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceValidUntilAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheDayItsValidityEnds();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Donde cae el instante preguntado dentro de la vigencia de cada uno, por su codigo, en el
+		/// mismo orden. TOTAL, y el instante mueve esto y nunca el juego de filas.
+		/// </summary>
+		internal string[] PublishedPriceValiditiesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().WhereTheInstantAskedFalls();
+
+			return said;
+		}
+
+		/// <summary>
+		/// El dia por el que se pregunto, el mismo en todas las filas. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceDaysAskedOnAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheDayItWasAskedOn();
 
 			return said;
 		}
@@ -737,7 +846,8 @@ namespace Concesionario.Dominio
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheRevisionItCameFrom();
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheRevisionItCameFrom();
 
 			return said;
 		}
@@ -1077,17 +1187,6 @@ namespace Concesionario.Dominio
 		private bool ItAnswersAboutCoverage(PublishedRevision candidate)
 		{
 			return OnlyASealedRevisionAnswers(candidate) && candidate.HasWarrantyCoverage();
-		}
-
-		private static string TheSubjectOfAServicePrice(OperationKindCode kind)
-		{
-			return TheSubjectOfAServicePrice(MaintenanceOperationKind.OfCode(kind));
-		}
-
-		private static string TheSubjectOfAServicePrice(MaintenanceOperationKind operation)
-		{
-			return "Precio del servicio de " + operation.HowItIsSaid.ToLowerInvariant()
-				+ " en el hito preguntado";
 		}
 
 		private static PublishedMilestone TheMilestone(

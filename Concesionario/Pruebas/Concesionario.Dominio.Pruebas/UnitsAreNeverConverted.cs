@@ -56,6 +56,8 @@ namespace Concesionario.Dominio.Pruebas
 			".ctor",
 			"Describe",
 			"IsTheSameMilestoneAs",
+			"TheDistanceItNames",
+			"TheUnitItIsIn",
 		};
 
 		private ModelSpecification specification;

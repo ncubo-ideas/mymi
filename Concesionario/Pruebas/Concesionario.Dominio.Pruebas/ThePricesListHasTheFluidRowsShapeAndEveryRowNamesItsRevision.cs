@@ -83,19 +83,19 @@ namespace Concesionario.Dominio.Pruebas
 			APublishedPriceOnTheSheet inspection = TheRowOf(handed, "Inspection");
 			APublishedPriceOnTheSheet fluid = TheRowOf(handed, "FluidChange");
 
-			Assert.That(inspection.Milestone, Is.EqualTo("10000 km"),
+			Assert.That(inspection.Milestone, Is.EqualTo("10.000 km"),
 				"El hito DICHO con su unidad, como lo lee una persona.");
 			// EL MONTO CON SU SIGNO Y SUS DECIMALES, como el dominio lo dice desde CL-2: se publico
 			// 120.50, el decimal se NORMALIZA a 120.5 al cruzar la puerta, y Money.Expressed lo vuelve
 			// a decir con los dos decimales de su moneda. Asi que la normalizacion sigue ocurriendo y
 			// ESTA FRASE ya no la muestra -- lo que la sigue impidiendo es el Normalized de la puerta,
 			// que esta en el camino de ESCRITURA y por eso vivo y replayado coinciden.
-			Assert.That(inspection.Says, Does.Contain("₡120.50"),
+			Assert.That(inspection.Says, Does.Contain("₡120,50"),
 				"Una sola afirmacion en vez de dos: el monto y su moneda son un valor y se dicen "
 				+ "juntos, asi que separarlos dejaria pasar una fila con el monto de una y la moneda "
 				+ "de otra.");
 
-			Assert.That(fluid.Milestone, Is.EqualTo("20000 km"),
+			Assert.That(fluid.Milestone, Is.EqualTo("20.000 km"),
 				"Y el otro hito es OTRO: cruzar las dos filas cambia esta afirmacion y la de arriba.");
 			Assert.That(fluid.Says, Does.Contain("340"));
 		}
@@ -109,14 +109,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			WhatTheServicesCost handed = WhatTheScreenIsHanded();
 
-			Assert.That(TheRowOf(handed, "Inspection").Says, Does.Contain("2026-02-01"),
+			Assert.That(TheRowOf(handed, "Inspection").Says, Does.Contain("1 de febrero de 2026"),
 				"La frase nombra el instante contra el que se juzgo la vigencia. La pantalla no lo dice "
 				+ "por su cuenta justamente porque cada fila lo trae adentro.");
 
 			Assert.That(
 				TheRowOf(handed, "Inspection").Says, Is.Not.EqualTo(TheRowOf(handed, "FluidChange").Says));
 
-			Assert.That(TheRowOf(handed, "FluidChange").Says, Does.Contain("2025-06-30"),
+			Assert.That(TheRowOf(handed, "FluidChange").Says, Does.Contain("30 de junio de 2025"),
 				"Y la que vencio nombra el dia en que su vigencia termino.");
 		}
 

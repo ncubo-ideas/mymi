@@ -74,15 +74,21 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El costo por distancia del periodo en una frase. TOTAL: las dos situaciones dicen algo, y
-		/// ninguna contesta un cero por no poder dividir.
+		/// El costo por distancia del periodo, como forma y valores. TOTAL: las dos situaciones
+		/// dicen algo, y ninguna contesta un cero por no poder dividir.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract ACostPerDistanceClause TheClauseItComposes();
 
-		/// <summary>La clausula que las dos situaciones comparten: entre cuando y cuando.</summary>
-		protected string ThePeriodClause()
+		/// <summary>Donde empieza el periodo, como instante con su hora.</summary>
+		protected string TheInstantItStartsAt()
 		{
-			return "Entre el " + TheInstant(_from) + " y el " + TheInstant(_to);
+			return TheInstant(_from);
+		}
+
+		/// <summary>Donde termina el periodo, como instante con su hora.</summary>
+		protected string TheInstantItEndsAt()
+		{
+			return TheInstant(_to);
 		}
 
 		/// <summary>Un instante dicho como instante, con su hora.</summary>

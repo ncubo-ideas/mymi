@@ -132,11 +132,77 @@ namespace Concesionario.Dominio.Pruebas
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
-				Member = "EachPriceSaid",
-				Snippet = "for (int row = 0; row < shapes.Length; row++)",
+				Member = "ThePriceRows",
+				Snippet = "for (int row = 0; row < operation.Length; row++)",
 				Reason = "Contador de un recorrido por las filas que el dominio ya conto. No mide nada: "
-					+ "compone la frase de cada fila con la forma, la clausula y la revision que "
-					+ "llegaron en columnas paralelas.",
+					+ "compone el hito y la frase de cada fila con las columnas paralelas que "
+					+ "llegaron.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "TheLedgerRows",
+				Snippet = "for (int row = 0; row < incurredAt.Length; row++)",
+				Reason = "El mismo contador para las filas del libro: el dinero, la vida util y la "
+					+ "frase de cada una se componen de columnas paralelas que el dominio conto.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencySaid",
+				Snippet = "for (int each = 0; each < views.Length; each++)",
+				Reason = "Contador de un recorrido por las monedas que el dominio ya agrupo. Pone las "
+					+ "dos vistas de cada una en su marco y no toca ninguna cifra.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencysShares",
+				Snippet = "for (int each = 0; each < howManyCurrencies; each++) "
+					+ "said[each] = new StringBuilder();",
+				Reason = "Abre un acumulador por moneda. El largo lo dice el dominio y aqui no se "
+					+ "deriva de nada.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencysShares",
+				Snippet = "for (int share = 0; share < currencyOfEachShare.Length; share++)",
+				Reason = "Contador de un recorrido por las partes amortizadas, que llegan aplanadas "
+					+ "con el indice de la moneda a la que pertenecen. El indice es del dominio.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencysShares",
+				Snippet = "for (int each = 0; each < howManyCurrencies; each++) "
+					+ "joined[each] = said[each].ToString();",
+				Reason = "Cierra esos mismos acumuladores, uno por moneda.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "APeriodOfSpend",
+				Snippet = "for (int each = 0; each < eachCurrency.Length; each++)",
+				Reason = "Contador de un recorrido que FILTRA las monedas de un periodo por el indice "
+					+ "que el dominio les puso. En cuantas monedas esta dicho el periodo NO se cuenta "
+					+ "aqui: lo dice el portador.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "APeriodOfSpend",
+				Snippet = "return phrases.Say(\"spend.\" + periodShapes[period] + frame,",
+				Reason = "Arma una CLAVE del catalogo pegando la situacion del periodo y el marco con "
+					+ "que se pregunto. Es texto y no una cuenta, como el de la mitad del sobre.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachFigure",
+				Snippet = "for (int each = 0; each < shapes.Length; each++)",
+				Reason = "Contador de un recorrido por las cifras por moneda que el dominio ya "
+					+ "dividio. Aqui solo se ponen en su marco con la unidad al lado.",
 			},
 			new AllowedArithmetic
 			{

@@ -94,7 +94,7 @@ namespace Concesionario.Dominio.Pruebas
 			"TheServiceIntervalClauseAgainst",
 			"PublishAServicePrice",
 			"HasAServicePrice",
-			"DescribeServicePrice",
+			"TheServicePriceClause",
 			"ThePriceKeysItPublished",
 			"PublishAServicingPolicy",
 			"HasAServicingPolicy",

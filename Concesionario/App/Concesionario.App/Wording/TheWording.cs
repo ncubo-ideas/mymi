@@ -24,7 +24,21 @@ namespace Concesionario.App.Wording
 		private const string TheLimitsAreNamed = "Named";
 		private const string TheSuspensionByAUnitMismatch = "UnitMismatch";
 		private const string HalvesThatIncludeThisVehicle = "GeneralAndPersonalTogether";
+		private const string TheTwoPeriodsCompared = "AsTwoPeriodsCompared";
+		private const string ThePerCurrencyFrame = "AsOnePeriodPerCurrency";
+		private const string TheAnswerWithNoSpanOfUse = "NoSpanOfUse";
+		private const string TheClassificationThatSpreadsItself = "Durable";
 		private const string NoReasonToGive = "";
+
+		/// <summary>
+		/// EL SUFIJO QUE ELIGE EL MARCO de un periodo del libro: el mismo periodo se dice de dos
+		/// maneras -- a secas y diciendo en cuantas monedas esta dicho -- y las cifras son las
+		/// mismas en las dos. No es una clave: es la MITAD de una, y la clave entera se arma con la
+		/// situacion del periodo.
+		/// </summary>
+		private const string TheSinglePeriodFrame = "";
+
+		private const string ThePerCurrencySuffix = ".perCurrency";
 
 		/// <summary>
 		/// LO QUE VA ENTRE DOS CLAUSULAS ENTERAS de una lista cuyo largo no se sabe de antemano. No es
@@ -403,6 +417,262 @@ namespace Concesionario.App.Wording
 						("withoutEvidence", phrases.Grouped(externalWithoutEvidence)),
 						("missed", phrases.Grouped(missedMaintenance)))),
 				phrases.Say("sheet.subject.ServicingPolicy"));
+		}
+
+		/// <summary>
+		/// CUANTO CUESTA UNA OPERACION EN UN HITO, con su moneda, su vigencia y -- cuando se
+		/// pregunto por un instante -- donde cae ese instante dentro de ella. Un precio viejo
+		/// mostrado como vigente es una promesa que el taller no hizo, asi que la vigencia va
+		/// siempre.
+		/// </summary>
+		public static string ThePrice(
+			Phrases phrases, string publication, string revision, string operation,
+			int milestoneDistance, string milestoneUnit, string currencyShape, string amount,
+			string currencyCode, string validFrom, string validUntil, string validity,
+			string askedOn)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string said = phrases.Say("price.said",
+				("operation", phrases.HowItIsSaid("canon.operation", operation)),
+				("milestone", TheMilestone(phrases, milestoneDistance, milestoneUnit)),
+				("money", TheMoney(phrases, currencyShape, amount, currencyCode)),
+				("from", phrases.ADay(validFrom)),
+				("until", phrases.ADay(validUntil)));
+
+			return TheSpecificationAnswer(
+				phrases, publication, revision,
+				phrases.Say("price." + validity, ("said", said), ("asked", phrases.ADay(askedOn))),
+				phrases.Say("sheet.subject.ServicePrice",
+					("operation",
+						phrases.HowItIsSaid("canon.operation", operation).ToLowerInvariant())));
+		}
+
+		/// <summary>
+		/// EL HITO AL QUE SE PUBLICO UN PRECIO, dicho con su unidad. Aqui no se convierte a ninguna
+		/// otra: el mismo numero en la otra unidad es OTRO hito.
+		/// </summary>
+		public static string TheMilestone(Phrases phrases, int distance, string unit)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return ADistance(phrases, distance, unit);
+		}
+
+		/// <summary>
+		/// UN MONTO CON SU MONEDA, que es lo minimo que se puede leer. La moneda que este modulo
+		/// nombra se dice con su signo, que es del catalogo porque es como una persona la lee; la
+		/// que no nombra, con el codigo tal como llego. Los digitos vienen ya redondeados a la
+		/// precision de su moneda y esta capa no elige ninguna.
+		/// </summary>
+		public static string TheMoney(
+			Phrases phrases, string shape, string amount, string code)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			if (shape.Length == 0) return "";
+
+			return phrases.Say("money." + shape,
+				("symbol", phrases.HowItIsSaid("canon.currency", code)),
+				("amount", phrases.ANumber(amount)),
+				("code", code));
+		}
+
+		/// <summary>
+		/// EL GASTO DE UN PERIODO O DE DOS COMPARADOS, con las DOS vistas adentro de cada moneda.
+		/// Como se pregunto elige el marco y nunca las cifras: una vista sola es el numero que
+		/// engana.
+		/// </summary>
+		public static string TheSpend(
+			Phrases phrases, string asked, string[] periodShapes, string[] periodFroms,
+			string[] periodTos, int[] currencyCounts, int[] periodOfEachCurrency, string[] views,
+			string[] cashOutShapes, string[] cashOutAmounts, string[] cashOutCodes,
+			string[] consumedShapes, string[] consumedAmounts, string[] consumedCodes,
+			int[] currencyOfEachShare, string[] wholeShapes, string[] wholeAmounts,
+			string[] wholeCodes, string[] shareSubjects, int[] shareLives, string[] shareInstants,
+			string[] shareShapes, string[] shareAmounts, string[] shareCodes)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string[] eachCurrency = EachCurrencySaid(
+				phrases, views, cashOutShapes, cashOutAmounts, cashOutCodes, consumedShapes,
+				consumedAmounts, consumedCodes,
+				EachCurrencysShares(
+					phrases, views.Length, currencyOfEachShare, wholeShapes, wholeAmounts,
+					wholeCodes, shareSubjects, shareLives, shareInstants, shareShapes, shareAmounts,
+					shareCodes));
+
+			if (asked == TheTwoPeriodsCompared)
+				return phrases.Say("spend.twoPeriods",
+					("first", APeriodOfSpend(
+						phrases, TheSinglePeriodFrame, 0, periodShapes, periodFroms, periodTos,
+						currencyCounts, periodOfEachCurrency, eachCurrency)),
+					("second", APeriodOfSpend(
+						phrases, TheSinglePeriodFrame, 1, periodShapes, periodFroms, periodTos,
+						currencyCounts, periodOfEachCurrency, eachCurrency)));
+
+			return APeriodOfSpend(
+				phrases, asked == ThePerCurrencyFrame ? ThePerCurrencySuffix : TheSinglePeriodFrame,
+				0, periodShapes, periodFroms, periodTos, currencyCounts, periodOfEachCurrency,
+				eachCurrency);
+		}
+
+		/// <summary>
+		/// CUANTO COSTO LA DISTANCIA DE UN PERIODO, moneda por moneda y con las dos unidades
+		/// dichas, o cual de las tres situaciones sin cifra le toca. El motivo de la que no tiene
+		/// tramo llega ya dicho por la serie del odometro y se cita tal cual.
+		/// </summary>
+		public static string TheCostPerDistance(
+			Phrases phrases, string shape, string from, string to, string anchor, int distance,
+			string unit, string why, string[] figureShapes, string[] figureAmounts,
+			string[] figureCodes)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			if (shape == TheAnswerWithNoSpanOfUse)
+				return phrases.Say("costPerDistance.NoSpanOfUse",
+					("from", from), ("to", to), ("why", why));
+
+			return phrases.Say("costPerDistance.said",
+				("from", from),
+				("to", to),
+				("anchor", anchor),
+				("distance", ADistance(phrases, distance, unit)),
+				("figures", phrases.Say("costPerDistance." + shape,
+					("unit", unit),
+					("figures", EachFigure(
+						phrases, unit, figureShapes, figureAmounts, figureCodes)))),
+				("rule", phrases.Say("costPerDistance.rule")));
+		}
+
+		/// <summary>
+		/// UNA ENTRADA DEL LIBRO EN SU PROPIA FRASE: cuanto, en que se fue, cuando, y de que clase
+		/// es con lo que su clase significa. Es lo que hace que una fila sirva sola.
+		/// </summary>
+		public static string TheCostEntry(
+			Phrases phrases, string classification, string currencyShape, string amount,
+			string currencyCode, string subject, string incurredAt, int expectedLifeMonths)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return phrases.Say("costEntry." + classification,
+				("money", TheMoney(phrases, currencyShape, amount, currencyCode)),
+				("subject", subject),
+				("incurredAt", incurredAt),
+				("classification",
+					phrases.HowItIsSaid("canon.costClassification", classification)),
+				("life", phrases.Months(expectedLifeMonths)));
+		}
+
+		/// <summary>
+		/// LA VIDA UTIL DE UNA ENTRADA, y nada donde no tiene ninguna. Cual de las dos es lo dice
+		/// la CLASIFICACION de esa entrada: un cero se leeria como una vida de cero meses.
+		/// </summary>
+		public static string TheExpectedLife(
+			Phrases phrases, string classification, int expectedLifeMonths)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return classification == TheClassificationThatSpreadsItself
+				? phrases.Months(expectedLifeMonths)
+				: "";
+		}
+
+		/// <summary>
+		/// LO QUE UNA MONEDA DEL PERIODO DICE: sus dos vistas y, detras, las clausulas que hacen
+		/// visible como se repartio lo duradero. La vista que no tiene cifra se dice con palabras.
+		/// </summary>
+		private static string[] EachCurrencySaid(
+			Phrases phrases, string[] views, string[] cashOutShapes, string[] cashOutAmounts,
+			string[] cashOutCodes, string[] consumedShapes, string[] consumedAmounts,
+			string[] consumedCodes, string[] sharesOfEachCurrency)
+		{
+			string[] said = new string[views.Length];
+
+			for (int each = 0; each < views.Length; each++)
+				said[each] = phrases.Say("spend.views." + views[each],
+					("cashOut", TheMoney(
+						phrases, cashOutShapes[each], cashOutAmounts[each], cashOutCodes[each])),
+					("consumed", TheMoney(
+						phrases, consumedShapes[each], consumedAmounts[each], consumedCodes[each])),
+					("shares", sharesOfEachCurrency[each]));
+
+			return said;
+		}
+
+		/// <summary>
+		/// LAS CLAUSULAS DE LO DURADERO DE CADA MONEDA, ya unidas. Llegan aplanadas con el indice
+		/// de la moneda a la que pertenecen, porque lo que una moneda reparte es de largo
+		/// desconocido.
+		/// </summary>
+		private static string[] EachCurrencysShares(
+			Phrases phrases, int howManyCurrencies, int[] currencyOfEachShare, string[] wholeShapes,
+			string[] wholeAmounts, string[] wholeCodes, string[] subjects, int[] lives,
+			string[] instants, string[] shareShapes, string[] shareAmounts, string[] shareCodes)
+		{
+			StringBuilder[] said = new StringBuilder[howManyCurrencies];
+
+			for (int each = 0; each < howManyCurrencies; each++) said[each] = new StringBuilder();
+
+			for (int share = 0; share < currencyOfEachShare.Length; share++)
+				said[currencyOfEachShare[share]]
+					.Append(BetweenTwoClauses)
+					.Append(phrases.Say("spend.share",
+						("whole", TheMoney(
+							phrases, wholeShapes[share], wholeAmounts[share], wholeCodes[share])),
+						("subject", subjects[share]),
+						("life", phrases.Months(lives[share])),
+						("incurredAt", instants[share]),
+						("share", TheMoney(
+							phrases, shareShapes[share], shareAmounts[share], shareCodes[share]))));
+
+			string[] joined = new string[howManyCurrencies];
+
+			for (int each = 0; each < howManyCurrencies; each++) joined[each] = said[each].ToString();
+
+			return joined;
+		}
+
+		private static string APeriodOfSpend(
+			Phrases phrases, string frame, int period, string[] periodShapes, string[] periodFroms,
+			string[] periodTos, int[] currencyCounts, int[] periodOfEachCurrency,
+			string[] eachCurrency)
+		{
+			StringBuilder currencies = new StringBuilder();
+			bool anyYet = false;
+
+			for (int each = 0; each < eachCurrency.Length; each++)
+			{
+				if (periodOfEachCurrency[each] != period) continue;
+
+				if (anyYet) currencies.Append(BetweenTwoClauses);
+
+				currencies.Append(eachCurrency[each]);
+				anyYet = true;
+			}
+
+			return phrases.Say("spend." + periodShapes[period] + frame,
+				("from", periodFroms[period]),
+				("to", periodTos[period]),
+				("count", phrases.Grouped(currencyCounts[period])),
+				("currencies", currencies.ToString()));
+		}
+
+		private static string EachFigure(
+			Phrases phrases, string unit, string[] shapes, string[] amounts, string[] codes)
+		{
+			StringBuilder said = new StringBuilder();
+
+			for (int each = 0; each < shapes.Length; each++)
+			{
+				if (each > 0) said.Append(phrases.Say("costPerDistance.betweenTwoFigures"));
+
+				said.Append(phrases.Say("costPerDistance.figure",
+					("money", TheMoney(phrases, shapes[each], amounts[each], codes[each])),
+					("unit", unit)));
+			}
+
+			return said.ToString();
 		}
 
 		/// <summary>

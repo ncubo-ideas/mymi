@@ -177,14 +177,14 @@ namespace Concesionario.Dominio.Pruebas
 		private static readonly string[] TheNineTheCostLedgerAdded =
 		{
 			"HasAnyCostBetween/2",
-			"DescribeSpendBetween/2",
+			"DescribeSpendBetween/3",
 			"IsSpendSaidInOneCurrencyBetween/2",
-			"DescribeSpendPerCurrencyBetween/2",
-			"DescribeTwoPeriodsOfSpendCompared/4",
-			"CostEntriesBetween/2",
+			"DescribeSpendPerCurrencyBetween/3",
+			"DescribeTwoPeriodsOfSpendCompared/5",
+			"CostEntriesBetween/3",
 			"CostEntryCountBetween/2",
 			"CanCostPerDistanceBeSaid/2",
-			"DescribeCostPerDistanceBetween/2",
+			"DescribeCostPerDistanceBetween/3",
 		};
 
 		// LOS DOS MIEMBROS PUBLICOS QUE DEVUELVEN ALGO Y ESCRIBEN. No son lecturas y el barrido no los
@@ -384,7 +384,7 @@ namespace Concesionario.Dominio.Pruebas
 					"L9 en el journal viejo: la fila nombra la revision de la que salio.");
 				Assert.That(api.DescribePublishedServicePrice(
 					"Inspection", 10000, TheUnitEverythingIsIn, TheLanguage.OfTheRecord),
-					Does.Contain("120.5"));
+					Does.Contain("₡120,50"));
 			}
 			finally
 			{

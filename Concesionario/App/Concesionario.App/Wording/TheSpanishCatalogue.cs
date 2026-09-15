@@ -103,6 +103,12 @@ namespace Concesionario.App.Wording
 				["canon.fuelStanding.Permitted"] = "permitido",
 				["canon.fuelStanding.Prohibited"] = "prohibido",
 
+				["canon.costClassification.Recurring"] = "Recurrente",
+				["canon.costClassification.Durable"] = "Duradero",
+
+				["canon.currency.CRC"] = "₡",
+				["canon.currency.USD"] = "$",
+
 				["canon.standing.Inside"] = "Adentro",
 				["canon.standing.Reached"] = "Alcanzado",
 				["canon.standing.NotPublished"] = "Sin publicar",
@@ -380,6 +386,77 @@ namespace Concesionario.App.Wording
 					"Límites que rigen: {limits}. Este vehículo está dentro de ellos.",
 				["coverage.reason.OutsideTheLimits"] =
 					"Límites que rigen: {limits}. Este vehículo está fuera de ellos.",
+
+				["money.Named"] = "{symbol}{amount}",
+				["money.NotNamed"] = "{amount} {code}",
+
+				["sheet.subject.ServicePrice"] =
+					"Precio del servicio de {operation} en el hito preguntado",
+
+				["price.said"] =
+					"{operation} a los {milestone}: {money}, vigente del {from} al {until}.",
+				["price.NotAsked"] = "{said}",
+				["price.InForce"] = "{said} Al {asked} esa vigencia está rigiendo.",
+				["price.NotYetStarted"] =
+					"{said} Al {asked} esa vigencia todavía no ha empezado, así que este precio no es "
+					+ "el vigente.",
+				["price.AlreadyPassed"] =
+					"{said} Al {asked} esa vigencia ya pasó, así que este precio no es el vigente.",
+
+				["spend.NoCostOnRecord"] =
+					"Entre el {from} y el {to} no hay ningún gasto registrado para este vehículo.",
+				["spend.NoCostOnRecord.perCurrency"] =
+					"Entre el {from} y el {to} no hay ningún gasto registrado para este vehículo, así "
+					+ "que no hay ninguna moneda en la que decirlo.",
+				["spend.SaidInOneCurrency"] = "Entre el {from} y el {to}: {currencies}",
+				["spend.SaidInOneCurrency.perCurrency"] =
+					"Entre el {from} y el {to} todo el gasto está dicho en una sola moneda: "
+					+ "{currencies}",
+				["spend.NotSaidAcrossCurrencies"] =
+					"Entre el {from} y el {to} el gasto está en {count} monedas distintas, así que no "
+					+ "hay un total entre ellas y cada una se dice por su lado. {currencies}",
+				["spend.NotSaidAcrossCurrencies.perCurrency"] =
+					"Entre el {from} y el {to} el gasto está en {count} monedas distintas, así que no "
+					+ "hay un total entre ellas y cada una se dice por su lado. {currencies}",
+				["spend.twoPeriods"] = "Primer período: {first} Segundo período: {second}",
+
+				["spend.views.BothViews"] =
+					"Salieron {cashOut} del banco y el período consumió {consumed}.{shares}",
+				["spend.views.TheCashOutAlone"] =
+					"Salieron {cashOut} del banco y el período no consumió nada de eso todavía."
+					+ "{shares}",
+				["spend.views.TheConsumedAlone"] =
+					"No salió nada del banco en este período y el período consumió {consumed}."
+					+ "{shares}",
+				["spend.share"] =
+					"De eso: {whole} en {subject}, en línea recta a lo largo de {life} desde el "
+					+ "{incurredAt}: a este período le tocan {share}.",
+
+				["costEntry.Recurring"] =
+					"{money} en {subject} el {incurredAt}. {classification}: se consumió en el período "
+					+ "en que se incurrió.",
+				["costEntry.Durable"] =
+					"{money} en {subject} el {incurredAt}. {classification}: se reparte en línea recta "
+					+ "a lo largo de {life} desde esa fecha.",
+
+				["costPerDistance.said"] =
+					"Entre el {from} y el {to}, desde la primera lectura del odómetro del período -- la "
+					+ "del {anchor} -- el vehículo recorrió {distance}: {figures} {rule}",
+				["costPerDistance.rule"] =
+					"Lo que se pagó en esa lectura o antes pagó el recorrido anterior y no cuenta acá.",
+				["costPerDistance.Measured"] =
+					"lo que se gastó después de ella sale a {figures}.",
+				["costPerDistance.figure"] = "{money} por {unit}",
+				["costPerDistance.betweenTwoFigures"] = " y ",
+				["costPerDistance.NothingSpentAfterTheAnchor"] =
+					"después de esa lectura no se gastó nada.",
+				["costPerDistance.NoDistanceTravelled"] =
+					"no hay distancia recorrida por la que dividir lo que se gastó después de esa "
+					+ "lectura, y eso no es un costo de cero por {unit}.",
+				["costPerDistance.NoSpanOfUse"] =
+					"Entre el {from} y el {to} no hay un tramo de uso por el que dividir el gasto, así "
+					+ "que no se puede decir cuánto cuesta la distancia. Lo que la serie del odómetro "
+					+ "dice de este período: {why}",
 			};
 		}
 	}

@@ -317,22 +317,22 @@ namespace Concesionario.Dominio.Pruebas
 			"HasAnyCostBetween/2(from)",
 			"HasAnyCostBetween/2(to)",
 
-			"DescribeSpendBetween/2(from)",
-			"DescribeSpendBetween/2(to)",
+			"DescribeSpendBetween/3(from)",
+			"DescribeSpendBetween/3(to)",
 
 			"IsSpendSaidInOneCurrencyBetween/2(from)",
 			"IsSpendSaidInOneCurrencyBetween/2(to)",
 
-			"DescribeSpendPerCurrencyBetween/2(from)",
-			"DescribeSpendPerCurrencyBetween/2(to)",
+			"DescribeSpendPerCurrencyBetween/3(from)",
+			"DescribeSpendPerCurrencyBetween/3(to)",
 
-			"DescribeTwoPeriodsOfSpendCompared/4(from1)",
-			"DescribeTwoPeriodsOfSpendCompared/4(to1)",
-			"DescribeTwoPeriodsOfSpendCompared/4(from2)",
-			"DescribeTwoPeriodsOfSpendCompared/4(to2)",
+			"DescribeTwoPeriodsOfSpendCompared/5(from1)",
+			"DescribeTwoPeriodsOfSpendCompared/5(to1)",
+			"DescribeTwoPeriodsOfSpendCompared/5(from2)",
+			"DescribeTwoPeriodsOfSpendCompared/5(to2)",
 
-			"CostEntriesBetween/2(from)",
-			"CostEntriesBetween/2(to)",
+			"CostEntriesBetween/3(from)",
+			"CostEntriesBetween/3(to)",
 
 			"CostEntryCountBetween/2(from)",
 			"CostEntryCountBetween/2(to)",
@@ -340,8 +340,8 @@ namespace Concesionario.Dominio.Pruebas
 			"CanCostPerDistanceBeSaid/2(from)",
 			"CanCostPerDistanceBeSaid/2(to)",
 
-			"DescribeCostPerDistanceBetween/2(from)",
-			"DescribeCostPerDistanceBetween/2(to)",
+			"DescribeCostPerDistanceBetween/3(from)",
+			"DescribeCostPerDistanceBetween/3(to)",
 		};
 
 		[Test]

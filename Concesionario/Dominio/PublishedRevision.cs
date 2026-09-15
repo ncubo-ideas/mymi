@@ -352,25 +352,25 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El precio dicho con su vigencia. Accesor GUARDADO: pedirlo de un hito que esta revision
-		/// no publico es un defecto de quien llama, no un monto en cero.
+		/// La clausula del precio con su vigencia. Accesor GUARDADO: pedirlo de un hito que esta
+		/// revision no publico es un defecto de quien llama, no un monto en cero.
 		/// </summary>
-		internal string DescribeServicePrice(
+		internal APriceClause TheServicePriceClause(
 			MaintenanceOperationKind kind, PublishedMilestone milestone)
 		{
 			return _servicePrices[ThePlaceOfAPublishedPrice(kind, milestone)]
-				.APriceCarriesItsValidity();
+				.APriceCarriesItsValidity(Code);
 		}
 
 		/// <summary>
-		/// Lo mismo, y ademas si esa vigencia rige en el instante recibido. Accesor GUARDADO por la
-		/// misma razon.
+		/// Lo mismo, y ademas donde cae el instante recibido dentro de esa vigencia. Accesor
+		/// GUARDADO por la misma razon.
 		/// </summary>
-		internal string DescribeServicePrice(
+		internal APriceClause TheServicePriceClause(
 			MaintenanceOperationKind kind, PublishedMilestone milestone, DateTime asOf)
 		{
 			return _servicePrices[ThePlaceOfAPublishedPrice(kind, milestone)]
-				.APriceCarriesItsValidity(asOf);
+				.APriceCarriesItsValidity(Code, asOf);
 		}
 
 		/// <summary>

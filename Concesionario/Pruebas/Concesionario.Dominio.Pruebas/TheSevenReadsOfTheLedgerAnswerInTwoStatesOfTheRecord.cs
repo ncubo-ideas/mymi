@@ -112,7 +112,7 @@ namespace Concesionario.Dominio.Pruebas
 				"HasAnyCostBetween sin ninguna entrada.");
 
 			Assert.That(
-				journal.Api.DescribeSpendBetween(TheYearFrom, TheYearTo),
+				journal.Api.DescribeSpendBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"Entre el 2026-01-01 00:00:00 y el 2026-12-31 23:59:59 no hay ningún gasto "
 					+ "registrado para este vehículo."),
@@ -126,14 +126,13 @@ namespace Concesionario.Dominio.Pruebas
 				+ "del conjunto de salida.");
 
 			Assert.That(
-				journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo),
+				journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
 				Does.Contain("no hay ninguna moneda en la que decirlo"),
 				"DescribeSpendPerCurrencyBetween dice ademas que no hay moneda: es su propia frase y "
 				+ "no la de DescribeSpendBetween.");
 
 			Assert.That(
-				journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					TheYearFrom, TheYearTo, TheEmptyYearFrom, TheEmptyYearTo),
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(TheYearFrom, TheYearTo, TheEmptyYearFrom, TheEmptyYearTo, TheLanguage.OfTheRecord),
 				Does.Contain("Primer período").And.Contains("Segundo período")
 					.And.Contains("2025-01-01 00:00:00"),
 				"DescribeTwoPeriodsOfSpendCompared nombra los DOS periodos, cada uno con su propia "
@@ -142,7 +141,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CostEntryCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(0),
 				"CostEntryCountBetween sin ninguna entrada.");
 
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(record.IncurredAt, Is.Empty, "CostEntriesBetween: la columna IncurredAt, vacia.");
 			Assert.That(record.Subject, Is.Empty);
@@ -181,20 +180,20 @@ namespace Concesionario.Dominio.Pruebas
 			// que a ese semestre le toca de las llantas, y las dos cifras TIENEN que diferir -- ese es
 			// el caso de las llantas de marzo que el brief pide en su prueba 8.
 			string theColonesHalf =
-				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo);
+				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord);
 
-			Assert.That(theColonesHalf, Does.Contain("Salieron ₡285000.00 del banco"),
+			Assert.That(theColonesHalf, Does.Contain("Salieron ₡285.000,00 del banco"),
 				"DescribeSpendBetween: la caja del semestre, sumada por el DOMINIO -- 240000 mas "
 				+ "45000.");
 			Assert.That(theColonesHalf, Does.Contain("el período consumió ₡"),
 				"Y lo consumido en la MISMA respuesta: ningun miembro contesta una vista sola.");
-			Assert.That(theColonesHalf, Does.Not.Contain("consumió ₡285000.00"),
+			Assert.That(theColonesHalf, Does.Not.Contain("consumió ₡285.000,00"),
 				"Y las dos cifras DIFIEREN: la duradera se reparte a lo largo de 48 meses, asi que "
 				+ "'compró llantas' no es 'el carro se puso caro'.");
 			Assert.That(
 				theColonesHalf,
 				Does.Contain(
-					"₡240000.00 en Llantas nuevas, en línea recta a lo largo de 48 meses desde el "
+					"₡240.000,00 en Llantas nuevas, en línea recta a lo largo de 48 meses desde el "
 					+ "2026-03-12 09:00:00"),
 				"Y la REGLA con la que se reparte va dicha adentro, con el entero, el asunto, la vida "
 				+ "util y el instante de anclaje: G2 pide que la persona pueda ver la regla en vez de "
@@ -209,31 +208,30 @@ namespace Concesionario.Dominio.Pruebas
 			// clausula -- y por eso la afirmacion se toma aca. Es C60 en la forma que SH-4 §3 encontro
 			// primero: el discriminador tiene que ser algo que solo ESE miembro dice.
 			Assert.That(
-				journal.Api.DescribeSpendPerCurrencyBetween(TheColonesHalfFrom, TheColonesHalfTo),
+				journal.Api.DescribeSpendPerCurrencyBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord),
 				Does.Contain("todo el gasto está dicho en una sola moneda"),
 				"DescribeSpendPerCurrencyBetween en el periodo de una sola moneda dice su propia "
 				+ "clausula, que DescribeSpendBetween no dice.");
 			Assert.That(
-				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo),
+				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord),
 				Does.Not.Contain("todo el gasto está dicho en una sola moneda"),
 				"Y la otra NO la dice: sin este renglon, la de arriba pasaria tambien si las dos "
 				+ "lecturas llamaran al mismo miembro del dominio.");
 
 			// EL ANIO ENTERO ESTA EN DOS MONEDAS, asi que cada una se dice por su lado y no hay total
 			// entre ellas.
-			string theYear = journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo);
+			string theYear = journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(theYear, Does.Contain("2 monedas distintas"));
 			Assert.That(theYear, Does.Contain("no hay un total entre ellas"));
-			Assert.That(theYear, Does.Contain("₡285000.00"), "El colon por su lado.");
-			Assert.That(theYear, Does.Contain("$120.50"), "Y el dolar con su propio signo.");
+			Assert.That(theYear, Does.Contain("₡285.000,00"), "El colon por su lado.");
+			Assert.That(theYear, Does.Contain("$120,50"), "Y el dolar con su propio signo.");
 			Assert.That(theYear, Does.Not.Contain("285120"),
 				"Y NINGUN total entre las dos: no hay factor con que sumarlas, y no lo hay a "
 				+ "proposito.");
 
 			Assert.That(
-				journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					TheColonesHalfFrom, TheColonesHalfTo, TheEmptyYearFrom, TheEmptyYearTo),
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(TheColonesHalfFrom, TheColonesHalfTo, TheEmptyYearFrom, TheEmptyYearTo, TheLanguage.OfTheRecord),
 				Does.Contain("Primer período: Entre el 2026-01-01 00:00:00")
 					.And.Contains("Segundo período: Entre el 2025-01-01 00:00:00")
 					.And.Contains("no hay ningún gasto registrado"),
@@ -251,7 +249,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.CostEntryCountBetween(TheEmptyYearFrom, TheEmptyYearTo), Is.EqualTo(0));
 
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				record.IncurredAt,
@@ -267,7 +265,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Los asuntos con las palabras que llegaron, sin tocar: G3 es texto recibido.");
 
 			Assert.That(
-				record.Money, Is.EqualTo(new[] { "₡240000.00", "₡45000.00", "$120.50" }),
+				record.Money, Is.EqualTo(new[] { "₡240.000,00", "₡45.000,00", "$120,50" }),
 				"El dinero dicho por el DOMINIO, con el signo y los decimales de cada moneda, y la "
 				+ "tercera fila en OTRA moneda: un cruce entre columnas cambia esta afirmacion.");
 
@@ -283,14 +281,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				record.Says[0],
-				Does.Contain("₡240000.00 en Llantas nuevas el 2026-03-12 09:00:00")
+				Does.Contain("₡240.000,00 en Llantas nuevas el 2026-03-12 09:00:00")
 					.And.Contains("Duradero"),
 				"Y la frase de cada fila la dice entera. EL ASUNTO SE AFIRMA ADENTRO DE SU PROPIA "
 				+ "CLAUSULA (C60): un Does.Contain del asunto suelto pasaria con la columna cruzada, "
 				+ "porque la frase tambien lo nombra.");
 			Assert.That(
 				record.Says[2],
-				Does.Contain("$120.50 en Lavado premium el 2026-08-05 14:15:00")
+				Does.Contain("$120,50 en Lavado premium el 2026-08-05 14:15:00")
 					.And.Contains("Recurrente"),
 				"Y la tercera fila dice lo suyo: otra moneda, otra clase y otro asunto que la "
 				+ "primera.");
@@ -312,7 +310,7 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			TheThreeEntriesInTwoCurrencies();
 
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			int rows = journal.Api.CostEntryCountBetween(TheYearFrom, TheYearTo);
 
@@ -412,7 +410,7 @@ namespace Concesionario.Dominio.Pruebas
 			TheThreeEntriesInTwoCurrencies();
 
 			CostLedgerRecord record =
-				journal.Api.CostEntriesBetween(TheColonesHalfFrom, TheColonesHalfTo);
+				journal.Api.CostEntriesBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord);
 
 			Assert.That(record.Money, Has.Length.EqualTo(2),
 				"El semestre tiene que traer dos filas para que haya una suma que hacer.");
@@ -422,8 +420,11 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (string cell in record.Money) summedOverTheRows += TheAmountInside(cell);
 
 			Assert.That(
-				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo),
-				Does.Contain("Salieron ₡" + summedOverTheRows.ToString("0.00") + " del banco"),
+				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord),
+				Does.Contain(
+					"Salieron ₡"
+					+ summedOverTheRows.ToString("#,##0.00", TheWayTheRecordWritesANumber)
+					+ " del banco"),
 				"La caja que el dominio dice y la suma de las filas del MISMO periodo tienen que ser "
 				+ "la misma cifra. Las dos mitades se arman desde las columnas del registro y no "
 				+ "desde literales: armada con literales, esta afirmacion pasaria contra un registro "
@@ -557,16 +558,16 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.RecordRecurringCost(
 				TheOilChangeIncurred, 45000.00m, TheColon, TheOilChange);
 
-			string live = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo).Money[0];
+			string live = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Money[0];
 
 			journal.CloseAndReopenFromTheJournal();
 
 			Assert.That(
-				journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo).Money[0], Is.EqualTo(live),
+				journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Money[0], Is.EqualTo(live),
 				"El monto se dijo distinto vivo y reproducido. Contra esta puerta eso no puede pasar; "
 				+ "el dia que pase, este es el renglon que lo dice.");
 
-			Assert.That(live, Is.EqualTo("₡45000.00"),
+			Assert.That(live, Is.EqualTo("₡45.000,00"),
 				"Y la razon por la que no puede: el dominio DICE el monto en las unidades menores de "
 				+ "su moneda, asi que la escala que el journal deja caer se vuelve a poner al "
 				+ "decirlo.");
@@ -612,7 +613,7 @@ namespace Concesionario.Dominio.Pruebas
 		// cuenta dejaria pasar una columna que cambiara de contenido al reproducirse.
 		private Dictionary<string, string> TheSevenAnswers()
 		{
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			return new Dictionary<string, string>
 			{
@@ -622,8 +623,8 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeSpendBetween",
-					journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo)
-					+ " // " + journal.Api.DescribeSpendBetween(TheYearFrom, TheYearTo)
+					journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord)
+					+ " // " + journal.Api.DescribeSpendBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"IsSpendSaidInOneCurrencyBetween",
@@ -634,12 +635,11 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeSpendPerCurrencyBetween",
-					journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo)
+					journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"DescribeTwoPeriodsOfSpendCompared",
-					journal.Api.DescribeTwoPeriodsOfSpendCompared(
-						TheColonesHalfFrom, TheColonesHalfTo, TheEmptyYearFrom, TheEmptyYearTo)
+					journal.Api.DescribeTwoPeriodsOfSpendCompared(TheColonesHalfFrom, TheColonesHalfTo, TheEmptyYearFrom, TheEmptyYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"CostEntryCountBetween",
@@ -684,11 +684,23 @@ namespace Concesionario.Dominio.Pruebas
 		// El monto de una celda de dinero, sin el signo de su moneda. Es aritmetica de la PRUEBA y no
 		// de una caratula: lo que la regla 3 prohibe es que una caratula sume dos valores del
 		// dominio, y lo que la regla 4 pide es exactamente esta comparacion.
+		// LAS CELDAS VIENEN DICHAS EN EL IDIOMA CON QUE SE PREGUNTO, asi que sumarlas exige leerlas
+		// con los separadores de ESE idioma y volver a decirlas con los mismos. Escribirlos aqui es
+		// lo que hace que esta suma se pueda comparar contra la frase letra por letra, y es lo que
+		// se pone rojo si el catalogo del registro cambia de separadores.
+		private static readonly System.Globalization.NumberFormatInfo TheWayTheRecordWritesANumber =
+			new System.Globalization.NumberFormatInfo
+			{
+				NumberGroupSeparator = ".",
+				NumberDecimalSeparator = ",",
+				NumberGroupSizes = new[] { 3 },
+			};
+
 		private static decimal TheAmountInside(string cell)
 		{
 			return decimal.Parse(
 				cell.Substring(1), System.Globalization.NumberStyles.Number,
-				System.Globalization.CultureInfo.InvariantCulture);
+				TheWayTheRecordWritesANumber);
 		}
 
 		// El SEGUNDO PROGRAMA que el journal guarda: cada define, cada invoke y cada blob de

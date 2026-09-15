@@ -93,7 +93,7 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void ARowRefusesToBeBuiltFromAnUnpublishedAnswer()
 		{
-			SpecificationAnswer absent = specification.ARevisionAppliesForward(
+			APriceClause absent = specification.ARevisionAppliesForward(
 				OperationKindCode.Repair,
 				new PublishedMilestone(90000, DistanceUnit.UnitA),
 				WhileItIsInForce);

@@ -57,8 +57,9 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheRowsAreTheThreeThatWereReceivedInsideThePeriod()
 		{
 			Assert.That(ledger.CostEntryCountBetween(TheStart, TheEnd), Is.EqualTo(3));
-			Assert.That(ledger.CostEntryMoniesBetween(TheStart, TheEnd),
-				Is.EqualTo(new[] { "₡25000.00", "₡40000.00", "₡100000.00" }));
+			Assert.That(TheSentenceTheDoorWouldCompose.EachCostEntryMoney(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
+				Is.EqualTo(new[] { "₡25.000,00", "₡40.000,00", "₡100.000,00" }));
 		}
 
 		// EL ANCLA, SEGUNDA MITAD Y LA QUE HACE EL TEST: el total se compara contra la suma de los
@@ -66,8 +67,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndTheDomainsCashOutTotalIsTheSumOfTheAmountsThatWereReceived()
 		{
-			Assert.That(ledger.DescribeSpendBetween(TheStart, TheEnd),
-				Does.Contain("₡165000.00"),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
+				Does.Contain("₡165.000,00"),
 				"25000 + 40000 + 100000, sumado a mano en el test. Comparar el total contra la suma "
 				+ "de las filas es comparar dos consumidores de una misma enumeracion, y coinciden "
 				+ "aunque la enumeracion este mal.");
@@ -78,10 +79,11 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndTheEntryFromOutsideThePeriodIsInNeitherTheRowsNorTheTotal()
 		{
-			Assert.That(ledger.CostEntryMoniesBetween(TheStart, TheEnd),
-				Does.Not.Contain("₡999000.00"));
-			Assert.That(ledger.DescribeSpendBetween(TheStart, TheEnd),
-				Does.Not.Contain("₡999000.00").And.Not.Contain("₡1164000.00"),
+			Assert.That(TheSentenceTheDoorWouldCompose.EachCostEntryMoney(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
+				Does.Not.Contain("₡999.000,00"));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
+				Does.Not.Contain("₡999.000,00").And.Not.Contain("₡1.164.000,00"),
 				"₡1164000 es lo que dirian LAS DOS -- el total y la suma de las filas -- si el "
 				+ "periodo no acotara: coincidiendo, y mal.");
 		}
@@ -94,9 +96,10 @@ namespace Concesionario.Dominio.Pruebas
 			DateTime from = new DateTime(2025, 1, 1, 0, 0, 0);
 			DateTime to = new DateTime(2025, 12, 31, 0, 0, 0);
 
-			Assert.That(ledger.CostEntryMoniesBetween(from, to),
-				Is.EqualTo(new[] { "₡999000.00" }));
-			Assert.That(ledger.DescribeSpendBetween(from, to), Does.Contain("₡999000.00"));
+			Assert.That(TheSentenceTheDoorWouldCompose.EachCostEntryMoney(
+				ledger, from, to, TheLanguage.OfTheRecord),
+				Is.EqualTo(new[] { "₡999.000,00" }));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, from, to, TheLanguage.OfTheRecord), Does.Contain("₡999.000,00"));
 		}
 
 		// LAS SEIS COLUMNAS SON PARALELAS, y lo son porque las seis abren por el mismo resolutor. Es
@@ -106,13 +109,15 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(ledger.CostEntryInstantsBetween(TheStart, TheEnd), Has.Length.EqualTo(3));
 			Assert.That(ledger.CostEntrySubjectsBetween(TheStart, TheEnd), Has.Length.EqualTo(3));
-			Assert.That(ledger.CostEntryMoniesBetween(TheStart, TheEnd), Has.Length.EqualTo(3));
+			Assert.That(TheSentenceTheDoorWouldCompose.EachCostEntryMoney(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord), Has.Length.EqualTo(3));
 			Assert.That(
 				ledger.CostEntryClassificationsBetween(TheStart, TheEnd), Has.Length.EqualTo(3));
 			Assert.That(
 				ledger.CostEntryExpectedLivesBetween(TheStart, TheEnd), Has.Length.EqualTo(3));
 			Assert.That(
-				ledger.DescribeEachCostEntryBetween(TheStart, TheEnd), Has.Length.EqualTo(3));
+				TheSentenceTheDoorWouldCompose.EachCostEntry(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord), Has.Length.EqualTo(3));
 		}
 
 		// EL LIMITE, AFIRMADO COMO LIMITE: no hay ninguna columna de partes consumidas, y por eso la

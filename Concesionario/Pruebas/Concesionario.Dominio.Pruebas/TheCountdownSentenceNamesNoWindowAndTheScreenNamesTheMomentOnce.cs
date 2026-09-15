@@ -110,7 +110,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(handed.Rows, Is.Not.Empty);
 
 			foreach (APublishedPriceOnTheSheet row in handed.Rows)
-				Assert.That(row.Says, Does.Contain("2026-02-01"),
+				Assert.That(row.Says, Does.Contain("1 de febrero de 2026"),
 					"La frase de un precio dejo de nombrar el instante contra el que se juzgo su "
 					+ "vigencia. Si eso pasa, el bloque de precios se queda sin decir a que momento "
 					+ "contesta y hay que ponerlo.");

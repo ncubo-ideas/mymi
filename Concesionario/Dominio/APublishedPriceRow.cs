@@ -15,17 +15,12 @@ namespace Concesionario.Dominio
 	internal sealed class APublishedPriceRow
 	{
 		private readonly APublishedPriceKey _key;
-		private readonly string _shape;
-		private readonly string _clause;
-		private readonly string _revision;
+		private readonly APriceClause _clause;
 
-		private APublishedPriceRow(
-			APublishedPriceKey key, string shape, string clause, string revision)
+		private APublishedPriceRow(APublishedPriceKey key, APriceClause clause)
 		{
 			_key = key;
-			_shape = shape;
 			_clause = clause;
-			_revision = revision;
 		}
 
 		/// <summary>
@@ -34,7 +29,7 @@ namespace Concesionario.Dominio
 		/// un precio que nadie publico, y es lo que haria falsa la ley de que toda fila nombra su
 		/// revision.
 		/// </summary>
-		internal static APublishedPriceRow Of(APublishedPriceKey key, SpecificationAnswer answer)
+		internal static APublishedPriceRow Of(APublishedPriceKey key, APriceClause answer)
 		{
 			if (key == null)
 				throw new DomainException(
@@ -44,7 +39,7 @@ namespace Concesionario.Dominio
 			if (answer == null)
 				throw new DomainException(
 					$"Se compuso la fila del precio de {key.TheNameOfItsOperation()} sin la respuesta "
-					+ "de la que sale. Sin ella no hay ni frase ni procedencia que poner.");
+					+ "de la que sale. Sin ella no hay ni clausula ni procedencia que poner.");
 
 			if (!answer.IsPublished())
 				throw new DomainException(
@@ -53,8 +48,7 @@ namespace Concesionario.Dominio
 					+ "nombra ninguna revision. Una fila con la procedencia en blanco parece un precio "
 					+ "publicado y no lo es.");
 
-			return new APublishedPriceRow(
-				key, answer.TheShapeItHas(), answer.TheClauseItCarries(), answer.RevisionCode());
+			return new APublishedPriceRow(key, answer);
 		}
 
 		/// <summary>
@@ -65,34 +59,12 @@ namespace Concesionario.Dominio
 			return _key.TheNameOfItsOperation();
 		}
 
-		/// <summary>El hito al que se publico, dicho con su unidad.</summary>
-		internal string TheMilestoneItWasPublishedAt()
-		{
-			return _key.TheMilestoneAsPublished();
-		}
-
-		/// <summary>El codigo de la revision que rige para esta clave.</summary>
-		internal string TheRevisionItCameFrom()
-		{
-			return _revision;
-		}
-
 		/// <summary>
-		/// Si hay algo publicado detras de la fila, por su codigo. Es siempre lo mismo -- la fabrica
-		/// se niega a nacer de una ausencia -- y va igual, porque quien redacta elige el marco por la
-		/// forma y no por saberse esta ley.
+		/// Lo que el precio tiene que decir, como forma y valores: la operacion, el hito con su
+		/// unidad, el monto con su moneda, la vigencia y donde cae el instante preguntado. La
+		/// revision va al lado y no dentro.
 		/// </summary>
-		internal string TheShapeOfItsAnswer()
-		{
-			return _shape;
-		}
-
-		/// <summary>
-		/// Lo que el precio tiene que decir, que es lo que hace la fila autodescriptiva: la operacion
-		/// como se dice, el hito, el monto con su moneda, la vigencia y si rige en el instante
-		/// preguntado. La revision va al lado y no dentro.
-		/// </summary>
-		internal string TheClauseItCarries()
+		internal APriceClause TheClauseItCarries()
 		{
 			return _clause;
 		}

@@ -60,8 +60,8 @@ namespace Concesionario.Dominio.Pruebas
 					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 					WhileItIsInForce, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al 2025-12-31. "
-					+ "Al 2025-06-15 esa vigencia está rigiendo. "
+					"Revisión a los 10.000 km: ₡120,50, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
+					+ "Al 15 de junio de 2025 esa vigencia está rigiendo. "
 					+ "Publicado en la revisión REV-2025-01."));
 		}
 
@@ -74,13 +74,13 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 				AfterItPassed, TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("vigente del 2025-01-01 al 2025-12-31"),
+			Assert.That(answer, Does.Contain("vigente del 1 de enero de 2025 al 31 de diciembre de 2025"),
 				"La vigencia va en la respuesta para que quien la lea vea contra que la esta "
 				+ "leyendo.");
 			Assert.That(answer, Does.Contain("no es el vigente"),
 				"Y lo dice con palabras. Un precio vencido que solo trae su fecha obliga al de "
 				+ "afuera a hacer la comparacion, que es la que este modulo ya hizo.");
-			Assert.That(answer, Does.Contain("120.50"),
+			Assert.That(answer, Does.Contain("₡120,50"),
 				"El precio publicado sigue saliendo: vencido no es inexistente, y la persona "
 				+ "necesita saber cual era.");
 		}
@@ -94,7 +94,7 @@ namespace Concesionario.Dominio.Pruebas
 				BeforeItStarted, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("no es el vigente"));
-			Assert.That(answer, Does.Contain("vigente del 2025-01-01"));
+			Assert.That(answer, Does.Contain("vigente del 1 de enero de 2025"));
 		}
 
 		// El monto sale COMO SU PROPIA MONEDA LO DICE -- con el signo delante y los decimales que esa
@@ -102,7 +102,7 @@ namespace Concesionario.Dominio.Pruebas
 		// sucursal no puso.
 		//
 		// LA FRASE CAMBIO EN CL-2 y el cambio es visible: antes decia "120.50 CRC" y ahora dice
-		// "₡120.50". El monto y la moneda dejaron de ser dos campos sueltos en el precio y son un solo
+		// "₡120,50". El monto y la moneda dejaron de ser dos campos sueltos en el precio y son un solo
 		// Money, que es quien dice la frase (DEC-85, DEC-87).
 		[Test]
 		public void TheAmountAndTheCurrencyAreAnsweredAsPublished()
@@ -111,7 +111,7 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 				WhileItIsInForce, TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("₡120.50"));
+			Assert.That(answer, Does.Contain("₡120,50"));
 		}
 
 		// EL HITO ES DISTANCIA MAS UNIDAD. El mismo numero en la otra unidad no es el mismo hito, y
@@ -270,7 +270,7 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 				WhileItIsInForce, TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("145.00"));
+			Assert.That(answer, Does.Contain("₡145,00"));
 			Assert.That(answer, Does.Not.Contain("120.50"));
 		}
 
@@ -294,7 +294,7 @@ namespace Concesionario.Dominio.Pruebas
 				TheSentenceTheDoorWouldCompose.TheServicePrice(
 					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 					WhileItIsInForce, TheLanguage.OfTheRecord),
-				Does.Contain("145.00"));
+				Does.Contain("₡145,00"));
 		}
 
 		// EL NUMERO SE DICE IGUAL EN TODA MAQUINA. Una respuesta que alguien guardo en una maquina
@@ -313,7 +313,7 @@ namespace Concesionario.Dominio.Pruebas
 					TheSentenceTheDoorWouldCompose.TheServicePrice(
 						specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 						WhileItIsInForce, TheLanguage.OfTheRecord),
-					Does.Contain("₡120.50"),
+					Does.Contain("₡120,50"),
 					"Bajo una cultura con coma decimal el monto sigue saliendo con punto. Si "
 					+ "cambiara, la frase dependeria de la maquina que la compuso.");
 			}

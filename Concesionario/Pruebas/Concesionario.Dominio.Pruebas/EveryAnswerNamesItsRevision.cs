@@ -66,7 +66,7 @@ namespace Concesionario.Dominio.Pruebas
 			new[] { "ThePublishedServicingElsewhereAnswer", "ReadServicingPolicyRevision" },
 			new[] { "TheCoverageScope", "ReadCoverageRevision" },
 			new[] { "TheCoverageAnswer", "ReadCoverageRevision" },
-			new[] { "PublishedPriceClausesAsOf", "PublishedPriceRevisionsAsOf" },
+			new[] { "PublishedPriceAmountsAsOf", "PublishedPriceRevisionsAsOf" },
 		};
 
 		// LOS ACARREADORES CON QUE LA FACHADA CONTESTA. Desde que el dominio dejo de redactar, una
@@ -74,14 +74,14 @@ namespace Concesionario.Dominio.Pruebas
 		// fachada y se re-deriva abajo, no se cuenta aqui.
 		//
 		// LA HOJA GANO UNO POR ITEM, y eso es lo que la ley pedia: un portador por respuesta
-		// compuesta, con los valores de ESE item y no la union de todos. SpecificationAnswer se queda
-		// porque el precio todavia pasa por el -- la moneda es su propio turno --, y ahi sigue
-		// llevando la clausula que el dominio redacta.
+		// compuesta, con los valores de ESE item y no la union de todos. Con el precio entro el
+		// ultimo, APriceClause, y con el la moneda: SpecificationAnswer ya no lo lleva, y ningun
+		// item de esta hoja pasa por el.
 		private static readonly Type[] LosAcarreadoresDeUnaRespuesta =
 		{
 			typeof(SpecificationAnswer), typeof(ACoverageScope), typeof(CoverageAnswer),
 			typeof(AFluidClause), typeof(ATyreClause), typeof(AFuelClause),
-			typeof(AServiceIntervalClause), typeof(AServicingClause),
+			typeof(AServiceIntervalClause), typeof(AServicingClause), typeof(APriceClause),
 		};
 		// LAS DOS QUE ENTRARON CON LA LEY L7b son el mismo caso que las dos de T4 y por eso la
 		// tabla ya sabia contestarlas: la mitad publicada y la emparejada son DOS FRASES DEL MISMO
@@ -258,7 +258,7 @@ namespace Concesionario.Dominio.Pruebas
 				.Where(metodo => LosAcarreadoresDeUnaRespuesta.Contains(metodo.ReturnType)
 					&& metodo.Name.StartsWith("The", StringComparison.Ordinal))
 				.Select(metodo => metodo.Name)
-				.Concat(new[] { "PublishedPriceClausesAsOf" })
+				.Concat(new[] { "PublishedPriceAmountsAsOf" })
 				.Distinct()
 				.OrderBy(nombre => nombre, StringComparer.Ordinal)
 				.ToList();

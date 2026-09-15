@@ -1441,8 +1441,8 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   {"hay algun gasto",-24} : {api.HasAnyCostBetween(from, to)}");
 			Console.WriteLine($"   {"en una sola moneda",-24} : {api.IsSpendSaidInOneCurrencyBetween(from, to)}");
 			Console.WriteLine($"   {"cuantos gastos",-24} : {api.CostEntryCountBetween(from, to)}");
-			Console.WriteLine($"     el gasto, entero  : {api.DescribeSpendBetween(from, to)}");
-			Console.WriteLine($"     moneda por moneda : {api.DescribeSpendPerCurrencyBetween(from, to)}");
+			Console.WriteLine($"     el gasto, entero  : {api.DescribeSpendBetween(from, to, TheVoiceOfTheDealership)}");
+			Console.WriteLine($"     moneda por moneda : {api.DescribeSpendPerCurrencyBetween(from, to, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -1453,13 +1453,13 @@ namespace Concesionario.Consola
 			Console.WriteLine("      dominio: el tramo lo dice la agenda y el dinero el libro. Ni la");
 			Console.WriteLine("      distancia ni el ancla salen por ninguna lectura como numero --");
 			Console.WriteLine($"   {"se puede decir",-24} : {api.CanCostPerDistanceBeSaid(from, to)}");
-			Console.WriteLine($"     {api.DescribeCostPerDistanceBetween(from, to)}");
+			Console.WriteLine($"     {api.DescribeCostPerDistanceBetween(from, to, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
 		private static void TheRowsOfTheLedger(DealershipCarAPI api, DateTime from, DateTime to)
 		{
-			CostLedgerRecord record = api.CostEntriesBetween(from, to);
+			CostLedgerRecord record = api.CostEntriesBetween(from, to, TheVoiceOfTheDealership);
 
 			Console.WriteLine("   -- el registro crudo: una fila por gasto incurrido adentro, en columnas");
 			Console.WriteLine("      paralelas y en orden del instante en que se incurrio --");
@@ -1513,9 +1513,9 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   primer periodo, del      : {Instant(Costs.TheYearFrom)} al {Instant(Costs.TheYearTo)}");
 			Console.WriteLine($"   segundo periodo, del     : {Instant(Costs.TheEarlierYearFrom)} al {Instant(Costs.TheEarlierYearTo)}");
 			Console.WriteLine();
-			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo)}");
+			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
-			Console.WriteLine($"   el anio anterior solo    : {api.DescribeSpendBetween(Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo)}");
+			Console.WriteLine($"   el anio anterior solo    : {api.DescribeSpendBetween(Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -1550,13 +1550,14 @@ namespace Concesionario.Consola
 			string bytesBeforeReading = TheTreeOf(actorFolder);
 			long entryBeforeReading = app.Actor.CurrentEntryId;
 
-			string spend = api.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo);
+			string spend = api.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership);
 			string perCurrency =
-				api.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo);
-			string perDistance =
-				api.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo);
+				api.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo, TheVoiceOfTheDealership);
+			string perDistance = api.DescribeCostPerDistanceBetween(
+				Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership);
 			string bothPeriods = api.DescribeTwoPeriodsOfSpendCompared(
-				Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo);
+				Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo,
+				TheVoiceOfTheDealership);
 
 			Console.WriteLine("---- mediciones contra el disco -------------------------------");
 			Console.WriteLine();
@@ -1577,16 +1578,16 @@ namespace Concesionario.Consola
 			Console.WriteLine($"  entrada del journal       : {reopened.Actor.CurrentEntryId}"
 				+ "  (crecio una: OnHydrated deja la semilla en CADA arranque)");
 			Console.WriteLine("  el gasto igual            : "
-				+ $"{again.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo) == spend}"
+				+ $"{again.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership) == spend}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  por moneda igual          : "
-				+ $"{again.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo) == perCurrency}"
+				+ $"{again.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo, TheVoiceOfTheDealership) == perCurrency}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  por distancia igual       : "
-				+ $"{again.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo) == perDistance}"
+				+ $"{again.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership) == perDistance}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  los dos periodos iguales  : "
-				+ $"{again.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo) == bothPeriods}"
+				+ $"{again.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo, TheVoiceOfTheDealership) == bothPeriods}"
 				+ "  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  Los gastos no son un campo de C#: salen del journal, y los cuatro hechos");

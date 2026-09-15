@@ -51,8 +51,9 @@ namespace Concesionario.Dominio.Pruebas
 			specification.SupersedeRevision(TheOldRevision, TheNewRevision);
 
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileItIsInForce),
-				Is.EqualTo(new[] { "15000 km" }),
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileItIsInForce, TheLanguage.OfTheRecord),
+				Is.EqualTo(new[] { "15.000 km" }),
 				"El hito de la revision apagada no puede seguir en la lista: quien lo lea estaria "
 				+ "citando un precio que la sucursal ya reemplazo.");
 			Assert.That(specification.HasAnyPublishedServicePrice(), Is.True,
@@ -63,7 +64,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
 					specification, WhileItIsInForce, TheLanguage.OfTheRecord),
-				Has.All.Contains("₡145.00"));
+				Has.All.Contains("₡145,00"));
 		}
 
 		// LA OTRA MITAD, y es la que separa sustituir de publicar: dos revisiones SELLADAS dejan las
@@ -76,8 +77,9 @@ namespace Concesionario.Dominio.Pruebas
 			TheNewRevisionPublishesAt(15000);
 
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileItIsInForce),
-				Is.EquivalentTo(new[] { "15000 km", "10000 km" }));
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileItIsInForce, TheLanguage.OfTheRecord),
+				Is.EquivalentTo(new[] { "15.000 km", "10.000 km" }));
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(2));
 		}
 
@@ -90,8 +92,9 @@ namespace Concesionario.Dominio.Pruebas
 			TheNewRevisionPublishesAt(15000);
 
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileItIsInForce),
-				Is.EqualTo(new[] { "15000 km", "10000 km" }));
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileItIsInForce, TheLanguage.OfTheRecord),
+				Is.EqualTo(new[] { "15.000 km", "10.000 km" }));
 		}
 
 		// UN PRECIO REPUBLICADO SALE UNA VEZ, y nombra la revision nueva. Sin la pregunta de "ya se
@@ -105,15 +108,16 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(1));
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileItIsInForce),
-				Is.EqualTo(new[] { "10000 km" }));
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileItIsInForce, TheLanguage.OfTheRecord),
+				Is.EqualTo(new[] { "10.000 km" }));
 			Assert.That(
 				specification.PublishedPriceRevisionsAsOf(WhileItIsInForce),
 				Is.EqualTo(new[] { TheNewRevision }));
 			Assert.That(
 				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
 					specification, WhileItIsInForce, TheLanguage.OfTheRecord),
-				Has.All.Contains("₡145.00"));
+				Has.All.Contains("₡145,00"));
 		}
 
 		// SUSTITUIR RETIRA lo que la sucesora no volvio a publicar, y aca eso deja la lista vacia. La
@@ -130,7 +134,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(specification.HasAnyPublishedServicePrice(), Is.False);
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(0));
-			Assert.That(specification.PublishedPriceMilestonesAsOf(WhileItIsInForce), Is.Empty);
+			Assert.That(TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileItIsInForce, TheLanguage.OfTheRecord), Is.Empty);
 		}
 
 		private void TheNewRevisionPublishesAt(int milestone)

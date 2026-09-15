@@ -421,7 +421,7 @@ namespace Concesionario.Dominio.Pruebas
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost(texts.Language)",
 				"state.ReadHowThisVehicleIsDriven()",
-				"state.ReadWhatThisVehicleHasCost()",
+				"state.ReadWhatThisVehicleHasCost(texts.Language)",
 				"state.ReadThePlateOfThisVehicle()",
 			})
 				Assert.That(page, Does.Contain(read),
@@ -470,7 +470,7 @@ namespace Concesionario.Dominio.Pruebas
 					+ "operations = state.ReadWhereEachOperationStands(texts.Language); "
 					+ "costs = state.ReadWhatTheServicesCost(texts.Language); "
 					+ "use = state.ReadHowThisVehicleIsDriven(); "
-					+ "spend = state.ReadWhatThisVehicleHasCost(); "
+					+ "spend = state.ReadWhatThisVehicleHasCost(texts.Language); "
 					+ "plate = state.ReadThePlateOfThisVehicle();"),
 				"Las ocho lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
 				+ "otro metodo, o despues de un await -- contesta sobre otro momento del mismo registro, "
@@ -487,7 +487,7 @@ namespace Concesionario.Dominio.Pruebas
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost(texts.Language)",
 				"state.ReadHowThisVehicleIsDriven()",
-				"state.ReadWhatThisVehicleHasCost()",
+				"state.ReadWhatThisVehicleHasCost(texts.Language)",
 				"state.ReadThePlateOfThisVehicle()",
 			})
 				Assert.That(TimesItSays(page, read), Is.EqualTo(1),

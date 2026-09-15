@@ -71,30 +71,31 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EveryRowSaysWhatWasPublishedByLiteral()
 		{
-			string[] milestones = specification.PublishedPriceMilestonesAsOf(AfterTheFluidPriceLapsed);
+			string[] milestones = TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
 				specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 			string[] revisions = specification.PublishedPriceRevisionsAsOf(AfterTheFluidPriceLapsed);
 
-			int inspection = Array.IndexOf(milestones, "10000 km");
-			int fluid = Array.IndexOf(milestones, "20000 km");
-			int repair = Array.IndexOf(milestones, "30000 mi");
+			int inspection = Array.IndexOf(milestones, "10.000 km");
+			int fluid = Array.IndexOf(milestones, "20.000 km");
+			int repair = Array.IndexOf(milestones, "30.000 mi");
 
 			Assert.That(said[inspection], Is.EqualTo(
-				"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
-				+ "Al 2025-09-01 esa vigencia está rigiendo. "
+				"Revisión a los 10.000 km: ₡145,00, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
+				+ "Al 1 de setiembre de 2025 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(revisions[inspection], Is.EqualTo(TheSecondRevision));
 
 			Assert.That(said[fluid], Is.EqualTo(
-				"Cambio de fluido a los 20000 km: ₡340.00, vigente del 2025-01-01 al 2025-06-30. "
-				+ "Al 2025-09-01 esa vigencia ya pasó, así que este precio no es el vigente. "
+				"Cambio de fluido a los 20.000 km: ₡340,00, vigente del 1 de enero de 2025 al 30 de junio de 2025. "
+				+ "Al 1 de setiembre de 2025 esa vigencia ya pasó, así que este precio no es el vigente. "
 				+ "Publicado en la revisión REV-2025-01."));
 			Assert.That(revisions[fluid], Is.EqualTo(TheFirstRevision));
 
 			Assert.That(said[repair], Is.EqualTo(
-				"Reparación a los 30000 mi: $900.00, vigente del 2025-01-01 al 2025-12-31. "
-				+ "Al 2025-09-01 esa vigencia está rigiendo. "
+				"Reparación a los 30.000 mi: $900,00, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
+				+ "Al 1 de setiembre de 2025 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(revisions[repair], Is.EqualTo(TheSecondRevision));
 		}
@@ -110,7 +111,8 @@ namespace Concesionario.Dominio.Pruebas
 			DateTime asOf = which == 0 ? WhileBothAreInForce : AfterTheFluidPriceLapsed;
 
 			string[] operations = specification.PublishedPriceOperationsAsOf(asOf);
-			string[] milestones = specification.PublishedPriceMilestonesAsOf(asOf);
+			string[] milestones = TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, asOf, TheLanguage.OfTheRecord);
 			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
 				specification, asOf, TheLanguage.OfTheRecord);
 			string[] revisions = specification.PublishedPriceRevisionsAsOf(asOf);
@@ -160,8 +162,8 @@ namespace Concesionario.Dominio.Pruebas
 					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 					WhileBothAreInForce, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
-					+ "Al 2025-06-15 esa vigencia está rigiendo. "
+					"Revisión a los 10.000 km: ₡145,00, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
+					+ "Al 15 de junio de 2025 esa vigencia está rigiendo. "
 					+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(
 				TheSentenceTheDoorWouldCompose.TheServicePrice(
@@ -216,9 +218,11 @@ namespace Concesionario.Dominio.Pruebas
 			return (OperationKindCode)Enum.Parse(typeof(OperationKindCode), name);
 		}
 
+		// EL HITO VIENE DICHO EN EL IDIOMA CON QUE SE PREGUNTO, con los separadores de miles de ese
+		// idioma adentro, asi que volver a la distancia con que se publico pasa por quitarlos.
 		private static int TheDistanceOf(string milestone)
 		{
-			return int.Parse(milestone.Split(' ')[0]);
+			return int.Parse(milestone.Split(' ')[0].Replace(".", ""));
 		}
 
 		private static DistanceUnitCode TheUnitOf(string milestone)

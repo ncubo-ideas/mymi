@@ -73,19 +73,21 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			CostLedger ledger = ALedgerWithTheAnchorSpendAndTheOilChange();
 
-			string withTheAnchorSpendCounted = ledger.DescribeCostPerDistance(
-				TheYearFrom, TheYearTo, TheYearFrom, TheDistance, DistanceUnitCode.UnitA);
+			string withTheAnchorSpendCounted = TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+				ledger.TheCostPerDistanceClause(
+				TheYearFrom, TheYearTo, TheYearFrom, TheDistance, DistanceUnitCode.UnitA), TheLanguage.OfTheRecord);
 
-			string asL13SaysIt = ledger.DescribeCostPerDistance(
-				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA);
+			string asL13SaysIt = TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+				ledger.TheCostPerDistanceClause(
+				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA), TheLanguage.OfTheRecord);
 
 			Assert.That(
-				withTheAnchorSpendCounted, Does.Contain("₡139.06 por km"),
+				withTheAnchorSpendCounted, Does.Contain("₡139,06 por km"),
 				"Con el ancla puesta antes de las llantas del año pasado, las llantas cuentan: "
 				+ "445000 sobre 3200 son 139.0625, que en colones se dicen 139.06.");
 
 			Assert.That(
-				asL13SaysIt, Does.Contain("₡89.06 por km"),
+				asL13SaysIt, Does.Contain("₡89,06 por km"),
 				"Con el ancla en el instante de las llantas, las llantas NO cuentan: 285000 sobre "
 				+ "3200 son 89.0625, que en colones se dicen 89.06. Es la MISMA distancia y el MISMO "
 				+ "libro: lo unico que cambio es donde esta el ancla.");
@@ -110,9 +112,10 @@ namespace Concesionario.Dominio.Pruebas
 				TheAnchor.AddSeconds(1), TheTyresOfLastYear, TheColon, "Llantas nuevas");
 
 			Assert.That(
-				ledger.DescribeCostPerDistance(
-					TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA),
-				Does.Contain("₡50.00 por km"),
+				TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+				ledger.TheCostPerDistanceClause(
+					TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA), TheLanguage.OfTheRecord),
+				Does.Contain("₡50,00 por km"),
 				"160000 sobre 3200 son 50.00. Un segundo despues del ancla es despues del ancla.");
 		}
 
@@ -124,15 +127,16 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			CostLedger ledger = ALedgerWithTheAnchorSpendAndTheOilChange();
 
-			string said = ledger.DescribeCostPerDistance(
-				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA);
+			string said = TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+				ledger.TheCostPerDistanceClause(
+				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("2026-01-10 08:00:00"),
 				"El instante del ancla, dicho como instante con su hora: de que dia local es un "
 				+ "instante necesitaria una zona que este modulo no tiene.");
 			Assert.That(said, Does.Contain("primera lectura del odómetro"),
 				"Y dicho por lo que es, no como una fecha suelta.");
-			Assert.That(said, Does.Contain("3200 km"),
+			Assert.That(said, Does.Contain("3.200 km"),
 				"Y la distancia con su unidad, para que la division se pueda revisar.");
 			Assert.That(said, Does.Contain("2026-01-01 00:00:00").And.Contains("2026-12-31 23:59:59"),
 				"Y los dos limites por los que se pregunto.");
@@ -150,15 +154,16 @@ namespace Concesionario.Dominio.Pruebas
 			ledger.RecordRecurringCost(
 				TheImportedPartIncurred, TheImportedPart, TheDollar, "Repuesto importado");
 
-			string said = ledger.DescribeCostPerDistance(
-				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA);
+			string said = TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+				ledger.TheCostPerDistanceClause(
+				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA), TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡89.06 por km"),
+			Assert.That(said, Does.Contain("₡89,06 por km"),
 				"La de colones, con el signo de su moneda Y la unidad de la distancia: las DOS "
 				+ "unidades dichas.");
-			Assert.That(said, Does.Contain("$2.00 por km"),
+			Assert.That(said, Does.Contain("$2,00 por km"),
 				"Y la de dolares por su lado: 6400 sobre 3200 son 2.00.");
-			Assert.That(said, Does.Not.Contain("291400").And.Not.Contain("₡91.06"),
+			Assert.That(said, Does.Not.Contain("291400").And.Not.Contain("₡91,06"),
 				"Y NINGUN total entre las dos: 285000 colones y 6400 dolares no se suman, y "
 				+ "89.06 + 2.00 no es una cifra de nada.");
 		}
@@ -175,13 +180,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			ledger.RecordRecurringCost(TheAnchor, TheTyresOfLastYear, TheColon, "Llantas nuevas");
 
-			string said = ledger.DescribeCostPerDistance(
-				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA);
+			string said = TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+				ledger.TheCostPerDistanceClause(
+				TheYearFrom, TheYearTo, TheAnchor, TheDistance, DistanceUnitCode.UnitA), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("no se gastó nada"),
-				"Dicho con palabras. Un ₡0.00 por km se leeria como un vehiculo que anduvo gratis.");
+				"Dicho con palabras. Un ₡0,00 por km se leeria como un vehiculo que anduvo gratis.");
 			Assert.That(said, Does.Not.Contain("0.00 por km").And.Not.Contain("₡0"));
-			Assert.That(said, Does.Contain("2026-01-10 08:00:00").And.Contains("3200 km"),
+			Assert.That(said, Does.Contain("2026-01-10 08:00:00").And.Contains("3.200 km"),
 				"Y sigue nombrando el ancla y la distancia: lo que falta es el gasto, no el tramo.");
 		}
 
@@ -193,8 +199,9 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			CostLedger ledger = ALedgerWithTheAnchorSpendAndTheOilChange();
 
-			string said = ledger.DescribeCostPerDistance(
-				TheYearFrom, TheYearTo, TheAnchor, 0, DistanceUnitCode.UnitA);
+			string said = TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+				ledger.TheCostPerDistanceClause(
+				TheYearFrom, TheYearTo, TheAnchor, 0, DistanceUnitCode.UnitA), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("no hay distancia recorrida"),
 				"Dicho con palabras, y nombrando que lo que falta es la distancia.");
@@ -223,7 +230,7 @@ namespace Concesionario.Dominio.Pruebas
 					"El tramo mezcla unidades, asi que no hay distancia recorrida que medir.");
 
 				string theRate = journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo);
-				string theCost = journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo);
+				string theCost = journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 				Assert.That(theCost, Does.Contain(theRate),
 					"La frase del ritmo entra ENTERA en la del costo. Comparar las dos lecturas es lo "
@@ -268,9 +275,9 @@ namespace Concesionario.Dominio.Pruebas
 					journal.Api.CanCostPerDistanceBeSaid(TheYearFrom, TheYearTo), Is.True,
 					"Hay tramo de uso y hay gasto: las dos mitades de la medibilidad.");
 
-				string said = journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo);
+				string said = journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
-				Assert.That(said, Does.Contain("₡89.06 por km"),
+				Assert.That(said, Does.Contain("₡89,06 por km"),
 					"285000 sobre los 3200 km que la SERIE dice, con las llantas del instante del "
 					+ "ancla excluidas. Ni la distancia ni el ancla se le pidieron a quien pregunta.");
 				Assert.That(said, Does.Contain("2026-01-10 08:00:00"),
@@ -298,10 +305,10 @@ namespace Concesionario.Dominio.Pruebas
 
 				Assert.That(journal.Api.CanCostPerDistanceBeSaid(TheYearFrom, TheYearTo), Is.True);
 
-				string said = journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo);
+				string said = journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Contain("no se gastó nada"));
-				Assert.That(said, Does.Contain("2026-06-01 09:00:00").And.Contains("3200 km"),
+				Assert.That(said, Does.Contain("2026-06-01 09:00:00").And.Contains("3.200 km"),
 					"Y nombra el ancla y la distancia que la serie dijo.");
 			}
 		}
@@ -339,8 +346,8 @@ namespace Concesionario.Dominio.Pruebas
 					+ "dice cual de las dos se cayo.");
 
 				Assert.That(
-					journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo),
-					Does.Contain("no se gastó nada").And.Contains("3200 km"),
+					journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
+					Does.Contain("no se gastó nada").And.Contains("3.200 km"),
 					"Y la frase sigue siendo TOTAL: el tramo se pudo medir, asi que la rama del si es "
 					+ "la que corre, y lo que falta -- el gasto -- se dice con palabras.");
 			}
@@ -351,27 +358,35 @@ namespace Concesionario.Dominio.Pruebas
 		// NINGUN MIEMBRO DEL LIBRO ENTREGA EL COSTO POR DISTANCIA COMO NUMERO, ni el monto de arriba
 		// suelto. Es la misma ley que L6 y L11 ya tienen, aplicada a la respuesta que este cruce
 		// agrega: quien tuviera la cifra y la distancia armaria un total que el dominio no dijo.
+		//
+		// LA RESPUESTA YA NO ES UNA FRASE SINO UN PORTADOR, asi que lo que se prohibe se dice por lo
+		// que es y no por lo que no es: una cifra. El portador entrega los DIGITOS de cada moneda
+		// como texto y junto a la forma y el codigo de esa moneda, que es lo minimo con lo que se
+		// puede leer; lo que no entrega -- ni el, ni el libro -- es un numero que alguien pueda
+		// multiplicar por la distancia.
 		[Test]
 		public void AndNoMemberOfTheLedgerHandsOutTheCostPerDistanceAsANumber()
 		{
 			var offending = new List<string>();
 
-			foreach (MethodInfo member in typeof(CostLedger).GetMethods(
-				BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-				| BindingFlags.DeclaredOnly))
+			foreach (MethodInfo member in TheMembersOf(typeof(CostLedger)))
 			{
-				if (!(member.IsPublic || member.IsAssembly) || member.IsSpecialName) continue;
-
 				if (!member.Name.Contains("PerDistance", StringComparison.Ordinal)) continue;
 
-				if (member.ReturnType != typeof(string))
+				if (ItIsANumber(member.ReturnType) || member.ReturnType == typeof(Money))
 					offending.Add(member.Name + " -> " + member.ReturnType.Name);
 			}
 
+			foreach (MethodInfo member in TheMembersOf(typeof(ACostPerDistanceClause)))
+				if (ItIsANumber(member.ReturnType) && member.Name != "TheDistanceTravelled")
+					offending.Add(member.Name + " -> " + member.ReturnType.Name);
+
 			Assert.That(offending, Is.Empty,
-				"Un miembro del costo por distancia contesta algo que no es una frase: "
-				+ string.Join(", ", offending) + ". La cifra sale DENTRO de la frase, con su moneda y "
-				+ "su unidad de distancia al lado.");
+				"Un miembro del costo por distancia entrega una cifra: "
+				+ string.Join(", ", offending) + ". La cifra sale DENTRO de la respuesta, con la "
+				+ "forma y el codigo de su moneda y su unidad de distancia al lado. La distancia "
+				+ "recorrida si sale como numero y es otra cosa: es un hecho que la serie del "
+				+ "odometro midio y que la frase nombra para que la division se pueda revisar.");
 
 			Assert.That(
 				typeof(ACostPerDistance).GetMethod(
@@ -379,6 +394,21 @@ namespace Concesionario.Dominio.Pruebas
 					BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic),
 				Is.Null,
 				"Y el tipo de la respuesta tampoco tiene un miembro que entregue la cifra sola.");
+		}
+
+		private static IEnumerable<MethodInfo> TheMembersOf(Type subject)
+		{
+			foreach (MethodInfo member in subject.GetMethods(
+				BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+				| BindingFlags.DeclaredOnly))
+				if ((member.IsPublic || member.IsAssembly) && !member.IsSpecialName) yield return member;
+		}
+
+		private static bool ItIsANumber(Type answered)
+		{
+			return answered == typeof(decimal) || answered == typeof(int)
+				|| answered == typeof(long) || answered == typeof(decimal[])
+				|| answered == typeof(int[]) || answered == typeof(long[]);
 		}
 
 		// ===== [REPLAY]: LAS DOS MITADES, Y ESTA VEZ LA DE C53 SI PUEDE DISCRIMINAR ========
@@ -435,7 +465,7 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(TheCrossingAnswerOf(journal), Is.EqualTo(live),
 					"El cruce contesto distinto despues de reabrir el journal.");
 
-				Assert.That(live, Does.Contain("₡50.00 por km"),
+				Assert.That(live, Does.Contain("₡50,00 por km"),
 					"Y la comparacion se toma donde puede discriminar: 160000 sobre 3200 son 50.00, "
 					+ "que es SOLO el gasto de un segundo DESPUES del ancla. El del mismo segundo del "
 					+ "ancla quedo afuera, y si el instante del ancla se moviera aunque fuera un "
@@ -457,7 +487,7 @@ namespace Concesionario.Dominio.Pruebas
 				string before = TheBytesOf(journal.Folder);
 
 				journal.Api.CanCostPerDistanceBeSaid(TheYearFrom, TheYearTo);
-				journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo);
+				journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 				Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before),
 					"El journal quedo byte a byte como estaba. Una lectura que escribe le agrega una "
@@ -489,7 +519,7 @@ namespace Concesionario.Dominio.Pruebas
 			return "CanCostPerDistanceBeSaid : "
 				+ journal.Api.CanCostPerDistanceBeSaid(TheYearFrom, TheYearTo)
 				+ "\nDescribeCostPerDistanceBetween : "
-				+ journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo);
+				+ journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 		}
 
 		// El SEGUNDO PROGRAMA que el journal guarda: cada define, cada invoke y cada blob de

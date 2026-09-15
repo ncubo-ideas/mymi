@@ -65,12 +65,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El periodo en una frase, con las dos vistas juntas, o la constancia con nombre de que no
-		/// hay ningun gasto. TOTAL.
+		/// El periodo como forma y valores, con las dos vistas juntas, o la constancia con nombre
+		/// de que no hay ningun gasto. TOTAL.
 		/// </summary>
-		internal string DescribeSpendBetween(DateTime from, DateTime to)
+		internal ASpendClause TheSpendClauseBetween(DateTime from, DateTime to)
 		{
-			return TheSpendBetween(from, to).Describe();
+			return ASpendClause.OfOnePeriod(TheSpendBetween(from, to));
 		}
 
 		/// <summary>Si todo el gasto del periodo esta dicho en una sola moneda. TOTAL.</summary>
@@ -80,23 +80,23 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El periodo dicho moneda por moneda, o el estado con nombre en que no hay total entre ellas.
-		/// TOTAL.
+		/// El mismo periodo diciendo ademas en cuantas monedas esta dicho, o el estado con nombre
+		/// en que no hay total entre ellas. TOTAL.
 		/// </summary>
-		internal string DescribeSpendPerCurrencyBetween(DateTime from, DateTime to)
+		internal ASpendClause TheSpendPerCurrencyClauseBetween(DateTime from, DateTime to)
 		{
-			return TheSpendBetween(from, to).DescribePerCurrency();
+			return ASpendClause.OfOnePeriodPerCurrency(TheSpendBetween(from, to));
 		}
 
 		/// <summary>
-		/// Los dos periodos dichos juntos, cada uno con sus limites y sus dos vistas, y sin ninguna
+		/// Los dos periodos juntos, cada uno con sus limites y sus dos vistas, y sin ninguna
 		/// diferencia suelta. TOTAL.
 		/// </summary>
-		internal string DescribeTwoPeriodsOfSpendCompared(
+		internal ASpendClause TheTwoPeriodsOfSpendComparedClause(
 			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
 		{
 			return ASpendComparison.Of(
-				TheSpendBetween(from1, to1), TheSpendBetween(from2, to2)).Describe();
+				TheSpendBetween(from1, to1), TheSpendBetween(from2, to2)).TheClauseItComposes();
 		}
 
 		/// <summary>
@@ -108,13 +108,13 @@ namespace Concesionario.Dominio
 		/// el valor viene de otro agregado adentro del mismo script, donde un enum cruza tipado.
 		/// </para>
 		/// </summary>
-		internal string DescribeCostPerDistance(
+		internal ACostPerDistanceClause TheCostPerDistanceClause(
 			DateTime from, DateTime to, DateTime firstReading, int distanceTravelled,
 			DistanceUnitCode unitOfTravel)
 		{
 			return ACostPerDistance.Of(
 				from, to, firstReading, distanceTravelled, DistanceUnit.OfCode(unitOfTravel),
-				TheSpendBetween(from, to).TheEntriesIncurredInside()).Describe();
+				TheSpendBetween(from, to).TheEntriesIncurredInside()).TheClauseItComposes();
 		}
 
 		/// <summary>
@@ -122,10 +122,11 @@ namespace Concesionario.Dominio
 		/// serie del odometro y se pasa entero. TOTAL, y es una operacion aparte y no un valor especial
 		/// de la de arriba -- una distancia por defecto seria una medicion que nadie tomo.
 		/// </summary>
-		internal string DescribeCostPerDistanceWithNoSpan(
+		internal ACostPerDistanceClause TheCostPerDistanceClauseWithNoSpan(
 			DateTime from, DateTime to, string whyTheRateCannotBeSaid)
 		{
-			return ACostPerDistance.WithNoSpanOfUse(from, to, whyTheRateCannotBeSaid).Describe();
+			return ACostPerDistance.WithNoSpanOfUse(from, to, whyTheRateCannotBeSaid)
+				.TheClauseItComposes();
 		}
 
 		/// <summary>Cuantas entradas se incurrieron adentro del periodo. TOTAL.</summary>
@@ -165,16 +166,47 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El dinero de cada entrada del periodo, dicho como su propia moneda lo dice, una por fila y
-		/// en el mismo orden. TOTAL.
+		/// La forma de la moneda de cada entrada del periodo, por su codigo, una por fila y en el
+		/// mismo orden. TOTAL, y va junto con los digitos y el codigo: un monto sin ellos no se
+		/// puede leer.
 		/// </summary>
-		internal string[] CostEntryMoniesBetween(DateTime from, DateTime to)
+		internal string[] CostEntryCurrencyShapesBetween(DateTime from, DateTime to)
 		{
 			List<ACostEntry> rows = TheSpendBetween(from, to).TheEntriesIncurredInside();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheMoneyItSays();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheShapeOfItsCurrency();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Los digitos de lo que costo cada entrada del periodo, en cultura invariante, una por
+		/// fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] CostEntryAmountsBetween(DateTime from, DateTime to)
+		{
+			List<ACostEntry> rows = TheSpendBetween(from, to).TheEntriesIncurredInside();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheAmountAsSaid();
+
+			return said;
+		}
+
+		/// <summary>
+		/// El codigo de la moneda de cada entrada del periodo, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] CostEntryCurrencyCodesBetween(DateTime from, DateTime to)
+		{
+			List<ACostEntry> rows = TheSpendBetween(from, to).TheEntriesIncurredInside();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheCodeOfItsCurrency();
 
 			return said;
 		}
@@ -195,32 +227,18 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La vida util de cada entrada del periodo, o nada en la celda de la que no tiene ninguna, una
-		/// por fila y en el mismo orden. TOTAL.
+		/// A lo largo de cuantos meses se reparte cada entrada del periodo, o cero en la fila de la
+		/// que no se reparte, una por fila y en el mismo orden. TOTAL, y cual de las dos es lo dice
+		/// la clasificacion de esa misma fila y nunca ese cero.
 		/// </summary>
-		internal string[] CostEntryExpectedLivesBetween(DateTime from, DateTime to)
+		internal int[] CostEntryExpectedLivesBetween(DateTime from, DateTime to)
 		{
 			List<ACostEntry> rows = TheSpendBetween(from, to).TheEntriesIncurredInside();
 
-			string[] said = new string[rows.Count];
+			int[] said = new int[rows.Count];
 
 			for (int row = 0; row < rows.Count; row++)
-				said[row] = rows[row].HowItsExpectedLifeIsSaid();
-
-			return said;
-		}
-
-		/// <summary>
-		/// Cada entrada del periodo en su propia frase, dicha entera, una por fila y en el mismo
-		/// orden. TOTAL.
-		/// </summary>
-		internal string[] DescribeEachCostEntryBetween(DateTime from, DateTime to)
-		{
-			List<ACostEntry> rows = TheSpendBetween(from, to).TheEntriesIncurredInside();
-
-			string[] said = new string[rows.Count];
-
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+				said[row] = rows[row].TheMonthsOfItsExpectedLife();
 
 			return said;
 		}

@@ -197,7 +197,7 @@ namespace Concesionario.Dominio.Pruebas
 		}
 
 		// POR VALOR: LOS DOS HECHOS, PARA LA MISMA OPERACION, A LA VEZ Y DISTINTOS. El fabricante
-		// publico ₡120.50 para la revision de los 10000 km; la sucursal cobro ₡145000 por hacerla. Los
+		// publico ₡120,50 para la revision de los 10000 km; la sucursal cobro ₡145000 por hacerla. Los
 		// dos se leen y ninguno se parece al otro.
 		[Test]
 		public void APublishedPriceAndACostForTheSameOperationBothReadAndTheyDiffer()
@@ -209,19 +209,19 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 				new DateTime(2025, 6, 15, 0, 0, 0), TheLanguage.OfTheRecord);
 
-			string theCost = ledger.DescribeSpendBetween(
-				new DateTime(2025, 6, 1, 0, 0, 0), new DateTime(2025, 6, 30, 0, 0, 0));
+			string theCost = TheSentenceTheDoorWouldCompose.TheSpend(ledger, 
+				new DateTime(2025, 6, 1, 0, 0, 0), new DateTime(2025, 6, 30, 0, 0, 0), TheLanguage.OfTheRecord);
 
-			Assert.That(thePrice, Does.Contain("₡120.50"),
+			Assert.That(thePrice, Does.Contain("₡120,50"),
 				"El precio publicado, con su vigencia y su revision.");
-			Assert.That(theCost, Does.Contain("₡145000.00"),
+			Assert.That(theCost, Does.Contain("₡145.000,00"),
 				"Y lo que de verdad se gasto, que no tiene vigencia ni revision porque no lo "
 				+ "publico nadie.");
 
-			Assert.That(thePrice, Does.Not.Contain("₡145000.00"),
+			Assert.That(thePrice, Does.Not.Contain("₡145.000,00"),
 				"El precio no se corrige con lo que se gasto: seria un reporte de variacion contra "
 				+ "lo cotizado, y este modulo no tiene tal cosa.");
-			Assert.That(theCost, Does.Not.Contain("₡120.50"),
+			Assert.That(theCost, Does.Not.Contain("₡120,50"),
 				"Y el gasto no se deriva de lo publicado: lo que se pago lo dice quien lo cobro.");
 		}
 
@@ -253,7 +253,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Se gasto mas y el precio publicado no se movio ni una letra. Un precio que se "
 				+ "corrigiera con el gasto seria el fabricante publicando lo que la sucursal cobro.");
 
-			theCostBefore = ledger.DescribeSpendBetween(from, to);
+			theCostBefore = TheSentenceTheDoorWouldCompose.TheSpend(ledger, from, to, TheLanguage.OfTheRecord);
 
 			specification.OpenRevision("REV-2025-02", new DateTime(2025, 4, 1, 10, 0, 0));
 			specification.PublishServicePrice(
@@ -262,10 +262,10 @@ namespace Concesionario.Dominio.Pruebas
 				new DateTime(2025, 12, 31, 0, 0, 0));
 			specification.SealRevision("REV-2025-02");
 
-			Assert.That(ledger.DescribeSpendBetween(from, to), Is.EqualTo(theCostBefore),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, from, to, TheLanguage.OfTheRecord), Is.EqualTo(theCostBefore),
 				"Y se republico el precio -- casi diez veces mas alto -- y lo gastado no se movio. "
 				+ "Un gasto derivado del precio habria seguido a la revision nueva.");
-			Assert.That(ledger.DescribeSpendBetween(from, to), Does.Not.Contain("999.99"));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, from, to, TheLanguage.OfTheRecord), Does.Not.Contain("999.99"));
 		}
 
 		private static ModelSpecification TheSheetWithThePublishedPrice()

@@ -104,8 +104,8 @@ namespace Concesionario.Dominio.Pruebas
 		// ya tipados -- asi que el cableado de cada uno esta una sola vez, aqui, y el envoltorio que
 		// los nueve comparten vive dentro del renderizador y no se repite.
 		//
-		// EL PRECIO TODAVIA NO. Sus dos lecturas siguen pasando por el envoltorio de abajo con la
-		// clausula que el dominio redacta en espanol: la moneda es su propio turno.
+		// EL PRECIO YA ENTRO, con la moneda: su portador lleva el hito con su unidad, el monto con la
+		// forma y el codigo de su moneda, la vigencia y donde cae el instante preguntado.
 		internal static string TheFluid(
 			ModelSpecification specification, FluidKindCode kind, string language)
 		{
@@ -178,7 +178,7 @@ namespace Concesionario.Dominio.Pruebas
 			ModelSpecification specification, OperationKindCode kind, int milestoneDistance,
 			DistanceUnitCode milestoneUnit, DateTime asOf, string language)
 		{
-			return TheSpecificationAnswer(
+			return ThePrice(
 				specification.TheServicePriceAnswer(kind, milestoneDistance, milestoneUnit, asOf),
 				language);
 		}
@@ -187,10 +187,22 @@ namespace Concesionario.Dominio.Pruebas
 			ModelSpecification specification, OperationKindCode kind, int milestoneDistance,
 			DistanceUnitCode milestoneUnit, string language)
 		{
-			return TheSpecificationAnswer(
+			return ThePrice(
 				specification.ThePublishedServicePriceAnswer(
 					kind, milestoneDistance, milestoneUnit),
 				language);
+		}
+
+		internal static string ThePrice(APriceClause answer, string language)
+		{
+			return TheWording.ThePrice(
+				Phrases.Of(language),
+				answer.ThePublicationShape(), answer.TheRevisionItCameFrom(),
+				answer.TheOperationItIsAbout(), answer.TheMilestoneDistance(),
+				answer.TheUnitTheMilestoneIsIn(), answer.TheShapeOfItsCurrency(),
+				answer.TheAmountAsSaid(), answer.TheCodeOfItsCurrency(),
+				answer.TheDayItsValidityStarts(), answer.TheDayItsValidityEnds(),
+				answer.WhereTheInstantAskedFalls(), answer.TheDayItWasAskedOn());
 		}
 
 		internal static string TheServicingElsewhereRule(
@@ -233,14 +245,143 @@ namespace Concesionario.Dominio.Pruebas
 			ModelSpecification specification, DateTime asOf, string language)
 		{
 			Phrases phrases = Phrases.Of(language);
+			string[] operations = specification.PublishedPriceOperationsAsOf(asOf);
+			int[] milestones = specification.PublishedPriceMilestoneDistancesAsOf(asOf);
+			string[] milestoneUnits = specification.PublishedPriceMilestoneUnitsAsOf(asOf);
 			string[] shapes = specification.PublishedPriceShapesAsOf(asOf);
-			string[] clauses = specification.PublishedPriceClausesAsOf(asOf);
+			string[] currencyShapes = specification.PublishedPriceCurrencyShapesAsOf(asOf);
+			string[] amounts = specification.PublishedPriceAmountsAsOf(asOf);
+			string[] currencyCodes = specification.PublishedPriceCurrencyCodesAsOf(asOf);
+			string[] validFrom = specification.PublishedPriceValidFromAsOf(asOf);
+			string[] validUntil = specification.PublishedPriceValidUntilAsOf(asOf);
+			string[] validity = specification.PublishedPriceValiditiesAsOf(asOf);
+			string[] askedOn = specification.PublishedPriceDaysAskedOnAsOf(asOf);
 			string[] revisions = specification.PublishedPriceRevisionsAsOf(asOf);
 			string[] said = new string[shapes.Length];
 
 			for (int fila = 0; fila < shapes.Length; fila++)
-				said[fila] = TheWording.TheSpecificationAnswer(
-					phrases, shapes[fila], revisions[fila], clauses[fila], "");
+				said[fila] = TheWording.ThePrice(
+					phrases, shapes[fila], revisions[fila], operations[fila], milestones[fila],
+					milestoneUnits[fila], currencyShapes[fila], amounts[fila], currencyCodes[fila],
+					validFrom[fila], validUntil[fila], validity[fila], askedOn[fila]);
+
+			return said;
+		}
+
+		// Cada hito publicado dicho con su unidad, que es la columna que el DTO de la puerta lleva.
+		internal static string[] EachPublishedMilestone(
+			ModelSpecification specification, DateTime asOf, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			int[] milestones = specification.PublishedPriceMilestoneDistancesAsOf(asOf);
+			string[] units = specification.PublishedPriceMilestoneUnitsAsOf(asOf);
+			string[] said = new string[milestones.Length];
+
+			for (int fila = 0; fila < milestones.Length; fila++)
+				said[fila] = TheWording.TheMilestone(phrases, milestones[fila], units[fila]);
+
+			return said;
+		}
+
+		// EL LIBRO DE COSTOS. Las tres lecturas del gasto pasan por el mismo portador y por el mismo
+		// marco, y lo unico que cambia entre ellas es COMO se pregunto.
+		internal static string TheSpend(CostLedger ledger, DateTime from, DateTime to, string language)
+		{
+			return TheSpend(ledger.TheSpendClauseBetween(from, to), language);
+		}
+
+		internal static string TheSpendPerCurrency(
+			CostLedger ledger, DateTime from, DateTime to, string language)
+		{
+			return TheSpend(ledger.TheSpendPerCurrencyClauseBetween(from, to), language);
+		}
+
+		internal static string TheTwoPeriodsOfSpendCompared(
+			CostLedger ledger, DateTime from1, DateTime to1, DateTime from2, DateTime to2,
+			string language)
+		{
+			return TheSpend(
+				ledger.TheTwoPeriodsOfSpendComparedClause(from1, to1, from2, to2), language);
+		}
+
+		internal static string TheSpend(ASpendClause clause, string language)
+		{
+			return TheWording.TheSpend(
+				Phrases.Of(language),
+				clause.HowItWasAsked(), clause.TheShapesOfItsPeriods(),
+				clause.TheInstantsEachPeriodStartsAt(), clause.TheInstantsEachPeriodEndsAt(),
+				clause.TheCurrencyCountOfEachPeriod(), clause.ThePeriodOfEachCurrency(),
+				clause.TheViewsOfEachCurrency(),
+				clause.TheShapesOfEachCashOut(), clause.TheCashOutsAsSaid(),
+				clause.TheCodesOfEachCashOut(), clause.TheShapesOfEachConsumed(),
+				clause.TheConsumedAsSaid(), clause.TheCodesOfEachConsumed(),
+				clause.TheCurrencyOfEachShare(), clause.TheShapesOfEachWhole(),
+				clause.TheWholesAsSaid(), clause.TheCodesOfEachWhole(),
+				clause.TheSubjectsOfEachShare(), clause.TheMonthsEachShareIsSpreadOver(),
+				clause.TheInstantsEachShareWasIncurred(), clause.TheShapesOfEachShare(),
+				clause.TheSharesAsSaid(), clause.TheCodesOfEachShare());
+		}
+
+		internal static string TheCostPerDistance(ACostPerDistanceClause clause, string language)
+		{
+			return TheWording.TheCostPerDistance(
+				Phrases.Of(language),
+				clause.TheShapeItHas(), clause.TheInstantItStartsAt(), clause.TheInstantItEndsAt(),
+				clause.TheInstantOfTheAnchor(), clause.TheDistanceTravelled(),
+				clause.TheUnitTheDistanceIsIn(), clause.WhyTheRateCannotBeSaid(),
+				clause.TheShapesOfEachFigure(), clause.TheFiguresAsSaid(),
+				clause.TheCodesOfEachFigure());
+		}
+
+		// Las filas del libro: el dinero de cada una, su vida util y su frase entera, como la puerta
+		// las compone.
+		internal static string[] EachCostEntryMoney(
+			CostLedger ledger, DateTime from, DateTime to, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] shapes = ledger.CostEntryCurrencyShapesBetween(from, to);
+			string[] amounts = ledger.CostEntryAmountsBetween(from, to);
+			string[] codes = ledger.CostEntryCurrencyCodesBetween(from, to);
+			string[] said = new string[shapes.Length];
+
+			for (int fila = 0; fila < shapes.Length; fila++)
+				said[fila] = TheWording.TheMoney(phrases, shapes[fila], amounts[fila], codes[fila]);
+
+			return said;
+		}
+
+		internal static string[] EachCostEntryExpectedLife(
+			CostLedger ledger, DateTime from, DateTime to, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] classifications = ledger.CostEntryClassificationsBetween(from, to);
+			int[] lives = ledger.CostEntryExpectedLivesBetween(from, to);
+			string[] said = new string[lives.Length];
+
+			for (int fila = 0; fila < lives.Length; fila++)
+				said[fila] = TheWording.TheExpectedLife(
+					phrases, classifications[fila], lives[fila]);
+
+			return said;
+		}
+
+		internal static string[] EachCostEntry(
+			CostLedger ledger, DateTime from, DateTime to, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] instants = ledger.CostEntryInstantsBetween(from, to);
+			string[] subjects = ledger.CostEntrySubjectsBetween(from, to);
+			string[] shapes = ledger.CostEntryCurrencyShapesBetween(from, to);
+			string[] amounts = ledger.CostEntryAmountsBetween(from, to);
+			string[] codes = ledger.CostEntryCurrencyCodesBetween(from, to);
+			string[] classifications = ledger.CostEntryClassificationsBetween(from, to);
+			int[] lives = ledger.CostEntryExpectedLivesBetween(from, to);
+			string[] said = new string[instants.Length];
+
+			for (int fila = 0; fila < instants.Length; fila++)
+				said[fila] = TheWording.TheCostEntry(
+					phrases, classifications[fila], shapes[fila], amounts[fila], codes[fila],
+					subjects[fila], instants[fila], lives[fila]);
 
 			return said;
 		}

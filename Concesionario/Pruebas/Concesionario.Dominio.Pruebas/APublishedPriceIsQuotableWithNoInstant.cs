@@ -52,7 +52,7 @@ namespace Concesionario.Dominio.Pruebas
 					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 					TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al 2025-12-31. "
+					"Revisión a los 10.000 km: ₡120,50, vigente del 1 de enero de 2025 al 31 de diciembre de 2025. "
 					+ "Publicado en la revisión REV-2025-01."));
 		}
 
@@ -69,7 +69,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(said, Does.Not.Contain(" Al "));
 			Assert.That(said, Does.Not.Contain("está rigiendo"));
 			Assert.That(said, Does.Not.Contain("no es el vigente"));
-			Assert.That(said, Does.Contain("vigente del 2025-01-01 al 2025-12-31"),
+			Assert.That(said, Does.Contain("vigente del 1 de enero de 2025 al 31 de diciembre de 2025"),
 				"La vigencia SI va: es lo que se publico. Lo que no va es el veredicto sobre un "
 				+ "instante que nadie pregunto.");
 		}
@@ -137,12 +137,12 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				composed,
-				Does.StartWith("Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al "
-					+ "2025-12-31."));
+				Does.StartWith("Revisión a los 10.000 km: ₡120,50, vigente del 1 de enero de 2025 al "
+					+ "31 de diciembre de 2025."));
 			Assert.That(
 				published,
-				Does.StartWith("Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al "
-					+ "2025-12-31."));
+				Does.StartWith("Revisión a los 10.000 km: ₡120,50, vigente del 1 de enero de 2025 al "
+					+ "31 de diciembre de 2025."));
 			Assert.That(composed, Is.Not.EqualTo(published),
 				"Y no son la misma respuesta: la compuesta agrega el veredicto sobre el instante "
 				+ "preguntado, que es la mitad recibida.");
