@@ -55,9 +55,32 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Pinned exactly, like the engine: a floating Photino brought a different native lib to
-         two machines once. Photino.Native ships win/linux/osx, x64 and arm64. -->
+    <!-- PINNED EXACTLY, LIKE THE ENGINE, AND ALL THREE - not just the top one.
+
+         Photino.Blazor is the only package this project uses by name, but the thing that actually
+         paints the window is Photino.Native, and it arrives two hops down: Blazor 4.0.13 asks for
+         Photino.NET >= 4.0.16, which asks for Photino.Native >= 4.0.22.
+
+         BE HONEST ABOUT WHAT THIS BUYS. NuGet already resolves a ">=" to the LOWEST version that
+         satisfies it, transitive ones included, so the graph was landing on 4.0.16/4.0.22 on its
+         own. These lines do not fix a version that was drifting. What they do:
+
+           - they make the native lib VISIBLE. Whoever debugs "it works on my machine and not on
+             Edgar's" reads the version here instead of digging it out of project.assets.json.
+           - they make a future bump ARGUE instead of happen. The day something else in the graph
+             asks for a higher Photino.Native, the direct reference wins and NuGet says so
+             (NU1605) rather than quietly handing the window a native lib nobody chose.
+
+         So this changes NOTHING in today's restore - verified: same three versions before and
+         after. To move Photino, bump Blazor, restore, and copy the other two off the resolved
+         graph so the three keep telling the same story.
+
+         Photino.Native ships win/linux/osx, x64 and arm64, and a plain framework-dependent build
+         drops ALL of them under bin/.../runtimes/ - that is what the MSI harvests. On Windows it
+         brings WebView2Loader.dll but NOT the WebView2 Runtime, which has to be on the machine. -->
     <PackageReference Include="Photino.Blazor" Version="4.0.13" />
+    <PackageReference Include="Photino.NET" Version="4.0.16" />
+    <PackageReference Include="Photino.Native" Version="4.0.22" />
   </ItemGroup>
 
   <!-- Photino serves wwwroot FROM THE OUTPUT FOLDER (a PhysicalFileProvider over
