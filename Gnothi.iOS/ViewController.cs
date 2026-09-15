@@ -344,14 +344,14 @@ public sealed class ViewController : UIViewController
 		// "Mis compras" es lo que la persona reconoce.
 		var quien = new UILabel
 		{
-			Text = $"{shell?.TitleOf(nombre) ?? nombre} · adentro de Gnothi",
+			Text = Textos.T("ios.adentro-de", ("titulo", shell?.TitleOf(nombre) ?? nombre)),
 			Font = UIFont.SystemFontOfSize(13, UIFontWeight.Medium),
 			TextColor = UIColor.FromRGB(0x3B, 0x2E, 0x63),
 			TranslatesAutoresizingMaskIntoConstraints = false,
 		};
 
 		var listo = UIButton.FromType(UIButtonType.System);
-		listo.SetTitle("Listo", UIControlState.Normal);
+		listo.SetTitle(Textos.T("general.listo"), UIControlState.Normal);
 		listo.TitleLabel!.Font = UIFont.SystemFontOfSize(15, UIFontWeight.Semibold);
 		listo.TranslatesAutoresizingMaskIntoConstraints = false;
 		listo.TouchUpInside += (_, _) => Cerrar();

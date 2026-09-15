@@ -496,6 +496,48 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			huerfanas.Length == 0, $"keys with no phrase: {string.Join(", ", huerfanas)}");
 	}
 
+	// Y TODA CLAVE QUE PIDE EL C#, que es la tercera superficie y la que menos se mira.
+	//
+	// El lector devuelve la clave cuando no la encuentra -- feo a proposito -- asi que un
+	// `Textos.T("ajustes.carpta")` compila, corre, y pinta «ajustes.carpta» en la pantalla de
+	// quien tenga esa rama. El compilador no ve nada: es un string. Las dos aserciones de arriba
+	// cubren ui.html; esta cubre los .cs y los .razor, que son las otras dos caras.
+	{
+		string[] fuentes = [.. new[] { "Gnothi.Host", "Gnothi.Movil", "Gnothi.Assistant", "Gnothi.Desktop", "Gnothi.Mobile", "Gnothi.iOS" }
+			.Select(d => Path.Combine(raiz, d))
+			.Where(Directory.Exists)
+			.SelectMany(d => Directory.EnumerateFiles(d, "*.cs", SearchOption.AllDirectories)
+				.Concat(Directory.EnumerateFiles(d, "*.razor", SearchOption.AllDirectories)))
+			.Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+			         && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))];
+
+		// `Textos.T("x")` en los .cs, y `T("x")` en los .razor, que lo llaman por el helper.
+		// SIN COMENTARIOS: `_Imports.razor` documenta el helper escribiendo T("clave") en un
+		// comentario, y leerlo como sitio de llamada hace fallar la asercion por una clave que
+		// nadie pide. Se quitan los bloques @* *@ de Razor y las lineas // de C#.
+		static string SinComentarios(string s)
+		{
+			s = System.Text.RegularExpressions.Regex.Replace(s, @"@\*.*?\*@", " ",
+				System.Text.RegularExpressions.RegexOptions.Singleline);
+			return System.Text.RegularExpressions.Regex.Replace(s, @"^[ \t]*//.*$", " ",
+				System.Text.RegularExpressions.RegexOptions.Multiline);
+		}
+
+		string[] pedidasCs = [.. fuentes
+			.SelectMany(f => System.Text.RegularExpressions.Regex
+				.Matches(SinComentarios(File.ReadAllText(f)), @"\bTextos\.T\(""([a-z0-9.-]+)""|@?\bT\(""([a-z0-9.-]+)""")
+				.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value))
+			.Distinct().Order()];
+
+		Gnothi.Host.Textos.Idioma = "es";
+		string[] sinFrase = [.. pedidasCs.Where(c => Gnothi.Host.Textos.T(c) == c)];
+
+		Assert("the C# and .razor faces ask the catalog for a good number of phrases",
+			pedidasCs.Length >= 60, $"only {pedidasCs.Length} Textos.T() call sites found");
+		Assert("every key the C# and .razor faces ask for exists in the catalog",
+			sinFrase.Length == 0, $"keys with no phrase: {string.Join(", ", sinFrase)}");
+	}
+
 	// Y QUE NINGUN TEXTO PARA LA PERSONA SIGA CABLEADO EN EL JAVASCRIPT.
 	//
 	// Las dos aserciones de arriba comprueban que toda CLAVE USADA exista. Ninguna comprueba lo

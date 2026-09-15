@@ -241,6 +241,25 @@
   "alta.codigo-sin-enlace":       { "es": "El código no traía ningún enlace.", "en": "The code carried no link." },
   "alta.pega-el-enlace":          { "es": "Pega el enlace que te dio tu institución.", "en": "Paste the link your institution gave you." },
 
+  "//la-traza": "LA TRAZA DEL ASISTENTE, la que la persona despliega en «que paso por debajo». La escribe AgentLoop y la pinta ui.html; el escritorio la pinta en Asistente.razor. NO ENTRA ACA lo que AgentLoop le devuelve al MODELO -«there is no query called X», y el motivo que compone Dispatcher-: eso lo lee un modelo, no un ojo, y sigue en ingles como el resto de Gnothi.Host. Los dos viven en el mismo archivo y se parecen; lo que los separa es quien los lee.",
+
+  "traza.catalogo.una":           { "es": "catálogo: 1 consulta", "en": "catalog: 1 query" },
+  "traza.catalogo.varias":        { "es": "catálogo: {n} consultas", "en": "catalog: {n} queries" },
+  "traza.vuelta.una":             { "es": "vuelta {vuelta}: 1 consulta", "en": "round {vuelta}: 1 query" },
+  "traza.vuelta.varias":          { "es": "vuelta {vuelta}: {n} consultas", "en": "round {vuelta}: {n} queries" },
+  "traza.no-existe":              { "es": "{consulta}: no existe", "en": "{consulta}: does not exist" },
+  "traza.denegada":               { "es": "{consulta}: denegada", "en": "{consulta}: denied" },
+  "traza.caracteres.uno":         { "es": "{consulta}: 1 carácter", "en": "{consulta}: 1 character" },
+  "traza.caracteres.varios":      { "es": "{consulta}: {n} caracteres", "en": "{consulta}: {n} characters" },
+
+  "asistente.sin-consultas":      { "es": "No tienes ningún módulo con consultas disponibles.", "en": "You have no module with available queries." },
+  "asistente.sin-respuesta":      { "es": "(el modelo no contestó nada)", "en": "(the model answered nothing)" },
+  "asistente.no-termino":         { "es": "No pude terminar la respuesta: el asistente siguió pidiendo consultas y lo detuve.", "en": "I could not finish the answer: the assistant kept asking for queries and I stopped it." },
+
+  "//uikit-de-ios": "LAS DOS ETIQUETAS QUE DIBUJA UIKit, sin WebView de por medio: la cabecera de la hoja que abre un modulo y su boton de cerrar. Es la razon por la que el catalogo no podia vivir del lado del HTML.",
+
+  "ios.adentro-de":               { "es": "{titulo} · adentro de Mymi", "en": "{titulo} · inside Mymi" },
+
   "//el-inicio-vacio": "LA PRIMERA PANTALLA DE QUIEN NO TIENE NADA TODAVIA. Es la unica de la cara que habla antes de que exista un solo registro, asi que aca se dice lo que Mymi es y no lo que hace. El lema de la marca no se traduce, igual que el nombre.",
 
   "inicio.titulo":                { "es": "Mis conexiones", "en": "My Connections" },
