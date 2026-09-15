@@ -167,7 +167,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (AScheduleOnARealJournal journal = AScheduleWhereThePlanUnitArrivedLast())
 			{
 				string live = journal.Api.ReadDueState(TheOperationMeasuredByDistance);
-				string why = journal.Api.ReadDueReason(TheOperationMeasuredByDistance);
+				string why = journal.Api.ReadDueReason(TheOperationMeasuredByDistance, TheLanguage.OfTheRecord);
 
 				Assert.That(live, Is.EqualTo("Due"),
 					"La ultima en llegar dentro del segundo es la que mide: 40000 sobre un ancla de "
@@ -178,7 +178,8 @@ namespace Concesionario.Dominio.Pruebas
 					"S4: el instante llega al journal truncado al segundo, asi que el desempate que "
 					+ "sobrevive es el ORDEN. Si el replay devolviera las dos lecturas al reves, "
 					+ "esta evaluacion nueva contestaria otra cosa.");
-				Assert.That(journal.Api.ReadDueReason(TheOperationMeasuredByDistance), Is.EqualTo(why),
+				Assert.That(journal.Api.ReadDueReason(TheOperationMeasuredByDistance,
+					TheLanguage.OfTheRecord), Is.EqualTo(why),
 					"Y por el mismo motivo, no por otro que de la misma respuesta.");
 			}
 		}

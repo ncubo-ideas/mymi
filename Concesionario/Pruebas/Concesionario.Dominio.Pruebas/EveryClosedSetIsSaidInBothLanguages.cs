@@ -152,6 +152,113 @@ namespace Concesionario.Dominio.Pruebas
 			});
 		}
 
+		// LOS DOS CONJUNTOS QUE EL DOMINIO NOMBRA DENTRO DE SUS PROPIAS FRASES, y que la caratula no
+		// espeja en ninguna tabla: el perfil de uso que ignora la distancia, y el motivo con que la
+		// persona aplazo. Desde que el dominio dejo de redactar los manda por su CODIGO, asi que un
+		// miembro nuevo sale a pantalla como {canon.usageProfile.Loquesea} si nadie lo dice.
+		[Test]
+		public void EveryUsageProfileAndEveryDeferralReasonIsSaidInBothLanguages()
+		{
+			string[] profiles = TheMembersOf<UsageProfile>(each => each.Name);
+			string[] reasons = TheMembersOf<DeferralReason>(each => each.Name);
+
+			Assert.That(profiles, Is.Not.Empty);
+			Assert.That(reasons, Is.Not.Empty);
+
+			Assert.Multiple(() =>
+			{
+				foreach (string profile in profiles) ItIsSaid("canon.usageProfile", profile);
+				foreach (string reason in reasons) ItIsSaid("canon.deferralReason", reason);
+			});
+		}
+
+		// LAS SIETE SITUACIONES DE UN RESTO, PEDIDAS AL RENDERIZADOR Y NO AL CATALOGO. Es la unica
+		// forma de ver las dos mitades a la vez: que la clave EXISTA, y que el renderizador sepa a
+		// cual de las familias mandar cada situacion -- tres de las siete dicen la clausula del
+		// motivo, que vive en otra familia. Una clave que falta sale como {clave} entre llaves y no
+		// revienta, asi que lo que esta prueba busca es la llave abierta.
+		[Test]
+		public void EveryRemainderStandingTheDomainCanChooseIsSaidWholeInBothLanguages()
+		{
+			string[] standings = TheMembersOf<RemainderStanding>(each => each.Name);
+
+			Assert.That(standings, Has.Length.EqualTo(7));
+
+			Assert.Multiple(() =>
+			{
+				foreach (string standing in standings)
+					foreach (Phrases said in new[] { InSpanish, InEnglish })
+						Assert.That(
+							TheWording.TheRemainder(
+								said, standing, IntervalDimension.Distance, new[] { 5 },
+								DistanceUnit.UnitA.Name, DistanceUnit.UnitB.Name,
+								UsageProfile.LowDistance.Name,
+								MaintenanceOperationKind.FluidChange.Name),
+							Does.Not.Contain("{"),
+							standing + ": la situacion sale con una llave abierta, asi que falta una "
+							+ "clave o falta llenar un hueco.");
+			});
+		}
+
+		// Y LAS FORMAS DE UN MOTIVO CON SUS CLAUSULAS, por lo mismo y con el mismo instrumento. Las
+		// formas se leen del dominio; la unica que se salta es TimeAndDistance, que NO es una forma
+		// de motivo sino la tercera respuesta a "cual decidio", y se afirma con las otras dos abajo.
+		[Test]
+		public void EveryReasonShapeAndEveryClauseTheDomainCanChooseIsSaidWholeInBothLanguages()
+		{
+			string[] shapes = TheCodesDeclaredBy(typeof(ADueReason))
+				.Where(code => code != ADueReason.TimeAndDistance).ToArray();
+			string[] clauses = TheCodesDeclaredBy(typeof(LimitClause));
+
+			Assert.That(shapes, Has.Length.EqualTo(8));
+			Assert.That(clauses, Has.Length.EqualTo(6));
+
+			Assert.Multiple(() =>
+			{
+				foreach (string shape in shapes)
+					foreach (string clause in clauses)
+						foreach (Phrases said in new[] { InSpanish, InEnglish })
+							Assert.That(
+								AReasonSaid(said, shape, clause), Does.Not.Contain("{"),
+								shape + " con " + clause + ": el motivo sale con una llave abierta.");
+
+				foreach (string who in new[]
+					{ IntervalDimension.Time, IntervalDimension.Distance, ADueReason.TimeAndDistance })
+					foreach (Phrases said in new[] { InSpanish, InEnglish })
+						Assert.That(said.Knows("reason.decidedBy." + who), Is.True,
+							"reason.decidedBy." + who + " no esta dicho.");
+			});
+		}
+
+		private static string AReasonSaid(Phrases said, string shape, string clause)
+		{
+			return TheWording.TheDueReason(
+				said, shape, DueState.Overdue.Name, IntervalDimension.Distance,
+				MaintenanceOperationKind.FluidChange.Name, "2026-03-21", DeferralReason.Cost.Name,
+				1, 2,
+				new[] { clause }, new[] { IntervalDimension.Distance }, new[] { 1500 },
+				new[] { 8000 }, new[] { DistanceUnit.UnitA.Name },
+				new[] { DistanceUnit.UnitB.Name }, new[] { UsageProfile.LowDistance.Name });
+		}
+
+		private static string[] TheMembersOf<T>(Func<T, string> named)
+		{
+			return typeof(T)
+				.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
+				.Where(each => each.FieldType == typeof(T))
+				.Select(each => named((T)each.GetValue(null)))
+				.ToArray();
+		}
+
+		private static string[] TheCodesDeclaredBy(Type holder)
+		{
+			return holder
+				.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
+				.Where(each => each.IsLiteral && each.FieldType == typeof(string))
+				.Select(each => (string)each.GetRawConstantValue())
+				.ToArray();
+		}
+
 		// EL AUTOCONTROL. Sin esto, un catalogo que contestara cualquier cosa y una prueba que no
 		// distingue son el mismo verde: un codigo que NINGUNA lista nombra tiene que caer al nombre
 		// separado en mayusculas, no a una etiqueta.

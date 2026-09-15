@@ -125,7 +125,8 @@ namespace Concesionario.Dominio.Pruebas
 				foreach (string kind in AppState.TheNineKinds)
 				{
 					Assert.That(journal.Api.ReadDueState(kind), Is.Not.Empty, $"'{kind}' no dio estado.");
-					Assert.That(journal.Api.ReadDueReason(kind), Is.Not.Empty, $"'{kind}' no dio motivo.");
+					Assert.That(journal.Api.ReadDueReason(kind,
+						TheLanguage.OfTheRecord), Is.Not.Empty, $"'{kind}' no dio motivo.");
 				}
 
 				// Las cinco razones, por el comando que las lleva. Aplazar fuera de un estado vencido

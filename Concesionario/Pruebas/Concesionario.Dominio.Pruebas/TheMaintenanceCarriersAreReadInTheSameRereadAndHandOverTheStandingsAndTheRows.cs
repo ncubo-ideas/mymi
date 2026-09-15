@@ -102,10 +102,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				row.Says,
-				Is.EqualTo(journal.Api.DescribeCountdown(TheKindWithACountdown, TheInstantTheScreenAsksAt)),
+				Is.EqualTo(journal.Api.DescribeCountdown(TheKindWithACountdown, TheInstantTheScreenAsksAt,
+					TheLanguage.OfTheRecord)),
 				"La cuenta atras entera es la de la puerta LETRA POR LETRA.");
 
-			Assert.That(row.Says, Does.Contain("distancia: te faltan 7345 km"));
+			Assert.That(row.Says, Does.Contain("distancia: te faltan 7.345 km"));
 			Assert.That(row.Says, Does.Contain("tiempo: te faltan 255 días"),
 				"Y dice LAS DOS dimensiones: elegir la mas cercana dejaria el numero de la pantalla "
 				+ "discrepando del motivo del estado para quien lea los dos juntos.");
@@ -120,7 +121,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				row.DistanceSays,
 				Is.EqualTo(journal.Api.DescribeDistanceRemaining(
-					TheKindWithACountdown, TheInstantTheScreenAsksAt)));
+					TheKindWithACountdown, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord)));
 
 			Assert.That(row.DaysCanBeSaid, Is.True);
 			Assert.That(row.DaysRemaining, Is.EqualTo(TheDaysThatAreLeft),
@@ -130,7 +131,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				row.DaysSays,
 				Is.EqualTo(journal.Api.DescribeDaysRemaining(
-					TheKindWithACountdown, TheInstantTheScreenAsksAt)));
+					TheKindWithACountdown, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord)));
 
 			// Y LAS DOS MITADES NO ESTAN CRUZADAS: los dos montos son distintos y las dos frases
 			// tambien, asi que cruzarlas cambia cuatro de las afirmaciones de arriba.
@@ -337,14 +338,25 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(read, Is.Not.Null, carrier.Name + " dejo de ofrecer ReadThrough.");
 
 				Assert.That(
-					read.GetParameters().Select(each => each.ParameterType.Name).ToArray(),
+					read.GetParameters().Take(2).Select(each => each.ParameterType.Name).ToArray(),
 					Is.EqualTo(new[] { "DealershipCarAPI", "DateTime" }),
+					carrier.Name + " dejo de empezar por la puerta y su instante.");
+
+				Assert.That(
+					read.GetParameters().Count(each => each.ParameterType == typeof(DateTime)),
+					Is.EqualTo(1),
 					carrier.Name + " toma la puerta y UN instante. Dos instantes son dos momentos que se "
 					+ "pueden separar.");
 
 				Assert.That(
-					read.GetParameters().Select(each => each.Name).ToArray(),
+					read.GetParameters().Take(2).Select(each => each.Name).ToArray(),
 					Is.EqualTo(new[] { "api", "asOf" }));
+
+				// Y EL IDIOMA NO ES UN MOMENTO. Un tercer parametro que no sea un instante no tiene
+				// nada que ver con esta ley; lo que la rompe es un SEGUNDO reloj.
+				Assert.That(
+					read.GetParameters().Skip(2).Select(each => each.ParameterType.Name).ToArray(),
+					Is.SubsetOf(new[] { "String" }));
 			}
 		}
 
@@ -363,8 +375,12 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(found, Is.Not.Null,
 					"La caratula dejo de ofrecer '" + read + "' y la seccion no tiene de donde sacarlo.");
 
-				Assert.That(found.GetParameters(), Is.Empty,
-					"'" + read + "' gano un argumento. El instante sale del reloj de la maquina.");
+				Assert.That(
+					found.GetParameters().Where(each => each.ParameterType == typeof(DateTime)),
+					Is.Empty,
+					"'" + read + "' gano un instante. El instante sale del reloj de la maquina, y "
+					+ "pedirselo a alguien es dejar que pregunte por un momento que se invento. El "
+					+ "idioma SI se le pide, y no es un momento: es de la persona que lee.");
 			}
 
 			Assert.That(
@@ -402,7 +418,7 @@ namespace Concesionario.Dominio.Pruebas
 				"state.ReadTheSpecification()",
 				"state.ReadWhereThisVehicleStands()",
 				"state.ReadTheStaysOfThisVehicle()",
-				"state.ReadWhereEachOperationStands()",
+				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost()",
 				"state.ReadHowThisVehicleIsDriven()",
 				"state.ReadWhatThisVehicleHasCost()",
@@ -451,7 +467,7 @@ namespace Concesionario.Dominio.Pruebas
 					"sheet = state.ReadTheSpecification(); "
 					+ "stands = state.ReadWhereThisVehicleStands(); "
 					+ "stays = state.ReadTheStaysOfThisVehicle(); "
-					+ "operations = state.ReadWhereEachOperationStands(); "
+					+ "operations = state.ReadWhereEachOperationStands(texts.Language); "
 					+ "costs = state.ReadWhatTheServicesCost(); "
 					+ "use = state.ReadHowThisVehicleIsDriven(); "
 					+ "spend = state.ReadWhatThisVehicleHasCost(); "
@@ -468,7 +484,7 @@ namespace Concesionario.Dominio.Pruebas
 				"state.ReadTheSpecification()",
 				"state.ReadWhereThisVehicleStands()",
 				"state.ReadTheStaysOfThisVehicle()",
-				"state.ReadWhereEachOperationStands()",
+				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost()",
 				"state.ReadHowThisVehicleIsDriven()",
 				"state.ReadWhatThisVehicleHasCost()",
@@ -519,7 +535,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		/// <summary>El fuente con cada corrida de espacios en blanco vuelta un espacio.</summary>

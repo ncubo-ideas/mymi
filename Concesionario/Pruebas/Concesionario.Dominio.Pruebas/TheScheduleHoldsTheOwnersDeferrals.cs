@@ -142,8 +142,8 @@ namespace Concesionario.Dominio.Pruebas
 				OperationKindCode.WearPartReplacement, DeferralReasonCode.SecondOpinion, FellDue);
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.WearPartReplacement),
-				Does.Contain("una segunda opinión"));
+				schedule.TheDueReasonFor(OperationKindCode.WearPartReplacement).DeferralReason,
+				Is.EqualTo(DeferralReason.SecondOpinion.Name));
 		}
 
 		// PRUEBA 10 de §9: una operacion clasificada de seguridad rechaza el PRIMER intento, y

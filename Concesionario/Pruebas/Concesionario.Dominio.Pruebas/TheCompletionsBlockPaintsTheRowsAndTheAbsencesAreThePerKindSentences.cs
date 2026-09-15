@@ -333,7 +333,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		private void TwoCompletionsOfOneKind()

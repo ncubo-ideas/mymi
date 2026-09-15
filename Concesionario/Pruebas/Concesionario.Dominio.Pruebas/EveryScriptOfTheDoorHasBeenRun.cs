@@ -367,7 +367,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanBeDeferred("FluidChange"), Is.True);
 			Assert.That(journal.Api.HasAnythingDue(), Is.True);
 			Assert.That(journal.Api.ReadNextDueKind(), Is.EqualTo("FluidChange"));
-			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("Vencida"));
+			Assert.That(journal.Api.ReadDueReason("FluidChange",
+				TheLanguage.OfTheRecord), Does.Contain("Vencida"));
 			Assert.That(journal.Api.MissedCount(), Is.EqualTo(0));
 			Assert.That(journal.Api.HasBeenEvaluated(), Is.True);
 			Assert.That(
@@ -453,9 +454,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadTimeRemainderStanding("FluidChange", asked),
 				Is.EqualTo("NoOperationScheduled"));
-			Assert.That(journal.Api.DescribeDistanceRemaining("FluidChange", asked), Is.Not.Empty);
-			Assert.That(journal.Api.DescribeDaysRemaining("FluidChange", asked), Is.Not.Empty);
-			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeDistanceRemaining("FluidChange", asked,
+				TheLanguage.OfTheRecord), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeDaysRemaining("FluidChange", asked,
+				TheLanguage.OfTheRecord), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked,
+				TheLanguage.OfTheRecord), Is.Not.Empty);
 
 			Assert.Throws<InvalidOperationException>(
 				() => journal.Api.ReadDistanceRemaining("FluidChange", asked));
@@ -503,7 +507,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadTimeRemainderStanding("FluidChange", asked),
 				Is.Not.EqualTo("NoOperationScheduled"));
-			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked), Does.Contain("distancia"));
+			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked,
+				TheLanguage.OfTheRecord), Does.Contain("distancia"));
 
 			Assert.That(journal.Api.HasAnyCompletion("FluidChange"), Is.True);
 			Assert.That(journal.Api.CompletionCount("FluidChange"), Is.EqualTo(1));
@@ -1247,7 +1252,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(journal.Api.ReadDueState("RecallRemedy"), Is.EqualTo("NotDue"));
 			Assert.That(journal.Api.DeferralsUsed("RecallRemedy"), Is.EqualTo(0));
-			Assert.That(journal.Api.ReadDueReason("RecallRemedy"), Does.Contain("no tiene agendada"));
+			Assert.That(journal.Api.ReadDueReason("RecallRemedy",
+				TheLanguage.OfTheRecord), Does.Contain("no tiene agendada"));
 			Assert.That(journal.Api.CanBeDeferred("RecallRemedy"), Is.False);
 		}
 

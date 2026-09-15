@@ -474,7 +474,11 @@ namespace Concesionario.Wasm
 
 		public string ReadDueState(string kind) { Require(); return api.ReadDueState(kind); }
 
-		public string ReadDueReason(string kind) { Require(); return api.ReadDueReason(kind); }
+		public string ReadDueReason(string kind, string language)
+		{
+			Require();
+			return api.ReadDueReason(kind, language);
+		}
 
 		public int DeferralsUsed(string kind) { Require(); return api.DeferralsUsed(kind); }
 
@@ -549,10 +553,11 @@ namespace Concesionario.Wasm
 		/// la maquina y no se le pide a nadie -- pedirlo seria dejar que alguien pregunte por un momento
 		/// que se invento.
 		/// </summary>
-		public WhereEachOperationStands ReadWhereEachOperationStands()
+		public WhereEachOperationStands ReadWhereEachOperationStands(string language)
 		{
 			Require();
-			return WhereEachOperationStands.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return WhereEachOperationStands.ReadThrough(
+				api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		/// <summary>

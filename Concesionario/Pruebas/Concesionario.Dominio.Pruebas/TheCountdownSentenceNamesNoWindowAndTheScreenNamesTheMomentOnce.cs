@@ -87,7 +87,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y CON LA OPERACION MEDIDA LA FRASE SI LLEVA LOS DOS MONTOS, que es lo que hace que la
 			// afirmacion de arriba mida una ausencia y no una frase vacia.
-			Assert.That(handed.Of(TheKindWithACountdown).Says, Does.Contain("te faltan 7345 km"));
+			Assert.That(handed.Of(TheKindWithACountdown).Says, Does.Contain("te faltan 7.345 km"));
 			Assert.That(handed.Of(TheKindWithACountdown).Says, Does.Contain("te faltan 255 días"));
 
 			// Y CON LA QUE NO ESTA AGENDADA, LA FRASE DICE ESO Y SE DICE UNA VEZ.
@@ -163,7 +163,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (string kind in AppState.TheNineKinds)
 			{
-				string said = journal.Api.DescribeCountdown(kind, TheInstantTheScreenAsksAt);
+				string said = journal.Api.DescribeCountdown(kind, TheInstantTheScreenAsksAt,
+					TheLanguage.OfTheRecord);
 
 				string domain = said
 					.Replace("no hay ninguna operación de ", "")
@@ -182,7 +183,8 @@ namespace Concesionario.Dominio.Pruebas
 			// aparecen en la misma fila de la pantalla.
 			Assert.That(ComoSeLee.Operacion(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "FluidChange"), Is.EqualTo("Cambio de líquidos"));
 			Assert.That(
-				journal.Api.DescribeCountdown("FluidChange", TheInstantTheScreenAsksAt),
+				journal.Api.DescribeCountdown("FluidChange", TheInstantTheScreenAsksAt,
+					TheLanguage.OfTheRecord),
 				Does.Contain("Cambio de fluido"));
 		}
 
@@ -190,7 +192,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		private void AnOperationWithAReadingAfterIt()

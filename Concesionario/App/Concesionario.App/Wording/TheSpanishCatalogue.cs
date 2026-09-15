@@ -85,6 +85,17 @@ namespace Concesionario.App.Wording
 				["canon.tyre.Rear"] = "Trasera",
 				["canon.tyre.Spare"] = "De repuesto",
 
+				["canon.usageProfile.Standard"] = "normal",
+				["canon.usageProfile.SevereDuty"] = "de uso severo",
+				["canon.usageProfile.LowDistance"] = "de poca distancia",
+				["canon.usageProfile.Commercial"] = "comercial",
+
+				["canon.deferralReason.Cost"] = "el costo",
+				["canon.deferralReason.Timing"] = "la fecha",
+				["canon.deferralReason.SecondOpinion"] = "una segunda opinión",
+				["canon.deferralReason.NotConvinced"] = "dudas de que haga falta",
+				["canon.deferralReason.WillDoElsewhere"] = "que se va a hacer en otro lado",
+
 				["canon.standing.Inside"] = "Adentro",
 				["canon.standing.Reached"] = "Alcanzado",
 				["canon.standing.NotPublished"] = "Sin publicar",
@@ -140,6 +151,60 @@ namespace Concesionario.App.Wording
 				["board.tyre.Front"] = "Delanteras",
 				["board.tyre.Rear"] = "Traseras",
 				["board.tyre.Spare"] = "Repuesto",
+
+				["dimension.Time"] = "tiempo",
+				["dimension.Distance"] = "distancia",
+
+				["quantity.distance"] = "{amount} {unit}",
+
+				["clause.BeforeTheLimit"] = "{dimension}: {amount} de {limit} desde la última",
+				["clause.AtTheLimit"] = "{dimension}: justo en un límite de {limit}",
+				["clause.PastTheLimit"] = "{dimension}: {amount} pasados de un límite de {limit}",
+				["clause.AbsentReading"] =
+					"{dimension}: no se puede evaluar porque no hay ninguna lectura usable",
+				["clause.UnitMismatch"] =
+					"{dimension}: no se puede evaluar porque el límite está en {unit} y las "
+					+ "mediciones están en {measured}, y las unidades nunca se convierten",
+				["clause.UsageProfile"] =
+					"{dimension}: no se puede evaluar porque el perfil de uso {profile} ignora los "
+					+ "límites de distancia",
+
+				["clauses.two"] = "{first}; {second}",
+
+				["remainder.StillAhead.one"] = "{dimension}: te falta {amount}",
+				["remainder.StillAhead.many"] = "{dimension}: te faltan {amount}",
+				["remainder.AlreadyPassed"] = "{dimension}: lleva {amount} de más",
+				["remainder.AtTheLimit"] = "{dimension}: justo en el límite",
+				["remainder.OutsideTheLaw"] =
+					"{dimension}: esta operación no tiene límite de {dimension}",
+				["remainder.NoOperationScheduled"] =
+					"no hay ninguna operación de {kind} agendada para este vehículo",
+
+				["countdown.both"] = "{distance}; {time}",
+
+				["reason.NoOperationScheduled"] =
+					"Este vehículo no tiene agendada ninguna operación de {kind}, así que no hay "
+					+ "nada que pueda estar vencido.",
+				["reason.NotEvaluatedYet"] =
+					"{state}, pero esta operación todavía no se ha evaluado, así que esto no es "
+					+ "evidencia de que la operación no esté vencida.",
+				["reason.Deferred"] =
+					"{state} hasta el {until} por {reason}. {used} de {allowed} aplazamientos "
+					+ "usados.",
+				["reason.Ended"] = "{state}.",
+				["reason.ACrossingArrived"] =
+					"{state} porque llegó un cruce de umbral observado para esta operación.",
+				["reason.WaitsForACrossing"] =
+					"{state} porque esta operación no tiene límite de tiempo ni de distancia: vence "
+					+ "solo cuando llega un cruce de umbral observado.",
+				["reason.NothingCouldBeEvaluated"] =
+					"{state}, pero no se pudo evaluar nada, así que esto no es evidencia de que la "
+					+ "operación no esté vencida. {clauses}.",
+				["reason.Decided"] = "{state}, decidido por {who}. {clauses}.",
+
+				["reason.decidedBy.Time"] = "tiempo",
+				["reason.decidedBy.Distance"] = "distancia",
+				["reason.decidedBy.TimeAndDistance"] = "tiempo y distancia",
 			};
 		}
 	}

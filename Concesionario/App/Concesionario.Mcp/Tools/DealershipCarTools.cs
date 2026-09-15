@@ -9,6 +9,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class DealershipCarTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTA CARA PIDE LAS FRASES DEL DOMINIO, que es el del registro y no el de
+		/// quien pregunta: esta superficie es la voz del concesionario hablandole al modelo, igual
+		/// que el titulo y las descripciones de estas mismas tools.
+		/// </summary>
+		private const string TheVoiceOfTheDealership = Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public DealershipCarTools(JournalReader reader)
@@ -209,16 +216,16 @@ namespace Concesionario.Mcp.Tools
 				return new ServiceCountdown
 				{
 					Operation = kind,
-					Says = api.DescribeCountdown(kind, askedAt),
+					Says = api.DescribeCountdown(kind, askedAt, TheVoiceOfTheDealership),
 					DistanceStanding = api.ReadDistanceRemainderStanding(kind, askedAt),
-					DistanceSays = api.DescribeDistanceRemaining(kind, askedAt),
+					DistanceSays = api.DescribeDistanceRemaining(kind, askedAt, TheVoiceOfTheDealership),
 					DistanceCanBeSaid = distanceCanBeSaid,
 					DistanceRemaining =
 						distanceCanBeSaid ? api.ReadDistanceRemaining(kind, askedAt) : 0,
 					DistanceUnit =
 						distanceCanBeSaid ? api.ReadDistanceRemainingUnit(kind, askedAt) : "",
 					TimeStanding = api.ReadTimeRemainderStanding(kind, askedAt),
-					DaysSays = api.DescribeDaysRemaining(kind, askedAt),
+					DaysSays = api.DescribeDaysRemaining(kind, askedAt, TheVoiceOfTheDealership),
 					DaysCanBeSaid = daysCanBeSaid,
 					DaysRemaining = daysCanBeSaid ? api.ReadDaysRemaining(kind, askedAt) : 0,
 				};
@@ -283,7 +290,7 @@ namespace Concesionario.Mcp.Tools
 					HasData = true,
 					Operation = each.WireName(),
 					State = api.ReadDueState(each.WireName()),
-					Reason = api.ReadDueReason(each.WireName()),
+					Reason = api.ReadDueReason(each.WireName(), TheVoiceOfTheDealership),
 					DeferralsUsed = api.DeferralsUsed(each.WireName()),
 				});
 
@@ -319,7 +326,7 @@ namespace Concesionario.Mcp.Tools
 				Vin = api.ReadVin(),
 				Operation = kind,
 				State = api.ReadDueState(kind),
-				Reason = api.ReadDueReason(kind),
+				Reason = api.ReadDueReason(kind, TheVoiceOfTheDealership),
 				DeferralsUsed = api.DeferralsUsed(kind),
 				Evaluated = api.HasBeenEvaluated(),
 				EvaluatedUpTo = TheInstantItWasEvaluatedTo(api),

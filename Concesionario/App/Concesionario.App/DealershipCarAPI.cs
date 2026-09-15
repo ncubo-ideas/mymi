@@ -796,11 +796,70 @@ namespace Concesionario.App
 			return AText("@kind = schedule.ReadNextDueKind();", "kind", p => { });
 		}
 
-		public string ReadDueReason(string kind)
+		/// <summary>
+		/// Por que esa clase esta donde esta, en una frase y en ese idioma. El dominio eligio la
+		/// forma y los valores; esta puerta solo los pone en el marco del idioma que se le pide.
+		/// </summary>
+		public string ReadDueReason(string kind, string language)
 		{
-			return AText("@reason = schedule.ReadDueReason(@kind);", "reason", p => {
-				p["kind", typeof(Enum)] = WireName.OperationKind(kind);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					reason            = schedule.TheDueReasonFor(@kind);
+					@shape            = reason.Shape;
+					@state            = reason.State;
+					@whoDecided       = reason.WhoDecided;
+					@kindNotScheduled = reason.Kind;
+					@deferredUntil    = reason.DeferredUntil;
+					@deferralReason   = reason.DeferralReason;
+					@deferralsUsed    = reason.DeferralsUsed;
+					@deferralsAllowed = reason.DeferralsAllowed;
+					@clauseCode       = reason.ClauseCodes;
+					@clauseDimension  = reason.ClauseDimensions;
+					@clauseAmount     = reason.ClauseAmounts;
+					@clauseLimit      = reason.ClauseLimits;
+					@clauseUnit       = reason.ClauseUnits;
+					@clauseMeasured   = reason.ClauseMeasuredUnits;
+					@clauseProfile    = reason.ClauseUsageProfiles;
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",            typeof(string)]   = default;
+					p[Parameter.Out, "state",            typeof(string)]   = default;
+					p[Parameter.Out, "whoDecided",       typeof(string)]   = default;
+					p[Parameter.Out, "kindNotScheduled", typeof(string)]   = default;
+					p[Parameter.Out, "deferredUntil",    typeof(string)]   = default;
+					p[Parameter.Out, "deferralReason",   typeof(string)]   = default;
+					p[Parameter.Out, "deferralsUsed",    typeof(int)]      = default;
+					p[Parameter.Out, "deferralsAllowed", typeof(int)]      = default;
+					p[Parameter.Out, "clauseCode",       typeof(string[])] = default;
+					p[Parameter.Out, "clauseDimension",  typeof(string[])] = default;
+					p[Parameter.Out, "clauseAmount",     typeof(int[])]    = default;
+					p[Parameter.Out, "clauseLimit",      typeof(int[])]    = default;
+					p[Parameter.Out, "clauseUnit",       typeof(string[])] = default;
+					p[Parameter.Out, "clauseMeasured",   typeof(string[])] = default;
+					p[Parameter.Out, "clauseProfile",    typeof(string[])] = default;
+					p["kind", typeof(Enum)] = WireName.OperationKind(kind);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheDueReason(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["state"].GetValue<string>(),
+					rented["whoDecided"].GetValue<string>(),
+					rented["kindNotScheduled"].GetValue<string>(),
+					rented["deferredUntil"].GetValue<string>(),
+					rented["deferralReason"].GetValue<string>(),
+					rented["deferralsUsed"].GetValue<int>(),
+					rented["deferralsAllowed"].GetValue<int>(),
+					rented["clauseCode"].GetValue<string[]>(),
+					rented["clauseDimension"].GetValue<string[]>(),
+					rented["clauseAmount"].GetValue<int[]>(),
+					rented["clauseLimit"].GetValue<int[]>(),
+					rented["clauseUnit"].GetValue<string[]>(),
+					rented["clauseMeasured"].GetValue<string[]>(),
+					rented["clauseProfile"].GetValue<string[]>());
+			}
 		}
 
 		public int MissedCount()
@@ -1700,12 +1759,44 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// Lo que le queda de distancia, en una frase. TOTAL: las siete situaciones dicen algo.
+		/// Lo que le queda de distancia, en una frase y en ese idioma. TOTAL: las siete situaciones
+		/// dicen algo.
 		/// </summary>
-		public string DescribeDistanceRemaining(string kind, DateTime asOf)
+		public string DescribeDistanceRemaining(string kind, DateTime asOf, string language)
 		{
-			return ATextAboutAnOperation(
-				"@clause = schedule.DescribeDistanceRemaining(@kind, @asOf);", "clause", kind, asOf);
+			try
+			{
+				using (RentedParameter rented = app.Actor.RentedParameters())
+				{
+					app.Actor.Using(@"
+						remainder         = schedule.TheDistanceRemainderFor(@kind, @asOf);
+						@standing         = remainder.Standing().Name;
+						@dimension        = remainder.TheDimensionItMeasures();
+						@amount           = remainder.TheAmountItCounts();
+						@unit             = remainder.TheUnitItIsExpressedIn();
+						@measured         = remainder.TheUnitTheMeasurementsAreIn();
+						@profile          = remainder.TheUsageProfileThatIgnoresIt();
+						@kindNotScheduled = remainder.TheKindWithNoOperationScheduled();
+					")
+					.WithParameters(rented, p => {
+						p[Parameter.Out, "standing",         typeof(string)] = default;
+						p[Parameter.Out, "dimension",        typeof(string)] = default;
+						p[Parameter.Out, "amount",           typeof(int[])]  = default;
+						p[Parameter.Out, "unit",             typeof(string)] = default;
+						p[Parameter.Out, "measured",         typeof(string)] = default;
+						p[Parameter.Out, "profile",          typeof(string)] = default;
+						p[Parameter.Out, "kindNotScheduled", typeof(string)] = default;
+						TheKindAndTheInstant(kind, asOf)(p);
+					})
+					.PerformQuery();
+
+					return AHalfOfTheCountdownSaid(rented, language);
+				}
+			}
+			catch (Exception refused) when (TheDomainRefusedTheFact(refused))
+			{
+				throw ARefusalTheReaderCanName(kind, asOf, refused);
+			}
 		}
 
 		/// <summary>
@@ -1741,22 +1832,57 @@ namespace Concesionario.App
 				kind, asOf);
 		}
 
-		/// <summary>Lo que le queda de plazo, en una frase. TOTAL.</summary>
-		public string DescribeDaysRemaining(string kind, DateTime asOf)
+		/// <summary>Lo que le queda de plazo, en una frase y en ese idioma. TOTAL.</summary>
+		public string DescribeDaysRemaining(string kind, DateTime asOf, string language)
 		{
-			return ATextAboutAnOperation(
-				"@clause = schedule.DescribeDaysRemaining(@kind, @asOf);", "clause", kind, asOf);
+			try
+			{
+				using (RentedParameter rented = app.Actor.RentedParameters())
+				{
+					app.Actor.Using(@"
+						remainder         = schedule.TheTimeRemainderFor(@kind, @asOf);
+						@standing         = remainder.Standing().Name;
+						@dimension        = remainder.TheDimensionItMeasures();
+						@amount           = remainder.TheAmountItCounts();
+						@unit             = remainder.TheUnitItIsExpressedIn();
+						@measured         = remainder.TheUnitTheMeasurementsAreIn();
+						@profile          = remainder.TheUsageProfileThatIgnoresIt();
+						@kindNotScheduled = remainder.TheKindWithNoOperationScheduled();
+					")
+					.WithParameters(rented, p => {
+						p[Parameter.Out, "standing",         typeof(string)] = default;
+						p[Parameter.Out, "dimension",        typeof(string)] = default;
+						p[Parameter.Out, "amount",           typeof(int[])]  = default;
+						p[Parameter.Out, "unit",             typeof(string)] = default;
+						p[Parameter.Out, "measured",         typeof(string)] = default;
+						p[Parameter.Out, "profile",          typeof(string)] = default;
+						p[Parameter.Out, "kindNotScheduled", typeof(string)] = default;
+						TheKindAndTheInstant(kind, asOf)(p);
+					})
+					.PerformQuery();
+
+					return AHalfOfTheCountdownSaid(rented, language);
+				}
+			}
+			catch (Exception refused) when (TheDomainRefusedTheFact(refused))
+			{
+				throw ARefusalTheReaderCanName(kind, asOf, refused);
+			}
 		}
 
 		/// <summary>
 		/// La cuenta atras entera: LAS DOS dimensiones y las dos situaciones en una frase, sin elegir
-		/// ninguna. TOTAL, y la compone el dominio: elegir la mas cercana dejaria el numero de la
-		/// pantalla discrepando del motivo del estado para quien lea los dos juntos.
+		/// ninguna. TOTAL, y quien elige es el dominio: quedarse con la mas cercana dejaria el numero
+		/// de la pantalla discrepando del motivo del estado para quien lea los dos juntos.
 		/// </summary>
-		public string DescribeCountdown(string kind, DateTime asOf)
+		public string DescribeCountdown(string kind, DateTime asOf, string language)
 		{
-			return ATextAboutAnOperation(
-				"@clause = schedule.DescribeCountdown(@kind, @asOf);", "clause", kind, asOf);
+			return Wording.TheWording.TheCountdown(
+				Wording.Phrases.Of(language),
+				ATruthAboutAnOperation(
+					"@two = schedule.TheCountdownHasTwoHalves(@kind, @asOf);", "two", kind, asOf),
+				DescribeDistanceRemaining(kind, asOf, language),
+				DescribeDaysRemaining(kind, asOf, language));
 		}
 
 		/// <summary>
@@ -2906,6 +3032,23 @@ namespace Concesionario.App
 			{
 				throw ARefusalTheReaderCanName(kind, asOf, refused);
 			}
+		}
+
+		/// <summary>
+		/// UNA de las dos mitades, dicha en ese idioma. Las siete respuestas salen de UN solo resto,
+		/// asi que son del mismo momento del registro; el marco lo pone el idioma.
+		/// </summary>
+		private static string AHalfOfTheCountdownSaid(RentedParameter rented, string language)
+		{
+			return Wording.TheWording.TheRemainder(
+				Wording.Phrases.Of(language),
+				rented["standing"].GetValue<string>(),
+				rented["dimension"].GetValue<string>(),
+				rented["amount"].GetValue<int[]>(),
+				rented["unit"].GetValue<string>(),
+				rented["measured"].GetValue<string>(),
+				rented["profile"].GetValue<string>(),
+				rented["kindNotScheduled"].GetValue<string>());
 		}
 
 		/// <summary>Lo mismo para la que contesta con palabras.</summary>

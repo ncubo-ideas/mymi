@@ -448,7 +448,7 @@ else
         foreach (string kind in AppState.TheNineKinds)
         {
             states[kind] = state.ReadDueState(kind);
-            why[kind] = state.ReadDueReason(kind);
+            why[kind] = state.ReadDueReason(kind, texts.Language);
         }
         board = states;
         reasons = why;
@@ -456,7 +456,7 @@ else
         sheet = state.ReadTheSpecification();
         stands = state.ReadWhereThisVehicleStands();
         stays = state.ReadTheStaysOfThisVehicle();
-        operations = state.ReadWhereEachOperationStands();
+        operations = state.ReadWhereEachOperationStands(texts.Language);
         costs = state.ReadWhatTheServicesCost();
         use = state.ReadHowThisVehicleIsDriven();
         spend = state.ReadWhatThisVehicleHasCost();

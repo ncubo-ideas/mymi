@@ -82,7 +82,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			journal.Api.Evaluate(AfterSixMonths);
 
-			Assert.That(journal.Api.ReadDueReason("FluidChange"),
+			Assert.That(journal.Api.ReadDueReason("FluidChange", TheLanguage.OfTheRecord),
 				Does.Contain("las unidades nunca se convierten"),
 				"El ancla esta en UnitB y las mediciones en UnitA: dos lineas de medida que nadie "
 				+ "convierte. Si el ancla tomara la unidad del limite las dos serian UnitA, no "

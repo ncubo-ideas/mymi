@@ -78,6 +78,17 @@ namespace Concesionario.App.Wording
 				["canon.tyre.Rear"] = "Rear",
 				["canon.tyre.Spare"] = "Spare",
 
+				["canon.usageProfile.Standard"] = "standard",
+				["canon.usageProfile.SevereDuty"] = "severe-duty",
+				["canon.usageProfile.LowDistance"] = "low-distance",
+				["canon.usageProfile.Commercial"] = "commercial",
+
+				["canon.deferralReason.Cost"] = "the cost",
+				["canon.deferralReason.Timing"] = "the timing",
+				["canon.deferralReason.SecondOpinion"] = "a second opinion",
+				["canon.deferralReason.NotConvinced"] = "doubts that it is needed",
+				["canon.deferralReason.WillDoElsewhere"] = "having it done elsewhere",
+
 				["canon.standing.Inside"] = "Inside",
 				["canon.standing.Reached"] = "Reached",
 				["canon.standing.NotPublished"] = "Not published",
@@ -133,6 +144,58 @@ namespace Concesionario.App.Wording
 				["board.tyre.Front"] = "Front",
 				["board.tyre.Rear"] = "Rear",
 				["board.tyre.Spare"] = "Spare",
+
+				["dimension.Time"] = "time",
+				["dimension.Distance"] = "distance",
+
+				["quantity.distance"] = "{amount} {unit}",
+
+				["clause.BeforeTheLimit"] = "{dimension}: {amount} of {limit} since the last one",
+				["clause.AtTheLimit"] = "{dimension}: exactly on a limit of {limit}",
+				["clause.PastTheLimit"] = "{dimension}: {amount} past a limit of {limit}",
+				["clause.AbsentReading"] =
+					"{dimension}: cannot be evaluated because there is no usable reading",
+				["clause.UnitMismatch"] =
+					"{dimension}: cannot be evaluated because the limit is in {unit} and the "
+					+ "measurements are in {measured}, and units are never converted",
+				["clause.UsageProfile"] =
+					"{dimension}: cannot be evaluated because the {profile} usage profile ignores "
+					+ "distance limits",
+
+				["clauses.two"] = "{first}; {second}",
+
+				["remainder.StillAhead.one"] = "{dimension}: {amount} to go",
+				["remainder.StillAhead.many"] = "{dimension}: {amount} to go",
+				["remainder.AlreadyPassed"] = "{dimension}: {amount} over",
+				["remainder.AtTheLimit"] = "{dimension}: exactly on the limit",
+				["remainder.OutsideTheLaw"] = "{dimension}: this operation has no {dimension} limit",
+				["remainder.NoOperationScheduled"] =
+					"no {kind} operation is scheduled for this vehicle",
+
+				["countdown.both"] = "{distance}; {time}",
+
+				["reason.NoOperationScheduled"] =
+					"This vehicle has no {kind} scheduled, so there is nothing that could be "
+					+ "overdue.",
+				["reason.NotEvaluatedYet"] =
+					"{state}, but this operation has not been evaluated yet, so this is no evidence "
+					+ "that the operation is not overdue.",
+				["reason.Deferred"] =
+					"{state} until {until} because of {reason}. {used} of {allowed} deferrals used.",
+				["reason.Ended"] = "{state}.",
+				["reason.ACrossingArrived"] =
+					"{state} because an observed threshold crossing arrived for this operation.",
+				["reason.WaitsForACrossing"] =
+					"{state} because this operation has no time limit and no distance limit: it "
+					+ "falls due only when an observed threshold crossing arrives.",
+				["reason.NothingCouldBeEvaluated"] =
+					"{state}, but nothing could be evaluated, so this is no evidence that the "
+					+ "operation is not overdue. {clauses}.",
+				["reason.Decided"] = "{state}, decided by {who}. {clauses}.",
+
+				["reason.decidedBy.Time"] = "time",
+				["reason.decidedBy.Distance"] = "distance",
+				["reason.decidedBy.TimeAndDistance"] = "time and distance",
 			};
 		}
 	}

@@ -133,12 +133,12 @@ namespace Concesionario.Dominio.Pruebas
 			"ReadDistanceRemaining/2",
 			"ReadDistanceRemainingUnit/2",
 			"ReadDistanceRemainderStanding/2",
-			"DescribeDistanceRemaining/2",
+			"DescribeDistanceRemaining/3",
 			"CanDaysRemainingBeSaid/2",
 			"ReadDaysRemaining/2",
 			"ReadTimeRemainderStanding/2",
-			"DescribeDaysRemaining/2",
-			"DescribeCountdown/2",
+			"DescribeDaysRemaining/3",
+			"DescribeCountdown/3",
 			"HasAnyCompletion/1",
 			"CompletionCount/1",
 			"DescribeCompletions/1",
@@ -348,7 +348,8 @@ namespace Concesionario.Dominio.Pruebas
 					+ "contesta la de la persona, y en un journal viejo tambien.");
 				Assert.That(api.ReadDistanceRemainderStanding(TheKindThatMeasuresDistance, TheDayItIsAsked),
 					Is.EqualTo("StillAhead"));
-				Assert.That(api.DescribeDistanceRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeDistanceRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("distancia: te faltan"));
 
 				Assert.That(api.CanDaysRemainingBeSaid(TheKindThatMeasuresDistance, TheDayItIsAsked),
@@ -357,9 +358,11 @@ namespace Concesionario.Dominio.Pruebas
 					Is.EqualTo(TheTimeLimitInDays - (int)(TheDayItIsAsked - TheSecondCompletion).TotalDays));
 				Assert.That(api.ReadTimeRemainderStanding(TheKindThatMeasuresDistance, TheDayItIsAsked),
 					Is.EqualTo("StillAhead"));
-				Assert.That(api.DescribeDaysRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeDaysRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("tiempo: te faltan"));
-				Assert.That(api.DescribeCountdown(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeCountdown(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("distancia:").And.Contain("tiempo:"),
 					"G1 en el journal viejo: dice las dos mitades y no escoge.");
 

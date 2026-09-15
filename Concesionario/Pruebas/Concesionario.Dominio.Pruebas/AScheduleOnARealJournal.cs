@@ -103,7 +103,7 @@ namespace Concesionario.Dominio.Pruebas
 				everything += "\n" + kind
 					+ " : " + Api.ReadDueState(kind)
 					+ " | deferrals=" + Api.DeferralsUsed(kind)
-					+ " | " + Api.ReadDueReason(kind);
+					+ " | " + Api.ReadDueReason(kind, TheLanguage.OfTheRecord);
 
 			everything += "\ndue=" + Api.CountDue()
 				+ " overdue=" + Api.CountOverdue()

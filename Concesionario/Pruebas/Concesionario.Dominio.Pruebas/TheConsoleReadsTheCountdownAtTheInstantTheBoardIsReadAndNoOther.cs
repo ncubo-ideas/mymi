@@ -533,7 +533,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheReaderSeesACallAtAnotherInstantAndAKindTheShellNamedWhenThereIsOne()
 		{
 			const string atAnother =
-				"Console.WriteLine($\"   x : {api.DescribeCountdown(kind, Story.SixMonthsLater)}\");";
+				"Console.WriteLine($\"   x : {api.DescribeCountdown(kind, Story.SixMonthsLater, "
+				+ "TheVoiceOfTheDealership)}\");";
 
 			List<string> found = TheArgumentsOfEveryCallTo(
 				TheCodeOfTheShellsAsData.OnlyWhatTheCompilerReads(atAnother, "cs"), "DescribeCountdown");

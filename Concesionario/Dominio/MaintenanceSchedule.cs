@@ -424,19 +424,17 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Por que esa clase esta donde esta, en una frase. Total: una clase que no esta agendada
-		/// lo dice con todas las letras. Componer el motivo es del dominio y no de la vista.
+		/// Por que esa clase esta donde esta. Total: una clase que no esta agendada tiene su propia
+		/// forma de motivo. Elegirlo es del dominio y no de la vista.
 		/// </summary>
-		internal string ReadDueReason(OperationKindCode kind)
+		internal ADueReason TheDueReasonFor(OperationKindCode kind)
 		{
 			MaintenanceOperationKind asked = MaintenanceOperationKind.OfCode(kind);
 
 			if (!_operations.ContainsKey(kind))
-				return "Este vehículo no tiene agendada ninguna operación de "
-					+ asked.HowItIsSaid.ToLowerInvariant() + ", así que no hay nada que pueda "
-					+ "estar vencido.";
+				return ADueReason.WithNoOperationScheduled(asked.Name);
 
-			return _operations[kind].Describe();
+			return _operations[kind].TheReason();
 		}
 
 		/// <summary>
@@ -707,11 +705,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Lo que le queda de distancia, en una frase. Total: las siete situaciones dicen algo.
+		/// Lo que le queda de distancia, como situacion mas valores. Total: las siete situaciones
+		/// dicen algo, y ninguna se entrega ya redactada.
 		/// </summary>
-		internal string DescribeDistanceRemaining(OperationKindCode kind, DateTime asOf)
+		internal ARemainder TheDistanceRemainderFor(OperationKindCode kind, DateTime asOf)
 		{
-			return TheRemainderOnDistanceFor(kind, asOf).Describe();
+			return TheRemainderOnDistanceFor(kind, asOf);
 		}
 
 		/// <summary>Si se puede decir cuantos dias le quedan a esa operacion. Total.</summary>
@@ -735,27 +734,20 @@ namespace Concesionario.Dominio
 			return TheRemainderOnTimeFor(kind, asOf).Standing().Name;
 		}
 
-		/// <summary>Lo que le queda de plazo, en una frase. Total.</summary>
-		internal string DescribeDaysRemaining(OperationKindCode kind, DateTime asOf)
+		/// <summary>Lo que le queda de plazo, como situacion mas valores. Total.</summary>
+		internal ARemainder TheTimeRemainderFor(OperationKindCode kind, DateTime asOf)
 		{
-			return TheRemainderOnTimeFor(kind, asOf).Describe();
+			return TheRemainderOnTimeFor(kind, asOf);
 		}
 
 		/// <summary>
-		/// La cuenta atras entera: LAS DOS dimensiones y las dos situaciones en una frase, sin
-		/// elegir ninguna. Elegir la mas cercana dejaria el numero de la pantalla discrepando del
-		/// motivo del estado para quien lea los dos juntos. Total.
-		/// <para>
-		/// Sin operacion agendada no hay dos mitades que decir, asi que se dice una sola vez.
-		/// </para>
+		/// Si la cuenta atras tiene DOS mitades que decir. Total, y es lo que separa una clase
+		/// agendada de una que no lo esta: sin operacion no hay dos mitades, y decir la misma
+		/// ausencia dos veces en una linea seria duplicarla.
 		/// </summary>
-		internal string DescribeCountdown(OperationKindCode kind, DateTime asOf)
+		internal bool TheCountdownHasTwoHalves(OperationKindCode kind, DateTime asOf)
 		{
-			ARemainder distance = TheRemainderOnDistanceFor(kind, asOf);
-
-			if (distance.HasNoOperationScheduled()) return distance.Describe();
-
-			return distance.Describe() + "; " + TheRemainderOnTimeFor(kind, asOf).Describe();
+			return !TheRemainderOnDistanceFor(kind, asOf).HasNoOperationScheduled();
 		}
 
 		/// <summary>

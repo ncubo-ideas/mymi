@@ -187,7 +187,7 @@ namespace Concesionario.Consola
 					: "";
 
 				Console.WriteLine($"   {kind,-20} {state,-10}{moved}");
-				Console.WriteLine($"   {"",-20} {api.ReadDueReason(kind)}");
+				Console.WriteLine($"   {"",-20} {api.ReadDueReason(kind, TheVoiceOfTheDealership)}");
 
 				int deferrals = api.DeferralsUsed(kind);
 				if (deferrals > 0)
@@ -207,7 +207,8 @@ namespace Concesionario.Consola
 
 		private static bool ItIsScheduled(DealershipCarAPI api, string kind)
 		{
-			return !api.ReadDueReason(kind).StartsWith("There is no scheduled", StringComparison.Ordinal);
+			return api.ReadDistanceRemainderStanding(kind, TheInstantTheBoardIsRead)
+				!= TheStandingOfAKindWithNoOperation;
 		}
 
 		private static void TheCountdownOfEveryKind(DealershipCarAPI api)
@@ -243,9 +244,9 @@ namespace Concesionario.Consola
 
 			try
 			{
-				Console.WriteLine($"   la cuenta atras          : {api.DescribeCountdown(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   la cuenta atras          : {api.DescribeCountdown(kind, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 				Console.WriteLine($"   situacion en distancia   : {api.ReadDistanceRemainderStanding(kind, TheInstantTheBoardIsRead)}");
-				Console.WriteLine($"   la distancia en palabras : {api.DescribeDistanceRemaining(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   la distancia en palabras : {api.DescribeDistanceRemaining(kind, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 
 				bool distance = api.CanDistanceRemainingBeSaid(kind, TheInstantTheBoardIsRead);
 				Console.WriteLine($"   se puede decir cuanta    : {distance}");
@@ -257,7 +258,7 @@ namespace Concesionario.Consola
 				}
 
 				Console.WriteLine($"   situacion en el plazo    : {api.ReadTimeRemainderStanding(kind, TheInstantTheBoardIsRead)}");
-				Console.WriteLine($"   el plazo en palabras     : {api.DescribeDaysRemaining(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   el plazo en palabras     : {api.DescribeDaysRemaining(kind, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 
 				bool days = api.CanDaysRemainingBeSaid(kind, TheInstantTheBoardIsRead);
 				Console.WriteLine($"   se puede decir cuantos   : {days}");
@@ -2073,6 +2074,15 @@ namespace Concesionario.Consola
 
 		private static readonly DateTime TheInstantTheBoardIsRead =
 			new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTE ARNES PIDE LAS FRASES DEL DOMINIO: el del registro, porque lo que
+		/// mide es el dominio del concesionario y no la pantalla de nadie.
+		/// </summary>
+		private const string TheVoiceOfTheDealership = Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
+		/// <summary>La situacion con que la puerta nombra una clase que no tiene operacion agendada.</summary>
+		private const string TheStandingOfAKindWithNoOperation = "NoOperationScheduled";
 
 		private static string AnArgument(string[] args, int i, string byDefault)
 		{

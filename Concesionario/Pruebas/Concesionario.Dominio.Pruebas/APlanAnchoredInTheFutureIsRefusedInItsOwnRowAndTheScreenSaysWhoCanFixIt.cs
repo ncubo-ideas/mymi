@@ -105,7 +105,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			HowOneOperationStands answers = handed.Of(TheKindThatAnswers);
 
-			Assert.That(answers.Says, Does.Contain("distancia: te faltan 7345 km"));
+			Assert.That(answers.Says, Does.Contain("distancia: te faltan 7.345 km"));
 			Assert.That(answers.DistanceRemaining, Is.EqualTo(7345));
 			Assert.That(answers.DaysRemaining, Is.EqualTo(255));
 		}
@@ -257,7 +257,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		private void AnOperationWithAReadingAfterIt()

@@ -171,9 +171,12 @@ namespace Concesionario.Dominio.Pruebas
 					.Append(journal.Api.ReadDistanceRemainderStanding(kind, TheDayItIsAsked))
 					.Append(" | timeStanding=")
 					.Append(journal.Api.ReadTimeRemainderStanding(kind, TheDayItIsAsked))
-					.Append(" | ").Append(journal.Api.DescribeDistanceRemaining(kind, TheDayItIsAsked))
-					.Append(" | ").Append(journal.Api.DescribeDaysRemaining(kind, TheDayItIsAsked))
-					.Append(" | ").Append(journal.Api.DescribeCountdown(kind, TheDayItIsAsked));
+					.Append(" | ").Append(journal.Api.DescribeDistanceRemaining(kind, TheDayItIsAsked,
+						TheLanguage.OfTheRecord))
+					.Append(" | ").Append(journal.Api.DescribeDaysRemaining(kind, TheDayItIsAsked,
+						TheLanguage.OfTheRecord))
+					.Append(" | ").Append(journal.Api.DescribeCountdown(kind, TheDayItIsAsked,
+						TheLanguage.OfTheRecord));
 
 				if (distance)
 					every.Append(" | left=")

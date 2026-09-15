@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Concesionario.Dominio
 {
@@ -142,20 +143,19 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Por que esta parada donde esta, en una frase. Es del dominio y no de la vista:
-		/// lo que la persona necesita saber es la dimension, el monto y, si no se pudo evaluar, el
-		/// motivo.
+		/// Por que esta parada donde esta. Elegirlo es del dominio y no de la vista: lo que la
+		/// persona necesita saber es la dimension, el monto y, si no se pudo evaluar, el motivo.
 		/// </summary>
-		internal string Describe()
+		internal ADueReason TheReason()
 		{
-			if (_state == DueState.Deferred) return TheDeferralSentence();
-			if (_state == DueState.Completed) return "Hecha.";
-			if (_state == DueState.Superseded) return "Sustituida.";
+			if (_state == DueState.Deferred) return TheDeferralReason();
+			if (_state == DueState.Completed) return ADueReason.TheOccurrenceEnded(_state);
+			if (_state == DueState.Superseded) return ADueReason.TheOccurrenceEnded(_state);
 
 			if (_conditionThresholdCrossed && _state == DueState.Due)
-				return "Vencida porque llegó un cruce de umbral observado para esta operación.";
+				return ADueReason.ACrossingWasReceived();
 
-			return _standing.Describe();
+			return _standing.TheReason();
 		}
 
 		/// <summary>
@@ -403,13 +403,15 @@ namespace Concesionario.Dominio
 			return _deferrals[_deferrals.Count - 1].WindowHasElapsedBy(asOf);
 		}
 
-		private string TheDeferralSentence()
+		private ADueReason TheDeferralReason()
 		{
 			Deferral latest = _deferrals[_deferrals.Count - 1];
 
-			return "Aplazada hasta el " + latest.WindowEndsAt.ToString("yyyy-MM-dd")
-				+ " por " + latest.Reason.HowItIsSaid + ". " + _deferrals.Count + " de "
-				+ SchedulePolicy.MaxDeferralsPerOperation + " aplazamientos usados.";
+			return ADueReason.DeferredUntilTheWindowEnds(
+				latest.WindowEndsAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+				latest.Reason.Name,
+				_deferrals.Count,
+				SchedulePolicy.MaxDeferralsPerOperation);
 		}
 	}
 }
