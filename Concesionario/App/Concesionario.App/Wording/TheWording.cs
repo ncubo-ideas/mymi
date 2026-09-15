@@ -23,6 +23,7 @@ namespace Concesionario.App.Wording
 		private const string TheMeasuredHalf = "Measured";
 		private const string TheLimitsAreNamed = "Named";
 		private const string TheSuspensionByAUnitMismatch = "UnitMismatch";
+		private const string HalvesThatIncludeThisVehicle = "GeneralAndPersonalTogether";
 		private const string NoReasonToGive = "";
 
 		/// <summary>
@@ -32,6 +33,13 @@ namespace Concesionario.App.Wording
 		/// en punto, asi que lo unico que falta entre dos es la separacion.
 		/// </summary>
 		private const string BetweenTwoClauses = " ";
+
+		/// <summary>
+		/// LO QUE VA ENTRE DOS GRADOS DE COMBUSTIBLE de una lista cuyo largo no se sabe de antemano, y
+		/// no es una clave del catalogo por la misma razon que lo anterior: una clave que solo lleva una
+		/// coma no es una frase, y ninguna puede quedarse sin palabras.
+		/// </summary>
+		private const string BetweenTwoGrades = ", ";
 
 		/// <summary>
 		/// POR QUE UNA OPERACION ESTA DONDE ESTA. La forma elige el marco; el estado, la dimension
@@ -275,6 +283,169 @@ namespace Concesionario.App.Wording
 					"specification.published", ("clause", clause), ("revision", revision));
 
 			return phrases.Say("specification.notPublished", ("subject", subject));
+		}
+
+		/// <summary>
+		/// QUE FLUIDO DE UNA CLASE LLEVA EL MODELO: la clase, el grado, la capacidad con su unidad y
+		/// cada cuanto se cambia. La capacidad lleva los digitos con que se publico y la coma del
+		/// idioma.
+		/// </summary>
+		public static string TheFluid(
+			Phrases phrases, string publication, string revision, string fluidKind, string grade,
+			string capacity, string capacityUnit, string intervalHalves, int intervalDistance,
+			int intervalDays, string intervalUnit)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string said = phrases.HowItIsSaid("canon.fluid", fluidKind);
+
+			return TheSpecificationAnswer(
+				phrases, publication, revision,
+				phrases.Say("fluid.said",
+					("fluid", said),
+					("grade", grade),
+					("capacity", phrases.ANumber(capacity)),
+					("unit", capacityUnit),
+					("interval", TheInterval(
+						phrases, intervalHalves, intervalDistance, intervalDays, intervalUnit))),
+				phrases.Say("sheet.subject.Fluid", ("fluid", said)));
+		}
+
+		/// <summary>
+		/// QUE LLANTA LLEVA EL MODELO EN UNA POSICION: la medida, la presion en frio con la unidad en
+		/// que se publico y las clasificaciones. Aqui no se convierte ninguna unidad a ninguna otra.
+		/// </summary>
+		public static string TheTyre(
+			Phrases phrases, string publication, string revision, string position, string size,
+			string pressure, string pressureUnit, string ratings)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string said = phrases.HowItIsSaid("canon.tyre", position).ToLowerInvariant();
+
+			return TheSpecificationAnswer(
+				phrases, publication, revision,
+				phrases.Say("tyre.said",
+					("position", said),
+					("size", size),
+					("pressure", phrases.ANumber(pressure)),
+					("unit", pressureUnit),
+					("ratings", ratings)),
+				phrases.Say("sheet.subject.Tyre", ("position", said)));
+		}
+
+		/// <summary>
+		/// QUE COMBUSTIBLE ACEPTA EL MODELO: todos los grados publicados, cada uno con su postura, en el
+		/// orden en que se publicaron. Ninguna postura se omite y ninguna se resume: un prohibido callado
+		/// es un motor danado. El texto de cada grado es del fabricante y no se traduce.
+		/// </summary>
+		public static string TheFuel(
+			Phrases phrases, string publication, string revision, string[] grades,
+			string[] standings)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return TheSpecificationAnswer(
+				phrases, publication, revision,
+				phrases.Say("fuel.said", ("grades", EachGrade(phrases, grades, standings))),
+				phrases.Say("sheet.subject.Fuel"));
+		}
+
+		/// <summary>
+		/// CADA CUANTO SE HACE UNA OPERACION, y -- cuando se pregunto por un vehiculo -- donde queda la
+		/// distancia que le queda frente a ese intervalo. Las dos mitades van juntas o es un folleto, y
+		/// lo que las separa es puntuacion, que es del idioma.
+		/// </summary>
+		public static string TheServiceInterval(
+			Phrases phrases, string publication, string revision, string operation,
+			string intervalHalves, int intervalDistance, int intervalDays, string intervalUnit,
+			string halvesAnswered, string remainderShape, int distanceRemaining,
+			string remainingUnit)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string published = phrases.Say("interval.said",
+				("operation", phrases.HowItIsSaid("canon.operation", operation)),
+				("interval", TheInterval(
+					phrases, intervalHalves, intervalDistance, intervalDays, intervalUnit)));
+
+			return TheSpecificationAnswer(
+				phrases, publication, revision,
+				BothHalves(phrases, halvesAnswered, published,
+					phrases.Say("interval." + remainderShape,
+						("amount", ADistance(phrases, distanceRemaining, remainingUnit)),
+						("unit", intervalUnit))),
+				phrases.Say("sheet.subject.ServiceInterval",
+					("operation",
+						phrases.HowItIsSaid("canon.operation", operation).ToLowerInvariant())));
+		}
+
+		/// <summary>
+		/// LA REGLA DEL FABRICANTE SOBRE SERVICIO EN OTRO TALLER y que conserva la cobertura, y --
+		/// cuando se pregunto por un vehiculo -- sus conteos, dichos como conteos. Dice el alcance y la
+		/// posicion; nunca dice que una reclamacion se vaya a pagar.
+		/// </summary>
+		public static string TheServicingElsewhereRule(
+			Phrases phrases, string publication, string revision, string rule,
+			string whatPreservesCover, string halvesAnswered, int externalWithEvidence,
+			int externalWithoutEvidence, int missedMaintenance)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string published = phrases.Say("servicing.said",
+				("rule", rule), ("keeps", whatPreservesCover));
+
+			return TheSpecificationAnswer(
+				phrases, publication, revision,
+				BothHalves(phrases, halvesAnswered, published,
+					phrases.Say("servicing.against",
+						("withEvidence", phrases.Grouped(externalWithEvidence)),
+						("withoutEvidence", phrases.Grouped(externalWithoutEvidence)),
+						("missed", phrases.Grouped(missedMaintenance)))),
+				phrases.Say("sheet.subject.ServicingPolicy"));
+		}
+
+		/// <summary>
+		/// CADA CUANTO, con la mitad o las dos mitades que se publicaron. La que no se publico no se
+		/// nombra: un cero ahi se leeria como un plazo cumplido desde siempre.
+		/// </summary>
+		private static string TheInterval(
+			Phrases phrases, string shape, int distance, int days, string unit)
+		{
+			if (shape.Length == 0) return "";
+
+			return phrases.Say("interval." + shape,
+				("distance", ADistance(phrases, distance, unit)),
+				("days", phrases.Days(days)));
+		}
+
+		/// <summary>
+		/// LAS MITADES QUE UNA RESPUESTA CONTESTA. Con las dos, lo que va entre ellas es puntuacion, y
+		/// la puntuacion la pone el idioma y no quien compone.
+		/// </summary>
+		private static string BothHalves(
+			Phrases phrases, string halvesAnswered, string published, string received)
+		{
+			if (halvesAnswered != HalvesThatIncludeThisVehicle) return published;
+
+			return phrases.Say(
+				"sheet.bothHalves", ("published", published), ("received", received));
+		}
+
+		private static string EachGrade(Phrases phrases, string[] grades, string[] standings)
+		{
+			StringBuilder said = new StringBuilder();
+
+			for (int each = 0; each < grades.Length; each++)
+			{
+				if (each > 0) said.Append(BetweenTwoGrades);
+
+				said.Append(phrases.Say("fuel.grade",
+					("grade", grades[each]),
+					("standing", phrases.HowItIsSaid("canon.fuelStanding", standings[each]))));
+			}
+
+			return said.ToString();
 		}
 
 		/// <summary>

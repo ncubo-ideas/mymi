@@ -113,15 +113,14 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheAnswerObjectItselfIsAProjectionAndNotALiveView()
 		{
-			SpecificationAnswer captured =
+			AFluidClause captured =
 				specification.ARevisionAppliesForward(FluidKindCode.EngineOil);
 
 			ASecondRevisionSealedWith(TheSecondGrade);
 
-			Assert.That(captured.RevisionCode(), Is.EqualTo(TheFirstRevision));
+			Assert.That(captured.TheRevisionItCameFrom(), Is.EqualTo(TheFirstRevision));
 			Assert.That(
-				TheSentenceTheDoorWouldCompose.TheSpecificationAnswer(
-					captured, TheLanguage.OfTheRecord),
+				TheSentenceTheDoorWouldCompose.TheFluid(captured, TheLanguage.OfTheRecord),
 				Does.Contain(TheFirstGrade),
 				"La respuesta se compuso con la revision que la dio y se quedo con ella. Una "
 				+ "respuesta que se re-resuelve cada vez que se lee no es una respuesta, es una "

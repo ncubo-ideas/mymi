@@ -385,7 +385,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServiceInterval(
 					"FluidChange", 2000, "UnitA", TheLanguage.OfTheRecord),
-				Does.Contain("le quedan 2000 km"));
+				Does.Contain("le quedan 2.000 km"));
 		}
 
 		// Y CUANDO NO HAY INTERVALO PUBLICADO NO SE ANUNCIA NADA. Sin esto, la frase de arriba podria

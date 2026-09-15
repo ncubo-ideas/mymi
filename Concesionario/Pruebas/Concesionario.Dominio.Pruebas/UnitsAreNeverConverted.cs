@@ -39,7 +39,13 @@ namespace Concesionario.Dominio.Pruebas
 		private static readonly string[] LoQueUnIntervaloPuedeExponer =
 		{
 			".ctor",
-			"Describe",
+			// Describe() se fue: el intervalo ya no redacta, entrega sus mitades como forma y
+			// valores. Son CUATRO accesores donde habia una frase, y ninguno convierte nada --
+			// la unidad sale con su nombre y sin par al que llevarla.
+			"TheHalvesItPublished",
+			"TheDistanceItPublished",
+			"TheDaysItPublished",
+			"TheUnitItsDistanceIsIn",
 			"UnitsAreNeverConverted",
 		};
 
@@ -74,7 +80,7 @@ namespace Concesionario.Dominio.Pruebas
 			string answer = TheSentenceTheDoorWouldCompose.TheTyre(
 				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("2.4 bar"));
+			Assert.That(answer, Does.Contain("2,4 bar"));
 			Assert.That(answer, Does.Not.Contain("psi"));
 		}
 
@@ -94,7 +100,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(answer, Does.Contain("no se puede evaluar"));
 			Assert.That(answer, Does.Contain("publicado en km"));
-			Assert.That(answer, Does.Contain("8400 mi"),
+			Assert.That(answer, Does.Contain("8.400 mi"),
 				"Se nombran las DOS unidades. 'No se puede evaluar' sin decir cual contra cual "
 				+ "obliga a adivinar donde esta el problema.");
 			Assert.That(answer, Does.Contain("nunca se convierten"));
@@ -115,7 +121,7 @@ namespace Concesionario.Dominio.Pruebas
 				TheLanguage.OfTheRecord);
 
 			Assert.That(LosNumerosDe(SinLaProcedencia(answer)),
-				Is.EqualTo(new[] { "10000", "8400" }),
+				Is.EqualTo(new[] { "10.000", "8.400" }),
 				"Los numeros de la respuesta son exactamente el publicado y el recibido, en ese "
 				+ "orden. Un tercero es una conversion, la reste quien la reste. La procedencia se "
 				+ "quita antes de contar: el codigo de una revision lleva su propio ano.");
@@ -135,7 +141,7 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
 				TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("8400 km"));
+			Assert.That(answer, Does.Contain("8.400 km"));
 			Assert.That(answer, Does.Not.Contain("no se puede evaluar"));
 		}
 
@@ -154,7 +160,7 @@ namespace Concesionario.Dominio.Pruebas
 				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("no se puede evaluar"));
-			Assert.That(answer, Does.Contain("1825 días"));
+			Assert.That(answer, Does.Contain("1.825 días"));
 		}
 
 		// LA AUSENCIA DE CONVERSION, AFIRMADA COMO LISTA BLANCA. Un Convert, un ToUnitA, un factor
@@ -240,6 +246,11 @@ namespace Concesionario.Dominio.Pruebas
 			return procedencia < 0 ? frase : frase.Substring(0, procedencia);
 		}
 
+		// UN NUMERO PUEDE LLEVAR EL SEPARADOR DE MILES DEL IDIOMA ADENTRO, y desde que la frase la
+		// redacta el catalogo lo lleva: "10.000". Cortar en el punto partiria un numero en dos y esta
+		// ley diria que hay cuatro donde hay dos, que es un rojo por la razon equivocada. El
+		// separador cuenta como parte del numero solo entre digitos, asi que un punto final sigue
+		// terminandolo.
 		private static string[] LosNumerosDe(string frase)
 		{
 			List<string> numeros = new List<string>();
@@ -250,11 +261,23 @@ namespace Concesionario.Dominio.Pruebas
 				if (!char.IsDigit(frase[indice])) { indice++; continue; }
 
 				int comienzo = indice;
-				while (indice < frase.Length && char.IsDigit(frase[indice])) indice++;
+
+				while (indice < frase.Length
+					&& (char.IsDigit(frase[indice]) || SeparaMiles(frase, indice))) indice++;
+
 				numeros.Add(frase.Substring(comienzo, indice - comienzo));
 			}
 
 			return numeros.ToArray();
+		}
+
+		// El separador de miles del idioma del registro, y solo entre dos digitos.
+		private static bool SeparaMiles(string frase, int indice)
+		{
+			return frase[indice] == '.'
+				&& indice + 1 < frase.Length
+				&& char.IsDigit(frase[indice + 1])
+				&& char.IsDigit(frase[indice - 1]);
 		}
 
 		private static List<string> LoQueExpone(Type tipo)

@@ -1313,7 +1313,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServiceInterval(
 					"FluidChange", 8400, "UnitA", TheLanguage.OfTheRecord),
-				Does.Contain("8400"));
+				Does.Contain("8.400"));
 			Assert.That(
 				journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(TheRevision));
 

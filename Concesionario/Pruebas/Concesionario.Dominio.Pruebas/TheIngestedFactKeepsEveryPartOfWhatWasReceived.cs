@@ -188,7 +188,7 @@ namespace Concesionario.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
-				Does.Contain("capacidad 4.2 gal").And.Contain("cada 10000 km"),
+				Does.Contain("capacidad 4,2 gal").And.Contain("cada 10.000 km"),
 				"La capacidad sale en la unidad de volumen en que se publico y el intervalo en la de "
 				+ "distancia en que se publico. Cruzadas, las dos mitades dirian lo contrario y las "
 				+ "dos seguirian siendo nombres legales.");
@@ -204,7 +204,7 @@ namespace Concesionario.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord),
-				Does.Contain("presión en frío 2.4 psi"),
+				Does.Contain("presión en frío 2,4 psi"),
 				"Quien la lee la va a marcar en un manometro: la unidad no es un adorno de la frase.");
 		}
 
@@ -289,7 +289,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServiceInterval(
 					"FluidChange", 2000, "UnitA", TheLanguage.OfTheRecord),
-				Does.Contain("cada 10000 km o 365 días"));
+				Does.Contain("cada 10.000 km o 365 días"));
 		}
 
 		// LO QUE UNA EXCLUSION EXCLUYE Y LA CONDICION BAJO LA CUAL MUERDE SON DOS TEXTOS. Cruzados, la
@@ -391,9 +391,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			(string Where, string Says, Func<string> Read)[] normalized =
 			{
-				("la capacidad del fluido", "capacidad 4.2 L",
+				("la capacidad del fluido", "capacidad 4,2 L",
 					() => journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord)),
-				("la presión de la llanta", "presión en frío 2.4 bar",
+				("la presión de la llanta", "presión en frío 2,4 bar",
 					() => journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord)),
 				("el monto del precio", "$89.90",
 					() => journal.Api.DescribeServicePrice(

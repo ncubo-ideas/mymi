@@ -29,6 +29,12 @@ namespace Concesionario.App.Wording
 		/// <summary>El otro idioma que este modulo habla. El alcance son dos y no hay un tercero.</summary>
 		public const string TheOtherLanguage = "en";
 
+		/// <summary>
+		/// Con que separa sus decimales un numero PUBLICADO al llegar aqui. Es la cultura invariante, que
+		/// es la unica forma en que un numero puede cruzar sin que nadie haya elegido un idioma todavia.
+		/// </summary>
+		private const char ThePublishedDecimalMark = '.';
+
 		private readonly IReadOnlyDictionary<string, string> catalogue;
 		private readonly NumberFormatInfo howNumbersAreWritten;
 
@@ -125,6 +131,37 @@ namespace Concesionario.App.Wording
 		public string Grouped(int value)
 		{
 			return value.ToString("#,##0", howNumbersAreWritten);
+		}
+
+		/// <summary>
+		/// UN NUMERO TAL COMO SE PUBLICO, dicho en este idioma: los mismos digitos, con el separador de
+		/// miles y el decimal que le tocan. Llega como texto en cultura invariante -- que es la forma en
+		/// que el fabricante lo publico -- y aqui no se redondea, no se completa y no se recorta: cuantos
+		/// decimales tiene es de quien lo publico, y donde va la coma es del idioma.
+		/// <para>
+		/// Un texto que no sea un numero se devuelve intacto, por la misma razon que un dia fuera de
+		/// molde: inventarle una forma seria peor que dejarlo ver.
+		/// </para>
+		/// </summary>
+		public string ANumber(string asPublished)
+		{
+			if (string.IsNullOrWhiteSpace(asPublished)) return "";
+
+			string[] halves = asPublished.Trim().Split(ThePublishedDecimalMark);
+
+			if (halves.Length == 1) return InGroups(halves[0]);
+
+			return InGroups(halves[0])
+				+ howNumbersAreWritten.NumberDecimalSeparator
+				+ halves[1];
+		}
+
+		private string InGroups(string whole)
+		{
+			return long.TryParse(
+					whole, NumberStyles.Integer, CultureInfo.InvariantCulture, out long value)
+				? value.ToString("#,##0", howNumbersAreWritten)
+				: whole;
 		}
 
 		/// <summary>Cuantos dias, dicho entero para que "1 dias" no aparezca en ningun idioma.</summary>

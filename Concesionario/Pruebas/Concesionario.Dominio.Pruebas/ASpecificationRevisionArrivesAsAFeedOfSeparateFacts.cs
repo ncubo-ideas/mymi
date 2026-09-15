@@ -591,7 +591,8 @@ namespace Concesionario.Dominio.Pruebas
 					"205/55R16", "225/50R17",
 					"tyre Spare : False |  | Llanta de repuesto: no se ha publicado nada"),
 				("intervalos", "interval FluidChange : True | R1", "interval FilterChange : True | R2",
-					"Cambio de fluido: se hace cada 10000", "Cambio de filtro: se hace cada 10000",
+					"Cambio de fluido: se hace cada 10.000",
+					"Cambio de filtro: se hace cada 10.000",
 					"interval Inspection : False |  | Intervalo de servicio de revisión: no se ha "
 					+ "publicado nada"),
 				("precios",    "price FluidChange : True | R1",   "price FilterChange : True | R2",

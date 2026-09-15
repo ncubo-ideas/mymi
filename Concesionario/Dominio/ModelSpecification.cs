@@ -233,10 +233,8 @@ namespace Concesionario.Dominio
 		/// corrige un item no borra los que no republico, y sustituir SI retira lo que la sucesora
 		/// no volvio a publicar. Si ninguna la publico, la ausencia es la respuesta.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(FluidKindCode kind)
+		internal AFluidClause ARevisionAppliesForward(FluidKindCode kind)
 		{
-			FluidKind asked = FluidKind.OfCode(kind);
-
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
 				PublishedRevision candidate = _order[revision];
@@ -244,15 +242,14 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAFluidSpecification(kind)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeFluidSpecification(kind));
+				return candidate.TheFluidClause(kind);
 			}
 
-			return UnpublishedIsAnAnswer(asked.HowItIsSaid);
+			return AFluidClause.OfNothingPublished(FluidKind.OfCode(kind));
 		}
 
 		/// <summary>La misma ley para la llanta de una posicion.</summary>
-		internal SpecificationAnswer ARevisionAppliesForward(TyrePositionCode position)
+		internal ATyreClause ARevisionAppliesForward(TyrePositionCode position)
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -261,11 +258,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasATyreSpecification(position)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeTyreSpecification(position));
+				return candidate.TheTyreClause(position);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfATyre(position));
+			return ATyreClause.OfNothingPublished(TyrePosition.OfCode(position));
 		}
 
 		/// <summary>
@@ -273,7 +269,7 @@ namespace Concesionario.Dominio
 		/// entera, asi que la ultima revision sellada que publico algun grado contesta con TODOS los
 		/// suyos y ninguno de los de otra revision.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward()
+		internal AFuelClause ARevisionAppliesForward()
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -282,11 +278,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAFuelSpecification()) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeFuelSpecification());
+				return candidate.TheFuelClause();
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfTheFuel);
+			return AFuelClause.OfNothingPublished();
 		}
 
 		/// <summary>
@@ -294,7 +289,7 @@ namespace Concesionario.Dominio
 		/// mas: es la que contestan la presencia y la procedencia, que no preguntan por ningun
 		/// vehiculo.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(OperationKindCode kind)
+		internal AServiceIntervalClause ARevisionAppliesForward(OperationKindCode kind)
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -303,11 +298,11 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServiceInterval(kind)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServiceInterval(kind));
+				return candidate.TheServiceIntervalClause(kind);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServiceInterval(kind));
+			return AServiceIntervalClause.OfNothingPublished(
+				MaintenanceOperationKind.OfCode(kind));
 		}
 
 		/// <summary>
@@ -315,7 +310,7 @@ namespace Concesionario.Dominio
 		/// queda a este vehiculo. Sin nada publicado la respuesta es la ausencia sola, porque no hay
 		/// contra que parar lo recibido.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal AServiceIntervalClause ARevisionAppliesForward(
 			OperationKindCode kind, int distanceRemaining, DistanceUnitCode remainingUnit)
 		{
 			DistanceUnit received = DistanceUnit.OfCode(remainingUnit);
@@ -327,15 +322,12 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServiceInterval(kind)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate,
-					GeneralAndPersonalTogether(
-						candidate.DescribeServiceInterval(kind),
-						candidate.DescribeAgainstTheServiceInterval(
-							kind, distanceRemaining, received)));
+				return candidate.TheServiceIntervalClauseAgainst(
+					kind, distanceRemaining, received);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServiceInterval(kind));
+			return AServiceIntervalClause.OfNothingPublished(
+				MaintenanceOperationKind.OfCode(kind));
 		}
 
 		/// <summary>
@@ -402,7 +394,7 @@ namespace Concesionario.Dominio
 		/// dominio: el combustible tampoco tiene clave, y dos sobrecargas sin parametros no se
 		/// pueden declarar.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForwardToTheServicingPolicy()
+		internal AServicingClause ARevisionAppliesForwardToTheServicingPolicy()
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -411,18 +403,17 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicingPolicy()) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServicingPolicy());
+				return candidate.TheServicingPolicyClause();
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfTheServicingPolicy);
+			return AServicingClause.OfNothingPublished();
 		}
 
 		/// <summary>
 		/// La misma ley, y ademas la mitad RECIBIDA: la regla publicada emparejada con los conteos
 		/// de este vehiculo. Sin regla publicada la respuesta es la ausencia sola.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForwardToTheServicingPolicy(
+		internal AServicingClause ARevisionAppliesForwardToTheServicingPolicy(
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
 			int missedMaintenanceCount)
 		{
@@ -433,37 +424,12 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicingPolicy()) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate,
-					GeneralAndPersonalTogether(
-						candidate.DescribeServicingPolicy(),
-						candidate.DescribeAgainstTheServicingPolicy(
-							externalServicesWithEvidence, externalServicesWithoutEvidence,
-							missedMaintenanceCount)));
+				return candidate.TheServicingPolicyClauseAgainst(
+					externalServicesWithEvidence, externalServicesWithoutEvidence,
+					missedMaintenanceCount);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfTheServicingPolicy);
-		}
-
-		/// <summary>
-		/// Empareja la verdad PUBLICADA con la posicion de ESTE vehiculo frente a ella, que es el
-		/// producto entero dicho en una linea. Las dos mitades son obligatorias y por eso esto
-		/// revienta sin ellas: la publicada sola es un folleto, y la del vehiculo sola no significa
-		/// nada. Solo se llama cuando hay algo publicado: una ausencia no se empareja con nada.
-		/// </summary>
-		internal string GeneralAndPersonalTogether(string publishedClause, string receivedClause)
-		{
-			if (string.IsNullOrWhiteSpace(publishedClause))
-				throw new DomainException(
-					"Se quiso emparejar la posicion de un vehiculo con nada publicado. Sin la mitad "
-					+ "publicada no hay contra que pararla, y unos numeros solos no dicen nada.");
-
-			if (string.IsNullOrWhiteSpace(receivedClause))
-				throw new DomainException(
-					"Se quiso contestar con lo publicado y nada de este vehiculo. Eso es un folleto: "
-					+ "dice lo que el modelo requiere y no dice donde esta parado este carro.");
-
-			return publishedClause + " " + receivedClause;
+			return AServicingClause.OfNothingPublished();
 		}
 
 		/// <summary>
@@ -495,7 +461,7 @@ namespace Concesionario.Dominio
 		/// Que fluido de esa clase lleva el modelo, como forma y valores, con la revision al lado.
 		/// TOTAL: lo no publicado tambien contesta, nombrando lo que se pregunto.
 		/// </summary>
-		internal SpecificationAnswer TheFluidAnswer(FluidKindCode kind)
+		internal AFluidClause TheFluidAnswer(FluidKindCode kind)
 		{
 			return ARevisionAppliesForward(kind);
 		}
@@ -507,7 +473,7 @@ namespace Concesionario.Dominio
 		/// </summary>
 		internal string ReadFluidRevision(FluidKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).RevisionCode();
+			return ARevisionAppliesForward(kind).TheRevisionItCameFrom();
 		}
 
 		/// <summary>Si hay algo publicado sobre las llantas de esa posicion. TOTAL.</summary>
@@ -520,7 +486,7 @@ namespace Concesionario.Dominio
 		/// Que llanta lleva el modelo en esa posicion, como forma y valores, con la revision al lado.
 		/// La presion sale en la unidad en que se publico. TOTAL.
 		/// </summary>
-		internal SpecificationAnswer TheTyreAnswer(TyrePositionCode position)
+		internal ATyreClause TheTyreAnswer(TyrePositionCode position)
 		{
 			return ARevisionAppliesForward(position);
 		}
@@ -528,7 +494,7 @@ namespace Concesionario.Dominio
 		/// <summary>De que revision salio la respuesta de esa posicion. TOTAL.</summary>
 		internal string ReadTyreRevision(TyrePositionCode position)
 		{
-			return ARevisionAppliesForward(position).RevisionCode();
+			return ARevisionAppliesForward(position).TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -544,7 +510,7 @@ namespace Concesionario.Dominio
 		/// Que combustible acepta el modelo: los grados publicados con su postura, con la revision al
 		/// lado. TOTAL.
 		/// </summary>
-		internal SpecificationAnswer TheFuelAnswer()
+		internal AFuelClause TheFuelAnswer()
 		{
 			return ARevisionAppliesForward();
 		}
@@ -590,7 +556,7 @@ namespace Concesionario.Dominio
 		/// <summary>De que revision salio la respuesta del combustible. TOTAL.</summary>
 		internal string ReadFuelRevision()
 		{
-			return ARevisionAppliesForward().RevisionCode();
+			return ARevisionAppliesForward().TheRevisionItCameFrom();
 		}
 
 		/// <summary>Si hay publicado un intervalo para esa operacion. TOTAL.</summary>
@@ -604,7 +570,7 @@ namespace Concesionario.Dominio
 		/// contra ese intervalo, con la distancia que le queda tal como llego. Las dos mitades, o es
 		/// un folleto. TOTAL: lo no publicado contesta, y ahi no se empareja nada.
 		/// </summary>
-		internal SpecificationAnswer TheServiceIntervalAnswer(
+		internal AServiceIntervalClause TheServiceIntervalAnswer(
 			OperationKindCode kind, int distanceRemaining, DistanceUnitCode remainingUnit)
 		{
 			return ARevisionAppliesForward(kind, distanceRemaining, remainingUnit);
@@ -615,7 +581,7 @@ namespace Concesionario.Dominio
 		/// mas. No pregunta por ningun vehiculo, asi que la contesta tambien quien no tenga ningun
 		/// hecho de ninguno. TOTAL.
 		/// </summary>
-		internal SpecificationAnswer ThePublishedServiceIntervalAnswer(OperationKindCode kind)
+		internal AServiceIntervalClause ThePublishedServiceIntervalAnswer(OperationKindCode kind)
 		{
 			return ARevisionAppliesForward(kind);
 		}
@@ -623,7 +589,7 @@ namespace Concesionario.Dominio
 		/// <summary>De que revision salio el intervalo de esa operacion. TOTAL.</summary>
 		internal string ReadServiceIntervalRevision(OperationKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).RevisionCode();
+			return ARevisionAppliesForward(kind).TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -827,7 +793,7 @@ namespace Concesionario.Dominio
 		/// ella, con los conteos tal como llegaron. Dice el alcance y la posicion; no dice que
 		/// ninguna reclamacion se vaya a pagar. TOTAL.
 		/// </summary>
-		internal SpecificationAnswer TheServicingElsewhereAnswer(
+		internal AServicingClause TheServicingElsewhereAnswer(
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
 			int missedMaintenanceCount)
 		{
@@ -841,7 +807,7 @@ namespace Concesionario.Dominio
 		/// pregunta por ningun vehiculo, asi que la contesta tambien quien no lleve los conteos de
 		/// ninguno. TOTAL.
 		/// </summary>
-		internal SpecificationAnswer ThePublishedServicingElsewhereAnswer()
+		internal AServicingClause ThePublishedServicingElsewhereAnswer()
 		{
 			return ARevisionAppliesForwardToTheServicingPolicy();
 		}
@@ -849,7 +815,7 @@ namespace Concesionario.Dominio
 		/// <summary>De que revision salio la regla de servicio en otro taller. TOTAL.</summary>
 		internal string ReadServicingPolicyRevision()
 		{
-			return ARevisionAppliesForwardToTheServicingPolicy().RevisionCode();
+			return ARevisionAppliesForwardToTheServicingPolicy().TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -1111,21 +1077,6 @@ namespace Concesionario.Dominio
 		private bool ItAnswersAboutCoverage(PublishedRevision candidate)
 		{
 			return OnlyASealedRevisionAnswers(candidate) && candidate.HasWarrantyCoverage();
-		}
-
-		private const string TheSubjectOfTheFuel = "Grados de combustible";
-		private const string TheSubjectOfTheServicingPolicy =
-			"La regla de servicio en otro taller";
-
-		private static string TheSubjectOfATyre(TyrePositionCode position)
-		{
-			return "Llanta " + TyrePosition.OfCode(position).HowItIsSaid.ToLowerInvariant();
-		}
-
-		private static string TheSubjectOfAServiceInterval(OperationKindCode kind)
-		{
-			return "Intervalo de servicio de "
-				+ MaintenanceOperationKind.OfCode(kind).HowItIsSaid.ToLowerInvariant();
 		}
 
 		private static string TheSubjectOfAServicePrice(OperationKindCode kind)

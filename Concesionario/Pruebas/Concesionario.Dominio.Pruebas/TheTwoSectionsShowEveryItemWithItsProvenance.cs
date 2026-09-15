@@ -158,7 +158,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(front.Revision, Is.EqualTo(TheFirstRevision));
 			Assert.That(front.Says, Does.StartWith("Llanta delantera:"));
 			Assert.That(front.Says, Does.Contain(TheFrontTyre));
-			Assert.That(front.Says, Does.Contain("2.4 bar"));
+			Assert.That(front.Says, Does.Contain("2,4 bar"));
 
 			PublishedTyre rear = TheTyreRow(sheet, "Rear");
 

@@ -936,27 +936,45 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.TheFluidAnswer(@kind);
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					answer        = specification.TheFluidAnswer(@kind);
+					@publication  = answer.ThePublicationShape();
+					@revision     = answer.TheRevisionItCameFrom();
+					@fluid        = answer.TheFluidItIsAbout();
+					@grade        = answer.TheGradePublished();
+					@capacity     = answer.TheCapacityAsPublished();
+					@capacityUnit = answer.TheUnitTheCapacityIsIn();
+					@halves       = answer.TheIntervalHalvesPublished();
+					@distance     = answer.TheIntervalDistance();
+					@days         = answer.TheIntervalDays();
+					@intervalUnit = answer.TheUnitTheIntervalIsIn();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication",  typeof(string)] = default;
+					p[Parameter.Out, "revision",     typeof(string)] = default;
+					p[Parameter.Out, "fluid",        typeof(string)] = default;
+					p[Parameter.Out, "grade",        typeof(string)] = default;
+					p[Parameter.Out, "capacity",     typeof(string)] = default;
+					p[Parameter.Out, "capacityUnit", typeof(string)] = default;
+					p[Parameter.Out, "halves",       typeof(string)] = default;
+					p[Parameter.Out, "distance",     typeof(int)]    = default;
+					p[Parameter.Out, "days",         typeof(int)]    = default;
+					p[Parameter.Out, "intervalUnit", typeof(string)] = default;
 					p["kind", typeof(Enum)] = WireName.FluidKind(kind);
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
+				return Wording.TheWording.TheFluid(
 					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
+					rented["publication"].GetValue<string>(),
 					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+					rented["fluid"].GetValue<string>(),
+					rented["grade"].GetValue<string>(),
+					rented["capacity"].GetValue<string>(),
+					rented["capacityUnit"].GetValue<string>(),
+					rented["halves"].GetValue<string>(),
+					rented["distance"].GetValue<int>(),
+					rented["days"].GetValue<int>(),
+					rented["intervalUnit"].GetValue<string>());
 			}
 		}
 
@@ -988,27 +1006,36 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.TheTyreAnswer(@position);
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					answer       = specification.TheTyreAnswer(@position);
+					@publication = answer.ThePublicationShape();
+					@revision    = answer.TheRevisionItCameFrom();
+					@tyre        = answer.ThePositionItIsAbout();
+					@size        = answer.TheSizePublished();
+					@pressure    = answer.ThePressureAsPublished();
+					@unit        = answer.TheUnitThePressureIsIn();
+					@ratings     = answer.TheRatingsPublished();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication", typeof(string)] = default;
+					p[Parameter.Out, "revision",    typeof(string)] = default;
+					p[Parameter.Out, "tyre",        typeof(string)] = default;
+					p[Parameter.Out, "size",        typeof(string)] = default;
+					p[Parameter.Out, "pressure",    typeof(string)] = default;
+					p[Parameter.Out, "unit",        typeof(string)] = default;
+					p[Parameter.Out, "ratings",     typeof(string)] = default;
 					p["position", typeof(Enum)] = WireName.TyrePosition(position);
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
+				return Wording.TheWording.TheTyre(
 					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
+					rented["publication"].GetValue<string>(),
 					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+					rented["tyre"].GetValue<string>(),
+					rented["size"].GetValue<string>(),
+					rented["pressure"].GetValue<string>(),
+					rented["unit"].GetValue<string>(),
+					rented["ratings"].GetValue<string>());
 			}
 		}
 
@@ -1035,26 +1062,26 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.TheFuelAnswer();
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					answer       = specification.TheFuelAnswer();
+					@publication = answer.ThePublicationShape();
+					@revision    = answer.TheRevisionItCameFrom();
+					@grades      = answer.TheGradesPublished();
+					@standings   = answer.TheStandingsPublished();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication", typeof(string)]   = default;
+					p[Parameter.Out, "revision",    typeof(string)]   = default;
+					p[Parameter.Out, "grades",      typeof(string[])] = default;
+					p[Parameter.Out, "standings",   typeof(string[])] = default;
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
+				return Wording.TheWording.TheFuel(
 					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
+					rented["publication"].GetValue<string>(),
 					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+					rented["grades"].GetValue<string[]>(),
+					rented["standings"].GetValue<string[]>());
 			}
 		}
 
@@ -1112,18 +1139,32 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.TheServiceIntervalAnswer(
+					answer        = specification.TheServiceIntervalAnswer(
 						@kind, @distanceRemaining, @remainingUnit);
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					@publication  = answer.ThePublicationShape();
+					@revision     = answer.TheRevisionItCameFrom();
+					@operation    = answer.TheOperationItIsAbout();
+					@published    = answer.TheIntervalHalvesPublished();
+					@distance     = answer.TheIntervalDistance();
+					@days         = answer.TheIntervalDays();
+					@intervalUnit = answer.TheUnitTheIntervalIsIn();
+					@halves       = answer.TheHalvesItAnswers();
+					@remainder    = answer.TheRemainderShape();
+					@remaining    = answer.TheDistanceRemaining();
+					@remainingIn  = answer.TheUnitTheRemainderIsIn();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication",  typeof(string)] = default;
+					p[Parameter.Out, "revision",     typeof(string)] = default;
+					p[Parameter.Out, "operation",    typeof(string)] = default;
+					p[Parameter.Out, "published",    typeof(string)] = default;
+					p[Parameter.Out, "distance",     typeof(int)]    = default;
+					p[Parameter.Out, "days",         typeof(int)]    = default;
+					p[Parameter.Out, "intervalUnit", typeof(string)] = default;
+					p[Parameter.Out, "halves",       typeof(string)] = default;
+					p[Parameter.Out, "remainder",    typeof(string)] = default;
+					p[Parameter.Out, "remaining",    typeof(int)]    = default;
+					p[Parameter.Out, "remainingIn",  typeof(string)] = default;
 					p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
 					p["distanceRemaining", typeof(int)]  = distanceRemaining;
 					p["remainingUnit",     typeof(Enum)] =
@@ -1131,12 +1172,19 @@ namespace Concesionario.App
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
+				return Wording.TheWording.TheServiceInterval(
 					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
+					rented["publication"].GetValue<string>(),
 					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+					rented["operation"].GetValue<string>(),
+					rented["published"].GetValue<string>(),
+					rented["distance"].GetValue<int>(),
+					rented["days"].GetValue<int>(),
+					rented["intervalUnit"].GetValue<string>(),
+					rented["halves"].GetValue<string>(),
+					rented["remainder"].GetValue<string>(),
+					rented["remaining"].GetValue<int>(),
+					rented["remainingIn"].GetValue<string>());
 			}
 		}
 
@@ -1150,27 +1198,48 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.ThePublishedServiceIntervalAnswer(@kind);
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					answer        = specification.ThePublishedServiceIntervalAnswer(@kind);
+					@publication  = answer.ThePublicationShape();
+					@revision     = answer.TheRevisionItCameFrom();
+					@operation    = answer.TheOperationItIsAbout();
+					@published    = answer.TheIntervalHalvesPublished();
+					@distance     = answer.TheIntervalDistance();
+					@days         = answer.TheIntervalDays();
+					@intervalUnit = answer.TheUnitTheIntervalIsIn();
+					@halves       = answer.TheHalvesItAnswers();
+					@remainder    = answer.TheRemainderShape();
+					@remaining    = answer.TheDistanceRemaining();
+					@remainingIn  = answer.TheUnitTheRemainderIsIn();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication",  typeof(string)] = default;
+					p[Parameter.Out, "revision",     typeof(string)] = default;
+					p[Parameter.Out, "operation",    typeof(string)] = default;
+					p[Parameter.Out, "published",    typeof(string)] = default;
+					p[Parameter.Out, "distance",     typeof(int)]    = default;
+					p[Parameter.Out, "days",         typeof(int)]    = default;
+					p[Parameter.Out, "intervalUnit", typeof(string)] = default;
+					p[Parameter.Out, "halves",       typeof(string)] = default;
+					p[Parameter.Out, "remainder",    typeof(string)] = default;
+					p[Parameter.Out, "remaining",    typeof(int)]    = default;
+					p[Parameter.Out, "remainingIn",  typeof(string)] = default;
 					p["kind", typeof(Enum)] = WireName.OperationKind(kind);
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
+				return Wording.TheWording.TheServiceInterval(
 					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
+					rented["publication"].GetValue<string>(),
 					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+					rented["operation"].GetValue<string>(),
+					rented["published"].GetValue<string>(),
+					rented["distance"].GetValue<int>(),
+					rented["days"].GetValue<int>(),
+					rented["intervalUnit"].GetValue<string>(),
+					rented["halves"].GetValue<string>(),
+					rented["remainder"].GetValue<string>(),
+					rented["remaining"].GetValue<int>(),
+					rented["remainingIn"].GetValue<string>());
 			}
 		}
 
@@ -1614,30 +1683,42 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.TheServicingElsewhereAnswer(
+					answer       = specification.TheServicingElsewhereAnswer(
 						@withEvidence, @withoutEvidence, @missed);
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					@publication = answer.ThePublicationShape();
+					@revision    = answer.TheRevisionItCameFrom();
+					@rule        = answer.TheRulePublished();
+					@keeps       = answer.TheWhatPreservesCoverPublished();
+					@halves      = answer.TheHalvesItAnswers();
+					@withOne     = answer.TheExternalServicesWithEvidence();
+					@withNone    = answer.TheExternalServicesWithoutEvidence();
+					@notDone     = answer.TheMissedMaintenanceCount();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication", typeof(string)] = default;
+					p[Parameter.Out, "revision",    typeof(string)] = default;
+					p[Parameter.Out, "rule",        typeof(string)] = default;
+					p[Parameter.Out, "keeps",       typeof(string)] = default;
+					p[Parameter.Out, "halves",      typeof(string)] = default;
+					p[Parameter.Out, "withOne",     typeof(int)]    = default;
+					p[Parameter.Out, "withNone",    typeof(int)]    = default;
+					p[Parameter.Out, "notDone",     typeof(int)]    = default;
 					p["withEvidence",    typeof(int)] = externalServicesWithEvidence;
 					p["withoutEvidence", typeof(int)] = externalServicesWithoutEvidence;
 					p["missed",          typeof(int)] = missedMaintenanceCount;
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
+				return Wording.TheWording.TheServicingElsewhereRule(
 					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
+					rented["publication"].GetValue<string>(),
 					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+					rented["rule"].GetValue<string>(),
+					rented["keeps"].GetValue<string>(),
+					rented["halves"].GetValue<string>(),
+					rented["withOne"].GetValue<int>(),
+					rented["withNone"].GetValue<int>(),
+					rented["notDone"].GetValue<int>());
 			}
 		}
 
@@ -1651,26 +1732,38 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
-					answer    = specification.ThePublishedServicingElsewhereAnswer();
-					@shape    = answer.TheShapeItHas();
-					@revision = answer.RevisionCode();
-					@clause   = answer.TheClauseItCarries();
-					@subject  = answer.TheSubjectItIsAbout();
+					answer       = specification.ThePublishedServicingElsewhereAnswer();
+					@publication = answer.ThePublicationShape();
+					@revision    = answer.TheRevisionItCameFrom();
+					@rule        = answer.TheRulePublished();
+					@keeps       = answer.TheWhatPreservesCoverPublished();
+					@halves      = answer.TheHalvesItAnswers();
+					@withOne     = answer.TheExternalServicesWithEvidence();
+					@withNone    = answer.TheExternalServicesWithoutEvidence();
+					@notDone     = answer.TheMissedMaintenanceCount();
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",    typeof(string)] = default;
-					p[Parameter.Out, "revision", typeof(string)] = default;
-					p[Parameter.Out, "clause",   typeof(string)] = default;
-					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p[Parameter.Out, "publication", typeof(string)] = default;
+					p[Parameter.Out, "revision",    typeof(string)] = default;
+					p[Parameter.Out, "rule",        typeof(string)] = default;
+					p[Parameter.Out, "keeps",       typeof(string)] = default;
+					p[Parameter.Out, "halves",      typeof(string)] = default;
+					p[Parameter.Out, "withOne",     typeof(int)]    = default;
+					p[Parameter.Out, "withNone",    typeof(int)]    = default;
+					p[Parameter.Out, "notDone",     typeof(int)]    = default;
 				})
 				.PerformQuery();
 
-				return Wording.TheWording.TheSpecificationAnswer(
+				return Wording.TheWording.TheServicingElsewhereRule(
 					Wording.Phrases.Of(language),
-					rented["shape"].GetValue<string>(),
+					rented["publication"].GetValue<string>(),
 					rented["revision"].GetValue<string>(),
-					rented["clause"].GetValue<string>(),
-					rented["subject"].GetValue<string>());
+					rented["rule"].GetValue<string>(),
+					rented["keeps"].GetValue<string>(),
+					rented["halves"].GetValue<string>(),
+					rented["withOne"].GetValue<int>(),
+					rented["withNone"].GetValue<int>(),
+					rented["notDone"].GetValue<int>());
 			}
 		}
 

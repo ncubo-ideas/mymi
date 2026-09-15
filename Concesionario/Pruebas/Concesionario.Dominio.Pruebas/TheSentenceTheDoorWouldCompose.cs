@@ -100,31 +100,57 @@ namespace Concesionario.Dominio.Pruebas
 				answer.TheUnitTheDeliveryReadingIsIn(), answer.TheDayItWasDelivered());
 		}
 
-		// LA HOJA DEL FABRICANTE. Las nueve respuestas con clave pasan por el mismo envoltorio --
-		// forma, revision, clausula y sujeto -- asi que el cableado esta una sola vez, abajo, y estas
-		// nueve solo eligen el resolvedor.
+		// LA HOJA DEL FABRICANTE. Cada item lleva su propio portador -- forma, revision y sus valores
+		// ya tipados -- asi que el cableado de cada uno esta una sola vez, aqui, y el envoltorio que
+		// los nueve comparten vive dentro del renderizador y no se repite.
+		//
+		// EL PRECIO TODAVIA NO. Sus dos lecturas siguen pasando por el envoltorio de abajo con la
+		// clausula que el dominio redacta en espanol: la moneda es su propio turno.
 		internal static string TheFluid(
 			ModelSpecification specification, FluidKindCode kind, string language)
 		{
-			return TheSpecificationAnswer(specification.TheFluidAnswer(kind), language);
+			return TheFluid(specification.TheFluidAnswer(kind), language);
+		}
+
+		internal static string TheFluid(AFluidClause answer, string language)
+		{
+			return TheWording.TheFluid(
+				Phrases.Of(language),
+				answer.ThePublicationShape(), answer.TheRevisionItCameFrom(),
+				answer.TheFluidItIsAbout(), answer.TheGradePublished(),
+				answer.TheCapacityAsPublished(), answer.TheUnitTheCapacityIsIn(),
+				answer.TheIntervalHalvesPublished(), answer.TheIntervalDistance(),
+				answer.TheIntervalDays(), answer.TheUnitTheIntervalIsIn());
 		}
 
 		internal static string TheTyre(
 			ModelSpecification specification, TyrePositionCode position, string language)
 		{
-			return TheSpecificationAnswer(specification.TheTyreAnswer(position), language);
+			ATyreClause answer = specification.TheTyreAnswer(position);
+
+			return TheWording.TheTyre(
+				Phrases.Of(language),
+				answer.ThePublicationShape(), answer.TheRevisionItCameFrom(),
+				answer.ThePositionItIsAbout(), answer.TheSizePublished(),
+				answer.ThePressureAsPublished(), answer.TheUnitThePressureIsIn(),
+				answer.TheRatingsPublished());
 		}
 
 		internal static string TheFuel(ModelSpecification specification, string language)
 		{
-			return TheSpecificationAnswer(specification.TheFuelAnswer(), language);
+			AFuelClause answer = specification.TheFuelAnswer();
+
+			return TheWording.TheFuel(
+				Phrases.Of(language),
+				answer.ThePublicationShape(), answer.TheRevisionItCameFrom(),
+				answer.TheGradesPublished(), answer.TheStandingsPublished());
 		}
 
 		internal static string TheServiceInterval(
 			ModelSpecification specification, OperationKindCode kind, int distanceRemaining,
 			DistanceUnitCode remainingUnit, string language)
 		{
-			return TheSpecificationAnswer(
+			return TheServiceInterval(
 				specification.TheServiceIntervalAnswer(kind, distanceRemaining, remainingUnit),
 				language);
 		}
@@ -132,8 +158,20 @@ namespace Concesionario.Dominio.Pruebas
 		internal static string ThePublishedServiceInterval(
 			ModelSpecification specification, OperationKindCode kind, string language)
 		{
-			return TheSpecificationAnswer(
+			return TheServiceInterval(
 				specification.ThePublishedServiceIntervalAnswer(kind), language);
+		}
+
+		internal static string TheServiceInterval(AServiceIntervalClause answer, string language)
+		{
+			return TheWording.TheServiceInterval(
+				Phrases.Of(language),
+				answer.ThePublicationShape(), answer.TheRevisionItCameFrom(),
+				answer.TheOperationItIsAbout(), answer.TheIntervalHalvesPublished(),
+				answer.TheIntervalDistance(), answer.TheIntervalDays(),
+				answer.TheUnitTheIntervalIsIn(), answer.TheHalvesItAnswers(),
+				answer.TheRemainderShape(), answer.TheDistanceRemaining(),
+				answer.TheUnitTheRemainderIsIn());
 		}
 
 		internal static string TheServicePrice(
@@ -159,7 +197,7 @@ namespace Concesionario.Dominio.Pruebas
 			ModelSpecification specification, int withEvidence, int withoutEvidence, int missed,
 			string language)
 		{
-			return TheSpecificationAnswer(
+			return TheServicingElsewhereRule(
 				specification.TheServicingElsewhereAnswer(withEvidence, withoutEvidence, missed),
 				language);
 		}
@@ -167,8 +205,18 @@ namespace Concesionario.Dominio.Pruebas
 		internal static string ThePublishedServicingElsewhereRule(
 			ModelSpecification specification, string language)
 		{
-			return TheSpecificationAnswer(
+			return TheServicingElsewhereRule(
 				specification.ThePublishedServicingElsewhereAnswer(), language);
+		}
+
+		internal static string TheServicingElsewhereRule(AServicingClause answer, string language)
+		{
+			return TheWording.TheServicingElsewhereRule(
+				Phrases.Of(language),
+				answer.ThePublicationShape(), answer.TheRevisionItCameFrom(),
+				answer.TheRulePublished(), answer.TheWhatPreservesCoverPublished(),
+				answer.TheHalvesItAnswers(), answer.TheExternalServicesWithEvidence(),
+				answer.TheExternalServicesWithoutEvidence(), answer.TheMissedMaintenanceCount());
 		}
 
 		internal static string TheSpecificationAnswer(SpecificationAnswer answer, string language)

@@ -78,28 +78,28 @@ namespace Concesionario.Dominio.Pruebas
 			"SupersededByCode",
 			"PublishAFluidSpecification",
 			"HasAFluidSpecification",
-			"DescribeFluidSpecification",
+			"TheFluidClause",
 			"PublishATyreSpecification",
 			"HasATyreSpecification",
-			"DescribeTyreSpecification",
+			"TheTyreClause",
 			"PublishAFuelGrade",
 			"HasAFuelSpecification",
-			"DescribeFuelSpecification",
+			"TheFuelClause",
 			"TheMinimumFuelGradePublished",
 			"ThePermittedFuelGradesPublished",
 			"TheProhibitedFuelGradesPublished",
 			"PublishAServiceInterval",
 			"HasAServiceInterval",
-			"DescribeServiceInterval",
-			"DescribeAgainstTheServiceInterval",
+			"TheServiceIntervalClause",
+			"TheServiceIntervalClauseAgainst",
 			"PublishAServicePrice",
 			"HasAServicePrice",
 			"DescribeServicePrice",
 			"ThePriceKeysItPublished",
 			"PublishAServicingPolicy",
 			"HasAServicingPolicy",
-			"DescribeServicingPolicy",
-			"DescribeAgainstTheServicingPolicy",
+			"TheServicingPolicyClause",
+			"TheServicingPolicyClauseAgainst",
 			"PublishACoveredSystem",
 			"PublishACoverageExclusion",
 			"HasWarrantyCoverage",
@@ -155,8 +155,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void ASealedRevisionStillAnswersForWhatItPublishedBeforeSealing()
 		{
 			Assert.That(revision.HasAFluidSpecification(FluidKindCode.EngineOil), Is.True);
-			Assert.That(revision.DescribeFluidSpecification(FluidKindCode.EngineOil),
-				Does.Contain("5W-30"));
+			Assert.That(revision.TheFluidClause(FluidKindCode.EngineOil).TheGradePublished(),
+				Is.EqualTo("5W-30"));
 		}
 
 		// El par de E41 sobre el contenido: la pregunta de presencia es TOTAL y el accesor esta
@@ -168,7 +168,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(revision.HasAFluidSpecification(FluidKindCode.Coolant), Is.False);
 
 			Assert.Throws<DomainException>(
-				() => revision.DescribeFluidSpecification(FluidKindCode.Coolant));
+				() => revision.TheFluidClause(FluidKindCode.Coolant));
 		}
 
 		[Test]

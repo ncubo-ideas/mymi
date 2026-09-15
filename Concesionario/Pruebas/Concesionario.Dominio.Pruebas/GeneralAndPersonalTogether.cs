@@ -45,9 +45,9 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
 				TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("10000"),
+			Assert.That(answer, Does.Contain("10.000"),
 				"La mitad publicada. Sin ella la respuesta es la posicion de un carro contra nada.");
-			Assert.That(answer, Does.Contain("8400"),
+			Assert.That(answer, Does.Contain("8.400"),
 				"La mitad recibida. Sin ella la respuesta es un folleto -- que es la palabra que la "
 				+ "ley usa.");
 			Assert.That(answer, Does.Contain(TheRevision),
@@ -122,13 +122,40 @@ namespace Concesionario.Dominio.Pruebas
 		// LA MITAD PUBLICADA SOLA NO SALE. Es el reverso de la ley y es lo que la hace una ley y no
 		// una preferencia de redaccion: una respuesta que trae el intervalo y no dice donde esta
 		// parado este carro es un folleto.
+		//
+		// LA LEY CAMBIO DE FORMA Y NO DE CONTENIDO. Antes las dos mitades eran dos textos que
+		// GeneralAndPersonalTogether pegaba, y las dos guardas miraban si alguno venia en blanco.
+		// Ahora el emparejamiento lo lleva el portador: emparejar una ausencia sigue REVENTANDO, y
+		// la otra mitad -- una respuesta emparejada a la que le falte la del vehiculo -- dejo de ser
+		// representable, porque el portador siempre lleva la forma del remanente y sus valores. Se
+		// afirma lo que queda falsificable, y la pareja que ya no lo es se dice aqui en vez de
+		// desaparecer sin que nadie lo note.
 		[Test]
 		public void ThePublishedHalfAloneIsRefusedWhenBothHalvesAreBeingPaired()
 		{
 			Assert.Throws<DomainException>(
-				() => specification.GeneralAndPersonalTogether("Published clause.", "   "));
+				() => AServicingClause.OfNothingPublished().PairedWith(2, 1, 3));
+
 			Assert.Throws<DomainException>(
-				() => specification.GeneralAndPersonalTogether("", "This vehicle: nothing."));
+				() => AServiceIntervalClause
+					.OfNothingPublished(
+						MaintenanceOperationKind.OfCode(OperationKindCode.FluidChange))
+					.PairedWith(TheIntervalPublished(), 8400, DistanceUnit.OfCode(
+						DistanceUnitCode.UnitA)));
+
+			Assert.That(
+				AServicingClause.Published(TheRevision, TheRule, WhatPreservesCover)
+					.PairedWith(0, 0, 0)
+					.TheHalvesItAnswers(),
+				Is.EqualTo("GeneralAndPersonalTogether"),
+				"Y una emparejada lo dice aunque los conteos del vehiculo sean cero: un cero es una "
+				+ "posicion, y callarla seria devolver el folleto que la ley prohibe.");
+		}
+
+		private static PublishedInterval TheIntervalPublished()
+		{
+			return new PublishedInterval(
+				10000, DistanceUnit.OfCode(DistanceUnitCode.UnitA), 365);
 		}
 
 		// LA AUSENCIA NO SE EMPAREJA. Sin regla publicada no hay contra que parar los numeros del

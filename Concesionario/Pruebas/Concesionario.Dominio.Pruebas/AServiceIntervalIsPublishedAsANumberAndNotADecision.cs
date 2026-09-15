@@ -46,8 +46,8 @@ namespace Concesionario.Dominio.Pruebas
 					specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
 					TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"Cambio de fluido: se hace cada 10000 km o 365 días. A este vehículo le quedan "
-					+ "8400 km contra él. Publicado en la revisión REV-2025-01."));
+					"Cambio de fluido: se hace cada 10.000 km o 365 días. A este vehículo le quedan "
+					+ "8.400 km contra él. Publicado en la revisión REV-2025-01."));
 		}
 
 		// Las dos mitades del intervalo se dicen por separado y NUNCA se colapsan en un numero. Un
@@ -63,7 +63,7 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
 				TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("cada 10000 km"));
+			Assert.That(answer, Does.Contain("cada 10.000 km"));
 			Assert.That(answer, Does.Contain("365 días"));
 		}
 
@@ -132,7 +132,7 @@ namespace Concesionario.Dominio.Pruebas
 				TheSentenceTheDoorWouldCompose.TheServiceInterval(
 					specification, OperationKindCode.Inspection, 8400, DistanceUnitCode.UnitA,
 					TheLanguage.OfTheRecord),
-				Does.Contain("cada 20000 km"));
+				Does.Contain("cada 20.000 km"));
 			Assert.That(
 				TheSentenceTheDoorWouldCompose.TheServiceInterval(
 					specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
@@ -152,7 +152,7 @@ namespace Concesionario.Dominio.Pruebas
 				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
 				TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("cada 12000 km"));
+			Assert.That(answer, Does.Contain("cada 12.000 km"));
 			Assert.That(answer, Does.Not.Contain("10000"));
 		}
 

@@ -30,6 +30,11 @@ namespace Concesionario.Dominio.Pruebas
 		// Los hechos del vehiculo que la mitad emparejada pide y la publicada no. Estan aca para que
 		// el control pueda exigir que NINGUNO aparezca en la frase de la mitad publicada.
 		private const int TheDistanceRemaining = 8400;
+
+		// LA MISMA DISTANCIA COMO SE DICE, y escrita a mano a proposito: buscarla con
+		// TheDistanceRemaining.ToString() encontraria "8400" en una frase que dice "8.400" nunca, y
+		// el control de abajo quedaria verde por no tener nada que encontrar en ninguna de las dos.
+		private const string TheDistanceRemainingSaid = "8.400";
 		private const string TheUnitItAsksIn = "UnitA";
 		private const int TheExternalServicesWithEvidence = 2;
 		private const int TheExternalServicesWithoutEvidence = 1;
@@ -64,7 +69,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribePublishedServiceInterval(TheOperation, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"Cambio de fluido: se hace cada 10000 km o 365 días. Publicado en la revisión R1."));
+					"Cambio de fluido: se hace cada 10.000 km o 365 días. Publicado en la revisión R1."));
 		}
 
 		// LA MITAD PUBLICADA DE LA REGLA DE SERVICIO EN OTRO TALLER. Es la que el navegador tenia
@@ -101,11 +106,11 @@ namespace Concesionario.Dominio.Pruebas
 				"Si las dos lecturas contestan lo mismo, la mitad publicada esta apuntada a la "
 				+ "sobrecarga emparejada y L7b no esta defendida por nada.");
 
-			Assert.That(publishedHalf, Does.Not.Contain(TheDistanceRemaining.ToString()),
+			Assert.That(publishedHalf, Does.Not.Contain(TheDistanceRemainingSaid),
 				"La distancia que le queda al vehiculo es la mitad RECIBIDA. En la frase de la "
 				+ "mitad publicada seria un hecho de un carro que esta lectura no pregunto.");
 
-			Assert.That(paired, Does.Contain(TheDistanceRemaining.ToString()),
+			Assert.That(paired, Does.Contain(TheDistanceRemainingSaid),
 				"Y el control del control: si la emparejada tampoco lleva el numero recibido, la "
 				+ "asercion de arriba esta verde porque no hay nada que distinguir.");
 

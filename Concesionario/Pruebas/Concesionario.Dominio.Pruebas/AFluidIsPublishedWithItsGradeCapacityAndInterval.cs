@@ -54,7 +54,7 @@ namespace Concesionario.Dominio.Pruebas
 				TheSentenceTheDoorWouldCompose.TheFluid(
 					specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-				"Aceite de motor: grado 5W-30, capacidad 4.6 L, se cambia cada 15000 km o 365 "
+				"Aceite de motor: grado 5W-30, capacidad 4,6 L, se cambia cada 15.000 km o 365 "
 				+ "días. Publicado en la revisión REV-2025-01."));
 		}
 
@@ -72,7 +72,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
 				specification, FluidKindCode.Coolant, TheLanguage.OfTheRecord),
-				Does.Contain("se cambia cada 60000 km."));
+				Does.Contain("se cambia cada 60.000 km."));
 			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
 				specification, FluidKindCode.Coolant, TheLanguage.OfTheRecord),
 				Does.Not.Contain("days"));
@@ -105,8 +105,8 @@ namespace Concesionario.Dominio.Pruebas
 			string answer = TheSentenceTheDoorWouldCompose.TheFluid(
 				specification, FluidKindCode.TransmissionFluid, TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("capacidad 7.5 gal"));
-			Assert.That(answer, Does.Contain("cada 90000 mi"));
+			Assert.That(answer, Does.Contain("capacidad 7,5 gal"));
+			Assert.That(answer, Does.Contain("cada 90.000 mi"));
 		}
 
 		[Test]

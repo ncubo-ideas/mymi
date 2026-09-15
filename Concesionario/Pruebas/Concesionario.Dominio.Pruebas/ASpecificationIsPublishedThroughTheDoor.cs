@@ -59,11 +59,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			string live = TheFluidClause("EngineOil");
 
-			Assert.That(live, Does.Contain("capacidad 2.4 L"),
+			Assert.That(live, Does.Contain("capacidad 2,4 L"),
 				"Con la forma que va a tener despues del journal, desde la primera lectura.");
-			Assert.That(live, Does.Not.Contain("2.40"),
+			Assert.That(live, Does.Not.Contain("2,40"),
 				"Y no con la que el editorial escribio, porque esa no sobrevive al replay. El "
-				+ "residuo se dice en voz alta: un 2.40 del fabricante se muestra 2.4.");
+				+ "residuo se dice en voz alta: un 2.40 del fabricante se muestra 2,4.");
 
 			journal.CloseAndReopenFromTheJournal();
 
@@ -83,7 +83,7 @@ namespace Concesionario.Dominio.Pruebas
 			string program = TheSecondProgramOf(journal.Folder);
 
 			Assert.That(program, Does.Contain("2.4"));
-			Assert.That(program, Does.Not.Contain("2.40"),
+			Assert.That(program, Does.Not.Contain("2,40"),
 				"Un 2.40 en el blob de argumentos querria decir que la puerta mando una forma que el "
 				+ "journal no puede devolver.");
 		}

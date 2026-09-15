@@ -92,6 +92,10 @@ namespace Concesionario.App.Wording
 				["canon.deferralReason.NotConvinced"] = "doubts that it is needed",
 				["canon.deferralReason.WillDoElsewhere"] = "having it done elsewhere",
 
+				["canon.fuelStanding.Minimum"] = "minimum",
+				["canon.fuelStanding.Permitted"] = "permitted",
+				["canon.fuelStanding.Prohibited"] = "prohibited",
+
 				["canon.standing.Inside"] = "Inside",
 				["canon.standing.Reached"] = "Reached",
 				["canon.standing.NotPublished"] = "Not published",
@@ -279,6 +283,43 @@ namespace Concesionario.App.Wording
 				["specification.notPublished"] =
 					"{subject}: nothing has been published for this model, so there is nothing to "
 					+ "quote and no revision to name.",
+
+				["sheet.bothHalves"] = "{published} {received}",
+
+				["sheet.subject.Fluid"] = "{fluid}",
+				["sheet.subject.Tyre"] = "Tyre, {position}",
+				["sheet.subject.Fuel"] = "Fuel grades",
+				["sheet.subject.ServiceInterval"] = "Service interval for {operation}",
+				["sheet.subject.ServicingPolicy"] = "The rule on servicing elsewhere",
+
+				["fluid.said"] =
+					"{fluid}: grade {grade}, capacity {capacity} {unit}, changed {interval}.",
+
+				["tyre.said"] =
+					"Tyre, {position}: size {size}, cold pressure {pressure} {unit}, ratings "
+					+ "{ratings}.",
+
+				["fuel.said"] = "Fuel grades: {grades}.",
+				["fuel.grade"] = "{grade} ({standing})",
+
+				["interval.said"] = "{operation}: done {interval}.",
+				["interval.ByDistance"] = "every {distance}",
+				["interval.ByTime"] = "every {days}",
+				["interval.Both"] = "every {distance} or {days}",
+
+				["interval.Measured"] = "This vehicle has {amount} left against it.",
+				["interval.NoDistanceHalfPublished"] =
+					"The distance this vehicle has left is {amount}, which cannot be evaluated "
+					+ "against an interval published as a period and with no distance.",
+				["interval.UnitMismatch"] =
+					"The distance this vehicle has left is {amount}, which cannot be evaluated "
+					+ "against an interval published in {unit}: these units are never converted.",
+
+				["servicing.said"] =
+					"Servicing elsewhere: \"{rule}\" What preserves cover: \"{keeps}\"",
+				["servicing.against"] =
+					"This vehicle: external services with evidence {withEvidence}, external services "
+					+ "without evidence {withoutEvidence}, missed maintenance {missed}.",
 
 				["coverage.law"] =
 					"Scope only: this says what the manufacturer published about the warranty's "

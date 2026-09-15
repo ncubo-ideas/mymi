@@ -44,48 +44,54 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La frase del intervalo, con la mitad o las dos mitades que se publicaron. La que no se
-		/// publico no se nombra: un cero ahi se leeria como un plazo cumplido desde siempre.
+		/// Que mitades se publicaron, por su codigo. La que no se publico no se nombra: un cero ahi se
+		/// leeria como un plazo cumplido desde siempre. TOTAL.
 		/// </summary>
-		internal string Describe()
+		internal string TheHalvesItPublished()
 		{
-			if (_distance == 0) return "cada " + _days + " días";
+			if (_distance == 0) return IntervalHalvesPublished.ByTime;
+			if (_days == 0) return IntervalHalvesPublished.ByDistance;
 
-			string byDistance = "cada " + _distance + " " + _unit.Name;
+			return IntervalHalvesPublished.Both;
+		}
 
-			if (_days == 0) return byDistance;
+		/// <summary>Cada cuanta distancia, o cero donde esa mitad no se publico. TOTAL.</summary>
+		internal int TheDistanceItPublished()
+		{
+			return _distance;
+		}
 
-			return byDistance + " o " + _days + " días";
+		/// <summary>Cada cuantos dias, o cero donde esa mitad no se publico. TOTAL.</summary>
+		internal int TheDaysItPublished()
+		{
+			return _days;
+		}
+
+		/// <summary>La unidad de esa distancia, como se dice. TOTAL.</summary>
+		internal string TheUnitItsDistanceIsIn()
+		{
+			return _unit.Name;
 		}
 
 		/// <summary>
-		/// Donde queda una distancia RECIBIDA frente a este intervalo. Es el unico sitio del modulo
-		/// donde un numero publicado y uno recibido se ponen uno al lado del otro, y por eso es
-		/// donde vive la regla: si vienen en unidades distintas NO SE CONVIERTE NINGUNA -- se dice
-		/// que no se puede evaluar y se nombran las dos, para que quien lea sepa por que. Un
-		/// intervalo publicado solo como plazo tampoco se puede comparar con una distancia: no hay
-		/// mitad de distancia contra la cual pararse, e inventarla seria publicar por el fabricante.
-		/// La distancia recibida se dice tal como llego, en su propia unidad, siempre.
+		/// Donde queda una distancia RECIBIDA frente a este intervalo, por su codigo. Es el unico sitio
+		/// del modulo donde un numero publicado y uno recibido se ponen uno al lado del otro, y por eso
+		/// es donde vive la regla: si vienen en unidades distintas NO SE CONVIERTE NINGUNA -- se dice
+		/// que no se puede evaluar y se nombran las dos, para que quien lea sepa por que. Un intervalo
+		/// publicado solo como plazo tampoco se puede comparar con una distancia: no hay mitad de
+		/// distancia contra la cual pararse, e inventarla seria publicar por el fabricante.
 		/// </summary>
-		internal string UnitsAreNeverConverted(int distanceRemaining, DistanceUnit remainingUnit)
+		internal string UnitsAreNeverConverted(DistanceUnit remainingUnit)
 		{
 			if (remainingUnit == null)
 				throw new DomainException(
 					"Se pregunto por una distancia sin decir en que unidad esta. Sin unidad no hay "
 					+ "nada que comparar ni nada que decir que no se puede comparar.");
 
-			if (_distance == 0)
-				return "La distancia que le queda a este vehículo es " + distanceRemaining + " "
-					+ remainingUnit.Name + ", que no se puede evaluar contra un intervalo publicado "
-					+ "como plazo y sin distancia.";
+			if (_distance == 0) return RemainderAgainstTheInterval.NoDistanceHalfPublished;
+			if (_unit != remainingUnit) return RemainderAgainstTheInterval.UnitMismatch;
 
-			if (_unit != remainingUnit)
-				return "La distancia que le queda a este vehículo es " + distanceRemaining + " "
-					+ remainingUnit.Name + ", que no se puede evaluar contra un intervalo publicado "
-					+ "en " + _unit.Name + ": estas unidades nunca se convierten.";
-
-			return "A este vehículo le quedan " + distanceRemaining + " " + remainingUnit.Name
-				+ " contra él.";
+			return RemainderAgainstTheInterval.Measured;
 		}
 	}
 }

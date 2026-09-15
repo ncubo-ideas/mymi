@@ -99,6 +99,10 @@ namespace Concesionario.App.Wording
 				["canon.deferralReason.NotConvinced"] = "dudas de que haga falta",
 				["canon.deferralReason.WillDoElsewhere"] = "que se va a hacer en otro lado",
 
+				["canon.fuelStanding.Minimum"] = "mínimo",
+				["canon.fuelStanding.Permitted"] = "permitido",
+				["canon.fuelStanding.Prohibited"] = "prohibido",
+
 				["canon.standing.Inside"] = "Adentro",
 				["canon.standing.Reached"] = "Alcanzado",
 				["canon.standing.NotPublished"] = "Sin publicar",
@@ -292,6 +296,43 @@ namespace Concesionario.App.Wording
 				["specification.notPublished"] =
 					"{subject}: no se ha publicado nada para este modelo, así que no hay nada que "
 					+ "citar ni ninguna revisión que nombrar.",
+
+				["sheet.bothHalves"] = "{published} {received}",
+
+				["sheet.subject.Fluid"] = "{fluid}",
+				["sheet.subject.Tyre"] = "Llanta {position}",
+				["sheet.subject.Fuel"] = "Grados de combustible",
+				["sheet.subject.ServiceInterval"] = "Intervalo de servicio de {operation}",
+				["sheet.subject.ServicingPolicy"] = "La regla de servicio en otro taller",
+
+				["fluid.said"] =
+					"{fluid}: grado {grade}, capacidad {capacity} {unit}, se cambia {interval}.",
+
+				["tyre.said"] =
+					"Llanta {position}: medida {size}, presión en frío {pressure} {unit}, "
+					+ "clasificaciones {ratings}.",
+
+				["fuel.said"] = "Grados de combustible: {grades}.",
+				["fuel.grade"] = "{grade} ({standing})",
+
+				["interval.said"] = "{operation}: se hace {interval}.",
+				["interval.ByDistance"] = "cada {distance}",
+				["interval.ByTime"] = "cada {days}",
+				["interval.Both"] = "cada {distance} o {days}",
+
+				["interval.Measured"] = "A este vehículo le quedan {amount} contra él.",
+				["interval.NoDistanceHalfPublished"] =
+					"La distancia que le queda a este vehículo es {amount}, que no se puede evaluar "
+					+ "contra un intervalo publicado como plazo y sin distancia.",
+				["interval.UnitMismatch"] =
+					"La distancia que le queda a este vehículo es {amount}, que no se puede evaluar "
+					+ "contra un intervalo publicado en {unit}: estas unidades nunca se convierten.",
+
+				["servicing.said"] =
+					"Servicio en otro taller: \"{rule}\" Qué conserva la cobertura: \"{keeps}\"",
+				["servicing.against"] =
+					"Este vehículo: servicios externos con comprobante {withEvidence}, servicios "
+					+ "externos sin comprobante {withoutEvidence}, mantenimientos no hechos {missed}.",
 
 				["coverage.law"] =
 					"Solo alcance: esto dice lo que el fabricante publicó sobre el alcance de la "

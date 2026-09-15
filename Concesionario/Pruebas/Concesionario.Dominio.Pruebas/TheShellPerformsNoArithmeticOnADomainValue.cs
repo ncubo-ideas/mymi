@@ -167,6 +167,15 @@ namespace Concesionario.Dominio.Pruebas
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachGrade",
+				Snippet = "for (int each = 0; each < grades.Length; each++)",
+				Reason = "Contador de un recorrido por los grados de combustible que el dominio ya "
+					+ "enumero. Las dos columnas son texto: el grado tal como el fabricante lo "
+					+ "publico y el NOMBRE de la postura, que esta capa traduce a una etiqueta.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
 				Member = "TheExclusions",
 				Snippet = "for (int each = 0; each < texts.Length; each++)",
 				Reason = "Contador de un recorrido por las exclusiones que el dominio ya enumero. Las "
