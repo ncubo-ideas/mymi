@@ -28,16 +28,26 @@
     <RootNamespace>Gnothi.iOS</RootNamespace>
 
     <ApplicationId>com.ncubo.gnothi.host</ApplicationId>
-    <ApplicationTitle>Gnothi Host</ApplicationTitle>
+    <ApplicationTitle>Mymi</ApplicationTitle>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
 
-    <!-- EL ICONO, y es el mismo que dibujo el spike de Siri (Spikes/Lab.Siri). Vive en
-         Assets.xcassets/AppIcon.appiconset con sus tres apariencias -clara, oscura y tenida-,
-         que es lo que iOS 18 pide para que el icono acompañe el tema del telefono. El SDK ya
-         recoge cualquier *.xcassets del proyecto y lo pasa por actool; esta linea solo dice
-         cual de los sets es el icono de la app. Sin ella el catalogo se compila igual y el
-         icono queda en blanco. -->
+    <!-- EL ICONO ES LA MASCOTA DE MYMI, la misma cara que dibujo Fer y que ya usan el
+         lanzador de Android (mipmap/ic_launcher) y el encabezado dentro de la app
+         (Assets/img/gnothi-mark.png). Antes vivia aca una gamma morada de relleno, que
+         dejaba al telefono mostrando una marca que no es la del producto.
+
+         Vive en Assets.xcassets/AppIcon.appiconset. Van dos apariencias y no tres: la clara
+         -el arte tal cual, a 1024- y la tenida -el mismo arte en escala de grises, que es de
+         donde iOS 18 saca la luminancia para aplicar su tinte-. La oscura no se declara a
+         proposito: el lila del fondo se eligio precisamente por aguantar pantalla clara y
+         oscura (ver el commit «el icono de Mymi va sobre lila»), asi que un archivo aparte
+         seria un duplicado byte a byte del claro, que es lo que iOS usa cuando la apariencia
+         oscura falta.
+
+         El SDK ya recoge cualquier *.xcassets del proyecto y lo pasa por actool; esta linea
+         solo dice cual de los sets es el icono de la app. Sin ella el catalogo se compila
+         igual y el icono queda en blanco. -->
     <AppIcon>AppIcon</AppIcon>
 
     <!-- El App Group, sin el cual la caratula de Swift no tiene donde leer la foto.

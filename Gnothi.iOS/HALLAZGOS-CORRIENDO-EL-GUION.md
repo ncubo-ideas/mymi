@@ -12,6 +12,11 @@ RAM de la Mac, así que ahí un número tranquilizador no prueba nada.
 Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]**,
 **[NO MEDIDO]**.
 
+**El nombre que se ve en las capturas.** Estos días la app se llamaba **Gnothi Host**, y así
+aparece citada donde el sistema la nombra —el *«Open in "Gnothi Host"?»* de P6 y el *Browse* de
+P6b—. Desde entonces el nombre visible pasó a ser **Mymi**, el del producto. Las citas se dejan
+como se midieron: quien repita el guion va a leer **Mymi** en esos mismos diálogos.
+
 > El guion decía «NADA DE ESTO ESTÁ MEDIDO». Ya no: **las ocho pruebas están medidas.** P0, P1,
 > P3, P4, P5, P6 y P7 en el simulador; **P2 en un iPhone 13 Pro de verdad**, que es el único
 > aparato donde ese número significa algo. Lo que falta no son mediciones: son las dos cosas que
