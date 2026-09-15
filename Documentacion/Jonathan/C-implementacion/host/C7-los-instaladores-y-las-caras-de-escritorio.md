@@ -6,6 +6,11 @@ MSI** (WiX v5, per-usuario, sin admin) y **dos caras de escritorio** que el inst
 del Host (Gnothi.Desktop); la otra es del comercio (Comercio.Shell). Ninguna es «el Host»: son caras
 sobre él, como el front MCP o el teléfono. Ver `A2`.
 
+**No son dos versiones de la misma ventana**, y la confusión es fácil porque las dos son una ventana con
+un WebView adentro. La diferencia es qué corre ahí: en Gnothi.Desktop el C# corre **nativo en el
+proceso** y el WebView solo pinta (Hybrid); en Comercio.Shell lo que corre adentro es el **PWA wasm** del
+comercio. Y hoy tampoco comparten toolkit —Photino la primera, WinForms + WebView2 la segunda—.
+
 Las **trampas** de todo esto —WiX v5 y no v7, el `--` que rompe un `.wxs`, nunca interrumpir `msiexec`,
 reubicar el user-data de WebView2— viven en `E1`. Acá está el *qué* y el *por qué*, no el *cómo duele*.
 
@@ -86,8 +91,15 @@ escaparía la comilla.
 
 ## Gnothi.Desktop — la ventana del Host
 
-Un proyecto nuevo: **Blazor Hybrid** (WinForms + `BlazorWebView`, `net9.0-windows`, WinExe). Muestra los
-módulos instalados como tarjetas —de quién son, prendido/apagado— y corre una consulta con un botón.
+Un proyecto nuevo: **Blazor Hybrid**. Muestra los módulos instalados como tarjetas —de quién son,
+prendido/apagado— y corre una consulta con un botón. Desde el 2026-09-14 también trae el asistente
+(Puerta 2) y sus ajustes.
+
+> **El toolkit cambió el 2026-09-08.** Nació WinForms + `BlazorWebView` sobre `net9.0-windows`, y hoy es
+> **Photino.Blazor sobre `net9.0` puro**. Lo que sigue abajo vale para las dos: lo Hybrid no cambió, y
+> los cinco componentes Razor y `HostState` no cambiaron una línea —nunca supieron de WinForms—. Cambió
+> el anfitrión (`Program.cs`) y el selector de archivos de «Import a module». El detalle de por qué
+> Photino y no MAUI/MacCatalyst está en el comentario de cabecera del `.csproj`.
 
 Lo que hay que entender es que **no es un cliente MCP**: no tiene `.mcp.json` ni `claude_desktop_config`
 ni stdio. Los componentes corren **nativos, en este proceso**, y llaman al `Dispatcher` **directo** —sin
@@ -95,13 +107,26 @@ wasm, sin puerto, sin http—. Es la Puerta 1 llevada al extremo: acá el que ll
 máquina, así que ni el spawn hace falta. Ver `B1`.
 
 Referencia al Host por `ProjectReference` y **solo su superficie pública** (`ModuleCatalog`,
-`Dispatcher`, `Module`, `Request`, `Response`, `Meter`) —igual que `Gnothi.Assistant`—. Si algún día
-necesita un tipo interno, esa es la señal de que la costura pública quedó corta: se ensancha la costura
-en el Host, nunca se atraviesa.
+`Dispatcher`, `Module`, `Request`, `Response`, `Meter`, `ModuleInstaller`) —igual que
+`Gnothi.Assistant`—. Si algún día necesita un tipo interno, esa es la señal de que la costura pública
+quedó corta: se ensancha la costura en el Host, nunca se atraviesa.
 
-⚠️ **Está fuera del `.slnx` a propósito.** `net9.0-windows`/WinExe solo compila en Windows y rompería
-`dotnet build` para cualquiera sin ese target (CI, Linux). Se construye aparte. Misma razón que la app
-Android.
+Al asistente tampoco lo reimplementa: referencia `Gnothi.Assistant` y corre **el mismo `AgentLoop` que
+corre el teléfono**.
+
+✅ **Ya está adentro del `.slnx`.** Estuvo afuera a propósito mientras fue `net9.0-windows` —solo
+compilaba en Windows y rompía `dotnet build` para cualquiera sin ese target (CI, Linux)—. Con Photino
+sobre `net9.0` compila en Windows, macOS y Linux sin workloads, así que entró: romper la ventana ahora
+lo agarra el build, y no alguien en una máquina Windows una semana después. La app Android sigue
+afuera, por la razón de siempre.
+
+⚠️ **Medida en Mac, no en Windows.** La migración se verificó en una Mac (arm64). Nadie corrió la
+ventana con Photino en Windows desde entonces, y hay tres cosas que hay que mirar cuando se haga:
+Photino necesita el **WebView2 Runtime** instalado (el paquete trae el `WebView2Loader.dll`, no el
+runtime); `WinExe` en Windows es sin consola, así que el handler de `UnhandledException` escribe a un
+*stderr* que no existe y una falla al arrancar se ve como **ventana en blanco** —para diagnosticar hay
+que correrla con `dotnet run` desde una consola abierta—; y el MSI de abajo es del 2026-09-04, cuatro
+días **anterior** a la migración.
 
 ---
 
@@ -110,8 +135,9 @@ Android.
 La cara del comercio es un **PWA wasm** (la vitrina con la marca de La Guaria). Para que la persona lo
 abra como app, un shell de escritorio lo hospeda: `Comercio.Shell`, WinForms + **WebView2**.
 
-**Ojo, no es `BlazorWebView`** —eso es Hybrid, para componentes nativos como Gnothi.Desktop—. Un PWA
-wasm se hospeda con **WebView2** apuntado a un **host virtual**:
+**Ojo, no es Hybrid** —eso es Gnothi.Desktop, donde los componentes son nativos y el WebView solo
+pinta—. Acá lo que corre adentro es wasm, y se hospeda con **WebView2** apuntado a un **host
+virtual**:
 
 ```csharp
 web.CoreWebView2.SetVirtualHostNameToFolderMapping(
