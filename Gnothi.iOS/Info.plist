@@ -21,6 +21,38 @@
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 
+	<!-- EL CICLO DE VIDA DE UIScene, Y ES OBLIGATORIO DESDE iOS 27.
+	     Sin esta clave la app NO ARRANCA: UIKit la mata a proposito con EXC_BREAKPOINT en
+	     __UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption, antes de que corra una
+	     linea nuestra. Medido el 2026-09-15 en el iPhone 13 Pro y en un simulador de iOS 27.0;
+	     el MISMO binario en un simulador de iOS 26.5 arrancaba bien.
+
+	     El requisito se aplica segun EL SDK CONTRA EL QUE SE ENLAZA la app, no segun la version
+	     del telefono: el build hecho con Xcode 26.6 declaraba `sdk 26.5` y corria en ese mismo
+	     iPhone con iOS 27. Xcode se auto-actualizo a 27 con macOS y se perdio la excepcion.
+
+	     UNA SOLA ESCENA a proposito: Mymi es una ventana. Y el delegado se nombra aca y no se
+	     resuelve en codigo, para que se vea sin compilar. Ver Gnothi.iOS/SceneDelegate.cs, donde
+	     ademas viven ahora el enlace y el archivo: con scenes, UIKit ya no llama OpenUrl ni
+	     ContinueUserActivity en el AppDelegate. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+
 	<!-- Sin esto la app corre en una ventana chica con marcos negros y parece rota. Un dict
 	     vacio alcanza desde iOS 14: el sistema pinta el color de fondo y ya. -->
 	<key>UILaunchScreen</key>
