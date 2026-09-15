@@ -77,7 +77,12 @@ public static class Snapshot
 					if (t.Input.Count > 0)
 					{
 						declarada["hechos"] = null;
-						declarada["porQueNo"] = "pide parametros: no se puede dejar contestada de antemano";
+						// EN INGLES, y no es un descuido: `porQueNo` lo lee un MODELO, no una persona.
+						// La foto entera se le entrega a Siri con un encuadre que le pide contestar «en su
+						// idioma»; el campo es insumo, no pantalla. Estaba en espanol mientras el otro
+						// origen del mismo campo -- el motivo que compone Dispatcher, unas lineas abajo --
+						// venia en ingles, asi que el archivo mezclaba los dos idiomas en una sola clave.
+						declarada["porQueNo"] = "asks for parameters: it cannot be answered in advance";
 						tools.Add(declarada);
 						continue;
 					}

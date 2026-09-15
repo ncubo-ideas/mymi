@@ -61,6 +61,17 @@ public sealed class Dispatcher
 			catch (Exception e) { return Response.Denied($"the Host failed: {e.GetType().Name}: {e.Message}"); }
 		}
 
+		// LOS MOTIVOS DE DENEGACION SE QUEDAN EN INGLES, y eso se midio antes de dejarlo asi.
+		//
+		// Se reviso cada consumidor de Response.Reason: AgentLoop se lo devuelve al modelo como
+		// resultado de la tool, ToolBridge lo mete en un TextContentBlock de MCP, IpcService lo
+		// manda por el puente del intent, Snapshot lo escribe en la foto que Siri le entrega al
+		// modelo, y QueryConsole lo saca por stderr. NINGUNO lo pinta en una pantalla: todos son
+		// insumo de un modelo, que despues le contesta a la persona en SU idioma.
+		//
+		// El plan de localizacion los daba por texto para la persona porque «llegan hasta Siri».
+		// Llegan, pero como entrada del modelo y no como frase hablada. Traducirlos cambiaria lo
+		// que el modelo entiende, que es una decision aparte y no esta tomada.
 		Module? m = catalog.Find(r.Module);
 		if (m is null) return Response.Denied($"there is no installed module called '{r.Module}'");
 

@@ -198,27 +198,43 @@ public sealed record UpdatePlan
 		=> $"{m.Journal?.Retention ?? ""}|{m.Journal?.ExpectedSize ?? ""}|{m.Journal?.Updates ?? ""}";
 
 	// One line for logs and the desktop's message: what this package is next to the installed one.
+	// UN CONJUNTO CERRADO DE SIETE DESENLACES, y por eso VA AL CATALOGO. No es dato del registro
+	// de nadie ni voz de una institucion: es vocabulario del Host, que es justo lo que la regla 4
+	// manda traducir. Lo que pasa de largo adentro son los numeros de version y los nombres de
+	// institucion, que sí son de ellas.
+	//
+	// El `_ =>` se queda con el nombre del enum a proposito: si aparece un Kind nuevo sin frase,
+	// que se vea crudo en la pantalla en vez de esconderse en una cadena vacia.
 	public string Describe() => Kind switch
 	{
-		UpdateKind.Fresh => "first install",
-		UpdateKind.Same => $"the same package already installed ({IncomingVersion})",
-		UpdateKind.Update => (Versioned ? $"update {InstalledVersion} -> {IncomingVersion}" : "update (unversioned)") + Changes(),
-		UpdateKind.Downgrade => $"DOWNGRADE {InstalledVersion} -> {IncomingVersion}" + Changes(),
-		UpdateKind.SameVersionOtherContent => $"same version {IncomingVersion}, different content" + Changes(),
-		UpdateKind.Collision => $"COLLISION: '{IncomingInstitution}' is not '{InstalledInstitution}'",
+		UpdateKind.Fresh => Textos.T("actualizacion.primera"),
+		UpdateKind.Same => Textos.T("actualizacion.misma", ("version", IncomingVersion ?? "")),
+		UpdateKind.Update => (Versioned
+			? Textos.T("actualizacion.sube", ("instalada", InstalledVersion ?? ""), ("entrante", IncomingVersion ?? ""))
+			: Textos.T("actualizacion.sube.sin-version")) + Changes(),
+		UpdateKind.Downgrade => Textos.T("actualizacion.baja", ("instalada", InstalledVersion ?? ""), ("entrante", IncomingVersion ?? "")) + Changes(),
+		UpdateKind.SameVersionOtherContent => Textos.T("actualizacion.otro-contenido", ("version", IncomingVersion ?? "")) + Changes(),
+		UpdateKind.Collision => Textos.T("actualizacion.colision", ("entrante", IncomingInstitution ?? ""), ("instalada", InstalledInstitution ?? "")),
 		_ => Kind.ToString(),
 	};
 
 	private string Changes()
 	{
 		List<string> parts = [];
-		if (NewTools.Count > 0) parts.Add($"+{NewTools.Count} tools");
-		if (RemovedTools.Count > 0) parts.Add($"-{RemovedTools.Count} tools");
-		if (NewCapabilities.Count > 0) parts.Add("asks for " + string.Join(", ", NewCapabilities));
-		if (PublisherChanged) parts.Add("publisher moved");
-		if (OriginChanged) parts.Add("origin moved");
-		if (JournalChanged) parts.Add("journal promise changed");
-		if (SubstrateChanged) parts.Add("substrate changed");
+		if (NewTools.Count > 0)
+			parts.Add(NewTools.Count == 1 ? Textos.T("actualizacion.cambio.nuevas.una")
+				: Textos.T("actualizacion.cambio.nuevas.varias", ("n", NewTools.Count.ToString())));
+		if (RemovedTools.Count > 0)
+			parts.Add(RemovedTools.Count == 1 ? Textos.T("actualizacion.cambio.quitadas.una")
+				: Textos.T("actualizacion.cambio.quitadas.varias", ("n", RemovedTools.Count.ToString())));
+		// LAS CAPACIDADES PASAN DE LARGO: son nombres del protocolo, los mismos que el manifiesto
+		// declara. Traducirlas romperia la correspondencia con lo que la institucion escribio.
+		if (NewCapabilities.Count > 0)
+			parts.Add(Textos.T("actualizacion.cambio.pide", ("lista", string.Join(", ", NewCapabilities))));
+		if (PublisherChanged) parts.Add(Textos.T("actualizacion.cambio.editor"));
+		if (OriginChanged) parts.Add(Textos.T("actualizacion.cambio.origen"));
+		if (JournalChanged) parts.Add(Textos.T("actualizacion.cambio.journal"));
+		if (SubstrateChanged) parts.Add(Textos.T("actualizacion.cambio.sustrato"));
 		return parts.Count == 0 ? "" : " (" + string.Join(", ", parts) + ")";
 	}
 }
