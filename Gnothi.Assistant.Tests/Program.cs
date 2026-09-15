@@ -496,6 +496,58 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			huerfanas.Length == 0, $"keys with no phrase: {string.Join(", ", huerfanas)}");
 	}
 
+	// Y QUE NINGUN TEXTO PARA LA PERSONA SIGA CABLEADO EN EL JAVASCRIPT.
+	//
+	// Las dos aserciones de arriba comprueban que toda CLAVE USADA exista. Ninguna comprueba lo
+	// contrario -- que todo LITERAL este convertido en clave --, y por ese hueco pasaron treinta y
+	// un rotulos: se vieron el 2026-09-15 en un iPhone con el sistema en ingles y Ajustes entero en
+	// espanol. Ni el compilador ni una corrida los ven: la pagina se pinta perfecta, en el idioma
+	// equivocado. Las que se escaparon estaban todas en el JS que arma HTML concatenando, que es
+	// justo donde no hay un data-i18n que revisar.
+	//
+	// LA REGLA ES EXACTA Y NO UNA HEURISTICA DE IDIOMA -- buscar palabras en espanol no ve
+	// «Proveedor» ni «Modelo», que fueron dos de los treinta y uno. Lo que se exige es esto: EN EL
+	// MARCADO QUE ARMA EL JAVASCRIPT, NINGUN NODO DE TEXTO TRAE LETRAS. Todo lo visible entra por
+	// T(...) o por esc(dato).
+	//
+	// Mira solo desde <script hasta `const MOCK`: el mock del escritorio imita la voz de
+	// instituciones ficticias -«Laboratorio Clinico Delfos», «Tu salud, en tus manos»- y esa no se
+	// traduce nunca (regla 4).
+	{
+		string pagina = Path.Combine(raiz, "Gnothi.Mobile", "Assets", "ui.html");
+		string html = File.Exists(pagina) ? File.ReadAllText(pagina) : "";
+		int desde = html.IndexOf("<script", StringComparison.Ordinal);
+		int hasta = html.IndexOf("const MOCK", StringComparison.Ordinal);
+		string js = desde >= 0 && hasta > desde ? html[desde..hasta] : "";
+
+		List<string> cableados = [];
+		foreach (System.Text.RegularExpressions.Match lit in System.Text.RegularExpressions.Regex
+			.Matches(js, @"'((?:[^'\\\r\n]|\\.)*)'|""((?:[^""\\\r\n]|\\.)*)"""))
+		{
+			string s = lit.Groups[1].Success ? lit.Groups[1].Value : lit.Groups[2].Value;
+
+			// Un literal sin marcado es codigo: un id de protocolo, un selector, una regla CSS.
+			if (!s.Contains('<') && !s.Contains('>')) continue;
+
+			// Los fragmentos cortan tags por la mitad: se descarta la cola de un tag que abre al
+			// final, y la cabeza de atributos de uno que venia abierto del literal anterior.
+			string limpio = System.Text.RegularExpressions.Regex.Replace(s, @"<[^>]*$", "");
+			limpio = System.Text.RegularExpressions.Regex.Replace(limpio, @"^[^<]*>", "");
+
+			foreach (string fuera in System.Text.RegularExpressions.Regex.Split(limpio, @"<[^>]*>"))
+			{
+				string txt = System.Text.RegularExpressions.Regex
+					.Replace(fuera, @"&[a-z]+;|&#\d+;", " ").Trim();
+				if (System.Text.RegularExpressions.Regex.IsMatch(txt, @"\p{L}\p{L}"))
+					cableados.Add(txt.Length > 45 ? txt[..45] + "..." : txt);
+			}
+		}
+
+		Assert("no text for the person is hardcoded in ui.html's JavaScript",
+			cableados.Count == 0,
+			$"hardcoded: {string.Join(" | ", cableados.Distinct())}");
+	}
+
 	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
 	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
 	// said nothing about what each face declares.

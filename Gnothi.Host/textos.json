@@ -266,7 +266,7 @@
   "asistente.sin-llave":          { "es": "Todavía no hay una llave para {proveedor}. Ponla en Ajustes para usar el asistente.", "en": "There is no key for {proveedor} yet. Add it in Settings to use the assistant." },
   "asistente.sin-llave.accion":   { "es": "Ir a Ajustes", "en": "Go to Settings" },
   "asistente.vacio":              { "es": "Pregunta algo sobre tus instituciones.", "en": "Ask something about your institutions." },
-  "asistente.traza":              { "es": "· qué pasó por debajo", "en": "· what happened underneath" },
+  "asistente.traza":              { "es": "qué pasó por debajo", "en": "what happened underneath" },
   "asistente.pensando":           { "es": "pensando…", "en": "thinking…" },
   "asistente.placeholder":        { "es": "Escribe tu pregunta…", "en": "Type your question…" },
   "asistente.enviar":             { "es": "Enviar", "en": "Send" },
@@ -353,5 +353,34 @@
   "instituciones.elegir.fallo": {
     "es": "No se pudo abrir el selector de archivos: {detalle}",
     "en": "Could not open the file picker: {detalle}"
-  }
+  },
+
+  "//lo-que-se-salto": "LAS FRASES DE ui.html QUE LA PRIMERA PASADA NO CONVIRTIO. Se vieron en un iPhone en ingles el 2026-09-15: el sistema en ingles y estos rotulos en espanol. Todas nacen en el JavaScript que arma HTML concatenando -la tarjeta del inicio, el detalle, Ajustes y la hoja de proveedores-, que es justo donde no hay un data-i18n que revisar. La suite no las veia porque comprobaba que toda CLAVE USADA exista, no que todo LITERAL este convertido; ahora hay una asercion que mira lo segundo.",
+
+  "inicio.llave-retirada":        { "es": "Llave retirada por la institución", "en": "Key withdrawn by the institution" },
+  "inicio.version-nueva":         { "es": "Hay una versión nueva", "en": "There is a new version" },
+  "inicio.apagado":               { "es": "Apagado", "en": "Off" },
+
+  "detalle.consultas.de":         { "es": "Consultas de {quien}", "en": "{quien} queries" },
+  "detalle.consultas.lead":       { "es": "Puedes preguntarle a tu asistente sobre:", "en": "You can ask your assistant about:" },
+  "detalle.consultas.apagada":    { "es": "Una consulta apagada desaparece del catálogo: el asistente no la ve y no puede pedirla.", "en": "A query you switch off disappears from the catalog: the assistant does not see it and cannot ask for it." },
+  "detalle.modulo-encendido":     { "es": "Módulo encendido", "en": "Module on" },
+  "detalle.abrir.de":             { "es": "Abrir {quien}", "en": "Open {quien}" },
+  "detalle.abrir.sub":            { "es": "la app de tu institución, adentro de Mymi", "en": "your institution's app, inside Mymi" },
+  "detalle.quitar.sub":           { "es": "la app de tu institución sale de este teléfono; tu bitácora se queda", "en": "your institution's app leaves this phone; your record stays" },
+
+  "ajustes.servidor":             { "es": "Servidor", "en": "Server" },
+  "ajustes.clave.puesta":         { "es": "Clave configurada", "en": "Key set" },
+  "ajustes.clave.falta":          { "es": "Falta la clave — el asistente no puede contestar", "en": "No key — the assistant cannot answer" },
+  "ajustes.clave.pega-nueva":     { "es": "Pega la clave nueva", "en": "Paste the new key" },
+  "ajustes.clave.placeholder":    { "es": "pégala aquí — se guarda solo en este teléfono", "en": "paste it here — it is kept on this phone only" },
+  "ajustes.clave.guardada-aqui":  { "es": "Guardada en este teléfono.", "en": "Kept on this phone." },
+  "ajustes.clave.cambiar":        { "es": "Cambiar clave", "en": "Change key" },
+  "ajustes.clave.pegar":          { "es": "Pegar clave", "en": "Paste key" },
+  "ajustes.modulos-instalados":   { "es": "Módulos instalados", "en": "Installed modules" },
+  "ajustes.carpeta":              { "es": "Carpeta", "en": "Folder" },
+  "ajustes.copiar":               { "es": "Copiar", "en": "Copy" },
+
+  "prov.otro":                    { "es": "Otro", "en": "Other" },
+  "prov.otro.nota":               { "es": "URL propia — LM Studio en tu red, etc.", "en": "Your own URL — LM Studio on your network, etc." }
 }
