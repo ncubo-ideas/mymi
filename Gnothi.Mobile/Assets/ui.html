@@ -1451,13 +1451,13 @@ const gn = {
         + (nm.pre ? '<span class="pre">' + esc(nm.pre) + '</span>' : '') + '<b' + (b.font && b.font.regular ? '' : ' class="mf"') + '>' + esc(nm.big) + '</b></div></div>'
         + '<small>' + esc(taglineOf(m)) + '</small>'
         + '<div class="acts">'
-        + (m.signerRevokedAt ? '<span class="off-tag">Llave retirada por la institución</span>' : '')
-        + (m.updateAvailable ? '<button class="perm nueva" onclick="event.stopPropagation();gn.actualizar(\'' + m.name + '\')">Hay una versión nueva</button>' : '')
+        + (m.signerRevokedAt ? '<span class="off-tag">' + T('inicio.llave-retirada') + '</span>' : '')
+        + (m.updateAvailable ? '<button class="perm nueva" onclick="event.stopPropagation();gn.actualizar(\'' + m.name + '\')">' + T('inicio.version-nueva') + '</button>' : '')
         + '<button class="perm" onclick="event.stopPropagation();gn.detail(\'' + m.name + '\')">'
         + '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
         + (on === 1 ? T('detalle.permiso.uno') : T('detalle.permiso.varios', { n: on })) + '</button>'
-        + (m.enabled ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">Abrir <span>→</span></button>'
-                     : '<span class="off-tag">Apagado</span>')
+        + (m.enabled ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">' + T('instituciones.abrir') + ' <span>→</span></button>'
+                     : '<span class="off-tag">' + T('inicio.apagado') + '</span>')
         + '</div></div>';
     }).join('');
 
@@ -1501,14 +1501,14 @@ const gn = {
 
         // WHAT THE CARD PROMISED: the queries, first. This is the point of entry to what the
         // institution exposes to the AI, and the person's switches live here.
-        + '<h2 class="qtitle">Consultas de ' + esc(m.shortName || m.institution || m.title) + '</h2>'
-        + '<p class="qlead">Podés preguntarle a tu asistente sobre:</p>'
+        + '<h2 class="qtitle">' + T('detalle.consultas.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</h2>'
+        + '<p class="qlead">' + T('detalle.consultas.lead') + '</p>'
         + m.tools.map(t =>
             '<div class="tool' + (m.enabled && t.enabled ? '' : ' dim') + '">'
             + '<div class="t"><b>' + esc(t.title || t.name) + '</b><p>' + esc(t.description) + '</p></div>'
             + sw(t.enabled, "gn.setTool('" + m.name + "','" + t.name + "',this.checked)")
             + '</div>').join('')
-        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>'
+        + '<p class="hint">' + T('detalle.consultas.apagada') + '</p>'
 
         + (m.description
             ? '<p class="desc">' + esc(m.description)
@@ -1541,12 +1541,12 @@ const gn = {
               + '</span></div>'
             : '')
 
-        + '<div class="master"><span>Módulo encendido</span>'
+        + '<div class="master"><span>' + T('detalle.modulo-encendido') + '</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
 
         + (m.enabled
-            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>Abrir ' + esc(m.shortName || m.institution || m.title) + '</b><br>'
-              + '<small>la app de tu institución, adentro de Mymi</small></span><span class="chev">›</span></div>'
+            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>' + T('detalle.abrir.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</b><br>'
+              + '<small>' + T('detalle.abrir.sub') + '</small></span><span class="chev">›</span></div>'
             : '')
 
 
@@ -1565,8 +1565,8 @@ const gn = {
         // QUITAR, al final y con el mismo aspecto que «Abrir»: es una acción sobre el módulo, no
         // un ajuste. La confirmación es un sheet propio y no confirm(): en el WebView del Host
         // confirm() no tiene quién lo atienda y contesta false sin mostrar nada.
-        + '<div class="master" onclick="gn.quitarPedir(\'' + m.name + '\')"><span><b>Quitar ' + esc(m.shortName || m.institution || m.title) + '</b><br>'
-          + '<small>la app de tu institución sale de este teléfono; tu bitácora se queda</small></span><span class="chev">›</span></div>';
+        + '<div class="master" onclick="gn.quitarPedir(\'' + m.name + '\')"><span><b>' + T('quitar.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</b><br>'
+          + '<small>' + T('detalle.quitar.sub') + '</small></span><span class="chev">›</span></div>';
     }
 
     // DATOS EN ESTE TELÉFONO: one row per institution, with its logo, what its record weighs and how
@@ -1585,30 +1585,30 @@ const gn = {
 
     const s = gn.state.settings || {};
     document.getElementById('set-model').innerHTML =
-        '<div><span>Proveedor</span><b>' + esc(s.name || s.provider) + '</b></div>'
-      + '<div><span>Servidor</span><b>' + esc(s.provider) + '</b></div>'
-      + '<div><span>Modelo</span><b>' + esc(s.model) + '</b></div>';
+        '<div><span>' + T('ajustes.proveedor') + '</span><b>' + esc(s.name || s.provider) + '</b></div>'
+      + '<div><span>' + T('ajustes.servidor') + '</span><b>' + esc(s.provider) + '</b></div>'
+      + '<div><span>' + T('ajustes.modelo') + '</span><b>' + esc(s.model) + '</b></div>';
     document.getElementById('set-prov-sub').textContent = (s.name || s.provider || '—') + (s.model ? ' · ' + s.model : '');
     document.getElementById('set-key-sub').innerHTML = s.keyPresent
-      ? '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1E9E6A;margin-right:6px"></i>Clave configurada'
-      : '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--off);margin-right:6px"></i>Falta la clave — el asistente no puede contestar';
+      ? '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1E9E6A;margin-right:6px"></i>' + T('ajustes.clave.puesta')
+      : '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--off);margin-right:6px"></i>' + T('ajustes.clave.falta');
 
     // The stored key is NEVER echoed back into the page: the editor opens empty, always.
     document.getElementById('set-key').innerHTML = gn.keyEdit
-      ? '<div class="st"><b>Pegá la clave nueva</b></div>'
-        + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="pegala acá — se guarda solo en este teléfono">'
-        + '<div class="btns"><button class="btn" onclick="gn.saveKey()">Guardar</button>'
-        + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">Cancelar</button></div>'
+      ? '<div class="st"><b>' + T('ajustes.clave.pega-nueva') + '</b></div>'
+        + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(T('ajustes.clave.placeholder')) + '">'
+        + '<div class="btns"><button class="btn" onclick="gn.saveKey()">' + T('ajustes.llave.guardar') + '</button>'
+        + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">' + T('general.cancelar') + '</button></div>'
       : (s.keyPresent
-        ? '<div class="st"><i class="dot ok"></i><div><b>Clave configurada</b><br><small style="color:var(--muted)">Guardada en este teléfono.</small></div></div>'
-          + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">Cambiar clave</button>'
-          + '<button class="btn danger" onclick="gn.clearKey()">Borrar</button></div>'
-        : '<div class="st"><i class="dot no"></i><b>Falta la clave — el asistente no puede contestar</b></div>'
-          + '<div class="btns"><button class="btn" onclick="gn.keyEdit=true;gn.paint()">Pegar clave</button></div>');
+        ? '<div class="st"><i class="dot ok"></i><div><b>' + T('ajustes.clave.puesta') + '</b><br><small style="color:var(--muted)">' + T('ajustes.clave.guardada-aqui') + '</small></div></div>'
+          + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">' + T('ajustes.clave.cambiar') + '</button>'
+          + '<button class="btn danger" onclick="gn.clearKey()">' + T('ajustes.llave.borrar') + '</button></div>'
+        : '<div class="st"><i class="dot no"></i><b>' + T('ajustes.clave.falta') + '</b></div>'
+          + '<div class="btns"><button class="btn" onclick="gn.keyEdit=true;gn.paint()">' + T('ajustes.clave.pegar') + '</button></div>');
     document.getElementById('set-host').innerHTML =
-        '<div><span>Módulos instalados</span><b>' + ms.length + '</b></div>'
-      + '<div class="path"><span>Carpeta</span><code>' + esc(s.root) + '</code>'
-      + '<button class="copy" onclick="gn.copy(this, ' + JSON.stringify(String(s.root || '')).replace(/"/g, '&quot;') + ')">Copiar</button></div>';
+        '<div><span>' + T('ajustes.modulos-instalados') + '</span><b>' + ms.length + '</b></div>'
+      + '<div class="path"><span>' + T('ajustes.carpeta') + '</span><code>' + esc(s.root) + '</code>'
+      + '<button class="copy" onclick="gn.copy(this, ' + JSON.stringify(String(s.root || '')).replace(/"/g, '&quot;') + ')">' + T('ajustes.copiar') + '</button></div>';
   },
 
   setTool(mod, tool, on)  { const s = gn.call('setTool',  {module: mod, tool: tool, enabled: on}); if (s) { gn.state = s; gn.paint(); } },
@@ -1625,7 +1625,7 @@ const gn = {
         + '<div class="t"><b>' + esc(p.name) + '</b>' + peq(T(p.nota)) + '</div>'
         + (cur === p.name ? '<span class="cur">✓</span>' : '') + '</div>').join('')
         + '<div class="prow" onclick="document.getElementById(\'pcustom\').style.display=\'block\'">'
-        + '<div class="t"><b>Otro</b><small>URL propia — LM Studio en tu red, etc.</small></div></div>';
+        + '<div class="t"><b>' + T('prov.otro') + '</b>' + peq(T('prov.otro.nota')) + '</div></div>';
       document.getElementById('pcustom').style.display = 'none';
     }
     document.getElementById('psheet').classList.toggle('on', on);
@@ -1689,7 +1689,7 @@ const gn = {
     if (think) think.remove();
     const tr = document.getElementById('r' + gn.seq);
     if (tr) tr.outerHTML =
-      '<details class="trace"><summary>qué pasó por debajo</summary>' + tr.innerHTML + '</details>';
+      '<details class="trace"><summary>' + T('asistente.traza') + '</summary>' + tr.innerHTML + '</details>';
     add('<div class="b bot"><div class="md">' + (failed ? esc(text) : md(text)) + '</div></div>');
     gn.busy = false;
     document.getElementById('send').disabled = false;

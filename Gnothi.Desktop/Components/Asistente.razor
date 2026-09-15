@@ -33,7 +33,7 @@
 
         @if (t.Trace.Count > 0)
         {
-            <div class="trace-label">@T("asistente.traza")</div>
+            <div class="trace-label">· @T("asistente.traza")</div>
             @foreach (string line in t.Trace)
             {
                 <div class="trace">@line</div>
