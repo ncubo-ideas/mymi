@@ -181,7 +181,7 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.PublishCoveredSystem(TheRevision, "POWERTRAIN", 0, 0, "UnitA");
 			journal.Api.SealRevision(TheRevision);
 
-			string scope = journal.Api.DescribeCoverageSummary();
+			string scope = journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord);
 
 			Assert.That(scope, Does.Contain("'POWERTRAIN' está dentro del alcance publicado"));
 			Assert.That(scope, Does.Not.Contain("con límites propios"),
@@ -245,7 +245,7 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.SealRevision(TheRevision);
 
 			Assert.That(
-				journal.Api.DescribeCoverageSummary(),
+				journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
 				Does.Contain("'Powertrain-Hybrid' está dentro del alcance publicado"),
 				"Recortado en los extremos, y nada mas: tal como lo publicaron.");
 
@@ -458,12 +458,13 @@ namespace Concesionario.Dominio.Pruebas
 		// lo demas, y lo que se observa es exactamente lo que un shell observaria.
 		private string TheFluidClause(string kind)
 		{
-			return journal.Api.DescribeFluid(kind);
+			return journal.Api.DescribeFluid(kind, TheLanguage.OfTheRecord);
 		}
 
 		private string ThePriceClauseAsOf(DateTime asOf)
 		{
-			return journal.Api.DescribeServicePrice("FluidChange", 10000, "UnitA", asOf);
+			return journal.Api.DescribeServicePrice(
+				"FluidChange", 10000, "UnitA", asOf, TheLanguage.OfTheRecord);
 		}
 
 		// El arbol entero del journal reducido a una cadena: nombre relativo mas hash del contenido,

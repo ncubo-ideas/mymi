@@ -287,6 +287,58 @@ namespace Concesionario.App.Wording
 				["envelope.odometer.Absent"] =
 					"No hay ninguna lectura del odómetro contra la cual medir la mitad de "
 					+ "distancia, y quien trae una es el feed del concesionario.",
+
+				["specification.published"] = "{clause} Publicado en la revisión {revision}.",
+				["specification.notPublished"] =
+					"{subject}: no se ha publicado nada para este modelo, así que no hay nada que "
+					+ "citar ni ninguna revisión que nombrar.",
+
+				["coverage.law"] =
+					"Solo alcance: esto dice lo que el fabricante publicó sobre el alcance de la "
+					+ "garantía, y nada sobre cómo se resolvería un reclamo -- eso lo decide el "
+					+ "fabricante, no este registro.",
+
+				["coverage.subject.scope"] = "La cobertura de garantía",
+				["coverage.subject.system"] = "La cobertura de garantía del sistema '{system}'",
+
+				["coverage.notPublished"] = "{answer} {law}",
+
+				["coverage.scope"] =
+					"Sistemas dentro del alcance publicado: {systems} Exclusiones: {exclusions} "
+					+ "{law}",
+
+				["coverage.systems.none"] = "ninguno publicado.",
+				["coverage.system"] = "'{code}' está dentro del alcance publicado.",
+				["coverage.system.withLimits"] =
+					"'{code}' está dentro del alcance publicado, con límites propios de {limits}.",
+
+				["coverage.exclusions.none"] = "ninguna publicada.",
+				["coverage.exclusion"] =
+					"Exclusión sobre '{system}': {text} Publicada para aplicar cuando: {condition}.",
+
+
+				["coverage.limits.both"] = "{months} o {distance}",
+
+				["coverage.settled"] = "{subject}: {standing}. {clause}",
+				["coverage.unitMismatch"] =
+					"{subject}: no se puede evaluar, porque el límite de distancia que rige está en "
+					+ "{limit} y el odómetro de este vehículo está en {other}, y las unidades nunca "
+					+ "se convierten. {clause}",
+
+				["coverage.clause"] = "{reason} {law}",
+				["coverage.clause.withExclusions"] = "{reason} {exclusions} {law}",
+				["coverage.clause.reasonless"] = "{exclusions} {law}",
+
+				["coverage.reason.NotInTheVocabulary"] =
+					"El alcance publicado no nombra este sistema en ninguna parte, así que aquí no "
+					+ "hay nada sobre él -- que no es lo mismo que el alcance lo deje afuera.",
+				["coverage.reason.OnlyAmongTheExclusions"] =
+					"El alcance publicado nombra este sistema solo entre sus exclusiones, y nunca "
+					+ "entre los sistemas que declara adentro.",
+				["coverage.reason.InsideTheLimits"] =
+					"Límites que rigen: {limits}. Este vehículo está dentro de ellos.",
+				["coverage.reason.OutsideTheLimits"] =
+					"Límites que rigen: {limits}. Este vehículo está fuera de ellos.",
 			};
 		}
 	}

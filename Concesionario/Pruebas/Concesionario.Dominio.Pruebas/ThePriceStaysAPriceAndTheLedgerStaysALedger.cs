@@ -205,9 +205,9 @@ namespace Concesionario.Dominio.Pruebas
 			ModelSpecification specification = TheSheetWithThePublishedPrice();
 			CostLedger ledger = TheLedgerWithWhatWasActuallySpent();
 
-			string thePrice = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
-				new DateTime(2025, 6, 15, 0, 0, 0));
+			string thePrice = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				new DateTime(2025, 6, 15, 0, 0, 0), TheLanguage.OfTheRecord);
 
 			string theCost = ledger.DescribeSpendBetween(
 				new DateTime(2025, 6, 1, 0, 0, 0), new DateTime(2025, 6, 30, 0, 0, 0));
@@ -237,16 +237,18 @@ namespace Concesionario.Dominio.Pruebas
 			DateTime from = new DateTime(2025, 6, 1, 0, 0, 0);
 			DateTime to = new DateTime(2025, 6, 30, 0, 0, 0);
 
-			string thePriceBefore = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, asOf);
+			string thePriceBefore = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, asOf,
+				TheLanguage.OfTheRecord);
 			string theCostBefore;
 
 			ledger.RecordRecurringCost(
 				new DateTime(2025, 6, 20, 9, 0, 0), 33000m, "CRC", "Otra cosa del mismo mes");
 
 			Assert.That(
-				specification.DescribeServicePrice(
-					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, asOf),
+				TheSentenceTheDoorWouldCompose.TheServicePrice(
+					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+					asOf, TheLanguage.OfTheRecord),
 				Is.EqualTo(thePriceBefore),
 				"Se gasto mas y el precio publicado no se movio ni una letra. Un precio que se "
 				+ "corrigiera con el gasto seria el fabricante publicando lo que la sucursal cobro.");

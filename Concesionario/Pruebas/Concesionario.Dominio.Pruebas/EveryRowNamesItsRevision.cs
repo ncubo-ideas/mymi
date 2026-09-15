@@ -56,7 +56,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheSentenceNamesTheSameRevisionAsTheColumn()
 		{
 			string[] revisions = specification.PublishedPriceRevisionsAsOf(WhileItIsInForce);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(WhileItIsInForce);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			for (int row = 0; row < revisions.Length; row++)
 				Assert.That(said[row], Does.Contain("Publicado en la revisión " + revisions[row] + "."),

@@ -210,7 +210,8 @@ namespace Concesionario.Dominio.Pruebas
 					+ "tiene, y esta es la prueba que lo dice.");
 
 				Assert.Throws<DomainException>(
-					() => broken.Api.DescribeCoverageForThisVehicle(TheSystem, asOf));
+					() => broken.Api.DescribeCoverageForThisVehicle(
+						TheSystem, asOf, TheLanguage.OfTheRecord));
 			}
 		}
 

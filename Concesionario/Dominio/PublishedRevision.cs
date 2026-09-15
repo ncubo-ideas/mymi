@@ -451,15 +451,15 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El alcance publicado en una frase. Accesor GUARDADO: pedirlo de una revision que no
-		/// publico alcance se leeria como un alcance vacio, o sea como que el fabricante dijo que
-		/// no cubre nada.
+		/// El alcance publicado como forma y valores, con esta revision adentro. Accesor GUARDADO:
+		/// pedirlo de una revision que no publico alcance se leeria como un alcance vacio, o sea como
+		/// que el fabricante dijo que no cubre nada.
 		/// </summary>
-		internal string DescribeWarrantyCoverage()
+		internal ACoverageScope TheWarrantyScopePublished()
 		{
 			RefuseCoverageUnlessItWasPublished();
 
-			return _coverage.DescribeTheScope();
+			return _coverage.TheScopePublished(Code);
 		}
 
 		/// <summary>
@@ -471,17 +471,6 @@ namespace Concesionario.Dominio
 			RefuseCoverageUnlessItWasPublished();
 
 			return _coverage.TheCoveredSystemsPublished();
-		}
-
-		/// <summary>
-		/// Las exclusiones que esta revision publico, con su texto y su condicion. Accesor
-		/// GUARDADO.
-		/// </summary>
-		internal string[] TheCoverageExclusionsPublished()
-		{
-			RefuseCoverageUnlessItWasPublished();
-
-			return _coverage.TheExclusionsPublished();
 		}
 
 		/// <summary>
@@ -509,7 +498,7 @@ namespace Concesionario.Dominio
 			RefuseCoverageUnlessItWasPublished();
 
 			return _coverage.TheStandingFor(
-				systemCode, vehicleEnvelope, deliveredAt, deliveryReading, currentReading,
+				Code, systemCode, vehicleEnvelope, deliveredAt, deliveryReading, currentReading,
 				odometerUnit, asOf);
 		}
 

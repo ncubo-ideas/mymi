@@ -55,20 +55,27 @@ namespace Concesionario.Dominio.Pruebas
 		// dos nombraran revisiones distintas, una de las dos estaria mintiendo.
 		private static readonly string[][] CadaFraseConSuProcedencia =
 		{
-			new[] { "DescribeFluid", "ReadFluidRevision" },
-			new[] { "DescribeTyre", "ReadTyreRevision" },
-			new[] { "DescribeFuel", "ReadFuelRevision" },
-			new[] { "DescribeServiceInterval", "ReadServiceIntervalRevision" },
-			new[] { "DescribeServicePrice", "ReadServicePriceRevision" },
-			new[] { "DescribeServicingElsewhereRule", "ReadServicingPolicyRevision" },
-			new[] { "DescribeCoverageSummary", "ReadCoverageRevision" },
-			new[] { "DescribeCoverage", "ReadCoverageRevision" },
-			new[] { "DescribePublishedServiceInterval", "ReadServiceIntervalRevision" },
-			new[] { "DescribePublishedServicingElsewhereRule", "ReadServicingPolicyRevision" },
-			new[] { "DescribePublishedServicePrice", "ReadServicePriceRevision" },
-			new[] { "DescribeEachPublishedPriceAsOf", "PublishedPriceRevisionsAsOf" },
+			new[] { "TheFluidAnswer", "ReadFluidRevision" },
+			new[] { "TheTyreAnswer", "ReadTyreRevision" },
+			new[] { "TheFuelAnswer", "ReadFuelRevision" },
+			new[] { "TheServiceIntervalAnswer", "ReadServiceIntervalRevision" },
+			new[] { "ThePublishedServiceIntervalAnswer", "ReadServiceIntervalRevision" },
+			new[] { "TheServicePriceAnswer", "ReadServicePriceRevision" },
+			new[] { "ThePublishedServicePriceAnswer", "ReadServicePriceRevision" },
+			new[] { "TheServicingElsewhereAnswer", "ReadServicingPolicyRevision" },
+			new[] { "ThePublishedServicingElsewhereAnswer", "ReadServicingPolicyRevision" },
+			new[] { "TheCoverageScope", "ReadCoverageRevision" },
+			new[] { "TheCoverageAnswer", "ReadCoverageRevision" },
+			new[] { "PublishedPriceClausesAsOf", "PublishedPriceRevisionsAsOf" },
 		};
 
+		// LOS TRES ACARREADORES CON QUE LA FACHADA CONTESTA. Desde que el dominio dejo de redactar,
+		// una respuesta no es un string: es una FORMA con sus valores. Que tres haya es un hecho de la
+		// fachada y se re-deriva abajo, no se cuenta aqui.
+		private static readonly Type[] LosAcarreadoresDeUnaRespuesta =
+		{
+			typeof(SpecificationAnswer), typeof(ACoverageScope), typeof(CoverageAnswer),
+		};
 		// LAS DOS QUE ENTRARON CON LA LEY L7b son el mismo caso que las dos de T4 y por eso la
 		// tabla ya sabia contestarlas: la mitad publicada y la emparejada son DOS FRASES DEL MISMO
 		// ITEM, asi que salen de UNA sola procedencia -- la que ya estaba declarada. Nombrar
@@ -159,7 +166,10 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(absent.IsPublished(), Is.False);
 			Assert.That(absent.RevisionCode(), Is.EqualTo(""));
-			Assert.That(absent.Describe(), Is.Not.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheSpecificationAnswer(
+					absent, TheLanguage.OfTheRecord),
+				Is.Not.Empty);
 		}
 
 		[Test]
@@ -170,8 +180,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(answer.IsPublished(), Is.True);
 			Assert.That(answer.RevisionCode(), Is.EqualTo(TheRevision));
-			Assert.That(answer.Describe(), Does.Contain(TheClause));
-			Assert.That(answer.Describe(), Does.Contain(TheRevision),
+			string said = TheSentenceTheDoorWouldCompose.TheSpecificationAnswer(
+				answer, TheLanguage.OfTheRecord);
+
+			Assert.That(said, Does.Contain(TheClause));
+			Assert.That(said, Does.Contain(TheRevision),
 				"La procedencia va en la FRASE y no solo en la lectura aparte: quien lea la "
 				+ "respuesta y no pregunte por la revision igual tiene que verla.");
 		}
@@ -220,6 +233,14 @@ namespace Concesionario.Dominio.Pruebas
 				+ "CODIGO, que es lo que la respuesta nombra.");
 		}
 
+		// UNA LECTURA QUE CONTESTA es la que entrega uno de los acarreadores, y su nombre empieza por
+		// "The". Los RESOLVEDORES devuelven lo mismo y no son lecturas -- ARevisionAppliesForward* es
+		// la ley de cual revision rige, y UnpublishedIsAnAnswer es la fabrica de la ausencia --, asi
+		// que el corte es el nombre y esta escrito aqui en vez de en una lista de exclusiones.
+		//
+		// La columna de clausulas de los precios entra a mano por la misma razon que entraba la frase
+		// que reemplazo: contesta una COLUMNA, no un acarreador, y su procedencia es la columna
+		// paralela que empareja fila por fila.
 		private static List<string> LasFrasesDeLaFachada()
 		{
 			return typeof(ModelSpecification)
@@ -227,23 +248,27 @@ namespace Concesionario.Dominio.Pruebas
 					| BindingFlags.DeclaredOnly)
 				.Where(metodo => !metodo.IsSpecialName)
 				.Where(metodo => metodo.IsPublic || metodo.IsAssembly)
-				.Where(metodo => metodo.Name.StartsWith("Describe", StringComparison.Ordinal))
+				.Where(metodo => LosAcarreadoresDeUnaRespuesta.Contains(metodo.ReturnType)
+					&& metodo.Name.StartsWith("The", StringComparison.Ordinal))
 				.Select(metodo => metodo.Name)
+				.Concat(new[] { "PublishedPriceClausesAsOf" })
 				.Distinct()
 				.OrderBy(nombre => nombre, StringComparer.Ordinal)
 				.ToList();
 		}
 
-		// Texto es una frase O una columna de frases. Las dos son respuestas en palabras; la
-		// diferencia es cuantas, y la ley de procedencia se cumple igual en las dos -- por una
-		// lectura aparte en la primera y por una columna paralela en la segunda.
+		// Contestar es entregar un ACARREADOR, un texto o una COLUMNA de textos. Los tres son
+		// respuestas; la diferencia es la forma, y la ley de procedencia se cumple igual en las tres
+		// -- por una lectura aparte en las dos primeras y por una columna paralela en la tercera.
 		private static bool DevuelveTexto(string miembro)
 		{
 			return typeof(ModelSpecification)
 				.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
 					| BindingFlags.DeclaredOnly)
 				.Any(metodo => metodo.Name == miembro
-					&& (metodo.ReturnType == typeof(string) || metodo.ReturnType == typeof(string[]))
+					&& (LosAcarreadoresDeUnaRespuesta.Contains(metodo.ReturnType)
+						|| metodo.ReturnType == typeof(string)
+						|| metodo.ReturnType == typeof(string[]))
 					&& (metodo.IsPublic || metodo.IsAssembly));
 		}
 

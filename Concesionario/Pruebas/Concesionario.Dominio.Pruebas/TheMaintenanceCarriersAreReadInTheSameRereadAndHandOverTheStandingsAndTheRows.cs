@@ -415,11 +415,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (string read in new[]
 			{
-				"state.ReadTheSpecification()",
+				"state.ReadTheSpecification(texts.Language)",
 				"state.ReadWhereThisVehicleStands(texts.Language)",
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands(texts.Language)",
-				"state.ReadWhatTheServicesCost()",
+				"state.ReadWhatTheServicesCost(texts.Language)",
 				"state.ReadHowThisVehicleIsDriven()",
 				"state.ReadWhatThisVehicleHasCost()",
 				"state.ReadThePlateOfThisVehicle()",
@@ -464,11 +464,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				page,
 				Does.Contain(
-					"sheet = state.ReadTheSpecification(); "
+					"sheet = state.ReadTheSpecification(texts.Language); "
 					+ "stands = state.ReadWhereThisVehicleStands(texts.Language); "
 					+ "stays = state.ReadTheStaysOfThisVehicle(); "
 					+ "operations = state.ReadWhereEachOperationStands(texts.Language); "
-					+ "costs = state.ReadWhatTheServicesCost(); "
+					+ "costs = state.ReadWhatTheServicesCost(texts.Language); "
 					+ "use = state.ReadHowThisVehicleIsDriven(); "
 					+ "spend = state.ReadWhatThisVehicleHasCost(); "
 					+ "plate = state.ReadThePlateOfThisVehicle();"),
@@ -481,11 +481,11 @@ namespace Concesionario.Dominio.Pruebas
 			// bloque de arriba siga intacto.
 			foreach (string read in new[]
 			{
-				"state.ReadTheSpecification()",
+				"state.ReadTheSpecification(texts.Language)",
 				"state.ReadWhereThisVehicleStands(texts.Language)",
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands(texts.Language)",
-				"state.ReadWhatTheServicesCost()",
+				"state.ReadWhatTheServicesCost(texts.Language)",
 				"state.ReadHowThisVehicleIsDriven()",
 				"state.ReadWhatThisVehicleHasCost()",
 				"state.ReadThePlateOfThisVehicle()",

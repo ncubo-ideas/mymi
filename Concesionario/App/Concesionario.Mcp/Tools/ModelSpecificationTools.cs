@@ -168,7 +168,7 @@ namespace Concesionario.Mcp.Tools
 				{
 					Kind = kind,
 					Published = api.IsFluidPublished(kind),
-					Says = api.DescribeFluid(kind),
+					Says = api.DescribeFluid(kind, TheVoiceOfTheDealership),
 					Revision = api.ReadFluidRevision(kind),
 				});
 
@@ -179,7 +179,7 @@ namespace Concesionario.Mcp.Tools
 				{
 					Position = position,
 					Published = api.IsTyrePublished(position),
-					Says = api.DescribeTyre(position),
+					Says = api.DescribeTyre(position, TheVoiceOfTheDealership),
 					Revision = api.ReadTyreRevision(position),
 				});
 
@@ -196,7 +196,7 @@ namespace Concesionario.Mcp.Tools
 				Fuel = new PublishedFuel
 				{
 					Published = api.IsFuelPublished(),
-					Says = api.DescribeFuel(),
+					Says = api.DescribeFuel(TheVoiceOfTheDealership),
 					MinimumGrade = api.ReadMinimumFuelGrade(),
 					PermittedGrades = api.PermittedFuelGrades(),
 					ProhibitedGrades = api.ProhibitedFuelGrades(),
@@ -251,7 +251,8 @@ namespace Concesionario.Mcp.Tools
 						standing = standingCanBeEvaluated
 							? api.ReadCoverageStandingForThisVehicle(system, askedAt)
 							: "";
-						standingSays = api.DescribeCoverageForThisVehicle(system, askedAt);
+						standingSays = api.DescribeCoverageForThisVehicle(
+							system, askedAt, TheVoiceOfTheDealership);
 					}
 				}
 				catch (Exception thrown) when (TheAssistantIsTold.TheRecordContradictsItself(thrown))
@@ -274,12 +275,13 @@ namespace Concesionario.Mcp.Tools
 				SystemInTheCatalogue =
 					system.Length > 0 && api.TheVocabularyIsTheManufacturers(system),
 				Published = api.IsCoveragePublished(),
-				Says = api.DescribeCoverageSummary(),
+				Says = api.DescribeCoverageSummary(TheVoiceOfTheDealership),
 				Revision = api.ReadCoverageRevision(),
 				CoveredSystems = api.CoveredSystems(),
-				Exclusions = api.CoverageExclusions(),
+				Exclusions = api.CoverageExclusions(TheVoiceOfTheDealership),
 				ServicingPolicyPublished = servicingPolicyPublished,
-				ServicingPolicySays = api.DescribePublishedServicingElsewhereRule(),
+				ServicingPolicySays = api.DescribePublishedServicingElsewhereRule(
+					TheVoiceOfTheDealership),
 				ServicingPolicyRevision = api.ReadServicingPolicyRevision(),
 				EnvelopeKnown = envelopeKnown,
 				AskedAt = askedAt.ToString("O"),
@@ -335,7 +337,8 @@ namespace Concesionario.Mcp.Tools
 
 			DateTime askedAt = TheClockTheAssistantReads.TheInstantThisWasAsked();
 
-			PublishedPriceRecord record = api.PublishedServicePricesAsOf(askedAt);
+			PublishedPriceRecord record =
+				api.PublishedServicePricesAsOf(askedAt, TheVoiceOfTheDealership);
 
 			var prices = new List<PublishedPrice>();
 
@@ -360,7 +363,7 @@ namespace Concesionario.Mcp.Tools
 				CurrentRevision = TheCurrentRevisionCode(api),
 				Operation = kind,
 				IntervalPublished = intervalPublished,
-				IntervalSays = api.DescribePublishedServiceInterval(kind),
+				IntervalSays = api.DescribePublishedServiceInterval(kind, TheVoiceOfTheDealership),
 				IntervalRevision = api.ReadServiceIntervalRevision(kind),
 				AnyPriceOnRecord = anyOnRecord,
 				PriceCountOnRecord = api.PublishedServicePriceCount(),

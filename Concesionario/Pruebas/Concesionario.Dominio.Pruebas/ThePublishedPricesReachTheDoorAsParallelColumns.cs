@@ -72,7 +72,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.False);
 			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(0));
 
-			PublishedPriceRecord none = journal.Api.PublishedServicePricesAsOf(WhileBothAreInForce);
+			PublishedPriceRecord none = journal.Api.PublishedServicePricesAsOf(
+				WhileBothAreInForce, TheLanguage.OfTheRecord);
 
 			Assert.That(none.Operation, Is.Empty);
 			Assert.That(none.Milestone, Is.Empty);
@@ -96,7 +97,10 @@ namespace Concesionario.Dominio.Pruebas
 				TheFirstRevision, "Inspection", 10000, "UnitA", 120.50m, "CRC", ValidFrom, ValidUntil);
 
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.False);
-			Assert.That(journal.Api.PublishedServicePricesAsOf(WhileBothAreInForce).Says, Is.Empty);
+			Assert.That(
+				journal.Api.PublishedServicePricesAsOf(
+					WhileBothAreInForce, TheLanguage.OfTheRecord).Says,
+				Is.Empty);
 		}
 
 		// ===== EL SEGUNDO ESTADO: DOS REVISIONES SELLADAS Y TRES CLAVES ==================
@@ -107,7 +111,8 @@ namespace Concesionario.Dominio.Pruebas
 			TwoSealedRevisions();
 
 			PublishedPriceRecord rows =
-				journal.Api.PublishedServicePricesAsOf(AfterTheFluidPriceLapsed);
+				journal.Api.PublishedServicePricesAsOf(
+					AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 
 			Assert.That(rows.Says, Has.Length.EqualTo(3));
 
@@ -145,11 +150,13 @@ namespace Concesionario.Dominio.Pruebas
 			TwoSealedRevisions();
 
 			PublishedPriceRecord rows =
-				journal.Api.PublishedServicePricesAsOf(AfterTheFluidPriceLapsed);
+				journal.Api.PublishedServicePricesAsOf(
+					AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 
 			foreach (string operation in rows.Operation)
 				Assert.That(
-					journal.Api.DescribePublishedServiceInterval(operation), Is.Not.Empty,
+					journal.Api.DescribePublishedServiceInterval(
+						operation, TheLanguage.OfTheRecord), Is.Not.Empty,
 					"La columna no sirvio como direccion: la puerta no acepto ese nombre de vuelta.");
 
 			Assert.That(rows.Says[Array.IndexOf(rows.Milestone, "10000 km")],
@@ -165,7 +172,8 @@ namespace Concesionario.Dominio.Pruebas
 			TwoSealedRevisions();
 
 			PublishedPriceRecord rows =
-				journal.Api.PublishedServicePricesAsOf(AfterTheFluidPriceLapsed);
+				journal.Api.PublishedServicePricesAsOf(
+					AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 
 			Assert.That(rows.Milestone, Is.EquivalentTo(new[] { "10000 km", "20000 km", "30000 mi" }));
 
@@ -184,22 +192,28 @@ namespace Concesionario.Dominio.Pruebas
 			TwoSealedRevisions();
 
 			string[] whileInForce =
-				journal.Api.PublishedServicePricesAsOf(WhileBothAreInForce).Milestone;
+				journal.Api.PublishedServicePricesAsOf(
+					WhileBothAreInForce, TheLanguage.OfTheRecord).Milestone;
 			string[] afterLapse =
-				journal.Api.PublishedServicePricesAsOf(AfterTheFluidPriceLapsed).Milestone;
+				journal.Api.PublishedServicePricesAsOf(
+					AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord).Milestone;
 			string[] beforeAnything =
-				journal.Api.PublishedServicePricesAsOf(BeforeAnyValidityStarted).Milestone;
+				journal.Api.PublishedServicePricesAsOf(
+					BeforeAnyValidityStarted, TheLanguage.OfTheRecord).Milestone;
 
 			Assert.That(afterLapse, Is.EqualTo(whileInForce));
 			Assert.That(beforeAnything, Is.EqualTo(whileInForce));
 
 			Assert.That(
-				journal.Api.PublishedServicePricesAsOf(AfterTheFluidPriceLapsed).Says,
-				Is.Not.EqualTo(journal.Api.PublishedServicePricesAsOf(WhileBothAreInForce).Says),
+				journal.Api.PublishedServicePricesAsOf(
+					AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord).Says,
+				Is.Not.EqualTo(journal.Api.PublishedServicePricesAsOf(
+					WhileBothAreInForce, TheLanguage.OfTheRecord).Says),
 				"Si las frases tampoco se movieran, la lectura estaria ignorando el instante.");
 
 			Assert.That(
-				journal.Api.PublishedServicePricesAsOf(BeforeAnyValidityStarted).Says,
+				journal.Api.PublishedServicePricesAsOf(
+					BeforeAnyValidityStarted, TheLanguage.OfTheRecord).Says,
 				Has.All.Contains("todavía no ha empezado"));
 		}
 
@@ -213,9 +227,12 @@ namespace Concesionario.Dominio.Pruebas
 
 			ParameterInfo[] rows = TheDoorsMember("PublishedServicePricesAsOf").GetParameters();
 
-			Assert.That(rows, Has.Length.EqualTo(1));
+			Assert.That(rows, Has.Length.EqualTo(2));
 			Assert.That(rows[0].ParameterType, Is.EqualTo(typeof(DateTime)));
 			Assert.That(rows[0].Name, Is.EqualTo("asOf"));
+			Assert.That(rows[1].Name, Is.EqualTo("language"),
+				"El segundo es el IDIOMA y no una medicion: el instante mueve la frase, el idioma "
+				+ "elige en que se dice, y ninguno de los dos es un hecho del vehiculo.");
 		}
 
 		// LA CUENTA Y LAS FILAS CONCUERDAN, y las dos salen de la misma enumeracion en cada lectura.
@@ -229,7 +246,7 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (DateTime asked in
 				new[] { WhileBothAreInForce, AfterTheFluidPriceLapsed, BeforeAnyValidityStarted })
 				Assert.That(
-					journal.Api.PublishedServicePricesAsOf(asked).Says,
+					journal.Api.PublishedServicePricesAsOf(asked, TheLanguage.OfTheRecord).Says,
 					Has.Length.EqualTo(journal.Api.PublishedServicePriceCount()));
 		}
 
@@ -243,7 +260,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			TwoSealedRevisions();
 
-			string said = journal.Api.DescribePublishedServicePrice("Inspection", 10000, "UnitA");
+			string said = journal.Api.DescribePublishedServicePrice(
+				"Inspection", 10000, "UnitA", TheLanguage.OfTheRecord);
 
 			Assert.That(said, Is.EqualTo(
 				"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
@@ -265,7 +283,8 @@ namespace Concesionario.Dominio.Pruebas
 			TwoSealedRevisions();
 
 			Assert.That(
-				journal.Api.DescribePublishedServicePrice("Inspection", 99000, "UnitA"),
+				journal.Api.DescribePublishedServicePrice(
+					"Inspection", 99000, "UnitA", TheLanguage.OfTheRecord),
 				Is.Not.Empty.And.Not.Contain("99000"));
 		}
 

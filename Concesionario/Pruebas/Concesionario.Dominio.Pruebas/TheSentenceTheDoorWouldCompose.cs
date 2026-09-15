@@ -100,6 +100,162 @@ namespace Concesionario.Dominio.Pruebas
 				answer.TheUnitTheDeliveryReadingIsIn(), answer.TheDayItWasDelivered());
 		}
 
+		// LA HOJA DEL FABRICANTE. Las nueve respuestas con clave pasan por el mismo envoltorio --
+		// forma, revision, clausula y sujeto -- asi que el cableado esta una sola vez, abajo, y estas
+		// nueve solo eligen el resolvedor.
+		internal static string TheFluid(
+			ModelSpecification specification, FluidKindCode kind, string language)
+		{
+			return TheSpecificationAnswer(specification.TheFluidAnswer(kind), language);
+		}
+
+		internal static string TheTyre(
+			ModelSpecification specification, TyrePositionCode position, string language)
+		{
+			return TheSpecificationAnswer(specification.TheTyreAnswer(position), language);
+		}
+
+		internal static string TheFuel(ModelSpecification specification, string language)
+		{
+			return TheSpecificationAnswer(specification.TheFuelAnswer(), language);
+		}
+
+		internal static string TheServiceInterval(
+			ModelSpecification specification, OperationKindCode kind, int distanceRemaining,
+			DistanceUnitCode remainingUnit, string language)
+		{
+			return TheSpecificationAnswer(
+				specification.TheServiceIntervalAnswer(kind, distanceRemaining, remainingUnit),
+				language);
+		}
+
+		internal static string ThePublishedServiceInterval(
+			ModelSpecification specification, OperationKindCode kind, string language)
+		{
+			return TheSpecificationAnswer(
+				specification.ThePublishedServiceIntervalAnswer(kind), language);
+		}
+
+		internal static string TheServicePrice(
+			ModelSpecification specification, OperationKindCode kind, int milestoneDistance,
+			DistanceUnitCode milestoneUnit, DateTime asOf, string language)
+		{
+			return TheSpecificationAnswer(
+				specification.TheServicePriceAnswer(kind, milestoneDistance, milestoneUnit, asOf),
+				language);
+		}
+
+		internal static string ThePublishedServicePrice(
+			ModelSpecification specification, OperationKindCode kind, int milestoneDistance,
+			DistanceUnitCode milestoneUnit, string language)
+		{
+			return TheSpecificationAnswer(
+				specification.ThePublishedServicePriceAnswer(
+					kind, milestoneDistance, milestoneUnit),
+				language);
+		}
+
+		internal static string TheServicingElsewhereRule(
+			ModelSpecification specification, int withEvidence, int withoutEvidence, int missed,
+			string language)
+		{
+			return TheSpecificationAnswer(
+				specification.TheServicingElsewhereAnswer(withEvidence, withoutEvidence, missed),
+				language);
+		}
+
+		internal static string ThePublishedServicingElsewhereRule(
+			ModelSpecification specification, string language)
+		{
+			return TheSpecificationAnswer(
+				specification.ThePublishedServicingElsewhereAnswer(), language);
+		}
+
+		internal static string TheSpecificationAnswer(SpecificationAnswer answer, string language)
+		{
+			return TheWording.TheSpecificationAnswer(
+				Phrases.Of(language),
+				answer.TheShapeItHas(), answer.RevisionCode(),
+				answer.TheClauseItCarries(), answer.TheSubjectItIsAbout());
+		}
+
+		// Cada precio publicado en su fila, como la puerta las compone: la misma frase que la lectura
+		// con clave, porque es el mismo marco y el mismo renderizador.
+		internal static string[] EachPublishedPrice(
+			ModelSpecification specification, DateTime asOf, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] shapes = specification.PublishedPriceShapesAsOf(asOf);
+			string[] clauses = specification.PublishedPriceClausesAsOf(asOf);
+			string[] revisions = specification.PublishedPriceRevisionsAsOf(asOf);
+			string[] said = new string[shapes.Length];
+
+			for (int fila = 0; fila < shapes.Length; fila++)
+				said[fila] = TheWording.TheSpecificationAnswer(
+					phrases, shapes[fila], revisions[fila], clauses[fila], "");
+
+			return said;
+		}
+
+		// LA GARANTIA. El resumen y la posicion de un sistema pasan por su propio marco, que dice la
+		// ley de que esto no adjudica nada, y las exclusiones salen una por fila.
+		internal static string TheCoverageSummary(
+			ModelSpecification specification, string language)
+		{
+			ACoverageScope scope = specification.TheCoverageScope();
+
+			return TheWording.TheCoverageScope(
+				Phrases.Of(language),
+				scope.ThePublicationShape(), scope.TheRevisionItCameFrom(),
+				scope.TheSystemCodes(), scope.TheSystemLimitShapes(), scope.TheSystemMonths(),
+				scope.TheSystemDistances(), scope.TheSystemDistanceUnits(),
+				scope.TheExclusionSystems(), scope.TheExclusionTexts(),
+				scope.TheExclusionConditions());
+		}
+
+		internal static string[] TheCoverageExclusions(
+			ModelSpecification specification, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			ACoverageScope scope = specification.TheCoverageScope();
+			string[] systems = scope.TheExclusionSystems();
+			string[] texts = scope.TheExclusionTexts();
+			string[] conditions = scope.TheExclusionConditions();
+			string[] said = new string[texts.Length];
+
+			for (int fila = 0; fila < texts.Length; fila++)
+				said[fila] = TheWording.AnExclusion(
+					phrases, systems[fila], texts[fila], conditions[fila]);
+
+			return said;
+		}
+
+		internal static string TheCoverage(
+			ModelSpecification specification, string systemCode, int envelopeMonths,
+			int envelopeDistance, DistanceUnitCode envelopeUnit, DateTime deliveredAt,
+			int deliveryReading, int currentReading, DistanceUnitCode currentUnit, DateTime asOf,
+			string language)
+		{
+			return TheCoverage(
+				specification.TheCoverageAnswer(
+					systemCode, envelopeMonths, envelopeDistance, envelopeUnit, deliveredAt,
+					deliveryReading, currentReading, currentUnit, asOf),
+				language);
+		}
+
+		internal static string TheCoverage(CoverageAnswer answer, string language)
+		{
+			return TheWording.TheCoverage(
+				Phrases.Of(language),
+				answer.ThePublicationShape(), answer.TheRevisionItCameFrom(),
+				answer.TheSystemItIsAbout(), answer.TheShapeItHas(),
+				answer.TheStandingItReached(), answer.TheReasonItGives(),
+				answer.TheLimitsShape(), answer.TheMonthsInForce(), answer.TheDistanceInForce(),
+				answer.TheUnitTheDistanceIsInForceIn(), answer.TheUnitTheLimitIsIn(),
+				answer.TheUnitTheOdometerIsIn(), answer.TheExclusionSystems(),
+				answer.TheExclusionTexts(), answer.TheExclusionConditions());
+		}
+
 		private static string TheRemainder(ARemainder remainder, string language)
 		{
 			return TheWording.TheRemainder(

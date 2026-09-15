@@ -146,8 +146,8 @@ namespace Concesionario.Dominio.Pruebas
 			"CompletionsOfEveryKind/0",
 			"HasAnyPublishedServicePrice/0",
 			"PublishedServicePriceCount/0",
-			"PublishedServicePricesAsOf/1",
-			"DescribePublishedServicePrice/3",
+			"PublishedServicePricesAsOf/2",
+			"DescribePublishedServicePrice/4",
 		};
 
 		// LAS NUEVE DEL LIBRO DE COSTOS, Y ESTAR AQUI ES OTRA COSA QUE ESTAR EN LA LISTA DE ARRIBA.
@@ -378,10 +378,12 @@ namespace Concesionario.Dominio.Pruebas
 
 				Assert.That(api.HasAnyPublishedServicePrice(), Is.True);
 				Assert.That(api.PublishedServicePriceCount(), Is.EqualTo(1));
-				Assert.That(api.PublishedServicePricesAsOf(TheDayItIsAsked).Revision,
+				Assert.That(api.PublishedServicePricesAsOf(
+					TheDayItIsAsked, TheLanguage.OfTheRecord).Revision,
 					Is.EqualTo(new[] { TheRevision }),
 					"L9 en el journal viejo: la fila nombra la revision de la que salio.");
-				Assert.That(api.DescribePublishedServicePrice("Inspection", 10000, TheUnitEverythingIsIn),
+				Assert.That(api.DescribePublishedServicePrice(
+					"Inspection", 10000, TheUnitEverythingIsIn, TheLanguage.OfTheRecord),
 					Does.Contain("120.5"));
 			}
 			finally

@@ -147,7 +147,7 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord)));
 			Assert.That(TheSystemRow(stands, TheSystemInside).Says,
 				Is.EqualTo(journal.Api.DescribeCoverageForThisVehicle(
-					TheSystemInside, TheDayTheVehicleAsks)));
+					TheSystemInside, TheDayTheVehicleAsks, TheLanguage.OfTheRecord)));
 		}
 
 		// LA UNIDAD CRUZA TAL CUAL Y LA PANTALLA NO OFRECE CON QUE CONVERTIRLA. El sobre se publico en
@@ -409,7 +409,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			// EL CONTROL: la puerta SI compone la frase CON los conteos cuando se los mandan, asi que
 			// el barrido de arriba esta mirando una diferencia real y no una imposibilidad.
-			string whole = journal.Api.DescribeServicingElsewhereRule(2, 1, 0);
+			string whole = journal.Api.DescribeServicingElsewhereRule(
+				2, 1, 0, TheLanguage.OfTheRecord);
 
 			Assert.That(whole, Does.Contain(TheRuleAsPublished));
 			Assert.That(whole, Does.Contain("servicios externos con comprobante 2"));
@@ -440,7 +441,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (var bare = ABareVehicle("1FTFW1ET5DFA00001"))
 			{
 				WhatTheManufacturerPublished sheet =
-					WhatTheManufacturerPublished.ReadThrough(bare.Api);
+					WhatTheManufacturerPublished.ReadThrough(bare.Api, TheLanguage.OfTheRecord);
 
 				Assert.That(sheet.ServicingRule.Published, Is.False);
 				Assert.That(sheet.ServicingRule.Revision, Is.Empty);
@@ -611,7 +612,7 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhatTheManufacturerPublished TheSheetTheScreenShows()
 		{
-			return WhatTheManufacturerPublished.ReadThrough(journal.Api);
+			return WhatTheManufacturerPublished.ReadThrough(journal.Api, TheLanguage.OfTheRecord);
 		}
 
 		private WhereThisVehicleStands WhatTheScreenIsHandedAt(DateTime asOf)

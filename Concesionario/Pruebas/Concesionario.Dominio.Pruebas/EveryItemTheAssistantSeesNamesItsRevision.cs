@@ -383,7 +383,8 @@ namespace Concesionario.Dominio.Pruebas
 			// EL CONTROL: la puerta SI compone la frase emparejada cuando le llega la mitad del
 			// vehiculo, asi que el renglon de arriba mira una diferencia real.
 			Assert.That(
-				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
+				journal.Api.DescribeServiceInterval(
+					"FluidChange", 2000, "UnitA", TheLanguage.OfTheRecord),
 				Does.Contain("le quedan 2000 km"));
 		}
 

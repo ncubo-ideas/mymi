@@ -124,8 +124,9 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", TheDayItIsAsked),
 				Is.EqualTo("OutsideEnvelope"));
 			Assert.That(
-				journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", TheDayItIsAsked),
-				Does.Contain("4000 mi"));
+				journal.Api.DescribeCoverageForThisVehicle(
+					"POWERTRAIN", TheDayItIsAsked, TheLanguage.OfTheRecord),
+				Does.Contain("4.000 mi"));
 		}
 	}
 }

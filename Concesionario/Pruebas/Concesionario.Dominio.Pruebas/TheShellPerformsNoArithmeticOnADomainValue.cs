@@ -131,11 +131,46 @@ namespace Concesionario.Dominio.Pruebas
 			},
 			new AllowedArithmetic
 			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "EachPriceSaid",
+				Snippet = "for (int row = 0; row < shapes.Length; row++)",
+				Reason = "Contador de un recorrido por las filas que el dominio ya conto. No mide nada: "
+					+ "compone la frase de cada fila con la forma, la clausula y la revision que "
+					+ "llegaron en columnas paralelas.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "CoverageExclusions",
+				Snippet = "for (int each = 0; each < said.Length; each++)",
+				Reason = "Contador de un recorrido por las exclusiones que el dominio ya enumero. Lo "
+					+ "que hace con cada una es ponerla en el marco del idioma, y ninguna de las tres "
+					+ "columnas es un numero.",
+			},
+			new AllowedArithmetic
+			{
 				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarApp.cs", Member = "TheActorFor",
 				Snippet = "return ThePrefixOfEveryActor + vin.Trim();",
 				Reason = "Pega dos textos para armar el nombre del actor. Es un '+' entre dos "
 					+ "identificadores, que el detector marca a proposito, y los dos son texto: no "
 					+ "hay ningun numero.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheSystemsInsideTheScope",
+				Snippet = "for (int each = 0; each < codes.Length; each++)",
+				Reason = "Contador de un recorrido por los sistemas que el dominio ya enumero. La "
+					+ "unica cuenta es el indice; los limites de cada uno ya vienen medidos y esta "
+					+ "capa solo elige el marco.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheExclusions",
+				Snippet = "for (int each = 0; each < texts.Length; each++)",
+				Reason = "Contador de un recorrido por las exclusiones que el dominio ya enumero. Las "
+					+ "tres columnas son texto publicado: no hay ningun numero que contar.",
 			},
 			new AllowedArithmetic
 			{

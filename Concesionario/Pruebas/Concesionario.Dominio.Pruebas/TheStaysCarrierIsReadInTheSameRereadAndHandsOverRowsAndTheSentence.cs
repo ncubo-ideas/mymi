@@ -300,7 +300,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (string read in new[]
 			{
-				"state.ReadTheSpecification()",
+				"state.ReadTheSpecification(texts.Language)",
 				"state.ReadWhereThisVehicleStands(texts.Language)",
 				"state.ReadTheStaysOfThisVehicle()",
 			})

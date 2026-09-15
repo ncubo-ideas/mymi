@@ -56,8 +56,9 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheSentenceSaysTheAmountTheCurrencyTheValidityAndThenItsRevision()
 		{
 			Assert.That(
-				specification.DescribeServicePrice(
-					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce),
+				TheSentenceTheDoorWouldCompose.TheServicePrice(
+					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+					WhileItIsInForce, TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al 2025-12-31. "
 					+ "Al 2025-06-15 esa vigencia está rigiendo. "
@@ -69,8 +70,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void APriceWhoseValidityHasPassedIsAnsweredWithItsValidityAndNotAsCurrent()
 		{
-			string answer = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, AfterItPassed);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				AfterItPassed, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("vigente del 2025-01-01 al 2025-12-31"),
 				"La vigencia va en la respuesta para que quien la lea vea contra que la esta "
@@ -87,8 +89,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void APriceWhoseValidityHasNotStartedIsNotCurrentEither()
 		{
-			string answer = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, BeforeItStarted);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				BeforeItStarted, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("no es el vigente"));
 			Assert.That(answer, Does.Contain("vigente del 2025-01-01"));
@@ -104,8 +107,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheAmountAndTheCurrencyAreAnsweredAsPublished()
 		{
-			string answer = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("₡120.50"));
 		}
@@ -146,8 +150,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void APriceThatWasNeverPublishedAnswersNotPublished()
 		{
-			string answer = specification.DescribeServicePrice(
-				OperationKindCode.Repair, 10000, DistanceUnitCode.UnitA, WhileItIsInForce);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Repair, 10000, DistanceUnitCode.UnitA,
+				WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("reparación"));
 			Assert.That(answer, Does.Not.Contain("120.50"));
@@ -238,9 +243,9 @@ namespace Concesionario.Dominio.Pruebas
 					OperationKindCode.Inspection, milestone, DistanceUnitCode.UnitA),
 				Is.EqualTo(""));
 			Assert.That(
-				specification.DescribeServicePrice(
-					OperationKindCode.Inspection, milestone, DistanceUnitCode.UnitA,
-					WhileItIsInForce),
+				TheSentenceTheDoorWouldCompose.TheServicePrice(
+					specification, OperationKindCode.Inspection, milestone, DistanceUnitCode.UnitA,
+					WhileItIsInForce, TheLanguage.OfTheRecord),
 				Does.Contain("revisión"));
 		}
 
@@ -261,8 +266,9 @@ namespace Concesionario.Dominio.Pruebas
 				145.00m, "CRC", ValidFrom, ValidUntil);
 			specification.SealRevision(TheNextRevision);
 
-			string answer = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("145.00"));
 			Assert.That(answer, Does.Not.Contain("120.50"));
@@ -285,8 +291,9 @@ namespace Concesionario.Dominio.Pruebas
 					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA),
 				Is.EqualTo(TheNextRevision));
 			Assert.That(
-				specification.DescribeServicePrice(
-					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce),
+				TheSentenceTheDoorWouldCompose.TheServicePrice(
+					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+					WhileItIsInForce, TheLanguage.OfTheRecord),
 				Does.Contain("145.00"));
 		}
 
@@ -303,9 +310,9 @@ namespace Concesionario.Dominio.Pruebas
 				CultureInfo.CurrentCulture = new CultureInfo("de-DE");
 
 				Assert.That(
-					specification.DescribeServicePrice(
-						OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
-						WhileItIsInForce),
+					TheSentenceTheDoorWouldCompose.TheServicePrice(
+						specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+						WhileItIsInForce, TheLanguage.OfTheRecord),
 					Does.Contain("₡120.50"),
 					"Bajo una cultura con coma decimal el monto sigue saliendo con punto. Si "
 					+ "cambiara, la frase dependeria de la maquina que la compuso.");

@@ -121,7 +121,7 @@ namespace Concesionario.Wasm
 				says = api.DescribeWarrantyEnvelope(asOf, language);
 
 				if (published && delivered && measured)
-					systems = TheStandingOnEverySystemTheScopeDeclares(api, asOf);
+					systems = TheStandingOnEverySystemTheScopeDeclares(api, asOf, language);
 			}
 			catch (Exception thrown) when (TheRecordContradictsItself(thrown))
 			{
@@ -154,7 +154,7 @@ namespace Concesionario.Wasm
 		}
 
 		private static List<CoverageStandingForThisVehicle> TheStandingOnEverySystemTheScopeDeclares(
-			DealershipCarAPI api, DateTime asOf)
+			DealershipCarAPI api, DateTime asOf, string language)
 		{
 			var systems = new List<CoverageStandingForThisVehicle>();
 
@@ -167,7 +167,7 @@ namespace Concesionario.Wasm
 					SystemCode = code,
 					CanBeEvaluated = can,
 					Standing = can ? api.ReadCoverageStandingForThisVehicle(code, asOf) : "",
-					Says = api.DescribeCoverageForThisVehicle(code, asOf),
+					Says = api.DescribeCoverageForThisVehicle(code, asOf, language),
 				});
 			}
 

@@ -349,7 +349,8 @@ namespace Concesionario.Consola
 
 		private static void ThePublishedServicePrices(DealershipCarAPI api)
 		{
-			PublishedPriceRecord record = api.PublishedServicePricesAsOf(TheInstantTheBoardIsRead);
+			PublishedPriceRecord record = api.PublishedServicePricesAsOf(
+				TheInstantTheBoardIsRead, TheVoiceOfTheDealership);
 
 			Console.WriteLine("================================================================");
 			Console.WriteLine($"  CUANTO ME VA A COSTAR: LOS PRECIOS PUBLICADOS, AL {Day(TheInstantTheBoardIsRead)}");
@@ -607,7 +608,7 @@ namespace Concesionario.Consola
 			Console.WriteLine("   journal de la persona creceria en cada apertura de la app)");
 			Console.WriteLine();
 
-			string oil = api.DescribeFluid(SpecSheet.TheFluidKind);
+			string oil = api.DescribeFluid(SpecSheet.TheFluidKind, TheVoiceOfTheDealership);
 			string current = TheCurrentRevisionCodeOf(api);
 			string firstState = api.ReadRevisionState(SpecSheet.TheFirstRevision);
 
@@ -665,7 +666,7 @@ namespace Concesionario.Consola
 				"aceite de motor",
 				api.IsFluidPublished(SpecSheet.TheFluidKind),
 				api.ReadFluidRevision(SpecSheet.TheFluidKind),
-				api.DescribeFluid(SpecSheet.TheFluidKind));
+				api.DescribeFluid(SpecSheet.TheFluidKind, TheVoiceOfTheDealership));
 		}
 
 		private static void TheTyre(DealershipCarAPI api)
@@ -674,12 +675,14 @@ namespace Concesionario.Consola
 				"llanta delantera",
 				api.IsTyrePublished(SpecSheet.TheTyrePosition),
 				api.ReadTyreRevision(SpecSheet.TheTyrePosition),
-				api.DescribeTyre(SpecSheet.TheTyrePosition));
+				api.DescribeTyre(SpecSheet.TheTyrePosition, TheVoiceOfTheDealership));
 		}
 
 		private static void TheFuel(DealershipCarAPI api)
 		{
-			AnAnswer("combustible", api.IsFuelPublished(), api.ReadFuelRevision(), api.DescribeFuel());
+			AnAnswer(
+				"combustible", api.IsFuelPublished(), api.ReadFuelRevision(),
+				api.DescribeFuel(TheVoiceOfTheDealership));
 
 			AListOfIts("grado minimo", TheOneOrNone(api.ReadMinimumFuelGrade()));
 			AListOfIts("permitidos", api.PermittedFuelGrades());
@@ -694,7 +697,8 @@ namespace Concesionario.Consola
 				api.IsServiceIntervalPublished(SpecSheet.TheOperation),
 				api.ReadServiceIntervalRevision(SpecSheet.TheOperation),
 				api.DescribeServiceInterval(
-					SpecSheet.TheOperation, SpecSheet.TheDistanceRemaining, SpecSheet.UnitA));
+					SpecSheet.TheOperation, SpecSheet.TheDistanceRemaining, SpecSheet.UnitA,
+					TheVoiceOfTheDealership));
 		}
 
 		private static void TheServicePrice(DealershipCarAPI api)
@@ -707,7 +711,7 @@ namespace Concesionario.Consola
 					SpecSheet.TheOperation, SpecSheet.TheMilestone, SpecSheet.UnitA),
 				api.DescribeServicePrice(
 					SpecSheet.TheOperation, SpecSheet.TheMilestone, SpecSheet.UnitA,
-					SpecSheet.TheDayTheVehicleAsks));
+					SpecSheet.TheDayTheVehicleAsks, TheVoiceOfTheDealership));
 		}
 
 		private static void TheCoverage(DealershipCarAPI api)
@@ -716,10 +720,10 @@ namespace Concesionario.Consola
 				"garantia - el alcance",
 				api.IsCoveragePublished(),
 				api.ReadCoverageRevision(),
-				api.DescribeCoverageSummary());
+				api.DescribeCoverageSummary(TheVoiceOfTheDealership));
 
 			AListOfIts("sistemas adentro", api.CoveredSystems());
-			AListOfIts("exclusiones", api.CoverageExclusions());
+			AListOfIts("exclusiones", api.CoverageExclusions(TheVoiceOfTheDealership));
 			Console.WriteLine(
 				$"   {"lo conoce el catalogo",-24} : "
 				+ $"{api.TheVocabularyIsTheManufacturers(SpecSheet.TheSystem)}");
@@ -733,7 +737,7 @@ namespace Concesionario.Consola
 					? TheCoverageOfTheSystem(api.ReadCoverageStanding)
 					: "no se pudo evaluar - pedir la postura aca REVIENTA"));
 
-			Console.WriteLine($"     {TheCoverageOfTheSystem(api.DescribeCoverage)}");
+			Console.WriteLine($"     {TheCoverageOfTheSystemSaid(api)}");
 			Console.WriteLine();
 		}
 
@@ -746,7 +750,7 @@ namespace Concesionario.Consola
 				api.DescribeServicingElsewhereRule(
 					SpecSheet.TheExternalServicesWithEvidence,
 					SpecSheet.TheExternalServicesWithoutEvidence,
-					SpecSheet.TheMissedMaintenance));
+					SpecSheet.TheMissedMaintenance, TheVoiceOfTheDealership));
 		}
 
 		private static T TheCoverageOfTheSystem<T>(
@@ -758,6 +762,16 @@ namespace Concesionario.Consola
 				Story.Delivery, Story.OdometerAtDelivery,
 				SpecSheet.TheOdometerToday, SpecSheet.UnitA,
 				SpecSheet.TheDayTheVehicleAsks);
+		}
+
+		private static string TheCoverageOfTheSystemSaid(DealershipCarAPI api)
+		{
+			return api.DescribeCoverage(
+				SpecSheet.TheSystem,
+				SpecSheet.TheEnvelopeMonths, SpecSheet.TheEnvelopeDistance, SpecSheet.UnitA,
+				Story.Delivery, Story.OdometerAtDelivery,
+				SpecSheet.TheOdometerToday, SpecSheet.UnitA,
+				SpecSheet.TheDayTheVehicleAsks, TheVoiceOfTheDealership);
 		}
 
 		private static void AnAnswer(string label, bool published, string revision, string sentence)
@@ -798,7 +812,7 @@ namespace Concesionario.Consola
 			Console.WriteLine($"  {SpecSheet.TheFirstRevision,-24}  : "
 				+ $"{again.ReadRevisionState(SpecSheet.TheFirstRevision)}  (antes {firstState})");
 			Console.WriteLine($"  la frase del aceite igual : "
-				+ $"{again.DescribeFluid(SpecSheet.TheFluidKind) == oil}  <- letra por letra");
+				+ $"{again.DescribeFluid(SpecSheet.TheFluidKind, TheVoiceOfTheDealership) == oil}  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  La procedencia no es un campo de C#: sale del journal, y la linea de");
 			Console.WriteLine("  publicacion se vuelve a armar corriendo otra vez los mismos comandos.");
@@ -1000,7 +1014,7 @@ namespace Concesionario.Consola
 				Console.WriteLine("                              mitades si se contestan, cada una entera");
 				Console.WriteLine("                              y dicha por el dominio, sin armar aca una");
 				Console.WriteLine("                              tercera con pedazos de las dos:");
-				Console.WriteLine($"     [lo publicado] {api.DescribeCoverageSummary()}");
+				Console.WriteLine($"     [lo publicado] {api.DescribeCoverageSummary(TheVoiceOfTheDealership)}");
 				Console.WriteLine($"     [este carro]   {api.DescribeWarrantyEnvelope(asOf, TheVoiceOfTheDealership)}");
 				Console.WriteLine();
 				return;
@@ -1013,15 +1027,16 @@ namespace Concesionario.Consola
 				+ (canBeEvaluated
 					? api.ReadCoverageStandingForThisVehicle(Warranty.TheSystem, asOf)
 					: "no se pudo evaluar - pedir el nombre aca REVIENTA"));
-			Console.WriteLine($"     {api.DescribeCoverageForThisVehicle(Warranty.TheSystem, asOf)}");
+			Console.WriteLine($"     {api.DescribeCoverageForThisVehicle(
+				Warranty.TheSystem, asOf, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
 		private static void TheSameSentenceAskedBothWays(DealershipCarAPI api)
 		{
 			string composed = api.DescribeCoverageForThisVehicle(
-				Warranty.TheSystem, Warranty.TheInstantInside);
-			string byHand = TheCoverageWithTheNineFactsHandedOver(api, api.DescribeCoverage);
+				Warranty.TheSystem, Warranty.TheInstantInside, TheVoiceOfTheDealership);
+			string byHand = TheCoverageWithTheNineFactsSaid(api);
 
 			Console.WriteLine("----------------------------------------------------------------");
 			Console.WriteLine("  LA MISMA FRASE, PEDIDA DE LAS DOS MANERAS");
@@ -1049,6 +1064,16 @@ namespace Concesionario.Consola
 			Console.WriteLine("   entrega en lugar de la de hoy, la linea diria False y la frase seguiria");
 			Console.WriteLine("   leyendose igual de bien.");
 			Console.WriteLine();
+		}
+
+		private static string TheCoverageWithTheNineFactsSaid(DealershipCarAPI api)
+		{
+			return api.DescribeCoverage(
+				Warranty.TheSystem,
+				Warranty.TheMonths, Warranty.TheFirstDistance, Warranty.TheUnit,
+				Warranty.TheDelivery, Warranty.TheOdometerAtDelivery,
+				Warranty.TheOdometerInside, Warranty.TheUnit,
+				Warranty.TheInstantInside, TheVoiceOfTheDealership);
 		}
 
 		private static T TheCoverageWithTheNineFactsHandedOver<T>(
@@ -1093,7 +1118,8 @@ namespace Concesionario.Consola
 		{
 			try
 			{
-				return api.DescribeCoverageForThisVehicle(Warranty.TheSystem, asOf);
+				return api.DescribeCoverageForThisVehicle(
+				Warranty.TheSystem, asOf, TheVoiceOfTheDealership);
 			}
 			catch (Exception ex)
 			{

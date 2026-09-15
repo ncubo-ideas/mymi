@@ -927,14 +927,37 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// Que fluido de esa clase lleva el modelo, en una frase con la revision adentro. La compone
-		/// el dominio: decir el porque es conocimiento del dominio y no de quien muestra.
+		/// Que fluido de esa clase lleva el modelo, en una frase y en ese idioma, con la revision
+		/// adentro. El dominio elige la forma y los valores; esta puerta solo los pone en el marco del
+		/// idioma que se le pide. TOTAL, tambien sin nada publicado.
 		/// </summary>
-		public string DescribeFluid(string kind)
+		public string DescribeFluid(string kind, string language)
 		{
-			return AText("@clause = specification.DescribeFluid(@kind);", "clause", p => {
-				p["kind", typeof(Enum)] = WireName.FluidKind(kind);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.TheFluidAnswer(@kind);
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p["kind", typeof(Enum)] = WireName.FluidKind(kind);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -957,14 +980,36 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// Que llanta lleva el modelo en esa posicion, con la presion en la unidad en que se
-		/// publico. Aca no se convierte ninguna unidad a ninguna otra.
+		/// Que llanta lleva el modelo en esa posicion, en ese idioma, con la presion en la unidad en
+		/// que se publico. Aca no se convierte ninguna unidad a ninguna otra. TOTAL.
 		/// </summary>
-		public string DescribeTyre(string position)
+		public string DescribeTyre(string position, string language)
 		{
-			return AText("@clause = specification.DescribeTyre(@position);", "clause", p => {
-				p["position", typeof(Enum)] = WireName.TyrePosition(position);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.TheTyreAnswer(@position);
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p["position", typeof(Enum)] = WireName.TyrePosition(position);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>De que revision salio la respuesta de esa posicion. TOTAL.</summary>
@@ -982,12 +1027,35 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// Que combustible acepta el modelo: los grados publicados con su postura, con la revision
-		/// adentro. TOTAL.
+		/// Que combustible acepta el modelo, en ese idioma: los grados publicados con su postura, con
+		/// la revision adentro. TOTAL.
 		/// </summary>
-		public string DescribeFuel()
+		public string DescribeFuel(string language)
 		{
-			return AText("@clause = specification.DescribeFuel();", "clause", p => { });
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.TheFuelAnswer();
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -1039,17 +1107,37 @@ namespace Concesionario.App
 		/// como parametro con su unidad, porque esta especificacion no guarda nada de ningun carro.
 		/// </summary>
 		public string DescribeServiceInterval(
-			string kind, int distanceRemaining, string remainingUnit)
+			string kind, int distanceRemaining, string remainingUnit, string language)
 		{
-			return AText(@"
-				@clause = specification.DescribeServiceInterval(
-					@kind, @distanceRemaining, @remainingUnit);
-			", "clause", p => {
-				p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
-				p["distanceRemaining", typeof(int)]  = distanceRemaining;
-				p["remainingUnit",     typeof(Enum)] =
-					WireName.DistanceUnit(remainingUnit, nameof(remainingUnit));
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.TheServiceIntervalAnswer(
+						@kind, @distanceRemaining, @remainingUnit);
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
+					p["distanceRemaining", typeof(int)]  = distanceRemaining;
+					p["remainingUnit",     typeof(Enum)] =
+						WireName.DistanceUnit(remainingUnit, nameof(remainingUnit));
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -1057,13 +1145,33 @@ namespace Concesionario.App
 		/// mas. No pregunta por ningun vehiculo, asi que la contesta cualquiera que no tenga los
 		/// hechos de ninguno. TOTAL.
 		/// </summary>
-		public string DescribePublishedServiceInterval(string kind)
+		public string DescribePublishedServiceInterval(string kind, string language)
 		{
-			return AText(@"
-				@clause = specification.DescribePublishedServiceInterval(@kind);
-			", "clause", p => {
-				p["kind", typeof(Enum)] = WireName.OperationKind(kind);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.ThePublishedServiceIntervalAnswer(@kind);
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p["kind", typeof(Enum)] = WireName.OperationKind(kind);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>De que revision salio el intervalo de esa operacion. TOTAL.</summary>
@@ -1099,18 +1207,39 @@ namespace Concesionario.App
 		/// nada, y un precio viejo mostrado como vigente es una promesa que el taller no hizo.
 		/// </summary>
 		public string DescribeServicePrice(
-			string kind, int milestoneDistance, string milestoneUnit, DateTime asOf)
+			string kind, int milestoneDistance, string milestoneUnit, DateTime asOf,
+			string language)
 		{
-			return AText(@"
-				@clause = specification.DescribeServicePrice(
-					@kind, @milestoneDistance, @milestoneUnit, @asOf);
-			", "clause", p => {
-				p["kind",              typeof(Enum)]     = WireName.OperationKind(kind);
-				p["milestoneDistance", typeof(int)]      = milestoneDistance;
-				p["milestoneUnit",     typeof(Enum)]     =
-					WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
-				p["asOf",              typeof(DateTime)] = InUtc(asOf);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.TheServicePriceAnswer(
+						@kind, @milestoneDistance, @milestoneUnit, @asOf);
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p["kind",              typeof(Enum)]     = WireName.OperationKind(kind);
+					p["milestoneDistance", typeof(int)]      = milestoneDistance;
+					p["milestoneUnit",     typeof(Enum)]     =
+						WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
+					p["asOf",              typeof(DateTime)] = InUtc(asOf);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>De que revision salio el precio de esa operacion en ese hito. TOTAL.</summary>
@@ -1134,17 +1263,37 @@ namespace Concesionario.App
 		/// citar lo que el fabricante publico. TOTAL.
 		/// </summary>
 		public string DescribePublishedServicePrice(
-			string kind, int milestoneDistance, string milestoneUnit)
+			string kind, int milestoneDistance, string milestoneUnit, string language)
 		{
-			return AText(@"
-				@clause = specification.DescribePublishedServicePrice(
-					@kind, @milestoneDistance, @milestoneUnit);
-			", "clause", p => {
-				p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
-				p["milestoneDistance", typeof(int)]  = milestoneDistance;
-				p["milestoneUnit",     typeof(Enum)] =
-					WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.ThePublishedServicePriceAnswer(
+						@kind, @milestoneDistance, @milestoneUnit);
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
+					p["milestoneDistance", typeof(int)]  = milestoneDistance;
+					p["milestoneUnit",     typeof(Enum)] =
+						WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -1172,18 +1321,39 @@ namespace Concesionario.App
 		/// Ninguna fila pide un hito a quien pregunta. El instante mueve la FRASE y nunca el juego de
 		/// filas.
 		/// </summary>
-		public PublishedPriceRecord PublishedServicePricesAsOf(DateTime asOf)
+		public PublishedPriceRecord PublishedServicePricesAsOf(DateTime asOf, string language)
 		{
 			string[][] columns = TheTextColumns(@"
 				@operation = specification.PublishedPriceOperationsAsOf(@asOf);
 				@milestone = specification.PublishedPriceMilestonesAsOf(@asOf);
-				@says      = specification.DescribeEachPublishedPriceAsOf(@asOf);
+				@shape     = specification.PublishedPriceShapesAsOf(@asOf);
+				@clause    = specification.PublishedPriceClausesAsOf(@asOf);
 				@revision  = specification.PublishedPriceRevisionsAsOf(@asOf);
 			", TheColumnsOfAPublishedPriceRecord, p => {
 				p["asOf", typeof(DateTime)] = InUtc(asOf);
 			});
 
-			return PublishedPriceRecord.Of(columns[0], columns[1], columns[2], columns[3]);
+			return PublishedPriceRecord.Of(
+				columns[0], columns[1],
+				EachPriceSaid(language, columns[2], columns[3], columns[4]), columns[4]);
+		}
+
+		/// <summary>
+		/// Lo que dice cada fila de precio, compuesto una por una en ese idioma. La frase de una fila
+		/// es la misma que la de la lectura con clave: el mismo renderizador y el mismo marco, para
+		/// que la tabla y la respuesta suelta no puedan decir cosas distintas del mismo precio.
+		/// </summary>
+		private static string[] EachPriceSaid(
+			string language, string[] shapes, string[] clauses, string[] revisions)
+		{
+			Wording.Phrases phrases = Wording.Phrases.Of(language);
+			string[] said = new string[shapes.Length];
+
+			for (int row = 0; row < shapes.Length; row++)
+				said[row] = Wording.TheWording.TheSpecificationAnswer(
+					phrases, shapes[row], revisions[row], clauses[row], "");
+
+			return said;
 		}
 
 		/// <summary>Si hay alcance de garantia publicado. TOTAL.</summary>
@@ -1193,12 +1363,54 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// El alcance publicado en una frase: los sistemas que declara adentro y las exclusiones,
-		/// con la revision. Dice alcance; nunca dice que una reclamacion se vaya a pagar.
+		/// El alcance publicado en una frase y en ese idioma: los sistemas que declara adentro y las
+		/// exclusiones, con la revision. Dice alcance; nunca dice que una reclamacion se vaya a pagar.
+		/// TOTAL, y el dominio eligio la forma y los valores.
 		/// </summary>
-		public string DescribeCoverageSummary()
+		public string DescribeCoverageSummary(string language)
 		{
-			return AText("@clause = specification.DescribeCoverageSummary();", "clause", p => { });
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					scope        = specification.TheCoverageScope();
+					@publication = scope.ThePublicationShape();
+					@revision    = scope.TheRevisionItCameFrom();
+					@systems     = scope.TheSystemCodes();
+					@limitShapes = scope.TheSystemLimitShapes();
+					@months      = scope.TheSystemMonths();
+					@distances   = scope.TheSystemDistances();
+					@units       = scope.TheSystemDistanceUnits();
+					@excludedOf  = scope.TheExclusionSystems();
+					@excluded    = scope.TheExclusionTexts();
+					@conditions  = scope.TheExclusionConditions();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "publication", typeof(string)]   = default;
+					p[Parameter.Out, "revision",    typeof(string)]   = default;
+					p[Parameter.Out, "systems",     typeof(string[])] = default;
+					p[Parameter.Out, "limitShapes", typeof(string[])] = default;
+					p[Parameter.Out, "months",      typeof(int[])]    = default;
+					p[Parameter.Out, "distances",   typeof(int[])]    = default;
+					p[Parameter.Out, "units",       typeof(string[])] = default;
+					p[Parameter.Out, "excludedOf",  typeof(string[])] = default;
+					p[Parameter.Out, "excluded",    typeof(string[])] = default;
+					p[Parameter.Out, "conditions",  typeof(string[])] = default;
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheCoverageScope(
+					Wording.Phrases.Of(language),
+					rented["publication"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["systems"].GetValue<string[]>(),
+					rented["limitShapes"].GetValue<string[]>(),
+					rented["months"].GetValue<int[]>(),
+					rented["distances"].GetValue<int[]>(),
+					rented["units"].GetValue<string[]>(),
+					rented["excludedOf"].GetValue<string[]>(),
+					rented["excluded"].GetValue<string[]>(),
+					rented["conditions"].GetValue<string[]>());
+			}
 		}
 
 		/// <summary>De que revision salio el alcance publicado. TOTAL.</summary>
@@ -1217,13 +1429,27 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// Las exclusiones publicadas, cada una con su texto y su condicion. Salen como clausulas y
-		/// no como codigos: un codigo no dice que esta excluido ni cuando.
+		/// Las exclusiones publicadas, cada una en una clausula y en ese idioma, con su texto y su
+		/// condicion. Salen como clausulas y no como codigos: un codigo no dice que esta excluido ni
+		/// cuando. TOTAL: sin alcance publicado, ninguna.
 		/// </summary>
-		public string[] CoverageExclusions()
+		public string[] CoverageExclusions(string language)
 		{
-			return ATextList(
-				"@exclusions = specification.CoverageExclusions();", "exclusions", p => { });
+			string[][] columns = TheTextColumns(@"
+				scope       = specification.TheCoverageScope();
+				@excludedOf = scope.TheExclusionSystems();
+				@excluded   = scope.TheExclusionTexts();
+				@conditions = scope.TheExclusionConditions();
+			", TheColumnsOfThePublishedExclusions, p => { });
+
+			Wording.Phrases phrases = Wording.Phrases.Of(language);
+			string[] said = new string[columns[0].Length];
+
+			for (int each = 0; each < said.Length; each++)
+				said[each] = Wording.TheWording.AnExclusion(
+					phrases, columns[0][each], columns[1][each], columns[2][each]);
+
+			return said;
 		}
 
 		/// <summary>
@@ -1286,22 +1512,87 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// La respuesta de cobertura en una frase: donde esta parado o por que no se pudo decidir,
-		/// contra que limites se midio, las exclusiones publicadas que haya, y la revision. TOTAL, y
-		/// es la lectura primaria: la frase es la que dice la ley, no el nombre suelto.
+		/// La respuesta de cobertura en una frase y en ese idioma: donde esta parado o por que no se
+		/// pudo decidir, contra que limites se midio, las exclusiones publicadas que haya, y la
+		/// revision. TOTAL, y es la lectura primaria: la frase es la que dice la ley, no el nombre
+		/// suelto. El idioma NO es un hecho del vehiculo -- lo pone quien pregunta, como el instante.
 		/// </summary>
 		public string DescribeCoverage(
 			string systemCode, int envelopeMonths, int envelopeDistance, string envelopeUnit,
 			DateTime deliveredAt, int deliveryReading, int currentReading, string currentUnit,
-			DateTime asOf)
+			DateTime asOf, string language)
 		{
-			return AText(@"
-				@clause = specification.DescribeCoverage(
-					@systemCode, @envelopeMonths, @envelopeDistance, @envelopeUnit,
-					@deliveredAt, @deliveryReading, @currentReading, @currentUnit, @asOf);
-			", "clause", TheFactsTheCoverageQuestionNeeds(
-				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
-				deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer       = specification.TheCoverageAnswer(
+						@systemCode, @envelopeMonths, @envelopeDistance, @envelopeUnit,
+						@deliveredAt, @deliveryReading, @currentReading, @currentUnit, @asOf);
+					@publication = answer.ThePublicationShape();
+					@revision    = answer.TheRevisionItCameFrom();
+					@system      = answer.TheSystemItIsAbout();
+					@shape       = answer.TheShapeItHas();
+					@standing    = answer.TheStandingItReached();
+					@reason      = answer.TheReasonItGives();
+					@limitShape  = answer.TheLimitsShape();
+					@months      = answer.TheMonthsInForce();
+					@distance    = answer.TheDistanceInForce();
+					@unit        = answer.TheUnitTheDistanceIsInForceIn();
+					@limitUnit   = answer.TheUnitTheLimitIsIn();
+					@odometer    = answer.TheUnitTheOdometerIsIn();
+					@excludedOf  = answer.TheExclusionSystems();
+					@excluded    = answer.TheExclusionTexts();
+					@conditions  = answer.TheExclusionConditions();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "publication", typeof(string)]   = default;
+					p[Parameter.Out, "revision",    typeof(string)]   = default;
+					p[Parameter.Out, "system",      typeof(string)]   = default;
+					p[Parameter.Out, "shape",       typeof(string)]   = default;
+					p[Parameter.Out, "standing",    typeof(string)]   = default;
+					p[Parameter.Out, "reason",      typeof(string)]   = default;
+					p[Parameter.Out, "limitShape",  typeof(string)]   = default;
+					p[Parameter.Out, "months",      typeof(int)]      = default;
+					p[Parameter.Out, "distance",    typeof(int)]      = default;
+					p[Parameter.Out, "unit",        typeof(string)]   = default;
+					p[Parameter.Out, "limitUnit",   typeof(string)]   = default;
+					p[Parameter.Out, "odometer",    typeof(string)]   = default;
+					p[Parameter.Out, "excludedOf",  typeof(string[])] = default;
+					p[Parameter.Out, "excluded",    typeof(string[])] = default;
+					p[Parameter.Out, "conditions",  typeof(string[])] = default;
+					p["systemCode",       typeof(string)]   = TheText(
+						systemCode, nameof(systemCode));
+					p["envelopeMonths",   typeof(int)]      = envelopeMonths;
+					p["envelopeDistance", typeof(int)]      = envelopeDistance;
+					p["envelopeUnit",     typeof(Enum)]     =
+						WireName.DistanceUnit(envelopeUnit, nameof(envelopeUnit));
+					p["deliveredAt",      typeof(DateTime)] = InUtc(deliveredAt);
+					p["deliveryReading",  typeof(int)]      = deliveryReading;
+					p["currentReading",   typeof(int)]      = currentReading;
+					p["currentUnit",      typeof(Enum)]     =
+						WireName.DistanceUnit(currentUnit, nameof(currentUnit));
+					p["asOf",             typeof(DateTime)] = InUtc(asOf);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheCoverage(
+					Wording.Phrases.Of(language),
+					rented["publication"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["system"].GetValue<string>(),
+					rented["shape"].GetValue<string>(),
+					rented["standing"].GetValue<string>(),
+					rented["reason"].GetValue<string>(),
+					rented["limitShape"].GetValue<string>(),
+					rented["months"].GetValue<int>(),
+					rented["distance"].GetValue<int>(),
+					rented["unit"].GetValue<string>(),
+					rented["limitUnit"].GetValue<string>(),
+					rented["odometer"].GetValue<string>(),
+					rented["excludedOf"].GetValue<string[]>(),
+					rented["excluded"].GetValue<string[]>(),
+					rented["conditions"].GetValue<string[]>());
+			}
 		}
 
 		/// <summary>Si hay publicada una regla de servicio en otro taller. TOTAL.</summary>
@@ -1318,16 +1609,36 @@ namespace Concesionario.App
 		/// </summary>
 		public string DescribeServicingElsewhereRule(
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
-			int missedMaintenanceCount)
+			int missedMaintenanceCount, string language)
 		{
-			return AText(@"
-				@clause = specification.DescribeServicingElsewhereRule(
-					@withEvidence, @withoutEvidence, @missed);
-			", "clause", p => {
-				p["withEvidence",    typeof(int)] = externalServicesWithEvidence;
-				p["withoutEvidence", typeof(int)] = externalServicesWithoutEvidence;
-				p["missed",          typeof(int)] = missedMaintenanceCount;
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.TheServicingElsewhereAnswer(
+						@withEvidence, @withoutEvidence, @missed);
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+					p["withEvidence",    typeof(int)] = externalServicesWithEvidence;
+					p["withoutEvidence", typeof(int)] = externalServicesWithoutEvidence;
+					p["missed",          typeof(int)] = missedMaintenanceCount;
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -1335,11 +1646,32 @@ namespace Concesionario.App
 		/// pregunta por ningun vehiculo, asi que la contesta cualquiera que no tenga los conteos de
 		/// ninguno. TOTAL.
 		/// </summary>
-		public string DescribePublishedServicingElsewhereRule()
+		public string DescribePublishedServicingElsewhereRule(string language)
 		{
-			return AText(
-				"@clause = specification.DescribePublishedServicingElsewhereRule();",
-				"clause", p => { });
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer    = specification.ThePublishedServicingElsewhereAnswer();
+					@shape    = answer.TheShapeItHas();
+					@revision = answer.RevisionCode();
+					@clause   = answer.TheClauseItCarries();
+					@subject  = answer.TheSubjectItIsAbout();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",    typeof(string)] = default;
+					p[Parameter.Out, "revision", typeof(string)] = default;
+					p[Parameter.Out, "clause",   typeof(string)] = default;
+					p[Parameter.Out, "subject",  typeof(string)] = default;
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheSpecificationAnswer(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["clause"].GetValue<string>(),
+					rented["subject"].GetValue<string>());
+			}
 		}
 
 		/// <summary>De que revision salio la regla de servicio en otro taller. TOTAL.</summary>
@@ -2193,22 +2525,79 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// La respuesta de cobertura de ese sistema para ESTE vehiculo, en una frase. Contesta
-		/// siempre que el registro tenga los tres hechos -- tambien lo que no se pudo evaluar, con
-		/// palabras -- y RECHAZA cuando alguno falta, porque la frase que los nombra la compone el
-		/// catalogo del fabricante y el catalogo no sabe que le falta a un vehiculo.
+		/// La respuesta de cobertura de ese sistema para ESTE vehiculo, en una frase y en ese idioma.
+		/// Contesta siempre que el registro tenga los tres hechos -- tambien lo que no se pudo
+		/// evaluar, con palabras -- y RECHAZA cuando alguno falta, porque la frase que los nombra la
+		/// compone el catalogo del fabricante y el catalogo no sabe que le falta a un vehiculo.
 		/// </summary>
-		public string DescribeCoverageForThisVehicle(string systemCode, DateTime asOf)
+		public string DescribeCoverageForThisVehicle(
+			string systemCode, DateTime asOf, string language)
 		{
 			TheRecordHasToHoldWhatTheCoverageQuestionNeeds(asOf);
 
-			return AText(@"
-				@clause = specification.DescribeCoverage(
-					@systemCode, profile.EnvelopeMonths(), profile.EnvelopeDistance(),
-					profile.EnvelopeUnit(), profile.ReadDeliveredAt(),
-					profile.ReadDeliveryReading(), schedule.ReadOdometer(@asOf),
-					schedule.OdometerUnit(@asOf), @asOf);
-			", "clause", TheSystemAndTheInstant(systemCode, asOf));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					answer       = specification.TheCoverageAnswer(
+						@systemCode, profile.EnvelopeMonths(), profile.EnvelopeDistance(),
+						profile.EnvelopeUnit(), profile.ReadDeliveredAt(),
+						profile.ReadDeliveryReading(), schedule.ReadOdometer(@asOf),
+						schedule.OdometerUnit(@asOf), @asOf);
+					@publication = answer.ThePublicationShape();
+					@revision    = answer.TheRevisionItCameFrom();
+					@system      = answer.TheSystemItIsAbout();
+					@shape       = answer.TheShapeItHas();
+					@standing    = answer.TheStandingItReached();
+					@reason      = answer.TheReasonItGives();
+					@limitShape  = answer.TheLimitsShape();
+					@months      = answer.TheMonthsInForce();
+					@distance    = answer.TheDistanceInForce();
+					@unit        = answer.TheUnitTheDistanceIsInForceIn();
+					@limitUnit   = answer.TheUnitTheLimitIsIn();
+					@odometer    = answer.TheUnitTheOdometerIsIn();
+					@excludedOf  = answer.TheExclusionSystems();
+					@excluded    = answer.TheExclusionTexts();
+					@conditions  = answer.TheExclusionConditions();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "publication", typeof(string)]   = default;
+					p[Parameter.Out, "revision",    typeof(string)]   = default;
+					p[Parameter.Out, "system",      typeof(string)]   = default;
+					p[Parameter.Out, "shape",       typeof(string)]   = default;
+					p[Parameter.Out, "standing",    typeof(string)]   = default;
+					p[Parameter.Out, "reason",      typeof(string)]   = default;
+					p[Parameter.Out, "limitShape",  typeof(string)]   = default;
+					p[Parameter.Out, "months",      typeof(int)]      = default;
+					p[Parameter.Out, "distance",    typeof(int)]      = default;
+					p[Parameter.Out, "unit",        typeof(string)]   = default;
+					p[Parameter.Out, "limitUnit",   typeof(string)]   = default;
+					p[Parameter.Out, "odometer",    typeof(string)]   = default;
+					p[Parameter.Out, "excludedOf",  typeof(string[])] = default;
+					p[Parameter.Out, "excluded",    typeof(string[])] = default;
+					p[Parameter.Out, "conditions",  typeof(string[])] = default;
+					p["systemCode", typeof(string)]   = TheText(systemCode, nameof(systemCode));
+					p["asOf",       typeof(DateTime)] = InUtc(asOf);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheCoverage(
+					Wording.Phrases.Of(language),
+					rented["publication"].GetValue<string>(),
+					rented["revision"].GetValue<string>(),
+					rented["system"].GetValue<string>(),
+					rented["shape"].GetValue<string>(),
+					rented["standing"].GetValue<string>(),
+					rented["reason"].GetValue<string>(),
+					rented["limitShape"].GetValue<string>(),
+					rented["months"].GetValue<int>(),
+					rented["distance"].GetValue<int>(),
+					rented["unit"].GetValue<string>(),
+					rented["limitUnit"].GetValue<string>(),
+					rented["odometer"].GetValue<string>(),
+					rented["excludedOf"].GetValue<string[]>(),
+					rented["excluded"].GetValue<string[]>(),
+					rented["conditions"].GetValue<string[]>());
+			}
 		}
 
 		/// <summary>
@@ -3104,7 +3493,14 @@ namespace Concesionario.App
 		/// el DTO las recibe.
 		/// </summary>
 		private static readonly string[] TheColumnsOfAPublishedPriceRecord =
-			{ "operation", "milestone", "says", "revision" };
+			{ "operation", "milestone", "shape", "clause", "revision" };
+
+		/// <summary>
+		/// Los nombres de las tres columnas de las exclusiones publicadas, en el orden en que la
+		/// clausula de una exclusion las pide.
+		/// </summary>
+		private static readonly string[] TheColumnsOfThePublishedExclusions =
+			{ "excludedOf", "excluded", "conditions" };
 
 		/// <summary>
 		/// Los nombres de las seis columnas del registro del libro de costos, en el orden en que el

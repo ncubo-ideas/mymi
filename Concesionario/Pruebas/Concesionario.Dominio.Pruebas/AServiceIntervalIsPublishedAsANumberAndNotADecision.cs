@@ -42,8 +42,9 @@ namespace Concesionario.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(
-				specification.DescribeServiceInterval(
-					OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA),
+				TheSentenceTheDoorWouldCompose.TheServiceInterval(
+					specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+					TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"Cambio de fluido: se hace cada 10000 km o 365 días. A este vehículo le quedan "
 					+ "8400 km contra él. Publicado en la revisión REV-2025-01."));
@@ -58,8 +59,9 @@ namespace Concesionario.Dominio.Pruebas
 			TheFluidChangeIntervalEnters();
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("cada 10000 km"));
 			Assert.That(answer, Does.Contain("365 días"));
@@ -92,8 +94,9 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(specification.ReadServiceIntervalRevision(OperationKindCode.Inspection),
 				Is.EqualTo(""));
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.Inspection, 8400, DistanceUnitCode.UnitA);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.Inspection, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("revisión"));
 			Assert.That(answer, Does.Not.Contain("10000"));
@@ -126,12 +129,14 @@ namespace Concesionario.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(
-				specification.DescribeServiceInterval(
-					OperationKindCode.Inspection, 8400, DistanceUnitCode.UnitA),
+				TheSentenceTheDoorWouldCompose.TheServiceInterval(
+					specification, OperationKindCode.Inspection, 8400, DistanceUnitCode.UnitA,
+					TheLanguage.OfTheRecord),
 				Does.Contain("cada 20000 km"));
 			Assert.That(
-				specification.DescribeServiceInterval(
-					OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA),
+				TheSentenceTheDoorWouldCompose.TheServiceInterval(
+					specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+					TheLanguage.OfTheRecord),
 				Does.Not.Contain("20000"));
 		}
 
@@ -143,8 +148,9 @@ namespace Concesionario.Dominio.Pruebas
 				TheRevision, OperationKindCode.FluidChange, 12000, DistanceUnitCode.UnitA, 365);
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("cada 12000 km"));
 			Assert.That(answer, Does.Not.Contain("10000"));

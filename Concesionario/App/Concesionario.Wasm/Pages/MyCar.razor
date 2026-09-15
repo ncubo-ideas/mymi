@@ -453,11 +453,11 @@ else
         board = states;
         reasons = why;
 
-        sheet = state.ReadTheSpecification();
+        sheet = state.ReadTheSpecification(texts.Language);
         stands = state.ReadWhereThisVehicleStands(texts.Language);
         stays = state.ReadTheStaysOfThisVehicle();
         operations = state.ReadWhereEachOperationStands(texts.Language);
-        costs = state.ReadWhatTheServicesCost();
+        costs = state.ReadWhatTheServicesCost(texts.Language);
         use = state.ReadHowThisVehicleIsDriven();
         spend = state.ReadWhatThisVehicleHasCost();
         plate = state.ReadThePlateOfThisVehicle();

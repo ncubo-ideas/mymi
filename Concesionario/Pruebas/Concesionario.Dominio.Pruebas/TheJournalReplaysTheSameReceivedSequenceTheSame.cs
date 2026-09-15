@@ -467,7 +467,8 @@ namespace Concesionario.Dominio.Pruebas
 					: "refused")
 				+ "\ncoverage="
 				+ (theRecordHasTheThreeFacts
-					? journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked)
+					? journal.Api.DescribeCoverageForThisVehicle(
+						"POWERTRAIN", asked, TheLanguage.OfTheRecord)
 					: "refused");
 		}
 

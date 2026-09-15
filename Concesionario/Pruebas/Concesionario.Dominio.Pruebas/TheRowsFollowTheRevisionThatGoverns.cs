@@ -61,7 +61,8 @@ namespace Concesionario.Dominio.Pruebas
 				specification.PublishedPriceRevisionsAsOf(WhileItIsInForce),
 				Is.EqualTo(new[] { TheNewRevision }));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(WhileItIsInForce),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, WhileItIsInForce, TheLanguage.OfTheRecord),
 				Has.All.Contains("₡145.00"));
 		}
 
@@ -110,7 +111,8 @@ namespace Concesionario.Dominio.Pruebas
 				specification.PublishedPriceRevisionsAsOf(WhileItIsInForce),
 				Is.EqualTo(new[] { TheNewRevision }));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(WhileItIsInForce),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, WhileItIsInForce, TheLanguage.OfTheRecord),
 				Has.All.Contains("₡145.00"));
 		}
 

@@ -274,6 +274,57 @@ namespace Concesionario.App.Wording
 				["envelope.odometer.Absent"] =
 					"There is no odometer reading to measure the distance half against, and the "
 					+ "dealership's feed is what brings one.",
+
+				["specification.published"] = "{clause} Published in revision {revision}.",
+				["specification.notPublished"] =
+					"{subject}: nothing has been published for this model, so there is nothing to "
+					+ "quote and no revision to name.",
+
+				["coverage.law"] =
+					"Scope only: this says what the manufacturer published about the warranty's "
+					+ "scope, and nothing about how a claim would be settled -- that is the "
+					+ "manufacturer's call, not this record's.",
+
+				["coverage.subject.scope"] = "Warranty coverage",
+				["coverage.subject.system"] = "Warranty coverage of the '{system}' system",
+
+				["coverage.notPublished"] = "{answer} {law}",
+
+				["coverage.scope"] =
+					"Systems inside the published scope: {systems} Exclusions: {exclusions} {law}",
+
+				["coverage.systems.none"] = "none published.",
+				["coverage.system"] = "'{code}' is inside the published scope.",
+				["coverage.system.withLimits"] =
+					"'{code}' is inside the published scope, with its own limits of {limits}.",
+
+				["coverage.exclusions.none"] = "none published.",
+				["coverage.exclusion"] =
+					"Exclusion on '{system}': {text} Published to apply when: {condition}.",
+
+
+				["coverage.limits.both"] = "{months} or {distance}",
+
+				["coverage.settled"] = "{subject}: {standing}. {clause}",
+				["coverage.unitMismatch"] =
+					"{subject}: cannot be evaluated, because the distance limit in force is in "
+					+ "{limit} and this vehicle's odometer is in {other}, and units are never "
+					+ "converted. {clause}",
+
+				["coverage.clause"] = "{reason} {law}",
+				["coverage.clause.withExclusions"] = "{reason} {exclusions} {law}",
+				["coverage.clause.reasonless"] = "{exclusions} {law}",
+
+				["coverage.reason.NotInTheVocabulary"] =
+					"The published scope does not name this system anywhere, so there is nothing "
+					+ "about it here -- which is not the same as the scope leaving it out.",
+				["coverage.reason.OnlyAmongTheExclusions"] =
+					"The published scope names this system only among its exclusions, and never "
+					+ "among the systems it declares inside.",
+				["coverage.reason.InsideTheLimits"] =
+					"Limits in force: {limits}. This vehicle is inside them.",
+				["coverage.reason.OutsideTheLimits"] =
+					"Limits in force: {limits}. This vehicle is outside them.",
 			};
 		}
 	}

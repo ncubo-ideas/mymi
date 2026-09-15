@@ -284,7 +284,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.ReadCurrentRevisionCode(),
 				Is.EqualTo(ADealershipNarrative.TheSecondRevision));
-			Assert.That(journal.Api.DescribeFluid("EngineOil"),
+			Assert.That(journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
 				Does.Contain(ADealershipNarrative.TheSecondOilGrade));
 		}
 

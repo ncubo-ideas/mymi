@@ -34,16 +34,25 @@ namespace Concesionario.Dominio
 			return false;
 		}
 
-		/// <summary>
-		/// Lo dice con todas las letras y sin ningun numero: un cero adentro de la frase se leeria
-		/// como un dato publicado, que es la forma en que un default entra sin que nadie lo
-		/// escriba.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Sin publicar.</summary>
+		internal override string TheShapeItHas()
 		{
-			return _subject
-				+ ": no se ha publicado nada para este modelo, así que no hay nada que citar ni "
-				+ "ninguna revisión que nombrar.";
+			return SpecificationPublication.NotPublished;
+		}
+
+		/// <summary>
+		/// Vacio, y sin ningun numero: un cero aqui se leeria como un dato publicado, que es la forma
+		/// en que un default entra sin que nadie lo escriba.
+		/// </summary>
+		internal override string TheClauseItCarries()
+		{
+			return string.Empty;
+		}
+
+		/// <summary>Lo que se pregunto, que es lo unico que esta ausencia tiene que nombrar.</summary>
+		internal override string TheSubjectItIsAbout()
+		{
+			return _subject;
 		}
 
 		/// <summary>

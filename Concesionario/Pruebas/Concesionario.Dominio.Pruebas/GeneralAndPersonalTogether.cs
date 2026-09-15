@@ -41,8 +41,9 @@ namespace Concesionario.Dominio.Pruebas
 			TheFluidChangeIntervalEnters();
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("10000"),
 				"La mitad publicada. Sin ella la respuesta es la posicion de un carro contra nada.");
@@ -61,7 +62,8 @@ namespace Concesionario.Dominio.Pruebas
 			ThePolicyEnters();
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServicingElsewhereRule(2, 0, 0);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+				specification, 2, 0, 0, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain(TheRule));
 			Assert.That(answer, Does.Contain(WhatPreservesCover));
@@ -76,7 +78,10 @@ namespace Concesionario.Dominio.Pruebas
 			ThePolicyEnters();
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeServicingElsewhereRule(2, 1, 0), Is.EqualTo(
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+					specification, 2, 1, 0, TheLanguage.OfTheRecord),
+				Is.EqualTo(
 				"Servicio en otro taller: \"Work may be done at any workshop.\" Qué conserva la cobertura: "
 				+ "\"Keep the invoice and the parts numbers.\" Este vehículo: servicios externos con "
 				+ "comprobante 2, servicios externos sin comprobante 1, mantenimientos no hechos "
@@ -93,20 +98,25 @@ namespace Concesionario.Dominio.Pruebas
 			ThePolicyEnters();
 			specification.SealRevision(TheRevision);
 
-			string first = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
-			string second = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 200, DistanceUnitCode.UnitA);
-			string again = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
+			string first = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
+			string second = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 200, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
+			string again = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(second, Is.Not.EqualTo(first));
 			Assert.That(again, Is.EqualTo(first),
 				"El modulo no guarda nada de ningun vehiculo: la misma pregunta contesta lo mismo "
 				+ "sin importar que le preguntaron en el medio.");
 
-			Assert.That(specification.DescribeServicingElsewhereRule(2, 0, 0),
-				Is.Not.EqualTo(specification.DescribeServicingElsewhereRule(0, 0, 3)));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+				specification, 2, 0, 0, TheLanguage.OfTheRecord),
+				Is.Not.EqualTo(TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+					specification, 0, 0, 3, TheLanguage.OfTheRecord)));
 		}
 
 		// LA MITAD PUBLICADA SOLA NO SALE. Es el reverso de la ley y es lo que la hace una ley y no
@@ -131,7 +141,8 @@ namespace Concesionario.Dominio.Pruebas
 				2.4m, PressureUnitCode.UnitA, "91V");
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServicingElsewhereRule(2, 1, 3);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+				specification, 2, 1, 3, TheLanguage.OfTheRecord);
 
 			Assert.That(specification.IsServicingPolicyPublished(), Is.False);
 			Assert.That(answer, Does.Not.Contain("external services"));

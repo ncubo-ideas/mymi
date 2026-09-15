@@ -476,9 +476,12 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.False);
 			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(0));
-			Assert.That(journal.Api.PublishedServicePricesAsOf(asked).Says, Is.Empty);
 			Assert.That(
-				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
+				journal.Api.PublishedServicePricesAsOf(asked, TheLanguage.OfTheRecord).Says,
+				Is.Empty);
+			Assert.That(
+				journal.Api.DescribePublishedServicePrice(
+					"FluidChange", TenThousandUnits, "UnitA", TheLanguage.OfTheRecord),
 				Is.Not.Empty);
 
 			// CON UNA OPERACION AGENDADA, UNA COMPLETACION Y UNA REVISION SELLADA: las mismas
@@ -523,10 +526,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.True);
 			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(1));
 			Assert.That(
-				journal.Api.PublishedServicePricesAsOf(asked).Revision, Is.EqualTo(new[] { TheRevision }),
+				journal.Api.PublishedServicePricesAsOf(
+					asked, TheLanguage.OfTheRecord).Revision, Is.EqualTo(new[] { TheRevision }),
 				"Y las CUATRO lineas del script de los precios atan sus cuatro Out en una sola.");
 			Assert.That(
-				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
+				journal.Api.DescribePublishedServicePrice(
+					"FluidChange", TenThousandUnits, "UnitA", TheLanguage.OfTheRecord),
 				Does.Contain("$75.50").And.Not.Contain(" Al "));
 		}
 
@@ -917,7 +922,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(
 				() => journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked));
 			Assert.Throws<InvalidOperationException>(
-				() => journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked));
+				() => journal.Api.DescribeCoverageForThisVehicle(
+					"POWERTRAIN", asked, TheLanguage.OfTheRecord));
 
 			// CON LECTURA: la rama then de las tres del sobre, y el script de TRES globales de las
 			// tres de cobertura.
@@ -936,7 +942,8 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked),
 				Is.EqualTo("CoveredWithExclusion"));
 			Assert.That(
-				journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked),
+				journal.Api.DescribeCoverageForThisVehicle(
+					"POWERTRAIN", asked, TheLanguage.OfTheRecord),
 				Does.Contain("wear parts"));
 		}
 
@@ -961,7 +968,8 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.DescribeWarrantyEnvelope(asked, TheLanguage.OfTheRecord);
 			journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked);
 			journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked);
-			journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked);
+			journal.Api.DescribeCoverageForThisVehicle(
+				"POWERTRAIN", asked, TheLanguage.OfTheRecord);
 
 			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before),
 				"El journal quedo byte a byte como estaba. Una lectura que escribe le agrega una "
@@ -1281,15 +1289,20 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.ReadModel(), Is.EqualTo(AScheduleOnARealJournal.TheModelAtDelivery));
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.True);
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("5W-30"));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain("5W-30"));
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.IsTyrePublished("Front"), Is.True);
-			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("205/55R16"));
+			Assert.That(
+				journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord),
+				Does.Contain("205/55R16"));
 			Assert.That(journal.Api.ReadTyreRevision("Front"), Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.IsFuelPublished(), Is.True);
-			Assert.That(journal.Api.DescribeFuel(), Does.Contain("91 RON regular"));
+			Assert.That(
+				journal.Api.DescribeFuel(TheLanguage.OfTheRecord), Does.Contain("91 RON regular"));
 			Assert.That(journal.Api.ReadMinimumFuelGrade(), Is.EqualTo("91 RON regular"));
 			Assert.That(
 				journal.Api.PermittedFuelGrades(), Is.EqualTo(new[] { "95 RON Premium" }));
@@ -1298,7 +1311,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.IsServiceIntervalPublished("FluidChange"), Is.True);
 			Assert.That(
-				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
+				journal.Api.DescribeServiceInterval(
+					"FluidChange", 8400, "UnitA", TheLanguage.OfTheRecord),
 				Does.Contain("8400"));
 			Assert.That(
 				journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(TheRevision));
@@ -1308,17 +1322,20 @@ namespace Concesionario.Dominio.Pruebas
 				Is.True);
 			Assert.That(
 				journal.Api.DescribeServicePrice(
-					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
+					"FluidChange", TenThousandUnits, "UnitA", ThePublication, TheLanguage.OfTheRecord),
 				Does.Contain("$75.50"));
 			Assert.That(
 				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
 				Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.IsCoveragePublished(), Is.True);
-			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("POWERTRAIN"));
+			Assert.That(
+				journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
+				Does.Contain("POWERTRAIN"));
 			Assert.That(journal.Api.ReadCoverageRevision(), Is.EqualTo(TheRevision));
 			Assert.That(journal.Api.CoveredSystems(), Is.EqualTo(new[] { "POWERTRAIN" }));
-			Assert.That(journal.Api.CoverageExclusions().Length, Is.EqualTo(1));
+			Assert.That(
+				journal.Api.CoverageExclusions(TheLanguage.OfTheRecord).Length, Is.EqualTo(1));
 			Assert.That(journal.Api.TheVocabularyIsTheManufacturers("POWERTRAIN"), Is.True);
 
 			Assert.That(TheCoverageOf("POWERTRAIN", journal.Api.CanCoverageBeEvaluated), Is.True);
@@ -1326,12 +1343,13 @@ namespace Concesionario.Dominio.Pruebas
 				TheCoverageOf("POWERTRAIN", journal.Api.ReadCoverageStanding),
 				Is.EqualTo("CoveredWithExclusion"));
 			Assert.That(
-				TheCoverageOf("POWERTRAIN", journal.Api.DescribeCoverage),
+				TheCoverageSaidOf("POWERTRAIN", journal.Api),
 				Does.Contain("wear parts"));
 
 			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.True);
 			Assert.That(
-				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("service anywhere"));
+				journal.Api.DescribeServicingElsewhereRule(
+					2, 0, 0, TheLanguage.OfTheRecord), Does.Contain("service anywhere"));
 			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.HasASealedRevision(), Is.True);
@@ -1354,15 +1372,21 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasASealedRevision(), Is.False);
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.False);
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsTyrePublished("Front"), Is.False);
-			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadTyreRevision("Front"), Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsFuelPublished(), Is.False);
-			Assert.That(journal.Api.DescribeFuel(), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeFuel(TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadMinimumFuelGrade(), Is.EqualTo(""));
 			Assert.That(journal.Api.PermittedFuelGrades(), Is.Empty);
 			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.Empty);
@@ -1370,10 +1394,12 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.IsServiceIntervalPublished("FluidChange"), Is.False);
 			Assert.That(
-				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
+				journal.Api.DescribeServiceInterval(
+					"FluidChange", 8400, "UnitA", TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(
-				journal.Api.DescribePublishedServiceInterval("FluidChange"),
+				journal.Api.DescribePublishedServiceInterval(
+					"FluidChange", TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(""));
 
@@ -1382,17 +1408,19 @@ namespace Concesionario.Dominio.Pruebas
 				Is.False);
 			Assert.That(
 				journal.Api.DescribeServicePrice(
-					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
+					"FluidChange", TenThousandUnits, "UnitA", ThePublication, TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(
 				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
 				Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsCoveragePublished(), Is.False);
-			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadCoverageRevision(), Is.EqualTo(""));
 			Assert.That(journal.Api.CoveredSystems(), Is.Empty);
-			Assert.That(journal.Api.CoverageExclusions(), Is.Empty);
+			Assert.That(journal.Api.CoverageExclusions(TheLanguage.OfTheRecord), Is.Empty);
 			Assert.That(journal.Api.TheVocabularyIsTheManufacturers("POWERTRAIN"), Is.False);
 
 			// Sin nada publicado la pregunta SI se puede contestar, y la respuesta es que no se
@@ -1402,14 +1430,15 @@ namespace Concesionario.Dominio.Pruebas
 				TheCoverageOf("POWERTRAIN", journal.Api.ReadCoverageStanding),
 				Is.EqualTo("NotPublished"));
 			Assert.That(
-				TheCoverageOf("POWERTRAIN", journal.Api.DescribeCoverage),
+				TheCoverageSaidOf("POWERTRAIN", journal.Api),
 				Does.Contain("no se ha publicado nada"));
 
 			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.False);
 			Assert.That(
-				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("no se ha publicado nada"));
+				journal.Api.DescribeServicingElsewhereRule(
+					2, 0, 0, TheLanguage.OfTheRecord), Does.Contain("no se ha publicado nada"));
 			Assert.That(
-				journal.Api.DescribePublishedServicingElsewhereRule(),
+				journal.Api.DescribePublishedServicingElsewhereRule(TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(""));
 		}
@@ -1453,7 +1482,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeCoverage(
 					"POWERTRAIN", 60, 100000, "UnitA",
-					Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitB", ThePublication),
+					Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitB", ThePublication, TheLanguage.OfTheRecord),
 				Is.Not.Empty,
 				"Pero la FRASE si contesta: lo que no se pudo evaluar tambien se dice con palabras.");
 		}
@@ -1519,6 +1548,16 @@ namespace Concesionario.Dominio.Pruebas
 		// Los nueve hechos de la pregunta de cobertura, atados una vez para las tres lecturas que la
 		// hacen. Van los nueve: la resta entre el limite y el odometro es donde se compara la
 		// unidad, y precalcularla aca se llevaria esa comparacion fuera del dominio.
+		// La misma llave que TheCoverageOf, para la lectura que ademas toma el idioma: una lectura
+		// de diez no entra en un Func de nueve, y la decima no es un hecho del vehiculo.
+		private static string TheCoverageSaidOf(string systemCode, DealershipCarAPI api)
+		{
+			return api.DescribeCoverage(
+				systemCode, 60, 100000, "UnitA",
+				Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitA", ThePublication,
+				TheLanguage.OfTheRecord);
+		}
+
 		private static T TheCoverageOf<T>(
 			string systemCode,
 			Func<string, int, int, string, DateTime, int, int, string, DateTime, T> read)

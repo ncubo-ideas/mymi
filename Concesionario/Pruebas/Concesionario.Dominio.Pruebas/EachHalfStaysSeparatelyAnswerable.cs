@@ -62,7 +62,7 @@ namespace Concesionario.Dominio.Pruebas
 			ASealedSheet();
 
 			Assert.That(
-				journal.Api.DescribePublishedServiceInterval(TheOperation),
+				journal.Api.DescribePublishedServiceInterval(TheOperation, TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"Cambio de fluido: se hace cada 10000 km o 365 días. Publicado en la revisión R1."));
 		}
@@ -75,7 +75,7 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ASealedSheet();
 
-			string answer = journal.Api.DescribePublishedServicingElsewhereRule();
+			string answer = journal.Api.DescribePublishedServicingElsewhereRule(TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain(TheRuleAsPublished));
 			Assert.That(answer, Does.Contain(WhatPreservesCover));
@@ -92,9 +92,10 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ASealedSheet();
 
-			string publishedHalf = journal.Api.DescribePublishedServiceInterval(TheOperation);
+			string publishedHalf = journal.Api.DescribePublishedServiceInterval(
+				TheOperation, TheLanguage.OfTheRecord);
 			string paired = journal.Api.DescribeServiceInterval(
-				TheOperation, TheDistanceRemaining, TheUnitItAsksIn);
+				TheOperation, TheDistanceRemaining, TheUnitItAsksIn, TheLanguage.OfTheRecord);
 
 			Assert.That(publishedHalf, Is.Not.EqualTo(paired),
 				"Si las dos lecturas contestan lo mismo, la mitad publicada esta apuntada a la "
@@ -108,10 +109,10 @@ namespace Concesionario.Dominio.Pruebas
 				"Y el control del control: si la emparejada tampoco lleva el numero recibido, la "
 				+ "asercion de arriba esta verde porque no hay nada que distinguir.");
 
-			string publishedRule = journal.Api.DescribePublishedServicingElsewhereRule();
+			string publishedRule = journal.Api.DescribePublishedServicingElsewhereRule(TheLanguage.OfTheRecord);
 			string pairedRule = journal.Api.DescribeServicingElsewhereRule(
 				TheExternalServicesWithEvidence, TheExternalServicesWithoutEvidence,
-				TheMissedOperations);
+				TheMissedOperations, TheLanguage.OfTheRecord);
 
 			Assert.That(publishedRule, Is.Not.EqualTo(pairedRule));
 			Assert.That(publishedRule, Does.Not.Contain("This vehicle"),
@@ -128,12 +129,13 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(journal.Api.HasASealedRevision(), Is.False);
 
-			Assert.That(journal.Api.DescribePublishedServiceInterval(TheOperation),
+			Assert.That(journal.Api.DescribePublishedServiceInterval(
+				TheOperation, TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"Intervalo de servicio de cambio de fluido: no se ha publicado nada para este "
 					+ "modelo, así que no hay nada que citar ni ninguna revisión que nombrar."));
 
-			Assert.That(journal.Api.DescribePublishedServicingElsewhereRule(),
+			Assert.That(journal.Api.DescribePublishedServicingElsewhereRule(TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"La regla de servicio en otro taller: no se ha publicado nada para este modelo, así "
 					+ "que no hay nada que citar ni ninguna revisión que nombrar."));
@@ -151,9 +153,10 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.PublishServicingPolicy(
 				TheRevision, TheRuleAsPublished, WhatPreservesCover);
 
-			Assert.That(journal.Api.DescribePublishedServiceInterval(TheOperation),
+			Assert.That(journal.Api.DescribePublishedServiceInterval(
+				TheOperation, TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
-			Assert.That(journal.Api.DescribePublishedServicingElsewhereRule(),
+			Assert.That(journal.Api.DescribePublishedServicingElsewhereRule(TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 		}
 

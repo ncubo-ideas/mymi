@@ -514,10 +514,10 @@ namespace Concesionario.Wasm
 		/// La ficha del fabricante entera, leida en un solo momento para que las dos secciones que
 		/// la muestran nombren la misma revision de la que salieron sus frases.
 		/// </summary>
-		public WhatTheManufacturerPublished ReadTheSpecification()
+		public WhatTheManufacturerPublished ReadTheSpecification(string language)
 		{
 			Require();
-			return WhatTheManufacturerPublished.ReadThrough(api);
+			return WhatTheManufacturerPublished.ReadThrough(api, language);
 		}
 
 		/// <summary>
@@ -565,10 +565,10 @@ namespace Concesionario.Wasm
 		/// Lo que el fabricante publico que cuestan los servicios, leido entero al instante en que la
 		/// pantalla pregunta, porque la vigencia de un precio se juzga contra un momento.
 		/// </summary>
-		public WhatTheServicesCost ReadWhatTheServicesCost()
+		public WhatTheServicesCost ReadWhatTheServicesCost(string language)
 		{
 			Require();
-			return WhatTheServicesCost.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return WhatTheServicesCost.ReadThrough(api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		/// <summary>

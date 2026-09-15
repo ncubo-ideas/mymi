@@ -239,7 +239,7 @@ namespace Concesionario.Dominio.Pruebas
 				"1FTFW1ET5DFA00001", AppState.TheProfileAtDelivery))
 			{
 				WhatTheManufacturerPublished sheet =
-					WhatTheManufacturerPublished.ReadThrough(bare.Api);
+					WhatTheManufacturerPublished.ReadThrough(bare.Api, TheLanguage.OfTheRecord);
 
 				Assert.That(sheet.HasASealedRevision, Is.False);
 				Assert.That(sheet.CurrentRevision, Is.Empty);
@@ -397,7 +397,7 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhatTheManufacturerPublished TheSheetTheScreenShows()
 		{
-			return WhatTheManufacturerPublished.ReadThrough(journal.Api);
+			return WhatTheManufacturerPublished.ReadThrough(journal.Api, TheLanguage.OfTheRecord);
 		}
 
 		private static PublishedFluid TheFluidRow(

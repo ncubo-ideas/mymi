@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace Concesionario.App.Wording
 {
@@ -20,6 +21,17 @@ namespace Concesionario.App.Wording
 		private const string TheAnswerThatNothingWasPublished = "NotPublished";
 		private const string ThePublishedShape = "Published";
 		private const string TheMeasuredHalf = "Measured";
+		private const string TheLimitsAreNamed = "Named";
+		private const string TheSuspensionByAUnitMismatch = "UnitMismatch";
+		private const string NoReasonToGive = "";
+
+		/// <summary>
+		/// LO QUE VA ENTRE DOS CLAUSULAS ENTERAS de una lista cuyo largo no se sabe de antemano. No es
+		/// una clave del catalogo a proposito: una clave que solo lleva un espacio no es una frase, y
+		/// el catalogo se comprueba pidiendole que ninguna este sin palabras. Cada clausula ya termina
+		/// en punto, asi que lo unico que falta entre dos es la separacion.
+		/// </summary>
+		private const string BetweenTwoClauses = " ";
 
 		/// <summary>
 		/// POR QUE UNA OPERACION ESTA DONDE ESTA. La forma elige el marco; el estado, la dimension
@@ -245,6 +257,199 @@ namespace Concesionario.App.Wording
 				("observedOn", phrases.ADay(observedOn)),
 				("deliveryReading", ADistance(phrases, deliveryReading, deliveryUnit)),
 				("deliveredOn", phrases.ADay(deliveredOn)));
+		}
+
+		/// <summary>
+		/// CUALQUIER RESPUESTA DE LA HOJA DEL FABRICANTE: lo que el item tiene que decir con la
+		/// revision que lo publico en la misma frase, o la constancia de que no hay nada publicado
+		/// nombrando lo que se preguntó. Una respuesta sin procedencia no existe -- es lo que separa
+		/// este modulo de un PDF --, y por eso las dos mitades se dicen aqui y no en cada item.
+		/// </summary>
+		public static string TheSpecificationAnswer(
+			Phrases phrases, string shape, string revision, string clause, string subject)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			if (shape == ThePublishedShape)
+				return phrases.Say(
+					"specification.published", ("clause", clause), ("revision", revision));
+
+			return phrases.Say("specification.notPublished", ("subject", subject));
+		}
+
+		/// <summary>
+		/// EL ALCANCE DE GARANTIA PUBLICADO ENTERO, sin ningun hecho de ningun vehiculo adentro: los
+		/// sistemas que declara adentro con sus limites propios y las exclusiones con su condicion. La
+		/// ley de que esto no adjudica nada la pone la frase y no quien compone, para que no dependa
+		/// de que se acuerde.
+		/// </summary>
+		public static string TheCoverageScope(
+			Phrases phrases, string publication, string revision, string[] systemCodes,
+			string[] systemLimitShapes, int[] systemMonths, int[] systemDistances,
+			string[] systemDistanceUnits, string[] exclusionSystems, string[] exclusionTexts,
+			string[] exclusionConditions)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			if (publication != ThePublishedShape)
+				return NothingWasPublishedAbout(phrases, phrases.Say("coverage.subject.scope"));
+
+			return TheSpecificationAnswer(
+				phrases, publication, revision,
+				phrases.Say("coverage.scope",
+					("systems", TheSystemsInsideTheScope(
+						phrases, systemCodes, systemLimitShapes, systemMonths, systemDistances,
+						systemDistanceUnits)),
+					("exclusions", TheExclusions(
+						phrases, exclusionSystems, exclusionTexts, exclusionConditions)),
+					("law", phrases.Say("coverage.law"))),
+				"");
+		}
+
+		/// <summary>
+		/// DONDE ESTA PARADO UN SISTEMA contra el alcance publicado: la forma elige el marco, y la
+		/// clausula -- que paso de la ley decidio, contra que limites y con que exclusiones -- va
+		/// detras. La ley de que esto no adjudica nada la pone la frase, igual que en el resumen.
+		/// </summary>
+		public static string TheCoverage(
+			Phrases phrases, string publication, string revision, string systemCode, string shape,
+			string standing, string reason, string limitsShape, int months, int distance,
+			string distanceUnit, string limitUnit, string odometerUnit, string[] exclusionSystems,
+			string[] exclusionTexts, string[] exclusionConditions)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string subject = phrases.Say("coverage.subject.system", ("system", systemCode));
+
+			if (publication != ThePublishedShape)
+				return NothingWasPublishedAbout(phrases, subject);
+
+			string clause = TheCoverageClause(
+				phrases, reason, limitsShape, months, distance, distanceUnit,
+				exclusionSystems, exclusionTexts, exclusionConditions);
+
+			string said = shape == TheSuspensionByAUnitMismatch
+				? phrases.Say("coverage.unitMismatch",
+					("subject", subject), ("limit", limitUnit), ("other", odometerUnit),
+					("clause", clause))
+				: phrases.Say("coverage.settled",
+					("subject", subject),
+					("standing", phrases.HowItIsSaid("canon.standing", standing)),
+					("clause", clause));
+
+			return TheSpecificationAnswer(phrases, publication, revision, said, "");
+		}
+
+		/// <summary>
+		/// UNA EXCLUSION PUBLICADA: sobre que sistema, que excluye y bajo que condicion. Las tres,
+		/// porque las tres son lo que la persona tiene que leer para saber si le toca. El texto y la
+		/// condicion son del registro del fabricante y no se traducen.
+		/// </summary>
+		public static string AnExclusion(
+			Phrases phrases, string system, string text, string condition)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return phrases.Say("coverage.exclusion",
+				("system", system), ("text", text), ("condition", condition));
+		}
+
+		private static string NothingWasPublishedAbout(Phrases phrases, string subject)
+		{
+			return phrases.Say("coverage.notPublished",
+				("answer", TheSpecificationAnswer(
+					phrases, TheAnswerThatNothingWasPublished, "", "", subject)),
+				("law", phrases.Say("coverage.law")));
+		}
+
+		/// <summary>
+		/// CONTRA QUE SE MIDIO una respuesta de cobertura. El desacuerdo de unidades no da ningun paso
+		/// que contar -- su motivo ya esta en el marco de la respuesta --, asi que ahi la clausula es
+		/// la letra chica y la ley, y nada mas.
+		/// </summary>
+		private static string TheCoverageClause(
+			Phrases phrases, string reason, string limitsShape, int months, int distance,
+			string distanceUnit, string[] systems, string[] texts, string[] conditions)
+		{
+			string law = phrases.Say("coverage.law");
+			bool anyExclusion = texts.Length > 0;
+
+			if (reason == NoReasonToGive)
+				return anyExclusion
+					? phrases.Say("coverage.clause.reasonless",
+						("exclusions", TheExclusions(phrases, systems, texts, conditions)),
+						("law", law))
+					: law;
+
+			string said = phrases.Say("coverage.reason." + reason,
+				("limits", TheLimitsInForce(
+					phrases, limitsShape, months, distance, distanceUnit)));
+
+			return anyExclusion
+				? phrases.Say("coverage.clause.withExclusions",
+					("reason", said),
+					("exclusions", TheExclusions(phrases, systems, texts, conditions)),
+					("law", law))
+				: phrases.Say("coverage.clause", ("reason", said), ("law", law));
+		}
+
+		/// <summary>
+		/// LOS LIMITES QUE RIGEN, con la mitad o las mitades que se publicaron. La que no se publico no
+		/// se nombra: un cero ahi se leeria como un limite cumplido desde siempre.
+		/// </summary>
+		private static string TheLimitsInForce(
+			Phrases phrases, string shape, int months, int distance, string unit)
+		{
+			if (shape != TheLimitsAreNamed) return "";
+
+			if (unit.Length == 0) return phrases.Months(months);
+
+			string byDistance = ADistance(phrases, distance, unit);
+
+			if (months == 0) return byDistance;
+
+			return phrases.Say("coverage.limits.both",
+				("months", phrases.Months(months)), ("distance", byDistance));
+		}
+
+		private static string TheSystemsInsideTheScope(
+			Phrases phrases, string[] codes, string[] limitShapes, int[] months, int[] distances,
+			string[] units)
+		{
+			if (codes.Length == 0) return phrases.Say("coverage.systems.none");
+
+			StringBuilder said = new StringBuilder();
+
+			for (int each = 0; each < codes.Length; each++)
+			{
+				if (each > 0) said.Append(BetweenTwoClauses);
+
+				said.Append(limitShapes[each] == TheLimitsAreNamed
+					? phrases.Say("coverage.system.withLimits",
+						("code", codes[each]),
+						("limits", TheLimitsInForce(
+							phrases, limitShapes[each], months[each], distances[each], units[each])))
+					: phrases.Say("coverage.system", ("code", codes[each])));
+			}
+
+			return said.ToString();
+		}
+
+		private static string TheExclusions(
+			Phrases phrases, string[] systems, string[] texts, string[] conditions)
+		{
+			if (texts.Length == 0) return phrases.Say("coverage.exclusions.none");
+
+			StringBuilder said = new StringBuilder();
+
+			for (int each = 0; each < texts.Length; each++)
+			{
+				if (each > 0) said.Append(BetweenTwoClauses);
+
+				said.Append(AnExclusion(phrases, systems[each], texts[each], conditions[each]));
+			}
+
+			return said.ToString();
 		}
 
 		private static string ADistance(Phrases phrases, int amount, string unit)

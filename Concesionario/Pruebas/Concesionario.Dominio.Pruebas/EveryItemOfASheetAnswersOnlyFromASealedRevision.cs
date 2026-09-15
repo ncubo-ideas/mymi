@@ -97,7 +97,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.PermittedFuelGrades(), Is.EqualTo(new[] { "95 RON Premium" }));
 			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.EqualTo(new[] { "E85 Flex" }));
 			Assert.That(journal.Api.CoveredSystems(), Is.EqualTo(new[] { TheSystem }));
-			Assert.That(journal.Api.CoverageExclusions().Length, Is.EqualTo(1));
+			Assert.That(
+				journal.Api.CoverageExclusions(TheLanguage.OfTheRecord).Length, Is.EqualTo(1));
 		}
 
 		// EL TERCERO: sellada la segunda revision, que solo republico el aceite, SOLO EL ACEITE se
@@ -116,7 +117,8 @@ namespace Concesionario.Dominio.Pruebas
 					each.Key);
 
 			Assert.That(
-				journal.Api.DescribeFluid(TheFluidKind), Does.Contain(TheSecondOilGrade));
+				journal.Api.DescribeFluid(
+					TheFluidKind, TheLanguage.OfTheRecord), Does.Contain(TheSecondOilGrade));
 			Assert.That(journal.Api.ReadCurrentRevisionCode(), Is.EqualTo(TheSecondRevision));
 		}
 
@@ -180,7 +182,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y LA FRASE NO DEJA ESCAPAR EL CONTENIDO por la puerta de atras: una ausencia que igual
 			// dice el grado es la hoja citada por otro camino.
-			Assert.That(journal.Api.DescribeFluid(TheFluidKind), Does.Not.Contain(TheFirstOilGrade));
+			Assert.That(
+				journal.Api.DescribeFluid(TheFluidKind, TheLanguage.OfTheRecord),
+				Does.Not.Contain(TheFirstOilGrade));
 
 			EveryListIsEmpty();
 		}
@@ -193,7 +197,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.PermittedFuelGrades(), Is.Empty);
 			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.Empty);
 			Assert.That(journal.Api.CoveredSystems(), Is.Empty);
-			Assert.That(journal.Api.CoverageExclusions(), Is.Empty);
+			Assert.That(journal.Api.CoverageExclusions(TheLanguage.OfTheRecord), Is.Empty);
 		}
 
 		private Dictionary<string, Func<bool>> ThePresenceReadOfEveryItem()
@@ -230,17 +234,19 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			return new Dictionary<string, Func<string>>
 			{
-				{ TheOil, () => journal.Api.DescribeFluid(TheFluidKind) },
-				{ "llanta", () => journal.Api.DescribeTyre(TheTyrePosition) },
-				{ "combustible", () => journal.Api.DescribeFuel() },
+				{ TheOil, () => journal.Api.DescribeFluid(TheFluidKind, TheLanguage.OfTheRecord) },
+				{ "llanta", () => journal.Api.DescribeTyre(
+					TheTyrePosition, TheLanguage.OfTheRecord) },
+				{ "combustible", () => journal.Api.DescribeFuel(TheLanguage.OfTheRecord) },
 				{ "intervalo",
 					() => journal.Api.DescribeServiceInterval(
-						TheOperation, TheDistanceRemaining, UnitA) },
+						TheOperation, TheDistanceRemaining, UnitA, TheLanguage.OfTheRecord) },
 				{ "precio",
 					() => journal.Api.DescribeServicePrice(
-						TheOperation, TheMilestone, UnitA, TheDayTheVehicleAsks) },
-				{ "garantia", () => journal.Api.DescribeCoverageSummary() },
-				{ "regla de taller", () => journal.Api.DescribeServicingElsewhereRule(2, 1, 0) },
+						TheOperation, TheMilestone, UnitA, TheDayTheVehicleAsks, TheLanguage.OfTheRecord) },
+				{ "garantia", () => journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord) },
+				{ "regla de taller", () => journal.Api.DescribeServicingElsewhereRule(
+					2, 1, 0, TheLanguage.OfTheRecord) },
 			};
 		}
 

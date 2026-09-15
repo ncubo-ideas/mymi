@@ -133,21 +133,23 @@ namespace Concesionario.Dominio.Pruebas
 				{ "IsFluidPublished.kind",
 					() => journal.Api.IsFluidPublished(NoMember) },
 				{ "DescribeFluid.kind",
-					() => journal.Api.DescribeFluid(NoMember) },
+					() => journal.Api.DescribeFluid(NoMember, TheLanguage.OfTheRecord) },
 				{ "ReadFluidRevision.kind",
 					() => journal.Api.ReadFluidRevision(NoMember) },
 				{ "IsTyrePublished.position",
 					() => journal.Api.IsTyrePublished(NoMember) },
 				{ "DescribeTyre.position",
-					() => journal.Api.DescribeTyre(NoMember) },
+					() => journal.Api.DescribeTyre(NoMember, TheLanguage.OfTheRecord) },
 				{ "ReadTyreRevision.position",
 					() => journal.Api.ReadTyreRevision(NoMember) },
 				{ "IsServiceIntervalPublished.kind",
 					() => journal.Api.IsServiceIntervalPublished(NoMember) },
 				{ "DescribeServiceInterval.kind",
-					() => journal.Api.DescribeServiceInterval(NoMember, 8400, "UnitA") },
+					() => journal.Api.DescribeServiceInterval(
+						NoMember, 8400, "UnitA", TheLanguage.OfTheRecord) },
 				{ "DescribeServiceInterval.remainingUnit",
-					() => journal.Api.DescribeServiceInterval("FluidChange", 8400, NoMember) },
+					() => journal.Api.DescribeServiceInterval(
+						"FluidChange", 8400, NoMember, TheLanguage.OfTheRecord) },
 				{ "ReadServiceIntervalRevision.kind",
 					() => journal.Api.ReadServiceIntervalRevision(NoMember) },
 				{ "IsServicePricePublished.kind",
@@ -157,10 +159,10 @@ namespace Concesionario.Dominio.Pruebas
 						"FluidChange", TenThousandUnits, NoMember) },
 				{ "DescribeServicePrice.kind",
 					() => journal.Api.DescribeServicePrice(
-						NoMember, TenThousandUnits, "UnitA", Published) },
+						NoMember, TenThousandUnits, "UnitA", Published, TheLanguage.OfTheRecord) },
 				{ "DescribeServicePrice.milestoneUnit",
 					() => journal.Api.DescribeServicePrice(
-						"FluidChange", TenThousandUnits, NoMember, Published) },
+						"FluidChange", TenThousandUnits, NoMember, Published, TheLanguage.OfTheRecord) },
 				{ "ReadServicePriceRevision.kind",
 					() => journal.Api.ReadServicePriceRevision(
 						NoMember, TenThousandUnits, "UnitA") },
@@ -186,11 +188,11 @@ namespace Concesionario.Dominio.Pruebas
 				{ "DescribeCoverage.envelopeUnit",
 					() => journal.Api.DescribeCoverage(
 						TheSystem, 36, 100000, NoMember,
-						Delivered, 10, 12000, "UnitA", Published) },
+						Delivered, 10, 12000, "UnitA", Published, TheLanguage.OfTheRecord) },
 				{ "DescribeCoverage.currentUnit",
 					() => journal.Api.DescribeCoverage(
 						TheSystem, 36, 100000, "UnitA",
-						Delivered, 10, 12000, NoMember, Published) },
+						Delivered, 10, 12000, NoMember, Published, TheLanguage.OfTheRecord) },
 			};
 		}
 
@@ -208,7 +210,7 @@ namespace Concesionario.Dominio.Pruebas
 						Blank, 36, 100000, "UnitA", Delivered, 10, 12000, "UnitA", Published) },
 				{ "DescribeCoverage.systemCode",
 					() => journal.Api.DescribeCoverage(
-						Blank, 36, 100000, "UnitA", Delivered, 10, 12000, "UnitA", Published) },
+						Blank, 36, 100000, "UnitA", Delivered, 10, 12000, "UnitA", Published, TheLanguage.OfTheRecord) },
 				{ "ReadRevisionState.revisionCode",
 					() => journal.Api.ReadRevisionState(Blank) },
 			};
@@ -217,13 +219,143 @@ namespace Concesionario.Dominio.Pruebas
 		private string ThePriceClauseAsOf(DateTime asOf)
 		{
 			return journal.Api.DescribeServicePrice(
-				"FluidChange", TenThousandUnits, "UnitA", asOf);
+				"FluidChange", TenThousandUnits, "UnitA", asOf, TheLanguage.OfTheRecord);
 		}
 
 		private string TheStandingAskedAt(DateTime deliveredAt, DateTime asOf)
 		{
 			return journal.Api.ReadCoverageStanding(
 				TheSystem, 36, 100000, "UnitA", deliveredAt, 10, 12000, "UnitA", asOf);
+		}
+
+		// EL CABLEADO DEL AYUDANTE CONTRA EL DE LA PUERTA, para la hoja entera.
+		//
+		// TheSentenceTheDoorWouldCompose NO es una segunda redaccion -- el renderizador es el mismo --,
+		// pero el CABLEADO si vive dos veces: que accesor va en que parametro esta escrito aqui y en la
+		// puerta. Ese es exactamente el defecto que ningun test de valores ve: las dos frases se leen
+		// bien y dicen cosas distintas. La agenda ya tenia su version de este renglon
+		// (TheHelperOfThePureSchedulesComposesExactlyWhatTheDoorComposes); esta es la de la hoja.
+		//
+		// LOS DOS IDIOMAS, porque un cableado cruzado puede coincidir en uno y no en el otro: los huecos
+		// de una frase no van en el mismo orden en espanol que en ingles.
+		[Test]
+		public void TheHelperOfThePureSheetComposesExactlyWhatTheDoorComposes()
+		{
+			ModelSpecification pure = TheSameSheetOnAPureSpecification();
+
+			foreach (string language in new[]
+				{ TheLanguage.OfTheRecord, TheLanguage.OfAnEnglishReader })
+				foreach (KeyValuePair<string, string[]> each in TheSameQuestionAskedBothWays(pure, language))
+					Assert.That(each.Value[0], Is.EqualTo(each.Value[1]),
+						"El cableado del ayudante y el de la puerta dejaron de decir lo mismo en "
+						+ language + ", en " + each.Key + ".");
+		}
+
+		// Las once respuestas de la hoja, cada una preguntada por las dos rutas. La clave es lo que se
+		// lee cuando una falla; el valor son las dos frases, la del ayudante primero.
+		private Dictionary<string, string[]> TheSameQuestionAskedBothWays(
+			ModelSpecification pure, string language)
+		{
+			return new Dictionary<string, string[]>
+			{
+				["DescribeFluid"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheFluid(
+						pure, FluidKindCode.EngineOil, language),
+					journal.Api.DescribeFluid("EngineOil", language),
+				},
+				["DescribeTyre"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheTyre(pure, TyrePositionCode.Front, language),
+					journal.Api.DescribeTyre("Front", language),
+				},
+				["DescribeFuel"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheFuel(pure, language),
+					journal.Api.DescribeFuel(language),
+				},
+				["DescribeServiceInterval"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheServiceInterval(
+						pure, OperationKindCode.FluidChange, 2500, DistanceUnitCode.UnitA, language),
+					journal.Api.DescribeServiceInterval("FluidChange", 2500, "UnitA", language),
+				},
+				["DescribePublishedServiceInterval"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.ThePublishedServiceInterval(
+						pure, OperationKindCode.FluidChange, language),
+					journal.Api.DescribePublishedServiceInterval("FluidChange", language),
+				},
+				["DescribeServicePrice"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheServicePrice(
+						pure, OperationKindCode.FluidChange, TenThousandUnits, DistanceUnitCode.UnitA,
+						Published, language),
+					journal.Api.DescribeServicePrice(
+						"FluidChange", TenThousandUnits, "UnitA", Published, language),
+				},
+				["DescribePublishedServicePrice"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.ThePublishedServicePrice(
+						pure, OperationKindCode.FluidChange, TenThousandUnits, DistanceUnitCode.UnitA,
+						language),
+					journal.Api.DescribePublishedServicePrice(
+						"FluidChange", TenThousandUnits, "UnitA", language),
+				},
+				["DescribeServicingElsewhereRule"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(pure, 2, 1, 0, language),
+					journal.Api.DescribeServicingElsewhereRule(2, 1, 0, language),
+				},
+				["DescribePublishedServicingElsewhereRule"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.ThePublishedServicingElsewhereRule(pure, language),
+					journal.Api.DescribePublishedServicingElsewhereRule(language),
+				},
+				["DescribeCoverageSummary"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheCoverageSummary(pure, language),
+					journal.Api.DescribeCoverageSummary(language),
+				},
+				["DescribeCoverage"] = new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheCoverage(
+						pure, TheSystem, 36, 100000, DistanceUnitCode.UnitA,
+						Delivered, 100, 12000, DistanceUnitCode.UnitA, Published.AddYears(1), language),
+					journal.Api.DescribeCoverage(
+						TheSystem, 36, 100000, "UnitA",
+						Delivered, 100, 12000, "UnitA", Published.AddYears(1), language),
+				},
+			};
+		}
+
+		// LA MISMA HOJA SIN JOURNAL: los mismos literales, publicados y sellados en el mismo orden. Se
+		// le agregan las dos que el sellado del journal no publica -- el combustible y la regla de otro
+		// taller --, porque sin ellas dos de las once compararian dos ausencias y no dirian nada.
+		private static ModelSpecification TheSameSheetOnAPureSpecification()
+		{
+			ModelSpecification pure = new ModelSpecification("YARIS-2019");
+
+			pure.OpenRevision(TheRevision, Published);
+			pure.PublishFluidSpecification(
+				TheRevision, FluidKindCode.EngineOil, "5W-30", 4.2m, VolumeUnitCode.UnitA,
+				TenThousandUnits, DistanceUnitCode.UnitA, 365);
+			pure.PublishTyreSpecification(
+				TheRevision, TyrePositionCode.Front, "205/55R16", 2.4m, PressureUnitCode.UnitA, "94V");
+			pure.PublishFuelGrade(TheRevision, "95 RON", FuelGradeStandingCode.Minimum);
+			pure.PublishServiceInterval(
+				TheRevision, OperationKindCode.FluidChange, TenThousandUnits,
+				DistanceUnitCode.UnitA, 365);
+			pure.PublishServicePrice(
+				TheRevision, OperationKindCode.FluidChange, TenThousandUnits, DistanceUnitCode.UnitA,
+				75.50m, "USD", Published, ValidUntil);
+			pure.PublishServicingPolicy(
+				TheRevision, "service may be done at any qualified workshop",
+				"keep the invoices and the parts records");
+			pure.PublishCoveredSystem(TheRevision, TheSystem, 0, 0, DistanceUnitCode.UnitA);
+			pure.SealRevision(TheRevision);
+
+			return pure;
 		}
 
 		private void ASealedSpecSheet()
@@ -242,6 +374,12 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.PublishServicePrice(
 				TheRevision, "FluidChange", TenThousandUnits, "UnitA", 75.50m, "USD",
 				Published, ValidUntil);
+
+			journal.Api.PublishFuelGrade(TheRevision, "95 RON", "Minimum");
+
+			journal.Api.PublishServicingPolicy(
+				TheRevision, "service may be done at any qualified workshop",
+				"keep the invoices and the parts records");
 
 			journal.Api.PublishCoveredSystem(TheRevision, TheSystem, 0, 0, "UnitA");
 

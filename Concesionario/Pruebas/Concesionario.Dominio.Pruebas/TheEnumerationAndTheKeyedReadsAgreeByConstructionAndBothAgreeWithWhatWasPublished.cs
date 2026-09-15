@@ -72,7 +72,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void EveryRowSaysWhatWasPublishedByLiteral()
 		{
 			string[] milestones = specification.PublishedPriceMilestonesAsOf(AfterTheFluidPriceLapsed);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(AfterTheFluidPriceLapsed);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 			string[] revisions = specification.PublishedPriceRevisionsAsOf(AfterTheFluidPriceLapsed);
 
 			int inspection = Array.IndexOf(milestones, "10000 km");
@@ -110,7 +111,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			string[] operations = specification.PublishedPriceOperationsAsOf(asOf);
 			string[] milestones = specification.PublishedPriceMilestonesAsOf(asOf);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(asOf);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, asOf, TheLanguage.OfTheRecord);
 			string[] revisions = specification.PublishedPriceRevisionsAsOf(asOf);
 
 			for (int row = 0; row < operations.Length; row++)
@@ -122,7 +124,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(specification.IsServicePricePublished(kind, distance, unit), Is.True,
 					"La enumeracion trajo una clave que la lectura llaveada no reconoce.");
 				Assert.That(
-					specification.DescribeServicePrice(kind, distance, unit, asOf),
+					TheSentenceTheDoorWouldCompose.TheServicePrice(
+						specification, kind, distance, unit, asOf, TheLanguage.OfTheRecord),
 					Is.EqualTo(said[row]));
 				Assert.That(
 					specification.ReadServicePriceRevision(kind, distance, unit),
@@ -153,15 +156,17 @@ namespace Concesionario.Dominio.Pruebas
 				"Y un hito que no es una distancia positiva sigue contestando sin reventar.");
 
 			Assert.That(
-				specification.DescribeServicePrice(
-					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileBothAreInForce),
+				TheSentenceTheDoorWouldCompose.TheServicePrice(
+					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+					WhileBothAreInForce, TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
 					+ "Al 2025-06-15 esa vigencia está rigiendo. "
 					+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(
-				specification.DescribeServicePrice(
-					OperationKindCode.Repair, 10000, DistanceUnitCode.UnitA, WhileBothAreInForce),
+				TheSentenceTheDoorWouldCompose.TheServicePrice(
+					specification, OperationKindCode.Repair, 10000, DistanceUnitCode.UnitA,
+					WhileBothAreInForce, TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada para este modelo"));
 
 			Assert.That(

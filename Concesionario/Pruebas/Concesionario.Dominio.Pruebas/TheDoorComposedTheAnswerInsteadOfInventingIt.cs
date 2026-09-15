@@ -66,8 +66,9 @@ namespace Concesionario.Dominio.Pruebas
 					Is.EqualTo(TheNineArgumentAnswerOf(journal, journal.Api.ReadCoverageStanding)));
 
 				Assert.That(
-					journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked),
-					Is.EqualTo(TheNineArgumentAnswerOf(journal, journal.Api.DescribeCoverage)),
+					journal.Api.DescribeCoverageForThisVehicle(
+						TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord),
+					Is.EqualTo(TheNineArgumentSentenceOf(journal)),
 					"PALABRA POR PALABRA. La frase la compone el dominio; lo unico que la puerta "
 					+ "aporta son los siete hechos, y salen del registro.");
 			}
@@ -85,9 +86,10 @@ namespace Concesionario.Dominio.Pruebas
 					journal.Api.DescribeCoverage(
 						TheSystem, 24, 12000, TheUnitEverythingIsIn,
 						TheDayItWasHandedOver, TheOdometerAtDelivery, TheOdometerToday,
-						TheUnitEverythingIsIn, TheDayItIsAsked),
+						TheUnitEverythingIsIn, TheDayItIsAsked, TheLanguage.OfTheRecord),
 					Is.Not.EqualTo(
-						journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked)),
+						journal.Api.DescribeCoverageForThisVehicle(
+							TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord)),
 					"Otros limites, otra frase. Sin este renglon, la igualdad de arriba podria "
 					+ "cumplirse por una frase que no nombra ningun hecho.");
 			}
@@ -175,7 +177,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.Throws<InvalidOperationException>(
 					() => journal.Api.ReadCoverageStandingForThisVehicle(TheSystem, TheDayItIsAsked));
 
-				string said = journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked);
+				string said = journal.Api.DescribeCoverageForThisVehicle(
+					TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Contain("nunca se convierten"),
 					"La frase dice por que no se pudo, y es lo mismo que dice la de nueve.");
@@ -184,7 +187,7 @@ namespace Concesionario.Dominio.Pruebas
 					Is.EqualTo(journal.Api.DescribeCoverage(
 						TheSystem, ThirtySixMonths, FifteenThousand, TheUnitEverythingIsIn,
 						TheDayItWasHandedOver, TheOdometerAtDelivery, TheOdometerToday,
-						"UnitA", TheDayItIsAsked)));
+						"UnitA", TheDayItIsAsked, TheLanguage.OfTheRecord)));
 			}
 		}
 
@@ -265,8 +268,9 @@ namespace Concesionario.Dominio.Pruebas
 					+ "sistema -- afuera. Gobierna el mas especifico.");
 
 				Assert.That(
-					journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked),
-					Does.Contain("5000 mi"));
+					journal.Api.DescribeCoverageForThisVehicle(
+						TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord),
+					Does.Contain("5.000 mi"));
 
 				Assert.That(
 					journal.Api.ReadEnvelopeStanding(TheDayItIsAsked), Is.EqualTo("Inside"),
@@ -302,7 +306,8 @@ namespace Concesionario.Dominio.Pruebas
 					+ "no se pudo evaluar. Contra un registro que se contradice, no.");
 
 				Assert.Throws<DomainException>(
-					() => journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked));
+					() => journal.Api.DescribeCoverageForThisVehicle(
+						TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord));
 			}
 		}
 
@@ -325,7 +330,7 @@ namespace Concesionario.Dominio.Pruebas
 
 				Assert.Throws<DomainException>(
 					() => journal.Api.DescribeCoverageForThisVehicle(
-						TheSystem, beforeItWasHandedOver));
+						TheSystem, beforeItWasHandedOver, TheLanguage.OfTheRecord));
 			}
 		}
 
@@ -334,7 +339,18 @@ namespace Concesionario.Dominio.Pruebas
 		private static string TheComposedSentenceOf(Func<AScheduleOnARealJournal> vehicle)
 		{
 			using (AScheduleOnARealJournal journal = vehicle())
-				return journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked);
+				return journal.Api.DescribeCoverageForThisVehicle(
+					TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord);
+		}
+
+		// La misma llave, para la lectura que ademas toma el idioma: una lectura de diez no entra en
+		// un Func de nueve, y la decima no es un hecho del vehiculo.
+		private static string TheNineArgumentSentenceOf(AScheduleOnARealJournal journal)
+		{
+			return journal.Api.DescribeCoverage(
+				TheSystem, ThirtySixMonths, FifteenThousand, TheUnitEverythingIsIn,
+				TheDayItWasHandedOver, TheOdometerAtDelivery, TheOdometerToday,
+				TheUnitEverythingIsIn, TheDayItIsAsked, TheLanguage.OfTheRecord);
 		}
 
 		private static T TheNineArgumentAnswerOf<T>(

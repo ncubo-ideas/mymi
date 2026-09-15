@@ -492,12 +492,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Que fluido de esa clase lleva el modelo, en una frase, con la revision adentro. TOTAL:
-		/// lo no publicado tambien se dice.
+		/// Que fluido de esa clase lleva el modelo, como forma y valores, con la revision al lado.
+		/// TOTAL: lo no publicado tambien contesta, nombrando lo que se pregunto.
 		/// </summary>
-		internal string DescribeFluid(FluidKindCode kind)
+		internal SpecificationAnswer TheFluidAnswer(FluidKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).Describe();
+			return ARevisionAppliesForward(kind);
 		}
 
 		/// <summary>
@@ -517,12 +517,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Que llanta lleva el modelo en esa posicion, en una frase, con la revision adentro. La
-		/// presion sale en la unidad en que se publico. TOTAL.
+		/// Que llanta lleva el modelo en esa posicion, como forma y valores, con la revision al lado.
+		/// La presion sale en la unidad en que se publico. TOTAL.
 		/// </summary>
-		internal string DescribeTyre(TyrePositionCode position)
+		internal SpecificationAnswer TheTyreAnswer(TyrePositionCode position)
 		{
-			return ARevisionAppliesForward(position).Describe();
+			return ARevisionAppliesForward(position);
 		}
 
 		/// <summary>De que revision salio la respuesta de esa posicion. TOTAL.</summary>
@@ -541,12 +541,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Que combustible acepta el modelo: los grados publicados con su postura, con la revision
-		/// adentro. TOTAL.
+		/// Que combustible acepta el modelo: los grados publicados con su postura, con la revision al
+		/// lado. TOTAL.
 		/// </summary>
-		internal string DescribeFuel()
+		internal SpecificationAnswer TheFuelAnswer()
 		{
-			return ARevisionAppliesForward().Describe();
+			return ARevisionAppliesForward();
 		}
 
 		/// <summary>
@@ -602,22 +602,22 @@ namespace Concesionario.Dominio
 		/// <summary>
 		/// Cada cuanto publica el fabricante que se hace esa operacion Y donde queda este vehiculo
 		/// contra ese intervalo, con la distancia que le queda tal como llego. Las dos mitades, o es
-		/// un folleto. TOTAL: lo no publicado se dice, y ahi no se empareja nada.
+		/// un folleto. TOTAL: lo no publicado contesta, y ahi no se empareja nada.
 		/// </summary>
-		internal string DescribeServiceInterval(
+		internal SpecificationAnswer TheServiceIntervalAnswer(
 			OperationKindCode kind, int distanceRemaining, DistanceUnitCode remainingUnit)
 		{
-			return ARevisionAppliesForward(kind, distanceRemaining, remainingUnit).Describe();
+			return ARevisionAppliesForward(kind, distanceRemaining, remainingUnit);
 		}
 
 		/// <summary>
 		/// Cada cuanto publica el fabricante que se hace esa operacion, con su mitad publicada nada
 		/// mas. No pregunta por ningun vehiculo, asi que la contesta tambien quien no tenga ningun
-		/// hecho de ninguno. TOTAL: lo no publicado se dice.
+		/// hecho de ninguno. TOTAL.
 		/// </summary>
-		internal string DescribePublishedServiceInterval(OperationKindCode kind)
+		internal SpecificationAnswer ThePublishedServiceIntervalAnswer(OperationKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).Describe();
+			return ARevisionAppliesForward(kind);
 		}
 
 		/// <summary>De que revision salio el intervalo de esa operacion. TOTAL.</summary>
@@ -644,15 +644,15 @@ namespace Concesionario.Dominio
 		/// Cuanto cuesta esa operacion en ese hito, con su moneda, su vigencia, si esa vigencia rige
 		/// en el instante recibido, y la revision. TOTAL.
 		/// </summary>
-		internal string DescribeServicePrice(
+		internal SpecificationAnswer TheServicePriceAnswer(
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit,
 			DateTime asOf)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind)).Describe();
+				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind));
 
 			return ARevisionAppliesForward(
-				kind, TheMilestone(milestoneDistance, milestoneUnit), asOf).Describe();
+				kind, TheMilestone(milestoneDistance, milestoneUnit), asOf);
 		}
 
 		/// <summary>De que revision salio el precio de esa operacion en ese hito. TOTAL.</summary>
@@ -671,14 +671,14 @@ namespace Concesionario.Dominio
 		/// decir si rige: eso necesita un instante, y quien no tenga ninguno que aportar igual puede
 		/// citar lo que el fabricante publico. TOTAL.
 		/// </summary>
-		internal string DescribePublishedServicePrice(
+		internal SpecificationAnswer ThePublishedServicePriceAnswer(
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind)).Describe();
+				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind));
 
 			return ARevisionAppliesForward(
-				kind, TheMilestone(milestoneDistance, milestoneUnit)).Describe();
+				kind, TheMilestone(milestoneDistance, milestoneUnit));
 		}
 
 		/// <summary>
@@ -732,16 +732,32 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Cada precio publicado en su propia frase -- con su monto, su moneda, su vigencia, si rige
-		/// en el instante preguntado y su revision --, una por fila y en el mismo orden. TOTAL.
+		/// Si hay algo publicado detras de cada fila, por su codigo, una por fila y en el mismo orden.
+		/// TOTAL, y todas contestan lo mismo: una fila nace de una clave que rige, y una clave que rige
+		/// sale de una revision sellada que la publico.
 		/// </summary>
-		internal string[] DescribeEachPublishedPriceAsOf(DateTime asOf)
+		internal string[] PublishedPriceShapesAsOf(DateTime asOf)
 		{
 			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheShapeOfItsAnswer();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Lo que cada precio publicado tiene que decir -- su monto, su moneda, su vigencia y si rige
+		/// en el instante preguntado --, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceClausesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheClauseItCarries();
 
 			return said;
 		}
@@ -811,23 +827,23 @@ namespace Concesionario.Dominio
 		/// ella, con los conteos tal como llegaron. Dice el alcance y la posicion; no dice que
 		/// ninguna reclamacion se vaya a pagar. TOTAL.
 		/// </summary>
-		internal string DescribeServicingElsewhereRule(
+		internal SpecificationAnswer TheServicingElsewhereAnswer(
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
 			int missedMaintenanceCount)
 		{
 			return ARevisionAppliesForwardToTheServicingPolicy(
 				externalServicesWithEvidence, externalServicesWithoutEvidence,
-				missedMaintenanceCount).Describe();
+				missedMaintenanceCount);
 		}
 
 		/// <summary>
 		/// La regla publicada sobre servicio en otro taller, con su mitad publicada nada mas. No
 		/// pregunta por ningun vehiculo, asi que la contesta tambien quien no lleve los conteos de
-		/// ninguno. TOTAL: lo no publicado se dice.
+		/// ninguno. TOTAL.
 		/// </summary>
-		internal string DescribePublishedServicingElsewhereRule()
+		internal SpecificationAnswer ThePublishedServicingElsewhereAnswer()
 		{
-			return ARevisionAppliesForwardToTheServicingPolicy().Describe();
+			return ARevisionAppliesForwardToTheServicingPolicy();
 		}
 
 		/// <summary>De que revision salio la regla de servicio en otro taller. TOTAL.</summary>
@@ -847,47 +863,16 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Elige, para la pregunta de cobertura sobre un sistema, la ULTIMA revision sellada que
-		/// publico alcance, y compone su respuesta con la procedencia adentro. El alcance es UN
-		/// item: una revision que lo republica lo reemplaza entero, y una que solo corrige otra
-		/// cosa no lo toca.
+		/// Elige la ULTIMA revision sellada que publico alcance de garantia y entrega el alcance
+		/// entero como forma y valores, con su procedencia. El alcance es UN item: una revision que lo
+		/// republica lo reemplaza entero, y una que solo corrige otra cosa no lo toca. TOTAL: sin
+		/// ninguna que lo publique sale la ausencia, que es un objeto y no un alcance vacio.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
-			string systemCode, int envelopeMonths, int envelopeDistance,
-			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
-			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		internal ACoverageScope TheCoverageScope()
 		{
-			RefuseReceivedFactsThatCannotBeTrue(
-				deliveredAt, deliveryReading, currentReading, asOf);
+			if (!ARevisionAnswersAboutCoverage()) return ACoverageScope.NothingWasPublished();
 
-			if (!ARevisionAnswersAboutCoverage())
-				return UnpublishedIsAnAnswer(
-					WarrantyCoverage.TheCoverageQuestionAbout(systemCode));
-
-			PublishedRevision answering = TheRevisionThatAnswersAboutCoverage();
-
-			return SpecificationAnswer.EveryAnswerNamesItsRevision(
-				answering,
-				TheStandingAccordingTo(
-					answering, systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
-					deliveredAt, deliveryReading, currentReading, currentUnit, asOf).Describe());
-		}
-
-		/// <summary>
-		/// Elige la ULTIMA revision sellada que publico alcance de garantia y compone el resumen
-		/// del alcance con su procedencia. Lleva el nombre largo porque el alcance no tiene clave
-		/// -- se pregunta por el entero -- y una sobrecarga sin parametros ya la ocupa otro item
-		/// que tampoco la tiene.
-		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForwardToTheWarrantyScope()
-		{
-			if (!ARevisionAnswersAboutCoverage())
-				return UnpublishedIsAnAnswer("La cobertura de garantía");
-
-			PublishedRevision answering = TheRevisionThatAnswersAboutCoverage();
-
-			return SpecificationAnswer.EveryAnswerNamesItsRevision(
-				answering, answering.DescribeWarrantyCoverage());
+			return TheRevisionThatAnswersAboutCoverage().TheWarrantyScopePublished();
 		}
 
 		/// <summary>
@@ -896,24 +881,16 @@ namespace Concesionario.Dominio
 		/// </summary>
 		internal bool IsCoveragePublished()
 		{
-			return ARevisionAppliesForwardToTheWarrantyScope().IsPublished();
+			return ARevisionAnswersAboutCoverage();
 		}
 
 		/// <summary>
-		/// El alcance publicado en una frase -- los sistemas que declara adentro y las exclusiones
-		/// --, con la revision adentro. TOTAL: lo no publicado tambien se dice.
-		/// </summary>
-		internal string DescribeCoverageSummary()
-		{
-			return WithTheScopeAlwaysSaid(ARevisionAppliesForwardToTheWarrantyScope());
-		}
-
-		/// <summary>
-		/// De que revision salio el alcance publicado. TOTAL: lo no publicado contesta vacio.
+		/// De que revision salio el alcance publicado. TOTAL: lo no publicado contesta vacio, que no
+		/// se confunde con una revision porque ninguna tiene el codigo en blanco.
 		/// </summary>
 		internal string ReadCoverageRevision()
 		{
-			return ARevisionAppliesForwardToTheWarrantyScope().RevisionCode();
+			return TheCoverageScope().TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -925,17 +902,6 @@ namespace Concesionario.Dominio
 			if (!ARevisionAnswersAboutCoverage()) return new string[0];
 
 			return TheRevisionThatAnswersAboutCoverage().TheCoveredSystemsPublished();
-		}
-
-		/// <summary>
-		/// Las exclusiones publicadas, cada una con su texto y su condicion -- no como codigos,
-		/// porque un codigo no dice que esta excluido. TOTAL: sin alcance publicado, vacio.
-		/// </summary>
-		internal string[] CoverageExclusions()
-		{
-			if (!ARevisionAnswersAboutCoverage()) return new string[0];
-
-			return TheRevisionThatAnswersAboutCoverage().TheCoverageExclusionsPublished();
 		}
 
 		/// <summary>
@@ -985,19 +951,22 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La respuesta de cobertura en una frase: donde esta parado o por que no se pudo decidir,
-		/// contra que limites se midio, las exclusiones publicadas que haya, y la revision. TOTAL:
-		/// lo que no se pudo evaluar tambien se dice con palabras.
+		/// La respuesta de cobertura como forma y valores: donde esta parado o por que no se pudo
+		/// decidir, contra que limites se midio, las exclusiones publicadas que haya, y la revision.
+		/// TOTAL: lo que no se pudo evaluar tambien contesta, diciendo por que.
+		/// <para>
+		/// Es el MISMO resolvedor que contestan la presencia y el nombre suelto, asi que las tres
+		/// lecturas no pueden discrepar: no hay dos sitios donde decidirlo.
+		/// </para>
 		/// </summary>
-		internal string DescribeCoverage(
+		internal CoverageAnswer TheCoverageAnswer(
 			string systemCode, int envelopeMonths, int envelopeDistance,
 			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
 			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
 		{
-			return WithTheScopeAlwaysSaid(
-				ARevisionAppliesForward(
-					systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
-					deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+			return TheCoverageAnswerFor(
+				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+				deliveredAt, deliveryReading, currentReading, currentUnit, asOf);
 		}
 
 		/// <summary>
@@ -1066,13 +1035,6 @@ namespace Concesionario.Dominio
 			return OnlyASealedRevisionAnswers(candidate) && candidate.HasAFuelSpecification();
 		}
 
-		private static string WithTheScopeAlwaysSaid(SpecificationAnswer answer)
-		{
-			if (answer.IsPublished()) return answer.Describe();
-
-			return answer.Describe() + " " + WarrantyCoverage.ScopeIsNotAdjudication();
-		}
-
 		private static void RefuseReceivedFactsThatCannotBeTrue(
 			DateTime deliveredAt, int deliveryReading, int currentReading, DateTime asOf)
 		{
@@ -1105,9 +1067,8 @@ namespace Concesionario.Dominio
 
 			if (!ARevisionAnswersAboutCoverage())
 				return new ASettledCoverageAnswer(
-					WarrantyCoverage.TheCoverageQuestionAbout(systemCode),
-					CoverageStanding.NotPublished,
-					WarrantyCoverage.ScopeIsNotAdjudication());
+					systemCode, CoverageStanding.NotPublished,
+					ACoverageClause.OfNothingPublished());
 
 			return TheStandingAccordingTo(
 				TheRevisionThatAnswersAboutCoverage(), systemCode, envelopeMonths,

@@ -104,7 +104,8 @@ namespace Concesionario.Dominio.Pruebas
 			ASealedRevisionWithOnePrice();
 
 			WhatTheServicesCost handed =
-				WhatTheServicesCost.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+				WhatTheServicesCost.ReadThrough(
+					journal.Api, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord);
 
 			Assert.That(handed.Rows, Is.Not.Empty);
 

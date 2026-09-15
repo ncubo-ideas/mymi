@@ -3,8 +3,8 @@ using System;
 namespace Concesionario.Dominio
 {
 	/// <summary>
-	/// Un precio publicado: la operacion, el hito, la frase que el dominio dice y la revision de la
-	/// que salio. Es la unidad de la enumeracion de precios, se compone en cada lectura y no se
+	/// Un precio publicado: la operacion, el hito, lo que el precio tiene que decir y la revision de
+	/// la que salio. Es la unidad de la enumeracion de precios, se compone en cada lectura y no se
 	/// guarda en ninguna parte.
 	/// <para>
 	/// Nace de la RESPUESTA del resolvedor y no de la revision que se estaba recorriendo, asi que la
@@ -15,13 +15,16 @@ namespace Concesionario.Dominio
 	internal sealed class APublishedPriceRow
 	{
 		private readonly APublishedPriceKey _key;
-		private readonly string _says;
+		private readonly string _shape;
+		private readonly string _clause;
 		private readonly string _revision;
 
-		private APublishedPriceRow(APublishedPriceKey key, string says, string revision)
+		private APublishedPriceRow(
+			APublishedPriceKey key, string shape, string clause, string revision)
 		{
 			_key = key;
-			_says = says;
+			_shape = shape;
+			_clause = clause;
 			_revision = revision;
 		}
 
@@ -50,7 +53,8 @@ namespace Concesionario.Dominio
 					+ "nombra ninguna revision. Una fila con la procedencia en blanco parece un precio "
 					+ "publicado y no lo es.");
 
-			return new APublishedPriceRow(key, answer.Describe(), answer.RevisionCode());
+			return new APublishedPriceRow(
+				key, answer.TheShapeItHas(), answer.TheClauseItCarries(), answer.RevisionCode());
 		}
 
 		/// <summary>
@@ -74,13 +78,23 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El precio en una frase, que es lo que hace la fila autodescriptiva: la operacion como se
-		/// dice, el hito, el monto con su moneda, la vigencia, si rige en el instante preguntado, y
-		/// la revision.
+		/// Si hay algo publicado detras de la fila, por su codigo. Es siempre lo mismo -- la fabrica
+		/// se niega a nacer de una ausencia -- y va igual, porque quien redacta elige el marco por la
+		/// forma y no por saberse esta ley.
 		/// </summary>
-		internal string Describe()
+		internal string TheShapeOfItsAnswer()
 		{
-			return _says;
+			return _shape;
+		}
+
+		/// <summary>
+		/// Lo que el precio tiene que decir, que es lo que hace la fila autodescriptiva: la operacion
+		/// como se dice, el hito, el monto con su moneda, la vigencia y si rige en el instante
+		/// preguntado. La revision va al lado y no dentro.
+		/// </summary>
+		internal string TheClauseItCarries()
+		{
+			return _clause;
 		}
 	}
 }

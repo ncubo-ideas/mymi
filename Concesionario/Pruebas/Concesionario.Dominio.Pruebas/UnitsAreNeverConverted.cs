@@ -71,7 +71,8 @@ namespace Concesionario.Dominio.Pruebas
 				2.4m, PressureUnitCode.UnitA, "91V");
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeTyre(TyrePositionCode.Front);
+			string answer = TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("2.4 bar"));
 			Assert.That(answer, Does.Not.Contain("psi"));
@@ -87,8 +88,9 @@ namespace Concesionario.Dominio.Pruebas
 				TheRevision, OperationKindCode.FluidChange, 10000, DistanceUnitCode.UnitA, 365);
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitB);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitB,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("no se puede evaluar"));
 			Assert.That(answer, Does.Contain("publicado en km"));
@@ -108,8 +110,9 @@ namespace Concesionario.Dominio.Pruebas
 				TheRevision, OperationKindCode.FluidChange, 10000, DistanceUnitCode.UnitA, 0);
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitB);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitB,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(LosNumerosDe(SinLaProcedencia(answer)),
 				Is.EqualTo(new[] { "10000", "8400" }),
@@ -128,8 +131,9 @@ namespace Concesionario.Dominio.Pruebas
 				TheRevision, OperationKindCode.FluidChange, 10000, DistanceUnitCode.UnitA, 365);
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("8400 km"));
 			Assert.That(answer, Does.Not.Contain("no se puede evaluar"));
@@ -145,8 +149,9 @@ namespace Concesionario.Dominio.Pruebas
 				TheRevision, OperationKindCode.TimedComponent, 0, DistanceUnitCode.UnitA, 1825);
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServiceInterval(
-				OperationKindCode.TimedComponent, 8400, DistanceUnitCode.UnitA);
+			string answer = TheSentenceTheDoorWouldCompose.TheServiceInterval(
+				specification, OperationKindCode.TimedComponent, 8400, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("no se puede evaluar"));
 			Assert.That(answer, Does.Contain("1825 días"));

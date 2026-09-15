@@ -202,9 +202,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(scope.Standing, Is.EqualTo("CoveredWithExclusion"));
 
 			Assert.That(scope.StandingSays, Does.Contain("'POWERTRAIN': Cubierto con exclusión"));
+			// EL NUMERO VA ESCRITO COMO LA PERSONA LO LEE y no pegado desde la constante: el
+			// separador de miles es del IDIOMA y lo pone el renderizador, asi que 20000 sale
+			// "20.000". Pegarlo desde TheDistance compararia contra una forma que ninguna caratula
+			// muestra. Sigue siendo el numero del registro: no hay otro de donde pudiera salir.
 			Assert.That(
-				scope.StandingSays,
-				Does.Contain("Límites que rigen: " + TheMonths + " meses o " + TheDistance + " mi."),
+				scope.StandingSays, Does.Contain("Límites que rigen: 240 meses o 20.000 mi."),
 				"Los limites que rigen son los del SOBRE de este vehiculo, que el sistema cubierto "
 				+ "no tiene propios. Ese numero solo puede haber salido del registro.");
 			Assert.That(scope.StandingSays, Does.Contain("Este vehículo está dentro de ellos."));
@@ -264,9 +267,10 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(standing.PublishedSays,
 				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord)));
 			Assert.That(scope.Says,
-				Is.EqualTo(journal.Api.DescribeCoverageSummary()));
+				Is.EqualTo(journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord)));
 			Assert.That(scope.StandingSays,
-				Is.EqualTo(journal.Api.DescribeCoverageForThisVehicle(TheSystemInside, asOf)));
+				Is.EqualTo(journal.Api.DescribeCoverageForThisVehicle(
+					TheSystemInside, asOf, TheLanguage.OfTheRecord)));
 			Assert.That(scope.ThisVehicleSays,
 				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(asOf, TheLanguage.OfTheRecord)));
 		}
@@ -290,9 +294,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(standing.Detail, Does.Contain("no contra donde está el carro hoy"));
 		}
 
-		// Y LAS TRES LECTURAS DE NUEVE ARGUMENTOS SIGUEN PIDIENDO LOS NUEVE. Se quedan porque quien
-		// MONTA UN ESCENARIO las puede llamar -- que es la consola -- y ninguna tool las llama. El
-		// dia que alguna acepte menos, o que aparezca una decima, esto se pone rojo.
+		// Y LAS TRES LECTURAS DE COBERTURA SIGUEN LLEVANDOSE EL VEHICULO ENTERO. Se quedan porque
+		// quien MONTA UN ESCENARIO las puede llamar -- que es la consola -- y ninguna tool las llama.
+		// El dia que alguna acepte menos, o gane un hecho, esto se pone rojo. La que compone una
+		// frase toma ademas el IDIOMA, que no es un hecho de ningun vehiculo, y por eso se nombra en
+		// vez de contarse.
 		[Test]
 		public void TheThreeCoverageReadsStillTakeTheWholeVehicleWithThem()
 		{
@@ -302,13 +308,20 @@ namespace Concesionario.Dominio.Pruebas
 			})
 			{
 				MethodInfo[] found = TheDoorsOverloadsOf(each);
+				int esperados = each == "DescribeCoverage" ? 10 : 9;
 
 				Assert.That(found, Has.Length.EqualTo(1), $"'{each}'");
-				Assert.That(found[0].GetParameters(), Has.Length.EqualTo(9),
+				Assert.That(found[0].GetParameters(), Has.Length.EqualTo(esperados),
 					$"'{each}' cambio de forma. Piden el escenario COMPLETO porque quien las llama "
 					+ "monta uno entero; una que pidiera ocho y derivara el noveno estaria "
 					+ "componiendo con un hecho que nadie le dio.");
 			}
+
+			Assert.That(
+				TheDoorsOverloadsOf("DescribeCoverage")[0].GetParameters()[9].Name,
+				Is.EqualTo("language"),
+				"El decimo de 'DescribeCoverage' tiene que ser el IDIOMA y ningun otro: un decimo "
+				+ "hecho del vehiculo entraria con el mismo conteo.");
 		}
 
 		// ===== MITAD 2: EL CENSO DE PARAMETROS DE LAS TOOLS ===============================

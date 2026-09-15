@@ -43,8 +43,9 @@ namespace Concesionario.Dominio.Pruebas
 				SystemLimits.OfTheSystemsOwn(36, 60000, DistanceUnit.UnitA);
 
 			Assert.That(limits.Exists(), Is.True);
-			Assert.That(limits.Describe(), Does.Contain("36 meses"));
-			Assert.That(limits.Describe(), Does.Contain("60000 km"));
+			Assert.That(limits.TheMonthsItLimits(), Is.EqualTo(36));
+			Assert.That(limits.TheDistanceItLimits(), Is.EqualTo(60000));
+			Assert.That(limits.TheNameOfTheUnitItsDistanceIsIn(), Is.EqualTo("km"));
 		}
 
 		// EL CERO DEL WIRE NO PASA. Publicar un sistema sin limites propios da la ausencia, no un
@@ -78,10 +79,10 @@ namespace Concesionario.Dominio.Pruebas
 				"Si el cero del wire llegara como limite, este sistema estaria fuera del sobre al "
 				+ "dia siguiente de que le entregaron el carro.");
 			Assert.That(
-				specification.DescribeCoverage(
-					TheSystem, 36, 100000, DistanceUnitCode.UnitA,
-					DeliveredAt, 10, 11, DistanceUnitCode.UnitA, TheDayAfterDelivery),
-				Does.Contain("36 meses o 100000 km"),
+				TheSentenceTheDoorWouldCompose.TheCoverage(
+					specification, TheSystem, 36, 100000, DistanceUnitCode.UnitA,
+					DeliveredAt, 10, 11, DistanceUnitCode.UnitA, TheDayAfterDelivery, TheLanguage.OfTheRecord),
+				Does.Contain("36 meses o 100.000 km"),
 				"Y los limites que la respuesta nombra son los del SOBRE, no unos ceros: si el cero "
 				+ "hubiera entrado como limite propio, la frase diria contra que se midio y seria un "
 				+ "limite que nadie publico.");
@@ -101,7 +102,10 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EveryAccessorOfTheAbsentOneRefusesToAnswer()
 		{
-			Assert.Throws<DomainException>(() => SystemLimits.None.Describe());
+			Assert.Throws<DomainException>(() => SystemLimits.None.TheMonthsItLimits());
+			Assert.Throws<DomainException>(() => SystemLimits.None.TheDistanceItLimits());
+			Assert.Throws<DomainException>(
+				() => SystemLimits.None.TheNameOfTheUnitItsDistanceIsIn());
 			Assert.Throws<DomainException>(() => SystemLimits.None.HasADistanceHalf());
 			Assert.Throws<DomainException>(
 				() => SystemLimits.None.MeasuresDistanceIn(DistanceUnit.UnitA));

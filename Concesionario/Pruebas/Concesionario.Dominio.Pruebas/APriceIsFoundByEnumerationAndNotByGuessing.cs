@@ -99,14 +99,15 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void NoReadOfThePricesAsksForAMilestone()
 		{
-			string[] theSixReads =
+			string[] theSevenReads =
 			{
 				"HasAnyPublishedServicePrice", "PublishedServicePriceCount",
 				"PublishedPriceOperationsAsOf", "PublishedPriceMilestonesAsOf",
-				"DescribeEachPublishedPriceAsOf", "PublishedPriceRevisionsAsOf",
+				"PublishedPriceShapesAsOf", "PublishedPriceClausesAsOf",
+				"PublishedPriceRevisionsAsOf",
 			};
 
-			foreach (string each in theSixReads)
+			foreach (string each in theSevenReads)
 			{
 				MethodInfo[] found = typeof(ModelSpecification)
 					.GetMethods(BindingFlags.Instance | BindingFlags.Public
@@ -140,7 +141,8 @@ namespace Concesionario.Dominio.Pruebas
 				specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce),
 				Has.Length.EqualTo(count));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(WhileBothAreInForce),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, WhileBothAreInForce, TheLanguage.OfTheRecord),
 				Has.Length.EqualTo(count));
 			Assert.That(
 				specification.PublishedPriceRevisionsAsOf(WhileBothAreInForce),
@@ -154,7 +156,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void EveryRowSaysItselfWhole()
 		{
 			string[] milestones = specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(WhileBothAreInForce);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord);
 
 			int theFluidRow = Array.IndexOf(milestones, "20000 km");
 
@@ -171,7 +174,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			string[] milestones =
 				specification.PublishedPriceMilestonesAsOf(AfterTheFluidPriceLapsed);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(AfterTheFluidPriceLapsed);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 
 			int theFluidRow = Array.IndexOf(milestones, "20000 km");
 			int theInspectionRow = Array.IndexOf(milestones, "10000 km");
@@ -190,7 +194,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(2));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(BeforeAnyValidityStarted),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, BeforeAnyValidityStarted, TheLanguage.OfTheRecord),
 				Has.All.Contains("todavía no ha empezado"));
 		}
 
@@ -210,8 +215,10 @@ namespace Concesionario.Dominio.Pruebas
 				specification.PublishedPriceMilestonesAsOf(AfterTheFluidPriceLapsed),
 				Is.EqualTo(atFirst));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(BeforeTheRevisionWasPublished),
-				Is.Not.EqualTo(specification.DescribeEachPublishedPriceAsOf(AfterTheFluidPriceLapsed)),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, BeforeTheRevisionWasPublished, TheLanguage.OfTheRecord),
+				Is.Not.EqualTo(TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord)),
 				"Si la frase tampoco se moviera, el instante no estaria haciendo nada y G4 no se "
 				+ "estaria honrando.");
 		}
@@ -230,7 +237,10 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(empty.PublishedServicePriceCount(), Is.EqualTo(0));
 			Assert.That(empty.PublishedPriceOperationsAsOf(WhileBothAreInForce), Is.Empty);
 			Assert.That(empty.PublishedPriceMilestonesAsOf(WhileBothAreInForce), Is.Empty);
-			Assert.That(empty.DescribeEachPublishedPriceAsOf(WhileBothAreInForce), Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					empty, WhileBothAreInForce, TheLanguage.OfTheRecord),
+				Is.Empty);
 			Assert.That(empty.PublishedPriceRevisionsAsOf(WhileBothAreInForce), Is.Empty);
 
 			Assert.That(

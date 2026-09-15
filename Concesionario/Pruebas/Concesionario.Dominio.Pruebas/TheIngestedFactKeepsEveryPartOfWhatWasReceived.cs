@@ -187,7 +187,7 @@ namespace Concesionario.Dominio.Pruebas
 				2, "R1", "EngineOil", "5W-30", "4.2", "UnitB", 10000, "UnitA", 365));
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
-			Assert.That(journal.Api.DescribeFluid("EngineOil"),
+			Assert.That(journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
 				Does.Contain("capacidad 4.2 gal").And.Contain("cada 10000 km"),
 				"La capacidad sale en la unidad de volumen en que se publico y el intervalo en la de "
 				+ "distancia en que se publico. Cruzadas, las dos mitades dirian lo contrario y las "
@@ -203,7 +203,7 @@ namespace Concesionario.Dominio.Pruebas
 			Apply(ADealershipNarrative.Tyre(2, "R1", "Front", "205/55R16", "2.4", "UnitB", "94V"));
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
-			Assert.That(journal.Api.DescribeTyre("Front"),
+			Assert.That(journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord),
 				Does.Contain("presión en frío 2.4 psi"),
 				"Quien la lee la va a marcar en un manometro: la unidad no es un adorno de la frase.");
 		}
@@ -223,7 +223,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServicePrice(
 					"FluidChange", 10000, "UnitA",
-					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
+					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), TheLanguage.OfTheRecord),
 				Does.Contain("vigente del 2025-08-15 al 2026-12-31"),
 				"El desde es el desde y el hasta es el hasta.");
 		}
@@ -242,8 +242,8 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.DescribeCoverage(
 					"POWERTRAIN", 36, 60000, "UnitA",
 					new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc), 30000, 35000, "UnitA",
-					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
-				Does.Contain("60 meses o 100000 km"),
+					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), TheLanguage.OfTheRecord),
+				Does.Contain("60 meses o 100.000 km"),
 				"Y son los limites PROPIOS del sistema los que rigen sobre el sobre del vehiculo, "
 				+ "que llego con 36 y 60000: mas especifico manda.");
 		}
@@ -268,7 +268,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.PermittedFuelGrades(), Is.EqualTo(new[] { "95 RON Premium" }));
 			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.EqualTo(new[] { "E85 Flex" }));
 
-			Assert.That(journal.Api.DescribeFuel(),
+			Assert.That(journal.Api.DescribeFuel(TheLanguage.OfTheRecord),
 				Does.Contain("95 RON Premium (permitido)")
 					.And.Contain("91 RON regular (mínimo)")
 					.And.Contain("E85 Flex (prohibido)"));
@@ -287,7 +287,8 @@ namespace Concesionario.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(
-				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
+				journal.Api.DescribeServiceInterval(
+					"FluidChange", 2000, "UnitA", TheLanguage.OfTheRecord),
 				Does.Contain("cada 10000 km o 365 días"));
 		}
 
@@ -303,7 +304,7 @@ namespace Concesionario.Dominio.Pruebas
 				3, "R1", "POWERTRAIN", "wear parts", "when the part is a consumable"));
 			Apply(ADealershipNarrative.RevisionSealed(4, "R1"));
 
-			Assert.That(journal.Api.DescribeCoverageSummary(),
+			Assert.That(journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
 				Does.Contain(
 					"Exclusión sobre 'POWERTRAIN': wear parts Publicada para aplicar cuando: when the part is a "
 					+ "consumable."));
@@ -320,7 +321,8 @@ namespace Concesionario.Dominio.Pruebas
 				2, "R1", "service anywhere qualified", "keep every invoice"));
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
-			Assert.That(journal.Api.DescribeServicingElsewhereRule(2, 1, 0),
+			Assert.That(journal.Api.DescribeServicingElsewhereRule(
+				2, 1, 0, TheLanguage.OfTheRecord),
 				Does.Contain("Servicio en otro taller: \"service anywhere qualified\"")
 					.And.Contain("Qué conserva la cobertura: \"keep every invoice\""));
 		}
@@ -390,13 +392,14 @@ namespace Concesionario.Dominio.Pruebas
 			(string Where, string Says, Func<string> Read)[] normalized =
 			{
 				("la capacidad del fluido", "capacidad 4.2 L",
-					() => journal.Api.DescribeFluid("EngineOil")),
+					() => journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord)),
 				("la presión de la llanta", "presión en frío 2.4 bar",
-					() => journal.Api.DescribeTyre("Front")),
+					() => journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord)),
 				("el monto del precio", "$89.90",
 					() => journal.Api.DescribeServicePrice(
 						"FluidChange", 10000, "UnitA",
-						new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc))),
+						new DateTime(
+							2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), TheLanguage.OfTheRecord)),
 			};
 
 			Assert.That(normalized.Length, Is.EqualTo(3),

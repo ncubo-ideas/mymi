@@ -89,7 +89,7 @@ namespace Concesionario.Dominio.Pruebas
 				// Y LA MITAD PUBLICADA DEL ALCANCE CONTESTA ENTERA, porque no depende de ningun hecho
 				// de este carro. Es la mitad que se pierde entera si la pantalla exigiera la personal.
 				WhatTheManufacturerPublished sheet =
-					WhatTheManufacturerPublished.ReadThrough(bare.Api);
+					WhatTheManufacturerPublished.ReadThrough(bare.Api, TheLanguage.OfTheRecord);
 
 				Assert.That(sheet.Coverage.Published, Is.True);
 				Assert.That(sheet.Coverage.CoveredSystems, Is.EqualTo(new[] { TheSystem }));
@@ -301,7 +301,7 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(stands.Odometer, Is.EqualTo(9000));
 
 				WhatTheManufacturerPublished sheet =
-					WhatTheManufacturerPublished.ReadThrough(broken.Api);
+					WhatTheManufacturerPublished.ReadThrough(broken.Api, TheLanguage.OfTheRecord);
 
 				Assert.That(sheet.Coverage.Published, Is.True);
 				Assert.That(sheet.Coverage.Revision, Is.EqualTo(TheRevision));
@@ -370,7 +370,8 @@ namespace Concesionario.Dominio.Pruebas
 					+ "salen negativos. No miente: dice exactamente lo que el registro implica.");
 
 				Assert.Throws<DomainException>(
-					() => ahead.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayTheScreenAsks));
+					() => ahead.Api.DescribeCoverageForThisVehicle(
+						TheSystem, TheDayTheScreenAsks, TheLanguage.OfTheRecord));
 			}
 		}
 

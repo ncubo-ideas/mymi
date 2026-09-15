@@ -175,8 +175,9 @@ namespace Concesionario.Dominio.Pruebas
 				120.50m, "CRC", ValidFrom, ValidUntil);
 			specification.SealRevision(TheRevision);
 
-			string said = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce);
+			string said = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("₡120.50"),
 				"EL ANCLA, contra el literal y no contra la otra respuesta: dos consumidores de un "

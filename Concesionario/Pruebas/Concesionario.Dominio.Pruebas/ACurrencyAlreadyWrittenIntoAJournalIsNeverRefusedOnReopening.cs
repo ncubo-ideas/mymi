@@ -190,7 +190,7 @@ namespace Concesionario.Dominio.Pruebas
 			CloseAndReopen();
 
 			string said = api.DescribeServicePrice(
-				TheOperation, TheMilestone, TheUnit, WhileItIsInForce);
+				TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			TestContext.Out.WriteLine("LA FRASE DESPUES DE REABRIR -- " + said);
 
@@ -214,7 +214,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(HowManyTimesItSays(heard, "[Puppeteer ERROR]"), Is.EqualTo(0));
 			Assert.That(api.PublishedServicePriceCount(), Is.EqualTo(1));
 			Assert.That(
-				api.DescribeServicePrice(TheOperation, TheMilestone, TheUnit, WhileItIsInForce),
+				api.DescribeServicePrice(
+					TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord),
 				Does.Contain("₡85000.10"),
 				"Y aca SI hay simbolo y decimales, porque el conjunto la nombra: es la unica "
 				+ "diferencia entre los dos caminos, y esta del lado de la frase y no del journal.");
@@ -239,10 +240,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(HowManyTimesItSays(heard, "[Puppeteer ERROR]"), Is.EqualTo(0));
 			Assert.That(api.PublishedServicePriceCount(), Is.EqualTo(2));
 			Assert.That(
-				api.DescribeServicePrice(TheOperation, TheMilestone, TheUnit, WhileItIsInForce),
+				api.DescribeServicePrice(
+					TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord),
 				Does.Contain("85000.1 XYZ"));
 			Assert.That(
-				api.DescribeServicePrice("FluidChange", 20000, TheUnit, WhileItIsInForce),
+				api.DescribeServicePrice(
+					"FluidChange", 20000, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord),
 				Does.Contain("₡85000.10"));
 		}
 
@@ -280,12 +283,12 @@ namespace Concesionario.Dominio.Pruebas
 			api.SealRevision(TheRevision);
 
 			string live = api.DescribeServicePrice(
-				TheOperation, TheMilestone, TheUnit, WhileItIsInForce);
+				TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			CloseAndReopen();
 
 			string replayed = api.DescribeServicePrice(
-				TheOperation, TheMilestone, TheUnit, WhileItIsInForce);
+				TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			TestContext.Out.WriteLine("VIVO     -- " + live);
 			TestContext.Out.WriteLine("REPLAYADO -- " + replayed);

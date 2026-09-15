@@ -48,8 +48,9 @@ namespace Concesionario.Dominio.Pruebas
 		public void ThePublishedHalfSaysThePriceItsValidityAndItsRevision()
 		{
 			Assert.That(
-				specification.DescribePublishedServicePrice(
-					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA),
+				TheSentenceTheDoorWouldCompose.ThePublishedServicePrice(
+					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+					TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al 2025-12-31. "
 					+ "Publicado en la revisión REV-2025-01."));
@@ -61,8 +62,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void ThePublishedHalfCarriesNoVerdictAboutAnyInstant()
 		{
-			string said = specification.DescribePublishedServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA);
+			string said = TheSentenceTheDoorWouldCompose.ThePublishedServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Not.Contain(" Al "));
 			Assert.That(said, Does.Not.Contain("está rigiendo"));
@@ -81,7 +83,7 @@ namespace Concesionario.Dominio.Pruebas
 			MethodInfo[] found = typeof(ModelSpecification)
 				.GetMethods(BindingFlags.Instance | BindingFlags.Public
 					| BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-				.Where(member => member.Name == "DescribePublishedServicePrice")
+				.Where(member => member.Name == "ThePublishedServicePriceAnswer")
 				.ToArray();
 
 			Assert.That(found, Has.Length.EqualTo(1));
@@ -96,8 +98,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void WhatWasNeverPublishedIsSaidWithWordsAndNoNumber()
 		{
-			string said = specification.DescribePublishedServicePrice(
-				OperationKindCode.Repair, 10000, DistanceUnitCode.UnitA);
+			string said = TheSentenceTheDoorWouldCompose.ThePublishedServicePrice(
+				specification, OperationKindCode.Repair, 10000, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("reparación"));
 			Assert.That(said, Does.Contain("no se ha publicado nada para este modelo"));
@@ -112,8 +115,9 @@ namespace Concesionario.Dominio.Pruebas
 		public void AMilestoneThatIsNotPositiveIsAskedAboutWithoutThrowing(int milestone)
 		{
 			Assert.That(
-				specification.DescribePublishedServicePrice(
-					OperationKindCode.Inspection, milestone, DistanceUnitCode.UnitA),
+				TheSentenceTheDoorWouldCompose.ThePublishedServicePrice(
+					specification, OperationKindCode.Inspection, milestone, DistanceUnitCode.UnitA,
+					TheLanguage.OfTheRecord),
 				Does.Contain("revisión"));
 		}
 
@@ -124,11 +128,12 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheComposedAnswerContainsThePublishedHalfVerbatim()
 		{
-			string published = specification.DescribePublishedServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA);
-			string composed = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
-				new DateTime(2025, 6, 15, 0, 0, 0));
+			string published = TheSentenceTheDoorWouldCompose.ThePublishedServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				TheLanguage.OfTheRecord);
+			string composed = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				new DateTime(2025, 6, 15, 0, 0, 0), TheLanguage.OfTheRecord);
 
 			Assert.That(
 				composed,
