@@ -909,8 +909,9 @@ namespace Concesionario.Consola
 
 			TheOneHoleInTheSentence(api);
 
-			string standing = api.DescribeWarrantyEnvelope(Warranty.TheInstantPastTheTimeHalf);
-			string published = api.DescribePublishedWarrantyEnvelope();
+			string standing = api.DescribeWarrantyEnvelope(
+				Warranty.TheInstantPastTheTimeHalf, TheVoiceOfTheDealership);
+			string published = api.DescribePublishedWarrantyEnvelope(TheVoiceOfTheDealership);
 
 			app.Dispose();
 
@@ -965,7 +966,7 @@ namespace Concesionario.Consola
 		private static void ThePublishedHalfAlone(DealershipCarAPI api)
 		{
 			Console.WriteLine("   -- la mitad publicada, que cita quien no tiene el odometro de nadie --");
-			Console.WriteLine($"     {api.DescribePublishedWarrantyEnvelope()}");
+			Console.WriteLine($"     {api.DescribePublishedWarrantyEnvelope(TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -979,7 +980,7 @@ namespace Concesionario.Consola
 				+ (canBeEvaluated
 					? api.ReadEnvelopeStanding(asOf)
 					: "no se pudo decidir - pedir el nombre aca REVIENTA"));
-			Console.WriteLine($"     {api.DescribeWarrantyEnvelope(asOf)}");
+			Console.WriteLine($"     {api.DescribeWarrantyEnvelope(asOf, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -1000,7 +1001,7 @@ namespace Concesionario.Consola
 				Console.WriteLine("                              y dicha por el dominio, sin armar aca una");
 				Console.WriteLine("                              tercera con pedazos de las dos:");
 				Console.WriteLine($"     [lo publicado] {api.DescribeCoverageSummary()}");
-				Console.WriteLine($"     [este carro]   {api.DescribeWarrantyEnvelope(asOf)}");
+				Console.WriteLine($"     [este carro]   {api.DescribeWarrantyEnvelope(asOf, TheVoiceOfTheDealership)}");
 				Console.WriteLine();
 				return;
 			}
@@ -1072,7 +1073,7 @@ namespace Concesionario.Consola
 			Console.WriteLine("falta nada: tiene el sobre, la entrega y una lectura de ese instante.");
 			Console.WriteLine();
 			Console.WriteLine("  la frase del sobre CONTESTA:");
-			Console.WriteLine($"    {api.DescribeWarrantyEnvelope(asOf)}");
+			Console.WriteLine($"    {api.DescribeWarrantyEnvelope(asOf, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 			Console.WriteLine("  la de cobertura RECHAZA:");
 			Console.WriteLine($"    {WhatCameBackInsteadOfTheCoverageSentence(api, asOf)}");
@@ -1110,10 +1111,11 @@ namespace Concesionario.Consola
 			Console.WriteLine($"  entrada del journal       : {reopened.Actor.CurrentEntryId}"
 				+ "  (crecio una: OnHydrated deja la semilla en CADA arranque)");
 			Console.WriteLine("  la frase del sobre igual  : "
-				+ $"{again.DescribeWarrantyEnvelope(Warranty.TheInstantPastTheTimeHalf) == standing}"
+				+ $"{again.DescribeWarrantyEnvelope(
+					Warranty.TheInstantPastTheTimeHalf, TheVoiceOfTheDealership) == standing}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  la mitad publicada igual  : "
-				+ $"{again.DescribePublishedWarrantyEnvelope() == published}  <- letra por letra");
+				+ $"{again.DescribePublishedWarrantyEnvelope(TheVoiceOfTheDealership) == published}  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  El sobre no es un campo de C#: sale del journal, y las dos");
 			Console.WriteLine("  publicaciones se vuelven a aplicar corriendo otra vez los mismos");

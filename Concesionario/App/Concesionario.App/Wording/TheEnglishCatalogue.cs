@@ -20,6 +20,9 @@ namespace Concesionario.App.Wording
 				["days.one"] = "1 day",
 				["days.many"] = "{count} days",
 
+				["months.one"] = "1 month",
+				["months.many"] = "{count} months",
+
 				["day.long"] = "{day} {month} {year}",
 				["day.short"] = "{day} {month} {year}",
 
@@ -196,6 +199,81 @@ namespace Concesionario.App.Wording
 				["reason.decidedBy.Time"] = "time",
 				["reason.decidedBy.Distance"] = "distance",
 				["reason.decidedBy.TimeAndDistance"] = "time and distance",
+
+				["envelope.published"] = "{months} or {distance}, published on {day}.",
+				["envelope.notPublished"] =
+					"The dealership has published no warranty envelope for this vehicle, so there "
+					+ "is nothing here to measure against -- which is not the same as this vehicle "
+					+ "having no warranty.",
+
+				["envelope.said"] = "This vehicle's warranty envelope: {reason} {clause} {law}",
+				["envelope.law"] =
+					"Position only: this says where this vehicle stands against the envelope the "
+					+ "dealership published, and nothing about whether a claim would be paid -- the "
+					+ "manufacturer decides that, not this record.",
+
+				["envelope.reason.Settled"] = "{standing}.",
+				["envelope.reason.NoDelivery"] =
+					"cannot be evaluated, because no delivery has been recorded for this vehicle, "
+					+ "and both halves of the envelope are measured from the day it was handed "
+					+ "over. The dealership records that.",
+				["envelope.reason.NoReading"] =
+					"cannot be evaluated, because there is no odometer reading for this vehicle at "
+					+ "the instant asked or before it. An absent reading is not a reading of "
+					+ "nothing, and the distance half cannot be measured without one.",
+				["envelope.reason.UnitMismatch"] =
+					"its distance half cannot be evaluated, because the published distance limit is "
+					+ "in {limit} and this vehicle's odometer is in {other}, and units are never "
+					+ "converted.",
+
+				["envelope.clause.TheEnvelopeAlone"] = "{published}",
+				["envelope.clause.ThePublishedHalfAlone"] = "Envelope published: {published}",
+				["envelope.clause.Whole"] =
+					"Envelope published: {published} {remainder} {odometer}",
+
+				["envelope.remainder"] = "{time} {distance} {first}",
+
+				["envelope.timeHalf.AtTheLimit"] = "Time: exactly on a limit of {limit}.",
+				["envelope.timeHalf.PastTheLimit"] = "Time: {amount} past a limit of {limit}.",
+				["envelope.timeHalf.BeforeTheLimit.one"] = "Time: {amount} left of {limit}.",
+				["envelope.timeHalf.BeforeTheLimit.many"] = "Time: {amount} left of {limit}.",
+
+				["envelope.distanceHalf.AtTheLimit"] = "Distance: exactly on a limit of {limit}.",
+				["envelope.distanceHalf.PastTheLimit"] = "Distance: {amount} past a limit of {limit}.",
+				["envelope.distanceHalf.BeforeTheLimit.one"] = "Distance: {amount} left of {limit}.",
+				["envelope.distanceHalf.BeforeTheLimit.many"] = "Distance: {amount} left of {limit}.",
+				["envelope.distanceHalf.NotMeasured"] = "Distance: cannot be measured, {why}",
+
+				["envelope.why.AbsentReading"] =
+					"because there is no odometer reading for this vehicle at the instant asked or "
+					+ "before it, and the distance half is measured from one.",
+				["envelope.why.UnitMismatch"] =
+					"because the published distance limit is in {limit} and {whose} is in {other}, "
+					+ "and units are never converted.",
+
+				["envelope.whose.TheDeliveryReading"] =
+					"the odometer reading recorded at delivery",
+				["envelope.whose.TheOdometer"] = "this vehicle's odometer",
+
+				["envelope.first.NeitherHalfCanBeSaid"] =
+					"Which of the two halves arrives first cannot be said either, because one of "
+					+ "them was not measured.",
+				["envelope.first.NeitherHalfIsReached"] =
+					"Neither half has been reached, and which arrives first depends on how much "
+					+ "this vehicle is driven from here on: the two halves are not comparable with "
+					+ "each other, and this record says what it holds instead of forecasting a rate.",
+				["envelope.first.BothHalvesTogether"] =
+					"Reached by time and distance, which arrived together.",
+				["envelope.first.TheDistanceHalf"] = "Reached by distance, which arrived first.",
+				["envelope.first.TheTimeHalf"] = "Reached by time, which arrived first.",
+
+				["envelope.odometer.Measured"] =
+					"Measured against an odometer of {reading} observed on {observedOn}, counting "
+					+ "from the {deliveryReading} recorded when the vehicle was handed over on "
+					+ "{deliveredOn}.",
+				["envelope.odometer.Absent"] =
+					"There is no odometer reading to measure the distance half against, and the "
+					+ "dealership's feed is what brings one.",
 			};
 		}
 	}

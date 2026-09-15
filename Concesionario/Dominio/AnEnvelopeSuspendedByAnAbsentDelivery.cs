@@ -10,12 +10,10 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class AnEnvelopeSuspendedByAnAbsentDelivery : EnvelopeAnswer
 	{
-		private readonly string _clause;
-
 		/// <summary>La compone quien vio que el perfil no tiene entrega registrada.</summary>
-		internal AnEnvelopeSuspendedByAnAbsentDelivery(string clause)
+		internal AnEnvelopeSuspendedByAnAbsentDelivery(AnEnvelopeClause clause)
+			: base(clause)
 		{
-			_clause = clause;
 		}
 
 		/// <summary>Si: es esta clase de ausencia y no otra.</summary>
@@ -25,16 +23,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Dice que falta la entrega y quien la registra. La frase contesta aunque la pregunta no:
+		/// Suspendida por la entrega que falta. La respuesta contesta aunque la pregunta no:
 		/// callarlo dejaria a la persona creyendo que le contestaron.
 		/// </summary>
-		internal override string Describe()
+		internal override string TheShapeItHas()
 		{
-			return TheAnswerSaying(
-				"no se puede evaluar, porque no hay ninguna entrega registrada para este vehículo, "
-				+ "y las dos mitades del sobre se miden desde el día en que se entregó. Eso lo "
-				+ "registra el concesionario.",
-				_clause);
+			return NoDelivery;
 		}
 	}
 }

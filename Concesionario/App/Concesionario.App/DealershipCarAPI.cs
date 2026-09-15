@@ -1411,15 +1411,40 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// El sobre publicado en palabras -- sus dos limites, su unidad y cuando se publico -- SIN
-		/// ningun hecho de ningun vehiculo. TOTAL, tambien sin sobre: es la que puede citar quien no
-		/// tiene el odometro de nadie, y no tenerla haria que faltar un dato personal volviera
-		/// incitable lo que la agencia publico.
+		/// El sobre publicado en una frase y en ese idioma -- sus dos limites, su unidad y cuando se
+		/// publico -- SIN ningun hecho de ningun vehiculo. TOTAL, tambien sin sobre: es la que puede
+		/// citar quien no tiene el odometro de nadie, y no tenerla haria que faltar un dato personal
+		/// volviera incitable lo que la agencia publico.
 		/// </summary>
-		public string DescribePublishedWarrantyEnvelope()
+		public string DescribePublishedWarrantyEnvelope(string language)
 		{
-			return AText(
-				"@clause = profile.DescribePublishedWarrantyEnvelope();", "clause", p => { });
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					envelope     = profile.ThePublishedWarrantyEnvelope();
+					@shape       = envelope.TheShapeItHas();
+					@months      = envelope.TheMonthsItPublished();
+					@distance    = envelope.TheDistanceItPublished();
+					@unit        = envelope.TheUnitItsDistanceIsSaidIn();
+					@publishedOn = envelope.TheDayItWasPublished();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",       typeof(string)] = default;
+					p[Parameter.Out, "months",      typeof(int)]    = default;
+					p[Parameter.Out, "distance",    typeof(int)]    = default;
+					p[Parameter.Out, "unit",        typeof(string)] = default;
+					p[Parameter.Out, "publishedOn", typeof(string)] = default;
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.ThePublishedWarrantyEnvelope(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["months"].GetValue<int>(),
+					rented["distance"].GetValue<int>(),
+					rented["unit"].GetValue<string>(),
+					rented["publishedOn"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -1998,24 +2023,132 @@ namespace Concesionario.App
 		}
 
 		/// <summary>
-		/// La respuesta del sobre en una frase: donde esta parado, sus dos mitades, cual llega
-		/// primero, contra que odometro se midio y cuando se observo -- o el motivo con nombre por
-		/// el que no se pudo decidir. TOTAL, y es la lectura primaria: la frase la compone el
-		/// dominio, no quien la lee.
+		/// La respuesta del sobre en una frase y en ese idioma: donde esta parado, sus dos mitades,
+		/// cual llega primero, contra que odometro se midio y cuando se observo -- o el motivo con
+		/// nombre por el que no se pudo decidir. TOTAL, y es la lectura primaria: el dominio eligio la
+		/// forma y los valores, y esta puerta solo los pone en el marco del idioma que se le pide.
 		/// </summary>
-		public string DescribeWarrantyEnvelope(DateTime asOf)
+		public string DescribeWarrantyEnvelope(DateTime asOf, string language)
 		{
-			return AText(@"
-				if (schedule.HasAnOdometerReading(@asOf)) {
-					@clause = profile.DescribeWarrantyEnvelope(
-						schedule.ReadOdometer(@asOf), schedule.OdometerUnit(@asOf),
-						schedule.ReadOdometerObservedAt(@asOf), @asOf);
-				} else {
-					@clause = profile.DescribeWarrantyEnvelopeWithNoOdometer(@asOf);
-				}
-			", "clause", p => {
-				p["asOf", typeof(DateTime)] = InUtc(asOf);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					if (schedule.HasAnOdometerReading(@asOf)) {
+						measured           = profile.TheStandingAsOf(
+							schedule.ReadOdometer(@asOf), schedule.OdometerUnit(@asOf),
+							schedule.ReadOdometerObservedAt(@asOf), @asOf);
+						@shape             = measured.TheShapeItHas();
+						@standing          = measured.TheStandingItReached();
+						@unitNotMatched    = measured.TheUnitThatDidNotMatch();
+						@clauseShape       = measured.TheClauseShape();
+						@publishedShape    = measured.ThePublishedShape();
+						@monthsPublished   = measured.TheMonthsPublished();
+						@distancePublished = measured.TheDistancePublished();
+						@unitPublished     = measured.TheUnitTheDistanceIsPublishedIn();
+						@publishedOn       = measured.TheDayTheEnvelopeWasPublished();
+						@monthsLeft        = measured.TheMonthsLeft();
+						@monthsLimit       = measured.TheMonthsLimit();
+						@distanceShape     = measured.TheDistanceHalfShape();
+						@distanceLeft      = measured.TheDistanceLeftCounted();
+						@distanceLimit     = measured.TheDistanceLimitCounted();
+						@distanceUnit      = measured.TheUnitTheDistanceIsSaidIn();
+						@otherUnit         = measured.TheUnitTheOtherDistanceIsIn();
+						@whoseDistance     = measured.WhoseDistanceDidNotMatch();
+						@whichFirst        = measured.WhichHalfArrivedFirst();
+						@odometerShape     = measured.TheOdometerShape();
+						@reading           = measured.TheReading();
+						@readingUnit       = measured.TheUnitTheReadingIsIn();
+						@observedOn        = measured.TheDayTheReadingWasObserved();
+						@deliveryReading   = measured.TheDeliveryReading();
+						@deliveryUnit      = measured.TheUnitTheDeliveryReadingIsIn();
+						@deliveredOn       = measured.TheDayItWasDelivered();
+					} else {
+						absent             = profile.TheStandingWithNoOdometerAsOf(@asOf);
+						@shape             = absent.TheShapeItHas();
+						@standing          = absent.TheStandingItReached();
+						@unitNotMatched    = absent.TheUnitThatDidNotMatch();
+						@clauseShape       = absent.TheClauseShape();
+						@publishedShape    = absent.ThePublishedShape();
+						@monthsPublished   = absent.TheMonthsPublished();
+						@distancePublished = absent.TheDistancePublished();
+						@unitPublished     = absent.TheUnitTheDistanceIsPublishedIn();
+						@publishedOn       = absent.TheDayTheEnvelopeWasPublished();
+						@monthsLeft        = absent.TheMonthsLeft();
+						@monthsLimit       = absent.TheMonthsLimit();
+						@distanceShape     = absent.TheDistanceHalfShape();
+						@distanceLeft      = absent.TheDistanceLeftCounted();
+						@distanceLimit     = absent.TheDistanceLimitCounted();
+						@distanceUnit      = absent.TheUnitTheDistanceIsSaidIn();
+						@otherUnit         = absent.TheUnitTheOtherDistanceIsIn();
+						@whoseDistance     = absent.WhoseDistanceDidNotMatch();
+						@whichFirst        = absent.WhichHalfArrivedFirst();
+						@odometerShape     = absent.TheOdometerShape();
+						@reading           = absent.TheReading();
+						@readingUnit       = absent.TheUnitTheReadingIsIn();
+						@observedOn        = absent.TheDayTheReadingWasObserved();
+						@deliveryReading   = absent.TheDeliveryReading();
+						@deliveryUnit      = absent.TheUnitTheDeliveryReadingIsIn();
+						@deliveredOn       = absent.TheDayItWasDelivered();
+					}
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",             typeof(string)] = default;
+					p[Parameter.Out, "standing",          typeof(string)] = default;
+					p[Parameter.Out, "unitNotMatched",    typeof(string)] = default;
+					p[Parameter.Out, "clauseShape",       typeof(string)] = default;
+					p[Parameter.Out, "publishedShape",    typeof(string)] = default;
+					p[Parameter.Out, "monthsPublished",   typeof(int)]    = default;
+					p[Parameter.Out, "distancePublished", typeof(int)]    = default;
+					p[Parameter.Out, "unitPublished",     typeof(string)] = default;
+					p[Parameter.Out, "publishedOn",       typeof(string)] = default;
+					p[Parameter.Out, "monthsLeft",        typeof(int)]    = default;
+					p[Parameter.Out, "monthsLimit",       typeof(int)]    = default;
+					p[Parameter.Out, "distanceShape",     typeof(string)] = default;
+					p[Parameter.Out, "distanceLeft",      typeof(int[])]  = default;
+					p[Parameter.Out, "distanceLimit",     typeof(int[])]  = default;
+					p[Parameter.Out, "distanceUnit",      typeof(string)] = default;
+					p[Parameter.Out, "otherUnit",         typeof(string)] = default;
+					p[Parameter.Out, "whoseDistance",     typeof(string)] = default;
+					p[Parameter.Out, "whichFirst",        typeof(string)] = default;
+					p[Parameter.Out, "odometerShape",     typeof(string)] = default;
+					p[Parameter.Out, "reading",           typeof(int)]    = default;
+					p[Parameter.Out, "readingUnit",       typeof(string)] = default;
+					p[Parameter.Out, "observedOn",        typeof(string)] = default;
+					p[Parameter.Out, "deliveryReading",   typeof(int)]    = default;
+					p[Parameter.Out, "deliveryUnit",      typeof(string)] = default;
+					p[Parameter.Out, "deliveredOn",       typeof(string)] = default;
+					p["asOf", typeof(DateTime)] = InUtc(asOf);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheWarrantyEnvelope(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["standing"].GetValue<string>(),
+					rented["unitNotMatched"].GetValue<string>(),
+					rented["clauseShape"].GetValue<string>(),
+					rented["publishedShape"].GetValue<string>(),
+					rented["monthsPublished"].GetValue<int>(),
+					rented["distancePublished"].GetValue<int>(),
+					rented["unitPublished"].GetValue<string>(),
+					rented["publishedOn"].GetValue<string>(),
+					rented["monthsLeft"].GetValue<int>(),
+					rented["monthsLimit"].GetValue<int>(),
+					rented["distanceShape"].GetValue<string>(),
+					rented["distanceLeft"].GetValue<int[]>(),
+					rented["distanceLimit"].GetValue<int[]>(),
+					rented["distanceUnit"].GetValue<string>(),
+					rented["otherUnit"].GetValue<string>(),
+					rented["whoseDistance"].GetValue<string>(),
+					rented["whichFirst"].GetValue<string>(),
+					rented["odometerShape"].GetValue<string>(),
+					rented["reading"].GetValue<int>(),
+					rented["readingUnit"].GetValue<string>(),
+					rented["observedOn"].GetValue<string>(),
+					rented["deliveryReading"].GetValue<int>(),
+					rented["deliveryUnit"].GetValue<string>(),
+					rented["deliveredOn"].GetValue<string>());
+			}
 		}
 
 		/// <summary>

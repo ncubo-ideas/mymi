@@ -198,7 +198,7 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				{ "vin", journal.Api.ReadVin() },
 				{ "envelopePublished", journal.Api.IsWarrantyEnvelopePublished().ToString() },
-				{ "envelopeSaid", journal.Api.DescribePublishedWarrantyEnvelope() },
+				{ "envelopeSaid", journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord) },
 				{ "envelopeAt", journal.Api.ReadEnvelopePublishedAt().ToString("O") },
 				{ "delivered", journal.Api.HasDeliveryBeenRecorded().ToString() },
 				{ "deliveredAt", journal.Api.ReadDeliveredAt().ToString("O") },
@@ -207,7 +207,8 @@ namespace Concesionario.Dominio.Pruebas
 				{ "odometer", journal.Api.ReadOdometer(TheDayItAsks).ToString() },
 				{ "odometerUnit", journal.Api.ReadOdometerUnit(TheDayItAsks) },
 				{ "envelopeStanding", journal.Api.ReadEnvelopeStanding(TheDayItAsks) },
-				{ "envelopeSentence", journal.Api.DescribeWarrantyEnvelope(TheDayItAsks) },
+				{ "envelopeSentence", journal.Api.DescribeWarrantyEnvelope(
+					TheDayItAsks, TheLanguage.OfTheRecord) },
 				{ "dueStates", journal.EveryDueStateItCanAnswer() },
 			};
 		}

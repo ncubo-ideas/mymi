@@ -16,6 +16,10 @@ namespace Concesionario.App.Wording
 	{
 		private const string TheTimeDimension = "Time";
 		private const string TheClauseThatCountsTowardTheLimit = "BeforeTheLimit";
+		private const string TheDecidedAnswer = "Settled";
+		private const string TheAnswerThatNothingWasPublished = "NotPublished";
+		private const string ThePublishedShape = "Published";
+		private const string TheMeasuredHalf = "Measured";
 
 		/// <summary>
 		/// POR QUE UNA OPERACION ESTA DONDE ESTA. La forma elige el marco; el estado, la dimension
@@ -110,6 +114,148 @@ namespace Concesionario.App.Wording
 			if (!hasTwoHalves) return distanceSaid;
 
 			return phrases.Say("countdown.both", ("distance", distanceSaid), ("time", timeSaid));
+		}
+
+		/// <summary>
+		/// LO QUE LA AGENCIA PUBLICO, sin ningun hecho de ningun vehiculo adentro. Las dos mitades van
+		/// siempre juntas: una sola no le dice nada a quien no sabe cuanto maneja.
+		/// </summary>
+		public static string ThePublishedWarrantyEnvelope(
+			Phrases phrases, string shape, int months, int distance, string unit, string publishedOn)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			if (shape != ThePublishedShape) return phrases.Say("envelope.notPublished");
+
+			return phrases.Say("envelope.published",
+				("months", phrases.Months(months)),
+				("distance", ADistance(phrases, distance, unit)),
+				("day", phrases.ADay(publishedOn)));
+		}
+
+		/// <summary>
+		/// DONDE ESTA PARADO ESTE VEHICULO contra su sobre: la forma elige el motivo, y la clausula --
+		/// lo publicado, lo que le queda a cada mitad y contra que odometro -- va detras, en la
+		/// cantidad que la forma de la clausula manda. La ley de que esto no adjudica nada la pone la
+		/// frase y no quien compone, para que no dependa de que se acuerde.
+		/// </summary>
+		public static string TheWarrantyEnvelope(
+			Phrases phrases, string shape, string standing, string unitThatDidNotMatch,
+			string clauseShape, string publishedShape, int monthsPublished, int distancePublished,
+			string unitPublished, string publishedOn, int monthsLeft, int monthsLimit,
+			string distanceHalfShape, int[] distanceLeft, int[] distanceLimit, string distanceUnit,
+			string otherDistanceUnit, string whoseDistance, string whichFirst,
+			string odometerShape, int reading, string readingUnit, string observedOn,
+			int deliveryReading, string deliveryUnit, string deliveredOn)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			string published = ThePublishedWarrantyEnvelope(
+				phrases, publishedShape, monthsPublished, distancePublished, unitPublished,
+				publishedOn);
+
+			return phrases.Say("envelope.said",
+				("reason", TheEnvelopeReason(phrases, shape, standing, unitPublished,
+					unitThatDidNotMatch)),
+				("clause", phrases.Say("envelope.clause." + clauseShape,
+					("published", published),
+					("remainder", TheRemainingEnvelope(
+						phrases, monthsLeft, monthsLimit, distanceHalfShape, distanceLeft,
+						distanceLimit, distanceUnit, unitPublished, otherDistanceUnit,
+						whoseDistance, whichFirst)),
+					("odometer", TheOdometerClause(
+						phrases, odometerShape, reading, readingUnit, observedOn,
+						deliveryReading, deliveryUnit, deliveredOn)))),
+				("law", phrases.Say("envelope.law")));
+		}
+
+		private static string TheEnvelopeReason(
+			Phrases phrases, string shape, string standing, string unitPublished,
+			string unitThatDidNotMatch)
+		{
+			if (shape == TheDecidedAnswer || shape == TheAnswerThatNothingWasPublished)
+				return phrases.Say(
+					"envelope.reason.Settled",
+					("standing", phrases.HowItIsSaid("canon.standing", standing)));
+
+			return phrases.Say("envelope.reason." + shape,
+				("limit", unitPublished), ("other", unitThatDidNotMatch));
+		}
+
+		private static string TheRemainingEnvelope(
+			Phrases phrases, int monthsLeft, int monthsLimit, string distanceHalfShape,
+			int[] distanceLeft, int[] distanceLimit, string distanceUnit, string unitPublished,
+			string otherDistanceUnit, string whoseDistance, string whichFirst)
+		{
+			return phrases.Say("envelope.remainder",
+				("time", AHalf(
+					phrases, "envelope.timeHalf", monthsLeft, phrases.Months(monthsLeft),
+					phrases.Months(-monthsLeft), phrases.Months(monthsLimit))),
+				("distance", TheDistanceHalf(
+					phrases, distanceHalfShape, distanceLeft, distanceLimit, distanceUnit,
+					unitPublished, otherDistanceUnit, whoseDistance)),
+				("first", phrases.Say("envelope.first." + whichFirst)));
+		}
+
+		private static string TheDistanceHalf(
+			Phrases phrases, string shape, int[] left, int[] limit, string unit,
+			string unitPublished, string otherUnit, string whoseDistance)
+		{
+			if (shape != TheMeasuredHalf)
+				return phrases.Say("envelope.distanceHalf.NotMeasured",
+					("why", phrases.Say("envelope.why." + shape,
+						("limit", unitPublished),
+						("other", otherUnit),
+						("whose", phrases.Say("envelope.whose." + whoseDistance)))));
+
+			int amount = TheOnlyAmountOf(left);
+
+			return AHalf(
+				phrases, "envelope.distanceHalf", amount,
+				ADistance(phrases, amount, unit), ADistance(phrases, -amount, unit),
+				ADistance(phrases, TheOnlyAmountOf(limit), unit));
+		}
+
+		/// <summary>
+		/// UNA MITAD DICHA: el signo elige el marco y el limite alcanzado exacto tiene el suyo, porque
+		/// "0 pasados del limite" se leeria como un defecto y no como una respuesta.
+		/// </summary>
+		private static string AHalf(
+			Phrases phrases, string family, int left, string ahead, string over, string limit)
+		{
+			if (left == 0) return phrases.Say(family + ".AtTheLimit", ("limit", limit));
+
+			if (left < 0)
+				return phrases.Say(
+					family + ".PastTheLimit", ("amount", over), ("limit", limit));
+
+			return phrases.Say(
+				family + (left == 1 ? ".BeforeTheLimit.one" : ".BeforeTheLimit.many"),
+				("amount", ahead), ("limit", limit));
+		}
+
+		private static string TheOdometerClause(
+			Phrases phrases, string shape, int reading, string readingUnit, string observedOn,
+			int deliveryReading, string deliveryUnit, string deliveredOn)
+		{
+			if (shape != TheMeasuredHalf) return phrases.Say("envelope.odometer.Absent");
+
+			return phrases.Say("envelope.odometer.Measured",
+				("reading", ADistance(phrases, reading, readingUnit)),
+				("observedOn", phrases.ADay(observedOn)),
+				("deliveryReading", ADistance(phrases, deliveryReading, deliveryUnit)),
+				("deliveredOn", phrases.ADay(deliveredOn)));
+		}
+
+		private static string ADistance(Phrases phrases, int amount, string unit)
+		{
+			return phrases.Say(
+				"quantity.distance", ("amount", phrases.Grouped(amount)), ("unit", unit));
+		}
+
+		private static int TheOnlyAmountOf(int[] amount)
+		{
+			return amount.Length == 1 ? amount[0] : 0;
 		}
 
 		private static string TheClauses(

@@ -164,7 +164,7 @@ namespace Concesionario.Dominio.Pruebas
 			// LAS DOS MITADES, dichas las dos. La de distancia es exacta y no depende del reloj; la
 			// de tiempo se afirma por su FORMA, porque los meses que quedan bajan solos con el
 			// calendario y afirmar el numero seria afirmar el dia en que corre la suite.
-			Assert.That(standing.Says, Does.Contain("Distancia: quedan 11120 mi de 20000 mi."),
+			Assert.That(standing.Says, Does.Contain("Distancia: quedan 11.120 mi de 20.000 mi."),
 				"La distancia se cuenta desde el odometro de la entrega y no desde cero.");
 			Assert.That(standing.Says, Does.Contain("meses de " + TheMonths + " meses."),
 				"Si esto se pone rojo despues de 2045, el escenario cumplio su plazo y hay que "
@@ -177,7 +177,7 @@ namespace Concesionario.Dominio.Pruebas
 			// LA LINEA DE HONESTIDAD: contra que odometro se midio y cuando se OBSERVO.
 			Assert.That(
 				standing.Says,
-				Does.Contain("odómetro de 9000 mi observado el 2025-09-01"));
+				Does.Contain("odómetro de 9.000 mi observado el 1 de setiembre de 2025"));
 			Assert.That(standing.OdometerObservedAt, Does.StartWith("2025-09-01"));
 			Assert.That(standing.Odometer, Is.EqualTo(TheOdometerToday),
 				"Y es la SEGUNDA lectura, la vigente al instante preguntado, no la primera que "
@@ -210,7 +210,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(scope.StandingSays, Does.Contain("Este vehículo está dentro de ellos."));
 			Assert.That(scope.StandingSays, Does.Contain("revisión " + TheRevision));
 
-			Assert.That(scope.ThisVehicleSays, Does.Contain("Distancia: quedan 11120 mi de 20000 mi."),
+			Assert.That(scope.ThisVehicleSays, Does.Contain("Distancia: quedan 11.120 mi de 20.000 mi."),
 				"Y la mitad del vehiculo va aparte y entera, que es lo que deja citarla cuando la "
 				+ "compuesta no se puede.");
 		}
@@ -260,15 +260,15 @@ namespace Concesionario.Dominio.Pruebas
 				standing.AskedAt, null, System.Globalization.DateTimeStyles.RoundtripKind);
 
 			Assert.That(standing.Says,
-				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(asOf)));
+				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(asOf, TheLanguage.OfTheRecord)));
 			Assert.That(standing.PublishedSays,
-				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope()));
+				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord)));
 			Assert.That(scope.Says,
 				Is.EqualTo(journal.Api.DescribeCoverageSummary()));
 			Assert.That(scope.StandingSays,
 				Is.EqualTo(journal.Api.DescribeCoverageForThisVehicle(TheSystemInside, asOf)));
 			Assert.That(scope.ThisVehicleSays,
-				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(asOf)));
+				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(asOf, TheLanguage.OfTheRecord)));
 		}
 
 		// Y SE LE DICE AL ASISTENTE, EN PALABRAS, CONTRA QUE SE MIDIO. La respuesta ya no dice "la

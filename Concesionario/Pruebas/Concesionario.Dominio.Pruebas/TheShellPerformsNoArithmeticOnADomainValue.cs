@@ -139,6 +139,15 @@ namespace Concesionario.Dominio.Pruebas
 			},
 			new AllowedArithmetic
 			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs", Member = "AHalf",
+				Snippet = "family + (left == 1 ? \".BeforeTheLimit.one\" : \".BeforeTheLimit.many\"),",
+				Reason = "Pega la familia de la clave con el sufijo del plural, y las dos son texto: el "
+					+ "detector marca el '+' entre dos identificadores a proposito. El '== 1' de al "
+					+ "lado es una comparacion y no una cuenta, y lo que compara es lo que el dominio "
+					+ "ya midio -- esta capa elige la redaccion, no vuelve a medir.",
+			},
+			new AllowedArithmetic
+			{
 				Root = TheCodeOfTheShellsAsData.Consola, File = "Program.cs", Member = "Act",
 				Snippet = "Console.WriteLine($\" entradas del journal : {before} -> {after} ({after - before} escritas)\");",
 				Reason = "Diagnostico: la diferencia entre dos ids de entrada del journal. El id es "
@@ -370,10 +379,15 @@ namespace Concesionario.Dominio.Pruebas
 			ItDoesNotSee("a.cs", "/// <summary>Lo que falta: Stands.Odometer - Stands.DeliveryReading</summary>");
 			ItDoesNotSee("a.cs", "string when = \"2026-06-10\";");
 			ItDoesNotSee("a.cs", "string said = \"Te faltan \" + kilometres;");
-			ItDoesNotSee("Inicio.razor", "<div class=\"d-bar__fill d-bar__fill--ok\" id=\"cuenta-al-dia\"></div>");
-			ItDoesNotSee("Inicio.razor", "<span class=\"@(\"d-pill d-pill--\" + Tono)\">@Titular</span>");
-			ItDoesNotSee("Inicio.razor", "role=\"img\" aria-label=\"Sotaventos Motors\" focusable=\"false\">");
-			ItDoesNotSee("nginx.conf", "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;");
+			ItDoesNotSee(
+				"Inicio.razor",
+				"<div class=\"d-bar__fill d-bar__fill--ok\" id=\"cuenta-al-dia\"></div>");
+			ItDoesNotSee(
+				"Inicio.razor", "<span class=\"@(\"d-pill d-pill--\" + Tono)\">@Titular</span>");
+			ItDoesNotSee(
+				"Inicio.razor", "role=\"img\" aria-label=\"Sotaventos Motors\" focusable=\"false\">");
+			ItDoesNotSee(
+				"nginx.conf", "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;");
 			ItDoesNotSee("a.js", "/* aca habria un x - y y no cuenta */");
 			ItDoesNotSee("a.cs", "return $\"{Kind} hecho el {CompletedAt:yyyy-MM-dd}\";");
 		}

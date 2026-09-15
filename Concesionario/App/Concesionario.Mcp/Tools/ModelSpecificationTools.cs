@@ -17,6 +17,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class ModelSpecificationTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTA CARA PIDE LAS FRASES DEL DOMINIO, que es el del registro y no el de
+		/// quien pregunta: esta superficie es la voz del concesionario hablandole al modelo, igual
+		/// que el titulo y las descripciones de estas mismas tools.
+		/// </summary>
+		private const string TheVoiceOfTheDealership = Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public ModelSpecificationTools(JournalReader reader)
@@ -234,7 +241,8 @@ namespace Concesionario.Mcp.Tools
 			if (envelopeKnown)
 				try
 				{
-					thisVehicleSays = api.DescribeWarrantyEnvelope(askedAt);
+					thisVehicleSays = api.DescribeWarrantyEnvelope(
+						askedAt, TheVoiceOfTheDealership);
 
 					if (wholeRecord && system.Length > 0)
 					{

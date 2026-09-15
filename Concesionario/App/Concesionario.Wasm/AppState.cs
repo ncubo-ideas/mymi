@@ -525,10 +525,11 @@ namespace Concesionario.Wasm
 		/// pregunta. Va aparte de la ficha porque la ficha es de un modelo y esto es de un carro, y
 		/// porque solo esta mitad depende del instante.
 		/// </summary>
-		public WhereThisVehicleStands ReadWhereThisVehicleStands()
+		public WhereThisVehicleStands ReadWhereThisVehicleStands(string language)
 		{
 			Require();
-			return WhereThisVehicleStands.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return WhereThisVehicleStands.ReadThrough(
+				api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		/// <summary>

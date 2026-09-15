@@ -135,6 +135,14 @@ namespace Concesionario.App.Wording
 				: Say("days.many", ("count", Grouped(days)));
 		}
 
+		/// <summary>Cuantos meses, dicho entero por la misma razon que los dias.</summary>
+		public string Months(int months)
+		{
+			return months == 1
+				? Say("months.one")
+				: Say("months.many", ("count", Grouped(months)));
+		}
+
 		/// <summary>
 		/// Un dia del registro -- yyyy-MM-dd, tal como lo componen las caratulas -- dicho en palabras.
 		/// El ORDEN de las partes lo pone el catalogo, porque no es el mismo en los dos idiomas. Un

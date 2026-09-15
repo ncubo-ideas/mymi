@@ -27,6 +27,9 @@ namespace Concesionario.App.Wording
 				["days.one"] = "1 día",
 				["days.many"] = "{count} días",
 
+				["months.one"] = "1 mes",
+				["months.many"] = "{count} meses",
+
 				["day.long"] = "{day} de {month} de {year}",
 				["day.short"] = "{day} {month} {year}",
 
@@ -205,6 +208,85 @@ namespace Concesionario.App.Wording
 				["reason.decidedBy.Time"] = "tiempo",
 				["reason.decidedBy.Distance"] = "distancia",
 				["reason.decidedBy.TimeAndDistance"] = "tiempo y distancia",
+
+				["envelope.published"] = "{months} o {distance}, publicado el {day}.",
+				["envelope.notPublished"] =
+					"El concesionario no ha publicado ningún sobre de garantía para este vehículo, "
+					+ "así que aquí no hay contra qué medir -- que no es lo mismo que este vehículo "
+					+ "no tenga garantía.",
+
+				["envelope.said"] = "El sobre de garantía de este vehículo: {reason} {clause} {law}",
+				["envelope.law"] =
+					"Solo posición: esto dice dónde está parado este vehículo frente al sobre que "
+					+ "publicó el concesionario, y nada sobre si un reclamo se pagaría -- eso lo "
+					+ "decide el fabricante, no este registro.",
+
+				["envelope.reason.Settled"] = "{standing}.",
+				["envelope.reason.NoDelivery"] =
+					"no se puede evaluar, porque no hay ninguna entrega registrada para este "
+					+ "vehículo, y las dos mitades del sobre se miden desde el día en que se "
+					+ "entregó. Eso lo registra el concesionario.",
+				["envelope.reason.NoReading"] =
+					"no se puede evaluar, porque no hay ninguna lectura del odómetro de este "
+					+ "vehículo al instante preguntado ni antes. Una lectura ausente no es una "
+					+ "lectura de nada, y la mitad de distancia no se puede medir sin una.",
+				["envelope.reason.UnitMismatch"] =
+					"su mitad de distancia no se puede evaluar, porque el límite de distancia "
+					+ "publicado está en {limit} y el odómetro de este vehículo está en {other}, y "
+					+ "las unidades nunca se convierten.",
+
+				["envelope.clause.TheEnvelopeAlone"] = "{published}",
+				["envelope.clause.ThePublishedHalfAlone"] = "Sobre publicado: {published}",
+				["envelope.clause.Whole"] =
+					"Sobre publicado: {published} {remainder} {odometer}",
+
+				["envelope.remainder"] = "{time} {distance} {first}",
+
+				["envelope.timeHalf.AtTheLimit"] = "Tiempo: justo en un límite de {limit}.",
+				["envelope.timeHalf.PastTheLimit"] =
+					"Tiempo: {amount} pasados de un límite de {limit}.",
+				["envelope.timeHalf.BeforeTheLimit.one"] = "Tiempo: queda {amount} de {limit}.",
+				["envelope.timeHalf.BeforeTheLimit.many"] = "Tiempo: quedan {amount} de {limit}.",
+
+				["envelope.distanceHalf.AtTheLimit"] = "Distancia: justo en un límite de {limit}.",
+				["envelope.distanceHalf.PastTheLimit"] =
+					"Distancia: {amount} pasados de un límite de {limit}.",
+				["envelope.distanceHalf.BeforeTheLimit.one"] = "Distancia: queda {amount} de {limit}.",
+				["envelope.distanceHalf.BeforeTheLimit.many"] =
+					"Distancia: quedan {amount} de {limit}.",
+				["envelope.distanceHalf.NotMeasured"] = "Distancia: no se puede medir, {why}",
+
+				["envelope.why.AbsentReading"] =
+					"porque no hay ninguna lectura del odómetro de este vehículo al instante "
+					+ "preguntado ni antes, y la mitad de distancia se mide desde una.",
+				["envelope.why.UnitMismatch"] =
+					"porque el límite de distancia publicado está en {limit} y {whose} está en "
+					+ "{other}, y las unidades nunca se convierten.",
+
+				["envelope.whose.TheDeliveryReading"] =
+					"la lectura del odómetro registrada en la entrega",
+				["envelope.whose.TheOdometer"] = "el odómetro de este vehículo",
+
+				["envelope.first.NeitherHalfCanBeSaid"] =
+					"Cuál de las dos mitades llega primero tampoco se puede decir, porque una de "
+					+ "las dos no se midió.",
+				["envelope.first.NeitherHalfIsReached"] =
+					"Ninguna de las dos mitades se ha alcanzado, y cuál llega primero depende de "
+					+ "cuánto se maneje este vehículo de aquí en adelante: las dos mitades no son "
+					+ "comparables entre sí, y este registro dice lo que tiene en vez de pronosticar "
+					+ "un ritmo.",
+				["envelope.first.BothHalvesTogether"] =
+					"Alcanzado por tiempo y distancia, que llegaron juntos.",
+				["envelope.first.TheDistanceHalf"] = "Alcanzado por distancia, que llegó primero.",
+				["envelope.first.TheTimeHalf"] = "Alcanzado por tiempo, que llegó primero.",
+
+				["envelope.odometer.Measured"] =
+					"Medido contra un odómetro de {reading} observado el {observedOn}, contando "
+					+ "desde los {deliveryReading} registrados cuando el vehículo se entregó el "
+					+ "{deliveredOn}.",
+				["envelope.odometer.Absent"] =
+					"No hay ninguna lectura del odómetro contra la cual medir la mitad de "
+					+ "distancia, y quien trae una es el feed del concesionario.",
 			};
 		}
 	}

@@ -119,7 +119,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (var past = AnotherVehicleWhoseOdometerReads(90000))
 			{
 				WhereThisVehicleStands mirror = WhereThisVehicleStands.ReadThrough(
-					past.Api, TheDayTheVehicleAsks);
+					past.Api, TheDayTheVehicleAsks, TheLanguage.OfTheRecord);
 
 				Assert.That(mirror.Standing, Is.EqualTo("Reached"));
 				Assert.That(mirror.Standing, Is.Not.EqualTo(stands.Standing),
@@ -142,9 +142,9 @@ namespace Concesionario.Dominio.Pruebas
 			WhereThisVehicleStands stands = WhatTheScreenIsHandedAt(TheDayTheVehicleAsks);
 
 			Assert.That(stands.Says,
-				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(TheDayTheVehicleAsks)));
+				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(TheDayTheVehicleAsks, TheLanguage.OfTheRecord)));
 			Assert.That(stands.PublishedSays,
-				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope()));
+				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord)));
 			Assert.That(TheSystemRow(stands, TheSystemInside).Says,
 				Is.EqualTo(journal.Api.DescribeCoverageForThisVehicle(
 					TheSystemInside, TheDayTheVehicleAsks)));
@@ -161,7 +161,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(stands.OdometerUnit, Is.EqualTo("mi"));
 			Assert.That(stands.DeliveryUnit, Is.EqualTo("mi"));
-			Assert.That(stands.Says, Does.Contain("60000 mi"));
+			Assert.That(stands.Says, Does.Contain("60.000 mi"));
 			Assert.That(stands.Says, Does.Not.Contain(" km"),
 				"Una sola aparicion de la otra unidad en esta frase quiere decir que se convirtio.");
 		}
@@ -200,7 +200,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (var bare = ABareVehicle("1FTFW1ET5DFA00001"))
 			{
 				WhereThisVehicleStands nothing = WhereThisVehicleStands.ReadThrough(
-					bare.Api, TheDayTheVehicleAsks);
+					bare.Api, TheDayTheVehicleAsks, TheLanguage.OfTheRecord);
 
 				Assert.That(nothing.Says, Does.Contain(nothing.PublishedSays),
 					"Sin sobre publicado tambien: la respuesta es NotPublished y su clausula ES la "
@@ -210,7 +210,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (AScheduleOnARealJournal broken = AVehicleWhoseOdometerWentBackwards())
 			{
 				WhereThisVehicleStands contradictory = WhereThisVehicleStands.ReadThrough(
-					broken.Api, TheDayTheVehicleAsks);
+					broken.Api, TheDayTheVehicleAsks, TheLanguage.OfTheRecord);
 
 				Assert.That(contradictory.Says, Is.Empty);
 				Assert.That(contradictory.PublishedSays, Is.Not.Empty,
@@ -587,9 +587,12 @@ namespace Concesionario.Dominio.Pruebas
 				+ "con su fila por sistema.");
 
 			Assert.That(words, Has.Some.Contains("EngineOil"), "No entro a la lista de fluidos.");
-			Assert.That(words, Has.Some.Contains("Llanta de repuesto"), "No entro a la lista de llantas.");
-			Assert.That(words, Has.Some.Contains(TheSystemInside), "No entro al arreglo de sistemas.");
-			Assert.That(words, Has.Some.Contains("wear parts"), "No entro al arreglo de exclusiones.");
+			Assert.That(
+				words, Has.Some.Contains("Llanta de repuesto"), "No entro a la lista de llantas.");
+			Assert.That(
+				words, Has.Some.Contains(TheSystemInside), "No entro al arreglo de sistemas.");
+			Assert.That(
+				words, Has.Some.Contains("wear parts"), "No entro al arreglo de exclusiones.");
 			Assert.That(words, Has.Some.Contains(TheRevision), "No leyo ninguna procedencia.");
 			Assert.That(words, Has.Some.Contains("CoveredWithExclusion"),
 				"No entro a la lista de sistemas de la mitad del vehiculo, que es la que T10 agrego.");
@@ -613,7 +616,7 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereThisVehicleStands WhatTheScreenIsHandedAt(DateTime asOf)
 		{
-			return WhereThisVehicleStands.ReadThrough(journal.Api, asOf);
+			return WhereThisVehicleStands.ReadThrough(journal.Api, asOf, TheLanguage.OfTheRecord);
 		}
 
 		private static CoverageStandingForThisVehicle TheSystemRow(

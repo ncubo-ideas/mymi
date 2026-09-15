@@ -93,14 +93,14 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El sobre publicado en palabras: sus dos limites, su unidad y cuando se publico, SIN NINGUN
-		/// hecho del vehiculo adentro. TOTAL, tambien cuando no hay sobre -- es la lectura que puede
-		/// citar quien no tiene ni un dato de ningun carro, y no tenerla haria que faltar el odometro
-		/// de alguien volviera incitable lo que la agencia publico para todos.
+		/// El sobre publicado con su forma y sus valores: sus dos limites, su unidad y cuando se
+		/// publico, SIN NINGUN hecho del vehiculo adentro. TOTAL, tambien cuando no hay sobre -- es lo
+		/// que puede citar quien no tiene ni un dato de ningun carro, y no tenerlo haria que faltar el
+		/// odometro de alguien volviera incitable lo que la agencia publico para todos.
 		/// </summary>
-		internal string DescribePublishedWarrantyEnvelope()
+		internal WarrantyEnvelope ThePublishedWarrantyEnvelope()
 		{
-			return _envelope.Describe();
+			return _envelope;
 		}
 
 		/// <summary>
@@ -179,20 +179,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La respuesta del sobre en una frase: donde esta parado, sus DOS mitades, cual llego
-		/// primero, contra que odometro se midio y cuando se observo, y cuando se publico el sobre --
-		/// o el motivo con nombre por el que no se pudo decidir. TOTAL.
-		/// </summary>
-		internal string DescribeWarrantyEnvelope(
-			int reading, DistanceUnitCode readingUnit, DateTime observedAt, DateTime asOf)
-		{
-			return TheStandingAsOf(reading, readingUnit, observedAt, asOf).Describe();
-		}
-
-		/// <summary>
-		/// Lo mismo cuando no hay ninguna lectura del odometro al instante preguntado. TOTAL. Es una
-		/// operacion aparte y no un valor especial en la de arriba: un cero o una lectura por defecto
-		/// serian una medicion que nadie tomo.
+		/// Si la pregunta del sobre se puede decidir cuando no hay ninguna lectura del odometro al
+		/// instante preguntado. TOTAL. Es una operacion aparte y no un valor especial en la de arriba:
+		/// un cero o una lectura por defecto serian una medicion que nadie tomo.
 		/// </summary>
 		internal bool CanTheEnvelopeBeEvaluatedWithNoOdometer(DateTime asOf)
 		{
@@ -203,12 +192,6 @@ namespace Concesionario.Dominio
 		internal string ReadEnvelopeStandingWithNoOdometer(DateTime asOf)
 		{
 			return TheStandingWithNoOdometerAsOf(asOf).Standing().Name;
-		}
-
-		/// <summary>La frase sin ninguna lectura, que dice que falta y no da ningun numero. TOTAL.</summary>
-		internal string DescribeWarrantyEnvelopeWithNoOdometer(DateTime asOf)
-		{
-			return TheStandingWithNoOdometerAsOf(asOf).Describe();
 		}
 
 		/// <summary>
@@ -225,16 +208,16 @@ namespace Concesionario.Dominio
 
 			DistanceUnit limitUnit = _envelope.TheUnitItsDistanceIsMeasuredIn;
 			DistanceUnit odometerUnit = DistanceUnit.OfCode(readingUnit);
-			string odometer = TheOdometerClause(reading, odometerUnit, observedAt);
+			AnOdometerClause odometer = AnOdometerClause.Measuring(
+				reading, odometerUnit, observedAt, _delivery);
 
 			if (!_delivery.IsExpressedIn(limitUnit))
 				return TheAnswerWithAUnitMismatch(
-					limitUnit, _delivery.Unit, "la lectura del odómetro registrada en la entrega",
-					odometer, asOf);
+					limitUnit, _delivery.Unit, MismatchedDistance.TheDeliveryReading, odometer, asOf);
 
 			if (!_envelope.MeasuresDistanceIn(odometerUnit))
 				return TheAnswerWithAUnitMismatch(
-					limitUnit, odometerUnit, "el odómetro de este vehículo", odometer, asOf);
+					limitUnit, odometerUnit, MismatchedDistance.TheOdometer, odometer, asOf);
 
 			return TheSettledAnswerFor(
 				RemainingEnvelope.InBothHalves(
@@ -256,14 +239,10 @@ namespace Concesionario.Dominio
 			if (!_envelope.Exists()) return TheUnpublishedAnswer();
 			if (!_delivery.Exists()) return TheAnswerWithNoAnchor();
 
-			RemainingEnvelope remaining = RemainingEnvelope.MeasuredOnlyInTime(
-				_envelope.MonthsLeftAsOf(_delivery.DeliveredAt, asOf),
-				_envelope.Months,
-				"porque no hay ninguna lectura del odómetro de este vehículo al instante preguntado "
-					+ "ni antes, y la mitad de distancia se mide desde una.");
+			RemainingEnvelope remaining = RemainingEnvelope.MeasuredOnlyForWantOfAReading(
+				_envelope.MonthsLeftAsOf(_delivery.DeliveredAt, asOf), _envelope.Months);
 
-			string odometer = "No hay ninguna lectura del odómetro contra la cual medir la mitad de "
-				+ "distancia, y quien trae una es el feed del concesionario.";
+			AnOdometerClause odometer = AnOdometerClause.NoneToMeasureAgainst();
 
 			if (remaining.TheStandingCanBeDecided)
 				return TheSettledAnswerFor(remaining, odometer);
@@ -364,24 +343,22 @@ namespace Concesionario.Dominio
 		private EnvelopeAnswer TheUnpublishedAnswer()
 		{
 			return new ASettledEnvelopeAnswer(
-				EnvelopeStanding.NotPublished, _envelope.Describe());
+				EnvelopeStanding.NotPublished, AnEnvelopeClause.OfTheEnvelopeAlone(_envelope));
 		}
 
 		private EnvelopeAnswer TheAnswerWithNoAnchor()
 		{
-			return new AnEnvelopeSuspendedByAnAbsentDelivery(ThePublishedHalf());
+			return new AnEnvelopeSuspendedByAnAbsentDelivery(
+				AnEnvelopeClause.OfThePublishedHalfAlone(_envelope));
 		}
 
 		private EnvelopeAnswer TheAnswerWithAUnitMismatch(
-			DistanceUnit limitUnit, DistanceUnit other, string whoseUnit,
-			string odometer, DateTime asOf)
+			DistanceUnit limitUnit, DistanceUnit other, string whoseDistance,
+			AnOdometerClause odometer, DateTime asOf)
 		{
-			RemainingEnvelope remaining = RemainingEnvelope.MeasuredOnlyInTime(
+			RemainingEnvelope remaining = RemainingEnvelope.MeasuredOnlyForAUnitMismatch(
 				_envelope.MonthsLeftAsOf(_delivery.DeliveredAt, asOf),
-				_envelope.Months,
-				"porque el límite de distancia publicado está en " + limitUnit.Name + " y "
-					+ whoseUnit + " está en " + other.Name + ", y las unidades nunca se "
-					+ "convierten.");
+				_envelope.Months, whoseDistance, other);
 
 			if (remaining.TheStandingCanBeDecided)
 				return TheSettledAnswerFor(remaining, odometer);
@@ -390,29 +367,17 @@ namespace Concesionario.Dominio
 				limitUnit, other, TheClause(remaining, odometer));
 		}
 
-		private EnvelopeAnswer TheSettledAnswerFor(RemainingEnvelope remaining, string odometer)
+		private EnvelopeAnswer TheSettledAnswerFor(
+			RemainingEnvelope remaining, AnOdometerClause odometer)
 		{
 			return new ASettledEnvelopeAnswer(
 				remaining.TheEnvelopeIsReached ? EnvelopeStanding.Reached : EnvelopeStanding.Inside,
 				TheClause(remaining, odometer));
 		}
 
-		private string TheClause(RemainingEnvelope remaining, string odometer)
+		private AnEnvelopeClause TheClause(RemainingEnvelope remaining, AnOdometerClause odometer)
 		{
-			return ThePublishedHalf() + " " + remaining.Describe() + " " + odometer;
-		}
-
-		private string ThePublishedHalf()
-		{
-			return "Sobre publicado: " + _envelope.Describe();
-		}
-
-		private string TheOdometerClause(int reading, DistanceUnit unit, DateTime observedAt)
-		{
-			return "Medido contra un odómetro de " + reading + " " + unit.Name + " observado el "
-				+ TheDay(observedAt) + ", contando desde los " + _delivery.Reading + " "
-				+ _delivery.Unit.Name + " registrados cuando el vehículo se entregó el "
-				+ TheDay(_delivery.DeliveredAt) + ".";
+			return AnEnvelopeClause.Measuring(_envelope, remaining, odometer);
 		}
 
 		private static string TheDay(DateTime instant)

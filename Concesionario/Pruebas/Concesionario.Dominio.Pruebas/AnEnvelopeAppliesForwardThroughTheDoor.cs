@@ -62,22 +62,24 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.PublishWarrantyEnvelope(36, 60000, TheUnitEverythingIsIn, DayOne);
 
 			string beforeTheSecondPublication =
-				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
+				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked, TheLanguage.OfTheRecord);
 
-			Assert.That(beforeTheSecondPublication, Does.Contain("36 meses o 60000 mi"));
-			Assert.That(beforeTheSecondPublication, Does.Contain("publicado el 2025-01-01"));
+			Assert.That(beforeTheSecondPublication, Does.Contain("36 meses o 60.000 mi"));
+			Assert.That(
+				beforeTheSecondPublication, Does.Contain("publicado el 1 de enero de 2025"));
 
 			journal.Api.PublishWarrantyEnvelope(24, 20000, TheUnitEverythingIsIn, DayOneHundred);
 
-			string afterwards = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
+			string afterwards = journal.Api.DescribeWarrantyEnvelope(
+				TheDayItIsAsked, TheLanguage.OfTheRecord);
 
-			Assert.That(afterwards, Does.Contain("24 meses o 20000 mi"));
-			Assert.That(afterwards, Does.Contain("publicado el 2025-04-11"));
-			Assert.That(afterwards, Does.Not.Contain("60000"),
+			Assert.That(afterwards, Does.Contain("24 meses o 20.000 mi"));
+			Assert.That(afterwards, Does.Contain("publicado el 11 de abril de 2025"));
+			Assert.That(afterwards, Does.Not.Contain("60.000"),
 				"Y EL SOBRE VIEJO NO DEJA NI UN NUMERO. Una respuesta que mezclara los dos seria una "
 				+ "medicion contra un limite que ya no rige.");
 
-			Assert.That(beforeTheSecondPublication, Does.Contain("60000"),
+			Assert.That(beforeTheSecondPublication, Does.Contain("60.000"),
 				"La respuesta que ya se habia dado se quedo con el sobre que nombro: una publicacion "
 				+ "no alcanza hacia atras.");
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(), Is.EqualTo(DayOneHundred));
@@ -96,7 +98,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.ReadEnvelopeStanding(TheDayItIsAsked), Is.EqualTo("Reached"));
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
+				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked, TheLanguage.OfTheRecord),
 				Does.Contain("Alcanzado por distancia, que llegó primero."));
 		}
 

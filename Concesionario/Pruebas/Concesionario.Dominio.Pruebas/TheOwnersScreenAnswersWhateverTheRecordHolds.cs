@@ -218,8 +218,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(after.PublishedAt, Is.EqualTo("2026-01-01"),
 					"Un sobre publicado despues rige desde su propia fecha hacia adelante, y la "
 					+ "procedencia que la pantalla nombra es la suya.");
-				Assert.That(after.Says, Does.Contain("120 meses o 200000 mi"));
-				Assert.That(after.Says, Does.Not.Contain("60000 mi"),
+				Assert.That(after.Says, Does.Contain("120 meses o 200.000 mi"));
+				Assert.That(after.Says, Does.Not.Contain("60.000 mi"),
 					"Y los limites del primero ya no salen. Si salieran, la pantalla estaria midiendo "
 					+ "contra un sobre que dejo de regir.");
 			}
@@ -293,7 +293,7 @@ namespace Concesionario.Dominio.Pruebas
 				// Y ESTE ES EL UNICO ESTADO EN QUE LA MITAD PUBLICADA TIENE QUE SALIR SOLA, porque es
 				// el unico en que no hay ninguna frase compuesta que la lleve adentro.
 				Assert.That(stands.PublishedSays, Is.Not.Empty);
-				Assert.That(stands.PublishedSays, Does.Contain("60000 mi"));
+				Assert.That(stands.PublishedSays, Does.Contain("60.000 mi"));
 
 				// LOS HECHOS SUELTOS SIGUEN SALIENDO, que es lo que le deja a la persona ver en la
 				// pantalla los dos numeros que no pueden ser los dos.
@@ -321,7 +321,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (AScheduleOnARealJournal broken = AVehicleWhoseOdometerWentBackwards())
 			{
 				Exception thrown = Assert.Catch(
-					() => broken.Api.DescribeWarrantyEnvelope(TheDayTheScreenAsks));
+					() => broken.Api.DescribeWarrantyEnvelope(TheDayTheScreenAsks, TheLanguage.OfTheRecord));
 
 				Assert.That(thrown.GetType().Name, Is.EqualTo("DomainException"),
 					"Si el dominio le cambia el nombre a su excepcion, la pantalla deja de "
@@ -363,7 +363,8 @@ namespace Concesionario.Dominio.Pruebas
 				// leeria como si el sobre tambien rechazara -- que es lo que pasa en la primera fila y
 				// NO es lo que pasa aca.
 				Assert.That(
-					ahead.Api.DescribeWarrantyEnvelope(TheDayTheScreenAsks),
+					ahead.Api.DescribeWarrantyEnvelope(
+						TheDayTheScreenAsks, TheLanguage.OfTheRecord),
 					Does.Contain("meses de 36 meses."),
 					"El sobre contesta, con MAS plazo del que publico, porque los meses cumplidos "
 					+ "salen negativos. No miente: dice exactamente lo que el registro implica.");
@@ -411,7 +412,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private static WhereThisVehicleStands WhatTheScreenIsHanded(AScheduleOnARealJournal journal)
 		{
-			return WhereThisVehicleStands.ReadThrough(journal.Api, TheDayTheScreenAsks);
+			return WhereThisVehicleStands.ReadThrough(
+				journal.Api, TheDayTheScreenAsks, TheLanguage.OfTheRecord);
 		}
 
 		private static AScheduleOnARealJournal ASealedScope(string vin)

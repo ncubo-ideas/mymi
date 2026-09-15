@@ -416,7 +416,7 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (string read in new[]
 			{
 				"state.ReadTheSpecification()",
-				"state.ReadWhereThisVehicleStands()",
+				"state.ReadWhereThisVehicleStands(texts.Language)",
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost()",
@@ -465,7 +465,7 @@ namespace Concesionario.Dominio.Pruebas
 				page,
 				Does.Contain(
 					"sheet = state.ReadTheSpecification(); "
-					+ "stands = state.ReadWhereThisVehicleStands(); "
+					+ "stands = state.ReadWhereThisVehicleStands(texts.Language); "
 					+ "stays = state.ReadTheStaysOfThisVehicle(); "
 					+ "operations = state.ReadWhereEachOperationStands(texts.Language); "
 					+ "costs = state.ReadWhatTheServicesCost(); "
@@ -482,7 +482,7 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (string read in new[]
 			{
 				"state.ReadTheSpecification()",
-				"state.ReadWhereThisVehicleStands()",
+				"state.ReadWhereThisVehicleStands(texts.Language)",
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost()",

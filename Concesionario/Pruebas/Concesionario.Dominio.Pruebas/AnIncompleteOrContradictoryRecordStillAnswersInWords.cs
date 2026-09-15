@@ -202,7 +202,7 @@ namespace Concesionario.Dominio.Pruebas
 				DateTime asOf = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
 
 				Exception thrown = Assert.Catch(
-					() => broken.Api.DescribeWarrantyEnvelope(asOf));
+					() => broken.Api.DescribeWarrantyEnvelope(asOf, TheLanguage.OfTheRecord));
 
 				Assert.That(thrown.GetType().Name, Is.EqualTo("DomainException"),
 					"Si el dominio le cambia el nombre a su excepcion, la tool deja de reconocerla y "

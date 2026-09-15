@@ -52,6 +52,54 @@ namespace Concesionario.Dominio.Pruebas
 				reason.ClauseMeasuredUnits, reason.ClauseUsageProfiles);
 		}
 
+		internal static string ThePublishedWarrantyEnvelope(
+			VehicleProfile profile, string language)
+		{
+			return ThePublishedWarrantyEnvelope(profile.ThePublishedWarrantyEnvelope(), language);
+		}
+
+		internal static string ThePublishedWarrantyEnvelope(
+			WarrantyEnvelope envelope, string language)
+		{
+			return TheWording.ThePublishedWarrantyEnvelope(
+				Phrases.Of(language),
+				envelope.TheShapeItHas(), envelope.TheMonthsItPublished(),
+				envelope.TheDistanceItPublished(), envelope.TheUnitItsDistanceIsSaidIn(),
+				envelope.TheDayItWasPublished());
+		}
+
+		internal static string TheWarrantyEnvelope(
+			VehicleProfile profile, int reading, DistanceUnitCode readingUnit,
+			DateTime observedAt, DateTime asOf, string language)
+		{
+			return TheWarrantyEnvelope(
+				profile.TheStandingAsOf(reading, readingUnit, observedAt, asOf), language);
+		}
+
+		internal static string TheWarrantyEnvelopeWithNoOdometer(
+			VehicleProfile profile, DateTime asOf, string language)
+		{
+			return TheWarrantyEnvelope(profile.TheStandingWithNoOdometerAsOf(asOf), language);
+		}
+
+		internal static string TheWarrantyEnvelope(EnvelopeAnswer answer, string language)
+		{
+			return TheWording.TheWarrantyEnvelope(
+				Phrases.Of(language),
+				answer.TheShapeItHas(), answer.TheStandingItReached(),
+				answer.TheUnitThatDidNotMatch(), answer.TheClauseShape(),
+				answer.ThePublishedShape(), answer.TheMonthsPublished(),
+				answer.TheDistancePublished(), answer.TheUnitTheDistanceIsPublishedIn(),
+				answer.TheDayTheEnvelopeWasPublished(), answer.TheMonthsLeft(),
+				answer.TheMonthsLimit(), answer.TheDistanceHalfShape(),
+				answer.TheDistanceLeftCounted(), answer.TheDistanceLimitCounted(),
+				answer.TheUnitTheDistanceIsSaidIn(), answer.TheUnitTheOtherDistanceIsIn(),
+				answer.WhoseDistanceDidNotMatch(), answer.WhichHalfArrivedFirst(),
+				answer.TheOdometerShape(), answer.TheReading(), answer.TheUnitTheReadingIsIn(),
+				answer.TheDayTheReadingWasObserved(), answer.TheDeliveryReading(),
+				answer.TheUnitTheDeliveryReadingIsIn(), answer.TheDayItWasDelivered());
+		}
+
 		private static string TheRemainder(ARemainder remainder, string language)
 		{
 			return TheWording.TheRemainder(

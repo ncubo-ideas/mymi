@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Concesionario.Wasm;
 using NUnit.Framework;
@@ -137,6 +138,13 @@ namespace Concesionario.Dominio.Pruebas
 		// Y LA LECTURA COMPUESTA NO RECIBE NINGUN INSTANTE. Es la version de esta caratula de la
 		// decision que T8 tomo en la suya: quien pregunta no elige el dia. La pantalla contesta sobre
 		// HOY, y un parametro aca seria dejar que alguien pregunte por un dia que se invento.
+		//
+		// DESDE QUE EL DOMINIO DEJO DE REDACTAR, ESTA LECTURA TOMA EL IDIOMA de la persona, que no es
+		// un instante ni un hecho de ningun carro: es en que se dice lo que ya se midio. EL NOMBRE DE
+		// ESTA PRUEBA OVERCLAIMS DESDE ESE DIA y se dejo igual a proposito, porque renombrarla orfana
+		// la citacion que PLAN-WarrantyEnvelope.md lleva. Lo que se afirma se estrecho para decir la
+		// verdad: ningun parametro es un instante, y el unico que hay es el idioma, por tipo y por
+		// nombre.
 		[Test]
 		public void TheScreensCompositeReadTakesNoInstantAndNoOtherArgument()
 		{
@@ -146,10 +154,12 @@ namespace Concesionario.Dominio.Pruebas
 				"La caratula dejo de ofrecer la mitad del vehiculo y la seccion Garantia no tiene de "
 				+ "donde sacarla.");
 
-			Assert.That(read.GetParameters(), Is.Empty,
-				"La lectura de la pantalla gano un argumento. Los tres hechos con que se mide salen "
-				+ "del registro y el instante sale del reloj de la maquina: no queda ninguno que "
-				+ "alguien tenga que traer.");
+			Assert.That(
+				read.GetParameters().Select(each => each.ParameterType.Name + " " + each.Name),
+				Is.EqualTo(new[] { "String language" }),
+				"La lectura de la pantalla gano un argumento QUE NO ES el idioma. Los tres hechos con "
+				+ "que se mide salen del registro y el instante sale del reloj de la maquina: no queda "
+				+ "ninguno que alguien tenga que traer.");
 
 			Assert.That(read.ReturnType, Is.EqualTo(typeof(WhereThisVehicleStands)));
 		}

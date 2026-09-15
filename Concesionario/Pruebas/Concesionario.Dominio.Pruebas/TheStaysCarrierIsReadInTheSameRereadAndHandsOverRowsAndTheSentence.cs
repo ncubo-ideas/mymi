@@ -301,7 +301,7 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (string read in new[]
 			{
 				"state.ReadTheSpecification()",
-				"state.ReadWhereThisVehicleStands()",
+				"state.ReadWhereThisVehicleStands(texts.Language)",
 				"state.ReadTheStaysOfThisVehicle()",
 			})
 				Assert.That(page, Does.Contain(read),

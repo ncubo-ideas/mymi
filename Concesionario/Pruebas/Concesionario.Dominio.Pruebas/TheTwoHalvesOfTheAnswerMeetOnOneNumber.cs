@@ -63,17 +63,17 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(schedule.HasAnOdometerReading(TheInstantAsked), Is.True);
 
-			string said = profile.DescribeWarrantyEnvelope(
-				schedule.ReadOdometer(TheInstantAsked),
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				profile, schedule.ReadOdometer(TheInstantAsked),
 				schedule.OdometerUnit(TheInstantAsked),
 				schedule.ReadOdometerObservedAt(TheInstantAsked),
-				TheInstantAsked);
+				TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("Tiempo: quedan 12 meses de 36 meses."));
-			Assert.That(said, Does.Contain("Distancia: quedan 35000 mi de 60000 mi."),
+			Assert.That(said, Does.Contain("Distancia: quedan 35.000 mi de 60.000 mi."),
 				"35000 = 60000 - (25010 - 10). El numero que la agenda entrego es el que el sobre "
 				+ "resto de su limite: un hecho, un numero, dos agregados.");
-			Assert.That(said, Does.Contain("observado el 2025-11-20"),
+			Assert.That(said, Does.Contain("observado el 20 de noviembre de 2025"),
 				"Y la frase NOMBRA cuando se observo la lectura contra la que se midio, que es la "
 				+ "linea de honestidad de este slice mientras la frescura no exista.");
 		}
@@ -128,7 +128,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(schedule.HasAnOdometerReading(TheInstantAsked), Is.False);
 
-			string said = profile.DescribeWarrantyEnvelopeWithNoOdometer(TheInstantAsked);
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelopeWithNoOdometer(
+				profile, TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("Tiempo: quedan 12 meses de 36 meses."),
 				"La mitad de tiempo se sigue diciendo: no depende de ninguna lectura.");

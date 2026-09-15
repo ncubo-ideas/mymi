@@ -13,6 +13,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class WarrantyEnvelopeTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTA CARA PIDE LAS FRASES DEL DOMINIO, que es el del registro y no el de
+		/// quien pregunta: esta superficie es la voz del concesionario hablandole al modelo, igual
+		/// que el titulo y las descripciones de estas mismas tools.
+		/// </summary>
+		private const string TheVoiceOfTheDealership = Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public WarrantyEnvelopeTools(JournalReader reader)
@@ -89,7 +96,7 @@ namespace Concesionario.Mcp.Tools
 			{
 				canBeEvaluated = api.CanTheEnvelopeBeEvaluated(askedAt);
 				standing = canBeEvaluated ? api.ReadEnvelopeStanding(askedAt) : "";
-				says = api.DescribeWarrantyEnvelope(askedAt);
+				says = api.DescribeWarrantyEnvelope(askedAt, TheVoiceOfTheDealership);
 			}
 			catch (Exception thrown) when (TheAssistantIsTold.TheRecordContradictsItself(thrown))
 			{
@@ -106,7 +113,7 @@ namespace Concesionario.Mcp.Tools
 				EnvelopeKnown = true,
 				AskedAt = askedAt.ToString("O"),
 				EnvelopePublished = published,
-				PublishedSays = api.DescribePublishedWarrantyEnvelope(),
+				PublishedSays = api.DescribePublishedWarrantyEnvelope(TheVoiceOfTheDealership),
 				PublishedAt = published ? api.ReadEnvelopePublishedAt().ToString("O") : "",
 				DeliveryRecorded = delivered,
 				DeliveredAt = delivered ? api.ReadDeliveredAt().ToString("O") : "",

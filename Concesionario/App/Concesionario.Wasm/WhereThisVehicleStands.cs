@@ -98,7 +98,8 @@ namespace Concesionario.Wasm
 		/// Lee la mitad del vehiculo por la puerta, en un solo instante, para que la postura, las dos
 		/// mitades y los hechos contra los que se midieron sean todos del mismo momento.
 		/// </summary>
-		public static WhereThisVehicleStands ReadThrough(DealershipCarAPI api, DateTime asOf)
+		public static WhereThisVehicleStands ReadThrough(
+			DealershipCarAPI api, DateTime asOf, string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
@@ -117,7 +118,7 @@ namespace Concesionario.Wasm
 			{
 				canBeEvaluated = api.CanTheEnvelopeBeEvaluated(asOf);
 				standing = canBeEvaluated ? api.ReadEnvelopeStanding(asOf) : "";
-				says = api.DescribeWarrantyEnvelope(asOf);
+				says = api.DescribeWarrantyEnvelope(asOf, language);
 
 				if (published && delivered && measured)
 					systems = TheStandingOnEverySystemTheScopeDeclares(api, asOf);
@@ -135,7 +136,7 @@ namespace Concesionario.Wasm
 				AskedAt = TheMoment(asOf),
 				RecordContradictsItself = contradicts,
 				EnvelopePublished = published,
-				PublishedSays = api.DescribePublishedWarrantyEnvelope(),
+				PublishedSays = api.DescribePublishedWarrantyEnvelope(language),
 				PublishedAt = published ? TheDay(api.ReadEnvelopePublishedAt()) : "",
 				DeliveryRecorded = delivered,
 				DeliveredAt = delivered ? TheDay(api.ReadDeliveredAt()) : "",

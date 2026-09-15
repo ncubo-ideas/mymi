@@ -86,7 +86,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void ThePublishedHalfStillAnswersWithWordsAndWithoutADigit()
 		{
-			string said = profile.DescribePublishedWarrantyEnvelope();
+			string said = TheSentenceTheDoorWouldCompose.ThePublishedWarrantyEnvelope(
+				profile, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("no ha publicado"));
 			Assert.That(said, Does.Not.Match(@"\d"),

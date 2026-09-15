@@ -454,7 +454,7 @@ else
         reasons = why;
 
         sheet = state.ReadTheSpecification();
-        stands = state.ReadWhereThisVehicleStands();
+        stands = state.ReadWhereThisVehicleStands(texts.Language);
         stays = state.ReadTheStaysOfThisVehicle();
         operations = state.ReadWhereEachOperationStands(texts.Language);
         costs = state.ReadWhatTheServicesCost();

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Concesionario.App.Wording;
 using NUnit.Framework;
 
 namespace Concesionario.Dominio.Pruebas
@@ -53,9 +54,11 @@ namespace Concesionario.Dominio.Pruebas
 
 		// ===== EL PAR DERIVADO NO SE PUEDE ARMAR A MEDIAS ==================================
 
-		// La mitad estructural de D5: las dos fabricas del par exigen las dos mitades, y la que
-		// deja la de distancia sin medir EXIGE DECIR POR QUE. Una mitad sin medir que no diga el
-		// motivo es E47 vuelto un string vacio.
+		// La mitad estructural de D5: las dos fabricas del par exigen las dos mitades, y la que deja
+		// la de distancia sin medir EXIGE DECIR POR QUE. Desde que el par manda forma y valores, el
+		// motivo dejo de ser un string que se puede pasar vacio: es la FABRICA la que se elige, y la
+		// de unidades exige nombrar cual distancia no calzo y en que unidad esta. Una mitad sin medir
+		// que no diga el motivo ya no se puede escribir.
 		[Test]
 		public void TheDerivedPairCannotBeBuiltWithoutBothHalves()
 		{
@@ -63,9 +66,14 @@ namespace Concesionario.Dominio.Pruebas
 				12, ThirtySixMonths, 35010, SixtyThousand, null),
 				"Una distancia sin unidad no se puede decir ni comparar.");
 
-			Assert.Throws<DomainException>(() => RemainingEnvelope.MeasuredOnlyInTime(
-				12, ThirtySixMonths, string.Empty),
-				"Una mitad de distancia sin medir y sin motivo no le deja a nadie arreglarla.");
+			Assert.Throws<DomainException>(() => RemainingEnvelope.MeasuredOnlyForAUnitMismatch(
+				12, ThirtySixMonths, string.Empty, DistanceUnit.UnitB),
+				"Una mitad suspendida por unidades que no diga cual distancia no calzo no le deja a "
+				+ "nadie arreglarla.");
+
+			Assert.Throws<DomainException>(() => RemainingEnvelope.MeasuredOnlyForAUnitMismatch(
+				12, ThirtySixMonths, MismatchedDistance.TheOdometer, null),
+				"Ni la que nombre una sola de las dos unidades.");
 		}
 
 		// Y las dos formas del par dicen LAS DOS mitades: la medida las dice con su numero, la
@@ -75,8 +83,11 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			foreach (RemainingEnvelope pair in LasDosFormasDelPar())
 			{
-				Assert.That(pair.Describe(), Does.Contain("Tiempo:"), pair.GetType().Name);
-				Assert.That(pair.Describe(), Does.Contain("Distancia:"), pair.GetType().Name);
+				string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					AnAnswerCarrying(pair), TheLanguage.OfTheRecord);
+
+				Assert.That(said, Does.Contain("Tiempo:"), pair.GetType().Name);
+				Assert.That(said, Does.Contain("Distancia:"), pair.GetType().Name);
 			}
 		}
 
@@ -85,12 +96,12 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void OneComfortableHalfAndOneTightHalfAreBothSaid()
 		{
-			string said = profile.DescribeWarrantyEnvelope(
-				SixtyThousand + TheDeliveryReading - 10, DistanceUnitCode.UnitA,
-				ObservedAt, InsideBothHalves);
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				profile, SixtyThousand + TheDeliveryReading - 10, DistanceUnitCode.UnitA,
+				ObservedAt, InsideBothHalves, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("12 meses de 36 meses"));
-			Assert.That(said, Does.Contain("10 km de 60000 km"),
+			Assert.That(said, Does.Contain("10 km de 60.000 km"),
 				"La mitad apretada se dice con su numero. Decir solo la comoda es la mitad de la "
 				+ "respuesta y la mitad equivocada.");
 			Assert.That(said, Does.Contain("Adentro"));
@@ -102,7 +113,9 @@ namespace Concesionario.Dominio.Pruebas
 		public void EveryAnswerNamesWhenTheEnvelopeWasPublished()
 		{
 			foreach (EnvelopeAnswer answer in LasRespuestasQueElPerfilCompone())
-				Assert.That(answer.Describe(), Does.Contain("2023-12-01"),
+				Assert.That(
+					TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(answer, TheLanguage.OfTheRecord),
+					Does.Contain("1 de diciembre de 2023"),
 					answer.GetType().Name + " no nombra cuando se publico el sobre contra el que "
 					+ "midio. Sin ese instante nadie puede ver que el sobre esta viejo.");
 		}
@@ -115,9 +128,13 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			foreach (EnvelopeAnswer answer in LasRespuestasQueElPerfilCompone())
 			{
-				Assert.That(answer.Describe(), Does.Contain("Tiempo:"),
+				Assert.That(
+					TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(answer, TheLanguage.OfTheRecord),
+					Does.Contain("Tiempo:"),
 					answer.GetType().Name + " no dice la mitad de tiempo.");
-				Assert.That(answer.Describe(), Does.Contain("Distancia:"),
+				Assert.That(
+					TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(answer, TheLanguage.OfTheRecord),
+					Does.Contain("Distancia:"),
 					answer.GetType().Name + " no dice la mitad de distancia.");
 			}
 		}
@@ -144,10 +161,14 @@ namespace Concesionario.Dominio.Pruebas
 				"Entro o salio una variante de EnvelopeAnswer. Cada una tiene que decidir si lleva "
 				+ "las dos mitades o si es una de las dos que no tienen ninguna.");
 
-			Assert.That(SinSobre().Describe(), Does.Not.Contain("Tiempo:"),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(SinSobre(), TheLanguage.OfTheRecord),
+				Does.Not.Contain("Tiempo:"),
 				"Sin sobre publicado no hay limites, asi que no queda nada de nada: la frase lo "
 				+ "dice con palabras en vez de con dos ceros.");
-			Assert.That(SinEntrega().Describe(), Does.Not.Contain("Tiempo:"),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(SinEntrega(), TheLanguage.OfTheRecord),
+				Does.Not.Contain("Tiempo:"),
 				"Sin entrega no hay ancla, y las dos mitades se miden desde ahi.");
 		}
 
@@ -156,25 +177,60 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheTwoAnswersWithoutHalvesCarryNoInventedNumberEither()
 		{
-			Assert.That(SinSobre().Describe(), Does.Not.Contain(" 0 "));
-			Assert.That(SinEntrega().Describe(), Does.Not.Contain(" 0 "));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					SinSobre(), TheLanguage.OfTheRecord),
+				Does.Not.Contain(" 0 "));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					SinEntrega(), TheLanguage.OfTheRecord),
+				Does.Not.Contain(" 0 "));
 		}
 
-		// L3 ESTRUCTURAL, LA AFIRMACION DIRECTA: el par derivado dice las dos mitades desde UN
-		// SOLO metodo, asi que no hay dos caminos de los cuales uno pueda olvidarse de una.
+		// L3 ESTRUCTURAL, LA AFIRMACION DIRECTA, Y SE MUDO CON LA REDACCION. Antes era que el par
+		// componia su propia frase desde UN Describe() no abstracto. Desde que la redaccion vive en
+		// el catalogo, la garantia son dos cosas y las dos se afirman aqui:
+		//
+		//   la mitad de TIEMPO la contesta la BASE y ninguna variante la puede pisar, asi que no hay
+		//   una forma del par que se la pueda callar; y
+		//
+		//   la frase del par sale de UNA clave con los dos huecos, en los dos idiomas, asi que
+		//   tampoco hay dos redacciones de las cuales una pueda decir una sola mitad.
 		[Test]
 		public void TheDerivedPairSaysBothHalvesFromOnePlace()
 		{
-			MethodInfo describe = typeof(RemainingEnvelope).GetMethod("Describe",
-				BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-				| BindingFlags.DeclaredOnly);
+			foreach (string half in new[] { "MonthsLeft", "TheMonthsLimit" })
+			{
+				MemberInfo[] declared = typeof(RemainingEnvelope).GetMember(half,
+					BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+					| BindingFlags.DeclaredOnly);
 
-			Assert.That(describe, Is.Not.Null,
-				"D5: la garantia estructural de L3 es que el par compone su propia frase. Si "
-				+ "Describe() se volviera abstracto, cada variante podria decir una sola mitad.");
-			Assert.That(describe.IsAbstract, Is.False,
-				"Describe() no es abstracto a proposito: la base dice las dos mitades y cada "
-				+ "variante solo aporta la clausula de la suya.");
+				Assert.That(declared, Is.Not.Empty,
+					half + ": la mitad de tiempo la contesta la base. Si bajara a las variantes, una "
+					+ "podria no contestarla.");
+			}
+
+			foreach (Phrases said in new[]
+				{ Phrases.Of(TheLanguage.OfTheRecord), Phrases.Of(TheLanguage.OfAnEnglishReader) })
+			{
+				Assert.That(said.Say("envelope.remainder"), Does.Contain("{time}"));
+				Assert.That(said.Say("envelope.remainder"), Does.Contain("{distance}"),
+					"La frase del par sale de una sola clave con los dos huecos. Con dos claves, una "
+					+ "podria decir una sola mitad y nada se pondria rojo.");
+			}
+		}
+
+		// La respuesta que lleva ese par, para las pruebas cuya ley es sobre el par y no sobre la
+		// composicion entera. El sobre publicado es el del escenario de esta fixture.
+		private static EnvelopeAnswer AnAnswerCarrying(RemainingEnvelope pair)
+		{
+			return new ASettledEnvelopeAnswer(
+				EnvelopeStanding.Inside,
+				AnEnvelopeClause.Measuring(
+					WarrantyEnvelope.PublishedAs(
+						ThirtySixMonths, SixtyThousand, DistanceUnit.UnitA, PublishedAt),
+					pair,
+					AnOdometerClause.NoneToMeasureAgainst()));
 		}
 
 		private EnvelopeAnswer SinSobre()
@@ -210,8 +266,7 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				RemainingEnvelope.InBothHalves(
 					12, ThirtySixMonths, 35010, SixtyThousand, DistanceUnit.UnitA),
-				RemainingEnvelope.MeasuredOnlyInTime(
-					12, ThirtySixMonths, "because this is a test of the shape and not of the words."),
+				RemainingEnvelope.MeasuredOnlyForWantOfAReading(12, ThirtySixMonths),
 			};
 		}
 	}

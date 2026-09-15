@@ -864,7 +864,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
 			Assert.That(
-				journal.Api.DescribePublishedWarrantyEnvelope(), Does.Contain("60000 mi"));
+				journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord), Does.Contain("60.000 mi"));
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(), Is.EqualTo(ThePublication));
 
 			Assert.That(journal.Api.HasDeliveryBeenRecorded(), Is.True);
@@ -909,7 +909,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(
 				() => journal.Api.ReadEnvelopeStanding(asked));
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("ninguna lectura del odómetro"));
+				journal.Api.DescribeWarrantyEnvelope(
+					asked, TheLanguage.OfTheRecord), Does.Contain("ninguna lectura del odómetro"));
 
 			Assert.That(
 				journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked), Is.False);
@@ -926,7 +927,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanTheEnvelopeBeEvaluated(asked), Is.True);
 			Assert.That(journal.Api.ReadEnvelopeStanding(asked), Is.EqualTo("Inside"));
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("40000 km"));
+				journal.Api.DescribeWarrantyEnvelope(
+					asked, TheLanguage.OfTheRecord), Does.Contain("40.000 km"));
 
 			Assert.That(
 				journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked), Is.True);
@@ -956,7 +958,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			journal.Api.CanTheEnvelopeBeEvaluated(asked);
 			journal.Api.ReadEnvelopeStanding(asked);
-			journal.Api.DescribeWarrantyEnvelope(asked);
+			journal.Api.DescribeWarrantyEnvelope(asked, TheLanguage.OfTheRecord);
 			journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked);
 			journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked);
 			journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked);
@@ -1062,8 +1064,8 @@ namespace Concesionario.Dominio.Pruebas
 			// instante de publicacion, asi que leer las mitades de la segunda es lo que prueba que el
 			// segundo script corrio y no solo el primero.
 			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("24 meses").And.Contains("40000 mi"),
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("24 meses").And.Contains("40.000 mi"),
 				"Las dos mitades del sobre que rige, con su unidad. Cruzar meses con distancia, o "
 				+ "quedarse con la primera publicacion, cambia esta frase.");
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(),

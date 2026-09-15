@@ -473,8 +473,10 @@ namespace Concesionario.Dominio.Pruebas
 				received, System.Globalization.CultureInfo.InvariantCulture);
 			DateTime inUtc = read.ToUniversalTime();
 
-			return new DateTime(inUtc.Ticks - inUtc.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc)
-				.ToString(TheJournalsInstantFormat, System.Globalization.CultureInfo.InvariantCulture);
+			return new DateTime(
+				inUtc.Ticks - inUtc.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc)
+				.ToString(
+					TheJournalsInstantFormat, System.Globalization.CultureInfo.InvariantCulture);
 		}
 
 		// Y LOS ONCE HECHOS MANDAN SUS VALORES COMO ARGUMENTOS Y NO INTERPOLADOS EN EL TEXTO. Es lo
@@ -552,8 +554,8 @@ namespace Concesionario.Dominio.Pruebas
 			Apply(ADealershipNarrative.Envelope(1, 36, 60000, "UnitB", ThePublication));
 			Apply(ADealershipNarrative.Delivered(2, "2025-03-01T00:00:00Z", 120, "UnitA"));
 
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("60000 mi"),
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("60.000 mi"),
 				"La distancia del sobre sale en la unidad en que se publico el SOBRE.");
 
 			Assert.That(journal.Api.ReadDeliveryUnit(), Is.EqualTo("km"),
@@ -570,8 +572,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Apply(ADealershipNarrative.Envelope(1, 36, 60000, "UnitB", ThePublication));
 
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 meses").And.Contains("60000 mi"));
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("36 meses").And.Contains("60.000 mi"));
 		}
 
 		// LOS DOS INSTANTES DE ESTE PAR TAMPOCO. El de la entrega y el de la publicacion del sobre son
