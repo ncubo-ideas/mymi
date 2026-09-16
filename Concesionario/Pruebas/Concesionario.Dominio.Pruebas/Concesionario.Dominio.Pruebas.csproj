@@ -116,6 +116,34 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Y LAS TRES SUPERFICIES QUE NOMBRAN A LA APP, que son las unicas que una persona lee ANTES de
+       que la caratula arranque: la pestana del navegador, el manifiesto con que el telefono la
+       instala, y el manifiesto del modulo, que es donde la institucion DECLARA como se llama.
+
+       Ninguna de las tres pasa por el catalogo de la pantalla y ninguna puede: las tres se leen
+       antes de que Texts.NegotiateAsync corra. Por eso el nombre de la app es voz de la institucion
+       (regla 4) y no texto de esta caratula, y por eso hay que afirmar que las tres DICEN LO MISMO:
+       no hay compilador ni catalogo que las ate, y sin esta prueba se separan sin que nada avise.
+       Ya paso: el <title> decia un nombre que no estaba declarado en ningun lado.
+
+       EL WEBMANIFEST VA POR GLOB Y A UNA CARPETA, no por Link, y no es una comodidad. El manifiesto
+       NO sigue a la persona: se hornea al instalar y queda en la pantalla de inicio para siempre,
+       asi que un segundo manifiesto por idioma seria revertir esa decision. Por glob, aparece solo
+       en el censo y alguien lo mira. -->
+  <ItemGroup>
+    <None Include="..\..\App\Concesionario.Wasm\wwwroot\index.html"
+          Link="index.html.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Wasm\wwwroot\*.webmanifest"
+          LinkBase="ManifiestoComoDato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\manifiesto.json"
+          Link="manifiesto.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Y TODO EL MARKUP DE LA CARATULA, desde T10, por una tercera cosa que ninguna prueba veia: que
        NINGUN control de la pantalla le pida a la persona un hecho de su propio vehiculo. El censo de
        parametros de la puerta no lo puede ver, porque un formulario guarda su valor en el estado de
