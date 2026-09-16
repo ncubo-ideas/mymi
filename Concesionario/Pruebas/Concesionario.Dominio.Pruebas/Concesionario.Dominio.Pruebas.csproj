@@ -144,6 +144,30 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Y LAS TRES PIEZAS DEL CASCARON: la hoja de estilo, donde esta la palabra que se lee mientras
+       la caratula carga; el modulo de JS por el que el texto del aviso de falla llega DESPUES de
+       negociar; y el Texts.cs que lo invoca. Son lo que una persona lee antes de que exista una
+       pantalla, y no las pinta ningun componente.
+
+       Van como DATO porque lo que hay que afirmar es la FUENTE. La palabra de la carga esta en un
+       content: de CSS, que el browser resuelve sin que corra nada nuestro. Y un .js no lo compila
+       nadie, asi que un nombre de export que deje de calzar con el que Texts.cs invoca no lo ve el
+       compilador; Texts.cs se traga la JSException, asi que tampoco lo ve nadie en pantalla: el
+       aviso se queda en el idioma del registro, para siempre y sin avisar. -->
+  <ItemGroup>
+    <None Include="..\..\App\Concesionario.Wasm\wwwroot\css\app.css"
+          Link="app.css.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Wasm\wwwroot\language-interop.js"
+          Link="language-interop.js.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Wasm\Texts.cs"
+          Link="Texts.cs.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Y TODO EL MARKUP DE LA CARATULA, desde T10, por una tercera cosa que ninguna prueba veia: que
        NINGUN control de la pantalla le pida a la persona un hecho de su propio vehiculo. El censo de
        parametros de la puerta no lo puede ver, porque un formulario guarda su valor en el estado de

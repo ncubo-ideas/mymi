@@ -1,6 +1,11 @@
 {
   "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Las frases que compone el dominio NO estan aca: esas las trae la puerta ya dichas y se citan letra por letra. El espanol de este archivo es de Costa Rica y es voseo -lees, elegi, abrila-: no lo pases a tuteo. El nombre del modelo, el VIN, la placa, los sistemas del alcance y las exclusiones son del registro del concesionario y no se traducen. {clave} es un hueco que el codigo llena.",
 
+  "shell": {
+    "wentWrong": "Algo salió mal.",
+    "reload": "Recargar"
+  },
+
   "route": {
     "notFound": "No encontrado",
     "notFoundBody": "No hay nada en esta dirección."

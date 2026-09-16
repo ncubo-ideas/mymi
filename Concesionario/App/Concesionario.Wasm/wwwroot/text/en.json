@@ -1,6 +1,11 @@
 {
   "//": "THE SAME SCREEN, SAID IN ENGLISH, key for key. A key that is in one catalogue and not in the other reaches the screen as a raw {key} and nothing goes red, so the parity is asserted by a test rather than by care. The model name, the VIN, the plate, the covered systems and the exclusions come from the dealership's record and are NOT translated. {key} is a hole the code fills.",
 
+  "shell": {
+    "wentWrong": "Something went wrong.",
+    "reload": "Reload"
+  },
+
   "route": {
     "notFound": "Not found",
     "notFoundBody": "There is nothing at this address."

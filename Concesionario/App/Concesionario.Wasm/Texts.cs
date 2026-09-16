@@ -126,6 +126,7 @@ namespace Concesionario.Wasm
 			texts = await LoadAsync(http, Tag);
 
 			await SetTheDocumentsLanguageAsync(js);
+			await SetTheWordsOfTheFailureBannerAsync(js);
 		}
 
 		/// <summary>
@@ -142,6 +143,34 @@ namespace Concesionario.Wasm
 					await js.InvokeAsync<IJSObjectReference>("import", "./language-interop.js");
 
 				await module.InvokeVoidAsync("setTheDocumentsLanguage", Tag);
+			}
+			catch (JSException)
+			{
+			}
+			catch (InvalidOperationException)
+			{
+			}
+		}
+
+		/// <summary>
+		/// LE PONE SUS PALABRAS AL AVISO DE FALLA, que vive en el documento y no en un componente:
+		/// lo muestra el arranque de Blazor, asi que ningun catalogo lo alcanza mientras la pagina
+		/// se sirve. Se le escriben DESPUES de negociar, que es cuando hay idioma.
+		/// <para>
+		/// Antes de negociar, y si el arranque falla antes de llegar aqui, el aviso dice lo que
+		/// trae el documento, que es el idioma del registro. Una falla al escribirle se traga: el
+		/// aviso se queda en ese idioma y la pantalla sigue.
+		/// </para>
+		/// </summary>
+		private async Task SetTheWordsOfTheFailureBannerAsync(IJSRuntime js)
+		{
+			try
+			{
+				await using IJSObjectReference module =
+					await js.InvokeAsync<IJSObjectReference>("import", "./language-interop.js");
+
+				await module.InvokeVoidAsync(
+					"setTheWordsOfTheFailureBanner", this["shell.wentWrong"], this["shell.reload"]);
 			}
 			catch (JSException)
 			{

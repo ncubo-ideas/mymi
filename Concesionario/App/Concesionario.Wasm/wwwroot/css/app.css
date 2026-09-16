@@ -1095,7 +1095,7 @@ h1:focus, h2:focus { outline: none; }
     color: #5B7292;
 }
 
-.loading-progress-text:after { content: var(--blazor-load-percentage-text, "Loading"); }
+.loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
 #blazor-error-ui {
     position: fixed;
