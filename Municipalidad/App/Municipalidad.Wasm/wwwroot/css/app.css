@@ -22,6 +22,12 @@
     --coral: #FF7A54;
     --coral-tenue: rgba(255, 122, 84, .16);
 
+    /* Chip de "N dias de atraso" en Pagos y vencimientos: un vino/borgoña oscuro y propio, no
+       --coral (ese lo siguen usando Inicio y Cambios en mis cobros, sin tocar esta ronda). Menos
+       naranja, mas integrado con el navy de la tarjeta. */
+    --atraso-fondo: #3A1826;
+    --atraso-texto: #F2B6C6;
+
     --tinta: #1A1D3C;
     --tinta-suave: #5C6088;
     --tinta-tenue: #8A8DAB;
@@ -1225,28 +1231,59 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
     font-size: .9375rem;
 }
 
-.seccion-cabeza__titulo {
+/* El total vive en su propio bloque a la derecha: la cifra pesa mas que la etiqueta por
+   tamano/peso tipografico, no por color -- nada de coral ni rojo en un total. */
+.seccion-total-bloque {
     display: flex;
-    align-items: baseline;
-    gap: .5rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    flex: none;
 }
 
-.seccion-cuenta {
-    font-size: .8125rem;
+.seccion-total-etiqueta {
+    font-size: .75rem;
     color: var(--noche-texto-tenue);
 }
 
-.obligaciones { margin: 0 0 .25rem; }
+.seccion-total-cifra {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+}
 
-.obligacion { border-bottom: 1px solid var(--noche-linea); }
-.obligacion:last-child { border-bottom: 0; }
+/* Explicacion secundaria: mas chica y mas apagada que .nota (que usan otras pantallas que no
+   se tocan esta ronda), para que la confirmacion de arriba sea lo unico que compita por ojo. */
+.explicacion-menor {
+    margin: .375rem 0 0;
+    font-size: .8125rem;
+    color: rgba(255, 255, 255, .58);
+    line-height: 1.5;
+}
+
+.obligaciones {
+    display: flex;
+    flex-direction: column;
+    gap: .625rem;
+    margin: 0 0 .25rem;
+}
+
+/* Cada obligacion es su propia tarjeta (fondo + borde + radio), no una fila de una lista
+   continua: es "convertir cada vencimiento en tarjeta", no una tabla de texto. */
+.obligacion {
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio-chico);
+    overflow: hidden;
+}
 
 .obligacion__resumen {
     display: flex;
     align-items: center;
     gap: .75rem;
-    padding: .875rem 0;
+    padding: .75rem .875rem;
     cursor: pointer;
     list-style: none;
 }
@@ -1254,7 +1291,19 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 .obligacion__resumen::-webkit-details-marker { display: none; }
 .obligacion__resumen::marker { content: ""; }
 
-.obligacion__icono { flex: none; }
+.obligacion__resumen:hover { background: var(--noche-superficie-alta); }
+
+/* El icono vive en un contenedor violeta: es identidad del rubro, no una alerta. El coral
+   queda exclusivo del badge de atraso, nunca del icono principal. */
+.obligacion__icono {
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radio-chico);
+    background: rgba(128, 110, 186, .25);
+}
 
 .obligacion__info {
     flex: 1;
@@ -1283,19 +1332,19 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
     font-weight: 700;
     padding: .1875rem .5625rem;
     border-radius: var(--radio-pastilla);
-    background: var(--coral-tenue);
-    color: var(--coral);
+    background: var(--atraso-fondo);
+    color: var(--atraso-texto);
 }
 
 .obligacion__lado {
     flex: none;
     display: flex;
     align-items: center;
-    gap: .375rem;
+    gap: .5rem;
 }
 
 .obligacion__monto {
-    font-size: 1.0625rem;
+    font-size: 1.1875rem;
     font-weight: 800;
     color: #FFFFFF;
     font-variant-numeric: tabular-nums;
@@ -1310,12 +1359,22 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 
 .obligacion[open] .obligacion__chevron { transform: rotate(90deg); }
 
-.obligacion__detalle { padding: 0 0 1.125rem; }
+.obligacion__detalle { padding: 0 .875rem 1rem; }
 
 .obligacion__detalle .renglones { margin-top: 0; }
 
+.obligacion__detalle__titulo {
+    display: block;
+    margin: .875rem 0 .375rem;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--noche-texto-tenue);
+}
+
 .obligacion__detalle .item__frase {
-    margin: .75rem 0 0;
+    margin: 0;
     font-size: .8438rem;
     color: var(--noche-texto-tenue);
     line-height: 1.5;
@@ -1434,20 +1493,14 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 /* ===== Cabecera de seccion con total real, sin inventar nada que mezcle listas ===== */
 .seccion-cabeza {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
     gap: .75rem;
     flex-wrap: wrap;
+    margin: 0 0 .75rem;
 }
 
 .seccion-cabeza h2 { margin: 0; }
-
-.seccion-total {
-    font-size: .9375rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, .88);
-    font-variant-numeric: tabular-nums;
-}
 
 .estado-vacio {
     display: flex;
@@ -1459,6 +1512,8 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 }
 
 .estado-vacio__marca { color: var(--turquesa); font-weight: 800; }
+
+.icono-info { color: var(--turquesa); font-weight: 700; }
 
 /* ===== Navegacion inferior (mobile) ===== */
 .pie-nav {
