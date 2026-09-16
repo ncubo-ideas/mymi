@@ -393,15 +393,18 @@ namespace Concesionario.Dominio.Pruebas
 
 			// SIN NINGUNA ESTADIA: los ocho scripts corren igual y ninguno rechaza.
 			Assert.That(journal.Api.IsInsideTheShopAt(insideTheStay), Is.False);
-			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay, TheLanguage.OfTheRecord),
+				Is.Not.Empty);
 			Assert.That(journal.Api.HasAnyStayBetween("2026-01-01", "2026-12-31"), Is.False);
 			Assert.That(journal.Api.DaysInTheShopBetween("2026-01-01", "2026-12-31"), Is.Empty);
 			Assert.That(
 				journal.Api.DaysInTheShopCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(0));
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31"), Is.Not.Empty);
+				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31",
+					TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(journal.Api.StayCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(0));
-			Assert.That(journal.Api.StaysBetween("2026-01-01", "2026-12-31").Branch, Is.Empty);
+			Assert.That(journal.Api.StaysBetween("2026-01-01", "2026-12-31",
+				TheLanguage.OfTheRecord).Branch, Is.Empty);
 
 			// CON UNA ESTADIA CERRADA Y UNA ABIERTA: los mismos ocho, y ahora contestando.
 			journal.Api.RecordShopStay(
@@ -415,7 +418,8 @@ namespace Concesionario.Dominio.Pruebas
 				new DateTime(2026, 6, 10, 8, 30, 0, DateTimeKind.Utc));
 
 			Assert.That(journal.Api.IsInsideTheShopAt(insideTheStay), Is.True);
-			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay), Does.Contain("Taller Escazu"));
+			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay, TheLanguage.OfTheRecord),
+				Does.Contain("Taller Escazu"));
 			Assert.That(journal.Api.HasAnyStayBetween("2026-01-01", "2026-12-31"), Is.True);
 			Assert.That(
 				journal.Api.DaysInTheShopBetween("2026-01-01", "2026-12-31"),
@@ -423,11 +427,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DaysInTheShopCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(2));
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31"),
+				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31",
+					TheLanguage.OfTheRecord),
 				Does.Contain("2 días"));
 			Assert.That(journal.Api.StayCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(1));
 			Assert.That(
-				journal.Api.StaysBetween("2026-01-01", "2026-12-31").Says,
+				journal.Api.StaysBetween("2026-01-01", "2026-12-31", TheLanguage.OfTheRecord).Says,
 				Has.Length.EqualTo(1),
 				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta.");
 		}
@@ -668,7 +673,8 @@ namespace Concesionario.Dominio.Pruebas
 			// SIN NINGUNA ASIGNACION: las tres totales corren igual y ninguna rechaza.
 			Assert.That(journal.Api.IsAPlatePublished(afterThePlate), Is.False);
 			Assert.That(
-				journal.Api.DescribePlate(afterThePlate), Does.Contain("concesionario"),
+				journal.Api.DescribePlate(afterThePlate,
+					TheLanguage.OfTheRecord), Does.Contain("concesionario"),
 				"La ausencia se dice en palabras y nombra a quien publica una placa.");
 			Assert.That(journal.Api.PlateAssignments().AsPublished, Is.Empty);
 
@@ -685,7 +691,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.IsAPlatePublished(afterThePlate), Is.True);
 
 			Assert.That(
-				journal.Api.DescribePlate(afterThePlate), Does.Contain("XKD-119"));
+				journal.Api.DescribePlate(afterThePlate, TheLanguage.OfTheRecord), Does.Contain("XKD-119"));
 
 			Assert.That(
 				journal.Api.ReadPlateAsPublished(afterThePlate), Is.EqualTo("XKD-119"));
@@ -1146,7 +1152,7 @@ namespace Concesionario.Dominio.Pruebas
 			// nombra tambien el asunto, asi que un Does.Contain pelado se satisface con los dos campos
 			// cruzados. MEDIDO en la pasada de falsificacion de esta tarea.
 			Assert.That(
-				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay),
+				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay, TheLanguage.OfTheRecord),
 				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
 					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject));
 		}

@@ -260,12 +260,11 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La placa dicha entera, o la constancia con nombre de que no hay ninguna. TOTAL, y la frase
-		/// es del dominio.
+		/// La placa como forma y valores, o la constancia con nombre de que no hay ninguna. TOTAL.
 		/// </summary>
-		internal string DescribePlate(DateTime asOf)
+		internal APlateClause ThePlateClauseAsOf(DateTime asOf)
 		{
-			return ThePlateAsOf(asOf).Describe();
+			return ThePlateAsOf(asOf).TheClause();
 		}
 
 		/// <summary>

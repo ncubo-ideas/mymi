@@ -46,24 +46,22 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El periodo en palabras: los dos dias por los que se pregunto, cuantos dias estuvo
+		/// El periodo como forma y valores: los dos dias por los que se pregunto, cuantos dias estuvo
 		/// adentro, en cuantas estadias, y cuales son esos dias.
 		/// </summary>
-		internal override string Describe()
+		internal override AStayPeriodClause TheClause()
 		{
-			return "Entre el " + _from.HowItIsSaid() + " y el " + _to.HowItIsSaid()
-				+ " estuvo en el taller " + HowManyDays() + (HowManyDays() == 1 ? " día" : " días")
-				+ ", en " + HowManyStays() + (HowManyStays() == 1 ? " estadía" : " estadías") + ": "
-				+ TheDaysSaid() + ".";
+			return AStayPeriodClause.WithStaysOnRecord(
+				_from.HowItIsSaid(), _to.HowItIsSaid(), HowManyDays(), HowManyStays(), TheDaysAsSaid());
 		}
 
-		private string TheDaysSaid()
+		private string[] TheDaysAsSaid()
 		{
-			List<string> said = new List<string>();
+			string[] said = new string[_days.Count];
 
-			foreach (StayDay day in _days) said.Add(day.HowItIsSaid());
+			for (int day = 0; day < _days.Count; day++) said[day] = _days[day].HowItIsSaid();
 
-			return string.Join(", ", said);
+			return said;
 		}
 
 		private static List<StayDay> TheDaysInsideThePeriod(

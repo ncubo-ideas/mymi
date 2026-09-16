@@ -58,9 +58,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El periodo en una frase. TOTAL: la ausencia tambien se dice con palabras y nombra los dos
-		/// dias por los que se pregunto.
+		/// El periodo como forma y valores. TOTAL: la ausencia tambien contesta, con su propio codigo
+		/// y nombrando los dos dias por los que se pregunto.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract AStayPeriodClause TheClause();
 	}
 }

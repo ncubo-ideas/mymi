@@ -417,12 +417,12 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				"state.ReadTheSpecification(texts.Language)",
 				"state.ReadWhereThisVehicleStands(texts.Language)",
-				"state.ReadTheStaysOfThisVehicle()",
+				"state.ReadTheStaysOfThisVehicle(texts.Language)",
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost(texts.Language)",
 				"state.ReadHowThisVehicleIsDriven(texts.Language)",
 				"state.ReadWhatThisVehicleHasCost(texts.Language)",
-				"state.ReadThePlateOfThisVehicle()",
+				"state.ReadThePlateOfThisVehicle(texts.Language)",
 			})
 				Assert.That(page, Does.Contain(read),
 					"La pagina no hace la lectura '" + read + "'. Las ocho se leen en el mismo Reread: "
@@ -466,12 +466,12 @@ namespace Concesionario.Dominio.Pruebas
 				Does.Contain(
 					"sheet = state.ReadTheSpecification(texts.Language); "
 					+ "stands = state.ReadWhereThisVehicleStands(texts.Language); "
-					+ "stays = state.ReadTheStaysOfThisVehicle(); "
+					+ "stays = state.ReadTheStaysOfThisVehicle(texts.Language); "
 					+ "operations = state.ReadWhereEachOperationStands(texts.Language); "
 					+ "costs = state.ReadWhatTheServicesCost(texts.Language); "
 					+ "use = state.ReadHowThisVehicleIsDriven(texts.Language); "
 					+ "spend = state.ReadWhatThisVehicleHasCost(texts.Language); "
-					+ "plate = state.ReadThePlateOfThisVehicle();"),
+					+ "plate = state.ReadThePlateOfThisVehicle(texts.Language);"),
 				"Las ocho lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
 				+ "otro metodo, o despues de un await -- contesta sobre otro momento del mismo registro, "
 				+ "y la pantalla mezcla dos: eso es exactamente lo que 'un solo Reread' existe para "
@@ -483,12 +483,12 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				"state.ReadTheSpecification(texts.Language)",
 				"state.ReadWhereThisVehicleStands(texts.Language)",
-				"state.ReadTheStaysOfThisVehicle()",
+				"state.ReadTheStaysOfThisVehicle(texts.Language)",
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost(texts.Language)",
 				"state.ReadHowThisVehicleIsDriven(texts.Language)",
 				"state.ReadWhatThisVehicleHasCost(texts.Language)",
-				"state.ReadThePlateOfThisVehicle()",
+				"state.ReadThePlateOfThisVehicle(texts.Language)",
 			})
 				Assert.That(TimesItSays(page, read), Is.EqualTo(1),
 					"'" + read + "' se hace en mas de un sitio de la pagina.");

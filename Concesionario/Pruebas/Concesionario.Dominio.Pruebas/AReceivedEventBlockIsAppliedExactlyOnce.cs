@@ -373,7 +373,7 @@ namespace Concesionario.Dominio.Pruebas
 			// hay -- ninguna lectura de periodo la alcanza, asi que no tiene fila ni columnas -- de
 			// modo que si esta afirmacion no discrimina, nada discrimina.
 			Assert.That(
-				journal.Api.DescribeTheStayAt(InsideTheOpenStay),
+				journal.Api.DescribeTheStayAt(InsideTheOpenStay, TheLanguage.OfTheRecord),
 				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
 					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject),
 				"DescribeTheStayAt dice la estadia ABIERTA con la sucursal en la clausula de la "
@@ -381,7 +381,7 @@ namespace Concesionario.Dominio.Pruebas
 				+ "frase los diria al reves.");
 
 			Assert.That(
-				journal.Api.DescribeTheStayAt(InsideTheFirstClosedStay),
+				journal.Api.DescribeTheStayAt(InsideTheFirstClosedStay, TheLanguage.OfTheRecord),
 				Does.Contain("en " + ADealershipNarrative.TheFirstShopBranch + " desde el")
 					.And.Contains("Entró por " + ADealershipNarrative.TheFirstShopSubject),
 				"Y la del acto unico cuando se pregunta por un instante que ELLA cubre.");
@@ -401,14 +401,15 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.DaysInTheShopCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(5));
 
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo),
+				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
 				Does.Contain("5 días").And.Contains("2 estadías"));
 
 			Assert.That(journal.Api.StayCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(2),
 				"DOS estadias con dias registrados, no tres: la abierta no entra en un periodo dicho "
 				+ "en dias, y no cinco: dias y estadias son dos cuentas distintas.");
 
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(
 				record.Branch,

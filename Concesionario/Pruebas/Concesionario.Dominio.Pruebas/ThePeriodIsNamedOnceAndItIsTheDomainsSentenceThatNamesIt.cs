@@ -90,18 +90,20 @@ namespace Concesionario.Dominio.Pruebas
 			using (var empty = new AScheduleOnARealJournal(TheVin, AppState.TheProfileAtDelivery))
 			{
 				TheStaysOfThisVehicle nothing = TheStaysOfThisVehicle.ReadThrough(
-					empty.Api, TheYearFrom, TheYearTo, TheInstantTheScreenAsksAt);
+					empty.Api, TheYearFrom, TheYearTo, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord);
 
-				Assert.That(nothing.Says, Does.Contain(TheYearFrom).And.Contains(TheYearTo),
+				Assert.That(
+					nothing.Says, Does.Contain(ADay(TheYearFrom)).And.Contains(ADay(TheYearTo)),
 					"Sin ninguna estadia, la frase TAMBIEN nombra el periodo. Es el estado en que un "
 					+ "encabezado callado costaria mas, y es justo donde el dominio si lo dice.");
 
 				empty.Api.RecordShopStay(TheBranch, TheSubject, TheEntry, TheCollection, TheDays);
 
 				TheStaysOfThisVehicle something = TheStaysOfThisVehicle.ReadThrough(
-					empty.Api, TheYearFrom, TheYearTo, TheInstantTheScreenAsksAt);
+					empty.Api, TheYearFrom, TheYearTo, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord);
 
-				Assert.That(something.Says, Does.Contain(TheYearFrom).And.Contains(TheYearTo),
+				Assert.That(
+					something.Says, Does.Contain(ADay(TheYearFrom)).And.Contains(ADay(TheYearTo)),
 					"Y con una estadia registrada, tambien. Los dos estados, porque una frase que "
 					+ "nombrara el periodo en uno solo dejaria la mitad de las pantallas sin ventana.");
 
@@ -123,6 +125,12 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.Fail("'Historial.razor' no llego al output.");
 			return "";
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

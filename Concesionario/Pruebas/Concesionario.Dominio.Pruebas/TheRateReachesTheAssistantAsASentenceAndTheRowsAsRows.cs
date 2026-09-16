@@ -318,7 +318,7 @@ namespace Concesionario.Dominio.Pruebas
 			// misma inversion, con excepcion. Si dejara de hacerlo, esta prueba estaria comparando
 			// contra nada.
 			Assert.Throws<ArgumentException>(
-				() => journal.Api.StaysBetween("2026-03-10", "2026-01-01"),
+				() => journal.Api.StaysBetween("2026-03-10", "2026-01-01", TheLanguage.OfTheRecord),
 				"El normalizador de periodos dichos en DIAS rechaza un periodo invertido. Es el que "
 				+ "esta tool NO usa, y por eso su rechazo no llega al asistente.");
 		}

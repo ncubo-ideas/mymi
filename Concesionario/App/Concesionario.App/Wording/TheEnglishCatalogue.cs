@@ -23,6 +23,9 @@ namespace Concesionario.App.Wording
 				["months.one"] = "1 month",
 				["months.many"] = "{count} months",
 
+				["stays.one"] = "1 stay",
+				["stays.many"] = "{count} stays",
+
 				["day.long"] = "{day} {month} {year}",
 				["day.short"] = "{day} {month} {year}",
 
@@ -501,6 +504,25 @@ namespace Concesionario.App.Wording
 					+ "because the vehicle did not move in the other period.",
 				["rate.change.Higher"] = "The change of the first against the second: {change}% more.",
 				["rate.change.Lower"] = "The change of the first against the second: {change}% less.",
+
+				["stay.StillOpen"] =
+					"It is at {branch} since {enteredAt}, and it has not been collected yet: the stay "
+					+ "is still open, so there are no days to give yet. It came in for {subject}.",
+				["stay.Collected"] =
+					"It was at {branch} from {enteredAt} until {collectedAt}: {howMany} in the shop "
+					+ "-- {days}. It came in for {subject}.",
+				["stay.NoStayCoversTheInstant"] = "No shop stay covers {at}.",
+
+				["stayPeriod.WithStaysOnRecord"] =
+					"Between {from} and {to} it was in the shop {howManyDays}, over {howManyStays}: "
+					+ "{days}.",
+				["stayPeriod.NoStayOnRecord"] =
+					"Between {from} and {to} there is no shop stay with recorded days.",
+
+				["plate.Assigned"] = "This vehicle's plate is {plate}, assigned since {day}.",
+				["plate.NoneOnRecord"] =
+					"There is no plate on record for this vehicle at the instant asked. A vehicle's "
+					+ "plate is published by the dealership.",
 			};
 		}
 	}

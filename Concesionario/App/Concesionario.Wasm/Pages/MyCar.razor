@@ -455,12 +455,12 @@ else
 
         sheet = state.ReadTheSpecification(texts.Language);
         stands = state.ReadWhereThisVehicleStands(texts.Language);
-        stays = state.ReadTheStaysOfThisVehicle();
+        stays = state.ReadTheStaysOfThisVehicle(texts.Language);
         operations = state.ReadWhereEachOperationStands(texts.Language);
         costs = state.ReadWhatTheServicesCost(texts.Language);
         use = state.ReadHowThisVehicleIsDriven(texts.Language);
         spend = state.ReadWhatThisVehicleHasCost(texts.Language);
-        plate = state.ReadThePlateOfThisVehicle();
+        plate = state.ReadThePlateOfThisVehicle(texts.Language);
     }
 
     private static Dictionary<string, string> Empty() => EveryKindStartsAt("");

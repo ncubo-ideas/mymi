@@ -84,7 +84,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.IsInsideTheShopAt(WhileItIsStillInside), Is.True,
 				"El vehiculo esta adentro mientras la estadia siga abierta.");
 
-			string says = journal.Api.DescribeTheStayAt(WhileItIsStillInside);
+			string says = journal.Api.DescribeTheStayAt(WhileItIsStillInside, TheLanguage.OfTheRecord);
 
 			Assert.That(says, Does.Contain(TheOpenBranch).And.Contains(TheOpenSubject),
 				"Y la frase la dice entera: donde esta y por que entro.");
@@ -112,7 +112,8 @@ namespace Concesionario.Dominio.Pruebas
 				"DaysInTheShopCountBetween en ese mes.");
 
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween(TheOctoberFrom, TheOctoberTo),
+				journal.Api.DescribeDaysInTheShopBetween(TheOctoberFrom, TheOctoberTo,
+					TheLanguage.OfTheRecord),
 				Does.Contain("con días registrados"),
 				"Y la frase dice que no hay dias REGISTRADOS, que no es lo mismo que decir que el "
 				+ "vehiculo no estuvo adentro: en octubre lo estuvo y lo sigue estando.");
@@ -121,7 +122,8 @@ namespace Concesionario.Dominio.Pruebas
 				"StayCountBetween en ese mes.");
 
 			Assert.That(
-				journal.Api.StaysBetween(TheOctoberFrom, TheOctoberTo).Branch, Is.Empty,
+				journal.Api.StaysBetween(TheOctoberFrom, TheOctoberTo,
+					TheLanguage.OfTheRecord).Branch, Is.Empty,
 				"Y el registro no trae ninguna fila para ella.");
 		}
 
@@ -133,7 +135,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.StayCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(1),
 				"UNA estadia en el año, no dos: la abierta no entra a ningun periodo dicho en dias.");
 
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(record.Branch, Is.EqualTo(new[] { TheClosedBranch }));
 			Assert.That(record.Subject, Is.EqualTo(new[] { TheClosedSubject }));

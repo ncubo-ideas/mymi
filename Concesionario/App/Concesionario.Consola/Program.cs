@@ -1233,7 +1233,8 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   {"cuantas estadias",-24} : {api.StayCountBetween(from, to)}");
 			Console.WriteLine($"   {"los dias, uno por uno",-24} : "
 				+ ADayList(api.DaysInTheShopBetween(from, to)));
-			Console.WriteLine($"     {api.DescribeDaysInTheShopBetween(from, to)}");
+			Console.WriteLine(
+				"     " + api.DescribeDaysInTheShopBetween(from, to, TheVoiceOfTheDealership));
 			Console.WriteLine();
 		}
 
@@ -1246,7 +1247,7 @@ namespace Concesionario.Consola
 			{
 				Console.WriteLine($"   al {Day(asOf)}");
 				Console.WriteLine($"   {"esta adentro",-24} : {api.IsInsideTheShopAt(asOf)}");
-				Console.WriteLine($"     {api.DescribeTheStayAt(asOf)}");
+				Console.WriteLine($"     {api.DescribeTheStayAt(asOf, TheVoiceOfTheDealership)}");
 			}
 
 			Console.WriteLine();
@@ -1254,7 +1255,8 @@ namespace Concesionario.Consola
 
 		private static void TheRowsOfThePeriod(DealershipCarAPI api)
 		{
-			ShopStayRecord record = api.StaysBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo);
+			ShopStayRecord record = api.StaysBetween(
+				ShopStays.TheYearFrom, ShopStays.TheYearTo, TheVoiceOfTheDealership);
 
 			Console.WriteLine("   -- el registro crudo: una fila por estadia CERRADA, en columnas");
 			Console.WriteLine("      paralelas y en orden de entrada --");
@@ -1300,7 +1302,7 @@ namespace Concesionario.Consola
 			string from = ShopStays.TheCutFrom;
 			string to = ShopStays.TheCutTo;
 
-			ShopStayRecord record = api.StaysBetween(from, to);
+			ShopStayRecord record = api.StaysBetween(from, to, TheVoiceOfTheDealership);
 
 			Console.WriteLine($"un periodo que CORTA una estadia, del {from} al {to}:");
 			Console.WriteLine($"  dias del periodo          : {ADayList(api.DaysInTheShopBetween(from, to))}");
@@ -1325,8 +1327,8 @@ namespace Concesionario.Consola
 			string days = ADayList(
 				api.DaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo));
 			string period = api.DescribeDaysInTheShopBetween(
-				ShopStays.TheYearFrom, ShopStays.TheYearTo);
-			string open = api.DescribeTheStayAt(TheInstantTheStaysAreRead);
+				ShopStays.TheYearFrom, ShopStays.TheYearTo, TheVoiceOfTheDealership);
+			string open = api.DescribeTheStayAt(TheInstantTheStaysAreRead, TheVoiceOfTheDealership);
 
 			Console.WriteLine("---- mediciones contra el disco -------------------------------");
 			Console.WriteLine();
@@ -1350,10 +1352,12 @@ namespace Concesionario.Consola
 				+ $"{ADayList(again.DaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo)) == days}"
 				+ "  <- uno por uno");
 			Console.WriteLine("  la frase del periodo igual: "
-				+ $"{again.DescribeDaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo) == period}"
+				+ $"{again.DescribeDaysInTheShopBetween(
+					ShopStays.TheYearFrom, ShopStays.TheYearTo, TheVoiceOfTheDealership) == period}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  la estadia abierta igual  : "
-				+ $"{again.DescribeTheStayAt(TheInstantTheStaysAreRead) == open}  <- letra por letra");
+				+ $"{again.DescribeTheStayAt(TheInstantTheStaysAreRead, TheVoiceOfTheDealership) == open}"
+				+ "  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  Las estadias no son un campo de C#: salen del journal, y los tres hechos");
 			Console.WriteLine("  se vuelven a aplicar corriendo otra vez los mismos comandos, en el mismo");

@@ -163,17 +163,27 @@ namespace Concesionario.Dominio.Pruebas
 					+ "compone de las cuatro columnas paralelas que el dominio ya conto, y ni el "
 					+ "valor ni el instante se tocan.",
 			},
-			// UNA ENTRADA PARA TRES SITIOS, y no por descuido: la clave de esta lista es raiz, archivo
-			// y linea, asi que tres recorridos escritos igual en el mismo archivo son UNA clave. El
-			// campo Member nombra la familia, que es lo unico que puede nombrar sin mentir.
+			// UNA ENTRADA PARA CUATRO SITIOS, y no por descuido: la clave de esta lista es raiz,
+			// archivo y linea, asi que cuatro recorridos escritos igual en el mismo archivo son UNA
+			// clave. El campo Member nombra la familia, que es lo unico que puede nombrar sin mentir.
+			// Eran TRES hasta que las estadias entraron con el suyo.
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
-				Member = "TheReadingsSaid y las dos TheCompletionsSaid",
+				Member = "TheReadingsSaid, las dos TheCompletionsSaid y TheStaysSaid",
 				Snippet = "for (int row = 0; row < said.Length; row++)",
-				Reason = "Contador de un recorrido por las filas del historial que el dominio ya conto: "
-					+ "la celda de la lectura y la frase de cada fila se componen de las columnas "
-					+ "paralelas, y ni el valor ni el instante se tocan.",
+				Reason = "Contador de un recorrido por las filas -- del historial y de las estadias -- "
+					+ "que el dominio ya conto: la celda de la lectura y la frase de cada fila se "
+					+ "componen de las columnas paralelas, y ni el valor ni el instante se tocan.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheDaysListed",
+				Snippet = "for (int day = 0; day < days.Length; day++)",
+				Reason = "Contador de un recorrido por los dias de calendario que el dominio ya eligio "
+					+ "y ya ordeno. Dice cada uno en el orden del idioma y pone la puntuacion entre "
+					+ "dos: ningun dia se deriva de otro y ninguno se cuenta aqui.",
 			},
 			new AllowedArithmetic
 			{

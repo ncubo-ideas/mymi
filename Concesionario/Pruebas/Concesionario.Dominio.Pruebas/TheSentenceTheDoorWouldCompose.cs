@@ -486,6 +486,25 @@ namespace Concesionario.Dominio.Pruebas
 			return Phrases.Of(language).Grouped(value);
 		}
 
+		// UN DIA DEL REGISTRO, DICHO COMO LA FRASE LO DICE, por la misma razon que el numero de
+		// arriba: el registro lleva el dia en yyyy-MM-dd y la frase lo dice en palabras, y el ORDEN de
+		// las partes no es el mismo en los dos idiomas. Sin esto la afirmacion compara un "2026-06-01"
+		// contra un "1 de junio de 2026" y se pone roja por el formato, que no es la ley que defiende.
+		//
+		// UN INSTANTE NO PASA POR AQUI y la diferencia es del dominio, no de la presentacion: un
+		// instante se registro con su hora y se cita tal cual en los dos idiomas.
+		internal static string ADayAsTheSentenceSaysIt(string yyyyMMdd, string language)
+		{
+			return Phrases.Of(language).ADay(yyyyMMdd);
+		}
+
+		// EL MISMO DIA EN LA FORMA CORTA, que es con la que se dice una LISTA de dias de largo
+		// desconocido: la forma larga repetida ocho veces deja de leerse como una lista.
+		internal static string AShortDayAsTheSentenceSaysIt(string yyyyMMdd, string language)
+		{
+			return Phrases.Of(language).AShortDay(yyyyMMdd);
+		}
+
 		// Cada lectura del periodo en su frase, como la puerta compone esa columna: de las cuatro que
 		// el registro ya lleva, y con la fuente dicha por el catalogo.
 		internal static string[] EachReadingOnTheRecord(
@@ -615,6 +634,78 @@ namespace Concesionario.Dominio.Pruebas
 				answer.TheUnitTheDistanceIsInForceIn(), answer.TheUnitTheLimitIsIn(),
 				answer.TheUnitTheOdometerIsIn(), answer.TheExclusionSystems(),
 				answer.TheExclusionTexts(), answer.TheExclusionConditions());
+		}
+
+		// LAS ESTADIAS EN EL TALLER. La estadia por instante y el periodo pasan por portadores
+		// DISTINTOS -- contestan sobre cosas distintas, no sobre la misma con otro marco -- y cada fila
+		// del periodo se dice con el MISMO renderizador que la estadia por instante, porque es la misma
+		// cosa dicha.
+		internal static string TheStay(ShopStay stays, DateTime asOf, string language)
+		{
+			return TheStay(stays.TheStayClauseAt(asOf), language);
+		}
+
+		internal static string TheStay(AStayClause clause, string language)
+		{
+			return TheWording.TheStay(
+				Phrases.Of(language),
+				clause.TheShapeItHas(), clause.TheBranchItWasSpentIn(),
+				clause.TheSubjectItCameInFor(), clause.TheInstantItEnteredAt(),
+				clause.TheInstantItWasCollectedAt(), clause.HowManyDaysItCovered(),
+				clause.TheDaysItCovered(), clause.TheInstantItWasAskedAt());
+		}
+
+		internal static string TheStayPeriod(
+			ShopStay stays, string fromDay, string toDay, string language)
+		{
+			return TheStayPeriod(stays.TheStayPeriodClauseBetween(fromDay, toDay), language);
+		}
+
+		internal static string TheStayPeriod(AStayPeriodClause clause, string language)
+		{
+			return TheWording.TheStayPeriod(
+				Phrases.Of(language),
+				clause.TheShapeItHas(), clause.TheDayItStartsAt(), clause.TheDayItEndsAt(),
+				clause.HowManyDays(), clause.HowManyStays(), clause.TheDaysItCovered());
+		}
+
+		// Cada estadia del periodo en su frase, como la puerta compone esa columna: con las mismas
+		// columnas paralelas que la fila lleva, y los dias de la celda vueltos a ser una lista.
+		internal static string[] EachStayBetween(
+			ShopStay stays, string fromDay, string toDay, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] shapes = stays.StayShapesBetween(fromDay, toDay);
+			string[] branches = stays.StayBranchesBetween(fromDay, toDay);
+			string[] subjects = stays.StaySubjectsBetween(fromDay, toDay);
+			string[] enteredAt = stays.StayEntryInstantsBetween(fromDay, toDay);
+			string[] collectedAt = stays.StayCollectionInstantsBetween(fromDay, toDay);
+			int[] dayCounts = stays.StayDayCountsBetween(fromDay, toDay);
+			string[] coveredDays = stays.StayCoveredDaysBetween(fromDay, toDay);
+			string[] said = new string[shapes.Length];
+
+			for (int fila = 0; fila < said.Length; fila++)
+				said[fila] = TheWording.TheStay(
+					phrases, shapes[fila], branches[fila], subjects[fila], enteredAt[fila],
+					collectedAt[fila], dayCounts[fila],
+					coveredDays[fila].Split(' ', StringSplitOptions.RemoveEmptyEntries), "");
+
+			return said;
+		}
+
+		// LA PLACA. Su portador lleva la forma, el texto publicado tal como llego y el dia desde el que
+		// rige; la llave de cruce no pasa por aqui, que es la misma decision que la puerta toma.
+		internal static string ThePlate(VehicleProfile profile, DateTime asOf, string language)
+		{
+			return ThePlate(profile.ThePlateClauseAsOf(asOf), language);
+		}
+
+		internal static string ThePlate(APlateClause clause, string language)
+		{
+			return TheWording.ThePlate(
+				Phrases.Of(language),
+				clause.TheShapeItHas(), clause.TheTextAsPublished(),
+				clause.TheDayItIsAssignedFrom());
 		}
 
 		private static string TheRemainder(ARemainder remainder, string language)

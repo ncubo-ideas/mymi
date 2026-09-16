@@ -538,14 +538,14 @@ namespace Concesionario.Wasm
 		/// La ventana la fija la pantalla con su propio reloj y no se le pide a nadie -- esta app no
 		/// tiene ningun control que recoja un valor de una persona, asi que no hay selector de periodo.
 		/// </summary>
-		public TheStaysOfThisVehicle ReadTheStaysOfThisVehicle()
+		public TheStaysOfThisVehicle ReadTheStaysOfThisVehicle(string language)
 		{
 			Require();
 
 			DateTime asOf = TheInstantTheScreenAsksAt();
 
 			return TheStaysOfThisVehicle.ReadThrough(
-				api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf);
+				api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf, language);
 		}
 
 		/// <summary>
@@ -612,10 +612,10 @@ namespace Concesionario.Wasm
 		/// rige se decide contra un momento. El instante lo lee la pantalla del reloj de la maquina y
 		/// no se lo pide a nadie: la placa la publica el concesionario y esta app solo la muestra.
 		/// </summary>
-		public ThePlateOfThisVehicle ReadThePlateOfThisVehicle()
+		public ThePlateOfThisVehicle ReadThePlateOfThisVehicle(string language)
 		{
 			Require();
-			return ThePlateOfThisVehicle.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return ThePlateOfThisVehicle.ReadThrough(api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		// HasCredential() vive mas arriba y pregunta al ALMACEN, no al journal: el api ya no

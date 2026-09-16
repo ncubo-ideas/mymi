@@ -2439,13 +2439,34 @@ namespace Concesionario.App
 
 		/// <summary>
 		/// La placa dicha entera -- cual es y desde cuando rige -- o la constancia con nombre de que no
-		/// hay ninguna. TOTAL, tambien sin placa: la frase es del dominio y la caratula la imprime.
+		/// hay ninguna. TOTAL, tambien sin placa: el dominio elige la situacion y manda sus valores, y
+		/// la redaccion es del idioma que se pida.
 		/// </summary>
-		public string DescribePlate(DateTime asOf)
+		public string DescribePlate(DateTime asOf, string language)
 		{
-			return AText("@says = profile.DescribePlate(@asOf);", "says", p => {
-				p["asOf", typeof(DateTime)] = InUtc(asOf);
-			});
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					plate        = profile.ThePlateClauseAsOf(@asOf);
+					@shape       = plate.TheShapeItHas();
+					@asPublished = plate.TheTextAsPublished();
+					@assignedOn  = plate.TheDayItIsAssignedFrom();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",       typeof(string)] = default;
+					p[Parameter.Out, "asPublished", typeof(string)] = default;
+					p[Parameter.Out, "assignedOn",  typeof(string)] = default;
+
+					p["asOf", typeof(DateTime)] = InUtc(asOf);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.ThePlate(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["asPublished"].GetValue<string>(),
+					rented["assignedOn"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -3398,11 +3419,46 @@ namespace Concesionario.App
 		/// La estadia que cubre ese instante, dicha entera, o la constancia de que ninguna lo cubre.
 		/// TOTAL, y es la otra pregunta que alcanza una estadia todavia abierta.
 		/// </summary>
-		public string DescribeTheStayAt(DateTime asOf)
+		public string DescribeTheStayAt(DateTime asOf, string language)
 		{
-			return AText(
-				"@says = stays.DescribeTheStayAt(@asOf);", "says",
-				p => { p["asOf", typeof(DateTime)] = InUtc(asOf); });
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					stay         = stays.TheStayClauseAt(@asOf);
+					@shape       = stay.TheShapeItHas();
+					@branch      = stay.TheBranchItWasSpentIn();
+					@subject     = stay.TheSubjectItCameInFor();
+					@enteredAt   = stay.TheInstantItEnteredAt();
+					@collectedAt = stay.TheInstantItWasCollectedAt();
+					@dayCount    = stay.HowManyDaysItCovered();
+					@days        = stay.TheDaysItCovered();
+					@askedAt     = stay.TheInstantItWasAskedAt();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",       typeof(string)]   = default;
+					p[Parameter.Out, "branch",      typeof(string)]   = default;
+					p[Parameter.Out, "subject",     typeof(string)]   = default;
+					p[Parameter.Out, "enteredAt",   typeof(string)]   = default;
+					p[Parameter.Out, "collectedAt", typeof(string)]   = default;
+					p[Parameter.Out, "dayCount",    typeof(int)]      = default;
+					p[Parameter.Out, "days",        typeof(string[])] = default;
+					p[Parameter.Out, "askedAt",     typeof(string)]   = default;
+
+					p["asOf", typeof(DateTime)] = InUtc(asOf);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheStay(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["branch"].GetValue<string>(),
+					rented["subject"].GetValue<string>(),
+					rented["enteredAt"].GetValue<string>(),
+					rented["collectedAt"].GetValue<string>(),
+					rented["dayCount"].GetValue<int>(),
+					rented["days"].GetValue<string[]>(),
+					rented["askedAt"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
@@ -3442,11 +3498,40 @@ namespace Concesionario.App
 		/// El periodo en una frase: los dias en que estuvo adentro y en cuantas estadias, o la
 		/// constancia de que no hay ninguna con dias registrados. TOTAL.
 		/// </summary>
-		public string DescribeDaysInTheShopBetween(string fromDay, string toDay)
+		public string DescribeDaysInTheShopBetween(string fromDay, string toDay, string language)
 		{
-			return AText(
-				"@says = stays.DescribeDaysInTheShopBetween(@fromDay, @toDay);", "says",
-				ADayRange(fromDay, toDay));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					period     = stays.TheStayPeriodClauseBetween(@fromDay, @toDay);
+					@shape     = period.TheShapeItHas();
+					@from      = period.TheDayItStartsAt();
+					@to        = period.TheDayItEndsAt();
+					@dayCount  = period.HowManyDays();
+					@stayCount = period.HowManyStays();
+					@days      = period.TheDaysItCovered();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",     typeof(string)]   = default;
+					p[Parameter.Out, "from",      typeof(string)]   = default;
+					p[Parameter.Out, "to",        typeof(string)]   = default;
+					p[Parameter.Out, "dayCount",  typeof(int)]      = default;
+					p[Parameter.Out, "stayCount", typeof(int)]      = default;
+					p[Parameter.Out, "days",      typeof(string[])] = default;
+
+					ADayRange(fromDay, toDay)(p);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheStayPeriod(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["from"].GetValue<string>(),
+					rented["to"].GetValue<string>(),
+					rented["dayCount"].GetValue<int>(),
+					rented["stayCount"].GetValue<int>(),
+					rented["days"].GetValue<string[]>());
+			}
 		}
 
 		/// <summary>
@@ -3462,21 +3547,88 @@ namespace Concesionario.App
 
 		/// <summary>
 		/// Las estadias del periodo como filas: donde, por que, cuando entro, que dias cubrio y la
-		/// frase con que el dominio la dice, en columnas paralelas y en orden de entrada. TOTAL, y
+		/// frase con que se dice entera, en columnas paralelas y en orden de entrada. TOTAL, y
 		/// contesta CERO filas donde no hay ninguna. Un periodo dicho en dias no alcanza una estadia
 		/// todavia abierta: esa se pregunta por instante.
 		/// </summary>
-		public ShopStayRecord StaysBetween(string fromDay, string toDay)
+		public ShopStayRecord StaysBetween(string fromDay, string toDay, string language)
 		{
-			string[][] columns = TheTextColumns(@"
-				@branch      = stays.StayBranchesBetween(@fromDay, @toDay);
-				@subject     = stays.StaySubjectsBetween(@fromDay, @toDay);
-				@enteredAt   = stays.StayEntryInstantsBetween(@fromDay, @toDay);
-				@coveredDays = stays.StayCoveredDaysBetween(@fromDay, @toDay);
-				@says        = stays.DescribeEachStayBetween(@fromDay, @toDay);
-			", TheColumnsOfAStayRecord, ADayRange(fromDay, toDay));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					@shape       = stays.StayShapesBetween(@fromDay, @toDay);
+					@branch      = stays.StayBranchesBetween(@fromDay, @toDay);
+					@subject     = stays.StaySubjectsBetween(@fromDay, @toDay);
+					@enteredAt   = stays.StayEntryInstantsBetween(@fromDay, @toDay);
+					@collectedAt = stays.StayCollectionInstantsBetween(@fromDay, @toDay);
+					@dayCount    = stays.StayDayCountsBetween(@fromDay, @toDay);
+					@coveredDays = stays.StayCoveredDaysBetween(@fromDay, @toDay);
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",       typeof(string[])] = default;
+					p[Parameter.Out, "branch",      typeof(string[])] = default;
+					p[Parameter.Out, "subject",     typeof(string[])] = default;
+					p[Parameter.Out, "enteredAt",   typeof(string[])] = default;
+					p[Parameter.Out, "collectedAt", typeof(string[])] = default;
+					p[Parameter.Out, "dayCount",    typeof(int[])]    = default;
+					p[Parameter.Out, "coveredDays", typeof(string[])] = default;
 
-			return ShopStayRecord.Of(columns[0], columns[1], columns[2], columns[3], columns[4]);
+					ADayRange(fromDay, toDay)(p);
+				})
+				.PerformQuery();
+
+				string[] branch = rented["branch"].GetValue<string[]>();
+				string[] subject = rented["subject"].GetValue<string[]>();
+				string[] enteredAt = rented["enteredAt"].GetValue<string[]>();
+				string[] coveredDays = rented["coveredDays"].GetValue<string[]>();
+
+				return ShopStayRecord.Of(
+					branch,
+					subject,
+					enteredAt,
+					coveredDays,
+					TheStaysSaid(
+						language, rented["shape"].GetValue<string[]>(), branch, subject, enteredAt,
+						rented["collectedAt"].GetValue<string[]>(), rented["dayCount"].GetValue<int[]>(),
+						coveredDays));
+			}
+		}
+
+		/// <summary>
+		/// LA FRASE DE CADA FILA DEL REGISTRO DE ESTADIAS, compuesta con las mismas columnas que la
+		/// fila lleva: es lo que hace que una celda y la frase de su lado no se puedan separar. Los
+		/// dias de una fila llegan pegados con espacios porque un registro de columnas paralelas es
+		/// rectangular, y aqui vuelven a ser una lista antes de decirse.
+		/// </summary>
+		private static string[] TheStaysSaid(
+			string language, string[] shapes, string[] branch, string[] subject, string[] enteredAt,
+			string[] collectedAt, int[] dayCount, string[] coveredDays)
+		{
+			Wording.Phrases phrases = Wording.Phrases.Of(language);
+			string[] said = new string[shapes.Length];
+
+			for (int row = 0; row < said.Length; row++)
+				said[row] = Wording.TheWording.TheStay(
+					phrases, shapes[row], branch[row], subject[row], enteredAt[row], collectedAt[row],
+					dayCount[row], TheDaysOf(coveredDays[row]), NoInstantToName);
+
+			return said;
+		}
+
+		/// <summary>
+		/// EL INSTANTE QUE UNA FILA NO NOMBRA. Solo la constancia de que ninguna estadia cubre un
+		/// instante lo dice, y una fila del periodo nunca esta en esa situacion: cero filas es cero
+		/// filas y no una tercera situacion.
+		/// </summary>
+		private const string NoInstantToName = "";
+
+		/// <summary>
+		/// Los dias de una celda del registro, uno por elemento. Es la vuelta exacta de como la
+		/// columna los junta, y la misma que la caratula hace para pintarlos.
+		/// </summary>
+		private static string[] TheDaysOf(string cell)
+		{
+			return cell.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 		}
 
 		public string Apply(IMensajeDeEvento message)
@@ -4242,13 +4394,6 @@ namespace Concesionario.App
 				return columns.ToArray();
 			}
 		}
-
-		/// <summary>
-		/// Los nombres de las cinco columnas del registro de estadias, en el orden en que el DTO las
-		/// recibe.
-		/// </summary>
-		private static readonly string[] TheColumnsOfAStayRecord =
-			{ "branch", "subject", "enteredAt", "coveredDays", "says" };
 
 		/// <summary>
 		/// Los nombres de las cuatro columnas del registro de asignaciones de placa, en el orden en

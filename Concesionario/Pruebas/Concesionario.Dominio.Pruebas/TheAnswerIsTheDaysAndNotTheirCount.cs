@@ -93,11 +93,15 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheSentenceNamesEveryDayAndNotJustHowManyThereAre()
 		{
-			string said = stays.DescribeDaysInTheShopBetween(TheFirstOfJune, TheLastOfJune);
+			string said = TheSentenceTheDoorWouldCompose.TheStayPeriod(
+				stays, TheFirstOfJune, TheLastOfJune, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("2026-06-10"));
-			Assert.That(said, Does.Contain("2026-06-11"));
-			Assert.That(said, Does.Contain("2026-06-12"));
+			// LOS DIAS SE DICEN EN LA FORMA CORTA, que es la de una LISTA de largo desconocido. El
+			// registro los lleva en yyyy-MM-dd y la frase los dice en palabras, asi que lo que se
+			// espera se compone con el mismo renderizador.
+			Assert.That(said, Does.Contain(AShortDay("2026-06-10")));
+			Assert.That(said, Does.Contain(AShortDay("2026-06-11")));
+			Assert.That(said, Does.Contain(AShortDay("2026-06-12")));
 		}
 
 		// EL CONTROL QUE HACE DISCRIMINAR A TODO LO DE ARRIBA (C61): con otros dias recibidos, la
@@ -113,6 +117,12 @@ namespace Concesionario.Dominio.Pruebas
 			string[] days = another.DaysInTheShopBetween(TheFirstOfJune, TheLastOfJune);
 
 			Assert.That(days, Is.EqualTo(new[] { "2026-06-20", "2026-06-21" }));
+		}
+
+		private static string AShortDay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.AShortDayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

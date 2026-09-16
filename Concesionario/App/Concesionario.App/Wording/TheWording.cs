@@ -29,6 +29,7 @@ namespace Concesionario.App.Wording
 		private const string TheAnswerWithNoSpanOfUse = "NoSpanOfUse";
 		private const string TheClassificationThatSpreadsItself = "Durable";
 		private const string TheKindWithNoOperationOnTheSchedule = "NotOnTheSchedule";
+		private const string TheInstantNoStayCovers = "NoStayCoversTheInstant";
 		private const string NoReasonToGive = "";
 
 		/// <summary>
@@ -55,6 +56,14 @@ namespace Concesionario.App.Wording
 		/// coma no es una frase, y ninguna puede quedarse sin palabras.
 		/// </summary>
 		private const string BetweenTwoGrades = ", ";
+
+		/// <summary>
+		/// LO QUE VA ENTRE DOS DIAS DE CALENDARIO de una lista cuyo largo no se sabe de antemano, y no
+		/// es una clave del catalogo por la misma razon que los dos de arriba: una clave que solo lleva
+		/// una coma no es una frase, y el catalogo se comprueba pidiendole que ninguna quede sin
+		/// palabras.
+		/// </summary>
+		private const string BetweenTwoDays = ", ";
 
 		/// <summary>
 		/// POR QUE UNA OPERACION ESTA DONDE ESTA. La forma elige el marco; el estado, la dimension
@@ -730,6 +739,92 @@ namespace Concesionario.App.Wording
 			return phrases.Say("completion.done." + readingShape,
 				("at", completedAt),
 				("reading", ADistance(phrases, reading, unit)));
+		}
+
+		/// <summary>
+		/// UNA ESTADIA EN EL TALLER: donde estuvo, por que entro, sus dos extremos y los dias que
+		/// cubrio; o la constancia de que ninguna cubre el instante preguntado. Es la misma frase para
+		/// la estadia que contesta por instante y para cada fila del periodo, porque es la misma cosa
+		/// dicha.
+		/// <para>
+		/// LOS DOS EXTREMOS SE CITAN COMO INSTANTES Y LOS DIAS SE DICEN COMO DIAS. Un extremo se
+		/// registro con su hora y se cita tal cual; un dia de calendario lo dijo la sucursal y el orden
+		/// en que se lee es del idioma. Que caigan en la misma frase no los vuelve la misma cosa.
+		/// </para>
+		/// </summary>
+		public static string TheStay(
+			Phrases phrases, string shape, string branch, string subject, string enteredAt,
+			string collectedAt, int dayCount, string[] days, string askedAt)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			if (shape == TheInstantNoStayCovers)
+				return phrases.Say("stay." + shape, ("at", askedAt));
+
+			return phrases.Say("stay." + shape,
+				("branch", branch),
+				("subject", subject),
+				("enteredAt", enteredAt),
+				("collectedAt", collectedAt),
+				("howMany", phrases.Days(dayCount)),
+				("days", TheDaysListed(phrases, days)));
+		}
+
+		/// <summary>
+		/// UN PERIODO DE ESTADIAS: entre que dos dias se pregunto, cuantos dias estuvo adentro, en
+		/// cuantas estadias y cuales; o la constancia de que no hay ninguna con dias registrados, que
+		/// nombra el periodo igual.
+		/// <para>
+		/// LOS DOS EXTREMOS SON DIAS Y SE DICEN COMO DIAS, igual que los de la lista. Aqui no hay
+		/// ningun instante: un periodo de estadias se pregunta en dias de calendario de punta a punta.
+		/// </para>
+		/// </summary>
+		public static string TheStayPeriod(
+			Phrases phrases, string shape, string fromDay, string toDay, int dayCount, int stayCount,
+			string[] days)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return phrases.Say("stayPeriod." + shape,
+				("from", phrases.ADay(fromDay)),
+				("to", phrases.ADay(toDay)),
+				("howManyDays", phrases.Days(dayCount)),
+				("howManyStays", phrases.Stays(stayCount)),
+				("days", TheDaysListed(phrases, days)));
+		}
+
+		/// <summary>
+		/// LA PLACA DE ESTE VEHICULO: cual es tal como la publico el concesionario y desde que dia
+		/// rige, o la constancia con nombre de que no hay ninguna. El texto publicado es del registro
+		/// y entra en su hueco intacto; el dia es un dia y lo dice el idioma.
+		/// </summary>
+		public static string ThePlate(
+			Phrases phrases, string shape, string asPublished, string assignedOn)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return phrases.Say("plate." + shape,
+				("plate", asPublished),
+				("day", phrases.ADay(assignedOn)));
+		}
+
+		/// <summary>
+		/// UNA LISTA DE DIAS DE LARGO DESCONOCIDO, cada uno dicho corto: la forma larga repetida ocho
+		/// veces deja de leerse como una lista. Lo que va entre dos es puntuacion, que es del idioma y
+		/// no una clave: una clave que solo lleva una coma no es una frase.
+		/// </summary>
+		private static string TheDaysListed(Phrases phrases, string[] days)
+		{
+			StringBuilder said = new StringBuilder();
+
+			for (int day = 0; day < days.Length; day++)
+			{
+				if (day > 0) said.Append(BetweenTwoDays);
+
+				said.Append(phrases.AShortDay(days[day]));
+			}
+
+			return said.ToString();
 		}
 
 		/// <summary>

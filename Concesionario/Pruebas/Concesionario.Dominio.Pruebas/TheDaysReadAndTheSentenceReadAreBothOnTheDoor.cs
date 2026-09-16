@@ -104,10 +104,14 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			TheStayInMarch();
 
-			string said = journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo);
+			string said = journal.Api.DescribeDaysInTheShopBetween(
+				TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
+			// LA COLUMNA TRAE EL DIA DEL REGISTRO Y LA FRASE LO DICE EN PALABRAS, asi que el dia de la
+			// lista se vuelve a decir con el mismo renderizador antes de buscarlo: comparar el crudo
+			// contra la frase se pondria rojo por el formato, que no es la ley que este renglon defiende.
 			foreach (string each in journal.Api.DaysInTheShopBetween(TheYearFrom, TheYearTo))
-				Assert.That(said, Does.Contain(each),
+				Assert.That(said, Does.Contain(AShortDay(each)),
 					"La frase tenia que nombrar el dia '" + each + "' que la lista trae.");
 
 			Assert.That(said, Does.Contain("3 días").And.Contains("1 estadía"),
@@ -123,9 +127,10 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.DaysInTheShopBetween(TheYearFrom, TheYearTo), Is.Empty,
 				"El registro no tiene ni un hecho: la lista esta vacia.");
 
-			string said = journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo);
+			string said = journal.Api.DescribeDaysInTheShopBetween(
+				TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain(TheYearFrom).And.Contains(TheYearTo),
+			Assert.That(said, Does.Contain(ADay(TheYearFrom)).And.Contains(ADay(TheYearTo)),
 				"Y la frase contesta igual, NOMBRANDO los dos dias por los que se pregunto. Un cero no "
 				+ "diria entre cuando y cuando, y una lista vacia tampoco.");
 			Assert.That(said, Does.Not.Contain("0 días"),
@@ -154,6 +159,18 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			journal.Api.RecordShopStay(
 				TheBranch, TheSubject, Entered, Collected, TheDaysTheBranchSaid);
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
+		}
+
+		private static string AShortDay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.AShortDayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

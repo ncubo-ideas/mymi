@@ -94,8 +94,10 @@ namespace Concesionario.Dominio.Pruebas
 				+ "otra lectura de la puerta no dice nada: son dos consumidores de un solo resolvedor y "
 				+ "se ponen de acuerdo tambien cuando el resolvedor esta mal.");
 
+			// EL DIA DE LA ASIGNACION SE DICE EN PALABRAS y el texto publicado entra intacto: uno es
+			// del idioma y el otro es dato del registro.
 			Assert.That(plate.Says,
-				Does.Contain(ThePlateAsPublished).And.Contains("2026-01-15"),
+				Does.Contain(ThePlateAsPublished).And.Contains(ADay("2026-01-15")),
 				"La frase dice CUAL es la placa y DESDE CUANDO rige. Sin el instante adentro, la frase "
 				+ "no dice cual pregunta contesto.");
 		}
@@ -365,9 +367,17 @@ namespace Concesionario.Dominio.Pruebas
 			MethodInfo read = typeof(AppState).GetMethod("ReadThePlateOfThisVehicle");
 
 			Assert.That(read, Is.Not.Null);
-			Assert.That(read.GetParameters(), Is.Empty,
-				"La lectura de la caratula gano un parametro. Un instante ahi es una medicion: el "
-				+ "instante lo lee ella del reloj de la maquina y no se lo pide a nadie.");
+
+			var taken = new List<string>();
+
+			foreach (ParameterInfo each in read.GetParameters())
+				taken.Add(each.Name + ":" + each.ParameterType.Name);
+
+			Assert.That(taken, Is.EqualTo(new[] { "language:String" }),
+				"La lectura de la caratula gano un parametro que no es el idioma. Un instante ahi es "
+				+ "una medicion: el instante lo lee ella del reloj de la maquina y no se lo pide a "
+				+ "nadie. El IDIOMA si entra, y no es una medicion: es la etiqueta con la que se "
+				+ "elige catalogo.");
 
 			var handingOutAnInstant = new List<string>();
 
@@ -395,7 +405,11 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (ParameterInfo each in read.GetParameters())
 				said.Add(each.Name + ":" + each.ParameterType.Name);
 
-			Assert.That(said, Is.EqualTo(new[] { "api:DealershipCarAPI", "asOf:DateTime" }));
+			Assert.That(
+				said,
+				Is.EqualTo(new[] { "api:DealershipCarAPI", "asOf:DateTime", "language:String" }),
+				"El portador toma la puerta, UN instante y el idioma. Un segundo instante serian dos "
+				+ "momentos que se pueden separar; el idioma no es una medicion y no es ninguno.");
 
 			foreach (string clock in new[] { "DateTime.UtcNow", "DateTime.Now", "DateTime.Today" })
 				Assert.That(TheCarrierAsItIsWritten(), Does.Not.Contain(clock),
@@ -456,7 +470,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private ThePlateOfThisVehicle WhatTheScreenIsHanded()
 		{
-			return ThePlateOfThisVehicle.ReadThrough(journal.Api, TheDayTheScreenAsks);
+			return ThePlateOfThisVehicle.ReadThrough(journal.Api, TheDayTheScreenAsks,
+				TheLanguage.OfTheRecord);
 		}
 
 		private void ThePlateArrives()
@@ -545,6 +560,12 @@ namespace Concesionario.Dominio.Pruebas
 				+ "barrido que leyo cero esta verde por no haber mirado.");
 
 			return File.ReadAllText(path);
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

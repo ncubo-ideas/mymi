@@ -30,6 +30,9 @@ namespace Concesionario.App.Wording
 				["months.one"] = "1 mes",
 				["months.many"] = "{count} meses",
 
+				["stays.one"] = "1 estadía",
+				["stays.many"] = "{count} estadías",
+
 				["day.long"] = "{day} de {month} de {year}",
 				["day.short"] = "{day} {month} {year}",
 
@@ -520,6 +523,28 @@ namespace Concesionario.App.Wording
 				["rate.change.Higher"] = "El cambio del primero respecto al segundo: un {change}% más.",
 				["rate.change.Lower"] =
 					"El cambio del primero respecto al segundo: un {change}% menos.",
+
+				["stay.StillOpen"] =
+					"Está en {branch} desde el {enteredAt}, y todavía no lo han entregado: la estadía "
+					+ "sigue abierta, así que aún no hay días que decir. Entró por {subject}.",
+				["stay.Collected"] =
+					"Estuvo en {branch} desde el {enteredAt} hasta el {collectedAt}: {howMany} en el "
+					+ "taller -- {days}. Entró por {subject}.",
+				["stay.NoStayCoversTheInstant"] =
+					"No hay ninguna estadía en el taller que cubra el {at}.",
+
+				["stayPeriod.WithStaysOnRecord"] =
+					"Entre el {from} y el {to} estuvo en el taller {howManyDays}, en {howManyStays}: "
+					+ "{days}.",
+				["stayPeriod.NoStayOnRecord"] =
+					"Entre el {from} y el {to} no hay ninguna estadía en el taller con días "
+					+ "registrados.",
+
+				["plate.Assigned"] =
+					"La placa de este vehículo es {plate}, asignada desde el {day}.",
+				["plate.NoneOnRecord"] =
+					"No hay ninguna placa registrada para este vehículo al instante preguntado. La "
+					+ "placa de un vehículo la publica el concesionario.",
 			};
 		}
 	}

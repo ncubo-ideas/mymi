@@ -183,6 +183,17 @@ namespace Concesionario.App.Wording
 				: Say("completions.many", ("count", Grouped(completions)));
 		}
 
+		/// <summary>
+		/// Cuantas estadias en el taller, dicho entero por la misma razon que los dias: "1 estadias"
+		/// no aparece en ningun idioma.
+		/// </summary>
+		public string Stays(int stays)
+		{
+			return stays == 1
+				? Say("stays.one")
+				: Say("stays.many", ("count", Grouped(stays)));
+		}
+
 		/// <summary>Cuantos meses, dicho entero por la misma razon que los dias.</summary>
 		public string Months(int months)
 		{

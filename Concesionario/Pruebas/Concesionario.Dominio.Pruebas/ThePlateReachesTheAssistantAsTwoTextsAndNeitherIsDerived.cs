@@ -83,7 +83,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(answer.AsPublished, Is.EqualTo(journal.Api.ReadPlateAsPublished(asOf)));
 			Assert.That(answer.JoinKey, Is.EqualTo(journal.Api.ReadPlateJoinKey(asOf)));
-			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribePlate(asOf)));
+			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribePlate(asOf,
+				TheLanguage.OfTheRecord)));
 		}
 
 		// EL RENGLON QUE ATRAPA EL DEFECTO QUE SE MIDIO, y no lo atrapa el de arriba. Comparar cada
