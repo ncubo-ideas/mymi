@@ -41,13 +41,36 @@ namespace Concesionario.Dominio.Pruebas
 		/// <summary>La frase de esa clave en el idioma del registro.</summary>
 		internal static string InSpanish(string key)
 		{
-			IReadOnlyDictionary<string, string> catalogue = WhatTheScreenSaysInSpanish();
+			return TheLineOf(WhatTheScreenSaysInSpanish(), key, "espanol");
+		}
 
+		/// <summary>La frase de esa clave en el otro idioma que este modulo habla.</summary>
+		internal static string InEnglish(string key)
+		{
+			return TheLineOf(WhatTheScreenSaysInEnglish(), key, "ingles");
+		}
+
+		private static string TheLineOf(
+			IReadOnlyDictionary<string, string> catalogue, string key, string language)
+		{
 			Assert.That(catalogue.ContainsKey(key), Is.True,
-				"'" + key + "' no esta en el catalogo de la pantalla en espanol, asi que lo que la "
-				+ "persona leeria ahi es la clave cruda entre llaves.");
+				"'" + key + "' no esta en el catalogo de la pantalla en " + language + ", asi que lo "
+				+ "que la persona leeria ahi es la clave cruda entre llaves.");
 
 			return catalogue[key];
+		}
+
+		// EL MISMO RELLENO DE HUECOS QUE HACE Texts.With, y no se puede llamar al suyo: Texts carga su
+		// catalogo por HTTP desde el wwwroot y su diccionario es privado, asi que en una prueba no hay
+		// ninguna instancia con palabras adentro. Es una SEGUNDA implementacion del mismo reemplazo, y
+		// lo que la mantiene honesta es que deja el hueco INTACTO cuando el nombre no calza -- que es
+		// justo lo que una afirmacion por valor ve, porque el '{hueco}' se queda en la frase final.
+		internal static string With(string said, params (string Hole, string Value)[] holes)
+		{
+			foreach ((string hole, string value) in holes)
+				said = said.Replace("{" + hole + "}", value);
+
+			return said;
 		}
 
 		// EL MISMO APLANADO QUE HACE Texts, y por la misma razon: el catalogo se escribe anidado por

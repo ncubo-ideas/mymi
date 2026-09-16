@@ -111,7 +111,9 @@ else
                         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
                             @foreach (string dia in estadia.CoveredDays)
                             {
-                                <span class="d-pill d-pill--info">@dia</span>
+                                <span class="d-pill d-pill--info">
+                                    @ComoSeLee.DiaCorto(Texts.ThePhrases, dia)
+                                </span>
                             }
                         </div>
 

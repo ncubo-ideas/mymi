@@ -32,7 +32,8 @@
                 <span>
                     @((MarkupString)Texts.With("sheet.scopeRevision",
                         ("revision", Sheet.CurrentRevision),
-                        ("day", Sheet.CurrentRevisionPublishedAt)))
+                        ("day",
+                            ComoSeLee.Dia(Texts.ThePhrases, Sheet.CurrentRevisionPublishedAt))))
                 </span>
             }
         </p>

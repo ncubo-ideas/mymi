@@ -48,7 +48,9 @@
                             <span class="item__body">
                                 <span class="item__head">
                                     <span class="item__name">@Texts["warranty.envelopePublished"]</span>
-                                    <span class="prov">@Stands.PublishedAt</span>
+                                    <span class="prov">
+                                        @ComoSeLee.Dia(Texts.ThePhrases, Stands.PublishedAt)
+                                    </span>
                                 </span>
                             </span>
                         </div>
@@ -63,7 +65,9 @@
                             <span class="item__body">
                                 <span class="item__head">
                                     <span class="item__name">@Texts["warranty.delivered"]</span>
-                                    <span class="prov">@Stands.DeliveredAt</span>
+                                    <span class="prov">
+                                        @ComoSeLee.Dia(Texts.ThePhrases, Stands.DeliveredAt)
+                                    </span>
                                 </span>
                                 <span class="item__says">
                                     @Texts.With("warranty.odometerThatDay",
@@ -88,7 +92,8 @@
                                     </span>
                                 </span>
                                 <span class="item__says">
-                                    @Texts.With("warranty.observedOn", ("day", Stands.OdometerObservedAt))
+                                    @Texts.With("warranty.observedOn", ("day",
+                                        ComoSeLee.Dia(Texts.ThePhrases, Stands.OdometerObservedAt)))
                                 </span>
                             </span>
                         </div>
