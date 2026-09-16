@@ -34,7 +34,13 @@ else
             <div class="desc">@T("pantalla.cara.desc")</div>
             <div style="margin-top:10px">
                 <button class="small" disabled="@faceBusy" @onclick="OpenFace">@(faceBusy ? T("pantalla.cara.abriendo") : T("pantalla.cara.abrir"))</button>
-                <button class="small ghost" disabled="@faceBusy" @onclick="Pin">@T("pantalla.cara.fijar")</button>
+                @* Only where it works: the icon is a Windows .lnk (DesktopShortcut). On macOS and
+                   Linux there is nothing to offer yet, so the button is not shown rather than
+                   shown and failing. *@
+                @if (OperatingSystem.IsWindows())
+                {
+                    <button class="small ghost" disabled="@faceBusy" @onclick="Pin">@T("pantalla.cara.fijar")</button>
+                }
             </div>
             @if (faceMessage is not null)
             {
