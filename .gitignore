@@ -93,3 +93,6 @@ Spikes/Lab.Sonda/out/
 # Modulos/ estan versionados y traen las rutas de la maquina donde se armo el POC, asi que
 # en cualquier otra publican el catalogo y fallan al llamar. Lo arma Modulos.local/armar.sh.
 Modulos.local/
+
+# Configuracion local del panel de Claude Code (launch.json apunta a rutas de esta maquina).
+.claude/
