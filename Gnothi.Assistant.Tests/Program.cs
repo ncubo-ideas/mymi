@@ -174,6 +174,16 @@ Console.WriteLine("=== UN MODULO NO ALCANZA EL JOURNAL DE OTRO ===");
 Gnothi.Tests.Aislamiento.Run(Assert);
 
 // ============================================================================================
+// Y EN LA SALA, DONDE TODOS LOS MODULOS COMPARTEN UN DOCUMENTO, LA SEPARACION LA SOSTIENE LA
+// CASCARA: una llamada en vuelo, un modulo cargado por vez, y la identidad sale del marco de la
+// llamada y nunca del mensaje. Ver Sala.cs.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== LA SALA SOSTIENE LA SEPARACION QUE EL PUENTE YA NO REGALA ===");
+Gnothi.Tests.Sala.Run(Assert);
+
+// ============================================================================================
 // --install WRITES THE CODEX TABLE WITHOUT TOUCHING THE REST OF config.toml.
 //
 // The ChatGPT desktop app (Codex and Work tabs) reads ~/.codex/config.toml. Measured
