@@ -151,17 +151,98 @@ public static class Sala
 		await UnaPorVez.WaitAsync();
 		try
 		{
-			if (Cargados.Remove(modulo, out Modulo? m) && m.Instancia is IDisposable d) d.Dispose();
+			string cerrado = "";
+			if (Cargados.Remove(modulo, out Modulo? m)) cerrado = Cerrar(m.Instancia);
+
+			// NUNCA GC.WaitForPendingFinalizers() ACA. MEDIDO: el runtime se muere con 255 al
+			// cambiar de modulo. En el motor web no hay hilo finalizador -- el runtime es de un
+			// solo hilo -- asi que esperar a que otro hilo corra los finalizadores es esperar a
+			// nadie. Un GC.Collect() suelto si es seguro: encola, no espera.
 			GC.Collect();
-			GC.WaitForPendingFinalizers();
 
 			string suya = $"{Raiz}/{modulo}";
-			if (Directory.Exists(suya)) Directory.Delete(suya, true);
+			string desmontada = Desmontar(suya);
 
-			return Json(new { ok = true, montadas = Directory.Exists(Raiz) ? Directory.GetDirectories(Raiz) : [] });
+			return Json(new
+			{
+				ok = true,
+				cerrado,
+				desmontada,
+				montadas = Directory.Exists(Raiz) ? Directory.GetDirectories(Raiz) : [],
+			});
 		}
 		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
 		finally { UnaPorVez.Release(); }
+	}
+
+	// CERRAR LA SUPERFICIE, SIN EXIGIRLE QUE SEA IDisposable. Medido: `FacturasSurface` no lo es
+	// -abre y cierra un actor por consulta- y `ExamenesSurface` si. Si se le exigiera, la mitad
+	// de los modulos quedarian con el motor vivo mientras se les desmonta la carpeta, que es
+	// justamente lo que mata el runtime.
+	private static string Cerrar(object instancia)
+	{
+		if (instancia is IDisposable d)
+		{
+			try { d.Dispose(); return "IDisposable"; }
+			catch (Exception e) { return $"IDisposable fallo: {e.GetType().Name}"; }
+		}
+
+		foreach (string nombre in new[] { "Dispose", "Cerrar", "Close", "GracefulExit" })
+		{
+			MethodInfo? m = instancia.GetType().GetMethod(nombre,
+				BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
+				null, Type.EmptyTypes, null);
+
+			if (m is null) continue;
+
+			try { m.Invoke(instancia, null); return nombre; }
+			catch (Exception e) { return $"{nombre} fallo: {Motivo(e)}"; }
+		}
+
+		return "nada que cerrar";
+	}
+
+	// DESMONTAR ES VACIAR, NO BORRAR. Y esto no es una concesion: es lo unico que se puede hacer.
+	//
+	// MEDIDO, y el rastro lo dice entero:
+	//
+	//     JournalWriter.Finalize() -> Dispose() -> UpdateFileHeader() -> Seek()
+	//     DirectoryNotFoundException: /journal/facturas/facturas/journal/journal_000001.bin
+	//     [ERROR] FATAL UNHANDLED EXCEPTION
+	//
+	// El motor deja un JournalWriter con finalizador pendiente aunque la superficie cierre su
+	// actor. En el motor web NO HAY HILO FINALIZADOR: los finalizadores corren en una
+	// recoleccion posterior, cuando les toca, y no hay forma soportada de forzarlos. Asi que
+	// entre el desalojo y el finalizador hay una ventana que no se puede cerrar -- y si en esa
+	// ventana el archivo desaparecio, la excepcion nace ADENTRO del finalizador, que es fatal y
+	// no se puede atrapar. Se lleva el runtime entero con 255.
+	//
+	// Vaciar no tiene ese problema: el finalizador encuentra el archivo, escribe su encabezado
+	// sobre un archivo de cero bytes y no tira. Y la propiedad que importa se conserva igual: el
+	// modulo que entre despues no tiene nada que leer del anterior.
+	//
+	// LO QUE SI QUEDA VISIBLE, y hay que decirlo: los NOMBRES de las carpetas. Un modulo puede
+	// enterarse de que la persona tiene otros modulos instalados, aunque no de que dicen. Cerrar
+	// eso pide que el motor libere sus escritores de forma determinista, y eso es un pedido al
+	// equipo del motor, no algo que la sala pueda resolver sola.
+	private static string Desmontar(string carpeta)
+	{
+		if (!Directory.Exists(carpeta)) return "no estaba";
+
+		int vaciados = 0;
+		long bytes = 0;
+		foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+		{
+			try
+			{
+				bytes += new FileInfo(archivo).Length;
+				File.WriteAllBytes(archivo, []);
+				vaciados++;
+			}
+			catch { /* si no se puede escribir, tampoco se va a poder leer nada util */ }
+		}
+
+		return $"vaciada: {vaciados} archivos, {bytes} bytes que el proximo modulo ya no ve";
 	}
 
 	// ---------------------------------------------------------------- adentro
