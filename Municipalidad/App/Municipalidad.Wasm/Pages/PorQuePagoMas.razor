@@ -1,14 +1,8 @@
 @page "/por-que-pago-mas"
 @inject EstadoDeLaApp estado
+@using System.Linq
 
-<PageTitle>Por qué pago más · Mi cuenta municipal</PageTitle>
-
-<h1>Por qué pago más</h1>
-<p class="bajada">
-    Entre los dos últimos comprobantes de cada rubro: de cuánto a cuánto cambió, y qué lo explica.
-    Lo que explica un aumento depende de cómo se cobra ese rubro, y ésa es la mitad que el portal no
-    contesta.
-</p>
+<PageTitle>Cambios en mis cobros · Mi cuenta municipal</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -16,91 +10,117 @@
 }
 else
 {
-    <NumeroSinFirmar Dicho="@($"Un cambio se llama salto cuando pasa el {Formato.Porcentaje(variacion.UmbralDeSalto)}, y por debajo del {Formato.Porcentaje(variacion.Ruido)} se considera ruido.")" />
+    <div class="fondo-noche">
+        <h1>Cambios en mis cobros</h1>
 
-    @foreach (var rubro in variacion.Rubros)
-    {
-        <article class="tarjeta" id="@("rubro-" + rubro.Rubro)">
-            <div class="tarjeta__cabeza">
-                <LlaveDelRubro Rubro="@rubro.Rubro" />
-                @if (rubro.SePuedeVer)
-                {
-                    <span class="sello sello--@(rubro.EsSalto ? "salto" : "quieto")">
-                        @rubro.Explicacion
-                    </span>
-                }
-            </div>
+        @if (!variacion.AlgunoSePuedeVer)
+        {
+            <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="Todavía no hay ninguna variación que ver.">
+                <p>
+                    Una variación necesita dos comprobantes del mismo rubro. Aparecen solas conforme tus
+                    pagos vayan llegando a esta app.
+                </p>
+            </Aviso>
+        }
 
-            <Frase Dice="@rubro.Dice" Apagada="@(!rubro.SePuedeVer)" />
-
-            @if (rubro.SePuedeVer)
+        <div class="lista-items">
+            @foreach (var rubro in variacion.Rubros.Where(r => r.SePuedeVer))
             {
-                <dl class="renglones">
-                    <dt>Períodos</dt>
-                    <dd>@rubro.Desde &rarr; @rubro.Hasta</dd>
-                    <dt>Por período</dt>
-                    <dd>@Formato.Monto(rubro.Antes) &rarr; @Formato.Monto(rubro.Ahora)</dd>
-                    <dt>El cambio</dt>
-                    <dd>@Formato.Porcentaje(rubro.Proporcion)</dd>
-                </dl>
-            }
-        </article>
-    }
-
-    @if (!variacion.AlgunoSePuedeVer)
-    {
-        <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="Todavía no hay ninguna variación que ver.">
-            <p>
-                Una variación necesita dos comprobantes del mismo rubro. Aparecen solas conforme tus
-                pagos vayan llegando a esta app.
-            </p>
-        </Aviso>
-    }
-
-    @if (fincas.HayAlguna)
-    {
-        <section class="bloque" id="el-valor-de-mi-finca">
-            <h2>El valor de tu finca</h2>
-
-            <p class="nota">
-                Tres de los cinco rubros se cobran sobre el valor de tu finca. El
-                <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el valor
-                con que te cobra, y es el que se usa arriba para explicar un salto.
-                <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
-                movimientos.
-            </p>
-
-            @foreach (var finca in fincas.Fincas)
-            {
-                <article class="tarjeta">
-                    <div class="tarjeta__cabeza">
-                        <LlaveDelRubro Rubro="@finca.Numero" />
-                        @if (finca.TieneAvaluo)
-                        {
-                            <span class="periodo">avalúo: @Formato.Monto(finca.Avaluo)</span>
-                        }
-                        else
-                        {
-                            <span class="periodo">sin avalúo publicado</span>
-                        }
+                <article class="item" id="@("rubro-" + rubro.Rubro)">
+                    <div class="item__cabeza">
+                        <span class="item__rubro">
+                            <LlaveDelRubro Rubro="@rubro.Rubro" />
+                            <span class="periodo">@rubro.Desde &rarr; @rubro.Hasta</span>
+                        </span>
+                        <span class="sello sello--@(rubro.EsSalto ? "salto" : "quieto")">
+                            @NombreLegible.DeLaExplicacionDeVariacion(rubro.Explicacion)
+                        </span>
                     </div>
 
-                    @if (!finca.TieneAvaluo)
-                    {
-                        <p class="nota">
-                            Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega
-                            solo, con el resto de tus movimientos, cuando ella lo publique.
-                        </p>
-                    }
+                    <span class="item__monto">@Formato.Monto(rubro.Antes) &rarr; @Formato.Monto(rubro.Ahora)</span>
+
+                    <div class="item__cambio">
+                        <span class="item__flecha item__flecha--@Direccion(rubro.Proporcion)">@Flecha(rubro.Proporcion)</span>
+                        <span class="item__porcentaje">@Formato.Porcentaje(Math.Abs(rubro.Proporcion))</span>
+                        <span class="item__meta">por período</span>
+                    </div>
+
+                    <p class="item__frase">@rubro.Dice</p>
                 </article>
             }
-        </section>
-    }
+        </div>
 
-    <p class="nota">
-        Un aumento nunca apura: ya pasó. Lo que apura es lo que vence, y eso está en
-        <a href="que-se-me-vence">qué se me vence</a>.
-    </p>
+        @{ var sinDatos = variacion.Rubros.Where(r => !r.SePuedeVer).ToList(); }
+        @if (sinDatos.Count > 0)
+        {
+            <section class="bloque" id="sin-datos-todavia">
+                <h2>Todavía sin suficientes datos</h2>
+                <div class="lista-items">
+                    @foreach (var rubro in sinDatos)
+                    {
+                        <article class="item">
+                            <div class="item__cabeza">
+                                <span class="item__rubro"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
+                            </div>
+                            <Frase Dice="@rubro.Dice" Apagada="true" />
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (fincas.HayAlguna)
+        {
+            <section class="bloque" id="el-valor-de-mi-finca">
+                <h2>El valor de tu finca</h2>
+
+                <p class="nota">
+                    Tres de los cinco rubros se cobran sobre el valor de tu finca. El
+                    <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el valor
+                    con que te cobra, y es el que se usa arriba para explicar un salto.
+                    <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
+                    movimientos.
+                </p>
+
+                <div class="lista-items">
+                    @foreach (var finca in fincas.Fincas)
+                    {
+                        <article class="item">
+                            <div class="item__cabeza">
+                                <span class="item__rubro"><LlaveDelRubro Rubro="@finca.Numero" /></span>
+                                @if (finca.TieneAvaluo)
+                                {
+                                    <span class="periodo">avalúo: @Formato.Monto(finca.Avaluo)</span>
+                                }
+                                else
+                                {
+                                    <span class="periodo">sin avalúo publicado</span>
+                                }
+                            </div>
+
+                            @if (!finca.TieneAvaluo)
+                            {
+                                <p class="item__frase">
+                                    Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega
+                                    solo, con el resto de tus movimientos, cuando ella lo publique.
+                                </p>
+                            }
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+
+        <p class="nota">
+            Un aumento nunca apura: ya pasó. Lo que apura es lo que vence, y eso está en
+            <a href="que-se-me-vence">pagos y vencimientos</a>.
+        </p>
+
+        <details class="plomeria">
+            <summary>¿Cómo detectamos estos cambios?</summary>
+            <NumeroSinFirmar Dicho="@($"Un cambio se llama salto cuando pasa el {Formato.Porcentaje(variacion.UmbralDeSalto)}, y por debajo del {Formato.Porcentaje(variacion.Ruido)} se considera ruido.")" />
+        </details>
+    </div>
 }
 
 @code {
@@ -117,4 +137,18 @@ else
 		variacion = estado.LeerLaVariacionDeCadaRubro();
 		fincas = estado.LeerLasFincas();
 	}
+
+	private static string Direccion(decimal proporcion) => proporcion switch
+	{
+		> 0 => "sube",
+		< 0 => "baja",
+		_ => "igual",
+	};
+
+	private static string Flecha(decimal proporcion) => proporcion switch
+	{
+		> 0 => "↑",
+		< 0 => "↓",
+		_ => "→",
+	};
 }

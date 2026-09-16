@@ -3,13 +3,16 @@
 
 <PageTitle>Mi cuenta municipal</PageTitle>
 
-<header class="portada">
-    <h1>Mi cuenta municipal</h1>
-    <p class="bajada">
-        Tu municipalidad te dice cuánto debés. Esta app te ayuda a entenderlo, anticiparlo y
-        administrarlo, con tu cuenta guardada en una carpeta tuya.
-    </p>
-</header>
+@if (!estado.EstaArriba)
+{
+    <header class="portada">
+        <h1>Mi cuenta municipal</h1>
+        <p class="bajada">
+            Tu municipalidad te dice cuánto debés. Esta app te ayuda a entenderlo, anticiparlo y
+            administrarlo, con tu cuenta guardada en una carpeta tuya.
+        </p>
+    </header>
+}
 
 @if (estado.NoSeEstaGuardando.Length > 0)
 {
@@ -117,30 +120,83 @@
 }
 else
 {
-    <div class="botones">
-        <button type="button" id="refrescar" @onclick="RefrescarAsync" disabled="@refrescando">
-            @(refrescando ? "Trayendo…" : "Traer lo que haya publicado la institución")
-        </button>
-    </div>
+    <div class="fondo-noche panel-inicio" id="panel-inicio">
+        <div class="panel-inicio__hero">
+            <button type="button" class="panel-inicio__sync @(refrescando ? "panel-inicio__sync--girando" : "")"
+                    id="refrescar" @onclick="RefrescarAsync" disabled="@refrescando"
+                    title="@(refrescando ? "Actualizando…" : "Actualizar mi cuenta")"
+                    aria-label="@(refrescando ? "Actualizando tu cuenta" : "Actualizar mi cuenta")">
+                <span aria-hidden="true">↻</span>
+            </button>
 
-    <nav class="cuatro" id="las-cuatro">
-        <a href="por-que-pago-mas">
-            <strong>Por qué pago más</strong>
-            <span>Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.</span>
-        </a>
-        <a href="que-se-me-vence">
-            <strong>Qué se me vence</strong>
-            <span>Lo que está por vencerse y lo que ya venció. Tu portal no contesta esto.</span>
-        </a>
-        <a href="cuanto-apartar">
-            <strong>Cuánto apartar</strong>
-            <span>Lo que esta app propone por mes, y lo que vos adoptaste.</span>
-        </a>
-        <a href="sin-comprobante">
-            <strong>Qué quedó sin comprobante</strong>
-            <span>Lo que tu portal da por pagado y aquí no tiene recibo.</span>
-        </a>
-    </nav>
+            <div class="panel-inicio__hero-texto">
+                <h1>Tu cuenta municipal</h1>
+                <p>Más clara y en un solo lugar.</p>
+            </div>
+            <IconoSprite Nombre="ilustracion" />
+        </div>
+
+        @if (vence is not null)
+        {
+            <a class="tarjeta-estado tarjeta-estado--@EstadoDeLaCuenta.Clase" href="que-se-me-vence"
+               id="estado-de-la-cuenta">
+                <span class="tarjeta-estado__icono">
+                    <IconoSprite Nombre="@EstadoDeLaCuenta.Icono" />
+                </span>
+                <span class="tarjeta-estado__texto">
+                    <span class="tarjeta-estado__etiqueta">Estado de tu cuenta</span>
+                    <span class="tarjeta-estado__estado">@EstadoDeLaCuenta.Titulo</span>
+                    @if (EstadoDeLaCuenta.Clase == "vencido")
+                    {
+                        <span class="tarjeta-estado__indicador tarjeta-estado__indicador--coral">
+                            <span aria-hidden="true">●</span>
+                            <span>@EstadoDeLaCuenta.Detalle</span>
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="tarjeta-estado__detalle">@EstadoDeLaCuenta.Detalle</span>
+                    }
+                </span>
+                <span class="tarjeta-estado__flecha" aria-hidden="true">&rsaquo;</span>
+            </a>
+        }
+
+        <h2 class="panel-inicio__titulo">Lo más importante</h2>
+        <nav class="accesos-principales">
+            <a class="acceso" href="que-se-me-vence">
+                <IconoSprite Nombre="calendario" />
+                <span class="acceso__nombre">
+                    Pagos y vencimientos
+                    <span class="acceso__dato">@MicrofraseVencimientos()</span>
+                </span>
+            </a>
+            <a class="acceso" href="cuanto-apartar">
+                <IconoSprite Nombre="presupuesto" />
+                <span class="acceso__nombre">
+                    Mi presupuesto
+                    <span class="acceso__dato">@MicrofrasePresupuesto()</span>
+                </span>
+            </a>
+            <a class="acceso acceso--ancho accesos-principales__ancho" href="por-que-pago-mas">
+                <IconoSprite Nombre="tendencia" />
+                <span class="acceso__nombre">
+                    Cambios en mis cobros
+                    <span class="acceso__dato">@MicrofraseCambios()</span>
+                </span>
+            </a>
+        </nav>
+
+        <section class="otras-opciones">
+            <h2 class="panel-inicio__titulo">Otras opciones</h2>
+            <div class="otras-opciones__lista">
+                <a class="opcion-menor" href="sin-comprobante">
+                    <IconoSprite Nombre="doc-x" />
+                    <span class="opcion-menor__nombre">Pagos sin comprobante</span>
+                </a>
+            </div>
+        </section>
+    </div>
 
     <p class="nota">
         Cuánto debés hoy, cuánto sería el año entero y si estás atrasado los contesta tu portal, que es
@@ -219,6 +275,10 @@ else
 	private long ultimoEvento;
 	private string dispositivo = "";
 	private bool hayCredencial;
+
+	private LoQueSeVence vence;
+	private LaReservaDeEsteAnio reserva;
+	private LaVariacionDeCadaRubro variacion;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -300,11 +360,74 @@ else
 		ultimoEvento = estado.UltimoEventoAplicado();
 		dispositivo = estado.ClaveDeDispositivo();
 		hayCredencial = estado.HayCredencial();
+
+		vence = estado.LeerLoQueSeVence();
+		reserva = estado.LeerLaReserva();
+		variacion = estado.LeerLaVariacionDeCadaRubro();
 	}
 
 	private string ElModoDicho() => estado.EnCarpetaPropia
 		? "una carpeta tuya"
 		: estado.EnElNavegador ? "el almacenamiento de este navegador" : "solo memoria";
+
+	/// <summary>
+	/// "Al dia" / "proximo" / "vencido" salen de las MISMAS dos listas que usa Pagos y vencimientos:
+	/// es el mismo resumen, para que Inicio y esa pantalla nunca digan cosas distintas.
+	/// </summary>
+	private (string Clase, string Icono, string Titulo, string Detalle) EstadoDeLaCuenta
+	{
+		get
+		{
+			var (clase, icono, titulo) = ResumenDeVencimientos.Estado(vence);
+
+			string detalle = clase switch
+			{
+				"vencido" => "Requieren tu atención",
+				"proximo" => "Tocá para ver cuáles.",
+				_ => "No tenés períodos vencidos.",
+			};
+
+			return (clase, icono, titulo, detalle);
+		}
+	}
+
+	/// <summary>Microfrase de un dato real para el acceso de Pagos y vencimientos. Nada hardcodeado.</summary>
+	private string MicrofraseVencimientos()
+	{
+		if (vence is null) return "";
+
+		if (vence.Vencidos.Count > 0)
+			return vence.Vencidos.Count == 1 ? "1 pago vencido" : $"{vence.Vencidos.Count} pagos vencidos";
+
+		if (vence.PorVencer.Count > 0)
+			return vence.PorVencer.Count == 1 ? "1 por vencer" : $"{vence.PorVencer.Count} por vencer";
+
+		return "Nada vence pronto";
+	}
+
+	/// <summary>Microfrase de un dato real para el acceso de Mi presupuesto. Nada hardcodeado.</summary>
+	private string MicrofrasePresupuesto()
+	{
+		if (reserva is null) return "";
+
+		if (reserva.HayReservaAdoptada) return $"{Formato.Monto(reserva.AdoptadoPorMes)} al mes";
+		if (reserva.SePuedeProponer) return $"{Formato.Monto(reserva.PropuestoPorMes)} al mes (propuesto)";
+
+		return "Aún sin datos";
+	}
+
+	/// <summary>Microfrase de un dato real para el acceso de Cambios en mis cobros. Nada hardcodeado.</summary>
+	private string MicrofraseCambios()
+	{
+		if (variacion is null) return "";
+
+		int saltos = variacion.Rubros.Count(r => r.SePuedeVer && r.EsSalto);
+		if (saltos > 0) return saltos == 1 ? "1 cobro cambió" : $"{saltos} cobros cambiaron";
+
+		if (variacion.AlgunoSePuedeVer) return "Sin cambios grandes";
+
+		return "Aún sin datos";
+	}
 
 	private async Task Intentar(string paso, Func<Task> accion)
 	{

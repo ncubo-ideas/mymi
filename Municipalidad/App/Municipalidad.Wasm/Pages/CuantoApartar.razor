@@ -1,13 +1,7 @@
 @page "/cuanto-apartar"
 @inject EstadoDeLaApp estado
 
-<PageTitle>Cuánto apartar · Mi cuenta municipal</PageTitle>
-
-<h1>Cuánto apartar</h1>
-<p class="bajada">
-    Dos cosas de dos dueños: lo que <strong>esta app propone</strong> a partir de lo que ya
-    pagaste, y lo que <strong>vos adoptaste</strong>. Que no coincidan no es un error.
-</p>
+<PageTitle>Mi presupuesto · Mi cuenta municipal</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -15,91 +9,104 @@
 }
 else
 {
-    <section class="bloque" id="la-propuesta">
-        <h2>Lo que esta app propone</h2>
+    <div class="fondo-noche">
+        <h1>Mi presupuesto</h1>
 
-        <article class="tarjeta">
-            <Frase Dice="@reserva.DiceLaPropuesta" Apagada="@(!reserva.SePuedeProponer)" />
+        <section class="bloque-protagonista" id="la-propuesta">
+            <span class="cifra-etiqueta cifra-etiqueta--eyebrow">Propuesta de la app · Para @reserva.Anio</span>
 
             @if (reserva.SePuedeProponer)
             {
-                <dl class="renglones">
-                    <dt>Proyección de @reserva.Anio</dt>
-                    <dd>@Formato.Monto(reserva.ProyeccionDelAnio)</dd>
-                    <dt>Por mes</dt>
-                    <dd class="cifra">@Formato.Monto(reserva.PropuestoPorMes)</dd>
-                </dl>
-            }
-        </article>
-    </section>
-
-    <section class="bloque" id="lo-adoptado">
-        <h2>Lo que vos adoptaste</h2>
-
-        <article class="tarjeta">
-            <div class="tarjeta__cabeza">
-                <SelloDeUrgencia Urgencia="@reserva.Urgencia" />
-            </div>
-
-            <Frase Dice="@reserva.DiceElFaltante" Apagada="@(!reserva.HayReservaAdoptada)" />
-
-            @if (reserva.HayReservaAdoptada)
-            {
-                <dl class="renglones">
-                    <dt>Adoptado por mes</dt>
-                    <dd class="cifra">@Formato.Monto(reserva.AdoptadoPorMes)</dd>
-                    <dt>Le falta</dt>
-                    <dd>@Formato.Monto(reserva.Faltante) (@Formato.Porcentaje(reserva.ProporcionDelFaltante))</dd>
-                    <dt>Vence este mes</dt>
-                    <dd>@Formato.Monto(reserva.VenceEsteMes)</dd>
-                </dl>
-            }
-        </article>
-
-        <NumeroSinFirmar Firmado="true"
-                         Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
-                         Dicho="@($"Se te avisa cuando lo adoptado queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
-
-        <div class="aporte" id="adoptar">
-            <label for="monto-a-apartar">Adoptar una reserva, en colones por mes</label>
-            <div class="aporte__linea">
-                <input id="monto-a-apartar" type="number" min="1" step="1" inputmode="numeric"
-                       @bind="montoAAdoptar" @bind:event="oninput" disabled="@adoptando" />
-                <button type="button" id="adoptar-reserva" @onclick="AdoptarAsync"
-                        disabled="@(adoptando || !EsUnMontoQuePuedoMandar())">
-                    @(adoptando ? "Guardando…" : "Adoptar")
-                </button>
-            </div>
-            <p class="nota">
-                Es tuyo y no de la municipalidad: nadie lo revisa y no cambia lo que te cobran. Se
-                puede adoptar una vez por día, y el último que pongás es el que rige.
-            </p>
-        </div>
-
-        @if (loQuePaso is not null)
-        {
-            @if (loQuePaso.QuedoSinRespaldo)
-            {
-                <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="Quedó registrado y NO se guardó.">
-                    <p>@loQuePaso.Dice</p>
-                </Aviso>
-            }
-            else if (loQuePaso.QuedoRegistrado)
-            {
-                <Aviso Tono="quieta" Id="aporte-entro" Titulo="Listo, quedó tuyo.">
-                    <p>Tu reserva quedó registrada y guardada en tu carpeta.</p>
-                </Aviso>
+                <span class="cifra-protagonista">@Formato.Monto(reserva.PropuestoPorMes)</span>
+                <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes</span>
+                <p class="cifra-secundaria" style="margin:.75rem 0 0">
+                    Proyección de @reserva.Anio: @Formato.Monto(reserva.ProyeccionDelAnio)
+                </p>
+                <p class="bloque-protagonista__frase nota">@reserva.DiceLaPropuesta</p>
             }
             else
             {
-                <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="No se registró, y ésta es la razón.">
-                    <p>@loQuePaso.Dice</p>
-                </Aviso>
+                <Frase Dice="@reserva.DiceLaPropuesta" Apagada="true" />
             }
-        }
-    </section>
+        </section>
 
-    <p class="nota">Contestado al @reserva.PreguntadoEl.</p>
+        <section class="bloque" id="lo-adoptado">
+            <h2>Tu reserva</h2>
+
+            @if (reserva.HayReservaAdoptada)
+            {
+                <div class="tarjeta__cabeza">
+                    <SelloDeUrgencia Urgencia="@reserva.Urgencia" />
+                </div>
+
+                <span class="cifra-protagonista">@Formato.Monto(reserva.AdoptadoPorMes)</span>
+                <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes, adoptado por vos</span>
+
+                <span class="item__meta" style="display:block;margin-top:.75rem">
+                    Le falta <strong>@Formato.Monto(reserva.Faltante)</strong>
+                    (@Formato.Porcentaje(reserva.ProporcionDelFaltante))
+                </span>
+                <span class="item__meta">
+                    Vence este mes: <strong>@Formato.Monto(reserva.VenceEsteMes)</strong>
+                </span>
+
+                <p class="item__frase">@reserva.DiceElFaltante</p>
+            }
+            else
+            {
+                <p class="frase">Todavía no definiste una reserva mensual.</p>
+                <p><a class="boton" href="cuanto-apartar#adoptar">Definir mi reserva</a></p>
+                <p class="item__frase">@reserva.DiceElFaltante</p>
+            }
+
+            <details class="plomeria">
+                <summary>Sobre este aviso</summary>
+                <NumeroSinFirmar Firmado="true"
+                                 Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
+                                 Dicho="@($"Se te avisa cuando lo adoptado queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
+            </details>
+
+            <div class="aporte" id="adoptar">
+                <label for="monto-a-apartar">Adoptar una reserva, en colones por mes</label>
+                <div class="aporte__linea">
+                    <input id="monto-a-apartar" type="number" min="1" step="1" inputmode="numeric"
+                           @bind="montoAAdoptar" @bind:event="oninput" disabled="@adoptando" />
+                    <button type="button" id="adoptar-reserva" @onclick="AdoptarAsync"
+                            disabled="@(adoptando || !EsUnMontoQuePuedoMandar())">
+                        @(adoptando ? "Guardando…" : "Adoptar")
+                    </button>
+                </div>
+                <p class="nota">
+                    Es tuyo y no de la municipalidad: nadie lo revisa y no cambia lo que te cobran. Se
+                    puede adoptar una vez por día, y el último que pongás es el que rige.
+                </p>
+            </div>
+
+            @if (loQuePaso is not null)
+            {
+                @if (loQuePaso.QuedoSinRespaldo)
+                {
+                    <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="Quedó registrado y NO se guardó.">
+                        <p>@loQuePaso.Dice</p>
+                    </Aviso>
+                }
+                else if (loQuePaso.QuedoRegistrado)
+                {
+                    <Aviso Tono="quieta" Id="aporte-entro" Titulo="Listo, quedó tuyo.">
+                        <p>Tu reserva quedó registrada y guardada en tu carpeta.</p>
+                    </Aviso>
+                }
+                else
+                {
+                    <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="No se registró, y ésta es la razón.">
+                        <p>@loQuePaso.Dice</p>
+                    </Aviso>
+                }
+            }
+        </section>
+
+        <p class="nota">Contestado al @reserva.PreguntadoEl.</p>
+    </div>
 }
 
 @code {
