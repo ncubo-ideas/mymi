@@ -84,14 +84,223 @@ footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
 </header>
 
 <main>
-    <h1>Your car's maintenance schedule, on your own computer.</h1>
+    <h1>Your car's maintenance schedule, on your own device.</h1>
     <p class="entrada">
-        Not on ours. The app installs on your machine, keeps your vehicle's record in a folder you
+        Not on ours. The app runs inside Gnothi, keeps your vehicle's record in a folder you
         pick, and works with the network off.
     </p>
 
+
+    <!-- SE USA CON GNOTHI: EL PASO A PASO POR AMBIENTE. Es la misma sección que estrenó la página
+         de La Guaria (Compras/PaginaDeDescarga/descarga/index.html) y la genera el mismo molde
+         (Herramientas/replicar-seccion-gnothi.mjs) con la voz y la paleta de esta institución; si cambia el
+         flujo, cambia en el molde y se vuelve a correr.
+  
+         Primero Gnothi (una vez), después la institución (un toque). Un panel por ambiente porque
+         los pasos no son los mismos: en el teléfono Gnothi viene de la tienda y el módulo entra por
+         el enlace al dominio de Gnothi (go.gnothi.app/alta, especificación 13 §7); en Windows Gnothi
+         se descarga de acá y el módulo se agrega desde la ventana de Gnothi. Los rótulos entre
+         comillas son los del catálogo del Host (Gnothi.Host/textos.json).
+  
+         LOS DESCARGABLES no van al repo y hay que armarlos antes de levantar URL1 (ver nginx.conf):
+           descargas/dealership.gmod        la forma cargo, para el escritorio
+           descargas/movil/dealership.gmod  la forma hospedada, para el teléfono; lleva el ORIGEN
+                                         adentro y tiene que ser el que sirve esta página
+           descargas/gnothi/Gnothi.Host.zip  Gnothi para Windows
+  
+         EL ENLACE DE ALTA SE ARMA EN EL NAVEGADOR con location.origin (esta página es estática y no
+         sabe desde dónde la sirven), sin sello &h=: el sello lo calcula quien puede leer el zip.
+         El panel inicial lo elige el user agent; sin JavaScript se ven los tres. -->
+    <style>
+      .gnothi {
+        --g-acento: var(--marca); --g-acento-hondo: #16294a; --g-sobre-acento: #ffffff;
+        --g-tinta: var(--tinta); --g-tenue: var(--tinta-suave); --g-linea: var(--borde);
+        --g-suave: var(--papel); --g-carta: var(--tarjeta); --g-radio: 7px;
+        color: var(--g-tinta); background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 10px; padding: 24px; margin: 0 0 22px;
+      }
+      .gnothi h2 { font-size: 26px; line-height: 1.12; margin: 0 0 12px; letter-spacing: -.01em; font-weight: 700; }
+      .gnothi h2 em { font-style: normal; color: var(--g-acento); }
+      .gnothi__lead { margin: 0; color: var(--g-tenue); font-size: 15.5px; max-width: 62ch; line-height: 1.6; }
+      .gnothi__lead strong { color: var(--g-tinta); font-weight: 600; }
+  
+      .gnothi__ambientes { display: none; gap: 8px; flex-wrap: wrap; margin: 26px 0 0; padding: 0; list-style: none; }
+      .js .gnothi__ambientes { display: flex; }
+      .gnothi__ambientes li { margin: 0; }
+      .gnothi__ambientes button {
+        font: inherit; font-size: 14px; font-weight: 600; color: var(--g-tinta); background: transparent;
+        border: 1px solid var(--g-linea); border-radius: 999px; padding: 9px 18px; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px; transition: background .18s, color .18s, border-color .18s;
+      }
+      .gnothi__ambientes button:hover { background: var(--g-suave); }
+      .gnothi__ambientes button[aria-selected="true"] { background: var(--g-acento); color: var(--g-sobre-acento); border-color: var(--g-acento); }
+      .gnothi__ambientes svg { width: 15px; height: 15px; flex: none; }
+  
+      .gnothi__ambiente { padding: 30px 0 34px; border-bottom: 1px solid var(--g-linea); display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 40px; }
+      .gnothi__ambiente:last-of-type { border-bottom: 0; }
+      .js .gnothi__ambiente:not(.activo) { display: none; }
+      .js .gnothi__ambiente { border-bottom: 0; }
+      .gnothi__ambiente h3 { font-size: 15px; font-weight: 700; margin: 0 0 8px; color: var(--g-tinta); letter-spacing: 0; text-transform: none; }
+      .gnothi__nota { margin: 0; color: var(--g-tenue); font-size: 14px; line-height: 1.55; }
+      .gnothi__descargas { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 18px; }
+  
+      .gnothi__boton {
+        display: inline-flex; align-items: center; gap: 11px; text-decoration: none;
+        background: var(--g-acento); color: var(--g-sobre-acento); font-weight: 600; font-size: 15px;
+        padding: 13px 24px; border-radius: var(--g-radio); border: 1px solid transparent; transition: background .18s;
+      }
+      .gnothi__boton:hover { background: var(--g-acento-hondo); color: var(--g-sobre-acento); }
+      .gnothi__boton--suave { background: transparent; color: var(--g-acento); border-color: var(--g-linea); }
+      .gnothi__boton--suave:hover { background: var(--g-suave); color: var(--g-acento); }
+      .gnothi__boton--inerte { background: var(--g-suave); color: var(--g-tenue); border-color: var(--g-linea); cursor: default; pointer-events: none; }
+      .gnothi__boton small { display: block; font-size: 11px; font-weight: 400; opacity: .85; letter-spacing: .02em; }
+      .gnothi__boton .dos { display: flex; flex-direction: column; line-height: 1.15; }
+  
+      .gnothi__pasos { margin: 0; padding: 0; list-style: none; counter-reset: g; }
+      .gnothi__pasos li { counter-increment: g; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--g-linea); margin: 0; }
+      .gnothi__pasos li:first-child { padding-top: 0; }
+      .gnothi__pasos li:last-child { border-bottom: 0; }
+      .gnothi__pasos li::before { content: counter(g); font-size: 12.5px; color: var(--g-acento); padding-top: 3px; font-variant-numeric: tabular-nums; }
+      .gnothi__pasos p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--g-tinta); }
+      .gnothi__pasos b { font-weight: 700; }
+      .gnothi__pasos span { color: var(--g-tenue); }
+      .gnothi code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; background: var(--g-suave); border: 1px solid var(--g-linea); border-radius: 5px; padding: 2px 6px; }
+  
+      .gnothi__enlace { margin: 18px 0 0; padding: 14px 16px; background: var(--g-suave); border: 1px solid var(--g-linea); border-radius: calc(var(--g-radio) + 4px); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; font-size: 13.5px; color: var(--g-tenue); line-height: 1.5; }
+      .gnothi__enlace > span { grid-column: 1 / -1; }
+      .gnothi__enlace > code { display: block; overflow-wrap: anywhere; background: var(--g-carta); padding: 7px 10px; }
+      .gnothi__enlace button { display: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--g-acento); background: var(--g-carta); border: 1px solid var(--g-linea); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+      .js .gnothi__enlace button { display: inline-block; }
+      .gnothi__enlace button:hover { background: var(--g-acento); color: var(--g-sobre-acento); border-color: var(--g-acento); }
+  
+      .gnothi__suelta { margin: 24px 0 0; color: var(--g-tenue); font-size: 14px; max-width: 70ch; line-height: 1.55; }
+      .gnothi__suelta b { color: var(--g-tinta); font-weight: 700; }
+      .gnothi__suelta a { color: var(--g-acento); }
+  
+      @media (max-width: 760px) { .gnothi__ambiente { grid-template-columns: 1fr; gap: 22px; } }
+    </style>
+  
+    <section class="gnothi" id="gnothi">
+      <h2>It works with <em>Gnothi</em>.</h2>
+      <p class="gnothi__lead">Gnothi is the app that gathers what each institution hands you —your lab, your supermarket— and shows it to your AI assistant, on your own device. <strong>You install it once</strong>, for free; after that, each institution is added with one tap. Sotaventos Motors is one of them.</p>
+  
+      <ul class="gnothi__ambientes" role="tablist" aria-label="Choose your device">
+        <li><button type="button" role="tab" id="tab-android" aria-controls="amb-android" aria-selected="false" data-ambiente="android"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.6 6.4h8.8v5.2a1 1 0 0 1-1 1h-.6v2.2a.9.9 0 1 1-1.8 0v-2.2H7v2.2a.9.9 0 1 1-1.8 0v-2.2h-.6a1 1 0 0 1-1-1V6.4Zm-1.5.1a.9.9 0 0 1 .9.9v3.6a.9.9 0 1 1-1.8 0V7.4a.9.9 0 0 1 .9-.9Zm11.8 0a.9.9 0 0 1 .9.9v3.6a.9.9 0 1 1-1.8 0V7.4a.9.9 0 0 1 .9-.9ZM8 1.6c2.2 0 4 1.5 4.4 3.6H3.6C4 3.1 5.8 1.6 8 1.6Zm-1.7 2a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Zm3.4 0a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Z"/></svg> Android</button></li>
+        <li><button type="button" role="tab" id="tab-iphone" aria-controls="amb-iphone" aria-selected="false" data-ambiente="iphone"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.3 8.5c0-1.5 1.2-2.2 1.3-2.2-.7-1-1.8-1.2-2.2-1.2-.9-.1-1.8.5-2.3.5s-1.2-.5-2-.5C4.9 5.1 3 6.4 3 9c0 .8.1 1.6.4 2.4.4 1.2 1.9 3.9 3.4 3.9.7 0 1.2-.5 2.1-.5.9 0 1.3.5 2.1.5 1.5 0 2.8-2.5 3.2-3.6-1.9-.9-2.9-2.1-2.9-3.2ZM9.9 3.9c.5-.6.8-1.4.7-2.2-.7 0-1.5.5-2 1.1-.4.5-.8 1.3-.7 2.1.8.1 1.5-.4 2-1Z"/></svg> iPhone</button></li>
+        <li><button type="button" role="tab" id="tab-computadora" aria-controls="amb-computadora" aria-selected="false" data-ambiente="computadora"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="8.5" rx="1.2"/><path d="M5.5 14h5M8 11v3"/></svg> Computer</button></li>
+      </ul>
+  
+      <div class="gnothi__ambiente" id="amb-android" role="tabpanel" aria-labelledby="tab-android" data-ambiente="android">
+        <div>
+          <h3>On your Android phone</h3>
+          <p class="gnothi__nota">Gnothi is on Google Play. Sotaventos Motors is added from this very page, with one tap.</p>
+          <div class="gnothi__descargas">
+            <a class="gnothi__boton" href="https://play.google.com/store/apps/details?id=com.ncubo.gnothi.host" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2.5 1.6c0-.5.5-.8.9-.6l10.4 6.3c.4.3.4.9 0 1.2L3.4 14.9c-.4.3-.9 0-.9-.5V1.6Z"/></svg><span class="dos"><small>Get it on</small>Google Play</span></a>
+            <a class="gnothi__boton gnothi__boton--suave" id="agregar-android" href="https://go.gnothi.app/alta">Add Sotaventos Motors to Gnothi</a>
+          </div>
+        </div>
+        <div>
+          <ol class="gnothi__pasos">
+            <li><p><b>Install Gnothi from Google Play.</b> <span>It is free and you install it once: the same Gnothi serves every institution you have.</span></p></li>
+            <li><p><b>Come back to this page on your phone and tap “Add Sotaventos Motors to Gnothi”.</b> <span>Gnothi downloads the module from this same address and shows you a sheet: who hands it over, what questions it will answer and in which folder of the phone it keeps your vehicle’s record. Nothing is written before you read it.</span></p></li>
+            <li><p><b>Tap “Install on my phone”.</b> <span>Sotaventos Motors appears in your list of institutions.</span></p></li>
+            <li><p><b>Ask.</b> <span>Your assistant sees Sotaventos Motors next to your other institutions. Every query has a switch: you turn off the ones you do not want it to read.</span></p></li>
+          </ol>
+          <div class="gnothi__enlace">
+            <span>Reading this on a computer? In Gnothi tap <b>Paste their link</b> and paste this one. If the <code>dealership.gmod</code> file reached you by mail or WhatsApp, open it: the phone offers Gnothi.</span>
+            <code id="enlace-movil">https://go.gnothi.app/alta?bundle=…/descargas/movil/dealership.gmod</code>
+            <button type="button" data-copiar="enlace-movil">Copy</button>
+          </div>
+        </div>
+      </div>
+  
+      <div class="gnothi__ambiente" id="amb-iphone" role="tabpanel" aria-labelledby="tab-iphone" data-ambiente="iphone">
+        <div>
+          <h3>On your iPhone</h3>
+          <p class="gnothi__nota">The same steps as on Android. Gnothi for iPhone is on its way to the App Store.</p>
+          <div class="gnothi__descargas">
+            <span class="gnothi__boton gnothi__boton--inerte" aria-disabled="true"><span class="dos"><small>Coming soon to the</small>App Store</span></span>
+            <a class="gnothi__boton gnothi__boton--suave" id="agregar-iphone" href="https://go.gnothi.app/alta">Add Sotaventos Motors to Gnothi</a>
+          </div>
+        </div>
+        <div>
+          <ol class="gnothi__pasos">
+            <li><p><b>Install Gnothi from the App Store</b> <span>once it is published. Once, for every institution you have.</span></p></li>
+            <li><p><b>Come back to this page on your iPhone and tap “Add Sotaventos Motors to Gnothi”.</b> <span>Gnothi opens with the module’s sheet: who hands it over, what it answers and where it keeps your vehicle’s record.</span></p></li>
+            <li><p><b>Tap “Install on my phone”.</b></p></li>
+            <li><p><b>Ask.</b> <span>Your assistant sees Sotaventos Motors, and you decide which queries stay on.</span></p></li>
+          </ol>
+        </div>
+      </div>
+  
+      <div class="gnothi__ambiente" id="amb-computadora" role="tabpanel" aria-labelledby="tab-computadora" data-ambiente="computadora">
+        <div>
+          <h3>On your computer</h3>
+          <p class="gnothi__nota">Gnothi for Windows downloads from here. It asks for no administrator rights and touches nothing outside its folder.</p>
+          <div class="gnothi__descargas">
+            <a class="gnothi__boton" href="descargas/gnothi/Gnothi.Host.zip" download><svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="dos"><small>Download for</small>Windows</span></a>
+            <a class="gnothi__boton gnothi__boton--suave" href="descargas/dealership.gmod" download>Download the Sotaventos Motors module</a>
+          </div>
+        </div>
+        <div>
+          <ol class="gnothi__pasos">
+            <li><p><b>Download and install Gnothi.</b> <span>Once. If Windows shows the SmartScreen notice, choose “More info” and “Run anyway”. The first time it opens, Gnothi asks before registering with your assistant (Claude or another) and backs up the configuration it is about to touch.</span></p></li>
+            <li><p><b>Open Gnothi and choose “Add an institution”.</b> <span>Paste the Sotaventos Motors link below, or tap “Pick the file…” and find the <code>dealership.gmod</code> you downloaded with the button.</span></p></li>
+            <li><p><b>Read the sheet and tap “Install on this computer”.</b> <span>It tells you who hands over the module, what it will answer and in which folder it keeps your vehicle’s record: <code>Documents\Gnothi\dealership</code>. The same one the app uses.</span></p></li>
+            <li><p><b>Restart your assistant and ask.</b> <span>“Is my car still under warranty?” Everything is answered from your computer; nothing goes to the cloud.</span></p></li>
+          </ol>
+          <div class="gnothi__enlace">
+            <span>The Sotaventos Motors link, to paste into Gnothi:</span>
+            <code id="enlace-escritorio">…/descargas/dealership.gmod</code>
+            <button type="button" data-copiar="enlace-escritorio">Copy</button>
+          </div>
+        </div>
+      </div>
+  
+      <p class="gnothi__suelta"><b>No Gnothi?</b> The app also works on its own, in the browser: <a href="/app/">open it</a> and pick the folder where you want your vehicle’s record kept. When you install Gnothi, it reads that same folder.</p>
+    </section>
+  
+    <script>
+      (function () {
+        document.documentElement.classList.add('js');
+  
+        // The enrollment link, with the origin this page is served from: the hosted form for the
+        // phones, the cargo form for the computer. Both are called dealership.gmod (armar-bundle.ps1).
+        var origen = location.origin;
+        var movil = origen + '/descargas/movil/dealership.gmod';
+        var cargo = origen + '/descargas/dealership.gmod';
+        var alta = 'https://go.gnothi.app/alta?bundle=' + encodeURIComponent(movil);
+        ['agregar-android', 'agregar-iphone'].forEach(function (id) { var a = document.getElementById(id); if (a) a.href = alta; });
+        var eMovil = document.getElementById('enlace-movil'), eEscritorio = document.getElementById('enlace-escritorio');
+        if (eMovil) eMovil.textContent = alta;
+        if (eEscritorio) eEscritorio.textContent = cargo;
+  
+        // Copy: the button says "Copied" for a moment. Without a clipboard (plain http off
+        // localhost) the text is left selected to copy by hand.
+        function seleccionar(nodo) { var r = document.createRange(); r.selectNodeContents(nodo); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+        document.querySelectorAll('[data-copiar]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var code = document.getElementById(b.getAttribute('data-copiar')); if (!code) return;
+            var listo = function () { var antes = b.textContent; b.textContent = 'Copied'; setTimeout(function () { b.textContent = antes; }, 1600); };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code.textContent).then(listo, function () { seleccionar(code); });
+            else seleccionar(code);
+          });
+        });
+  
+        // The device: proposed by the user agent, changed by the person.
+        var tabs = Array.prototype.slice.call(document.querySelectorAll('.gnothi__ambientes [role="tab"]'));
+        var paneles = Array.prototype.slice.call(document.querySelectorAll('.gnothi__ambiente'));
+        function elegir(nombre) {
+          tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.ambiente === nombre)); });
+          paneles.forEach(function (p) { p.classList.toggle('activo', p.dataset.ambiente === nombre); });
+        }
+        tabs.forEach(function (t) { t.addEventListener('click', function () { elegir(t.dataset.ambiente); }); });
+        var ua = navigator.userAgent || '';
+        elegir(/Android/i.test(ua) ? 'android' : /iPhone|iPad|iPod/i.test(ua) ? 'iphone' : 'computadora');
+      })();
+    </script>
+
     <div class="tarjeta">
-        <h2>Install it</h2>
+        <h2>Without Gnothi: open it on its own</h2>
         <p>
             <a class="boton" href="/app/">Open the app</a>
         </p>

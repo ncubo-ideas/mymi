@@ -68,6 +68,14 @@ Gnothi.Mobile/bundles/
 # con -Origen, ver Compras/README.md. La forma cargo (descargas/compras.gmod) si va.
 Compras/PaginaDeDescarga/descarga/descargas/movil/
 
+# Las otras cuatro paginas ofrecen los mismos descargables (Gnothi para Windows, la forma
+# cargo y la hospedada del modulo) y ninguno va al repo: se arman antes de levantar URL1,
+# ver el nginx.conf de cada una.
+Examenes/PaginaDeDescarga/descarga/descargas/
+Municipalidad/PaginaDeDescarga/descarga/descargas/
+Concesionario/PaginaDeDescarga/descarga/descargas/
+Cargas/PaginaDeDescarga/descarga/descargas/
+
 # Xcode: estado de UI por persona, no del proyecto. El .xcodeproj y el esquema
 # compartido si van, para no rearmar el target a mano en cada clon.
 xcuserdata/

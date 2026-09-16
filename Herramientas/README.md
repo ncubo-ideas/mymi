@@ -109,3 +109,25 @@ pre-commit o un paso de CI con `--check`.
 Deja al guardián de la suite —`Gnothi.Assistant.Tests/Conformance.cs`, que arranca cada módulo y
 cruza su manifiesto contra su `tools/list` real— como la red: esto mantiene sincronizado, el guardián
 avisa si alguien igual editó a mano y se desvió.
+
+## `replicar-seccion-gnothi.mjs` — el paso a paso «Se usa con Gnothi», en cada página
+
+Cada página de institución (`<Negocio>/PaginaDeDescarga/descarga/index.html`) trae la misma
+sección `#gnothi`: primero Gnothi (una vez, de la tienda o de la descarga para Windows), después
+la institución (un toque), en tres paneles elegidos por el aparato de la persona. La estrenó La
+Guaria a mano; las otras cuatro salen de este molde, con la **voz** de cada página (usted, vos,
+inglés) y su **paleta** mapeada a variables propias, para que la sección vista la marca de cada una.
+
+```bash
+node Herramientas/replicar-seccion-gnothi.mjs
+```
+
+Empalma la sección en cada página que **todavía no la tiene** y ajusta el llamado a la acción de
+la portada; una página que ya la trae no se toca. Si el flujo cambia —un rótulo del alta, un paso
+nuevo—, cambia en el molde, se quita la sección vieja de las páginas y se vuelve a correr; la de
+La Guaria se edita a mano y le sirve de referencia visual.
+
+Los tres descargables que la sección ofrece (`descargas/gnothi/Gnothi.Host.zip`,
+`descargas/<modulo>.gmod` y `descargas/movil/<modulo>.gmod`) **no van al repo**: se arman con
+`Gnothi.Mobile/armar-bundle.ps1` antes de levantar URL1, y el `nginx.conf` de cada página dice
+cuál es cuál. La forma hospedada lleva el origen adentro y tiene que ser el que sirve la página.
