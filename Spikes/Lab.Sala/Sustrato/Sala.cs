@@ -97,6 +97,14 @@ public static class Sala
 				superficie = superficie.Name,
 				consultas = consultas.Keys,
 				vistas = vistas.Keys,
+
+				// LA CONFORMIDAD, NO UNA PROMESA. Se reporta que queda de los OTROS modulos en el
+				// momento en que este entra. Si algun dia una de estas lineas dice mas de cero
+				// bytes, la frontera entre journals se rompio y el log lo grita.
+				//
+				// Mismo espiritu que la sonda de CSP de Lab.WebViewWasm: la contencion se
+				// afirma intentandola, no declarandola.
+				vecinos = Vecinos(modulo),
 			});
 		}
 		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
@@ -184,6 +192,33 @@ public static class Sala
 		}
 		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
 		finally { UnaPorVez.Release(); }
+	}
+
+	// QUE QUEDA DE LOS DEMAS. Lo que este metodo ve, lo ve tambien el dominio de la institucion:
+	// corre en el mismo heap y sobre el mismo sistema de archivos en memoria. Por eso sirve como
+	// prueba y no como comentario.
+	private static object[] Vecinos(string propio)
+	{
+		if (!Directory.Exists(Raiz)) return [];
+
+		var salida = new List<object>();
+		foreach (string carpeta in Directory.GetDirectories(Raiz))
+		{
+			string nombre = Path.GetFileName(carpeta);
+			if (string.Equals(nombre, propio, StringComparison.Ordinal)) continue;
+
+			long bytes = 0;
+			int archivos = 0;
+			foreach (string f in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+			{
+				archivos++;
+				try { bytes += new FileInfo(f).Length; } catch { }
+			}
+
+			salida.Add(new { modulo = nombre, archivos, bytes });
+		}
+
+		return [.. salida];
 	}
 
 	private static MethodInfo? PorMarcadorSuelto(Type superficie, string marcador) =>

@@ -71,7 +71,14 @@ internal sealed class AndroidSala : ISalaHost
 		actividad.RunOnUiThread(() => web!.EvaluateJavascript(js, null));
 
 		using CancellationTokenRegistration _ = ct.Register(() => espera.TrySetCanceled(ct));
-		return await espera.Task;
+		string respuesta = await espera.Task;
+
+		// LA CONFORMIDAD QUEDA EN EL LOG, no en un comentario. Cargar y desalojar reportan que
+		// quedo de los OTROS modulos en memoria; si alguna vez dice mas de cero bytes, la
+		// frontera entre journals se rompio y esto lo grita donde se ve.
+		if (verbo is "cargar" or "desalojar") log($"sala/{verbo} {modulo}: {respuesta}");
+
+		return respuesta;
 	}
 
 	// ---------------------------------------------------------------- el documento
