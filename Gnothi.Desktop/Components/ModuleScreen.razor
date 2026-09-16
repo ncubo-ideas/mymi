@@ -30,11 +30,11 @@ else
            por `consultar` a la misma superficie en proceso que contesta abajo. Abrirla es lo que
            dispara el pull del cartero y la entrega a [Deliver]. *@
         <div class="query">
-            <div class="title">La pantalla de @module.Manifest.Identity</div>
-            <div class="desc">La cara que la institución diseñó, corriendo dentro de Gnothi con el motor prestado.</div>
+            <div class="title">@T("pantalla.cara.titulo", ("quien", module.Manifest.Identity))</div>
+            <div class="desc">@T("pantalla.cara.desc")</div>
             <div style="margin-top:10px">
-                <button class="small" disabled="@faceBusy" @onclick="OpenFace">@(faceBusy ? "abriendo…" : "Abrir la pantalla")</button>
-                <button class="small ghost" disabled="@faceBusy" @onclick="Pin">Poner un icono en el escritorio</button>
+                <button class="small" disabled="@faceBusy" @onclick="OpenFace">@(faceBusy ? T("pantalla.cara.abriendo") : T("pantalla.cara.abrir"))</button>
+                <button class="small ghost" disabled="@faceBusy" @onclick="Pin">@T("pantalla.cara.fijar")</button>
             </div>
             @if (faceMessage is not null)
             {
@@ -108,11 +108,11 @@ else
         {
             Module m = module;
             await Task.Run(() => State.Faces.OpenFace(m, CancellationToken.None));
-            faceMessage = "La pantalla está abierta.";
+            faceMessage = T("pantalla.cara.abierta");
         }
         catch (Exception e)
         {
-            faceMessage = $"No se pudo abrir: {e.GetType().Name}: {e.Message}";
+            faceMessage = T("pantalla.cara.no-abrio", ("detalle", $"{e.GetType().Name}: {e.Message}"));
         }
         finally { faceBusy = false; }
     }
@@ -125,11 +125,11 @@ else
         try
         {
             string link = State.Faces.PinToDesktop(module, State.Root, State.JournalsRoot);
-            faceMessage = $"Listo: hay un icono de {module.Manifest.Identity} en tu escritorio ({Path.GetFileName(link)}). Abre esta pantalla directo.";
+            faceMessage = T("pantalla.cara.icono-puesto", ("quien", module.Manifest.Identity), ("archivo", Path.GetFileName(link)));
         }
         catch (Exception e)
         {
-            faceMessage = $"No se pudo crear el icono: {e.GetType().Name}: {e.Message}";
+            faceMessage = T("pantalla.cara.icono-fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
         }
     }
     private readonly Dictionary<string, ToolUi> uis = new(StringComparer.Ordinal);

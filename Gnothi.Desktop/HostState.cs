@@ -88,7 +88,8 @@ internal sealed class HostState
 				Response said = await Dispatcher.Serve(
 					new Request(Dispatcher.HostModule, "verify_module", new Dictionary<string, object?> { ["module"] = m.Name }), ct);
 				string verdict = JsonSerializer.Serialize(said.Content);
-				lines.Add($"comprobación de {m.Name}: {verdict}");
+				// What is shown comes from the catalog; the log line stays a log line.
+				lines.Add(Textos.T("alta.escritorio.comprobacion", ("quien", m.Manifest.Identity), ("veredicto", verdict)));
 				Log($"comprobación de {m.Name}: {verdict}");
 
 				DeclaredTool? first = m.Manifest.Tools.FirstOrDefault(t => t.ReadOnly && t.Input.Count == 0);
@@ -96,7 +97,8 @@ internal sealed class HostState
 				{
 					Response answer = await Dispatcher.Serve(new Request(m.Name, first.Name, null), ct);
 					string text = answer.Content as string ?? JsonSerializer.Serialize(answer.Content);
-					lines.Add($"{first.Name} contestó: {text[..Math.Min(200, text.Length)]}");
+					lines.Add(Textos.T("alta.escritorio.contesto",
+						("consulta", first.Title.Length > 0 ? first.Title : first.Name), ("texto", text[..Math.Min(200, text.Length)])));
 					Log($"  {first.Name} contestó {text.Length} bytes");
 				}
 
@@ -104,7 +106,7 @@ internal sealed class HostState
 			}
 			catch (Exception ex)
 			{
-				lines.Add($"comprobación de {m.Name} FALLÓ: {ex.GetType().Name}: {ex.Message}");
+				lines.Add(Textos.T("alta.escritorio.comprobacion-fallo", ("quien", m.Manifest.Identity), ("detalle", $"{ex.GetType().Name}: {ex.Message}")));
 				Log($"comprobación de {m.Name} FALLÓ: {ex.GetType().Name}: {ex.Message}");
 			}
 		}

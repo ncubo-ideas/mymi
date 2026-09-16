@@ -15,16 +15,21 @@
     It takes every form -cargo, hosted, hybrid- because the enrollment does; on this machine a
     hosted module will install but has no shell to run in (the desktop has no WebView shell for
     a whole PWA), and the sheet says so before she decides.
+
+    EVERY PHRASE COMES FROM THE CATALOG, and from the SAME keys the phone's sheet uses (hoja.*,
+    alta.error.*, propuesta.*): two faces of one product cannot word the same check differently.
+    Only what exists on the desktop alone -the title of this card, the hybrid form, "install on
+    this computer"- has keys of its own, under alta.escritorio.* and hoja.forma.hibrido.*.
 *@
 
 <div class="query">
-    <div class="title">Agregar un módulo</div>
-    <div class="desc">Pegá el enlace que te dio la institución, o elegí el paquete que te mandó.</div>
+    <div class="title">@T("alta.escritorio.titulo")</div>
+    <div class="desc">@T("alta.escritorio.lead")</div>
 
-    <input type="text" @bind="link" placeholder="https://…/modulo.gmod, o el enlace de go.gnothi.app" style="width:100%" disabled="@busy" />
+    <input type="text" @bind="link" placeholder="@T("alta.escritorio.enlace.placeholder")" style="width:100%" disabled="@busy" />
     <div style="margin-top:10px">
-        <button class="small" disabled="@(busy || string.IsNullOrWhiteSpace(link))" @onclick="ExamineLink">@(busy ? "revisando…" : "Agregar")</button>
-        <button class="small ghost" disabled="@busy" @onclick="ExamineFile">Elegir el archivo…</button>
+        <button class="small" disabled="@(busy || string.IsNullOrWhiteSpace(link))" @onclick="ExamineLink">@(busy ? T("alta.escritorio.revisando") : T("alta.escritorio.agregar"))</button>
+        <button class="small ghost" disabled="@busy" @onclick="ExamineFile">@T("alta.escritorio.elegir-archivo")</button>
     </div>
 
     @if (progress is not null)
@@ -44,10 +49,10 @@
                     <span style="font-size:26px">@HostState.Icon(p.Manifest)</span>
                     <span class="title">@p.Manifest.Identity</span>
                     <div class="meta">
+                        @* WHO: the institution's own words -legal name, tax id- are not translated. *@
                         @(p.Manifest.Publisher?.Legal is { Length: > 0 } legal ? legal : p.Manifest.Institution)
                         @if (p.Manifest.Publisher?.TaxId is { Length: > 0 } tax) { <text>, @tax</text> }
-                        @if (p.Manifest.Publisher?.Domain is { Length: > 0 } dom) { <text> · declara @dom</text> }
-                        @if (p.ServedBy.Length > 0) { <text> y lo sirvió @p.ServedBy</text> }
+                        @if (Procedencia(p) is { } proc) { <text> · </text>@proc }
                         @if (p.Manifest.Publisher?.Version is { Length: > 0 } v) { <text> · v@(v)</text> }
                     </div>
                 </div>
@@ -63,41 +68,45 @@
                 <div class="notice">@p.Update.Describe()</div>
             }
 
-            <h3 style="font-size:13px;margin:14px 0 6px">Qué va a poder contestar</h3>
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.que-contesta")</h3>
             @foreach (DeclaredTool t in p.Manifest.Tools)
             {
                 <div class="meta"><strong>@(t.Title.Length > 0 ? t.Title : t.Name)</strong> — @t.Description</div>
             }
 
-            <h3 style="font-size:13px;margin:14px 0 6px">Dónde va a vivir tu registro</h3>
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.donde-vive")</h3>
             <div class="meta"><code>@p.JournalGoesTo</code></div>
             @if (p.Manifest.Journal is { } j && (j.ExpectedSize.Length > 0 || j.Updates.Length > 0 || j.Retention.Length > 0))
             {
-                <div class="meta">Unos @j.ExpectedSize. Se actualiza @j.Updates. La institución lo guarda @j.Retention.</div>
+                <div class="meta">
+                    @if (j.ExpectedSize.Length > 0) { <text>@T("hoja.journal.tamano", ("tamano", j.ExpectedSize)) </text> }
+                    @if (j.Updates.Length > 0) { <text>@T("hoja.journal.refresco", ("refresco", j.Updates)) </text> }
+                    @if (j.Retention.Length > 0) { <text>@T("hoja.journal.retencion", ("retencion", j.Retention))</text> }
+                </div>
             }
 
-            <h3 style="font-size:13px;margin:14px 0 6px">Con quién va a hablar</h3>
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.con-quien")</h3>
             <div class="meta">
-                @if (p.Publisher.Length > 0) { <code>@p.Publisher</code><text> — es la única red que va a poder tocar, y la hace Gnothi por él.</text> }
-                else { <text>Con nadie: vive de lo que ya tiene en su registro.</text> }
+                @if (p.Publisher.Length > 0) { <code>@p.Publisher</code><text> — @T("hoja.unica-red")</text> }
+                else { <text>@T("hoja.sin-publicador")</text> }
             </div>
 
-            <h3 style="font-size:13px;margin:14px 0 6px">Lo que Gnothi revisó</h3>
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.reviso")</h3>
             <ul class="meta" style="margin:0;padding-left:18px">
-                <li>@Origen(p.Provenance)</li>
-                @if (!p.Provenance.Secure && p.ServedBy.Length > 0) { <li>La conexión no va cifrada: así solo sirve en desarrollo.</li> }
+                <li>@Origen(p)</li>
+                @if (!p.Provenance.Secure && p.ServedBy.Length > 0) { <li>@T("hoja.respaldo.inseguro")</li> }
                 <li>@Firma(p.Provenance)</li>
                 <li>@Forma(p.Inspection)</li>
                 <li>
-                    @if (p.Inspection.Excesses.Count > 0) { <text>Pide @string.Join(", ", p.Inspection.Excesses): se instala <strong>apagado</strong> hasta que vos lo encendás.</text> }
-                    else { <text>No pide red, ni micrófono, ni parlante.</text> }
+                    @if (p.Inspection.Excesses.Count > 0) { @M("hoja.caps.pide-mas", ("lista", string.Join(", ", p.Inspection.Excesses)))<text> @T("hoja.caps.apagado")</text> }
+                    else { <text>@T("hoja.caps.no-pide")</text> }
                 </li>
-                <li>Sin ejecutables ni datos de muestra adentro.</li>
+                <li>@T("hoja.sin-ejecutables")</li>
             </ul>
 
             <div style="margin-top:14px">
-                <button class="small" disabled="@busy" @onclick="Accept">@(p.Update.Kind == UpdateKind.Fresh ? "Instalar en esta computadora" : "Actualizar")</button>
-                <button class="small ghost" disabled="@busy" @onclick="Discard">Ahora no</button>
+                <button class="small" disabled="@busy" @onclick="Accept">@Boton(p.Update.Kind)</button>
+                <button class="small ghost" disabled="@busy" @onclick="Discard">@T("propuesta.ahora-no")</button>
             </div>
         </div>
     }
@@ -130,13 +139,13 @@
         try
         {
             picked = Window.ShowOpenFile(
-                title: "Elegí el paquete del módulo",
+                title: T("instituciones.elegir.titulo"),
                 multiSelect: false,
-                filters: [("Módulo de Gnothi", [".gmod", ".zip"]), ("Todos los archivos", ["*"])]);
+                filters: [(T("instituciones.elegir.gmod"), [".gmod", ".zip"]), (T("instituciones.elegir.todos"), ["*"])]);
         }
         catch (Exception e)
         {
-            error = $"No se pudo abrir el selector: {e.GetType().Name}: {e.Message}";
+            error = T("instituciones.elegir.fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
             return;
         }
         if (picked is not { Length: > 0 } || string.IsNullOrWhiteSpace(picked[0])) return;
@@ -152,7 +161,7 @@
     private async Task Examine(Func<Task<EnrollmentProposal>> how)
     {
         if (proposal is not null) { State.Enrollment.Discard(proposal); proposal = null; }
-        busy = true; error = null; result.Clear(); progress = "Revisando…";
+        busy = true; error = null; result.Clear(); progress = T("alta.paso.revisando");
         try
         {
             // OFF THE UI THREAD: the download and the inspection are real work.
@@ -167,10 +176,12 @@
         finally { busy = false; }
     }
 
+    // The enrollment's own step text already comes from the catalog (alta.paso.*); only the
+    // byte count is composed here.
     private void Progress(EnrollmentProgress p)
     {
         progress = p.Total is long total && total > 0
-            ? $"{p.Text} {p.Bytes / 1048576.0:0.0} MB de {total / 1048576.0:0.0} MB"
+            ? T("alta.escritorio.progreso", ("texto", p.Text), ("bajados", Mb(p.Bytes)), ("total", Mb(total)))
             : p.Text;
         _ = InvokeAsync(StateHasChanged);
     }
@@ -184,7 +195,7 @@
             string module = await Task.Run(() => State.Enrollment.Accept(p));
             proposal = null;
             State.Reload();
-            result.Add($"Listo: ya tenés '{module}' en esta computadora.");
+            result.Add(T("alta.listo", ("titulo", p.Manifest.Identity)));
             foreach (string line in await Task.Run(() => State.VerifyNewModules(CancellationToken.None))) result.Add(line);
             await Installed.InvokeAsync();
         }
@@ -202,50 +213,97 @@
         proposal = null;
     }
 
-    // The phone's refusals, in the person's words. What is not one of these is shown as it came.
+    // A phrase that carries <b> in the catalog, with its values HTML-escaped -what esc() does on
+    // the phone- and rendered as markup, not as text.
+    private static MarkupString M(string clave, params (string Nombre, string Valor)[] valores) =>
+        (MarkupString)T(clave, [.. valores.Select(v => (v.Nombre, System.Net.WebUtility.HtmlEncode(v.Valor)))]);
+
+    private static string Mb(long bytes) => $"{bytes / 1048576.0:0.0} MB";
+
+    private static string Boton(UpdateKind kind) => kind switch
+    {
+        UpdateKind.Fresh => T("alta.escritorio.instalar"),
+        UpdateKind.Same => T("hoja.boton.reinstalar"),
+        UpdateKind.Downgrade => T("hoja.boton.volver"),
+        _ => T("hoja.boton.actualizar"),
+    };
+
+    // WHERE IT COMES FROM, in one line under the name: what it declares against what served it.
+    private static MarkupString? Procedencia(EnrollmentProposal p)
+    {
+        string dominio = p.Manifest.Publisher?.Domain ?? "";
+        if (dominio.Length == 0 && p.ServedBy.Length == 0) return null;
+        if (dominio.Length == 0) return M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", ""));
+        if (p.ServedBy.Length == 0) return M("hoja.proc.archivo", ("dominio", dominio));
+        return string.Equals(dominio, p.ServedBy, StringComparison.OrdinalIgnoreCase)
+            ? M("hoja.proc.mismo-dominio", ("servido", p.ServedBy))
+            : M("hoja.proc.distinto", ("dominio", dominio), ("servido", p.ServedBy));
+    }
+
+    // The phone's refusals, in the person's words -the same keys ui.html uses. What is not one
+    // of these is shown with its detail.
     private static string Motivo(Exception e) => e switch
     {
-        PackageSealMismatchException => "El paquete no es el que sellaba el enlace: no se instala. Pedile el enlace actual a tu institución.",
-        PackageSignatureInvalidException => "El paquete viene firmado y la firma no cierra: lo tocaron después de firmarlo. No se instala.",
-        PackageKeyRevokedException => "La institución retiró la llave con la que está firmado este paquete. No se instala.",
-        PackageNotBackedException => "Tu institución no reconoce este paquete como suyo: no se instala. Pedile el enlace o el paquete actual.",
-        PackageCollisionException c => c.Message,
-        HttpRequestException h => $"No se pudo bajar el módulo: {h.Message}",
-        _ => $"{e.GetType().Name}: {e.Message}",
+        PackageSealMismatchException => T("alta.error.sello"),
+        PackageSignatureInvalidException => T("alta.error.firma"),
+        PackageKeyRevokedException => T("alta.error.llave-retirada"),
+        PackageNotBackedException => T("alta.error.no-reconocido"),
+        PackageCollisionException c => T("alta.error.colision",
+            ("modulo", c.Module),
+            ("instalada", c.InstalledInstitution.Length > 0 ? c.InstalledInstitution : T("alta.error.otra-institucion")),
+            ("entrante", c.IncomingInstitution.Length > 0 ? c.IncomingInstitution : T("alta.error.otra-institucion"))),
+        HttpRequestException => T("alta.error.sin-conexion"),
+        _ => T("alta.error.no-se-pudo", ("detalle", $"{e.GetType().Name}: {e.Message}")),
     };
 
-    private static string Origen(Gnothi.MobileShared.Provenance p) => p.Origin switch
+    // WHO ANSWERS FOR IT. The same cases the phone's sheet enumerates, one whole phrase each.
+    private static MarkupString Origen(EnrollmentProposal p)
     {
-        OriginCheck.Verified => $"Lo respalda {p.ServedBy}: ese origen publica este módulo y el paquete dice ser suyo.",
-        OriginCheck.NoOrigin => "Llegó sin un origen que se pueda consultar.",
-        OriginCheck.NoWellKnown => $"Lo sirvió {p.ServedBy}, que no publica su lista de módulos: sin respaldo verificable.",
-        OriginCheck.NotListed => $"{p.ServedBy} publica su lista y este paquete no está en ella.",
-        OriginCheck.NotDeclared => "El paquete no declara de qué origen es: sin respaldo verificable.",
-        OriginCheck.DeclaresAnother => $"El paquete dice ser de {p.DeclaredOrigin} y lo sirvió {p.ServedBy}.",
-        _ => p.Origin.ToString(),
-    };
-
-    private static string Firma(Gnothi.MobileShared.Provenance p) => p.Signer switch
-    {
-        SignerCheck.Unsigned => "Viene sin firma.",
-        SignerCheck.Published => $"Firmado por la llave «{p.SignerId}», que su origen publica. Gnothi la va a recordar.",
-        SignerCheck.Pinned => $"Firmado con la misma llave que la vez pasada («{p.SignerId}», desde {p.SignedSince}).",
-        SignerCheck.Rotated => $"Firmado con una llave nueva («{p.SignerId}»), que su origen publica.",
-        SignerCheck.Unknown => $"Firmado por «{p.SignerId}», una llave que su origen no publica.",
-        SignerCheck.Changed => $"Firmado con otra llave («{p.SignerId}») que la vez pasada, y el origen no la publica.",
-        SignerCheck.Revoked => $"Firmado con una llave que la institución retiró («{p.SignerId}»).",
-        _ => p.Signer.ToString(),
-    };
-
-    private static string Forma(PackageInspection i)
-    {
-        string peso = $"{i.Files} archivos, {i.Bytes / 1048576.0:0.0} MB";
-        return i.Form switch
+        Gnothi.MobileShared.Provenance pr = p.Provenance;
+        string via = pr.Source == EnrollmentSource.PastedLink ? T("hoja.via.pegado") : "";
+        return pr.Origin switch
         {
-            PackageForm.Cargo => $"Trae solo el reglamento, como dos librerías: {peso}. El motor lo presta Gnothi.",
-            PackageForm.Hybrid => $"Trae la pantalla de la institución y su reglamento al lado: {peso}. El motor lo presta Gnothi; la pantalla se abre dentro de esta ventana.",
-            PackageForm.Hosted => $"Trae la app de la institución completa: {peso}" + (i.EngineFiles > 0 ? $", con su propio motor adentro ({i.EngineBytes / 1048576.0:0.0} MB)" : "") + ". En esta computadora todavía no hay dónde correrla: se instala, pero no contesta.",
-            _ => peso,
+            OriginCheck.Verified => M("hoja.respaldo.verificado", ("host", p.ServedBy), ("via", via)),
+            OriginCheck.NoOrigin => M("hoja.archivo.sin-ninguno"),
+            OriginCheck.NoWellKnown => Dos(M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", via)), M("hoja.respaldo.sin-publicacion")),
+            OriginCheck.NotListed => Dos(M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", via)), M("hoja.respaldo.no-publicado")),
+            OriginCheck.NotDeclared => p.ServedBy.Length > 0
+                ? Dos(M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", via)), M("hoja.respaldo.sin-origen"))
+                : M("hoja.archivo.sin-origen"),
+            OriginCheck.DeclaresAnother => M("hoja.respaldo.otro-origen", ("quien", pr.DeclaredOrigin)),
+            _ => (MarkupString)System.Net.WebUtility.HtmlEncode(pr.Origin.ToString()),
         };
     }
+
+    private static MarkupString Firma(Gnothi.MobileShared.Provenance p) => p.Signer switch
+    {
+        SignerCheck.Unsigned => M("hoja.firma.sin-firma"),
+        SignerCheck.Published => p.SignedSince.Length > 0
+            ? M("hoja.firma.publicada.desde", ("desde", p.SignedSince))
+            : Dos(M("hoja.firma.publicada.primera", ("llave", p.SignerId)), M("hoja.firma.publicada.recordar")),
+        SignerCheck.Pinned => Dos(M("hoja.firma.conocida", ("desde", p.SignedSince)), M("hoja.firma.conocida.detalle")),
+        SignerCheck.Rotated => Dos(M("hoja.firma.rotada", ("llave", p.SignerId)), M("hoja.firma.rotada.detalle")),
+        SignerCheck.Unknown => M("hoja.firma.desconocida", ("llave", p.SignerId)),
+        SignerCheck.Changed => M("hoja.firma.cambiada", ("llave", p.SignerId)),
+        SignerCheck.Revoked => M("alta.error.llave-retirada"),
+        _ => (MarkupString)System.Net.WebUtility.HtmlEncode(p.Signer.ToString()),
+    };
+
+    // WHAT IT CARRIES. Cargo and hosted are the phone's phrases; the hybrid is the form the
+    // desktop hosts and the phone does not name yet, and the hosted one adds what is true only
+    // here: there is nowhere to run it.
+    private static MarkupString Forma(PackageInspection i) => i.Form switch
+    {
+        PackageForm.Cargo => Dos(M("hoja.forma.cargo"), M("hoja.forma.cargo.detalle")),
+        PackageForm.Hybrid => Dos(M("hoja.forma.hibrido", ("archivos", i.Files.ToString()), ("peso", Mb(i.Bytes))), M("hoja.forma.hibrido.detalle")),
+        PackageForm.Hosted => Dos(
+            M("hoja.forma.hospedado", ("archivos", i.Files.ToString()), ("peso", Mb(i.Bytes))),
+            i.EngineFiles > 0 ? M("hoja.forma.motor", ("peso", Mb(i.EngineBytes))) : new MarkupString(""),
+            M("hoja.forma.hospedado.sin-donde")),
+        _ => (MarkupString)System.Net.WebUtility.HtmlEncode($"{i.Files} · {Mb(i.Bytes)}"),
+    };
+
+    // Two or three whole phrases, one after the other. Never fragments of one.
+    private static MarkupString Dos(params MarkupString[] frases) =>
+        (MarkupString)string.Join(" ", frases.Select(f => f.Value).Where(s => s.Length > 0));
 }
