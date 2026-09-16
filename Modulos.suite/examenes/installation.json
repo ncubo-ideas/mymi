@@ -1,0 +1,13 @@
+{
+  "//": "BANCO DE LA SUITE. Apunta a bin/suite y NO al bin/Debug de cada modulo, y eso no es una preferencia: el bin/Debug lo tienen ABIERTO los servidores MCP que la sesion levanta desde .mcp.json, asi que nadie puede reconstruirlo y la suite terminaba comparando contra un dll viejo sin decirlo. El manifest.json de al lado NO se versiona: lo copia el csproj de la suite desde Modulos/ en cada build, para que no sea una copia que se desincronice.",
+  "shell": {
+    "type": "in-process",
+    "command": "dotnet",
+    "arguments": [
+      "../../bin/suite/examenes/Examenes.Mcp.dll"
+    ]
+  },
+  "grantedFolder": "C:/Gnothi/examenes",
+  "enabled": true,
+  "disabledTools": []
+}
