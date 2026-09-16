@@ -97,4 +97,23 @@
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- EL ICONO DEL EJECUTABLE. `SetIconFile` le pone cara a la VENTANA; esto se la pone al
+         archivo, que es de donde Windows saca el icono de la barra de tareas, el del
+         explorador y el de alt-tab. Sin los dos, Mymi tiene cara abierta y no la tiene
+         anclada. -->
+    <ApplicationIcon>mymi.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="mymi.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- LA CARA DE MYMI, Y ES EL MISMO ARCHIVO que pintan los dos telefonos: se enlaza, no se
+         copia. Si la marca cambia, cambia en las tres caras a la vez; dos copias divergen. -->
+    <Content Include="..\Gnothi.Mobile\Assets\img\mymi-hub.png" Link="wwwroot\mymi.png"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

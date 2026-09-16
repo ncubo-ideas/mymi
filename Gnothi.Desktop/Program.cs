@@ -58,6 +58,10 @@ internal static class Program
 
 		app.MainWindow
 			.SetTitle("Mymi")
+			// EL ICONO DE LA VENTANA, el mismo dibujo que el encabezado y que el telefono. Sin
+			// esto la barra de titulo y la de tareas muestran el icono por omision del runtime,
+			// que no es de nadie. El .ico lleva varios tamanos adentro y Windows elige.
+			.SetIconFile("mymi.ico")
 			.SetUseOsDefaultLocation(true)
 			.SetSize(1000, 740)
 			.SetMinSize(720, 520)

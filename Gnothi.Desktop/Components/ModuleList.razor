@@ -33,16 +33,33 @@ else
 {
     @foreach (Module m in State.Catalog.Modules)
     {
-        <div class="card @(m.Installation.Enabled ? "" : "off")">
+        Module.BrandLook look = Module.LookOf(m.Manifest, m.Directory, out _);
+        <div class="card @(m.Installation.Enabled ? "" : "off")"
+             style="@(look.Color.Length > 0 ? $"--marca:{look.Color}" : "")">
             <div class="row">
-                <div>
-                    <span style="font-size:26px">@HostState.Icon(m.Manifest)</span>
+                <div class="quien">
+                    @* LA MARCA DE LA INSTITUCION, la que ella declaro y el Host ya tenia
+                       calculada. Cuando no declaro ninguna, cae al dibujo de su rubro: el Host
+                       no le inventa una cara a nadie. *@
+                    @if (look.Logo.Length > 0)
+                    {
+                        <img class="marca" src="@look.Logo" alt="" />
+                    }
+                    else
+                    {
+                        <span class="marca sinlogo">@HostState.Icon(m.Manifest)</span>
+                    }
+                    <div>
                     @* QUIEN ES arriba y QUE ES abajo, igual que en el telefono. Estaba al
                        revés: el titulo grande y la institucion en la linea chica. La linea que
                        identifica la resuelve el manifiesto -Manifest.Identity- y no esta
                        pagina, porque hay tres caras y un fallback implementado tres veces es un
                        fallback que diverge. *@
                     <span class="title">@m.Manifest.Identity</span>
+                    @if (m.Manifest.Brand?.Slogan is { Length: > 0 } lema)
+                    {
+                        <div class="lema">@lema</div>
+                    }
                     <div class="meta">
                         @m.Manifest.Title
                         @if (!m.Installation.Enabled)
@@ -53,6 +70,7 @@ else
                         {
                             <text> &middot; @Consultas(CountEnabled(m))</text>
                         }
+                    </div>
                     </div>
                 </div>
                 @if (m.Installation.Enabled && CountEnabled(m) > 0)
@@ -87,9 +105,13 @@ else
     // funciona en ingles y no existe en espanol: «consulta»/«consultas» no comparten el prefijo
     // que esa concatenacion asume. Regla 7 de las reglas de localizacion: cada clave es una
     // frase entera.
+    //
+    // Y SON LAS MISMAS CLAVES QUE EL TELEFONO. Alla la tarjeta dice «20 permisos activos», no
+    // «20 consultas»: lo que se cuenta es lo que la persona dejo encendido, y esa es la palabra
+    // que lo dice. Dos caras del mismo producto no pueden llamarle distinto a lo mismo.
     private static string Consultas(int cuantas) => cuantas == 1
-        ? T("instituciones.consultas.una")
-        : T("instituciones.consultas.varias", ("n", cuantas.ToString()));
+        ? T("detalle.permiso.uno")
+        : T("detalle.permiso.varios", ("n", cuantas.ToString()));
 
     private void Reload() => State.Reload();
 
