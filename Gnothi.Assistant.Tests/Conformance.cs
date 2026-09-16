@@ -71,10 +71,10 @@ internal static class Conformance
 			}
 			catch (Exception ex)
 			{
-				// NOT A DEFECT OF THE MODULE, and it must not be reported as one: this is the
-				// documented open limitation -- installation.json carries ABSOLUTE paths from
-				// the machine where the POC was assembled, so on any other machine the shell
-				// cannot be started. See Metodologia/Guias/el-manifiesto-y-la-instalacion.md §8.
+				// NOT A DEFECT OF THE MODULE, and it must not be reported as one: the shell could
+				// not be started. Since the bench went relative (installation.json anchors
+				// shell.arguments[0] to its own folder) the usual cause is that the module's dll
+				// is not BUILT on this machine -- the path points at bin/Debug of its project.
 				//
 				// It is listed instead of asserted, because a red line here would train people
 				// to ignore the suite for a reason that has nothing to do with drift. What IS
@@ -111,9 +111,10 @@ internal static class Conformance
 		assert("al menos un modulo se pudo verificar contra su superficie real",
 			verificados > 0,
 			$"ninguno de {catalog.Modules.Count} se pudo arrancar: [{string.Join("  ·  ", sinVerificar)}]. "
-			+ "Casi siempre es installation.json con rutas de otra maquina (limitacion abierta, "
-			+ "ver Metodologia/Guias/el-manifiesto-y-la-instalacion.md seccion 8): apuntar "
-			+ "shell.arguments[0] al dll construido en ESTA maquina y repetir.");
+			+ "Casi siempre falta compilar los modulos: shell.arguments[0] de cada installation.json "
+			+ "apunta, relativo a su carpeta, al bin/Debug del proyecto Mcp del modulo. Correr "
+			+ "dotnet build sobre Compras/App/Compras.Mcp, Examenes/App/Examenes.Mcp y "
+			+ "HolaMundo/Facturas/App/Facturas.Mcp, y repetir.");
 
 		if (verificados > 0 && sinVerificar.Count > 0)
 			Console.WriteLine($"  ({verificados} modulos verificados, {sinVerificar.Count} sin verificar)");

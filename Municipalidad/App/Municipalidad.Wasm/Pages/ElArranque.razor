@@ -1,90 +1,80 @@
 @page "/"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Mi cuenta municipal</PageTitle>
+<PageTitle>@Textos.TituloDelModulo</PageTitle>
 
 <header class="portada">
-    <h1>Mi cuenta municipal</h1>
-    <p class="bajada">
-        Tu municipalidad te dice cuánto debés. Esta app te ayuda a entenderlo, anticiparlo y
-        administrarlo, con tu cuenta guardada en una carpeta tuya.
-    </p>
+    <h1>@Textos.TituloDelModulo</h1>
+    <p class="bajada">@textos["arranque.bajada"]</p>
 </header>
 
-@if (estado.NoSeEstaGuardando.Length > 0)
+@if (estado.NoSeEstaGuardando.HayQueDecirlo)
 {
     <div class="parte mala" role="alert" id="no-se-guarda">
-        <h3>Lo que ves NO se está guardando.</h3>
-        <p>@estado.NoSeEstaGuardando</p>
+        <h3>@textos["arranque.noSeGuarda"]</h3>
+        <p>@textos.Diga(estado.NoSeEstaGuardando)</p>
     </div>
 }
 
 @if (falla.Length > 0)
 {
     <div class="parte mala" role="alert" id="falla">
-        <h3>@(estado.EstaArriba ? "No se pudo completar el paso." : "No se pudo abrir la app.")</h3>
+        <h3>@(estado.EstaArriba ? textos["arranque.pasoFallido"] : textos["arranque.noAbrio"])</h3>
+        <p>@textos.Diga(elPasoQueFallo)</p>
         <p class="mono">@falla</p>
     </div>
 }
 
-@if (estado.NoSeAlcanzaLaInstitucion.Length > 0)
+@if (estado.NoSeAlcanzaLaInstitucion.HayQueDecirlo)
 {
     <div class="parte tibia" id="sin-institucion">
-        <h3>No se pudo hablar con la institución.</h3>
-        <p>
-            @estado.NoSeAlcanzaLaInstitucion Lo que ya está en tu carpeta se ve igual: para eso es
-            tuya.
-        </p>
+        <h3>@textos["arranque.sinInstitucion"]</h3>
+        <p>@textos.Diga(estado.NoSeAlcanzaLaInstitucion) @textos["arranque.sinInstitucionCuerpo"]</p>
     </div>
 }
 
-@if (elNavegadorDijoQueNo.Length > 0)
+@if (elNavegadorDijoQueNo.HayQueDecirlo)
 {
     <div class="parte tibia" id="navegador-dijo-no">
-        <h3>El navegador dijo que no.</h3>
-        <p>@elNavegadorDijoQueNo</p>
+        <h3>@textos["arranque.navegadorDijoNo.titulo"]</h3>
+        <p>@textos.Diga(elNavegadorDijoQueNo)</p>
     </div>
 }
 
-@if (!estado.EstaArriba)
+@if (!estado.EstaArriba && !estado.Hospedada)
 {
     @if (sinAlmacenamiento == "inseguro")
     {
         <div class="parte tibia" id="sin-almacenamiento-inseguro">
-            <h3>Esta página no está en una conexión segura.</h3>
-            <p>
-                Ningún navegador la va a dejar guardar nada. Abrila por <span class="mono">https</span>,
-                o por <span class="mono">localhost</span>.
-            </p>
+            <h3>@textos["arranque.sinHttps"]</h3>
+            <p>@((MarkupString)textos["arranque.sinHttpsCuerpo"])</p>
         </div>
     }
     else if (sinAlmacenamiento == "navegador")
     {
         <div class="parte tibia" id="sin-almacenamiento-navegador">
-            <h3>Este navegador no puede guardar nada para esta app.</h3>
-            <p>No tiene ni selector de carpetas ni almacenamiento propio. La salida es abrir la app en otro.</p>
+            <h3>@textos["arranque.navegadorSinAlmacenamiento"]</h3>
+            <p>@textos["arranque.navegadorSinAlmacenamientoCuerpo"]</p>
         </div>
     }
 
     <div class="tarjeta">
-        <h2>Dónde guardar</h2>
+        <h2>@textos["arranque.dondeGuardar"]</h2>
 
         @if (estado.FaltaReotorgarPermiso)
         {
-            <p>
-                Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El navegador
-                te vuelve a pedir el permiso de escritura cada vez que la app se abre.
-            </p>
+            <p>@((MarkupString)textos.Con("arranque.reotorgar", ("carpeta", estado.NombreDeLaCarpeta)))</p>
             <div class="botones">
                 <button type="button" id="reotorgar" @onclick="ReotorgarElPermiso">
-                    Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
+                    @textos.Con("arranque.darPermiso", ("carpeta", estado.NombreDeLaCarpeta))
                 </button>
                 <button class="suave" type="button" id="elegir-carpeta" @onclick="ConectarCarpetaAsync"
                         disabled="@(haySelector == false)">
-                    Elegir otra carpeta
+                    @textos["arranque.elegirOtraCarpeta"]
                 </button>
                 <button class="suave" type="button" id="olvidar-carpeta" @onclick="OlvidarCarpetaAsync">
-                    Olvidar esta carpeta
+                    @textos["arranque.olvidarCarpeta"]
                 </button>
             </div>
         }
@@ -94,24 +84,20 @@
                 @if (haySelector == true)
                 {
                     <button type="button" id="elegir-carpeta" @onclick="ConectarCarpetaAsync">
-                        Elegir una carpeta
+                        @textos["arranque.elegirCarpeta"]
                     </button>
                 }
                 @if (hayNavegador == true)
                 {
                     <button class="suave" type="button" id="usar-navegador" @onclick="UsarElNavegadorAsync">
-                        @(instalada ? "Guardar dentro de esta app" : "Guardar en este navegador")
+                        @(instalada ? textos["arranque.guardarEnLaApp"] : textos["arranque.guardarEnElNavegador"])
                     </button>
                 }
                 <button class="suave" type="button" id="abrir-sin-guardar" @onclick="AbrirAsync">
-                    Abrir sin guardar nada
+                    @textos["arranque.abrirSinGuardar"]
                 </button>
             </div>
-            <p class="nota">
-                Una carpeta tuya es la opción que hace que valga la pena: el servidor MCP la lee desde
-                afuera del navegador, y el almacenamiento del navegador no. Abrir sin guardar deja el
-                registro solo en memoria, y se pierde al cerrar.
-            </p>
+            <p class="nota">@textos["arranque.notaDeLaCarpeta"]</p>
         }
     </div>
 }
@@ -119,94 +105,93 @@ else
 {
     <div class="botones">
         <button type="button" id="refrescar" @onclick="RefrescarAsync" disabled="@refrescando">
-            @(refrescando ? "Trayendo…" : "Traer lo que haya publicado la institución")
+            @(refrescando ? textos["arranque.trayendo"] : textos["arranque.traer"])
         </button>
     </div>
 
     <nav class="preguntas" id="las-preguntas">
         <a href="por-que-pago-mas">
-            <strong>Por qué pago más</strong>
-            <span>Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.</span>
+            <strong>@textos["porQuePagoMas.titulo"]</strong>
+            <span>@textos["arranque.enlace.porQuePagoMas"]</span>
         </a>
         <a href="que-se-me-vence">
-            <strong>Qué se me vence</strong>
-            <span>Lo que está por vencerse y lo que ya venció. Tu portal no contesta esto.</span>
+            <strong>@textos["queSeMeVence.titulo"]</strong>
+            <span>@textos["arranque.enlace.queSeMeVence"]</span>
         </a>
         <a href="cuanto-apartar">
-            <strong>Cuánto apartar</strong>
-            <span>Lo que esta app propone por mes, y lo que vos adoptaste.</span>
+            <strong>@textos["cuantoApartar.titulo"]</strong>
+            <span>@textos["arranque.enlace.cuantoApartar"]</span>
         </a>
         <a href="sin-comprobante">
-            <strong>Qué quedó sin comprobante</strong>
-            <span>Lo que tu portal da por pagado y aquí no tiene recibo.</span>
+            <strong>@textos["sinComprobante.titulo"]</strong>
+            <span>@textos["arranque.enlace.sinComprobante"]</span>
         </a>
         <a href="cuanto-he-pagado">
-            <strong>Cuánto he pagado</strong>
-            <span>El total de un año, con la mora adentro, y la serie de cada rubro.</span>
+            <strong>@textos["cuantoHePagado.titulo"]</strong>
+            <span>@textos["arranque.enlace.cuantoHePagado"]</span>
         </a>
         <a href="que-tan-al-dia-esta">
-            <strong>Qué tan al día está esto</strong>
-            <span>Hasta dónde leyó esta app lo que publicó tu municipalidad, y qué falta.</span>
+            <strong>@textos["queTanAlDia.titulo"]</strong>
+            <span>@textos["arranque.enlace.queTanAlDia"]</span>
         </a>
     </nav>
 
-    <p class="nota">
-        Cuánto debés hoy, cuánto sería el año entero y si estás atrasado los contesta tu portal, que es
-        la autoridad sobre tu deuda. Esta app muestra lo otro.
-    </p>
+    <p class="nota">@textos["arranque.loQueContestaElPortal"]</p>
 
     <details class="plomeria">
-        <summary>Cómo quedó guardada tu cuenta</summary>
+        <summary>@textos["arranque.plomeria"]</summary>
 
     <div class="tarjeta">
-        <h2>Dónde vive el registro</h2>
+        <h2>@textos["arranque.dondeVive"]</h2>
         <dl class="renglones">
-            <dt>Modo</dt>
+            <dt>@textos["arranque.modo"]</dt>
             <dd>@ElModoDicho()</dd>
             @if (estado.EnCarpetaPropia)
             {
-                <dt>Carpeta</dt>
+                <dt>@textos["arranque.carpeta"]</dt>
                 <dd>@estado.NombreDeLaCarpeta</dd>
             }
-            <dt>Permiso</dt>
+            <dt>@textos["arranque.permiso"]</dt>
             <dd class="mono">@permiso</dd>
-            <dt>En MEMFS</dt>
-            <dd>@archivos @(archivos == 1 ? "archivo" : "archivos"), @bytes bytes</dd>
+            <dt>@textos["arranque.enMemfs"]</dt>
+            <dd>@textos.Con(archivos == 1 ? "arranque.memfs.uno" : "arranque.memfs.varios", ("archivos", archivos.ToString()), ("bytes", bytes.ToString()))</dd>
         </dl>
     </div>
 
     <div class="tarjeta">
-        <h2>Qué dice el journal</h2>
+        <h2>@textos["arranque.queDiceElJournal"]</h2>
         <dl class="renglones">
-            <dt>Entradas</dt>
+            <dt>@textos["arranque.entradas"]</dt>
             <dd>@entradas</dd>
-            <dt>Último evento leído</dt>
+            <dt>@textos["arranque.ultimoEvento"]</dt>
             <dd>@ultimoEvento</dd>
-            <dt>Esta instalación</dt>
-            <dd class="mono">@(dispositivo.Length > 0 ? dispositivo : "sin registrar")</dd>
-            <dt>Credencial</dt>
-            <dd>@(hayCredencial ? "guardada" : "no hay")</dd>
+            <dt>@textos["arranque.estaInstalacion"]</dt>
+            <dd class="mono">@(dispositivo.Length > 0 ? dispositivo : textos["arranque.sinRegistrar"])</dd>
+            <dt>@textos["arranque.credencial"]</dt>
+            <dd>@(hayCredencial ? textos["arranque.credencialSi"] : textos["arranque.credencialNo"])</dd>
         </dl>
     </div>
 
     <div class="tarjeta">
-        <h2>A quién se le pide</h2>
+        <h2>@textos["arranque.aQuienSeLePide"]</h2>
         <dl class="renglones">
-            <dt>Feed</dt>
+            <dt>@textos["arranque.feed"]</dt>
             <dd class="mono">@estado.DondeEstaElFeed@estado.Recurso/@estado.Id/events</dd>
         </dl>
-        <p class="nota">
-            Sale de <span class="mono">wwwroot/appsettings.json</span>, no de una constante compilada.
-        </p>
+        <p class="nota">@((MarkupString)textos["arranque.deDondeSale"])</p>
     </div>
 
-    <p class="nota">@estado.UltimoMensaje</p>
+    @if (estado.Apunte.HayQueDecirlo)
+    {
+        <p class="nota">@textos.Diga(estado.Apunte)</p>
+    }
 
-    <p class="nota">
-        El registro se baja a la carpeta después de cada comando. Entre que el actor confirma y la
-        carpeta recibe hay un instante en que un cierre abrupto pierde entradas: es lo más angosta
-        que se puede hacer esa ventana, y no es durabilidad transaccional.
-    </p>
+    @if (estado.ApunteDelFeed.HayQueDecirlo)
+    {
+        <p class="nota">@textos.Diga(estado.ApunteDelFeed)</p>
+    }
+
+    <p class="nota">@textos["arranque.ventanaDeEscritura"]</p>
     </details>
 }
 
@@ -218,7 +203,8 @@ else
 	private bool refrescando;
 
 	private string falla = "";
-	private string elNavegadorDijoQueNo = "";
+	private Apunte elPasoQueFallo = Apunte.Ninguno;
+	private Apunte elNavegadorDijoQueNo = Apunte.Ninguno;
 
 	private string permiso = "";
 	private int archivos;
@@ -230,6 +216,8 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
+		if (estado.Hospedada) { await AbrirAsync(); return; }
+
 		haySelector = await estado.HaySelectorDeCarpetasAsync();
 		hayNavegador = await estado.HayAlmacenamientoDelNavegadorAsync();
 		instalada = await estado.CorreComoAppInstaladaAsync();
@@ -249,52 +237,52 @@ else
 		if (recuperada.Ok) await AbrirAsync();
 	}
 
-	private Task ConectarCarpetaAsync() => Intentar("elegir una carpeta", async () =>
-		await AbrirODecir(await estado.ConectarCarpetaAsync(), "elegir esa carpeta"));
+	private Task ConectarCarpetaAsync() => Intentar("elegirCarpeta", async () =>
+		await AbrirODecir(await estado.ConectarCarpetaAsync(), "elegirCarpeta"));
 
-	private Task ReotorgarElPermiso() => Intentar("dar permiso a la carpeta", async () =>
-		await AbrirODecir(await estado.PedirPermisoAsync(), "obtener permiso de escritura sobre esa carpeta"));
+	private Task ReotorgarElPermiso() => Intentar("darPermiso", async () =>
+		await AbrirODecir(await estado.PedirPermisoAsync(), "darPermiso"));
 
-	private Task UsarElNavegadorAsync() => Intentar("guardar en este navegador", async () =>
-		await AbrirODecir(await estado.UsarElNavegadorAsync(), "usar el almacenamiento de este navegador"));
+	private Task UsarElNavegadorAsync() => Intentar("usarNavegador", async () =>
+		await AbrirODecir(await estado.UsarElNavegadorAsync(), "usarNavegador"));
 
-	private Task OlvidarCarpetaAsync() => Intentar("olvidar la carpeta guardada", async () =>
+	private Task OlvidarCarpetaAsync() => Intentar("olvidarCarpeta", async () =>
 	{
 		await estado.OlvidarLaCarpetaAsync();
-		elNavegadorDijoQueNo = "";
+		elNavegadorDijoQueNo = Apunte.Ninguno;
 	});
 
-	private Task AbrirAsync() => Intentar("abrir la app", async () =>
+	private Task AbrirAsync() => Intentar("abrirLaApp", async () =>
 	{
 		await estado.AbrirAsync();
 		await Releer();
 	});
 
-	private Task RefrescarAsync() => Intentar("traer lo que haya publicado la institución", async () =>
+	private Task RefrescarAsync() => Intentar("traerDeLaInstitucion", async () =>
 	{
 		refrescando = true;
 		try { await estado.RefrescarAsync(); }
 		finally { refrescando = false; await Releer(); }
 	});
 
+	/// <summary>
+	/// Abre, o dice que el navegador no dejo. Las dos negativas son frases enteras y distintas: una es
+	/// un permiso bloqueado, que la persona puede destrabar, y la otra es cualquier otro no.
+	/// </summary>
 	private async Task AbrirODecir(ResultadoDeCarpeta resultado, string queEstabaIntentando)
 	{
 		if (resultado.Ok)
 		{
-			elNavegadorDijoQueNo = "";
+			elNavegadorDijoQueNo = Apunte.Ninguno;
 			await estado.AbrirAsync();
 			await Releer();
 			return;
 		}
 
 		elNavegadorDijoQueNo = resultado.Permiso == "denied"
-			? $"El navegador se negó a {queEstabaIntentando}, sin preguntarte. O el permiso de edición "
-			  + "de archivos de este sitio está bloqueado — abrí el candado al lado de la dirección, "
-			  + "reiniciá los permisos de este sitio, recargá y volvé a elegir la carpeta — o este "
-			  + "navegador no da edición de archivos del todo, que es lo normal en un navegador "
-			  + "embebido. Si no hay candado que abrir, es lo segundo."
-			: $"No se pudo {queEstabaIntentando}. El navegador dijo: "
-			  + (resultado.Motivo.Length > 0 ? resultado.Motivo : resultado.Permiso);
+			? Apunte.De("arranque.navegadorDijoNo.denegado." + queEstabaIntentando)
+			: Apunte.De("arranque.navegadorDijoNo.otro." + queEstabaIntentando,
+				("motivo", resultado.Motivo.Length > 0 ? resultado.Motivo : resultado.Permiso));
 	}
 
 	/// <summary>La unica pasada de lectura de esta pantalla: todo lo que muestra sale de aca.</summary>
@@ -311,12 +299,17 @@ else
 	}
 
 	private string ElModoDicho() => estado.EnCarpetaPropia
-		? "una carpeta tuya"
-		: estado.EnElNavegador ? "el almacenamiento de este navegador" : "solo memoria";
+		? textos["arranque.modoCarpeta"]
+		: estado.EnElNavegador ? textos["arranque.modoNavegador"] : textos["arranque.modoMemoria"];
 
+	/// <summary>
+	/// Corre un paso y, si falla, deja DOS cosas: la frase que dice cual paso fallo, en el idioma de la
+	/// persona, y el detalle tecnico, que son nombres de tipos y no se traduce.
+	/// </summary>
 	private async Task Intentar(string paso, Func<Task> accion)
 	{
 		falla = "";
+		elPasoQueFallo = Apunte.Ninguno;
 
 		try
 		{
@@ -324,9 +317,11 @@ else
 		}
 		catch (Exception ex)
 		{
-			var detalle = new System.Text.StringBuilder($"Paso: {paso}\n{ex.GetType().FullName}: {ex.Message}");
+			elPasoQueFallo = Apunte.De("arranque.falla.paso." + paso);
+
+			var detalle = new System.Text.StringBuilder($"{ex.GetType().FullName}: {ex.Message}");
 			for (Exception adentro = ex.InnerException; adentro is not null; adentro = adentro.InnerException)
-				detalle.Append($"\n  causa: {adentro.GetType().FullName}: {adentro.Message}");
+				detalle.Append($"\n  {adentro.GetType().FullName}: {adentro.Message}");
 			falla = detalle.ToString();
 		}
 	}

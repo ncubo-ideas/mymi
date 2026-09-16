@@ -17,7 +17,7 @@
 
 @if (module is null)
 {
-    <div class="empty">No module called <code>@Name</code>.</div>
+    <div class="empty">@T("pantalla.no-existe", ("nombre", Name))</div>
 }
 else
 {
@@ -62,7 +62,7 @@ else
 
             <div style="margin-top:10px">
                 <button class="small" disabled="@ui.Busy" @onclick="() => Run(tool, ui)">
-                    @(ui.Busy ? "asking…" : "Run")
+                    @(ui.Busy ? T("pantalla.consultando") : T("pantalla.consultar"))
                 </button>
             </div>
 

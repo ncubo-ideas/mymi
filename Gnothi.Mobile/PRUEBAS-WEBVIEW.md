@@ -45,9 +45,9 @@ Sirve igual en un **emulador** y en un **teléfono físico de cualquier marca y 
 P6 y P9 vienen del 2026-09-03 sobre un **Xiaomi 14T Pro** físico; ver su nota.
 
 **Y el alta nueva, corrida el 2026-09-09.** En un **Samsung A54 (Android 16)**: P2b **por QR con la cámara
-real** ✅ —el código de Sotavento Motors en el monitor, la barra de descarga, la hoja con *del código que
+real** ✅ —el código de Sotaventos Motors en el monitor, la barra de descarga, la hoja con *del código que
 escaneaste*, instalado, `matches:true`—. En el emulador `Gnothi37k4` (Android 37, `-gpu host`): P2b por
-enlace pegado ✅ (Delfos, La Guaria, Sotavento), P2c por archivo con **varios a la vez y la lista** ✅
+enlace pegado ✅ (Delfos, La Guaria, Sotaventos), P2c por archivo con **varios a la vez y la lista** ✅
 (Faro elegida entre tres), P2d firma ✅, revocación ✅, y el rechazo por origen ✅. El guion completo, en
 orden, está en §2b. P1b se corrió en
 DealershipCar y vale para los cuatro: el mecanismo es del navegador, no del módulo.
@@ -255,7 +255,7 @@ adb shell am start -a android.intent.action.VIEW -d http://127.0.0.1:<puerto>/ap
 | `examenes` | 8096 | «Laboratorio Clínico Delfos» · *5 de tus 6 valores están en su rango* · **35 exámenes** · leído hasta el evento **234** |
 | `compras` | 8102 | «Supermercado La Guaria» · **87 compras** tuyas desde enero de 2025 · **₡3.222.336** |
 | `cargas` | 8112 | «Estaciones Faro» · **9 cargas** desde dic 2025 · 0 de 9 con kilometraje · leído hasta el evento **219** |
-| `dealership` | 8093 | «Sotavento Motors» · VIN 1HGCM82633A004352 · **3 due · 2 overdue · 2 missed** · read up to event **118** |
+| `dealership` | 8093 | «Sotaventos Motors» · VIN 1HGCM82633A004352 · **3 due · 2 overdue · 2 missed** · read up to event **118** |
 
 **Primero hay que elegir dónde guarda.** Las cuatro abren preguntándolo, y hay que tocar la
 opción del navegador:
@@ -386,7 +386,7 @@ dice **«3 de 3 encendidos»** (o 4 de 4) y muestra una tarjeta por institución
 
 **La tarjeta es de la institución, no de Gnothi** (desde el 2026-09-08): su ícono sobre su color,
 su nombre en grande —*Laboratorio Clínico Delfos*, *Supermercado La Guaria*, *Estaciones Faro*,
-*Sotavento Motors*— y debajo su eslogan, si declaró uno. Todo sale del bundle, del bloque `brand`
+*Sotaventos Motors*— y debajo su eslogan, si declaró uno. Todo sale del bundle, del bloque `brand`
 del `manifest.json` (formato 1.1: `shortName`, `logo`, `color`, `slogan`); si un manifiesto 1.0 no
 trae `brand`, `Marca.cs` toma ícono y color del `manifest.webmanifest` de su PWA. Nada de «(mock del
 POC)» en pantalla. **Mal:** una tarjeta con la caja índigo genérica y el título arriba ⇒ ese bundle no trae

@@ -33,6 +33,25 @@
     <AssemblyName>Gnothi.Host</AssemblyName>
   </PropertyGroup>
 
+  <!-- LO QUE EL HOST LE DICE A LA PERSONA, EN SUS DOS IDIOMAS. Va embebido y no suelto al lado
+       del binario porque las tres caras lo cargan distinto: el escritorio referencia este
+       proyecto, y los dos telefonos COMPILAN sus fuentes por glob. Un archivo en disco tendria
+       tres rutas; un recurso embebido tiene una linea de lectura.
+
+       EL LogicalName ES LO QUE HACE QUE ESA LINEA SEA UNA SOLA. Sin el, cada ensamblado calcula
+       el nombre del recurso desde SU RootNamespace - Gnothi.Host.textos.json aca,
+       Gnothi.Mobile.textos.json en Android - y Textos.cs necesitaria un caso por cara. Con el
+       nombre fijo, typeof(Textos).Assembly resuelve al ensamblado correcto en cada una y el
+       recurso se llama igual en las tres.
+
+       ESTA MISMA LINEA VA EN Gnothi.Mobile.csproj Y EN Gnothi.iOS.csproj, y olvidarla en una de
+       las dos no rompe el build: rompe la pantalla, en ejecucion. Textos.cs no tira excepcion si
+       el recurso falta - devuelve cada clave como su propio texto - asi que el sintoma es una
+       pantalla que dice 'instituciones.titulo'. Es feo a proposito. -->
+  <ItemGroup>
+    <EmbeddedResource Include="textos.json" LogicalName="gnothi.textos.json" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />

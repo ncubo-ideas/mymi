@@ -13,7 +13,7 @@ modos.
 | `examenes` | Laboratorio Clínico Delfos | `resumen`, `lista_de_examenes` |
 | `compras` | Supermercado La Guaria | `resumen`, `lista_de_compras` |
 | `cargas` | Estaciones Faro | `resumen`, `lista_de_vehiculos` |
-| `dealership` | Sotavento Motors (en inglés) | `resumen`, `hasta_donde_leyo` |
+| `dealership` | Sotaventos Motors (en inglés) | `resumen`, `hasta_donde_leyo` |
 
 ---
 

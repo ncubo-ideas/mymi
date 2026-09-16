@@ -2,7 +2,12 @@
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @using Gnothi.Host
 @using Gnothi.Assistant
 @using Gnothi.Desktop
 @using Gnothi.Desktop.Components
+
+@* T("clave") sin prefijo en todo el markup. El catalogo es estatico y compartido con
+   los dos telefonos: vive en Gnothi.Host/textos.json. *@
+@using static Gnothi.Host.Textos

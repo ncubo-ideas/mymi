@@ -256,7 +256,7 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(api.EstadoDeLaCuenta(), Does.Contain("\"sePuedeProyectar\":false"));
 				Assert.That(api.SePuedeProyectar(), Is.False,
 					"y el canal tipado dice lo mismo que el documento");
-				Assert.Throws<DomainException>(() => api.ReservaPropuestaPara(2025),
+				Assert.Throws<DomainException>(() => api.ReservaPropuestaPara(2025, "es"),
 					"El predicado dice que no y la lectura se niega: concuerdan.");
 			});
 
@@ -267,7 +267,7 @@ namespace Municipalidad.Dominio.Pruebas
 			{
 				Assert.That(api.EstadoDeLaCuenta(), Does.Contain("\"sePuedeProyectar\":true"));
 				Assert.That(api.SePuedeProyectar(), Is.True, "y el tipado tambien de este lado");
-				Assert.That(api.ReservaPropuestaPara(2025).Anio, Is.EqualTo(2025),
+				Assert.That(api.ReservaPropuestaPara(2025, "es").Anio, Is.EqualTo(2025),
 					"El predicado dice que si y la lectura contesta: concuerdan tambien de este lado.");
 			});
 		}

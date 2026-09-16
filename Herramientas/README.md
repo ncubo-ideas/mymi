@@ -58,12 +58,17 @@ dotnet Gnothi.Host/bin/Debug/net9.0/Gnothi.Host.dll <carpeta-de-modulos> < /dev/
 ```
 
 ```
-warning: malo: brand.shortName tiene 49 caracteres y el tope es 28
-warning: malo: brand.logo es '.svg' y solo se aceptan png, jpg y webp -- un svg ejecuta
-warning: malo: about.category 'farmacia' no esta en la lista que el Host conoce
+warning: malo: brand.shortName is 49 characters and the cap is 28
+warning: malo: brand.logo is '.svg' and only png, jpg and webp are accepted -- an svg executes
+warning: malo: about.category 'farmacia' is not in the list the Host knows, so it falls to the generic icon
 ```
 
 El ejemplo de este directorio no produce ninguno.
+
+> **Estos avisos van en inglés a propósito**, y no entran en el catálogo de textos: hablan de
+> `brand.shortName` y de `about.category`, así que son diagnóstico para quien **empaqueta** el
+> módulo, no copy para quien lo usa. Estaban en español dentro de una lista cuyo resto era inglés.
+> Ver [las reglas de localización](../Metodologia/Guias/reglas-de-localizacion.md).
 
 ## `sincronizar-manifiesto.mjs` — el manifiesto, proyectado desde el módulo
 
@@ -92,9 +97,15 @@ entrar mezclado, y `--check` lo hace visible antes de mergear.
 
 **Requisitos:** el DLL del módulo compilado (si su `.cs` es más nuevo, recompilar primero) y
 `node`. No lee el journal, solo enumera tools, así que corre con una carpeta de datos vacía.
+Dónde está el DLL lo lee de `Modulos/<x>/installation.json` —`shell.arguments[0]`, relativo a la
+carpeta del módulo si no es absoluto, la misma regla que aplica el Host—, así que no hay una segunda
+lista que mantener. Si ese `bin/Debug` está tomado por un proceso —los MCP de una sesión abierta— y
+compilaste a otra carpeta, `node Herramientas/sincronizar-manifiesto.mjs compras --dll=<ruta>` usa
+ese dll y escribe igual el manifiesto de `Modulos/compras`.
 
 **Idempotente:** correrlo dos veces seguidas no produce un segundo diff. Bueno para un hook de
 pre-commit o un paso de CI con `--check`.
 
-Deja a `Gnothi.Assistant.Tests/GuardianDeManifiestos` como la red: esto mantiene sincronizado,
-el guardián avisa si alguien igual editó a mano y se desvió.
+Deja al guardián de la suite —`Gnothi.Assistant.Tests/Conformance.cs`, que arranca cada módulo y
+cruza su manifiesto contra su `tools/list` real— como la red: esto mantiene sincronizado, el guardián
+avisa si alguien igual editó a mano y se desvió.

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Municipalidad.App
 {
@@ -33,6 +34,18 @@ namespace Municipalidad.App
 		public static readonly string[] Declaradas = { Resumen, ListaDeVencimientos };
 
 		/// <summary>
+		/// LO QUE ESTA CARA CONTESTA SIEMPRE, que es el idioma del registro. No sigue al dispositivo a
+		/// proposito: quien lee esto es el asistente, que ya sabe en que idioma le hablo la persona y
+		/// redacta en el suyo. Una frase traducida aca llegaria al modelo sin los nombres con que la
+		/// municipalidad lleva la cuenta, que es lo que el modelo necesita para volver a preguntar.
+		/// <para>
+		/// El valor lo dice <see cref="Frases.Frases.IdiomaDelRegistro"/>, que es su dueno; esto es el
+		/// nombre con que las cascaras lo piden, para que no tengan que nombrar la redaccion.
+		/// </para>
+		/// </summary>
+		public const string IdiomaDelRegistro = Frases.Frases.IdiomaDelRegistro;
+
+		/// <summary>
 		/// UNA LINEA DE RESUMEN: el bloque util mas chico, y el que una pantalla pone arriba. Cuenta
 		/// periodos, no plata: cuanto debe la persona hoy lo dice el portal de la municipalidad, que es la
 		/// autoridad sobre su deuda, y esta app existe para lo que el portal no contesta.
@@ -42,9 +55,10 @@ namespace Municipalidad.App
 			ArgumentNullException.ThrowIfNull(api);
 
 			RegistroDeVencimientos porVencer =
-				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso);
+				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso, IdiomaDelRegistro);
 
-			RegistroDeAtrasos vencidos = api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora);
+			RegistroDeAtrasos vencidos =
+				api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora, IdiomaDelRegistro);
 
 			return new
 			{
@@ -73,9 +87,10 @@ namespace Municipalidad.App
 			ArgumentNullException.ThrowIfNull(api);
 
 			RegistroDeVencimientos vencimientos =
-				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso);
+				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso, IdiomaDelRegistro);
 
-			RegistroDeAtrasos atrasos = api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora);
+			RegistroDeAtrasos atrasos =
+				api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora, IdiomaDelRegistro);
 
 			var porVencer = new List<object>();
 
@@ -131,7 +146,12 @@ namespace Municipalidad.App
 				+ "desde aquí.",
 		};
 
-		/// <summary>El dia de un instante, en el formato con que el dominio escribe un dia.</summary>
-		private static string ElDiaDe(DateTime instante) => instante.ToString("yyyy-MM-dd");
+		/// <summary>
+		/// El dia de un instante, en el formato con que el dominio escribe un dia. La cultura es
+		/// invariante y no la de la maquina: anio-mes-dia es una llave de calendario, y un calendario
+		/// que no fuera el gregoriano la escribiria con otro anio.
+		/// </summary>
+		private static string ElDiaDe(DateTime instante) =>
+			instante.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 	}
 }

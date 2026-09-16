@@ -385,7 +385,7 @@ namespace Concesionario.Dominio.Pruebas
 			ItDoesNotSee("a.cs", "string said = \"Te faltan \" + kilometres;");
 			ItDoesNotSee("Inicio.razor", "<div class=\"d-bar__fill d-bar__fill--ok\" id=\"cuenta-al-dia\"></div>");
 			ItDoesNotSee("Inicio.razor", "<span class=\"@(\"d-pill d-pill--\" + Tono)\">@Titular</span>");
-			ItDoesNotSee("Inicio.razor", "role=\"img\" aria-label=\"Sotavento Motors\" focusable=\"false\">");
+			ItDoesNotSee("Inicio.razor", "role=\"img\" aria-label=\"Sotaventos Motors\" focusable=\"false\">");
 			ItDoesNotSee("nginx.conf", "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;");
 			ItDoesNotSee("a.js", "/* aca habria un x - y y no cuenta */");
 			ItDoesNotSee("a.cs", "return $\"{Kind} hecho el {CompletedAt:yyyy-MM-dd}\";");

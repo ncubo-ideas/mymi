@@ -551,7 +551,7 @@ namespace Municipalidad.Dominio.Pruebas
 
 			foreach (string rubro in puerta.RubrosConHistoria())
 			{
-				RegistroDelHistorial historia = puerta.HistorialDe(rubro);
+				RegistroDelHistorial historia = puerta.HistorialDe(rubro, "es");
 
 				dicho.Append(rubro).Append(' ').Append(historia.Estado).Append('\n');
 

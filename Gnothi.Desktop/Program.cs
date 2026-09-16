@@ -1,4 +1,6 @@
+using System.Globalization;
 using Gnothi.Desktop.Components;
+using Gnothi.Host;
 using Microsoft.Extensions.DependencyInjection;
 using Photino.Blazor;
 
@@ -28,6 +30,14 @@ internal static class Program
 			: Directory.Exists(beside) ? beside
 			: Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Modulos");
 		modulesRoot = Path.GetFullPath(modulesRoot);
+
+		// EL IDIOMA DE LA PERSONA, RESUELTO UNA VEZ Y AQUI. Sale del APARATO: no hay selector
+		// adentro de Gnothi, y esa es la decision, no una etapa.
+		//
+		// Va antes que HostState.Reload() porque desde ese momento hay texto que se compone.
+		// Y va en UN solo lugar por cara: dos resolutores son dos fuentes de verdad, que es
+		// exactamente lo que el catalogo compartido existe para evitar.
+		Textos.Idioma = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		// THE HYBRID FORM ON THE DESKTOP. Before the catalog
 		// loads -ChooseShell runs in Module's constructor- the window registers the two shells the
@@ -94,7 +104,14 @@ internal static class Program
 		PhotinoBlazorApp app = builder.Build();
 
 		app.MainWindow
-			.SetTitle("Gnothi")
+			.SetTitle("Mymi")
+			// EL ICONO DE LA VENTANA, el mismo dibujo que el encabezado y que el telefono. Sin
+			// esto la barra de titulo y la de tareas muestran el icono por omision del runtime,
+			// que no es de nadie. El .ico lleva varios tamanos adentro y Windows elige.
+			// Por ruta absoluta: Photino lo busca desde el directorio de trabajo, y ese es el del
+			// proyecto con `dotnet run` pero cualquier otro cuando lo lanza un icono o un guion.
+			// Sin esto la ventana muere al arrancar con "WindowIconFile: mymi.ico cannot be found".
+			.SetIconFile(Path.Combine(AppContext.BaseDirectory, "mymi.ico"))
 			.SetUseOsDefaultLocation(true)
 			.SetSize(1000, 740)
 			.SetMinSize(720, 520)

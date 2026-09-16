@@ -677,19 +677,6 @@ namespace Municipalidad.Dominio
 		}
 
 		/// <summary>
-		/// La frase con que el dominio dice cada cosa que a esa fecha todavia no vence, una por fila y
-		/// en el mismo orden. TOTAL: cero filas donde no hay ninguna.
-		/// </summary>
-		internal string[] FrasesDeLosVencimientosAl(DateTime fecha, int diasDeAviso)
-		{
-			IReadOnlyList<VencimientoProximo> proximos = VencimientosAl(fecha);
-			string[] dicho = new string[proximos.Count];
-			for (int fila = 0; fila < proximos.Count; fila++)
-				dicho[fila] = proximos[fila].Dice(fecha, diasDeAviso);
-			return dicho;
-		}
-
-		/// <summary>
 		/// El rubro de cada cosa que a esa fecha ya vencio y nadie pago, una por fila y en el mismo
 		/// orden que la lista. TOTAL: cero filas donde no hay ninguna.
 		/// </summary>
@@ -776,19 +763,6 @@ namespace Municipalidad.Dominio
 		}
 
 		/// <summary>
-		/// La frase con que el dominio dice cada cosa que a esa fecha ya vencio, con su proyeccion a esa
-		/// tasa dicha COMO proyeccion, una por fila y en el mismo orden. TOTAL: cero filas donde no hay
-		/// ninguna.
-		/// </summary>
-		internal string[] FrasesDeLosAtrasosAl(DateTime fecha, decimal tasaAnual)
-		{
-			IReadOnlyList<Atraso> atrasos = AtrasosAl(fecha);
-			string[] dicho = new string[atrasos.Count];
-			for (int fila = 0; fila < atrasos.Count; fila++) dicho[fila] = atrasos[fila].Dice(fecha, tasaAnual);
-			return dicho;
-		}
-
-		/// <summary>
 		/// El rubro de cada periodo que la consulta de ese dia da por pagado y la app no vio pagar,
 		/// una por fila y en el mismo orden que la lista. TOTAL: cero filas donde no hay ninguna, y
 		/// tambien donde no hay consulta de ese dia.
@@ -815,33 +789,12 @@ namespace Municipalidad.Dominio
 		}
 
 		/// <summary>
-		/// La frase con que el dominio dice cada periodo que la consulta de ese dia da por pagado y la
-		/// app no vio pagar, una por fila y en el mismo orden. TOTAL: cero filas donde no hay ninguna.
-		/// </summary>
-		internal string[] FrasesDeLoPagadoSinComprobante(DateTime fechaDeConsulta)
-		{
-			IReadOnlyList<PeriodoSinComprobante> sinComprobante = PeriodosPagadosSinComprobante(fechaDeConsulta);
-			string[] dicho = new string[sinComprobante.Count];
-			for (int fila = 0; fila < sinComprobante.Count; fila++) dicho[fila] = sinComprobante[fila].Dice();
-			return dicho;
-		}
-
-		/// <summary>
 		/// Por que la serie de ese rubro trae lo que trae, por el nombre del estado. TOTAL, y separa
 		/// las DOS razones por las que la serie sale vacia: el rubro no existe, o no tiene historia.
 		/// </summary>
 		internal string EtiquetaDelEstadoDeLaSerieDe(string nombreDelRubro)
 		{
 			return EstadoDeLaSerie.De(nombreDelRubro, HistorialDe(nombreDelRubro)).Etiqueta;
-		}
-
-		/// <summary>
-		/// La frase con que el dominio dice por que la serie de ese rubro trae lo que trae. TOTAL, y es
-		/// la del REGISTRO entero: describe la respuesta y no una fila.
-		/// </summary>
-		internal string FraseDelEstadoDeLaSerieDe(string nombreDelRubro)
-		{
-			return EstadoDeLaSerie.De(nombreDelRubro, HistorialDe(nombreDelRubro)).Dice();
 		}
 
 		/// <summary>
@@ -855,18 +808,6 @@ namespace Municipalidad.Dominio
 				fechaDeConsulta,
 				TieneConsultaDel(fechaDeConsulta),
 				PeriodosPagadosSinComprobante(fechaDeConsulta)).Etiqueta;
-		}
-
-		/// <summary>
-		/// La frase con que el dominio dice por que el cotejo de ese dia trae lo que trae. TOTAL, y es
-		/// la del REGISTRO entero: describe la respuesta y no una fila.
-		/// </summary>
-		internal string FraseDelEstadoDeLoSinComprobante(DateTime fechaDeConsulta)
-		{
-			return EstadoDeLosPeriodosSinComprobante.De(
-				fechaDeConsulta,
-				TieneConsultaDel(fechaDeConsulta),
-				PeriodosPagadosSinComprobante(fechaDeConsulta)).Dice();
 		}
 
 		/// <summary>

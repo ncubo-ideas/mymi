@@ -176,6 +176,15 @@ acto de quien concede"*. **La carpeta concedida se pasa como último argumento**
 Y las rutas van **con barra normal**: Windows las acepta igual y así se evita el doble escape de JSON,
 *"que ya rompió este archivo una vez"*.
 
+Y `shell.arguments[0]` **puede ser relativa**: si no es absoluta, el Host la ancla a **la carpeta del
+propio `installation.json`**. Es el argumento que nombra código —el dll que se carga, la carpeta web
+del webview— y es el único que se ancla; el resto son flags del shell, y la carpeta concedida nunca
+viaja ahí. Las dos formas conviven: el **instalador** escribe la ruta absoluta —el dll queda dentro de
+la carpeta del módulo, así que absoluta y relativa nombran el mismo archivo—, y el **banco versionado
+en `Modulos/`** escribe `../../Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll`, que arranca
+en cualquier máquina que haya compilado el módulo. Antes traía el disco de quien armó el POC, y en
+cualquier otra máquina —y en CI— ningún módulo arrancaba y la suite de conformance no verificaba nada.
+
 **`enabled` y `disabledTools` son el interruptor**, y son del Host. El segundo es el que de verdad
 hace falta — *"el corte fino: la tendencia sí, la velocidad no"*. El nombre va **tal como aparece en
 el manifiesto, sin el prefijo del módulo**. Y tiene una propiedad de diseño que conviene conocer:
@@ -295,8 +304,6 @@ acá no sabés qué poner en `capabilities`, es que algo del modelado quedó sin
   > evitar. Si tu tool tiene un parámetro cerrado —un `Periodo`, por ejemplo—, sabé que lo estás
   > sosteniendo con texto hasta que ese pendiente se cierre.
 - **Las capacidades hoy sólo avisan.** Hacerlas cumplir necesita el sandbox de la etapa 2.
-- **`installation.json` trae rutas absolutas** de la máquina donde se armó el POC. Cómo se genera en
-  una instalación real no está resuelto.
 
 ---
 

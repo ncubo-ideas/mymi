@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using Municipalidad.App;
 using Puppeteer;
@@ -88,7 +89,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine();
 
 			Console.WriteLine("  la serie de basura -con cuantos periodos cubre cada linea, inferido-:");
-			RegistroDelHistorial basura = api.HistorialDe("recoleccion-de-basura");
+			RegistroDelHistorial basura = api.HistorialDe("recoleccion-de-basura", ConsultasDelModulo.IdiomaDelRegistro);
 			Console.WriteLine("    estado: " + basura.Estado);
 			Console.WriteLine("    dice:   " + basura.EstadoDicho);
 			for (int fila = 0; fila < basura.Periodo.Length; fila++)
@@ -109,7 +110,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine();
 
 			Console.WriteLine("  que se me vence, al 25 de setiembre, con 7 dias de aviso -la ausencia-:");
-			RegistroDeVencimientos vencimientos = api.VencimientosAl(new DateTime(2026, 9, 25), 7);
+			RegistroDeVencimientos vencimientos = api.VencimientosAl(new DateTime(2026, 9, 25), 7, ConsultasDelModulo.IdiomaDelRegistro);
 			for (int fila = 0; fila < vencimientos.Rubro.Length; fila++)
 			{
 				Console.WriteLine("    " + vencimientos.Rubro[fila]
@@ -123,7 +124,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine();
 
 			Console.WriteLine("  los atrasos al 5 de octubre, con el costo proyectado a 6,2 %:");
-			RegistroDeAtrasos atrasos = api.AtrasosAl(new DateTime(2026, 10, 5), 0.062m);
+			RegistroDeAtrasos atrasos = api.AtrasosAl(new DateTime(2026, 10, 5), 0.062m, ConsultasDelModulo.IdiomaDelRegistro);
 			for (int fila = 0; fila < atrasos.Rubro.Length; fila++)
 			{
 				Console.WriteLine("    " + atrasos.Rubro[fila]
@@ -141,7 +142,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine("  la reserva que la app propone para 2026:");
 			if (api.SePuedeProyectar())
 			{
-				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(2026);
+				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(2026, ConsultasDelModulo.IdiomaDelRegistro);
 				Console.WriteLine("    anio " + propuesta.Anio
 					+ "  proyeccion " + propuesta.Proyeccion
 					+ "  propuesto por mes " + propuesta.PropuestoPorMes);
@@ -158,7 +159,7 @@ namespace Municipalidad.Consola
 			if (api.SePuedeVerElFaltanteDeReserva())
 			{
 				RegistroDelFaltanteDeReserva faltante =
-					api.FaltanteDeReservaAl(new DateTime(2026, 9, 15), 0.10m);
+					api.FaltanteDeReservaAl(new DateTime(2026, 9, 15), 0.10m, ConsultasDelModulo.IdiomaDelRegistro);
 				Console.WriteLine("    propuesto " + faltante.Propuesto
 					+ "  declarado " + faltante.Declarado
 					+ "  faltante " + faltante.Faltante
@@ -177,7 +178,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine();
 
 			Console.WriteLine("  periodos pagados sin comprobante segun la consulta:");
-			RegistroDePeriodosSinComprobante sinComprobante = api.PeriodosPagadosSinComprobante(consulta);
+			RegistroDePeriodosSinComprobante sinComprobante = api.PeriodosPagadosSinComprobante(consulta, ConsultasDelModulo.IdiomaDelRegistro);
 			Console.WriteLine("    estado: " + sinComprobante.Estado);
 			Console.WriteLine("    dice:   " + sinComprobante.EstadoDicho);
 			for (int fila = 0; fila < sinComprobante.Rubro.Length; fila++)
@@ -190,7 +191,7 @@ namespace Municipalidad.Consola
 
 			Console.WriteLine("  y el mismo cotejo un dia sin consulta -1 de enero de 2026-:");
 			RegistroDePeriodosSinComprobante sinConsulta =
-				api.PeriodosPagadosSinComprobante(new DateTime(2026, 1, 1));
+				api.PeriodosPagadosSinComprobante(new DateTime(2026, 1, 1), ConsultasDelModulo.IdiomaDelRegistro);
 			Console.WriteLine("    estado: " + sinConsulta.Estado);
 			Console.WriteLine("    dice:   " + sinConsulta.EstadoDicho);
 			Console.WriteLine();
@@ -201,7 +202,7 @@ namespace Municipalidad.Consola
 			Console.WriteLine("    hay alguna consulta     : " + api.HayAlgunaConsulta());
 			Console.WriteLine("    la mas reciente         : "
 				+ (api.HayAlgunaConsulta()
-					? api.ConsultaMasReciente().ToString("yyyy-MM-dd")
+					? api.ConsultaMasReciente().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
 					: "ninguna todavia"));
 			Console.WriteLine("    las fincas              : " + string.Join(", ", api.NumerosDeLasFincas()));
 			foreach (string numeroDeFinca in api.NumerosDeLasFincas())
@@ -241,7 +242,7 @@ namespace Municipalidad.Consola
 				return;
 			}
 
-			RegistroDeLaVariacion variacion = api.VariacionDe(nombreDelRubro, 0.25m, 0.02m);
+			RegistroDeLaVariacion variacion = api.VariacionDe(nombreDelRubro, 0.25m, 0.02m, ConsultasDelModulo.IdiomaDelRegistro);
 			Console.WriteLine("    " + variacion.Rubro
 				+ "  de " + variacion.Desde + " a " + variacion.Hasta
 				+ "  antes " + variacion.Antes

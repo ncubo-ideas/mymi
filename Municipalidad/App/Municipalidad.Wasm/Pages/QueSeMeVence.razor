@@ -1,13 +1,11 @@
 @page "/que-se-me-vence"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Qué se me vence · Mi cuenta municipal</PageTitle>
+<PageTitle>@textos["queSeMeVence.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
-<h1>Qué se me vence</h1>
-<p class="bajada">
-    Ésta es la pregunta que tu portal no contesta. El portal te dice cuánto debés hoy; esto te dice
-    qué está por vencerse y qué ya se venció.
-</p>
+<h1>@textos["queSeMeVence.titulo"]</h1>
+<p class="bajada">@textos["queSeMeVence.bajada"]</p>
 
 @if (!estado.EstaArriba)
 {
@@ -15,18 +13,16 @@
 }
 else
 {
-    <NumeroSinFirmar Dicho="@($"Se avisa {Formato.Dias(vence.DiasDeAviso)} antes del vencimiento, y el costo de pagar tarde se proyecta a una tasa anual del {Formato.Porcentaje(vence.TasaConQueSeProyecto)}.")" />
+    <NumeroSinFirmar Dicho="@textos.Con("queSeMeVence.umbrales", ("dias", textos.Dias(vence.DiasDeAviso)), ("tasa", textos.Porcentaje(vence.TasaConQueSeProyecto)))" />
 
     <section class="bloque" id="por-vencer">
-        <h2>Por vencer</h2>
+        <h2>@textos["queSeMeVence.porVencer"]</h2>
 
         @if (vence.PorVencer.Count == 0)
         {
-            <p class="nota">
-                Al @vence.PreguntadoEl no hay nada dentro de la ventana de aviso. Eso no dice que no
-                tengás nada que pagar más adelante: dice que nada cae dentro de los próximos
-                @Formato.Dias(vence.DiasDeAviso).
-            </p>
+            <p class="nota">@textos.Con("queSeMeVence.nadaPorVencer",
+                ("dia", vence.PreguntadoEl),
+                ("dias", textos.Dias(vence.DiasDeAviso)))</p>
         }
 
         @foreach (var periodo in vence.PorVencer)
@@ -41,26 +37,23 @@ else
                 <Frase Dice="@periodo.Dice" />
 
                 <dl class="renglones">
-                    <dt>Vence</dt>
+                    <dt>@textos["queSeMeVence.vence"]</dt>
                     <dd>@periodo.Vence</dd>
-                    <dt>Faltan</dt>
-                    <dd>@Formato.Dias(periodo.Faltan)</dd>
-                    <dt>Monto</dt>
-                    <dd>@Formato.Monto(periodo.Monto)</dd>
+                    <dt>@textos["queSeMeVence.faltan"]</dt>
+                    <dd>@textos.Dias(periodo.Faltan)</dd>
+                    <dt>@textos["queSeMeVence.monto"]</dt>
+                    <dd>@textos.Monto(periodo.Monto)</dd>
                 </dl>
             </article>
         }
     </section>
 
     <section class="bloque" id="vencidos">
-        <h2>Ya vencidos</h2>
+        <h2>@textos["queSeMeVence.yaVencidos"]</h2>
 
         @if (vence.Vencidos.Count == 0)
         {
-            <p class="nota">
-                No hay nada vencido sin pagar en lo que esta app ha visto. Eso no es una constancia de
-                estar al día con la municipalidad: tu portal es la autoridad sobre eso.
-            </p>
+            <p class="nota">@textos["queSeMeVence.nadaVencido"]</p>
         }
 
         @foreach (var periodo in vence.Vencidos)
@@ -75,28 +68,24 @@ else
                 <Frase Dice="@periodo.Dice" />
 
                 <dl class="renglones">
-                    <dt>Venció</dt>
+                    <dt>@textos["queSeMeVence.vencio"]</dt>
                     <dd>@periodo.Vencio</dd>
-                    <dt>De atraso</dt>
-                    <dd>@Formato.Dias(periodo.Dias)</dd>
-                    <dt>Monto</dt>
-                    <dd>@Formato.Monto(periodo.Monto)</dd>
-                    <dt>Proyección de mora</dt>
-                    <dd>@Formato.Monto(periodo.CostoProyectado)</dd>
+                    <dt>@textos["queSeMeVence.deAtraso"]</dt>
+                    <dd>@textos.Dias(periodo.Dias)</dd>
+                    <dt>@textos["queSeMeVence.monto"]</dt>
+                    <dd>@textos.Monto(periodo.Monto)</dd>
+                    <dt>@textos["queSeMeVence.proyeccionDeMora"]</dt>
+                    <dd>@textos.Monto(periodo.CostoProyectado)</dd>
                 </dl>
             </article>
         }
     </section>
 
-    <Aviso Tono="quieta" Id="las-dos-no-se-suman" Titulo="Las dos listas no se suman">
-        <p>
-            Un período por vencer y uno vencido son situaciones distintas, y un total que los mezcle
-            no es un número que nadie haya calculado. Si querés saber cuánto debés en total, eso lo
-            dice tu portal.
-        </p>
+    <Aviso Tono="quieta" Id="las-dos-no-se-suman" Titulo="@textos["queSeMeVence.noSeSuman"]">
+        <p>@textos["queSeMeVence.noSeSumanCuerpo"]</p>
     </Aviso>
 
-    <p class="nota">Contestado al @vence.PreguntadoEl.</p>
+    <p class="nota">@textos.Con("comun.contestadoAl", ("dia", vence.PreguntadoEl))</p>
 }
 
 @code {

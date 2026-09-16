@@ -43,7 +43,8 @@ namespace Municipalidad.App.Vistas
 		public bool ElAnioPedidoNoTieneComprobantes { get; private init; }
 
 		/// <summary>La serie de cada rubro y el total del anio, leidos de una sola pasada.</summary>
-		public static LoQuePagueEnUnAnio LeerPor(MunicipalidadAPI api, int elAnio, bool loEligioLaPersona)
+		public static LoQuePagueEnUnAnio LeerPor(MunicipalidadAPI api, int elAnio, bool loEligioLaPersona,
+			Textos textos)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
@@ -54,7 +55,7 @@ namespace Municipalidad.App.Vistas
 
 			foreach (string rubro in api.LosRubrosQueHay())
 			{
-				RegistroDelHistorial historial = api.HistorialDe(rubro);
+				RegistroDelHistorial historial = api.HistorialDe(rubro, textos.Idioma);
 
 				var lineas = new List<UnaLineaDeComprobante>();
 

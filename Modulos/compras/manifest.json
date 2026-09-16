@@ -4,7 +4,9 @@
   "module": "compras",
   "title": "La Guaria y vos",
   "institution": "Supermercado La Guaria",
-  "about": { "locale": "es-CR" },
+  "about": {
+    "locale": "es-CR"
+  },
   "substrate": {
     "range": ">=3.0.0 <4.0.0"
   },
@@ -203,6 +205,59 @@
       "description": "Las garantias cuya VENTANA PARA RECLAMAR se esta cerrando, de la mas urgente a la menos, con cuantos dias quedan y que conviene hacer. No es la lista de garantias vigentes que la app muestra: son solo las que ya piden algo, y eso sale del plazo de cada una contra la fecha de hoy. Usala cuando pregunte si se le vence alguna garantia, si tiene algo por reclamar, o antes de que tire una factura. Una lista vacia significa que ninguna esta cerca de vencer.",
       "readOnly": true,
       "input": []
+    },
+    {
+      "name": "promociones_vigentes",
+      "title": "",
+      "description": "LAS PROMOCIONES DEL SUPER vigentes hoy, la que vence antes primero: el gancho ('2 x 1'), el detalle, hasta cuando vale y cuantos dias quedan (cero = ultimo dia). IMPORTANTE sobre su origen: llegaron como EVENTOS al journal de la persona, igual que sus compras — son contenido DE LA INSTITUCION, publicado a todos por igual, NO elegido con los datos de ella, y el super no se entera de cuales vio. Usala cuando pregunte '¿hay ofertas?', '¿que promociones tiene el super?' o al armarle la lista de compras, para avisarle si algo que le falta esta en promocion. Una lista vacia significa que no hay ninguna vigente, y es una respuesta.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "como_me_cambiaron_los_precios",
+      "title": "",
+      "description": "COMO SE MOVIO EL PRECIO de cada producto que la persona SI lleva -sus habituales-, comparando SIEMPRE por unidad de medida (el litro, el kilo, la unidad): si paso de la leche de 1 L a la de 2 L, el precio de linea sube y el del litro puede haber bajado, y esta lectura no se deja engañar por eso. Cada producto trae antes (el primer precio que pago), ahora (el ultimo), la unidad, el cambio en proporcion y si subio. Es SU propia inflacion -la de lo que ella compra, con los precios que ella pago-, no la del pais ni la lista del super. El que mas se movio viene primero, y las BAJADAS tambien vienen: subio en false es una buena noticia, no un error. Usala para '¿que me subio de precio?', '¿el helado esta mas caro?' o '¿que me conviene comprar ahora?'. Una lista vacia significa que ningun habitual tuvo un cambio real (mas del 3%: menos que eso es redondeo de gondola).",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "como_me_cambio_el_precio",
+      "title": "",
+      "description": "LA SERIE DE PRECIOS de UN producto: cada precio que la persona pago, con su FECHA, su presentacion y el numero de compra. Es la que contesta 'el mismo helado te costaba 3.680 en enero de 2025 y hoy 4.214' — el dato que ninguna otra fuente le da: el banco le dice cuanto gasto, nadie le dice que el MISMO producto le subio. Los precios van por UNIDAD DE MEDIDA (unidad, litro, kilo); precioDeLinea es lo que ese dia costo el empaque. Acepta sku o texto ('helado'); si hay varios que coinciden gana el comprado mas recientemente. La direccion se lee del SIGNO de cambio, y hayCambioReal dice si el movimiento supera el 3% (menos es redondeo de gondola). Con hay en false el producto no esta en el historial; con haySerie en false hay UNA sola compra y no hay cambio que leer — las dos son respuestas. Usala cuando pregunten por el precio de UN producto en el tiempo; para el panorama de todos los habituales esta como_me_cambiaron_los_precios.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "producto",
+          "type": "string",
+          "description": "El producto, por sku o por texto: 'helado', 'LECHE-1L', 'detergente'."
+        }
+      ]
+    },
+    {
+      "name": "donde_compro",
+      "title": "",
+      "description": "EN QUE SUCURSALES compra la persona, y DESDE CUANDO se mueve: cada sucursal con sus compras, la primera y la ultima vez; la mas frecuentada viene primero y esa es 'la de siempre'. seMueveDesde trae el mes (aaaa-mm) de la primera compra en una sucursal distinta — el dato que corrobora un cambio de vida desde una fuente que nadie esperaria: alguien que empezo a moverse por trabajo aparece comprando en tiendas nuevas ese mismo mes. comprasSinSucursal cuenta los tiquetes que NO dicen donde fueron (el campo es nuevo y los viejos callan): decilo si es grande, porque el recorrido se lee solo de los que si lo dicen. Con hayDatos en false ningun tiquete trae el dato todavia, y eso es la respuesta, no un error.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "mi_canasta_frente_a_antes",
+      "title": "",
+      "description": "CUANTO CUESTA HOY lo mismo que la persona suele llevar, frente a hace unos meses: una pieza de cada habitual, a los precios de hoy contra los de entonces, SUMADA en colones. cambio es la cifra con signo (positivo = mas caro hoy) y productos trae el detalle -antes, ahora y cambio por producto, en colones por SU presentacion mas reciente-, el que mas se movio primero. El 'entonces' de cada producto es el ultimo precio que ELLA pago en o antes del corte; un habitual sin precio tan viejo queda AFUERA de la suma, no en cero. Usala para '¿cuanto mas caro me sale el super?', '¿me esta rindiendo menos la plata?' o para ponerle numero a una sospecha de inflacion propia. Si hayConQueComparar viene en false, ningun habitual tiene un precio tan viejo todavia, y eso es la respuesta.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "meses",
+          "type": "integer",
+          "description": "OPCIONAL: contra hace cuantos meses comparar. Omitilo para usar la ventana de la app (3 meses); pasalo solo si la persona nombro otro plazo."
+        }
+      ]
     }
-  ]
+  ],
+  "brand": {
+    "shortName": "La Guaria",
+    "color": "#2f6b3f",
+    "logo": "brand/logo.png",
+    "slogan": "Tu canasta, más cerca de vos"
+  }
 }

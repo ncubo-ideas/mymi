@@ -54,55 +54,32 @@ namespace Municipalidad.Dominio
 		}
 
 		/// <summary>
-		/// La frase que una persona lee sobre este faltante. NOMBRA LAS DOS MITADES Y DE QUIEN ES CADA
-		/// UNA -- lo propuesto lo calcula la app, lo adoptado lo puso la persona-, porque un numero
-		/// pelado no dice de quien es y las dos mitades juntas son el unico contraste que hay aca.
-		/// </summary>
-		internal string Dice(decimal umbral)
-		{
-			return "La app propone apartar " + Dichos.Monto(PropuestoPorMes) + " por mes y vos adoptaste "
-				+ Dichos.Monto(DeclaradoPorMes) + ". " + ElFaltante + " " + ElAviso(umbral) + " "
-				+ LoQueVenceEsteMes(umbral);
-		}
-
-		/// <summary>Que falta, si falta, contra lo que la app propone.</summary>
-		private string ElFaltante
-		{
-			get
-			{
-				return Faltante == 0m
-					? "Lo que apartás cubre lo que la app propone, así que no te falta nada."
-					: "Te faltan " + Dichos.Monto(Faltante) + " por mes, un "
-						+ Dichos.Porcentaje(Proporcion) + " de lo propuesto.";
-			}
-		}
-
-		/// <summary>Si eso pasa del umbral con que se pregunto, que es lo que decide si se avisa.</summary>
-		private string ElAviso(decimal umbral)
-		{
-			return Avisa(umbral)
-				? "Pasa del " + Dichos.Porcentaje(umbral) + " con que se preguntó, así que se avisa."
-				: "No pasa del " + Dichos.Porcentaje(umbral) + " con que se preguntó, así que no se avisa.";
-		}
-
-		/// <summary>
 		/// Lo que vence en el mes, que es UNA de las dos condiciones de lo urgente y no las dos. La
 		/// clausula la decide la Urgencia que este mismo portador reporta y nunca el predicado suelto,
 		/// para que la frase no pueda contradecir la urgencia de su propia respuesta.
 		/// </summary>
-		private string LoQueVenceEsteMes(decimal umbral)
+	/// <summary>
+		/// SI FALTA ALGO O NO, como nombre de una clausula. El monto y la proporcion van aparte.
+		/// </summary>
+		internal string ClaveDeLoQueFalta { get { return Faltante == 0m ? "cubre" : "falta"; } }
+
+		/// <summary>
+		/// SI ESO PASA DEL UMBRAL CON QUE SE PREGUNTO, como nombre de una clausula.
+		/// </summary>
+		internal string ClaveDelAviso(decimal umbral)
 		{
-			if (Urgencia(umbral).EsUrgente())
-				return "Y este mes vencen " + Dichos.Monto(VenceEsteMes) + ", más de lo que apartás por "
-					+ "mes: eso es lo que lo vuelve urgente.";
+			return Avisa(umbral) ? "avisa" : "no-avisa";
+		}
 
-			if (EsUrgente)
-				return "Este mes vencen " + Dichos.Monto(VenceEsteMes) + ", más de lo que apartás por "
-					+ "mes. Por sí solo eso no lo vuelve urgente: para eso haría falta además que lo "
-					+ "adoptado quedara por debajo del umbral.";
-
-			return "Este mes vencen " + Dichos.Monto(VenceEsteMes) + ", que lo que apartás alcanza a "
-				+ "cubrir.";
+		/// <summary>
+		/// QUE PAPEL JUEGA LO QUE VENCE ESTE MES. Lo decide la Urgencia que este mismo portador reporta
+		/// y nunca el predicado suelto, para que la clausula no pueda contradecir la urgencia de su
+		/// propia respuesta.
+		/// </summary>
+		internal string ClaveDeLoQueVence(decimal umbral)
+		{
+			if (Urgencia(umbral).EsUrgente()) return "urgente";
+			return EsUrgente ? "solo-vence" : "alcanza";
 		}
 	}
 }

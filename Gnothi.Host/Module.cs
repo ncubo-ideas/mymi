@@ -342,7 +342,7 @@ public sealed class Module : IAsyncDisposable
 		var info = new FileInfo(full);
 		if (info.Length == 0 || info.Length > Brand.MaxFontBytes)
 		{
-			problem = $"pesa {info.Length / 1024} KB y el tope es {Brand.MaxFontBytes / 1024} KB";
+			problem = $"weighs {info.Length / 1024} KB and the cap is {Brand.MaxFontBytes / 1024} KB";
 			return "";
 		}
 
@@ -350,7 +350,7 @@ public sealed class Module : IAsyncDisposable
 		string? mime = SniffFont(bytes);
 		if (mime is null)
 		{
-			problem = "no es un woff2, woff, ttf ni otf legible -- se rechaza por lo que dicen sus bytes";
+			problem = "is not a readable woff2, woff, ttf or otf -- refused for what its bytes say";
 			return "";
 		}
 		return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
@@ -377,17 +377,17 @@ public sealed class Module : IAsyncDisposable
 		problem = "";
 		if (Uri.TryCreate(src, UriKind.Absolute, out Uri? u) && !u.IsFile)
 		{
-			problem = $"apunta a la red ('{src}') y por aca no sale nada a la red";
+			problem = $"points at the network ('{src}') and nothing goes out to the network here";
 			return "";
 		}
 		string full = Path.GetFullPath(Path.Combine(baseDir, src.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
 		string root = Path.GetFullPath(baseDir) + Path.DirectorySeparatorChar;
 		if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
 		{
-			problem = $"apunta fuera de la carpeta del modulo: '{src}'";
+			problem = $"points outside the module's folder: '{src}'";
 			return "";
 		}
-		if (!File.Exists(full)) { problem = $"declara '{src}' y ese archivo no esta en el bundle"; return ""; }
+		if (!File.Exists(full)) { problem = $"declares '{src}' and that file is not in the bundle"; return ""; }
 		return full;
 	}
 
@@ -398,7 +398,7 @@ public sealed class Module : IAsyncDisposable
 		// Un logo remoto no se baja: por aca no sale nada a la red.
 		if (Uri.TryCreate(src, UriKind.Absolute, out Uri? u) && !u.IsFile)
 		{
-			problem = $"apunta a la red ('{src}') y por aca no sale nada a la red";
+			problem = $"points at the network ('{src}') and nothing goes out to the network here";
 			return "";
 		}
 
@@ -411,16 +411,16 @@ public sealed class Module : IAsyncDisposable
 		string root = Path.GetFullPath(baseDir) + Path.DirectorySeparatorChar;
 		if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
 		{
-			problem = $"apunta fuera de la carpeta del modulo: '{src}'";
+			problem = $"points outside the module's folder: '{src}'";
 			return "";
 		}
 
-		if (!File.Exists(full)) { problem = $"declara '{src}' y ese archivo no esta en el bundle"; return ""; }
+		if (!File.Exists(full)) { problem = $"declares '{src}' and that file is not in the bundle"; return ""; }
 
 		var info = new FileInfo(full);
 		if (info.Length == 0 || info.Length > maxBytes)
 		{
-			problem = $"pesa {info.Length / 1024} KB y el tope es {maxBytes / 1024} KB";
+			problem = $"weighs {info.Length / 1024} KB and the cap is {maxBytes / 1024} KB";
 			return "";
 		}
 
@@ -431,7 +431,7 @@ public sealed class Module : IAsyncDisposable
 		string? mime = SniffImage(bytes, out int width, out int height);
 		if (mime is null)
 		{
-			problem = "no es un png, jpeg, webp ni svg legible -- se rechaza por lo que dicen sus bytes";
+			problem = "is not a readable png, jpeg, webp or svg -- refused for what its bytes say";
 			return "";
 		}
 
@@ -442,7 +442,7 @@ public sealed class Module : IAsyncDisposable
 		// tope no aplica y SniffImage devuelve 0x0 a proposito.
 		if (width > maxPixels || height > maxPixels)
 		{
-			problem = $"mide {width}x{height} y el tope es {maxPixels} de lado";
+			problem = $"is {width}x{height} and the cap is {maxPixels} a side";
 			return "";
 		}
 
