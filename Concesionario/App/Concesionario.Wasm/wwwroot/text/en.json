@@ -22,6 +22,7 @@
     "errorBody": "This is a fault in the app, not something you did. The detail names the step that failed.",
     "hideDetail": "hide detail",
     "showDetail": "detail",
+    "detailIsTheAppsOwnReport": "What follows is the app's own report of what failed, not an answer about your car. It is written in the language the dealership keeps your record in, because it is for whoever maintains the app.",
     "destinationTitle": "The browser said no.",
     "folderIn": "the folder «{folder}»",
     "thisBrowser": "this browser"

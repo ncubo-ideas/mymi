@@ -22,6 +22,7 @@
     "errorBody": "Esto es una falla de la app, no algo que hayas hecho vos. El detalle nombra el paso que falló.",
     "hideDetail": "ocultar detalle",
     "showDetail": "detalle",
+    "detailIsTheAppsOwnReport": "Lo que sigue es el reporte que la app hace de lo que falló, no una respuesta sobre tu carro. Está escrito en el idioma en que el concesionario lleva tu registro, porque es para quien mantiene la app.",
     "destinationTitle": "El navegador dijo que no.",
     "folderIn": "la carpeta «{folder}»",
     "thisBrowser": "este navegador"
