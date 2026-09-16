@@ -32,8 +32,12 @@
         // en las dos plataformas, igual que el de los modulos hospedados.
         window.sala = {
             pedido: function (id, op, a, b) {
+                var c = arguments[4] || '{}';
                 var t = op === 'cargar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Cargar', a)
-                    : op === 'consultar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Consultar', a, b, arguments[4] || '{}')
+                    : op === 'consultar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Consultar', a, b, c)
+                    : op === 'vista' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Vista', a, b, c)
+                    : op === 'entregar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Entregar', a, b)
+                    : op === 'cursor' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Cursor', a)
                     : op === 'repertorio' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Repertorio', a)
                     : op === 'desalojar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Desalojar', a)
                     : Promise.resolve(JSON.stringify({ ok: false, motivo: 'verbo desconocido: ' + op }));

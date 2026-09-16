@@ -98,9 +98,76 @@ internal sealed class SalaShell : IShell
 		finally { UnaPorVez.Release(); }
 	}
 
+	// LO QUE PIDE LA CARA DE LA INSTITUCION, y es otro conjunto que el del asistente.
+	//
+	// SIN ESTO LA PANTALLA NO ABRE. El valor por omision de IShell.View tira
+	// NotSupportedException -- "only the hybrid form has a face that asks" -- y la cara del
+	// modulo se queda en esa excepcion. La sala SI tiene con que contestarle: la superficie que
+	// corre adentro trae sus [View] igual que sus [Query], y el sustrato ya las descubre.
+	//
+	// Siguen siendo dos caminos y no un parametro, igual que en el contrato: con uno solo, una
+	// consulta de pantalla podria entrar por la puerta del asistente y al reves.
+	public async Task<object> View(string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
+	{
+		await UnaPorVez.WaitAsync(ct);
+		try
+		{
+			await Asegurar(ct);
+
+			string args = JsonSerializer.Serialize(arguments ?? new Dictionary<string, object?>());
+			return Contenido(await Anfitrion().Pedir("vista", this.name, name, args, ct));
+		}
+		finally { UnaPorVez.Release(); }
+	}
+
+	// LO QUE EL CARTERO DEJA. Gnothi hizo la red con SU credencial y le entrega al modulo un
+	// sobre ya leido; en la forma hibrida la cara no tiene motor, asi que la superficie es la
+	// unica que puede asentarlo. En la sala pasa lo mismo, un piso mas adentro.
+	public async Task<string> Deliver(string envelopeJson, CancellationToken ct)
+	{
+		await UnaPorVez.WaitAsync(ct);
+		try
+		{
+			await Asegurar(ct);
+
+			object? r = Contenido(await Anfitrion().Pedir("entregar", name, envelopeJson, "", ct));
+			return r as string ?? JsonSerializer.Serialize(r);
+		}
+		finally { UnaPorVez.Release(); }
+	}
+
+	// HASTA DONDE YA LEYO, para que el cartero pida de ahi en adelante y no se baje el historial
+	// entero en cada refresco.
+	public async Task<long> Cursor(CancellationToken ct)
+	{
+		await UnaPorVez.WaitAsync(ct);
+		try
+		{
+			await Asegurar(ct);
+
+			object? r = Contenido(await Anfitrion().Pedir("cursor", name, "", "", ct));
+			return r is JsonElement j && j.TryGetInt64(out long v) ? v : 0L;
+		}
+		catch (Exception) { return 0L; }
+		finally { UnaPorVez.Release(); }
+	}
+
 	// EL DESALOJO ES DEL LADO DE ADENTRO. Soltar esta cascara no tiene por que tirar el
 	// documento: la sala sigue viva para el proximo modulo, que es toda la ganancia.
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+	// La respuesta de la sala es siempre {ok, contenido} o {ok:false, motivo}. Un solo lugar que
+	// lo abra, para que los cuatro caminos fallen igual.
+	private static object? Contenido(string crudo)
+	{
+		using JsonDocument doc = JsonDocument.Parse(crudo);
+		if (!doc.RootElement.GetProperty("ok").GetBoolean())
+			throw new InvalidOperationException(doc.RootElement.GetProperty("motivo").GetString());
+
+		return doc.RootElement.TryGetProperty("contenido", out JsonElement c)
+			? JsonSerializer.Deserialize<object>(c.GetRawText())
+			: null;
+	}
 
 	private ISalaHost Anfitrion() => Host
 		?? throw new InvalidOperationException(

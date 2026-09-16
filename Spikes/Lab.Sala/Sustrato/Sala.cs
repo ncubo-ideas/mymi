@@ -106,7 +106,10 @@ public static class Sala
 	// CONSULTAR: invoca una [Query] y devuelve sus hechos aplanados, que es lo que el Host ya
 	// hace hoy en InProcessShell.Project antes de que nadie serialice.
 	[JSInvokable]
-	public static async Task<string> Consultar(string modulo, string tool, string argumentosJson)
+	public static Task<string> Consultar(string modulo, string tool, string argumentosJson) =>
+		Invocar(modulo, tool, argumentosJson, soloVistas: false);
+
+	private static async Task<string> Invocar(string modulo, string tool, string argumentosJson, bool soloVistas)
 	{
 		await UnaPorVez.WaitAsync();
 		try
@@ -114,8 +117,15 @@ public static class Sala
 			if (!Cargados.TryGetValue(modulo, out Modulo? m))
 				return Json(new { ok = false, motivo = $"el modulo '{modulo}' no esta cargado" });
 
-			if (!m.Consultas.TryGetValue(tool, out MethodInfo? metodo)
-				&& !m.Vistas.TryGetValue(tool, out metodo))
+			// LAS DOS PUERTAS NO SE MEZCLAN. Una vista se busca solo entre las vistas; una
+			// consulta puede caer en cualquiera de las dos porque el asistente pregunta por lo
+			// declarado y eso ya esta filtrado antes de llegar aca.
+			MethodInfo? metodo;
+			bool hay = soloVistas
+				? m.Vistas.TryGetValue(tool, out metodo)
+				: m.Consultas.TryGetValue(tool, out metodo) || m.Vistas.TryGetValue(tool, out metodo);
+
+			if (!hay || metodo is null)
 				return Json(new { ok = false, motivo = $"el modulo '{modulo}' no expone '{tool}'" });
 
 			Dictionary<string, JsonElement> argumentos = string.IsNullOrWhiteSpace(argumentosJson)
@@ -133,6 +143,52 @@ public static class Sala
 		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
 		finally { UnaPorVez.Release(); }
 	}
+
+	// LO QUE PIDE LA PANTALLA, que es otro conjunto que el del asistente: series, puntos, lineas
+	// de referencia. Ni se declara en el manifiesto ni le sirve al modelo. Son dos caminos y no
+	// un parametro, igual que en el contrato.
+	[JSInvokable]
+	public static Task<string> Vista(string modulo, string vista, string argumentosJson) =>
+		Invocar(modulo, vista, argumentosJson, soloVistas: true);
+
+	// EL SOBRE QUE DEJA EL CARTERO. Gnothi hizo la red; el modulo decide que asienta.
+	[JSInvokable]
+	public static async Task<string> Entregar(string modulo, string sobreJson)
+	{
+		await UnaPorVez.WaitAsync();
+		try
+		{
+			if (!Cargados.TryGetValue(modulo, out Modulo? m)) return Json(new { ok = false, motivo = $"'{modulo}' no esta cargado" });
+			MethodInfo? metodo = PorMarcadorSuelto(m.Superficie, "DeliverAttribute");
+			if (metodo is null) return Json(new { ok = true, contenido = "" });
+
+			object? r = metodo.Invoke(m.Instancia, [sobreJson]);
+			return Json(new { ok = true, contenido = r as string ?? "" });
+		}
+		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
+		finally { UnaPorVez.Release(); }
+	}
+
+	// HASTA DONDE YA LEYO. Cero por omision, y cero no es un error: quiere decir «traeme todo».
+	[JSInvokable]
+	public static async Task<string> Cursor(string modulo)
+	{
+		await UnaPorVez.WaitAsync();
+		try
+		{
+			if (!Cargados.TryGetValue(modulo, out Modulo? m)) return Json(new { ok = true, contenido = 0L });
+			MethodInfo? metodo = PorMarcadorSuelto(m.Superficie, "CursorAttribute");
+			if (metodo is null) return Json(new { ok = true, contenido = 0L });
+
+			return Json(new { ok = true, contenido = Convert.ToInt64(metodo.Invoke(m.Instancia, null) ?? 0L) });
+		}
+		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
+		finally { UnaPorVez.Release(); }
+	}
+
+	private static MethodInfo? PorMarcadorSuelto(Type superficie, string marcador) =>
+		superficie.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+			.FirstOrDefault(m => m.GetCustomAttributes(false).Any(a => a.GetType().Name == marcador));
 
 	// LO QUE EL MODULO EXPONE DE VERDAD, para el contraste declarado-contra-real que el Host ya
 	// hace con las otras cascaras.
