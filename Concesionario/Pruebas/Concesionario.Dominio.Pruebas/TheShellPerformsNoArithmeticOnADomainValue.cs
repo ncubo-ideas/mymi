@@ -156,6 +156,41 @@ namespace Concesionario.Dominio.Pruebas
 			},
 			new AllowedArithmetic
 			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "ReadingsBetween",
+				Snippet = "for (int row = 0; row < says.Length; row++)",
+				Reason = "El mismo contador para las filas de la serie: la frase de cada lectura se "
+					+ "compone de las cuatro columnas paralelas que el dominio ya conto, y ni el "
+					+ "valor ni el instante se tocan.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheRateOfUse",
+				Snippet = "for (int reading = 0; reading < readingOf.Length; reading++)",
+				Reason = "Contador de un recorrido por las lecturas que cada periodo nombra. Llegan "
+					+ "aplanadas con el indice de su periodo y esto solo las reparte en la celda que "
+					+ "les toca: ninguna distancia se resta y ningun tramo se divide.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheRateOfUse",
+				Snippet = "for (int period = 0; period < howManyPeriods; period++)",
+				Reason = "El contador de los periodos, que son uno o dos y los conto el dominio. "
+					+ "Pone la situacion de cada uno en su marco y no compara los dos ritmos: el "
+					+ "cambio llega ya dicho con su propia situacion.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheEmptyCellsOf",
+				Snippet = "for (int period = 0; period < howManyPeriods; period++) cells[period] = \"\";",
+				Reason = "El mismo contador para dejar sin palabras la celda que la situacion de un "
+					+ "periodo no usa. No hay ninguna cifra en este recorrido.",
+			},
+			new AllowedArithmetic
+			{
 				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
 				Member = "EachCurrencysShares",
 				Snippet = "for (int each = 0; each < howManyCurrencies; each++) "

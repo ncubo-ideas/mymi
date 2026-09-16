@@ -387,7 +387,8 @@ namespace Concesionario.Consola
 
 		private static void TheRateOfUseOverTheStorysSpan(DealershipCarAPI api)
 		{
-			OdometerSeriesRecord record = api.ReadingsBetween(Story.Delivery, TheInstantTheBoardIsRead);
+			OdometerSeriesRecord record = api.ReadingsBetween(
+				Story.Delivery, TheInstantTheBoardIsRead, TheVoiceOfTheDealership);
 
 			Console.WriteLine("================================================================");
 			Console.WriteLine($"  CUANTO SE MANEJA: EL RITMO DEL {Day(Story.Delivery)} AL {Day(TheInstantTheBoardIsRead)}");
@@ -411,7 +412,7 @@ namespace Concesionario.Consola
 			Console.WriteLine();
 			Console.WriteLine($"   se puede decir           : {api.CanARateOfUseBeSaid(Story.Delivery, TheInstantTheBoardIsRead)}");
 			Console.WriteLine($"   situacion del ritmo      : {api.ReadRateOfUseStanding(Story.Delivery, TheInstantTheBoardIsRead)}");
-			Console.WriteLine($"   el ritmo en palabras     : {api.DescribeRateOfUse(Story.Delivery, TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   el ritmo en palabras     : {api.DescribeRateOfUse(Story.Delivery, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 			Console.WriteLine($"   cuantas lecturas         : {api.ReadingCountBetween(Story.Delivery, TheInstantTheBoardIsRead)}");
 			Console.WriteLine();
 
@@ -458,7 +459,7 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   cuantas lecturas         : {api.ReadingCountBetween(Story.Delivery, Story.TheFirstEvaluation)}");
 			Console.WriteLine($"   se puede decir           : {api.CanARateOfUseBeSaid(Story.Delivery, Story.TheFirstEvaluation)}");
 			Console.WriteLine();
-			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfUseCompared(Story.TheFirstEvaluation, TheInstantTheBoardIsRead, Story.Delivery, Story.TheFirstEvaluation)}");
+			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfUseCompared(Story.TheFirstEvaluation, TheInstantTheBoardIsRead, Story.Delivery, Story.TheFirstEvaluation, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 

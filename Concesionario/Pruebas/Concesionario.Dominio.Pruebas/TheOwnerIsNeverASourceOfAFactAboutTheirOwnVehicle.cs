@@ -300,16 +300,16 @@ namespace Concesionario.Dominio.Pruebas
 			"ReadRateOfUseStanding/2(from)",
 			"ReadRateOfUseStanding/2(to)",
 
-			"DescribeRateOfUse/2(from)",
-			"DescribeRateOfUse/2(to)",
+			"DescribeRateOfUse/3(from)",
+			"DescribeRateOfUse/3(to)",
 
-			"DescribeTwoPeriodsOfUseCompared/4(from1)",
-			"DescribeTwoPeriodsOfUseCompared/4(to1)",
-			"DescribeTwoPeriodsOfUseCompared/4(from2)",
-			"DescribeTwoPeriodsOfUseCompared/4(to2)",
+			"DescribeTwoPeriodsOfUseCompared/5(from1)",
+			"DescribeTwoPeriodsOfUseCompared/5(to1)",
+			"DescribeTwoPeriodsOfUseCompared/5(from2)",
+			"DescribeTwoPeriodsOfUseCompared/5(to2)",
 
-			"ReadingsBetween/2(from)",
-			"ReadingsBetween/2(to)",
+			"ReadingsBetween/3(from)",
+			"ReadingsBetween/3(to)",
 
 			"ReadingCountBetween/2(from)",
 			"ReadingCountBetween/2(to)",

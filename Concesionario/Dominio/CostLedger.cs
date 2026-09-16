@@ -118,15 +118,15 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Lo mismo cuando el periodo no tiene tramo de uso que medir: el motivo llega DICHO por la
-		/// serie del odometro y se pasa entero. TOTAL, y es una operacion aparte y no un valor especial
-		/// de la de arriba -- una distancia por defecto seria una medicion que nadie tomo.
+		/// Lo mismo cuando el periodo no tiene tramo de uso que medir: el motivo lo dice la serie
+		/// del odometro por su lado y este libro no lo transporta. TOTAL, y es una operacion aparte
+		/// y no un valor especial de la de arriba -- una distancia por defecto seria una medicion
+		/// que nadie tomo.
 		/// </summary>
 		internal ACostPerDistanceClause TheCostPerDistanceClauseWithNoSpan(
-			DateTime from, DateTime to, string whyTheRateCannotBeSaid)
+			DateTime from, DateTime to)
 		{
-			return ACostPerDistance.WithNoSpanOfUse(from, to, whyTheRateCannotBeSaid)
-				.TheClauseItComposes();
+			return ACostPerDistance.WithNoSpanOfUse(from, to).TheClauseItComposes();
 		}
 
 		/// <summary>Cuantas entradas se incurrieron adentro del periodo. TOTAL.</summary>

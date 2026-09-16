@@ -172,6 +172,23 @@ namespace Concesionario.Dominio.Pruebas
 			});
 		}
 
+		// Y LAS CINCO FUENTES DE UNA LECTURA DEL ODOMETRO, que es el conjunto cerrado que la serie
+		// nombra en cada fila. Nada se pesa ni se descarta por ella -- decirla es la obligacion
+		// entera --, asi que una fuente que el catalogo no diga sale a pantalla como el nombre del
+		// miembro separado en mayusculas en medio de una fila traducida.
+		[Test]
+		public void EveryReadingSourceIsSaidInBothLanguages()
+		{
+			string[] sources = TheMembersOf<ReadingSource>(each => each.Name);
+
+			Assert.That(sources, Has.Length.EqualTo(5));
+
+			Assert.Multiple(() =>
+			{
+				foreach (string source in sources) ItIsSaid("canon.readingSource", source);
+			});
+		}
+
 		// LAS SIETE SITUACIONES DE UN RESTO, PEDIDAS AL RENDERIZADOR Y NO AL CATALOGO. Es la unica
 		// forma de ver las dos mitades a la vez: que la clave EXISTA, y que el renderizador sepa a
 		// cual de las familias mandar cada situacion -- tres de las siete dicen la clausula del

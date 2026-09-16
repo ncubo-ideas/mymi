@@ -102,6 +102,12 @@ namespace Concesionario.App.Wording
 				["canon.currency.CRC"] = "₡",
 				["canon.currency.USD"] = "$",
 
+				["canon.readingSource.HumanEntry"] = "written down by hand",
+				["canon.readingSource.Telemetry"] = "reported by the vehicle",
+				["canon.readingSource.Inspection"] = "read during an inspection",
+				["canon.readingSource.CustomerDeclared"] = "declared by the person",
+				["canon.readingSource.Correction"] = "a correction of an earlier reading",
+
 				["canon.standing.Inside"] = "Inside",
 				["canon.standing.Reached"] = "Reached",
 				["canon.standing.NotPublished"] = "Not published",
@@ -441,6 +447,42 @@ namespace Concesionario.App.Wording
 					"Between {from} and {to} there is no span of use to divide the spend by, so how "
 					+ "much the distance costs cannot be said. What the odometer series says about "
 					+ "this period: {why}",
+
+				["row.said"] = "{reading} on {observedAt}, {source}",
+
+				["rate.Measured"] =
+					"from {from} on {fromAt} to {to} on {toAt}: {distance} in {span}, about {perDay} "
+					+ "per day",
+				["rate.SuspendedByAUnitMismatch"] =
+					"how much it is driven cannot be said: the period has readings in {unit} and in "
+					+ "{other}, and units are never converted. The second unit was introduced by the "
+					+ "reading of {reading} on {at}",
+				["rate.SuspendedByASingleReading"] =
+					"how much it is driven cannot be said yet: the period has a single reading, "
+					+ "{reading} on {at}, and a rate needs two",
+				["rate.SuspendedByAnAbsentReading"] =
+					"how much it is driven between {periodFrom} and {periodTo} cannot be said: there "
+					+ "is no odometer reading in that period",
+				["rate.SuspendedByAZeroLengthSpan"] =
+					"how much it is driven cannot be said: the period's two readings were observed in "
+					+ "the same second, {second}, so there is no elapsed time to divide by",
+
+				["rate.span.AWholeSecond"] = "1 second",
+				["rate.span.InSeconds"] = "{count} seconds",
+				["rate.span.AWholeDay"] = "1 day",
+				["rate.span.InDays"] = "{count} days",
+
+				["rate.twoPeriods"] = "First period: {first}. Second period: {second}. {change}",
+
+				["rate.change.CannotBeSaid"] =
+					"The change cannot be said: one of the two periods has no rate to say.",
+				["rate.change.TheSameRate"] =
+					"The change of the first against the second: the same rate.",
+				["rate.change.NotAPercentage"] =
+					"The change of the first against the second: it cannot be said as a percentage, "
+					+ "because the vehicle did not move in the other period.",
+				["rate.change.Higher"] = "The change of the first against the second: {change}% more.",
+				["rate.change.Lower"] = "The change of the first against the second: {change}% less.",
 			};
 		}
 	}

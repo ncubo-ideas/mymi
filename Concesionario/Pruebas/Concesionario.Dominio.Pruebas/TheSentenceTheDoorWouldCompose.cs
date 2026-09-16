@@ -322,15 +322,93 @@ namespace Concesionario.Dominio.Pruebas
 				clause.TheSharesAsSaid(), clause.TheCodesOfEachShare());
 		}
 
+		// LAS TRES SITUACIONES DEL COSTO POR DISTANCIA QUE SI TIENEN TRAMO no nombran ningun motivo:
+		// su clave no lleva ese hueco, asi que no hay razon que decir y no se inventa una.
 		internal static string TheCostPerDistance(ACostPerDistanceClause clause, string language)
+		{
+			return TheCostPerDistanceSaid(clause, "", language);
+		}
+
+		// LA QUE NO TIENE TRAMO SI LO NOMBRA, Y EL MOTIVO ES DE LA SERIE DEL ODOMETRO: llega como su
+		// propia clausula, se dice con el MISMO renderizador y en el MISMO idioma, y esta funcion la
+		// pone en su hueco. Es el cableado que la puerta hace, y es la costura que CL-9 dejo abierta:
+		// hasta este turno el motivo cruzaba ya redactado en espanol y se citaba igual en los dos.
+		internal static string TheCostPerDistance(
+			ACostPerDistanceClause clause, ARateClause why, string language)
+		{
+			return TheCostPerDistanceSaid(clause, TheRateOfUse(why, language), language);
+		}
+
+		private static string TheCostPerDistanceSaid(
+			ACostPerDistanceClause clause, string why, string language)
 		{
 			return TheWording.TheCostPerDistance(
 				Phrases.Of(language),
 				clause.TheShapeItHas(), clause.TheInstantItStartsAt(), clause.TheInstantItEndsAt(),
 				clause.TheInstantOfTheAnchor(), clause.TheDistanceTravelled(),
-				clause.TheUnitTheDistanceIsIn(), clause.WhyTheRateCannotBeSaid(),
+				clause.TheUnitTheDistanceIsIn(), why,
 				clause.TheShapesOfEachFigure(), clause.TheFiguresAsSaid(),
 				clause.TheCodesOfEachFigure());
+		}
+
+		// LA SERIE DEL ODOMETRO. El ritmo de un periodo y los dos periodos comparados pasan por el
+		// mismo portador y por el mismo marco, y lo unico que cambia entre ellos es COMO se pregunto.
+		internal static string TheRateOfUse(
+			MaintenanceSchedule schedule, DateTime from, DateTime to, string language)
+		{
+			return TheRateOfUse(schedule.TheRateOfUseClause(from, to), language);
+		}
+
+		internal static string TheTwoPeriodsOfUseCompared(
+			MaintenanceSchedule schedule, DateTime from1, DateTime to1, DateTime from2, DateTime to2,
+			string language)
+		{
+			return TheRateOfUse(
+				schedule.TheTwoPeriodsOfUseComparedClause(from1, to1, from2, to2), language);
+		}
+
+		internal static string TheRateOfUse(ARateClause clause, string language)
+		{
+			return TheWording.TheRateOfUse(
+				Phrases.Of(language),
+				clause.HowItWasAsked(), clause.TheShapesOfItsPeriods(),
+				clause.TheInstantsEachPeriodStartsAt(), clause.TheInstantsEachPeriodEndsAt(),
+				clause.TheUnitsEachPeriodIsIn(), clause.TheSecondsBothEndsFellIn(),
+				clause.TheDistancesEachPeriodTravelled(), clause.TheUnitsEachDistanceIsIn(),
+				clause.TheDistancesPerDayAsSaid(), clause.TheShapesOfEachSpan(),
+				clause.TheSpansAsSaid(), clause.ThePeriodOfEachReading(),
+				clause.TheValuesOfEachReading(), clause.TheUnitsOfEachReading(),
+				clause.TheInstantsOfEachReading(), clause.TheShapeOfItsChange(),
+				clause.TheChangeAsSaid());
+		}
+
+		// UN NUMERO DE UNA COLUMNA, DICHO COMO LA FRASE LO DICE. Una prueba que arma el pedazo que
+		// espera a partir de una COLUMNA del registro tiene que agrupar los miles igual que el
+		// renderizador: la columna cruza el NUMERO y la frase lo dice con los separadores del idioma.
+		// Sin esto la afirmacion compara un 20000 contra un 20.000 y se pone roja por el formato,
+		// que no es la ley que esta defendiendo.
+		internal static string ANumberAsTheSentenceSaysIt(int value, string language)
+		{
+			return Phrases.Of(language).Grouped(value);
+		}
+
+		// Cada lectura del periodo en su frase, como la puerta compone esa columna: de las cuatro que
+		// el registro ya lleva, y con la fuente dicha por el catalogo.
+		internal static string[] EachReadingOnTheRecord(
+			MaintenanceSchedule schedule, DateTime from, DateTime to, string language)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] instants = schedule.ReadingInstantsBetween(from, to);
+			int[] values = schedule.ReadingValuesBetween(from, to);
+			string[] units = schedule.ReadingUnitsBetween(from, to);
+			string[] sources = schedule.ReadingSourcesBetween(from, to);
+			string[] said = new string[instants.Length];
+
+			for (int fila = 0; fila < instants.Length; fila++)
+				said[fila] = TheWording.TheReadingOnTheRecord(
+					phrases, values[fila], units[fila], instants[fila], sources[fila]);
+
+			return said;
 		}
 
 		// Las filas del libro: el dinero de cada una, su vida util y su frase entera, como la puerta

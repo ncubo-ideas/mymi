@@ -13,9 +13,9 @@ namespace Concesionario.Dominio
 	/// leeria como un vehiculo que anduvo gratis.
 	/// </para>
 	/// <para>
-	/// El motivo de la que no tiene tramo llega YA DICHO por la serie del odometro, que es de quien
-	/// es esa ley, y se pasa entero: volver a componerlo aqui dejaria dos versiones de una misma
-	/// razon.
+	/// El motivo de la que no tiene tramo NO viaja aqui: lo compone la serie del odometro en su
+	/// propia clausula, que es de quien es esa ley, y quien redacta pone una dentro de la otra.
+	/// Transportarlo dejaria dos versiones de una misma razon.
 	/// </para>
 	/// </summary>
 	internal sealed class ACostPerDistanceClause
@@ -31,14 +31,13 @@ namespace Concesionario.Dominio
 		private readonly string _firstReading;
 		private readonly int _distance;
 		private readonly string _unit;
-		private readonly string _why;
 		private readonly string[] _figureShapes;
 		private readonly string[] _figureAmounts;
 		private readonly string[] _figureCodes;
 
 		private ACostPerDistanceClause(
 			string shape, string from, string to, string firstReading, int distance, string unit,
-			string why, string[] figureShapes, string[] figureAmounts, string[] figureCodes)
+			string[] figureShapes, string[] figureAmounts, string[] figureCodes)
 		{
 			_shape = shape;
 			_from = from;
@@ -46,7 +45,6 @@ namespace Concesionario.Dominio
 			_firstReading = firstReading;
 			_distance = distance;
 			_unit = unit;
-			_why = why;
 			_figureShapes = figureShapes;
 			_figureAmounts = figureAmounts;
 			_figureCodes = figureCodes;
@@ -77,7 +75,7 @@ namespace Concesionario.Dominio
 			}
 
 			return new ACostPerDistanceClause(
-				CostPerDistanceShape.Measured, from, to, firstReading, distance, unit, NothingToSay,
+				CostPerDistanceShape.Measured, from, to, firstReading, distance, unit,
 				shapes, amounts, codes);
 		}
 
@@ -90,7 +88,7 @@ namespace Concesionario.Dominio
 		{
 			return new ACostPerDistanceClause(
 				CostPerDistanceShape.NothingSpentAfterTheAnchor, from, to, firstReading, distance,
-				unit, NothingToSay, NoFigures, NoFigures, NoFigures);
+				unit, NoFigures, NoFigures, NoFigures);
 		}
 
 		/// <summary>
@@ -102,25 +100,18 @@ namespace Concesionario.Dominio
 		{
 			return new ACostPerDistanceClause(
 				CostPerDistanceShape.NoDistanceTravelled, from, to, firstReading, NoDistanceToSay,
-				unit, NothingToSay, NoFigures, NoFigures, NoFigures);
+				unit, NoFigures, NoFigures, NoFigures);
 		}
 
 		/// <summary>
-		/// La clausula de un periodo sin tramo de uso que medir, con el motivo tal como la serie
-		/// del odometro lo dijo.
+		/// La clausula de un periodo sin tramo de uso que medir. El motivo lo dice la serie del
+		/// odometro en la suya, y esta no lo lleva.
 		/// </summary>
-		internal static ACostPerDistanceClause WithNoSpanOfUse(
-			string from, string to, string whyTheRateCannotBeSaid)
+		internal static ACostPerDistanceClause WithNoSpanOfUse(string from, string to)
 		{
-			if (string.IsNullOrWhiteSpace(whyTheRateCannotBeSaid))
-				throw new DomainException(
-					"Se compuso el costo por distancia de un periodo sin tramo de uso y sin decir por "
-					+ "que. El motivo lo dice la serie del odometro y este libro no lo vuelve a "
-					+ "escribir: sin el, la respuesta seria una negativa sin causa.");
-
 			return new ACostPerDistanceClause(
 				CostPerDistanceShape.NoSpanOfUse, from, to, NothingToSay, NoDistanceToSay,
-				NothingToSay, whyTheRateCannotBeSaid, NoFigures, NoFigures, NoFigures);
+				NothingToSay, NoFigures, NoFigures, NoFigures);
 		}
 
 		/// <summary>Que pudo decirse del costo de la distancia, por su codigo. TOTAL.</summary>
@@ -164,14 +155,6 @@ namespace Concesionario.Dominio
 		internal string TheUnitTheDistanceIsIn()
 		{
 			return _unit;
-		}
-
-		/// <summary>
-		/// Lo que la serie del odometro dijo de este periodo, o vacio donde si hubo tramo. TOTAL.
-		/// </summary>
-		internal string WhyTheRateCannotBeSaid()
-		{
-			return _why;
 		}
 
 		/// <summary>La forma de la moneda de cada cifra, una por fila. TOTAL.</summary>

@@ -578,7 +578,7 @@ namespace Concesionario.Wasm
 		/// ventana la fija la pantalla y no se le pide a nadie -- esta app no tiene ningun control que
 		/// recoja un valor de una persona, asi que no hay selector de periodo.
 		/// </summary>
-		public HowThisVehicleIsDriven ReadHowThisVehicleIsDriven()
+		public HowThisVehicleIsDriven ReadHowThisVehicleIsDriven(string language)
 		{
 			Require();
 
@@ -586,7 +586,7 @@ namespace Concesionario.Wasm
 
 			return HowThisVehicleIsDriven.ReadThrough(
 				api, TheTwelveMonthsBefore(asOf), asOf, TheTwentyFourMonthsBefore(asOf),
-				TheTwelveMonthsBefore(asOf));
+				TheTwelveMonthsBefore(asOf), language);
 		}
 
 		/// <summary>

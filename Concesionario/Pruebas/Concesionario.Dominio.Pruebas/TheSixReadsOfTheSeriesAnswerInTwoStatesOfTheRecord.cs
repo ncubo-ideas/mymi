@@ -131,7 +131,7 @@ namespace Concesionario.Dominio.Pruebas
 				"ReadRateOfUseStanding proyecta el NOMBRE del miembro, y la ausencia tiene el suyo.");
 
 			Assert.That(
-				journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo),
+				journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
 				Does.Contain("2026-01-01 00:00:00").And.Contains("2026-12-31 23:59:59")
 					.And.Contains("ninguna lectura del odómetro"),
 				"DescribeRateOfUse nombra LOS DOS EXTREMOS del periodo con su hora: un cero no diria "
@@ -139,7 +139,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.DescribeTwoPeriodsOfUseCompared(
-					TheSecondHalfFrom, TheSecondHalfTo, TheFirstHalfFrom, TheFirstHalfTo),
+					TheSecondHalfFrom, TheSecondHalfTo, TheFirstHalfFrom, TheFirstHalfTo, TheLanguage.OfTheRecord),
 				Does.Contain("Primer periodo").And.Contains("Segundo periodo")
 					.And.Contains("No se puede decir el cambio"),
 				"DescribeTwoPeriodsOfUseCompared nombra los DOS periodos igual, y dice que el cambio "
@@ -148,7 +148,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.ReadingCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(0),
 				"ReadingCountBetween sin ninguna lectura.");
 
-			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo);
+			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(record.ObservedAt, Is.Empty, "ReadingsBetween: la columna ObservedAt, vacia.");
 			Assert.That(record.Value, Is.Empty);
@@ -191,29 +191,29 @@ namespace Concesionario.Dominio.Pruebas
 			// LA FRASE DEL RITMO, ENTERA Y LETRA POR LETRA. El barrido de aritmetica defiende los
 			// numeros; solo una afirmacion letra por letra defiende la frase.
 			Assert.That(
-				journal.Api.DescribeRateOfUse(TheFirstHalfFrom, TheFirstHalfTo),
+				journal.Api.DescribeRateOfUse(TheFirstHalfFrom, TheFirstHalfTo, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"de 20000 km el 2026-01-10 08:00:00 a 22000 km el 2026-03-10 08:00:00: "
-					+ "2000 km en 59 días, unos 34 km por día"),
+					"de 20.000 km el 2026-01-10 08:00:00 a 22.000 km el 2026-03-10 08:00:00: "
+					+ "2.000 km en 59 días, unos 34 km por día"),
 				"DescribeRateOfUse: los dos extremos con sus instantes, la distancia exacta, el "
 				+ "tiempo exacto, y la distancia por dia introducida por 'unos'.");
 
 			Assert.That(
-				journal.Api.DescribeRateOfUse(TheSecondHalfFrom, TheSecondHalfTo),
+				journal.Api.DescribeRateOfUse(TheSecondHalfFrom, TheSecondHalfTo, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"de 26000 km el 2026-07-20 08:00:00 a 30000 km el 2026-09-25 08:00:00: "
-					+ "4000 km en 67 días, unos 60 km por día"),
+					"de 26.000 km el 2026-07-20 08:00:00 a 30.000 km el 2026-09-25 08:00:00: "
+					+ "4.000 km en 67 días, unos 60 km por día"),
 				"Y el otro semestre a OTRO ritmo, asi que cruzar los dos periodos cambia las dos "
 				+ "afirmaciones.");
 
 			Assert.That(
 				journal.Api.DescribeTwoPeriodsOfUseCompared(
-					TheSecondHalfFrom, TheSecondHalfTo, TheFirstHalfFrom, TheFirstHalfTo),
+					TheSecondHalfFrom, TheSecondHalfTo, TheFirstHalfFrom, TheFirstHalfTo, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"Primer periodo: de 26000 km el 2026-07-20 08:00:00 a 30000 km el "
-					+ "2026-09-25 08:00:00: 4000 km en 67 días, unos 60 km por día. Segundo periodo: "
-					+ "de 20000 km el 2026-01-10 08:00:00 a 22000 km el 2026-03-10 08:00:00: "
-					+ "2000 km en 59 días, unos 34 km por día. El cambio del primero respecto al "
+					"Primer periodo: de 26.000 km el 2026-07-20 08:00:00 a 30.000 km el "
+					+ "2026-09-25 08:00:00: 4.000 km en 67 días, unos 60 km por día. Segundo periodo: "
+					+ "de 20.000 km el 2026-01-10 08:00:00 a 22.000 km el 2026-03-10 08:00:00: "
+					+ "2.000 km en 59 días, unos 34 km por día. El cambio del primero respecto al "
 					+ "segundo: un 76% más."),
 				"DescribeTwoPeriodsOfUseCompared: los DOS periodos con sus DOS ritmos y el cambio "
 				+ "adentro de la misma frase. El cambio es del PRIMERO respecto al SEGUNDO, y ese "
@@ -232,7 +232,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadingCountBetween(TheEmptyYearFrom, TheEmptyYearTo), Is.EqualTo(0));
 
-			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo);
+			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				record.ObservedAt,
@@ -269,12 +269,12 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				record.Says[2],
-				Is.EqualTo("15000 mi el 2026-05-15 08:00:00, declarada por la persona"),
+				Is.EqualTo("15.000 mi el 2026-05-15 08:00:00, declarada por la persona"),
 				"Y la frase de cada fila la dice entera: el valor con su unidad, cuando se observo y "
 				+ "de donde vino, dicho en palabras.");
 			Assert.That(
 				record.Says[4],
-				Is.EqualTo("30000 km el 2026-09-25 08:00:00, corrección de una lectura anterior"),
+				Is.EqualTo("30.000 km el 2026-09-25 08:00:00, corrección de una lectura anterior"),
 				"Una lectura correctiva lo dice en su propia fila.");
 		}
 
@@ -292,26 +292,27 @@ namespace Concesionario.Dominio.Pruebas
 			TheFiveReadingsInTwoUnits();
 
 			OdometerSeriesRecord record =
-				journal.Api.ReadingsBetween(TheFirstHalfFrom, TheFirstHalfTo);
+				journal.Api.ReadingsBetween(TheFirstHalfFrom, TheFirstHalfTo, TheLanguage.OfTheRecord);
 
 			Assert.That(record.Value, Has.Length.EqualTo(2),
 				"El periodo tiene que traer dos filas para que haya dos extremos que comparar.");
 
-			string said = journal.Api.DescribeRateOfUse(TheFirstHalfFrom, TheFirstHalfTo);
+			string said = journal.Api.DescribeRateOfUse(TheFirstHalfFrom, TheFirstHalfTo, TheLanguage.OfTheRecord);
 
 			int last = record.Value.Length - 1;
 
 			Assert.That(
 				said,
 				Does.Contain(
-					"de " + record.Value[0] + " " + record.Unit[0] + " el " + record.ObservedAt[0]),
+					"de " + Said(record.Value[0]) + " " + record.Unit[0] + " el "
+					+ record.ObservedAt[0]),
 				"El extremo de ARRANQUE del ritmo es la PRIMERA fila del registro del mismo periodo, "
 				+ "con su valor, su unidad y su instante.");
 
 			Assert.That(
 				said,
 				Does.Contain(
-					"a " + record.Value[last] + " " + record.Unit[last] + " el "
+					"a " + Said(record.Value[last]) + " " + record.Unit[last] + " el "
 					+ record.ObservedAt[last]),
 				"Y el extremo de LLEGADA es la ULTIMA. Si los dos se separaran, la pantalla pintaria "
 				+ "una tabla y una frase que no hablan del mismo tramo.");
@@ -332,16 +333,16 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanARateOfUseBeSaid(TheYearFrom, TheYearTo), Is.False);
 
 			Assert.That(
-				journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo),
+				journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"no se puede decir cuánto se maneja: el periodo tiene lecturas en km y en mi, y "
 					+ "las unidades nunca se convierten. La segunda unidad la introdujo la lectura de "
-					+ "15000 mi del 2026-05-15 08:00:00"),
+					+ "15.000 mi del 2026-05-15 08:00:00"),
 				"La suspension nombra LAS DOS unidades y la lectura que introdujo la segunda, con su "
 				+ "instante: 'hay unidades mezcladas' es una categoria, y esa lectura es algo que "
 				+ "alguien puede ir a arreglar.");
 
-			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo);
+			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(journal.Api.ReadingCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(5),
 				"Y la cuenta del periodo contesta igual con el ritmo suspendido.");
@@ -385,7 +386,7 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo("SuspendedByAnAbsentReading"));
 
 			Assert.That(
-				journal.Api.DescribeRateOfUse(TheYearTo, TheYearFrom),
+				journal.Api.DescribeRateOfUse(TheYearTo, TheYearFrom, TheLanguage.OfTheRecord),
 				Is.EqualTo(
 					"no se puede decir cuánto se maneja entre el 2026-12-31 23:59:59 y el "
 					+ "2026-01-01 00:00:00: no hay ninguna lectura del odómetro en ese periodo"),
@@ -394,11 +395,11 @@ namespace Concesionario.Dominio.Pruebas
 				+ "pregunto no sabria que le cambiaron el periodo.");
 
 			Assert.That(journal.Api.ReadingCountBetween(TheYearTo, TheYearFrom), Is.EqualTo(0));
-			Assert.That(journal.Api.ReadingsBetween(TheYearTo, TheYearFrom).Says, Is.Empty);
+			Assert.That(journal.Api.ReadingsBetween(TheYearTo, TheYearFrom, TheLanguage.OfTheRecord).Says, Is.Empty);
 
 			Assert.That(
 				journal.Api.DescribeTwoPeriodsOfUseCompared(
-					TheYearTo, TheYearFrom, TheYearTo, TheYearFrom),
+					TheYearTo, TheYearFrom, TheYearTo, TheYearFrom, TheLanguage.OfTheRecord),
 				Does.Contain("No se puede decir el cambio"));
 		}
 
@@ -506,7 +507,7 @@ namespace Concesionario.Dominio.Pruebas
 		// cuenta dejaria pasar una columna que cambiara de contenido al reproducirse.
 		private Dictionary<string, string> TheSixAnswers()
 		{
-			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo);
+			OdometerSeriesRecord record = journal.Api.ReadingsBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			return new Dictionary<string, string>
 			{
@@ -520,13 +521,13 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeRateOfUse",
-					journal.Api.DescribeRateOfUse(TheFirstHalfFrom, TheFirstHalfTo)
-					+ " // " + journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo)
+					journal.Api.DescribeRateOfUse(TheFirstHalfFrom, TheFirstHalfTo, TheLanguage.OfTheRecord)
+					+ " // " + journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"DescribeTwoPeriodsOfUseCompared",
 					journal.Api.DescribeTwoPeriodsOfUseCompared(
-						TheSecondHalfFrom, TheSecondHalfTo, TheFirstHalfFrom, TheFirstHalfTo)
+						TheSecondHalfFrom, TheSecondHalfTo, TheFirstHalfFrom, TheFirstHalfTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"ReadingCountBetween",
@@ -602,6 +603,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			journal.Api.RecordReading(
 				TheSeptemberReading, TheUnitOfThePeriod, September, "Correction");
+		}
+
+		// El valor de una columna dicho como la frase lo dice: la columna cruza el NUMERO y la frase
+		// le pone los separadores de miles del idioma.
+		private static string Said(int value)
+		{
+			return TheSentenceTheDoorWouldCompose.ANumberAsTheSentenceSaysIt(
+				value, TheLanguage.OfTheRecord);
 		}
 	}
 }

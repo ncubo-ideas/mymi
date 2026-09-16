@@ -534,27 +534,28 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El ritmo de uso de ese periodo en una frase: los dos extremos con sus instantes, la
-		/// distancia, el tiempo y la distancia por dia; o la razon con nombre que impide decirlo.
-		/// TOTAL. Los dos extremos no salen nunca sueltos: salen dentro de esta frase, que ya trae
-		/// el ritmo.
+		/// El ritmo de uso de ese periodo como forma y valores: los dos extremos con sus instantes,
+		/// la distancia, el tiempo y el ritmo; o la razon con nombre que impide decirlo.
+		/// TOTAL. Los dos extremos no salen nunca sueltos: salen dentro de esta clausula, que ya
+		/// trae el ritmo.
 		/// </summary>
-		internal string DescribeRateOfUse(DateTime from, DateTime to)
+		internal ARateClause TheRateOfUseClause(DateTime from, DateTime to)
 		{
-			return TheSpanOfUseBetween(from, to).TheRate().Describe();
+			return ARateClause.OfOnePeriod(
+				TheSpanOfUseBetween(from, to).TheRate().TheClauseOfItsPeriod());
 		}
 
 		/// <summary>
-		/// Los dos periodos comparados en una sola frase: cada uno con su propio ritmo y el cambio
-		/// del PRIMERO respecto al SEGUNDO dicho adentro. TOTAL. Ninguna lectura entrega el cambio
+		/// Los dos periodos comparados en una sola clausula: cada uno con su propio ritmo y el
+		/// cambio del PRIMERO respecto al SEGUNDO adentro. TOTAL. Ninguna lectura entrega el cambio
 		/// solo.
 		/// </summary>
-		internal string DescribeTwoPeriodsOfUseCompared(
+		internal ARateClause TheTwoPeriodsOfUseComparedClause(
 			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
 		{
 			return ATwoSpanComparison.Of(
 				TheSpanOfUseBetween(from1, to1).TheRate(),
-				TheSpanOfUseBetween(from2, to2).TheRate()).Describe();
+				TheSpanOfUseBetween(from2, to2).TheRate()).TheClauseItComposes();
 		}
 
 		/// <summary>
@@ -650,20 +651,6 @@ namespace Concesionario.Dominio
 			string[] said = new string[rows.Count];
 
 			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheNameOfItsSource();
-
-			return said;
-		}
-
-		/// <summary>
-		/// Cada lectura del periodo en su propia frase, una por fila y en el mismo orden. TOTAL.
-		/// </summary>
-		internal string[] DescribeEachReadingBetween(DateTime from, DateTime to)
-		{
-			List<ASeriesRow> rows = TheSpanOfUseBetween(from, to).Rows();
-
-			string[] said = new string[rows.Count];
-
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
 
 			return said;
 		}

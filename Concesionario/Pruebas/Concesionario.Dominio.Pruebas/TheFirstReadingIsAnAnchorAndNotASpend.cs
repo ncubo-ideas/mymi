@@ -229,7 +229,7 @@ namespace Concesionario.Dominio.Pruebas
 					journal.Api.CanCostPerDistanceBeSaid(TheYearFrom, TheYearTo), Is.False,
 					"El tramo mezcla unidades, asi que no hay distancia recorrida que medir.");
 
-				string theRate = journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo);
+				string theRate = journal.Api.DescribeRateOfUse(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 				string theCost = journal.Api.DescribeCostPerDistanceBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 				Assert.That(theCost, Does.Contain(theRate),

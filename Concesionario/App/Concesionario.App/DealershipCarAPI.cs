@@ -929,6 +929,25 @@ namespace Concesionario.App
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
+					rate             = schedule.TheRateOfUseClause(@from, @to);
+					@asked           = rate.HowItWasAsked();
+					@shapes          = rate.TheShapesOfItsPeriods();
+					@periodStartsAt  = rate.TheInstantsEachPeriodStartsAt();
+					@periodEndsAt    = rate.TheInstantsEachPeriodEndsAt();
+					@periodUnits     = rate.TheUnitsEachPeriodIsIn();
+					@sameSecond      = rate.TheSecondsBothEndsFellIn();
+					@distances       = rate.TheDistancesEachPeriodTravelled();
+					@units           = rate.TheUnitsEachDistanceIsIn();
+					@perDays         = rate.TheDistancesPerDayAsSaid();
+					@spanShapes      = rate.TheShapesOfEachSpan();
+					@spans           = rate.TheSpansAsSaid();
+					@readingOf       = rate.ThePeriodOfEachReading();
+					@readingValues   = rate.TheValuesOfEachReading();
+					@readingUnits    = rate.TheUnitsOfEachReading();
+					@readingInstants = rate.TheInstantsOfEachReading();
+					@changeShape     = rate.TheShapeOfItsChange();
+					@change          = rate.TheChangeAsSaid();
+
 					if (schedule.CanARateOfUseBeSaid(@from, @to)) {
 						measured      = ledger.TheCostPerDistanceClause(@from, @to,
 							schedule.FirstReadingInstantBetween(@from, @to),
@@ -940,36 +959,49 @@ namespace Concesionario.App
 						@anchor       = measured.TheInstantOfTheAnchor();
 						@distance     = measured.TheDistanceTravelled();
 						@unit         = measured.TheUnitTheDistanceIsIn();
-						@why          = measured.WhyTheRateCannotBeSaid();
 						@figureShapes = measured.TheShapesOfEachFigure();
 						@figures      = measured.TheFiguresAsSaid();
 						@figureCodes  = measured.TheCodesOfEachFigure();
 					} else {
-						noSpan        = ledger.TheCostPerDistanceClauseWithNoSpan(@from, @to,
-							schedule.DescribeRateOfUse(@from, @to));
+						noSpan        = ledger.TheCostPerDistanceClauseWithNoSpan(@from, @to);
 						@shape        = noSpan.TheShapeItHas();
 						@startsAt     = noSpan.TheInstantItStartsAt();
 						@endsAt       = noSpan.TheInstantItEndsAt();
 						@anchor       = noSpan.TheInstantOfTheAnchor();
 						@distance     = noSpan.TheDistanceTravelled();
 						@unit         = noSpan.TheUnitTheDistanceIsIn();
-						@why          = noSpan.WhyTheRateCannotBeSaid();
 						@figureShapes = noSpan.TheShapesOfEachFigure();
 						@figures      = noSpan.TheFiguresAsSaid();
 						@figureCodes  = noSpan.TheCodesOfEachFigure();
 					}
 				")
 				.WithParameters(rented, p => {
-					p[Parameter.Out, "shape",        typeof(string)]   = default;
-					p[Parameter.Out, "startsAt",     typeof(string)]   = default;
-					p[Parameter.Out, "endsAt",       typeof(string)]   = default;
-					p[Parameter.Out, "anchor",       typeof(string)]   = default;
-					p[Parameter.Out, "distance",     typeof(int)]      = default;
-					p[Parameter.Out, "unit",         typeof(string)]   = default;
-					p[Parameter.Out, "why",          typeof(string)]   = default;
-					p[Parameter.Out, "figureShapes", typeof(string[])] = default;
-					p[Parameter.Out, "figures",      typeof(string[])] = default;
-					p[Parameter.Out, "figureCodes",  typeof(string[])] = default;
+					p[Parameter.Out, "asked",           typeof(string)]   = default;
+					p[Parameter.Out, "shapes",          typeof(string[])] = default;
+					p[Parameter.Out, "periodStartsAt",  typeof(string[])] = default;
+					p[Parameter.Out, "periodEndsAt",    typeof(string[])] = default;
+					p[Parameter.Out, "periodUnits",     typeof(string[])] = default;
+					p[Parameter.Out, "sameSecond",      typeof(string[])] = default;
+					p[Parameter.Out, "distances",       typeof(int[])]    = default;
+					p[Parameter.Out, "units",           typeof(string[])] = default;
+					p[Parameter.Out, "perDays",         typeof(string[])] = default;
+					p[Parameter.Out, "spanShapes",      typeof(string[])] = default;
+					p[Parameter.Out, "spans",           typeof(string[])] = default;
+					p[Parameter.Out, "readingOf",       typeof(int[])]    = default;
+					p[Parameter.Out, "readingValues",   typeof(int[])]    = default;
+					p[Parameter.Out, "readingUnits",    typeof(string[])] = default;
+					p[Parameter.Out, "readingInstants", typeof(string[])] = default;
+					p[Parameter.Out, "changeShape",     typeof(string)]   = default;
+					p[Parameter.Out, "change",          typeof(string)]   = default;
+					p[Parameter.Out, "shape",           typeof(string)]   = default;
+					p[Parameter.Out, "startsAt",        typeof(string)]   = default;
+					p[Parameter.Out, "endsAt",          typeof(string)]   = default;
+					p[Parameter.Out, "anchor",          typeof(string)]   = default;
+					p[Parameter.Out, "distance",        typeof(int)]      = default;
+					p[Parameter.Out, "unit",            typeof(string)]   = default;
+					p[Parameter.Out, "figureShapes",    typeof(string[])] = default;
+					p[Parameter.Out, "figures",         typeof(string[])] = default;
+					p[Parameter.Out, "figureCodes",     typeof(string[])] = default;
 					p["from", typeof(DateTime)] = InUtc(from);
 					p["to",   typeof(DateTime)] = InUtc(to);
 				})
@@ -983,7 +1015,7 @@ namespace Concesionario.App
 					rented["anchor"].GetValue<string>(),
 					rented["distance"].GetValue<int>(),
 					rented["unit"].GetValue<string>(),
-					rented["why"].GetValue<string>(),
+					TheRateSaid(rented, language),
 					rented["figureShapes"].GetValue<string[]>(),
 					rented["figures"].GetValue<string[]>(),
 					rented["figureCodes"].GetValue<string[]>());
@@ -2494,11 +2526,55 @@ namespace Concesionario.App
 		/// distancia, el tiempo y la distancia por dia; o la razon con nombre que impide decirlo.
 		/// TOTAL. Los dos extremos no salen nunca sueltos: salen aca, y esta frase ya trae el ritmo.
 		/// </summary>
-		public string DescribeRateOfUse(DateTime from, DateTime to)
+		public string DescribeRateOfUse(DateTime from, DateTime to, string language)
 		{
-			return AText(
-				"@says = schedule.DescribeRateOfUse(@from, @to);", "says",
-				APeriodOfInstants(from, to));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					rate             = schedule.TheRateOfUseClause(@from, @to);
+					@asked           = rate.HowItWasAsked();
+					@shapes          = rate.TheShapesOfItsPeriods();
+					@periodStartsAt  = rate.TheInstantsEachPeriodStartsAt();
+					@periodEndsAt    = rate.TheInstantsEachPeriodEndsAt();
+					@periodUnits     = rate.TheUnitsEachPeriodIsIn();
+					@sameSecond      = rate.TheSecondsBothEndsFellIn();
+					@distances       = rate.TheDistancesEachPeriodTravelled();
+					@units           = rate.TheUnitsEachDistanceIsIn();
+					@perDays         = rate.TheDistancesPerDayAsSaid();
+					@spanShapes      = rate.TheShapesOfEachSpan();
+					@spans           = rate.TheSpansAsSaid();
+					@readingOf       = rate.ThePeriodOfEachReading();
+					@readingValues   = rate.TheValuesOfEachReading();
+					@readingUnits    = rate.TheUnitsOfEachReading();
+					@readingInstants = rate.TheInstantsOfEachReading();
+					@changeShape     = rate.TheShapeOfItsChange();
+					@change          = rate.TheChangeAsSaid();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "asked",           typeof(string)]   = default;
+					p[Parameter.Out, "shapes",          typeof(string[])] = default;
+					p[Parameter.Out, "periodStartsAt",  typeof(string[])] = default;
+					p[Parameter.Out, "periodEndsAt",    typeof(string[])] = default;
+					p[Parameter.Out, "periodUnits",     typeof(string[])] = default;
+					p[Parameter.Out, "sameSecond",      typeof(string[])] = default;
+					p[Parameter.Out, "distances",       typeof(int[])]    = default;
+					p[Parameter.Out, "units",           typeof(string[])] = default;
+					p[Parameter.Out, "perDays",         typeof(string[])] = default;
+					p[Parameter.Out, "spanShapes",      typeof(string[])] = default;
+					p[Parameter.Out, "spans",           typeof(string[])] = default;
+					p[Parameter.Out, "readingOf",       typeof(int[])]    = default;
+					p[Parameter.Out, "readingValues",   typeof(int[])]    = default;
+					p[Parameter.Out, "readingUnits",    typeof(string[])] = default;
+					p[Parameter.Out, "readingInstants", typeof(string[])] = default;
+					p[Parameter.Out, "changeShape",     typeof(string)]   = default;
+					p[Parameter.Out, "change",          typeof(string)]   = default;
+
+					APeriodOfInstants(from, to)(p);
+				})
+				.PerformQuery();
+
+				return TheRateSaid(rented, language);
+			}
 		}
 
 		/// <summary>
@@ -2507,19 +2583,92 @@ namespace Concesionario.App
 		/// lectura como numero.
 		/// </summary>
 		public string DescribeTwoPeriodsOfUseCompared(
-			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
+			DateTime from1, DateTime to1, DateTime from2, DateTime to2, string language)
 		{
-			return AText(@"
-				@says = schedule.DescribeTwoPeriodsOfUseCompared(@from1, @to1, @from2, @to2);
-			", "says", TwoPeriodsOfInstants(from1, to1, from2, to2));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					rate             = schedule.TheTwoPeriodsOfUseComparedClause(
+						@from1, @to1, @from2, @to2);
+					@asked           = rate.HowItWasAsked();
+					@shapes          = rate.TheShapesOfItsPeriods();
+					@periodStartsAt  = rate.TheInstantsEachPeriodStartsAt();
+					@periodEndsAt    = rate.TheInstantsEachPeriodEndsAt();
+					@periodUnits     = rate.TheUnitsEachPeriodIsIn();
+					@sameSecond      = rate.TheSecondsBothEndsFellIn();
+					@distances       = rate.TheDistancesEachPeriodTravelled();
+					@units           = rate.TheUnitsEachDistanceIsIn();
+					@perDays         = rate.TheDistancesPerDayAsSaid();
+					@spanShapes      = rate.TheShapesOfEachSpan();
+					@spans           = rate.TheSpansAsSaid();
+					@readingOf       = rate.ThePeriodOfEachReading();
+					@readingValues   = rate.TheValuesOfEachReading();
+					@readingUnits    = rate.TheUnitsOfEachReading();
+					@readingInstants = rate.TheInstantsOfEachReading();
+					@changeShape     = rate.TheShapeOfItsChange();
+					@change          = rate.TheChangeAsSaid();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "asked",           typeof(string)]   = default;
+					p[Parameter.Out, "shapes",          typeof(string[])] = default;
+					p[Parameter.Out, "periodStartsAt",  typeof(string[])] = default;
+					p[Parameter.Out, "periodEndsAt",    typeof(string[])] = default;
+					p[Parameter.Out, "periodUnits",     typeof(string[])] = default;
+					p[Parameter.Out, "sameSecond",      typeof(string[])] = default;
+					p[Parameter.Out, "distances",       typeof(int[])]    = default;
+					p[Parameter.Out, "units",           typeof(string[])] = default;
+					p[Parameter.Out, "perDays",         typeof(string[])] = default;
+					p[Parameter.Out, "spanShapes",      typeof(string[])] = default;
+					p[Parameter.Out, "spans",           typeof(string[])] = default;
+					p[Parameter.Out, "readingOf",       typeof(int[])]    = default;
+					p[Parameter.Out, "readingValues",   typeof(int[])]    = default;
+					p[Parameter.Out, "readingUnits",    typeof(string[])] = default;
+					p[Parameter.Out, "readingInstants", typeof(string[])] = default;
+					p[Parameter.Out, "changeShape",     typeof(string)]   = default;
+					p[Parameter.Out, "change",          typeof(string)]   = default;
+
+					TwoPeriodsOfInstants(from1, to1, from2, to2)(p);
+				})
+				.PerformQuery();
+
+				return TheRateSaid(rented, language);
+			}
+		}
+
+		/// <summary>
+		/// LA FRASE DEL RITMO a partir de lo que el script dejo en esos parametros. Es la lectura de
+		/// vuelta y no el script: los dos scripts de arriba escriben las mismas columnas, y quien
+		/// las lee es uno solo.
+		/// </summary>
+		private static string TheRateSaid(RentedParameter rented, string language)
+		{
+			return Wording.TheWording.TheRateOfUse(
+				Wording.Phrases.Of(language),
+				rented["asked"].GetValue<string>(),
+				rented["shapes"].GetValue<string[]>(),
+				rented["periodStartsAt"].GetValue<string[]>(),
+				rented["periodEndsAt"].GetValue<string[]>(),
+				rented["periodUnits"].GetValue<string[]>(),
+				rented["sameSecond"].GetValue<string[]>(),
+				rented["distances"].GetValue<int[]>(),
+				rented["units"].GetValue<string[]>(),
+				rented["perDays"].GetValue<string[]>(),
+				rented["spanShapes"].GetValue<string[]>(),
+				rented["spans"].GetValue<string[]>(),
+				rented["readingOf"].GetValue<int[]>(),
+				rented["readingValues"].GetValue<int[]>(),
+				rented["readingUnits"].GetValue<string[]>(),
+				rented["readingInstants"].GetValue<string[]>(),
+				rented["changeShape"].GetValue<string>(),
+				rented["change"].GetValue<string>());
 		}
 
 		/// <summary>
 		/// Las lecturas del periodo como filas: cuando se observo cada una, que valor leyo, en que
-		/// unidad, de que fuente vino y la frase con que el dominio la dice, en columnas paralelas y
-		/// en orden de observacion. TOTAL, y contesta CERO filas donde no hay ninguna.
+		/// unidad, de que fuente vino y la frase con que se dice entera, en columnas paralelas y en
+		/// orden de observacion. TOTAL, y contesta CERO filas donde no hay ninguna.
 		/// </summary>
-		public OdometerSeriesRecord ReadingsBetween(DateTime from, DateTime to)
+		public OdometerSeriesRecord ReadingsBetween(DateTime from, DateTime to, string language)
 		{
 			using (RentedParameter rented = app.Actor.RentedParameters())
 			{
@@ -2528,25 +2677,29 @@ namespace Concesionario.App
 					@value      = schedule.ReadingValuesBetween(@from, @to);
 					@unit       = schedule.ReadingUnitsBetween(@from, @to);
 					@source     = schedule.ReadingSourcesBetween(@from, @to);
-					@says       = schedule.DescribeEachReadingBetween(@from, @to);
 				")
 				.WithParameters(rented, p => {
 					p[Parameter.Out, "observedAt", typeof(string[])] = default;
 					p[Parameter.Out, "value",      typeof(int[])]    = default;
 					p[Parameter.Out, "unit",       typeof(string[])] = default;
 					p[Parameter.Out, "source",     typeof(string[])] = default;
-					p[Parameter.Out, "says",       typeof(string[])] = default;
 
 					APeriodOfInstants(from, to)(p);
 				})
 				.PerformQuery();
 
-				return OdometerSeriesRecord.Of(
-					rented["observedAt"].GetValue<string[]>(),
-					rented["value"].GetValue<int[]>(),
-					rented["unit"].GetValue<string[]>(),
-					rented["source"].GetValue<string[]>(),
-					rented["says"].GetValue<string[]>());
+				Wording.Phrases phrases = Wording.Phrases.Of(language);
+				string[] observedAt = rented["observedAt"].GetValue<string[]>();
+				int[] value = rented["value"].GetValue<int[]>();
+				string[] unit = rented["unit"].GetValue<string[]>();
+				string[] source = rented["source"].GetValue<string[]>();
+				string[] says = new string[observedAt.Length];
+
+				for (int row = 0; row < says.Length; row++)
+					says[row] = Wording.TheWording.TheReadingOnTheRecord(
+						phrases, value[row], unit[row], observedAt[row], source[row]);
+
+				return OdometerSeriesRecord.Of(observedAt, value, unit, source, says);
 			}
 		}
 

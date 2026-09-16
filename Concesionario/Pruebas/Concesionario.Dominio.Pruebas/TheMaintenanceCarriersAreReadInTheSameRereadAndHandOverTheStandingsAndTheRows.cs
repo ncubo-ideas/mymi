@@ -420,7 +420,7 @@ namespace Concesionario.Dominio.Pruebas
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost(texts.Language)",
-				"state.ReadHowThisVehicleIsDriven()",
+				"state.ReadHowThisVehicleIsDriven(texts.Language)",
 				"state.ReadWhatThisVehicleHasCost(texts.Language)",
 				"state.ReadThePlateOfThisVehicle()",
 			})
@@ -469,7 +469,7 @@ namespace Concesionario.Dominio.Pruebas
 					+ "stays = state.ReadTheStaysOfThisVehicle(); "
 					+ "operations = state.ReadWhereEachOperationStands(texts.Language); "
 					+ "costs = state.ReadWhatTheServicesCost(texts.Language); "
-					+ "use = state.ReadHowThisVehicleIsDriven(); "
+					+ "use = state.ReadHowThisVehicleIsDriven(texts.Language); "
 					+ "spend = state.ReadWhatThisVehicleHasCost(texts.Language); "
 					+ "plate = state.ReadThePlateOfThisVehicle();"),
 				"Las ocho lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
@@ -486,7 +486,7 @@ namespace Concesionario.Dominio.Pruebas
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands(texts.Language)",
 				"state.ReadWhatTheServicesCost(texts.Language)",
-				"state.ReadHowThisVehicleIsDriven()",
+				"state.ReadHowThisVehicleIsDriven(texts.Language)",
 				"state.ReadWhatThisVehicleHasCost(texts.Language)",
 				"state.ReadThePlateOfThisVehicle()",
 			})

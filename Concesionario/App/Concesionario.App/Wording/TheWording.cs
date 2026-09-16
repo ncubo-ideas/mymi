@@ -520,7 +520,9 @@ namespace Concesionario.App.Wording
 		/// <summary>
 		/// CUANTO COSTO LA DISTANCIA DE UN PERIODO, moneda por moneda y con las dos unidades
 		/// dichas, o cual de las tres situaciones sin cifra le toca. El motivo de la que no tiene
-		/// tramo llega ya dicho por la serie del odometro y se cita tal cual.
+		/// tramo es de la serie del odometro: llega dicho por el mismo renderizador, en el mismo
+		/// idioma, y esta frase lo pone en su hueco -- que es como la cuenta atras junta sus dos
+		/// mitades.
 		/// </summary>
 		public static string TheCostPerDistance(
 			Phrases phrases, string shape, string from, string to, string anchor, int distance,
@@ -576,6 +578,116 @@ namespace Concesionario.App.Wording
 			return classification == TheClassificationThatSpreadsItself
 				? phrases.Months(expectedLifeMonths)
 				: "";
+		}
+
+		/// <summary>
+		/// CUANTO SE MANEJA ESTE VEHICULO EN UN PERIODO O EN DOS COMPARADOS: cada periodo con sus
+		/// dos extremos, la distancia, el tramo de tiempo y la distancia por dia, o cual de las
+		/// cuatro razones con nombre impide decirlo -- y, con dos, el cambio del primero respecto al
+		/// segundo. Como se pregunto elige el marco y nunca las cifras.
+		/// </summary>
+		public static string TheRateOfUse(
+			Phrases phrases, string asked, string[] periodShapes, string[] periodFroms,
+			string[] periodTos, string[] periodUnits, string[] periodSeconds, int[] distances,
+			string[] units, string[] perDays, string[] spanShapes, string[] spans, int[] readingOf,
+			int[] readingValues, string[] readingUnits, string[] readingInstants,
+			string changeShape, string change)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			int howManyPeriods = periodShapes.Length;
+			string[] earlierSaid = TheEmptyCellsOf(howManyPeriods);
+			string[] earlierAt = TheEmptyCellsOf(howManyPeriods);
+			string[] earlierUnit = TheEmptyCellsOf(howManyPeriods);
+			string[] laterSaid = TheEmptyCellsOf(howManyPeriods);
+			string[] laterAt = TheEmptyCellsOf(howManyPeriods);
+			bool[] theEarlierIsIn = new bool[howManyPeriods];
+
+			for (int reading = 0; reading < readingOf.Length; reading++)
+			{
+				int period = readingOf[reading];
+				string said = ADistance(phrases, readingValues[reading], readingUnits[reading]);
+
+				if (theEarlierIsIn[period])
+				{
+					laterSaid[period] = said;
+					laterAt[period] = readingInstants[reading];
+					continue;
+				}
+
+				earlierSaid[period] = said;
+				earlierAt[period] = readingInstants[reading];
+				earlierUnit[period] = readingUnits[reading];
+				theEarlierIsIn[period] = true;
+			}
+
+			string[] eachPeriod = new string[howManyPeriods];
+
+			for (int period = 0; period < howManyPeriods; period++)
+				eachPeriod[period] = phrases.Say("rate." + periodShapes[period],
+					("from", earlierSaid[period]),
+					("fromAt", earlierAt[period]),
+					("to", laterSaid[period]),
+					("toAt", laterAt[period]),
+					("distance", ADistance(phrases, distances[period], units[period])),
+					("span", TheSpan(phrases, spanShapes[period], spans[period])),
+					("perDay", ADistanceAsSaid(phrases, perDays[period], units[period])),
+					("unit", periodUnits[period]),
+					("other", earlierUnit[period]),
+					("reading", earlierSaid[period]),
+					("at", earlierAt[period]),
+					("periodFrom", periodFroms[period]),
+					("periodTo", periodTos[period]),
+					("second", periodSeconds[period]));
+
+			if (asked != TheTwoPeriodsCompared) return eachPeriod[0];
+
+			return phrases.Say("rate.twoPeriods",
+				("first", eachPeriod[0]),
+				("second", eachPeriod[1]),
+				("change", phrases.Say(
+					"rate.change." + changeShape, ("change", phrases.ANumber(change)))));
+		}
+
+		/// <summary>
+		/// UNA LECTURA DEL ODOMETRO EN SU PROPIA FRASE: el valor con su unidad, cuando se observo y
+		/// de donde vino. La fuente es un conjunto cerrado y se dice con las palabras del catalogo,
+		/// asi que ninguna pantalla lleva una tabla propia para ella.
+		/// </summary>
+		public static string TheReadingOnTheRecord(
+			Phrases phrases, int value, string unit, string observedAt, string source)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return phrases.Say("row.said",
+				("reading", ADistance(phrases, value, unit)),
+				("observedAt", observedAt),
+				("source", phrases.HowItIsSaid("canon.readingSource", source)));
+		}
+
+		/// <summary>
+		/// EL TRAMO DE TIEMPO DE UN PERIODO, en la unidad que su forma dice. Las dos formas enteras
+		/// no llevan cifra: el singular es del idioma y no se elige mirando unos digitos.
+		/// </summary>
+		private static string TheSpan(Phrases phrases, string shape, string howMany)
+		{
+			if (shape.Length == 0) return "";
+
+			return phrases.Say("rate.span." + shape, ("count", phrases.ANumber(howMany)));
+		}
+
+		/// <summary>
+		/// UNA CELDA POR PERIODO, VACIA. Un periodo nombra dos lecturas, una o ninguna segun su
+		/// situacion, y la celda que su situacion no usa se queda sin palabras en vez de quedarse
+		/// sin poner.
+		/// </summary>
+		private static string[] TheEmptyCellsOf(int howManyPeriods)
+		{
+			string[] cells = new string[howManyPeriods];
+
+			for (int period = 0; period < howManyPeriods; period++) cells[period] = "";
+
+			return cells;
 		}
 
 		/// <summary>
@@ -897,6 +1009,17 @@ namespace Concesionario.App.Wording
 		{
 			return phrases.Say(
 				"quantity.distance", ("amount", phrases.Grouped(amount)), ("unit", unit));
+		}
+
+		/// <summary>
+		/// LA MISMA DISTANCIA CUANDO EL DOMINIO LA TIENE COMO DIGITOS y no como un numero: la
+		/// agrupacion de miles y la coma las pone el idioma, igual que arriba, y aqui no se redondea
+		/// ni se completa.
+		/// </summary>
+		private static string ADistanceAsSaid(Phrases phrases, string amount, string unit)
+		{
+			return phrases.Say(
+				"quantity.distance", ("amount", phrases.ANumber(amount)), ("unit", unit));
 		}
 
 		private static int TheOnlyAmountOf(int[] amount)

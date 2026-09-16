@@ -71,11 +71,12 @@ namespace Concesionario.Wasm
 		/// puede.
 		/// </summary>
 		public static HowThisVehicleIsDriven ReadThrough(
-			DealershipCarAPI api, DateTime from, DateTime to, DateTime earlierFrom, DateTime earlierTo)
+			DealershipCarAPI api, DateTime from, DateTime to, DateTime earlierFrom,
+			DateTime earlierTo, string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
-			OdometerSeriesRecord record = api.ReadingsBetween(from, to);
+			OdometerSeriesRecord record = api.ReadingsBetween(from, to, language);
 
 			var rows = new List<AReadingOnTheRecord>();
 
@@ -97,9 +98,9 @@ namespace Concesionario.Wasm
 				EarlierTo = TheMoment(earlierTo),
 				CanBeSaid = api.CanARateOfUseBeSaid(from, to),
 				Standing = api.ReadRateOfUseStanding(from, to),
-				Says = api.DescribeRateOfUse(from, to),
-				BothPeriodsSay =
-					api.DescribeTwoPeriodsOfUseCompared(from, to, earlierFrom, earlierTo),
+				Says = api.DescribeRateOfUse(from, to, language),
+				BothPeriodsSay = api.DescribeTwoPeriodsOfUseCompared(
+					from, to, earlierFrom, earlierTo, language),
 				ReadingCount = api.ReadingCountBetween(from, to),
 				Rows = rows,
 			};

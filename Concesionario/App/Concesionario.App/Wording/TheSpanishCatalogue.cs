@@ -109,6 +109,12 @@ namespace Concesionario.App.Wording
 				["canon.currency.CRC"] = "₡",
 				["canon.currency.USD"] = "$",
 
+				["canon.readingSource.HumanEntry"] = "anotada a mano",
+				["canon.readingSource.Telemetry"] = "reportada por el vehículo",
+				["canon.readingSource.Inspection"] = "leída en una revisión",
+				["canon.readingSource.CustomerDeclared"] = "declarada por la persona",
+				["canon.readingSource.Correction"] = "corrección de una lectura anterior",
+
 				["canon.standing.Inside"] = "Adentro",
 				["canon.standing.Reached"] = "Alcanzado",
 				["canon.standing.NotPublished"] = "Sin publicar",
@@ -457,6 +463,43 @@ namespace Concesionario.App.Wording
 					"Entre el {from} y el {to} no hay un tramo de uso por el que dividir el gasto, así "
 					+ "que no se puede decir cuánto cuesta la distancia. Lo que la serie del odómetro "
 					+ "dice de este período: {why}",
+
+				["row.said"] = "{reading} el {observedAt}, {source}",
+
+				["rate.Measured"] =
+					"de {from} el {fromAt} a {to} el {toAt}: {distance} en {span}, unos {perDay} "
+					+ "por día",
+				["rate.SuspendedByAUnitMismatch"] =
+					"no se puede decir cuánto se maneja: el periodo tiene lecturas en {unit} y en "
+					+ "{other}, y las unidades nunca se convierten. La segunda unidad la introdujo la "
+					+ "lectura de {reading} del {at}",
+				["rate.SuspendedByASingleReading"] =
+					"todavía no se puede decir cuánto se maneja: en el periodo hay una sola lectura, "
+					+ "{reading} del {at}, y un ritmo necesita dos",
+				["rate.SuspendedByAnAbsentReading"] =
+					"no se puede decir cuánto se maneja entre el {periodFrom} y el {periodTo}: no hay "
+					+ "ninguna lectura del odómetro en ese periodo",
+				["rate.SuspendedByAZeroLengthSpan"] =
+					"no se puede decir cuánto se maneja: las dos lecturas del periodo se observaron en "
+					+ "el mismo segundo, el {second}, así que no hay tiempo transcurrido que dividir",
+
+				["rate.span.AWholeSecond"] = "1 segundo",
+				["rate.span.InSeconds"] = "{count} segundos",
+				["rate.span.AWholeDay"] = "1 día",
+				["rate.span.InDays"] = "{count} días",
+
+				["rate.twoPeriods"] = "Primer periodo: {first}. Segundo periodo: {second}. {change}",
+
+				["rate.change.CannotBeSaid"] =
+					"No se puede decir el cambio: uno de los dos periodos no tiene ritmo que decir.",
+				["rate.change.TheSameRate"] =
+					"El cambio del primero respecto al segundo: el mismo ritmo.",
+				["rate.change.NotAPercentage"] =
+					"El cambio del primero respecto al segundo: no se puede decir como porcentaje, "
+					+ "porque en el otro periodo el vehículo no se movió.",
+				["rate.change.Higher"] = "El cambio del primero respecto al segundo: un {change}% más.",
+				["rate.change.Lower"] =
+					"El cambio del primero respecto al segundo: un {change}% menos.",
 			};
 		}
 	}

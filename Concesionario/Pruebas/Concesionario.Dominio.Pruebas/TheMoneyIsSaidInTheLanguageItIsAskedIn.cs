@@ -271,23 +271,53 @@ namespace Concesionario.Dominio.Pruebas
 					+ "that reading or before paid for the earlier distance and does not count here."));
 		}
 
-		// EL MOTIVO DE LA QUE NO TIENE TRAMO SE CITA TAL CUAL, en los dos: lo dijo la serie del
-		// odometro, que es de quien es esa ley, y este libro no lo vuelve a escribir. Es la costura
-		// que el turno de la serie cierra.
+		// LA COSTURA QUE ESTE TURNO CERRO, DICHA DESDE EL LADO DEL DINERO. Hasta la vuelta de la
+		// serie el motivo cruzaba hasta aqui YA REDACTADO en espanol, y la respuesta en ingles lo
+		// citaba en espanol: era la unica frase a medio traducir del modulo. Ahora la serie compone
+		// su propia clausula, el mismo renderizador la dice en el idioma que se pregunto, y esta
+		// frase la pone en su hueco. La ley sigue siendo la misma -- la razon es de la serie y este
+		// libro no la vuelve a escribir -- y ahora se puede afirmar como IDENTIDAD y no como cita.
 		[Test]
-		public void TheReasonTheOdometerSeriesGaveIsQuotedVerbatimInBothLanguages()
+		public void TheReasonForANoSpanPeriodIsTheOdometerSeriesOwnSentenceInBothLanguages()
 		{
-			const string whatTheSeriesSaid = "no se puede decir cuánto se maneja";
+			MaintenanceSchedule schedule =
+				new MaintenanceSchedule(TheVin, UsageProfileCode.Standard);
 
 			foreach (string language in TheTwoLanguages())
+			{
+				string whatTheSeriesSays = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+					schedule, TheStartOfJanuary, TheStartOfFebruary, language);
+
 				Assert.That(
 					TheSentenceTheDoorWouldCompose.TheCostPerDistance(
 						ledger.TheCostPerDistanceClauseWithNoSpan(
-							TheStartOfJanuary, TheStartOfFebruary, whatTheSeriesSaid),
+							TheStartOfJanuary, TheStartOfFebruary),
+						schedule.TheRateOfUseClause(TheStartOfJanuary, TheStartOfFebruary),
 						language),
-					Does.EndWith(whatTheSeriesSaid),
-					"El motivo llega YA DICHO y se pasa entero. Volver a componerlo aqui dejaria dos "
-					+ "versiones de una misma razon que pueden discrepar sin que nada lo vea.");
+					Does.EndWith(whatTheSeriesSays),
+					"El motivo es la frase que la serie compone para ESE periodo en ESE idioma, "
+					+ "letra por letra. Volver a componerlo aqui dejaria dos versiones de una misma "
+					+ "razon que pueden discrepar sin que nada lo vea.");
+			}
+		}
+
+		// Y NO ES LA MISMA FRASE EN LOS DOS, que es lo que la version anterior no podia decir: con el
+		// motivo cruzando ya redactado, las dos respuestas terminaban con el mismo espanol.
+		[Test]
+		public void AndThatReasonIsNotTheSameSentenceInTheTwoLanguages()
+		{
+			MaintenanceSchedule schedule =
+				new MaintenanceSchedule(TheVin, UsageProfileCode.Standard);
+
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+					ledger.TheCostPerDistanceClauseWithNoSpan(
+						TheStartOfJanuary, TheStartOfFebruary),
+					schedule.TheRateOfUseClause(TheStartOfJanuary, TheStartOfFebruary),
+					TheLanguage.OfAnEnglishReader),
+				Does.EndWith(
+					"how much it is driven between 2026-01-01 00:00:00 and 2026-02-01 00:00:00 "
+					+ "cannot be said: there is no odometer reading in that period"));
 		}
 
 		// EL PRECIO PUBLICADO, con su hito, su moneda, su vigencia y donde cae el instante que se
@@ -401,7 +431,9 @@ namespace Concesionario.Dominio.Pruebas
 					language),
 				TheSentenceTheDoorWouldCompose.TheCostPerDistance(
 					ledger.TheCostPerDistanceClauseWithNoSpan(
-						TheStartOfJanuary, TheStartOfFebruary, "lo que la serie dijo"),
+						TheStartOfJanuary, TheStartOfFebruary),
+					new MaintenanceSchedule(TheVin, UsageProfileCode.Standard)
+						.TheRateOfUseClause(TheStartOfJanuary, TheStartOfFebruary),
 					language),
 				TheSentenceTheDoorWouldCompose.TheServicePrice(
 					specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,

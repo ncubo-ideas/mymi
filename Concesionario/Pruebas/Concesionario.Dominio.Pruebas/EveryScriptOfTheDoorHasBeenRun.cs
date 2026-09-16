@@ -556,13 +556,13 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadRateOfUseStanding(from, to),
 				Is.EqualTo("SuspendedByAnAbsentReading"));
-			Assert.That(journal.Api.DescribeRateOfUse(from, to), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeRateOfUse(from, to, TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(
 				journal.Api.DescribeTwoPeriodsOfUseCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+					from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Is.Not.Empty);
 			Assert.That(journal.Api.ReadingCountBetween(from, to), Is.EqualTo(0));
-			Assert.That(journal.Api.ReadingsBetween(from, to).Says, Is.Empty);
+			Assert.That(journal.Api.ReadingsBetween(from, to, TheLanguage.OfTheRecord).Says, Is.Empty);
 
 			// CON DOS LECTURAS EN UNA UNIDAD: las mismas seis, y ahora contestando.
 			journal.Api.RecordReading(
@@ -574,16 +574,16 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanARateOfUseBeSaid(from, to), Is.True);
 			Assert.That(journal.Api.ReadRateOfUseStanding(from, to), Is.EqualTo("Measured"));
 			Assert.That(
-				journal.Api.DescribeRateOfUse(from, to), Does.Contain("unos 33 km por día"));
+				journal.Api.DescribeRateOfUse(from, to, TheLanguage.OfTheRecord), Does.Contain("unos 33 km por día"));
 			Assert.That(
 				journal.Api.DescribeTwoPeriodsOfUseCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+					from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Does.Contain("No se puede decir el cambio"),
 				"Y los CUATRO extremos del script de la comparacion atan por separado: el segundo "
 				+ "periodo es otro anio y no tiene ritmo que decir.");
 			Assert.That(journal.Api.ReadingCountBetween(from, to), Is.EqualTo(2));
 			Assert.That(
-				journal.Api.ReadingsBetween(from, to).Value, Is.EqualTo(new[] { 40000, 41000 }),
+				journal.Api.ReadingsBetween(from, to, TheLanguage.OfTheRecord).Value, Is.EqualTo(new[] { 40000, 41000 }),
 				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta, "
 				+ "cuatro de texto y una de numeros.");
 		}
@@ -745,7 +745,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeCostPerDistanceBetween(from, to, TheLanguage.OfTheRecord),
 				Does.Contain("₡80,00 por km"),
-				"240000 sobre los 3000 km que la serie dice son 80.00, y el 'km' sale del codigo de "
+				"240000 sobre los 3.000 km que la serie dice son 80.00, y el 'km' sale del codigo de "
 				+ "unidad que cruzo TIPADO de una global a la otra: si hubiera cruzado como NOMBRE, la "
 				+ "llamada no habria ligado.");
 		}

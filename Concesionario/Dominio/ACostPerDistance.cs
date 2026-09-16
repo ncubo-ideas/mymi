@@ -57,20 +57,14 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La respuesta cuando el periodo no tiene tramo de uso que medir. El motivo llega DICHO por el
-		/// agregado que lo sabe -- la serie del odometro -- y aca se pasa entero: escribirlo de nuevo
-		/// seria una segunda version de una ley que no es de este libro.
+		/// La respuesta cuando el periodo no tiene tramo de uso que medir. El motivo lo compone el
+		/// agregado que lo sabe -- la serie del odometro -- en su propia clausula, y este libro
+		/// no lo escribe ni lo transporta: una segunda version de una ley que no es suya podria
+		/// discrepar sin que nada lo vea.
 		/// </summary>
-		internal static ACostPerDistance WithNoSpanOfUse(
-			DateTime from, DateTime to, string whyTheRateCannotBeSaid)
+		internal static ACostPerDistance WithNoSpanOfUse(DateTime from, DateTime to)
 		{
-			if (string.IsNullOrWhiteSpace(whyTheRateCannotBeSaid))
-				throw new DomainException(
-					"Se pidio el costo por distancia de un periodo sin tramo de uso y sin decir por "
-					+ "que. El motivo lo dice la serie del odometro y este libro no lo vuelve a "
-					+ "escribir: sin el, la respuesta seria una negativa sin causa.");
-
-			return new NoSpanOfUseToDivideBy(from, to, whyTheRateCannotBeSaid);
+			return new NoSpanOfUseToDivideBy(from, to);
 		}
 
 		/// <summary>
