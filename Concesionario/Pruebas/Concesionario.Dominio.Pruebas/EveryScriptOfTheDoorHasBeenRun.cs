@@ -470,9 +470,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.HasAnyCompletion("FluidChange"), Is.False);
 			Assert.That(journal.Api.CompletionCount("FluidChange"), Is.EqualTo(0));
-			Assert.That(journal.Api.DescribeCompletions("FluidChange"), Is.Not.Empty);
-			Assert.That(journal.Api.CompletionsOf("FluidChange").Says, Is.Empty);
-			Assert.That(journal.Api.CompletionsOfEveryKind().Kind, Is.Empty);
+			Assert.That(
+				journal.Api.DescribeCompletions("FluidChange", TheLanguage.OfTheRecord),
+				Is.Not.Empty);
+			Assert.That(journal.Api.CompletionsOf("FluidChange", TheLanguage.OfTheRecord).Says, Is.Empty);
+			Assert.That(journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Kind, Is.Empty);
 
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.False);
 			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(0));
@@ -515,13 +517,16 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.HasAnyCompletion("FluidChange"), Is.True);
 			Assert.That(journal.Api.CompletionCount("FluidChange"), Is.EqualTo(1));
-			Assert.That(journal.Api.DescribeCompletions("FluidChange"), Does.Contain("2026-01-21"));
 			Assert.That(
-				journal.Api.CompletionsOf("FluidChange").Says, Has.Length.EqualTo(1),
-				"Y las TRES lineas del script del registro atan sus tres Out en una sola consulta.");
+				journal.Api.DescribeCompletions("FluidChange", TheLanguage.OfTheRecord),
+				Does.Contain("2026-01-21"));
 			Assert.That(
-				journal.Api.CompletionsOfEveryKind().Kind, Is.EqualTo(new[] { "FluidChange" }),
-				"Y las CUATRO lineas del script del historial entero atan sus cuatro Out en una sola.");
+				journal.Api.CompletionsOf("FluidChange", TheLanguage.OfTheRecord).Says, Has.Length.EqualTo(1),
+				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta.");
+			Assert.That(
+				journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Kind,
+				Is.EqualTo(new[] { "FluidChange" }),
+				"Y las CINCO lineas del script del historial entero atan sus cinco Out en una sola.");
 
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.True);
 			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(1));

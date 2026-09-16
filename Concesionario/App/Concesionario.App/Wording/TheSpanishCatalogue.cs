@@ -466,6 +466,26 @@ namespace Concesionario.App.Wording
 
 				["row.said"] = "{reading} el {observedAt}, {source}",
 
+				["completions.one"] = "1 completación registrada",
+				["completions.many"] = "{count} completaciones registradas",
+
+				["completions.OnRecord"] = "{kind}: {count}. La más reciente {done}.",
+				["completions.NoneOnRecord"] =
+					"{kind}: no hay ninguna completación registrada para este vehículo.",
+				["completions.NotOnTheSchedule"] =
+					"Este vehículo no tiene agendada ninguna operación de {kind}, así que no hay "
+					+ "ninguna completación que registrar.",
+
+				["completion.said"] = "{kind}: {done}.",
+
+				["completion.done.WithAReading"] =
+					"se hizo el {at} con el odómetro en {reading}",
+				["completion.done.WithNoReading"] =
+					"se hizo el {at}, sin lectura del odómetro registrada",
+
+				["completion.reading.WithAReading"] = "{reading}",
+				["completion.reading.WithNoReading"] = "sin lectura registrada",
+
 				["rate.Measured"] =
 					"de {from} el {fromAt} a {to} el {toAt}: {distance} en {span}, unos {perDay} "
 					+ "por día",

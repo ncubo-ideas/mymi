@@ -150,7 +150,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				refused.CompletionsSays,
-				Is.EqualTo(journal.Api.DescribeCompletions(TheKindAnchoredAhead)),
+				Is.EqualTo(journal.Api.DescribeCompletions(
+					TheKindAnchoredAhead, TheLanguage.OfTheRecord)),
 				"Y es la frase de la puerta letra por letra, de ESA clase.");
 
 			Assert.That(refused.HasBeenCompleted, Is.False);

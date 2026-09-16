@@ -740,7 +740,7 @@ namespace Concesionario.Dominio
 		/// <summary>
 		/// Si esa clase tiene alguna completacion alcanzable en su cadena. Total: es la pregunta que
 		/// hay que hacer antes de leer las filas, y las dos ausencias contestan que no por razones
-		/// distintas que <see cref="DescribeCompletions"/> dice.
+		/// distintas que <see cref="TheCompletionsClauseFor"/> separa con su forma.
 		/// </summary>
 		internal bool HasAnyCompletion(OperationKindCode kind)
 		{
@@ -757,12 +757,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El historial de esa clase en una frase. Total: nunca completada y no agendada son dos
-		/// ausencias distintas y cada una dice la suya.
+		/// El historial de esa clase como forma y valores. Total: nunca completada y no agendada son
+		/// dos ausencias distintas y cada una sale con su propio codigo.
 		/// </summary>
-		internal string DescribeCompletions(OperationKindCode kind)
+		internal ACompletionsClause TheCompletionsClauseFor(OperationKindCode kind)
 		{
-			return TheCompletionsOf(kind).Describe();
+			return TheCompletionsOf(kind).TheClause();
 		}
 
 		/// <summary>
@@ -781,31 +781,46 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Con que lectura del odometro se hizo cada completacion de esa clase, una por fila y en el
-		/// mismo orden. La que no tiene lectura lo DICE con palabras. TOTAL.
+		/// Si cada completacion de esa clase tiene lectura del odometro, por su codigo, una por fila y
+		/// en el mismo orden. La que no tiene lo DICE con su propia situacion. TOTAL.
 		/// </summary>
-		internal string[] CompletionReadingsOf(OperationKindCode kind)
+		internal string[] CompletionReadingShapesOf(OperationKindCode kind)
 		{
 			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheShapeOfItsReading();
 
 			return said;
 		}
 
 		/// <summary>
-		/// Cada completacion de esa clase en su propia frase, una por fila y en el mismo orden.
-		/// TOTAL.
+		/// Que leyo el odometro en cada completacion de esa clase, una por fila y en el mismo orden.
+		/// TOTAL, y cual fila dice algo lo dice su forma y nunca el cero.
 		/// </summary>
-		internal string[] DescribeEachCompletionOf(OperationKindCode kind)
+		internal int[] CompletionReadingValuesOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			int[] said = new int[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheValueOfItsReading();
+
+			return said;
+		}
+
+		/// <summary>
+		/// La unidad de la lectura de cada completacion de esa clase, una por fila y en el mismo
+		/// orden. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingUnitsOf(OperationKindCode kind)
 		{
 			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheUnitOfItsReading();
 
 			return said;
 		}
@@ -841,31 +856,46 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Con que lectura del odometro se hizo cada completacion del historial entero, una por fila
-		/// y en el mismo orden. La que no tiene lectura lo dice. TOTAL.
+		/// Si cada completacion del historial entero tiene lectura del odometro, por su codigo, una
+		/// por fila y en el mismo orden. La que no tiene lo dice con su propia situacion. TOTAL.
 		/// </summary>
-		internal string[] CompletionReadingsOnRecord()
+		internal string[] CompletionReadingShapesOnRecord()
 		{
 			List<ACompletionRow> rows = TheCompletionsOnRecord();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheShapeOfItsReading();
 
 			return said;
 		}
 
 		/// <summary>
-		/// Cada completacion del historial entero en su propia frase, una por fila y en el mismo
-		/// orden. TOTAL.
+		/// Que leyo el odometro en cada completacion del historial entero, una por fila y en el mismo
+		/// orden. TOTAL, y cual fila dice algo lo dice su forma y nunca el cero.
 		/// </summary>
-		internal string[] DescribeEachCompletionOnRecord()
+		internal int[] CompletionReadingValuesOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			int[] said = new int[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheValueOfItsReading();
+
+			return said;
+		}
+
+		/// <summary>
+		/// La unidad de la lectura de cada completacion del historial entero, una por fila y en el
+		/// mismo orden. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingUnitsOnRecord()
 		{
 			List<ACompletionRow> rows = TheCompletionsOnRecord();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheUnitOfItsReading();
 
 			return said;
 		}
@@ -928,7 +958,7 @@ namespace Concesionario.Dominio
 		private static ARemainder NoOperationScheduledFor(OperationKindCode kind)
 		{
 			return ARemainder.WithNoOperationScheduled(
-				MaintenanceOperationKind.OfCode(kind).HowItIsSaid);
+				MaintenanceOperationKind.OfCode(kind).Name);
 		}
 
 		private static BasePoint TheAnchor(

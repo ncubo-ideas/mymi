@@ -63,7 +63,7 @@ namespace Concesionario.Wasm
 				operations.Add(row);
 			}
 
-			EveryKindCompletionRecord record = api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord record = api.CompletionsOfEveryKind(language);
 
 			var done = new List<AThingThatWasDone>();
 
@@ -101,7 +101,7 @@ namespace Concesionario.Wasm
 			DealershipCarAPI api, string kind, DateTime asOf, string language)
 		{
 			bool completed = api.HasAnyCompletion(kind);
-			string completions = api.DescribeCompletions(kind);
+			string completions = api.DescribeCompletions(kind, language);
 
 			try
 			{

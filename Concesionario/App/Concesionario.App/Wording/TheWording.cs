@@ -28,6 +28,7 @@ namespace Concesionario.App.Wording
 		private const string ThePerCurrencyFrame = "AsOnePeriodPerCurrency";
 		private const string TheAnswerWithNoSpanOfUse = "NoSpanOfUse";
 		private const string TheClassificationThatSpreadsItself = "Durable";
+		private const string TheKindWithNoOperationOnTheSchedule = "NotOnTheSchedule";
 		private const string NoReasonToGive = "";
 
 		/// <summary>
@@ -663,6 +664,72 @@ namespace Concesionario.App.Wording
 				("reading", ADistance(phrases, value, unit)),
 				("observedAt", observedAt),
 				("source", phrases.HowItIsSaid("canon.readingSource", source)));
+		}
+
+		/// <summary>
+		/// EL HISTORIAL DE UNA CLASE: la clase, cuantas completaciones hay y como se hizo la mas
+		/// reciente; o cual de las dos ausencias le toca, cada una nombrando su propia razon. Un solo
+		/// marco para las dos juntaria una ausencia que una visita al taller cura con una que no.
+		/// </summary>
+		public static string TheCompletions(
+			Phrases phrases, string shape, string kind, int completions, string completedAt,
+			string readingShape, int reading, string unit)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			if (shape == TheKindWithNoOperationOnTheSchedule)
+				return phrases.Say("completions." + shape,
+					("kind", phrases.HowItIsSaid("canon.operation", kind).ToLowerInvariant()));
+
+			return phrases.Say("completions." + shape,
+				("kind", phrases.HowItIsSaid("canon.operation", kind)),
+				("count", phrases.Completions(completions)),
+				("done", TheWorkDone(phrases, readingShape, completedAt, reading, unit)));
+		}
+
+		/// <summary>
+		/// UNA COMPLETACION EN SU PROPIA FRASE: de que clase fue, cuando y con que lectura del
+		/// odometro, o la constancia de que su ancla no tiene ninguna. Es lo que hace que una fila
+		/// sirva sola, y lleva su conectiva: dos valores sueltos que se contienen cruzarian las
+		/// columnas sin que se note.
+		/// </summary>
+		public static string TheCompletionOnTheRecord(
+			Phrases phrases, string kind, string completedAt, string readingShape, int reading,
+			string unit)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return phrases.Say("completion.said",
+				("kind", phrases.HowItIsSaid("canon.operation", kind)),
+				("done", TheWorkDone(phrases, readingShape, completedAt, reading, unit)));
+		}
+
+		/// <summary>
+		/// LA CELDA DE LA LECTURA DE UNA COMPLETACION: la lectura con su unidad, o la ausencia dicha
+		/// con palabras. Nunca un cero y nunca la celda vacia, que se leerian las dos como que hubo
+		/// medicion.
+		/// </summary>
+		public static string TheReadingOfACompletion(
+			Phrases phrases, string readingShape, int reading, string unit)
+		{
+			if (phrases == null) throw new ArgumentNullException(nameof(phrases));
+
+			return phrases.Say(
+				"completion.reading." + readingShape,
+				("reading", ADistance(phrases, reading, unit)));
+		}
+
+		/// <summary>
+		/// COMO SE HIZO UNA COMPLETACION, sin nombrar la clase: el instante y la lectura o su
+		/// ausencia. Es la mitad que el juego entero reusa para hablar de la mas reciente sin repetir
+		/// la clase.
+		/// </summary>
+		private static string TheWorkDone(
+			Phrases phrases, string readingShape, string completedAt, int reading, string unit)
+		{
+			return phrases.Say("completion.done." + readingShape,
+				("at", completedAt),
+				("reading", ADistance(phrases, reading, unit)));
 		}
 
 		/// <summary>

@@ -299,12 +299,14 @@ namespace Concesionario.Consola
 
 		private static void TheHistoryOfOneKind(DealershipCarAPI api, string kind)
 		{
-			CompletionRecord record = api.CompletionsOf(kind);
+			CompletionRecord record = api.CompletionsOf(kind, TheVoiceOfTheDealership);
 
 			Console.WriteLine($"   {kind}");
 			Console.WriteLine($"   hay alguna               : {api.HasAnyCompletion(kind)}");
 			Console.WriteLine($"   cuantas                  : {api.CompletionCount(kind)}");
-			Console.WriteLine($"   el historial en palabras : {api.DescribeCompletions(kind)}");
+			Console.WriteLine(
+				"   el historial en palabras : "
+				+ api.DescribeCompletions(kind, TheVoiceOfTheDealership));
 
 			if (record.Says.Length == 0) Console.WriteLine("   filas                    : (ninguna)");
 
@@ -320,7 +322,7 @@ namespace Concesionario.Consola
 
 		private static void TheWholeHistoryAsRows(DealershipCarAPI api)
 		{
-			EveryKindCompletionRecord record = api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord record = api.CompletionsOfEveryKind(TheVoiceOfTheDealership);
 
 			Console.WriteLine("   -- el historial ENTERO, de la completacion mas reciente a la mas vieja");
 			Console.WriteLine("      entre todas las clases, en columnas paralelas --");

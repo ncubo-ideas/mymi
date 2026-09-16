@@ -2912,27 +2912,86 @@ namespace Concesionario.App
 		/// El historial de esa clase en una frase. TOTAL: nunca completada y no agendada son dos
 		/// ausencias distintas y cada una dice la suya.
 		/// </summary>
-		public string DescribeCompletions(string kind)
+		public string DescribeCompletions(string kind, string language)
 		{
-			return AText(
-				"@clause = schedule.DescribeCompletions(@kind);", "clause", TheKindAsked(kind));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					completions  = schedule.TheCompletionsClauseFor(@kind);
+					@shape       = completions.TheShapeItHas();
+					@kindSaid    = completions.TheKindItIsAbout();
+					@count       = completions.HowManyCompletions();
+					@completedAt = completions.TheInstantOfTheNewest();
+					@shapeOfIt   = completions.TheShapeOfTheNewestReading();
+					@reading     = completions.TheValueOfTheNewestReading();
+					@unit        = completions.TheUnitOfTheNewestReading();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "shape",       typeof(string)] = default;
+					p[Parameter.Out, "kindSaid",    typeof(string)] = default;
+					p[Parameter.Out, "count",       typeof(int)]    = default;
+					p[Parameter.Out, "completedAt", typeof(string)] = default;
+					p[Parameter.Out, "shapeOfIt",   typeof(string)] = default;
+					p[Parameter.Out, "reading",     typeof(int)]    = default;
+					p[Parameter.Out, "unit",        typeof(string)] = default;
+
+					TheKindAsked(kind)(p);
+				})
+				.PerformQuery();
+
+				return Wording.TheWording.TheCompletions(
+					Wording.Phrases.Of(language),
+					rented["shape"].GetValue<string>(),
+					rented["kindSaid"].GetValue<string>(),
+					rented["count"].GetValue<int>(),
+					rented["completedAt"].GetValue<string>(),
+					rented["shapeOfIt"].GetValue<string>(),
+					rented["reading"].GetValue<int>(),
+					rented["unit"].GetValue<string>());
+			}
 		}
 
 		/// <summary>
 		/// Las completaciones de esa clase como filas: cuando se hizo cada una, con que lectura del
-		/// odometro o la constancia de que no hay, y la frase con que el dominio la dice, en columnas
+		/// odometro o la constancia de que no hay, y la frase con que se dice entera, en columnas
 		/// paralelas y de la mas reciente a la mas vieja. TOTAL, y contesta CERO filas donde no hay
 		/// ninguna. La clase la puso quien pregunta, asi que no viene como columna.
 		/// </summary>
-		public CompletionRecord CompletionsOf(string kind)
+		public CompletionRecord CompletionsOf(string kind, string language)
 		{
-			string[][] columns = TheTextColumns(@"
-				@completedAt = schedule.CompletionInstantsOf(@kind);
-				@reading     = schedule.CompletionReadingsOf(@kind);
-				@says        = schedule.DescribeEachCompletionOf(@kind);
-			", TheColumnsOfACompletionRecord, TheKindAsked(kind));
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					completions  = schedule.TheCompletionsClauseFor(@kind);
+					@kindSaid    = completions.TheKindItIsAbout();
+					@completedAt = schedule.CompletionInstantsOf(@kind);
+					@shapeOfIt   = schedule.CompletionReadingShapesOf(@kind);
+					@reading     = schedule.CompletionReadingValuesOf(@kind);
+					@unit        = schedule.CompletionReadingUnitsOf(@kind);
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "kindSaid",    typeof(string)]   = default;
+					p[Parameter.Out, "completedAt", typeof(string[])] = default;
+					p[Parameter.Out, "shapeOfIt",   typeof(string[])] = default;
+					p[Parameter.Out, "reading",     typeof(int[])]    = default;
+					p[Parameter.Out, "unit",        typeof(string[])] = default;
 
-			return CompletionRecord.Of(columns[0], columns[1], columns[2]);
+					TheKindAsked(kind)(p);
+				})
+				.PerformQuery();
+
+				string[] completedAt = rented["completedAt"].GetValue<string[]>();
+				string[] shapes = rented["shapeOfIt"].GetValue<string[]>();
+				int[] readings = rented["reading"].GetValue<int[]>();
+				string[] units = rented["unit"].GetValue<string[]>();
+
+				return CompletionRecord.Of(
+					completedAt,
+					TheReadingsSaid(language, shapes, readings, units),
+					TheCompletionsSaid(
+						language, rented["kindSaid"].GetValue<string>(), completedAt, shapes,
+						readings, units));
+			}
 		}
 
 		/// <summary>
@@ -2941,16 +3000,93 @@ namespace Concesionario.App
 		/// reciente a la mas vieja entre todas las clases. TOTAL, y no toma ningun instante: cada fila
 		/// trae el suyo y la cadena es la que es.
 		/// </summary>
-		public EveryKindCompletionRecord CompletionsOfEveryKind()
+		public EveryKindCompletionRecord CompletionsOfEveryKind(string language)
 		{
-			string[][] columns = TheTextColumns(@"
-				@kind        = schedule.CompletionKindsOnRecord();
-				@completedAt = schedule.CompletionInstantsOnRecord();
-				@reading     = schedule.CompletionReadingsOnRecord();
-				@says        = schedule.DescribeEachCompletionOnRecord();
-			", TheColumnsOfAnEveryKindCompletionRecord, p => { });
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					@kind        = schedule.CompletionKindsOnRecord();
+					@completedAt = schedule.CompletionInstantsOnRecord();
+					@shapeOfIt   = schedule.CompletionReadingShapesOnRecord();
+					@reading     = schedule.CompletionReadingValuesOnRecord();
+					@unit        = schedule.CompletionReadingUnitsOnRecord();
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "kind",        typeof(string[])] = default;
+					p[Parameter.Out, "completedAt", typeof(string[])] = default;
+					p[Parameter.Out, "shapeOfIt",   typeof(string[])] = default;
+					p[Parameter.Out, "reading",     typeof(int[])]    = default;
+					p[Parameter.Out, "unit",        typeof(string[])] = default;
+				})
+				.PerformQuery();
 
-			return EveryKindCompletionRecord.Of(columns[0], columns[1], columns[2], columns[3]);
+				string[] kinds = rented["kind"].GetValue<string[]>();
+				string[] completedAt = rented["completedAt"].GetValue<string[]>();
+				string[] shapes = rented["shapeOfIt"].GetValue<string[]>();
+				int[] readings = rented["reading"].GetValue<int[]>();
+				string[] units = rented["unit"].GetValue<string[]>();
+
+				return EveryKindCompletionRecord.Of(
+					kinds,
+					completedAt,
+					TheReadingsSaid(language, shapes, readings, units),
+					TheCompletionsSaid(language, kinds, completedAt, shapes, readings, units));
+			}
+		}
+
+		/// <summary>
+		/// LA CELDA DE LA LECTURA DE CADA FILA. Es la lectura de vuelta y no el script: los dos
+		/// registros de completaciones escriben las mismas columnas, y quien las lee es uno solo.
+		/// </summary>
+		private static string[] TheReadingsSaid(
+			string language, string[] shapes, int[] readings, string[] units)
+		{
+			Wording.Phrases phrases = Wording.Phrases.Of(language);
+			string[] said = new string[shapes.Length];
+
+			for (int row = 0; row < said.Length; row++)
+				said[row] = Wording.TheWording.TheReadingOfACompletion(
+					phrases, shapes[row], readings[row], units[row]);
+
+			return said;
+		}
+
+		/// <summary>
+		/// LA FRASE DE CADA FILA DEL REGISTRO DE UNA SOLA CLASE, que es la misma en todas: la puso
+		/// quien pregunto y el portador la dice una vez. Repetirla en una columna dejaria en el registro
+		/// la unica columna del modulo cuyo contenido compone la puerta.
+		/// </summary>
+		private static string[] TheCompletionsSaid(
+			string language, string kind, string[] completedAt, string[] shapes, int[] readings,
+			string[] units)
+		{
+			Wording.Phrases phrases = Wording.Phrases.Of(language);
+			string[] said = new string[completedAt.Length];
+
+			for (int row = 0; row < said.Length; row++)
+				said[row] = Wording.TheWording.TheCompletionOnTheRecord(
+					phrases, kind, completedAt[row], shapes[row], readings[row], units[row]);
+
+			return said;
+		}
+
+		/// <summary>
+		/// LA FRASE DE CADA FILA DEL JUEGO ENTERO, donde la clase cambia de fila en fila y viene por
+		/// columna. Es la misma frase y el mismo renderizador; lo unico distinto es de donde sale la
+		/// clase.
+		/// </summary>
+		private static string[] TheCompletionsSaid(
+			string language, string[] kinds, string[] completedAt, string[] shapes, int[] readings,
+			string[] units)
+		{
+			Wording.Phrases phrases = Wording.Phrases.Of(language);
+			string[] said = new string[kinds.Length];
+
+			for (int row = 0; row < said.Length; row++)
+				said[row] = Wording.TheWording.TheCompletionOnTheRecord(
+					phrases, kinds[row], completedAt[row], shapes[row], readings[row], units[row]);
+
+			return said;
 		}
 
 		/// <summary>
@@ -4120,20 +4256,6 @@ namespace Concesionario.App
 		/// </summary>
 		private static readonly string[] TheColumnsOfAPlateAssignmentRecord =
 			{ "asPublished", "joinKey", "assignedAt", "isCurrent" };
-
-		/// <summary>
-		/// Los nombres de las tres columnas del registro de completaciones de UNA clase, en el orden
-		/// en que el DTO las recibe. No hay columna de clase: la puso quien pregunta.
-		/// </summary>
-		private static readonly string[] TheColumnsOfACompletionRecord =
-			{ "completedAt", "reading", "says" };
-
-		/// <summary>
-		/// Los nombres de las cuatro columnas del registro de completaciones de TODAS las clases, en
-		/// el orden en que el DTO las recibe. Aqui la clase cambia de fila en fila y viene por columna.
-		/// </summary>
-		private static readonly string[] TheColumnsOfAnEveryKindCompletionRecord =
-			{ "kind", "completedAt", "reading", "says" };
 
 		/// <summary>
 		/// Los nombres de las tres columnas de las exclusiones publicadas, en el orden en que la

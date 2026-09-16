@@ -382,6 +382,100 @@ namespace Concesionario.Dominio.Pruebas
 				clause.TheChangeAsSaid());
 		}
 
+		// EL HISTORIAL. El juego de una clase pasa por su portador -- forma, clase, conteo y la mas
+		// reciente -- y cada fila se dice con las MISMAS columnas que la puerta lee, que es lo que hace
+		// que la celda de la lectura y la frase de la fila no se puedan separar.
+		internal static string TheCompletions(
+			MaintenanceSchedule schedule, OperationKindCode kind, string language)
+		{
+			return TheCompletions(schedule.TheCompletionsClauseFor(kind), language);
+		}
+
+		internal static string TheCompletions(ACompletionsClause clause, string language)
+		{
+			return TheWording.TheCompletions(
+				Phrases.Of(language),
+				clause.TheShapeItHas(), clause.TheKindItIsAbout(), clause.HowManyCompletions(),
+				clause.TheInstantOfTheNewest(), clause.TheShapeOfTheNewestReading(),
+				clause.TheValueOfTheNewestReading(), clause.TheUnitOfTheNewestReading());
+		}
+
+		internal static string[] EachCompletionOf(
+			MaintenanceSchedule schedule, OperationKindCode kind, string language)
+		{
+			return EachCompletion(
+				language, TheKindOfEachRow(schedule, kind), schedule.CompletionInstantsOf(kind),
+				schedule.CompletionReadingShapesOf(kind), schedule.CompletionReadingValuesOf(kind),
+				schedule.CompletionReadingUnitsOf(kind));
+		}
+
+		internal static string[] EachCompletionReadingOf(
+			MaintenanceSchedule schedule, OperationKindCode kind, string language)
+		{
+			return EachCompletionReading(
+				language, schedule.CompletionReadingShapesOf(kind),
+				schedule.CompletionReadingValuesOf(kind), schedule.CompletionReadingUnitsOf(kind));
+		}
+
+		internal static string[] EachCompletionOnRecord(
+			MaintenanceSchedule schedule, string language)
+		{
+			return EachCompletion(
+				language, schedule.CompletionKindsOnRecord(),
+				schedule.CompletionInstantsOnRecord(), schedule.CompletionReadingShapesOnRecord(),
+				schedule.CompletionReadingValuesOnRecord(),
+				schedule.CompletionReadingUnitsOnRecord());
+		}
+
+		internal static string[] EachCompletionReadingOnRecord(
+			MaintenanceSchedule schedule, string language)
+		{
+			return EachCompletionReading(
+				language, schedule.CompletionReadingShapesOnRecord(),
+				schedule.CompletionReadingValuesOnRecord(),
+				schedule.CompletionReadingUnitsOnRecord());
+		}
+
+		private static string[] EachCompletion(
+			string language, string[] kinds, string[] instants, string[] shapes, int[] readings,
+			string[] units)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] said = new string[kinds.Length];
+
+			for (int fila = 0; fila < said.Length; fila++)
+				said[fila] = TheWording.TheCompletionOnTheRecord(
+					phrases, kinds[fila], instants[fila], shapes[fila], readings[fila], units[fila]);
+
+			return said;
+		}
+
+		private static string[] EachCompletionReading(
+			string language, string[] shapes, int[] readings, string[] units)
+		{
+			Phrases phrases = Phrases.Of(language);
+			string[] said = new string[shapes.Length];
+
+			for (int fila = 0; fila < said.Length; fila++)
+				said[fila] = TheWording.TheReadingOfACompletion(
+					phrases, shapes[fila], readings[fila], units[fila]);
+
+			return said;
+		}
+
+		// La clase de cada fila del juego de UNA clase, que es la misma en todas: el portador la dice
+		// una vez porque la puso quien pregunto, y la frase de cada fila la nombra igual.
+		private static string[] TheKindOfEachRow(
+			MaintenanceSchedule schedule, OperationKindCode kind)
+		{
+			string said = schedule.TheCompletionsClauseFor(kind).TheKindItIsAbout();
+			string[] kinds = new string[schedule.CompletionInstantsOf(kind).Length];
+
+			for (int fila = 0; fila < kinds.Length; fila++) kinds[fila] = said;
+
+			return kinds;
+		}
+
 		// UN NUMERO DE UNA COLUMNA, DICHO COMO LA FRASE LO DICE. Una prueba que arma el pedazo que
 		// espera a partir de una COLUMNA del registro tiene que agrupar los miles igual que el
 		// renderizador: la columna cruza el NUMERO y la frase lo dice con los separadores del idioma.

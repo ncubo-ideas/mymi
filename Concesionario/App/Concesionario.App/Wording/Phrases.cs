@@ -172,6 +172,17 @@ namespace Concesionario.App.Wording
 				: Say("days.many", ("count", Grouped(days)));
 		}
 
+		/// <summary>
+		/// Cuantas completaciones hay en el registro, dicho entero por la misma razon que los dias:
+		/// "1 completaciones" no aparece en ningun idioma.
+		/// </summary>
+		public string Completions(int completions)
+		{
+			return completions == 1
+				? Say("completions.one")
+				: Say("completions.many", ("count", Grouped(completions)));
+		}
+
 		/// <summary>Cuantos meses, dicho entero por la misma razon que los dias.</summary>
 		public string Months(int months)
 		{

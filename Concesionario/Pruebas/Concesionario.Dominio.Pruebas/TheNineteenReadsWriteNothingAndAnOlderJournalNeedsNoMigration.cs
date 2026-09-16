@@ -116,7 +116,9 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanDistanceRemainingBeSaid(TheKindThatMeasuresDistance, TheDayItIsAsked), Is.True);
 			Assert.That(journal.Api.HasAnyCompletion(TheKindThatMeasuresDistance), Is.True);
 			Assert.That(journal.Api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(2));
-			Assert.That(journal.Api.CompletionsOfEveryKind().Says, Has.Length.EqualTo(3));
+			Assert.That(
+				journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Says,
+				Has.Length.EqualTo(3));
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.True);
 			Assert.That(
 				journal.Api.PublishedServicePricesAsOf(
@@ -194,9 +196,9 @@ namespace Concesionario.Dominio.Pruebas
 				every.Append("\nhistory ").Append(kind)
 					.Append(" : any=").Append(journal.Api.HasAnyCompletion(kind))
 					.Append(" count=").Append(journal.Api.CompletionCount(kind))
-					.Append(" | ").Append(journal.Api.DescribeCompletions(kind));
+					.Append(" | ").Append(journal.Api.DescribeCompletions(kind, TheLanguage.OfTheRecord));
 
-				CompletionRecord rows = journal.Api.CompletionsOf(kind);
+				CompletionRecord rows = journal.Api.CompletionsOf(kind, TheLanguage.OfTheRecord);
 
 				every.Append("\nrows ").Append(kind)
 					.Append(" : ").Append(string.Join(" / ", rows.CompletedAt))
@@ -209,7 +211,8 @@ namespace Concesionario.Dominio.Pruebas
 						kind, 10000, "UnitA", TheLanguage.OfTheRecord));
 			}
 
-			EveryKindCompletionRecord everyKind = journal.Api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord everyKind =
+				journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord);
 
 			every.Append("\nevery kind : ").Append(string.Join(" / ", everyKind.Kind))
 				.Append(" | ").Append(string.Join(" / ", everyKind.CompletedAt))

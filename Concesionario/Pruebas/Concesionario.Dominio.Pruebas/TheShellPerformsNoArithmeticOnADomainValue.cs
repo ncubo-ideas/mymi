@@ -163,6 +163,18 @@ namespace Concesionario.Dominio.Pruebas
 					+ "compone de las cuatro columnas paralelas que el dominio ya conto, y ni el "
 					+ "valor ni el instante se tocan.",
 			},
+			// UNA ENTRADA PARA TRES SITIOS, y no por descuido: la clave de esta lista es raiz, archivo
+			// y linea, asi que tres recorridos escritos igual en el mismo archivo son UNA clave. El
+			// campo Member nombra la familia, que es lo unico que puede nombrar sin mentir.
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "TheReadingsSaid y las dos TheCompletionsSaid",
+				Snippet = "for (int row = 0; row < said.Length; row++)",
+				Reason = "Contador de un recorrido por las filas del historial que el dominio ya conto: "
+					+ "la celda de la lectura y la frase de cada fila se componen de las columnas "
+					+ "paralelas, y ni el valor ni el instante se tocan.",
+			},
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",

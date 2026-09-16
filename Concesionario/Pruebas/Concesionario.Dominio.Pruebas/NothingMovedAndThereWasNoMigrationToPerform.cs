@@ -141,9 +141,9 @@ namespace Concesionario.Dominio.Pruebas
 			"DescribeCountdown/3",
 			"HasAnyCompletion/1",
 			"CompletionCount/1",
-			"DescribeCompletions/1",
-			"CompletionsOf/1",
-			"CompletionsOfEveryKind/0",
+			"DescribeCompletions/2",
+			"CompletionsOf/2",
+			"CompletionsOfEveryKind/1",
 			"HasAnyPublishedServicePrice/0",
 			"PublishedServicePriceCount/0",
 			"PublishedServicePricesAsOf/2",
@@ -369,11 +369,13 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(api.HasAnyCompletion(TheKindThatMeasuresDistance), Is.True);
 				Assert.That(api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(2),
 					"Las dos completaciones que escribio la app de antes, caminadas de la cadena.");
-				Assert.That(api.DescribeCompletions(TheKindThatMeasuresDistance),
-					Does.Contain("se hizo el").And.Contain("27300"));
-				Assert.That(api.CompletionsOf(TheKindThatMeasuresDistance).CompletedAt,
+				Assert.That(api.DescribeCompletions(
+					TheKindThatMeasuresDistance, TheLanguage.OfTheRecord),
+					Does.Contain("se hizo el").And.Contain("27.300"));
+				Assert.That(api.CompletionsOf(
+					TheKindThatMeasuresDistance, TheLanguage.OfTheRecord).CompletedAt,
 					Has.Length.EqualTo(2));
-				Assert.That(api.CompletionsOfEveryKind().Kind, Has.Length.EqualTo(3),
+				Assert.That(api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Kind, Has.Length.EqualTo(3),
 					"Tres filas: dos de la clase que mide distancia y una de la que solo mide tiempo.");
 
 				Assert.That(api.HasAnyPublishedServicePrice(), Is.True);

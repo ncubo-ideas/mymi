@@ -85,14 +85,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				perKind,
-				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km"),
+				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km"),
 				"LA MEDICION: la frase por clase lleva ADENTRO la clausula de la fila mas reciente. Es "
 				+ "por esto que no se pinta al lado de las filas -- pintar las dos imprime la misma "
 				+ "clausula dos veces en una sola columna.");
 
 			Assert.That(
 				newest.Says,
-				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km"),
+				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km"),
 				"Y es la MISMA clausula, que es lo que hace que la de arriba sea una duplicacion y no un "
 				+ "parecido.");
 		}

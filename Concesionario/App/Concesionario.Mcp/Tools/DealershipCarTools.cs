@@ -243,7 +243,7 @@ namespace Concesionario.Mcp.Tools
 
 		private MaintenanceHistory TheWholeHistory(DealershipCarAPI api)
 		{
-			EveryKindCompletionRecord record = api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord record = api.CompletionsOfEveryKind(TheVoiceOfTheDealership);
 
 			var completions = new List<CompletedWork>();
 
@@ -264,7 +264,7 @@ namespace Concesionario.Mcp.Tools
 					Operation = each.WireName(),
 					AnyOnRecord = api.HasAnyCompletion(each.WireName()),
 					Count = api.CompletionCount(each.WireName()),
-					Says = api.DescribeCompletions(each.WireName()),
+					Says = api.DescribeCompletions(each.WireName(), TheVoiceOfTheDealership),
 				});
 
 			return new MaintenanceHistory

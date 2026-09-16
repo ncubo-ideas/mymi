@@ -450,6 +450,24 @@ namespace Concesionario.App.Wording
 
 				["row.said"] = "{reading} on {observedAt}, {source}",
 
+				["completions.one"] = "1 completion on record",
+				["completions.many"] = "{count} completions on record",
+
+				["completions.OnRecord"] = "{kind}: {count}. The most recent was {done}.",
+				["completions.NoneOnRecord"] =
+					"{kind}: there is no completion on record for this vehicle.",
+				["completions.NotOnTheSchedule"] =
+					"This vehicle has no {kind} scheduled, so there is no completion to record.",
+
+				["completion.said"] = "{kind}: {done}.",
+
+				["completion.done.WithAReading"] = "done on {at} with the odometer at {reading}",
+				["completion.done.WithNoReading"] =
+					"done on {at}, with no odometer reading recorded",
+
+				["completion.reading.WithAReading"] = "{reading}",
+				["completion.reading.WithNoReading"] = "no reading recorded",
+
 				["rate.Measured"] =
 					"from {from} on {fromAt} to {to} on {toAt}: {distance} in {span}, about {perDay} "
 					+ "per day",

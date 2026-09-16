@@ -222,19 +222,19 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(second.Kind, Is.EqualTo(TheKindThatWasCompletedTwice));
 			Assert.That(second.CompletedAt, Is.EqualTo("2025-08-22 09:30:00"));
-			Assert.That(second.Reading, Is.EqualTo("27300 km"));
+			Assert.That(second.Reading, Is.EqualTo("27.300 km"));
 			Assert.That(
 				second.Says,
-				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km"),
+				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km"),
 				"La clausula entera. Contener el instante y la lectura sueltos se queda verde con las "
 				+ "dos columnas de dos filas cruzadas.");
 
 			Assert.That(first.Kind, Is.EqualTo(TheKindThatWasCompletedTwice));
 			Assert.That(first.CompletedAt, Is.EqualTo("2025-04-11 12:00:00"));
-			Assert.That(first.Reading, Is.EqualTo("22500 km"));
+			Assert.That(first.Reading, Is.EqualTo("22.500 km"));
 			Assert.That(
 				first.Says,
-				Does.Contain("se hizo el 2025-04-11 12:00:00 con el odómetro en 22500 km"));
+				Does.Contain("se hizo el 2025-04-11 12:00:00 con el odómetro en 22.500 km"));
 
 			// Y CADA FILA NOMBRA SU PROPIA CLASE, que es lo que la hace autodescriptiva sin la columna
 			// al lado.
@@ -313,7 +313,7 @@ namespace Concesionario.Dominio.Pruebas
 			// que SI se llaman aparecen.
 			foreach (string called in new[]
 			{
-				"api.CompletionsOfEveryKind()", "api.DescribeCompletions(", "api.HasAnyCompletion(",
+				"api.CompletionsOfEveryKind(", "api.DescribeCompletions(", "api.HasAnyCompletion(",
 				"api.DescribeCountdown(", "api.PublishedServicePricesAsOf(",
 				"api.HasAnyPublishedServicePrice()", "api.PublishedServicePriceCount()",
 			})
