@@ -198,7 +198,9 @@ else
                 <span class="d-card__title">@Texts["vehicle.pricesTitle"]</span>
                 @if (Costs.AnyPriceOnRecord)
                 {
-                    <span class="d-pill d-pill--info">@Costs.PriceCountOnRecord</span>
+                    <span class="d-pill d-pill--info">
+                        @Texts.Grouped(Costs.PriceCountOnRecord)
+                    </span>
                 }
             </div>
 
