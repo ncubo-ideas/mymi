@@ -1,0 +1,11 @@
+<div class="caja">
+  <h1>@Titulo</h1>
+  <p>Llevas <b>@cuenta</b> @(cuenta == 1 ? "toque" : "toques")</p>
+  <button @onclick="Sumar">Tocar</button>
+</div>
+
+@code {
+    [Parameter] public string Titulo { get; set; } = "";
+    private int cuenta;
+    private void Sumar() => cuenta++;
+}

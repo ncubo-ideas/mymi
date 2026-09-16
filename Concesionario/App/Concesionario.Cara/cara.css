@@ -36,3 +36,22 @@ footer .malo { color: var(--d-danger-ink); }
 .d-releer:hover:not(:disabled) { border-color: #fff; background: rgba(255, 255, 255, .10); }
 .d-releer:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .d-releer:disabled { opacity: .55; cursor: progress; }
+
+/* QUE `hidden` GANE, y esto es el arreglo de un defecto real, no una precaucion.
+ *
+ * `[hidden] { display: none }` vive en la hoja del navegador, que es la de MENOR precedencia.
+ * Cualquier regla de la institucion que fije `display` en esa misma clase le gana, y el nodo
+ * se sigue viendo con el atributo puesto. Medido en el telefono el 2026-09-14: `.placa` es
+ * `inline-flex` en cargas, asi que la placa salia DOS VECES -- la fija y el selector, los dos
+ * marcados como escondidos, los dos visibles.
+ *
+ * La app suelta no tiene este problema porque Blazor no esconde: con un `@if` el nodo que no
+ * toca NO SE DIBUJA. Una cara hibrida es HTML estatico, los dos nodos existen siempre, y
+ * esconder es la unica herramienta. Entonces la herramienta tiene que funcionar.
+ *
+ * Va en `cara.css` -- que carga despues de la hoja de la institucion -- y no en la de ella:
+ * esto es una consecuencia de COMO pinta esta cara, no una opinion sobre su diseno.
+ *
+ * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
+ * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
+[hidden] { display: none !important; }

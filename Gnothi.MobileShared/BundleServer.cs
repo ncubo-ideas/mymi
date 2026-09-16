@@ -86,6 +86,22 @@ internal sealed class BundleServer
 	// el log del Host-. Nulo significa el comportamiento de antes: callarse. Ver Serve.
 	internal Action<string>? NotFound { get; set; }
 
+	// CUANTO ALCANZO A PEDIR EL MODULO ANTES DE CALLARSE. No es telemetria: es la mitad del
+	// diagnostico cuando la espera de `listo` se vence. Un modulo que no contesta y NO pidio ni
+	// su documento no arranco; uno que pidio doscientos archivos y despues no dijo nada arranco
+	// y se quedo en otra parte. Las dos cosas dejan la misma pantalla y hasta hoy el Host solo
+	// sabia decir «TimeoutException».
+	//
+	// Costo medirlo a mano el 2026-09-16: hubo que parchar el interop del modulo EN EL TELEFONO
+	// para descubrir que la app cargaba entera y nunca llamaba al puente. Eso es lo que estos
+	// dos enteros contestan sin parchar nada.
+	internal int Served => served;
+
+	internal int Documents => documents;
+
+	private int served;
+	private int documents;
+
 	// The path as the engine asked for it, with the bundle's base still in front. Returns what
 	// to answer; it never throws for a missing file, because a 404 is an answer.
 	internal ServedFile Serve(string requestedPath)
@@ -118,8 +134,11 @@ internal sealed class BundleServer
 
 		// The document is read whole because its CSP depends on its content. Everything else
 		// travels as a file the platform streams.
+		Interlocked.Increment(ref served);
+
 		if (path.EndsWith(".html", StringComparison.Ordinal))
 		{
+			Interlocked.Increment(ref documents);
 			byte[] document = WithWatchdog(File.ReadAllBytes(full));
 			return ServedFile.Document(document, CspFor(document));
 		}

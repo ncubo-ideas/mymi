@@ -230,12 +230,28 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
+		if (estado.EstaArriba) { await Releer(); return; }
+
+		// HOSPEDADA: NO HAY NADA QUE ELEGIR NI PERMISO QUE PEDIR. La carpeta la concede Gnothi, y
+		// esta rama tiene que ir ANTES de preguntar por el selector, por OPFS o por el modo
+		// recordado: ninguna de esas preguntas tiene sentido cuando el destino ya está dado.
+		//
+		// FALTABA, Y COSTO UN MODULO QUE NO ABRIA. Medido el 2026-09-16 en el telefono: la app
+		// detectaba el puente -- `window.gnothiPuente` estaba, `hospedada()` devolvia true -- y
+		// acto seguido le preguntaba al almacenamiento del NAVEGADOR: estaSoportado,
+		// opfsSoportado, estaInstalada, modoActual. Como no habia selector ni modo recordado, se
+		// quedaba mostrando «DONDE GUARDAR», nunca llamaba `AbrirAsync`, y por lo tanto nunca
+		// decia `listo`. Gnothi esperaba sus 60 segundos y reportaba
+		// `TimeoutException` + `matches:false` -- un sintoma que no nombra la causa.
+		//
+		// Es la misma rama que `Compras.Wasm/Pages/MisCompras.razor` tiene desde siempre. Si esta
+		// pantalla vuelve a crecer, esta pregunta va PRIMERA.
+		if (estado.Hospedada) { await AbrirAsync(); return; }
+
 		haySelector = await estado.HaySelectorDeCarpetasAsync();
 		hayNavegador = await estado.HayAlmacenamientoDelNavegadorAsync();
 		instalada = await estado.CorreComoAppInstaladaAsync();
 		sinAlmacenamiento = await estado.MotivoSinAlmacenamientoAsync();
-
-		if (estado.EstaArriba) { await Releer(); return; }
 
 		if (await estado.ModoRecordadoAsync() == "opfs" && hayNavegador == true)
 		{

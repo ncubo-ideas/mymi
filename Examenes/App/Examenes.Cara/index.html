@@ -33,6 +33,16 @@
   detalle por analito. En la forma hibrida la carpeta la concede Gnothi, y esta cara es el inicio.
 -->
 
+<!-- EL ENVOLTORIO, Y FALTABA. `MainLayout.razor` de la app suelta abre con `<main class="hoja">`
+     y yo no lo puse: se veia como una omision inofensiva y no lo era.
+     `.hoja` lleva `padding: 44px 26px 80px`, y `.inicio-hero` lleva `margin: -44px -26px` para
+     SANGRAR exactamente ese padding y tocar los bordes. Sin la `.hoja`, esos margenes negativos
+     no cancelan nada: tiran el hero 44px arriba del borde de la pagina y 26px afuera a cada lado.
+     Medido en el telefono el 2026-09-14: el titulo «Laboratorio Clinico Delfos» quedaba mordido
+     por la barra de estado y el conteo de «MERECE ATENCION» se cortaba contra el borde derecho.
+     Dos sintomas, una sola causa. -->
+<main class="hoja">
+
 <section class="inicio-hero">
     <div class="inicio-hero-marca">
         <!-- La gota dentro de un circulo, solo trazo. El mismo SVG de la app. -->
@@ -88,6 +98,8 @@
 <!-- EL DATO QUE EL MODULO PIDE. En la app suelta esto es editable; aca no, y no es un olvido:
      declarar el sexo es una ESCRITURA, y `consultar` solo alcanza [View]. -->
 <div id="pedido"></div>
+
+</main>
 
 <footer>
     <p>El registro vive en este dispositivo. Esta pantalla no sale a la red:

@@ -190,10 +190,15 @@ if (-not (Test-Path $apk)) {
 # with the modules, journals and pins of the previous one untouched (measured 2026-09-09).
 #
 # Y SE MIRA EL CODIGO DE SALIDA, NO LA PALABRA «Success». Esto decia
-# `if ("$instalado" -notmatch 'Success')`, y adb 36 NO IMPRIME ESA PALABRA: contesta
-# «Install command complete in 3323 ms». Con eso, un install -r que FUNCIONO se leia como
-# fallado y el guion caia SIEMPRE al desinstalar -- que es justo lo que el camino de abajo
-# existe para evitar.
+# `if ("$instalado" -notmatch 'Success')` sobre `Select-Object -Last 1`, y ahi estaba la
+# trampa: adb 36 SI imprime «Success», pero le agrega DESPUES una linea de tiempo --
+# «Install command complete in 4019 ms» --, y `-Last 1` se quedaba con esa. Un install -r
+# que funciono se leia como fallado y el guion caia SIEMPRE al desinstalar, que es justo lo
+# que el camino de abajo existe para evitar.
+#
+# [MEDIDO 2026-09-16] con el codigo de salida: `install -r` conservo los accesos fijados
+# -- `dumpsys shortcut` seguia nombrando modulo:examenes, modulo:compras y
+# modulo:municipalidad despues de instalar --.
 #
 # Y el precio no eran unos segundos: desinstalar el paquete le BORRA AL LANZADOR SUS ACCESOS
 # FIJADOS. `pm uninstall -k` conserva modulos y journals -- son datos de la app -- pero los

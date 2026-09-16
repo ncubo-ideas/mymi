@@ -44,9 +44,26 @@ public sealed class Module : IAsyncDisposable
 		installation.Shell.Type.ToLowerInvariant() switch
 		{
 			// MOVIL: el modulo es la PWA de la institucion dentro de un WebView. Es la unica
-			// forma que las tiendas permiten para codigo que llega de afuera -Play y Apple
-			// nombran JavaScript en un webview como la excepcion-, y por eso en un telefono
-			// "in-process" no se puede publicar aunque funcione.
+			// forma que pasa el TEXTO de Google Play para codigo que llega de afuera, y por eso
+			// en un telefono "in-process" probablemente no se pueda publicar aunque funcione.
+			//
+			// ESTE COMENTARIO DECIA MAS DE LO QUE SE SABIA. Decia que "Play y Apple nombran
+			// JavaScript en un webview como LA excepcion". Eso venia del viejo §3.3.2 del acuerdo
+			// de Apple, que YA NO EXISTE con esa redaccion. Leidos los tres textos el 2026-09-16
+			// (ver Documentacion/Jonathan/B-arquitectura/B11-lo-que-dicen-las-tiendas.md):
+			//
+			//   - Google Play SI es claro, y la palabra que decide es "indirect": el WebView da
+			//     acceso INDIRECTO a las APIs de Android y esta permitido; un dll cargado por
+			//     Mono en este proceso da acceso DIRECTO y no lo esta.
+			//   - Apple ya no nombra motor: dice "interpreted code", con tres condiciones. Es mas
+			//     ancho, y la tercera -no crear una tienda o escaparate para otras aplicaciones-
+			//     le pega a Gnothi entero, no a una forma.
+			//   - Y el 4.7.2 de Apple -no exponer APIs nativas al software que no viene en el
+			//     binario sin permiso previo- le pega TAMBIEN a la forma hospedada, que este
+			//     comentario daba por segura. El puente es justo eso.
+			//
+			// O sea: "webview" es la mejor posicionada, no la limpia. Nada de esto es veredicto:
+			// son textos leidos, no una revision pasada.
 			"webview"    => new WebViewShell(name, installation.Shell, installation.GrantedFolder),
 
 			// HIBRIDA: la cara en el WebView y la superficie en proceso, con el motor prestado.

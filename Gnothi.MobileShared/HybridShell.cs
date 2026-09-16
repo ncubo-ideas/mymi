@@ -42,8 +42,12 @@ namespace Gnothi.Host;
 // camino existe para averiguar.
 //
 // Y HAY UNA OBJECION QUE ESTA CLASE NO RESUELVE: un dll de la institucion ejecutandose nativo
-// es codigo que llega de afuera, y Module.ChooseShell dice que las tiendas nombran JavaScript
-// en un webview como LA excepcion. El hibrido hereda esa objecion entera.
+// es codigo que llega de afuera. Contra el texto de Google Play -leido el 2026-09-16, ver B11-
+// eso da acceso DIRECTO a las APIs de Android, y la excepcion de la politica es justamente para
+// lo que da acceso INDIRECTO ("JavaScript in a webview"). El hibrido hereda esa objecion entera.
+//
+// Lo que la caja de wasm (F5) haria distinto es exactamente esto: un intermediario que solo
+// concede los imports que Gnothi decide. Eso SI encaja en el texto.
 internal sealed class HybridShell : IShell
 {
 	private readonly InProcessShell surface;
