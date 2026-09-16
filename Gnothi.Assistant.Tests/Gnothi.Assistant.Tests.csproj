@@ -17,6 +17,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS0436</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,6 +38,19 @@
          que es exactamente lo que se quiere de una suite que compila el archivo de verdad en
          vez de una copia. -->
     <Compile Include="..\Gnothi.MobileShared\ModuleEnrollment.cs" Link="ModuleEnrollment.cs" />
+
+    <!-- Y LA CAPA NEUTRAL DEL PUENTE, por la misma razon y con el mismo precedente: el cerco del
+         journal -que un modulo no pueda escribir en la carpeta de otro- no lo expresa ningun
+         tipo ni ninguna firma publica, asi que nada en una revision normal nota el dia que se
+         pierde. Son los seis archivos que ya compila Gnothi.Desktop, tal cual. Ver Aislamiento.cs.
+         CS0436: WebViewShell y HybridShell existen tambien como stubs en el Host; el compilador
+         prefiere estos, que son los de verdad. -->
+    <Compile Include="..\Gnothi.MobileShared\WebModule.cs" Link="WebModule.cs" />
+    <Compile Include="..\Gnothi.MobileShared\BundleServer.cs" Link="BundleServer.cs" />
+    <Compile Include="..\Gnothi.MobileShared\HybridShell.cs" Link="HybridShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\WebViewShell.cs" Link="WebViewShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\GnothiCourier.cs" Link="GnothiCourier.cs" />
+    <Compile Include="..\Gnothi.MobileShared\GnothiCredential.cs" Link="GnothiCredential.cs" />
 
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />

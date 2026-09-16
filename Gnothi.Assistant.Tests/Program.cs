@@ -164,6 +164,16 @@ Console.WriteLine("=== THE PACKAGE IS INSPECTED BEFORE SHE DECIDES ===");
 Gnothi.Tests.Enrollment.Run(Assert);
 
 // ============================================================================================
+// UN MODULO NO PUEDE ESCRIBIR EN LA CARPETA DE OTRO, Y EL PUENTE NO ACEPTA QUE LE DIGAN DE
+// QUIEN HABLA. Hoy la segunda mitad se cumple sola porque hay un puente por WebView; la forma
+// que se esta evaluando (nota 49) le quita esa muleta. Ver Aislamiento.cs.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== UN MODULO NO ALCANZA EL JOURNAL DE OTRO ===");
+Gnothi.Tests.Aislamiento.Run(Assert);
+
+// ============================================================================================
 // --install WRITES THE CODEX TABLE WITHOUT TOUCHING THE REST OF config.toml.
 //
 // The ChatGPT desktop app (Codex and Work tabs) reads ~/.codex/config.toml. Measured
