@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <!-- EL SUSTRATO DE GNOTHI, COMPILADO PARA EL MOTOR WEB.
+       Esto es lo que en la nota 49 se llama la fila I: un solo documento, propiedad de
+       Gnothi, con el runtime .NET, el motor y el contrato adentro. El modulo NO se
+       referencia: llega despues, como bytes, y se carga en tiempo de ejecucion. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Sala.Sustrato</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.13" PrivateAssets="all" />
+    <PackageReference Include="Ncubo.Puppeteer" Version="3.0.0-beta.10044" />
+  </ItemGroup>
+
+  <!-- LO QUE EL HOST PRESTA. Se referencian sin usarse en C#, igual que en la forma cargo:
+       el modulo los nombra, este proyecto no. Por proyecto y no por dll suelto, para que el
+       sustrato preste exactamente lo que el repo compila hoy. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
+    <ProjectReference Include="..\..\..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  </ItemGroup>
+
+  <!-- Y LA PARTE QUE DECIDE EL SPIKE: si nadie lo usa en C#, el trimmer lo borra. Rootear
+       lo prestado no es un truco del laboratorio: es la definicion del sustrato. -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Gnothi.Contract" />
+    <TrimmerRootAssembly Include="Puppets.Portador" />
+    <TrimmerRootAssembly Include="Puppeteer" />
+    <TrimmerRootAssembly Include="Choreography" />
+  </ItemGroup>
+
+  <!-- MEDIDO 2026-09-16, primera corrida: sin esto el modulo carga y se descubre entero, pero
+       instanciarlo revienta con TypeLoadException porque el trimmer borro System.Lazy`1: nadie
+       en el sustrato lo usaba. El trimmer recorta por app, y el modulo no es parte de la app.
+       Rootear el BCL que el modulo puede tocar ES la definicion del sustrato prestado. -->
+  <!-- LOS CINCO MODULOS, TRAIDOS DE bundles/hibrida SIN MODIFICAR. No se copian al repo: el
+       paquete de la institucion ya vive ahi, y tener dos copias es el antipatron del manifiesto.
+       Que la sala consuma el MISMO bundle que hoy consume la forma hibrida es justamente lo que
+       se quiere demostrar. -->
+  <Target Name="TraerLosModulosHibridos" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <DllDeModulo Include="$(MSBuildThisFileDirectory)..\..\..\Gnothi.Mobile\bundles\hibrida\**\dominio\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DllDeModulo)"
+          DestinationFiles="@(DllDeModulo->'$(MSBuildThisFileDirectory)wwwroot\modulos\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="System.Private.CoreLib" />
+    <TrimmerRootAssembly Include="System.Runtime" />
+    <TrimmerRootAssembly Include="System.Linq" />
+    <TrimmerRootAssembly Include="System.Collections" />
+  </ItemGroup>
+
+</Project>

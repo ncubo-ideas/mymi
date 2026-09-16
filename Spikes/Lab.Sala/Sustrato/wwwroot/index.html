@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab.SustratoWeb</title>
+    <base href="/" />
+    <style>
+        body { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: #0e1116; color: #d7dde5; margin: 0; padding: 24px; }
+        h1 { font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: #7d8794; font-weight: 600; margin: 0 0 16px; }
+        pre { white-space: pre-wrap; font-size: 13px; line-height: 1.65; margin: 0; }
+    </style>
+</head>
+<body>
+    <h1>Sustrato de Gnothi en el motor web &mdash; carga de un modulo desconocido</h1>
+    <pre id="salida">arrancando el runtime...
+</pre>
+    <div id="app" hidden></div>
+    <script>
+        window.registrar = function (linea) {
+            document.getElementById('salida').textContent += linea + "\n";
+            // Cuando la sala corre adentro de un APK, cada linea va tambien a logcat. Asi se
+            // lee la corrida sin depender de que alguien mire la pantalla del telefono.
+            try { if (window.Sala) Sala.linea(linea); } catch (e) { }
+        };
+        // La memoria lineal del wasm ES el heap de .NET. Es el numero que hay que comparar
+        // contra los ~45 MB que hoy agrega cada modulo hospedado.
+        window.memoriaWasm = function () {
+            try {
+                var r = globalThis.getDotnetRuntime && globalThis.getDotnetRuntime(0);
+                var m = r && (r.Module || r.module);
+                var h = m && (m.HEAPU8 || m.HEAP8);
+                if (h) return h.byteLength;
+            } catch (e) { }
+            return -1;
+        };
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>
