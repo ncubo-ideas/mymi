@@ -94,6 +94,28 @@ function type(value) {
 	adbArgs('shell', `input text '${value.replace(/'/g, `'\\''`).replace(/ /g, '%s')}'`);
 }
 
+// `input text` DROPS CHARACTERS on a loaded device. Measured on the emulator while another
+// branch held the machine: of 40 characters only "htt" or "http:/" arrived, and the screen
+// answered "the link is not a valid module address" -- which reads like a bad link and is really
+// a lost keystroke. The cure is not a longer sleep: it is to READ BACK what the field holds and
+// type only what is missing, until it matches. If what arrived is not even a prefix of what we
+// wanted, the field is emptied and we start over, because appending to garbage gives garbage.
+async function typeUntilItSticks(selector, value) {
+	for (let intento = 1; intento <= 8; intento++) {
+		const puesto = await evaluate(`document.querySelector('${selector}').value`);
+		if (puesto === value) return;
+		if (puesto && !value.startsWith(puesto)) {
+			adb('shell input keyevent 123');                      // al final del texto
+			for (let i = 0; i < puesto.length + 4; i++) adb('shell input keyevent 67');
+			await sleep(300);
+			continue;
+		}
+		type(value.slice(puesto.length));
+		await sleep(600);
+	}
+	throw new Error(`the field kept losing keystrokes: ${await evaluate(`document.querySelector('${selector}').value`)}`);
+}
+
 // Poll up to `seconds`, printing the enrollment strip every time it changes.
 async function waitFor(done, seconds) {
 	let last = '';
@@ -111,8 +133,18 @@ async function waitFor(done, seconds) {
 async function openTheCard() {
 	const isOpen = async () => /\bon\b/.test(await evaluate("document.getElementById('sheet').className"));
 	if (await isOpen()) return;
-	// The "Agregar" button in the home header (the brand mosaic has no add card any more).
-	await tap('.addbtn');
+	// WITH NOTHING CONNECTED YET THE BUTTON IS ANOTHER ONE. The header's "+ Conectar" is hidden
+	// on an empty home -- the empty state carries the only call to action, and two buttons asking
+	// for the same thing was the point of hiding it. A hidden element measures 0x0, so tapping it
+	// blindly lands on the top-left corner and nothing opens.
+	const visible = async selector => evaluate(
+		`(() => { const e = document.querySelector('${selector}');
+		          if (!e) return false;
+		          const r = e.getBoundingClientRect();
+		          return r.width > 0 && r.height > 0; })()`);
+	const boton = await visible('.hola .addbtn') ? '.hola .addbtn' : '.nada .cta';
+	if (!(await visible(boton))) throw new Error('no add button on screen: ' + boton);
+	await tap(boton);
 	if (!(await isOpen())) throw new Error('the sheet did not open');
 }
 
@@ -134,8 +166,7 @@ async function pegar() {
 	// A field that already has the focus is not tapped again: with the keyboard up the window
 	// pans, and a tap computed from the page lands on a key (a stray letter, measured twice).
 	if ((await evaluate("document.activeElement && document.activeElement.id")) !== 'alta-url') await tap('#alta-url');
-	type(bundle);
-	await sleep(600);
+	await typeUntilItSticks('#alta-url', bundle);
 	console.log('typed:', await evaluate("document.getElementById('alta-url').value"));
 
 	adb('shell input keyevent 66');
