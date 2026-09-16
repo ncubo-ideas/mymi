@@ -42,8 +42,11 @@
     background:var(--panel);margin-bottom:12px;
     border-left:4px solid var(--marca,var(--brand))}
   .quien{display:flex;align-items:center;gap:14px;min-width:0}
-  .marca{width:42px;height:42px;flex:none;border-radius:11px;object-fit:cover;
-    background:#fff;box-shadow:0 1px 3px rgba(26,32,40,.14)}
+  /* EL LOGO VA SUELTO, SIN TEJA. Con `background:#fff` y sombra, un logo transparente vuelve a
+     quedar sobre el cuadrito blanco que las dos caras venian mostrando -- y que en realidad
+     estaba pintado dentro de los archivos. `contain` en vez de `cover` porque un logo no se
+     recorta: si no es cuadrado, se le respeta la forma. */
+  .marca{width:42px;height:42px;flex:none;object-fit:contain}
   .marca.sinlogo{display:grid;place-items:center;font-size:24px;background:var(--panel)}
   .lema{color:var(--soft);font-size:13px;margin-top:1px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
