@@ -120,10 +120,18 @@ namespace Concesionario.Wasm
 			ArgumentNullException.ThrowIfNull(http);
 
 			string[] asked = await WhatTheDeviceAskedForAsync(js);
+
 			Tag = TheFirstOneWeSpeak(asked);
+			texts = await LoadAsync(http, Tag);
+
+			if (texts.Count == 0 && Tag != TheOneOfTheRecord)
+			{
+				Tag = TheOneOfTheRecord;
+				texts = await LoadAsync(http, Tag);
+			}
+
 			TheChoiceWasAnswered = asked.Length > 0
 				&& ThePrimarySubtagOf(asked[0]) == ThePrimarySubtagOf(Tag);
-			texts = await LoadAsync(http, Tag);
 
 			await SetTheDocumentsLanguageAsync(js);
 			await SetTheWordsOfTheFailureBannerAsync(js);
