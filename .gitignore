@@ -63,6 +63,11 @@ Gnothi.Mobile/paquete.zip
 # escenario se los lleva, y 136 MB en un repo compartido no se sacan con un commit.
 Gnothi.Mobile/bundles/
 
+# La forma hospedada de compras que la pagina de La Guaria ofrece al telefono en
+# /descargas/movil/. Mismo motivo: 15 MB y el origen adentro. La arma armar-bundle.ps1
+# con -Origen, ver Compras/README.md. La forma cargo (descargas/compras.gmod) si va.
+Compras/PaginaDeDescarga/descarga/descargas/movil/
+
 # Xcode: estado de UI por persona, no del proyecto. El .xcodeproj y el esquema
 # compartido si van, para no rearmar el target a mano en cada clon.
 xcuserdata/
