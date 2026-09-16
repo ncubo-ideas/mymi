@@ -41,7 +41,18 @@ internal sealed class SalaShell : IShell
 	public SalaShell(string name, Shell shell, string grantedFolder)
 	{
 		this.name = name;
-		entrada = shell.Arguments.Count > 0 ? shell.Arguments[0] : "";
+
+		// DONDE ESTA EL DLL, SEGUN COMO SE INSTALO EL MODULO. En la forma hibrida el alta
+		// escribe [web, endpoint, dll] -- el web va primero porque lo lee todo el lado que abre
+		// la pantalla, y poner el dll ahi haria que abrir el modulo intentara servir un .dll
+		// como si fuera la carpeta del bundle. En la forma cargo el dll es lo unico y va en [0].
+		//
+		// La sala toma EL MISMO paquete en los dos casos: solo cambia de que casillero sacar la
+		// ruta.
+		entrada = shell.Arguments.Count > 2 ? shell.Arguments[2]
+			: shell.Arguments.Count > 0 ? shell.Arguments[0]
+			: "";
+
 		granted = grantedFolder;
 	}
 
