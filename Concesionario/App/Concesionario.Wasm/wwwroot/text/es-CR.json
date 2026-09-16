@@ -111,7 +111,7 @@
     "contactTitle": "¿Necesitás hablar con el taller?",
     "call": "Llamar",
     "source": "Esta app no le pregunta nada a nadie: lee el registro que tu concesionario ya te envió y que vive en {where}. {evaluated}",
-    "evaluated": "Evaluado al {day}.",
+    "evaluated": "Evaluado al {instant}.",
     "notEvaluated": "Todavía sin evaluar.",
     "refreshMigrated": "Ya no se actualiza",
     "refreshFetching": "Trayendo…",

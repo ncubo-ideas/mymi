@@ -111,7 +111,7 @@
     "contactTitle": "Need to talk to the workshop?",
     "call": "Call",
     "source": "This app asks nobody anything: it reads the record your dealership already sent you, which lives in {where}. {evaluated}",
-    "evaluated": "Evaluated up to {day}.",
+    "evaluated": "Evaluated up to {instant}.",
     "notEvaluated": "Not evaluated yet.",
     "refreshMigrated": "No longer updating",
     "refreshFetching": "Fetching…",
