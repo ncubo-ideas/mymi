@@ -1,0 +1,30 @@
+@inject HostState State
+
+@*
+    THE INSTITUTION'S SCREEN, INSIDE GNOTHI'S WINDOW -- the phone's shape on the desktop. A bar
+    that says whose it is and takes you back, and under it the module's face as a frame on its
+    own origin, filling the window. Gnothi's header and tabs are not shown while a face is open:
+    the person went to Delfos, and Gnothi is what holds it, one "Volver" away.
+*@
+
+<div class="carabar">
+    <button class="link" @onclick="() => Back.InvokeAsync()">&larr; Volver a Gnothi</button>
+    <span class="title">@Identity</span>
+    <span class="meta">dentro de Gnothi &middot; tu registro queda en esta computadora</span>
+</div>
+@* sandbox WITHOUT allow-top-navigation and WITHOUT allow-popups: the module's origin, scripts and
+   forms are its own, but it cannot take Gnothi's window somewhere else nor open one -- the half
+   no CSP covers, closed on the phone by ShouldOverrideUrlLoading. What the sandbox does not stop
+   is the frame navigating ITSELF elsewhere; for that, frames.js only talks to the frame's own
+   origin, so a frame that left it hears nothing more from Gnothi. *@
+<iframe id="cara-@Module" class="cara" src="@Url" title="@Identity"
+        sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+
+@code {
+    [Parameter] public string Module { get; set; } = "";
+    [Parameter] public string Url { get; set; } = "";
+    [Parameter] public EventCallback Back { get; set; }
+
+    private string Identity =>
+        State.Catalog.Modules.FirstOrDefault(m => m.Name == Module)?.Manifest.Identity ?? Module;
+}

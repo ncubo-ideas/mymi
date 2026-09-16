@@ -1,50 +1,118 @@
+using System.Text.Json;
 using Gnothi.Host;
 
 namespace Gnothi.Desktop;
 
-// THE HOST, HELD FOR THE WINDOW. One catalog, one dispatcher, shared by every component.
-//
-// It is deliberately thin: it owns NOTHING of its own about modules. The catalog and the
-// dispatcher are the Host's, the very same ones the MCP front end and the phone build. If the
-// window had its own way of reading modules there would be two truths, and the one that is
-// wrong is always the one nobody looks at.
-//
-// It mirrors, on the desktop, exactly what MainActivity.Start does on Android:
-//   new ModuleCatalog(root)  ->  .Load()  ->  new Dispatcher(catalog, new Meter())
+// THE ONE PLACE THE WINDOW HOLDS THE HOST. Catalog and Dispatcher are the Host's own types;
+// the components only read them. Reload() re-reads installation.json from disk -that is how a
+// switch the person flipped in her file shows up here.
 internal sealed class HostState
 {
 	private readonly string root;
+	private Gnothi.MobileShared.ModuleEnrollment? enrollment;
 
-	public HostState(string root) => this.root = root;
-
-	public string Root => root;
-	public ModuleCatalog Catalog { get; private set; } = null!;
-	public Dispatcher Dispatcher { get; private set; } = null!;
-	public IReadOnlyList<string> Warnings { get; private set; } = [];
-
-	// RELOAD, not "load once". The catalog reads installation.json off disk, and the person
-	// can edit that file to switch a module on or off -that is the Host's stated way to change
-	// consent (HostTools: "It is changed by editing installation.json"). Re-reading on demand
-	// is how the window reflects an edit without a restart.
-	public void Reload()
+	public HostState(string root, string? journalsRoot = null)
 	{
-		Catalog = new ModuleCatalog(root);
-		Warnings = Catalog.Load();
-		Dispatcher = new Dispatcher(Catalog, new Meter());
+		this.root = root;
+		// THE SAME BASE ModuleInstaller GRANTS ON THE DESKTOP -Documents/Gnothi/<modulo>- so a
+		// module that arrives through the enrollment and one that arrived through --install-module
+		// keep their journals side by side.
+		JournalsRoot = journalsRoot ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Gnothi");
 	}
 
-	// EL ICONO POR RUBRO, no por nombre de modulo.
-	//
-	// Este switch decia 'examenes', 'facturas' y 'compras', con un comentario que aclaraba que
-	// el icono NO venia del manifiesto a proposito. Era la tercera copia del mismo mapa -las
-	// otras dos en Shell.cs y en ui.html- y su costo se veia: el Host tenia que CONOCER a cada
-	// institucion por nombre para pintarla, asi que un modulo de una institucion nueva entraba
-	// anonimo. Ahora ella declara su rubro y el Host sigue eligiendo el dibujo.
-	//
-	// EL ESCRITORIO NO PINTA EL LOGO todavia, y es una diferencia real con el telefono: la
-	// aduana -Module.LogoDataUri- ya esta disponible aca, porque vive en Gnothi.Host, pero esta
-	// ventana es Razor y no comparte la cara con los dos telefonos. Es la unica capa que no sale
-	// gratis, y se dijo por adelantado en el plan.
+	public string Root => root;
+
+	public string JournalsRoot { get; }
+
+	public ModuleCatalog Catalog { get; private set; } = null!;
+
+	public Dispatcher Dispatcher { get; private set; } = null!;
+
+	public IReadOnlyList<string> Warnings { get; private set; } = [];
+
+	// THE FACES OF HYBRID MODULES, created on demand. Program registers it as WebViewShell.Host
+	// before the catalog loads, so a module whose installation.json says "hybrid" gets the real
+	// shells.
+	public IFaces Faces { get; init; } = new NoFaces();
+
+	// The default face host: the module's screen as a frame inside this window. Root wires its
+	// page side; null when the faces run in their own WebView2 window (--cara ventana).
+	public FrameWebModuleHost? Frames { get; init; }
+
+	// THE ENROLLMENT, the same one the phone runs: download or read the package, inspect it,
+	// check its signature and its origin, propose, and only then write installation.json. It
+	// replaces ModuleInstaller as the window's way in because ModuleInstaller takes cargo only,
+	// and a hybrid is not cargo.
+	public Gnothi.MobileShared.ModuleEnrollment Enrollment => enrollment ??=
+		new Gnothi.MobileShared.ModuleEnrollment(root, JournalsRoot, Log)
+		{
+			BeforeReplacing = m =>
+			{
+				Faces.Close(m);
+				Log($"alta: '{m}' estaba abierto; se cerró antes de reemplazarlo");
+			},
+		};
+
+	// ONE CATALOG, RELOADED -never a second one. Load() publishes the new list and DISPOSES the
+	// Module objects it replaced (ModuleCatalog.Publish): for a hybrid that is the institution's
+	// AssemblyLoadContext and, with keepLoaded, its actor over the journal folder. A fresh
+	// ModuleCatalog per Reload defeated that: Publish compares against ITS OWN previous list,
+	// which for a new catalog is empty, so the old catalog stayed alive with its shells and every
+	// alta or update left two actors on the same journal -the "Temp file not found" case the
+	// phone already closed. Found 2026-09-14 reviewing the desktop against Jonathan's diagram.
+	// The Dispatcher reads the catalog live (no copy), so it is built once too; the Meter keeps
+	// counting across reloads, which is what a meter should do.
+	public void Reload()
+	{
+		if (Catalog is null)
+		{
+			Catalog = new ModuleCatalog(root);
+			Dispatcher = new Dispatcher(Catalog, new Meter());
+		}
+		Warnings = Catalog.Load();
+	}
+
+	// THE CHECK AFTER AN INSTALL, the same the phone runs (Gnothi.MobileShared/Shell.VerifyNewModules):
+	// declared against actual, and one real answer. Once per module, marked in its folder, so
+	// reinstalling checks again and restarting does not. Returns what it found, to show.
+	public async Task<IReadOnlyList<string>> VerifyNewModules(CancellationToken ct)
+	{
+		List<string> lines = [];
+		foreach (Module m in Catalog.Modules)
+		{
+			string mark = Path.Combine(m.Directory, "comprobado.json");
+			if (File.Exists(mark)) continue;
+
+			try
+			{
+				Response said = await Dispatcher.Serve(
+					new Request(Dispatcher.HostModule, "verify_module", new Dictionary<string, object?> { ["module"] = m.Name }), ct);
+				string verdict = JsonSerializer.Serialize(said.Content);
+				lines.Add($"comprobación de {m.Name}: {verdict}");
+				Log($"comprobación de {m.Name}: {verdict}");
+
+				DeclaredTool? first = m.Manifest.Tools.FirstOrDefault(t => t.ReadOnly && t.Input.Count == 0);
+				if (first is not null)
+				{
+					Response answer = await Dispatcher.Serve(new Request(m.Name, first.Name, null), ct);
+					string text = answer.Content as string ?? JsonSerializer.Serialize(answer.Content);
+					lines.Add($"{first.Name} contestó: {text[..Math.Min(200, text.Length)]}");
+					Log($"  {first.Name} contestó {text.Length} bytes");
+				}
+
+				File.WriteAllText(mark, JsonSerializer.Serialize(new { cuando = DateTime.UtcNow.ToString("O") }));
+			}
+			catch (Exception ex)
+			{
+				lines.Add($"comprobación de {m.Name} FALLÓ: {ex.GetType().Name}: {ex.Message}");
+				Log($"comprobación de {m.Name} FALLÓ: {ex.GetType().Name}: {ex.Message}");
+			}
+		}
+		return lines;
+	}
+
+	public static void Log(string s) => Console.Error.WriteLine($"[gnothi.desktop] {s}");
+
 	public static string Icon(Manifest m) => (m.About?.Category ?? "") switch
 	{
 		"laboratorio" or "salud" => "\U0001FA7A",   // stethoscope

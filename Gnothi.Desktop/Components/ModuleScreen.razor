@@ -23,6 +23,25 @@ else
 {
     <h1>@HostState.Icon(module.Manifest) @module.Manifest.Identity</h1>
     <p class="sub">@module.Manifest.Title</p>
+    @if (module.Installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase))
+    {
+        @* LA PANTALLA DE LA INSTITUCION, en la forma hibrida. La cara corre en su propio origen
+           -un marco dentro de esta ventana, o su propia ventana con `--cara ventana`- y pregunta
+           por `consultar` a la misma superficie en proceso que contesta abajo. Abrirla es lo que
+           dispara el pull del cartero y la entrega a [Deliver]. *@
+        <div class="query">
+            <div class="title">La pantalla de @module.Manifest.Identity</div>
+            <div class="desc">La cara que la institución diseñó, corriendo dentro de Gnothi con el motor prestado.</div>
+            <div style="margin-top:10px">
+                <button class="small" disabled="@faceBusy" @onclick="OpenFace">@(faceBusy ? "abriendo…" : "Abrir la pantalla")</button>
+                <button class="small ghost" disabled="@faceBusy" @onclick="Pin">Poner un icono en el escritorio</button>
+            </div>
+            @if (faceMessage is not null)
+            {
+                <div class="notice">@faceMessage</div>
+            }
+        </div>
+    }
 
     @foreach (DeclaredTool tool in module.EnabledTools())
     {
@@ -77,6 +96,42 @@ else
     [Parameter] public string Name { get; set; } = "";
 
     private Module? module;
+    private bool faceBusy;
+    private string? faceMessage;
+
+    private async Task OpenFace()
+    {
+        if (module is null) return;
+        faceBusy = true;
+        faceMessage = null;
+        try
+        {
+            Module m = module;
+            await Task.Run(() => State.Faces.OpenFace(m, CancellationToken.None));
+            faceMessage = "La pantalla está abierta.";
+        }
+        catch (Exception e)
+        {
+            faceMessage = $"No se pudo abrir: {e.GetType().Name}: {e.Message}";
+        }
+        finally { faceBusy = false; }
+    }
+
+    // THE ICON ON THE DESKTOP: the phone's pinned shortcut. It opens Gnothi straight into this
+    // module's face; the label is the institution's, the process is Gnothi's.
+    private void Pin()
+    {
+        if (module is null) return;
+        try
+        {
+            string link = State.Faces.PinToDesktop(module, State.Root, State.JournalsRoot);
+            faceMessage = $"Listo: hay un icono de {module.Manifest.Identity} en tu escritorio ({Path.GetFileName(link)}). Abre esta pantalla directo.";
+        }
+        catch (Exception e)
+        {
+            faceMessage = $"No se pudo crear el icono: {e.GetType().Name}: {e.Message}";
+        }
+    }
     private readonly Dictionary<string, ToolUi> uis = new(StringComparer.Ordinal);
 
     protected override void OnParametersSet()

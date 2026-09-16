@@ -60,6 +60,12 @@
   .query{border:1px solid var(--line);border-radius:9px;padding:14px 16px;margin-bottom:12px}
   .query .desc{color:var(--soft);font-size:13px;margin:2px 0 8px}
 
+  /* --- the module's own screen, inside the window (Cara.razor) --- */
+  .carabar{display:flex;gap:14px;align-items:center;padding:9px 18px;border-bottom:1px solid var(--line);
+    background:var(--panel)}
+  .carabar .meta{margin-left:auto}
+  iframe.cara{display:block;width:100%;height:calc(100vh - 44px);border:0;background:#fff}
+
   /* --- tabs: Modulos / Asistente / Ajustes --- */
   nav.tabs{display:flex;gap:4px;padding:0 22px;border-bottom:1px solid var(--line)}
   nav.tabs button{background:none;border:none;border-bottom:2px solid transparent;color:var(--soft);
@@ -98,5 +104,6 @@
 <body>
   <div id="app"></div>
   <script src="_framework/blazor.webview.js"></script>
+  <script src="frames.js"></script>
 </body>
 </html>

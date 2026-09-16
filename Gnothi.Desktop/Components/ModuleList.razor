@@ -1,5 +1,4 @@
 @inject HostState State
-@inject Photino.NET.PhotinoWindow Window
 
 @*
     THE LIST OF MODULES. The same thing the phone shows (MainActivity.Card): icon, title, who
@@ -64,8 +63,12 @@ else
     }
 }
 
+@* THE WAY IN. It used to be a file picker straight into ModuleInstaller, which takes cargo
+   modules only; now it is the enrollment the phone runs -link or file, every form, a proposal
+   before anything is written. *@
+<Alta Installed="Reload" />
+
 <p class="crumb" style="margin-top:18px">
-    <button @onclick="Import">Import a module…</button>
     <button class="ghost" @onclick="Reload">Reload</button>
     <span class="meta"> &nbsp;re-reads installation.json from disk</span>
 </p>
@@ -85,34 +88,7 @@ else
 
     private void Reload() => State.Reload();
 
-    // IMPORT A MODULE FROM A .gmod. The window is one more caller of the Host's install
-    // authority (decision B1): it hands the package to ModuleInstaller, which verifies it,
-    // extracts it, grants a folder and writes installation.json -the person's file. The
-    // window itself neither parses the package nor writes that file.
-    //
-    // The file picker is the OS one, through Photino: NSOpenPanel on macOS, IFileOpenDialog on
-    // Windows, GTK on Linux. It has to run on the UI thread, which is where a Blazor Hybrid
-    // event handler already is. It blocks that thread while open, and that is fine: there is
-    // nothing else the window could be doing while the person picks a file.
-    private void Import()
-    {
-        string[]? picked;
-        try
-        {
-            picked = Window.ShowOpenFile(
-                title: "Pick a module package",
-                multiSelect: false,
-                filters: [("Gnothi module", [".gmod"]), ("All files", ["*"])]);
-        }
-        catch (Exception e)
-        {
-            (ok, message) = (false, $"could not open the file picker: {e.GetType().Name}: {e.Message}");
-            return;
-        }
-
-        if (picked is not { Length: > 0 } || string.IsNullOrWhiteSpace(picked[0])) return;
-
-        (ok, message) = ModuleInstaller.Install(picked[0], State.Root);
-        if (ok) State.Reload();
-    }
+    // The file picker used to live here and hand the package to ModuleInstaller (decision B1),
+    // which takes cargo modules only. The Alta component does both -link and file- through the
+    // enrollment the phone runs, for every form. The picker itself moved there unchanged.
 }

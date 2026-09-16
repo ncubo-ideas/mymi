@@ -1,0 +1,251 @@
+@using Gnothi.Host
+@using Gnothi.MobileShared
+@inject HostState State
+@inject Photino.NET.PhotinoWindow Window
+
+@*
+    THE ENROLLMENT ON THE DESKTOP -- the same one the phone runs.
+
+    The person pastes the link her institution gave her (the go.gnothi one or the bundle's own
+    address) or picks the .gmod file. ModuleEnrollment downloads or reads it, inspects it, checks
+    the signature and the origin, and PROPOSES. Nothing is written until she taps Instalar. What
+    the sheet says is what the phone's sheet says, in fewer words: who, what it will answer,
+    where the record goes, whom Gnothi will talk to for it, and what Gnothi checked.
+
+    It takes every form -cargo, hosted, hybrid- because the enrollment does; on this machine a
+    hosted module will install but has no shell to run in (the desktop has no WebView shell for
+    a whole PWA), and the sheet says so before she decides.
+*@
+
+<div class="query">
+    <div class="title">Agregar un módulo</div>
+    <div class="desc">Pegá el enlace que te dio la institución, o elegí el paquete que te mandó.</div>
+
+    <input type="text" @bind="link" placeholder="https://…/modulo.gmod, o el enlace de go.gnothi.app" style="width:100%" disabled="@busy" />
+    <div style="margin-top:10px">
+        <button class="small" disabled="@(busy || string.IsNullOrWhiteSpace(link))" @onclick="ExamineLink">@(busy ? "revisando…" : "Agregar")</button>
+        <button class="small ghost" disabled="@busy" @onclick="ExamineFile">Elegir el archivo…</button>
+    </div>
+
+    @if (progress is not null)
+    {
+        <div class="meta" style="margin-top:8px">@progress</div>
+    }
+    @if (error is not null)
+    {
+        <div class="notice denied">@error</div>
+    }
+
+    @if (proposal is { } p)
+    {
+        <div class="card" style="margin-top:14px">
+            <div class="row">
+                <div>
+                    <span style="font-size:26px">@HostState.Icon(p.Manifest)</span>
+                    <span class="title">@p.Manifest.Identity</span>
+                    <div class="meta">
+                        @(p.Manifest.Publisher?.Legal is { Length: > 0 } legal ? legal : p.Manifest.Institution)
+                        @if (p.Manifest.Publisher?.TaxId is { Length: > 0 } tax) { <text>, @tax</text> }
+                        @if (p.Manifest.Publisher?.Domain is { Length: > 0 } dom) { <text> · declara @dom</text> }
+                        @if (p.ServedBy.Length > 0) { <text> y lo sirvió @p.ServedBy</text> }
+                        @if (p.Manifest.Publisher?.Version is { Length: > 0 } v) { <text> · v@(v)</text> }
+                    </div>
+                </div>
+            </div>
+
+            @if (p.Manifest.About is { } about && (about.Description.Length > 0 || about.DoesNotDo.Length > 0))
+            {
+                <p class="desc">@about.Description @about.DoesNotDo</p>
+            }
+
+            @if (p.Update.Kind != UpdateKind.Fresh)
+            {
+                <div class="notice">@p.Update.Describe()</div>
+            }
+
+            <h3 style="font-size:13px;margin:14px 0 6px">Qué va a poder contestar</h3>
+            @foreach (DeclaredTool t in p.Manifest.Tools)
+            {
+                <div class="meta"><strong>@(t.Title.Length > 0 ? t.Title : t.Name)</strong> — @t.Description</div>
+            }
+
+            <h3 style="font-size:13px;margin:14px 0 6px">Dónde va a vivir tu registro</h3>
+            <div class="meta"><code>@p.JournalGoesTo</code></div>
+            @if (p.Manifest.Journal is { } j && (j.ExpectedSize.Length > 0 || j.Updates.Length > 0 || j.Retention.Length > 0))
+            {
+                <div class="meta">Unos @j.ExpectedSize. Se actualiza @j.Updates. La institución lo guarda @j.Retention.</div>
+            }
+
+            <h3 style="font-size:13px;margin:14px 0 6px">Con quién va a hablar</h3>
+            <div class="meta">
+                @if (p.Publisher.Length > 0) { <code>@p.Publisher</code><text> — es la única red que va a poder tocar, y la hace Gnothi por él.</text> }
+                else { <text>Con nadie: vive de lo que ya tiene en su registro.</text> }
+            </div>
+
+            <h3 style="font-size:13px;margin:14px 0 6px">Lo que Gnothi revisó</h3>
+            <ul class="meta" style="margin:0;padding-left:18px">
+                <li>@Origen(p.Provenance)</li>
+                @if (!p.Provenance.Secure && p.ServedBy.Length > 0) { <li>La conexión no va cifrada: así solo sirve en desarrollo.</li> }
+                <li>@Firma(p.Provenance)</li>
+                <li>@Forma(p.Inspection)</li>
+                <li>
+                    @if (p.Inspection.Excesses.Count > 0) { <text>Pide @string.Join(", ", p.Inspection.Excesses): se instala <strong>apagado</strong> hasta que vos lo encendás.</text> }
+                    else { <text>No pide red, ni micrófono, ni parlante.</text> }
+                </li>
+                <li>Sin ejecutables ni datos de muestra adentro.</li>
+            </ul>
+
+            <div style="margin-top:14px">
+                <button class="small" disabled="@busy" @onclick="Accept">@(p.Update.Kind == UpdateKind.Fresh ? "Instalar en esta computadora" : "Actualizar")</button>
+                <button class="small ghost" disabled="@busy" @onclick="Discard">Ahora no</button>
+            </div>
+        </div>
+    }
+
+    @if (result.Count > 0)
+    {
+        <pre style="margin-top:12px">@string.Join("\n", result)</pre>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback Installed { get; set; }
+
+    private string link = "";
+    private bool busy;
+    private string? progress;
+    private string? error;
+    private EnrollmentProposal? proposal;
+    private readonly List<string> result = [];
+
+    private async Task ExamineLink()
+    {
+        EnrollmentLink parsed = ModuleEnrollment.ParseLink(link);
+        await Examine(() => State.Enrollment.Examine(parsed.Bundle, EnrollmentSource.PastedLink, parsed.Seal, CancellationToken.None, Progress));
+    }
+
+    private async Task ExamineFile()
+    {
+        string[]? picked;
+        try
+        {
+            picked = Window.ShowOpenFile(
+                title: "Elegí el paquete del módulo",
+                multiSelect: false,
+                filters: [("Módulo de Gnothi", [".gmod", ".zip"]), ("Todos los archivos", ["*"])]);
+        }
+        catch (Exception e)
+        {
+            error = $"No se pudo abrir el selector: {e.GetType().Name}: {e.Message}";
+            return;
+        }
+        if (picked is not { Length: > 0 } || string.IsNullOrWhiteSpace(picked[0])) return;
+
+        string path = picked[0];
+        await Examine(async () =>
+        {
+            byte[] zip = await File.ReadAllBytesAsync(path);
+            return await State.Enrollment.ExamineFile(zip, Path.GetFileName(path), CancellationToken.None, Progress);
+        });
+    }
+
+    private async Task Examine(Func<Task<EnrollmentProposal>> how)
+    {
+        if (proposal is not null) { State.Enrollment.Discard(proposal); proposal = null; }
+        busy = true; error = null; result.Clear(); progress = "Revisando…";
+        try
+        {
+            // OFF THE UI THREAD: the download and the inspection are real work.
+            proposal = await Task.Run(how);
+            progress = null;
+        }
+        catch (Exception e)
+        {
+            progress = null;
+            error = Motivo(e);
+        }
+        finally { busy = false; }
+    }
+
+    private void Progress(EnrollmentProgress p)
+    {
+        progress = p.Total is long total && total > 0
+            ? $"{p.Text} {p.Bytes / 1048576.0:0.0} MB de {total / 1048576.0:0.0} MB"
+            : p.Text;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Accept()
+    {
+        if (proposal is not { } p) return;
+        busy = true; error = null;
+        try
+        {
+            string module = await Task.Run(() => State.Enrollment.Accept(p));
+            proposal = null;
+            State.Reload();
+            result.Add($"Listo: ya tenés '{module}' en esta computadora.");
+            foreach (string line in await Task.Run(() => State.VerifyNewModules(CancellationToken.None))) result.Add(line);
+            await Installed.InvokeAsync();
+        }
+        catch (Exception e)
+        {
+            error = Motivo(e);
+        }
+        finally { busy = false; }
+    }
+
+    private void Discard()
+    {
+        if (proposal is not { } p) return;
+        State.Enrollment.Discard(p);
+        proposal = null;
+    }
+
+    // The phone's refusals, in the person's words. What is not one of these is shown as it came.
+    private static string Motivo(Exception e) => e switch
+    {
+        PackageSealMismatchException => "El paquete no es el que sellaba el enlace: no se instala. Pedile el enlace actual a tu institución.",
+        PackageSignatureInvalidException => "El paquete viene firmado y la firma no cierra: lo tocaron después de firmarlo. No se instala.",
+        PackageKeyRevokedException => "La institución retiró la llave con la que está firmado este paquete. No se instala.",
+        PackageNotBackedException => "Tu institución no reconoce este paquete como suyo: no se instala. Pedile el enlace o el paquete actual.",
+        PackageCollisionException c => c.Message,
+        HttpRequestException h => $"No se pudo bajar el módulo: {h.Message}",
+        _ => $"{e.GetType().Name}: {e.Message}",
+    };
+
+    private static string Origen(Gnothi.MobileShared.Provenance p) => p.Origin switch
+    {
+        OriginCheck.Verified => $"Lo respalda {p.ServedBy}: ese origen publica este módulo y el paquete dice ser suyo.",
+        OriginCheck.NoOrigin => "Llegó sin un origen que se pueda consultar.",
+        OriginCheck.NoWellKnown => $"Lo sirvió {p.ServedBy}, que no publica su lista de módulos: sin respaldo verificable.",
+        OriginCheck.NotListed => $"{p.ServedBy} publica su lista y este paquete no está en ella.",
+        OriginCheck.NotDeclared => "El paquete no declara de qué origen es: sin respaldo verificable.",
+        OriginCheck.DeclaresAnother => $"El paquete dice ser de {p.DeclaredOrigin} y lo sirvió {p.ServedBy}.",
+        _ => p.Origin.ToString(),
+    };
+
+    private static string Firma(Gnothi.MobileShared.Provenance p) => p.Signer switch
+    {
+        SignerCheck.Unsigned => "Viene sin firma.",
+        SignerCheck.Published => $"Firmado por la llave «{p.SignerId}», que su origen publica. Gnothi la va a recordar.",
+        SignerCheck.Pinned => $"Firmado con la misma llave que la vez pasada («{p.SignerId}», desde {p.SignedSince}).",
+        SignerCheck.Rotated => $"Firmado con una llave nueva («{p.SignerId}»), que su origen publica.",
+        SignerCheck.Unknown => $"Firmado por «{p.SignerId}», una llave que su origen no publica.",
+        SignerCheck.Changed => $"Firmado con otra llave («{p.SignerId}») que la vez pasada, y el origen no la publica.",
+        SignerCheck.Revoked => $"Firmado con una llave que la institución retiró («{p.SignerId}»).",
+        _ => p.Signer.ToString(),
+    };
+
+    private static string Forma(PackageInspection i)
+    {
+        string peso = $"{i.Files} archivos, {i.Bytes / 1048576.0:0.0} MB";
+        return i.Form switch
+        {
+            PackageForm.Cargo => $"Trae solo el reglamento, como dos librerías: {peso}. El motor lo presta Gnothi.",
+            PackageForm.Hybrid => $"Trae la pantalla de la institución y su reglamento al lado: {peso}. El motor lo presta Gnothi; la pantalla se abre dentro de esta ventana.",
+            PackageForm.Hosted => $"Trae la app de la institución completa: {peso}" + (i.EngineFiles > 0 ? $", con su propio motor adentro ({i.EngineBytes / 1048576.0:0.0} MB)" : "") + ". En esta computadora todavía no hay dónde correrla: se instala, pero no contesta.",
+            _ => peso,
+        };
+    }
+}
