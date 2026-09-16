@@ -368,7 +368,7 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 	Assert("the embedded catalog loads: a known key is not its own name",
 		es != "instituciones.titulo", $"got '{es}' -- the EmbeddedResource is missing from this csproj");
 	Assert("the two languages are different phrases",
-		es == "Tus instituciones" && en == "Your institutions", $"es='{es}' en='{en}'");
+		es == "Mis conexiones" && en == "My Connections", $"es='{es}' en='{en}'");
 
 	Gnothi.Host.Textos.Idioma = "es";
 	Assert("a value travels by name, not by position",

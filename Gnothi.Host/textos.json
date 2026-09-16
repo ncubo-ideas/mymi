@@ -317,7 +317,7 @@
   "inicio.vacio.cuerpo":          { "es": "Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.", "en": "Your institutions deliver your records directly to you. They stay on your device and are only accessed when you allow it." },
   "inicio.lema":                  { "es": "Your world, together", "en": "Your world, together", "igual": "el lema de la marca no se traduce, igual que el nombre" },
 
-  "nav.instituciones":            { "es": "Instituciones", "en": "Institutions" },
+  "nav.instituciones":            { "es": "Conexiones", "en": "Connections" },
   "nav.asistente":                { "es": "Asistente", "en": "Assistant" },
   "nav.ajustes":                  { "es": "Ajustes", "en": "Settings" },
   "nav.volver":                   { "es": "Todas tus instituciones", "en": "All your institutions" },
@@ -364,8 +364,8 @@
   "ajustes.error.no-se-pudo":     { "es": "No se pudieron cargar los modelos.", "en": "Could not load the models." },
 
   "instituciones.titulo": {
-    "es": "Tus instituciones",
-    "en": "Your institutions"
+    "es": "Mis conexiones",
+    "en": "My Connections"
   },
   "instituciones.sub": {
     "es": "Lo que cada institución te entregó. Mymi lee lo que ya está en este aparato.",
