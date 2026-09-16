@@ -891,9 +891,6 @@ cargas      {"hayDatos":true,"cargas":9,"vehiculos":1,"ultimoEventoLeido":219}
 dealership  {"hasData":true,"vin":"1HGCM82633A004352","anythingDue":true,"dueCount":3,"overdueCount":2,…}
 ```
 
-DealershipCar contesta en inglés porque el módulo entero está en inglés. No es un descuido:
-la respuesta es del módulo, y el módulo habla su idioma.
-
 **Puede aparecer una vez** `{"ok":false,"motivo":"La app todavia no arranco."}` justo después
 del alta, y despues la respuesta buena. Es la carrera conocida entre el dibujado y la
 hidratación del actor: el módulo avisa con `listo()` y Gnothi reintenta. Si se queda ahí y no

@@ -123,7 +123,7 @@ namespace Concesionario.Dominio.Pruebas
 					"Y por la puerta, los mismos cinco.");
 
 				Assert.That(
-					byTheFeed.Api.StaysBetween(TheYearFrom, TheYearTo).Branch,
+					byTheFeed.Api.StaysBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Branch,
 					Is.EqualTo(new[]
 					{
 						ADealershipNarrative.TheFirstShopBranch,
@@ -250,7 +250,8 @@ namespace Concesionario.Dominio.Pruebas
 		// una columna con otro contenido.
 		private static Dictionary<string, string> TheEightAnswersOf(AScheduleOnARealJournal journal)
 		{
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			return new Dictionary<string, string>
 			{
@@ -264,11 +265,11 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeTheStayAt(dentro de la abierta)",
-					journal.Api.DescribeTheStayAt(InsideTheOpenStay)
+					journal.Api.DescribeTheStayAt(InsideTheOpenStay, TheLanguage.OfTheRecord)
 				},
 				{
 					"DescribeTheStayAt(dentro de la primera cerrada)",
-					journal.Api.DescribeTheStayAt(InsideTheFirstClosedStay)
+					journal.Api.DescribeTheStayAt(InsideTheFirstClosedStay, TheLanguage.OfTheRecord)
 				},
 				{
 					"HasAnyStayBetween",
@@ -284,7 +285,7 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeDaysInTheShopBetween",
-					journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo)
+					journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"StayCountBetween",

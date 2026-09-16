@@ -43,6 +43,10 @@ namespace Concesionario.Dominio.Pruebas
 		// aritmetica de la prueba y no la del dominio.
 		private const int TheDistanceThatIsLeft = 17456;
 
+		// El mismo monto tal como lo escribe el renderizador, que es quien pone el separador de
+		// miles desde que la redaccion salio del dominio.
+		private const string TheDistanceAsTheSentenceWritesIt = "17.456";
+
 		// CIEN ANOS. El plazo tiene que sobrevivir al reloj de cualquier corrida futura, porque la
 		// tool no acepta un instante. Si esto se pone rojo despues de 2125, el escenario cumplio su
 		// plazo y hay que volver a montarlo.
@@ -109,7 +113,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(row.DistanceStanding, Is.EqualTo("StillAhead"));
 			Assert.That(
 				row.DistanceSays,
-				Is.EqualTo("distancia: te faltan " + TheDistanceThatIsLeft + " km"),
+				Is.EqualTo("distancia: te faltan " + TheDistanceAsTheSentenceWritesIt + " km"),
 				"La frase entera y no dos pedazos: dos valores sueltos que se contienen no "
 				+ "distinguen una frase cruzada de una correcta.");
 
@@ -130,7 +134,9 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ServiceCountdown row = TheRowFor(TheKindMeasuredBothWays);
 
-			Assert.That(row.Says, Does.Contain("distancia: te faltan " + TheDistanceThatIsLeft + " km"));
+			Assert.That(
+				row.Says,
+				Does.Contain("distancia: te faltan " + TheDistanceAsTheSentenceWritesIt + " km"));
 			Assert.That(row.Says, Does.Contain("tiempo: te faltan "));
 			Assert.That(row.Says, Does.Contain(";"),
 				"Las dos mitades en UNA frase, separadas por la conectiva del dominio.");

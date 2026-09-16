@@ -4,15 +4,16 @@ using System.Collections.Generic;
 namespace Concesionario.Dominio
 {
 	/// <summary>
-	/// La respuesta de un periodo cuyo gasto entero esta dicho en una sola moneda: el resumen de esa
-	/// moneda, con sus dos vistas juntas y con las clausulas que hacen visible como se repartio lo
-	/// duradero.
+	/// La respuesta de un periodo cuyo gasto entero esta dicho en una sola moneda: el resumen de
+	/// esa moneda, con sus dos vistas juntas y con las clausulas que hacen visible como se repartio
+	/// lo duradero.
 	/// </summary>
 	internal sealed class ASpendSaidInOneCurrency : SpendInAPeriod
 	{
 		private readonly ASpendSummary _summary;
 
-		/// <summary>Se arma con el periodo, las entradas que lo tocan y el resumen de la unica moneda.</summary>
+		/// <summary>Se arma con el periodo, las entradas que lo tocan y el resumen de la unica
+		/// moneda.</summary>
 		internal ASpendSaidInOneCurrency(
 			DateTime from, DateTime to, List<ACostEntry> touching, ASpendSummary summary)
 			: base(from, to, touching)
@@ -37,17 +38,16 @@ namespace Concesionario.Dominio
 			return true;
 		}
 
-		/// <summary>El periodo y su resumen, con las dos vistas adentro.</summary>
-		internal override string Describe()
+		/// <summary>Todo el gasto dicho en una sola moneda.</summary>
+		internal override string TheShapeItHas()
 		{
-			return ThePeriodClause() + ": " + _summary.Describe();
+			return SpendShape.SaidInOneCurrency;
 		}
 
-		/// <summary>Lo mismo, diciendo que todo el gasto esta en una sola moneda.</summary>
-		internal override string DescribePerCurrency()
+		/// <summary>La unica moneda, con sus dos vistas adentro.</summary>
+		internal override List<ASummaryClause> TheClausesOfItsCurrencies()
 		{
-			return ThePeriodClause() + " todo el gasto está dicho en una sola moneda: "
-				+ _summary.Describe();
+			return new List<ASummaryClause> { _summary.TheClauseItComposes() };
 		}
 	}
 }

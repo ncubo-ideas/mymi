@@ -42,8 +42,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(schedule.ReadDueState(OperationKindCode.FluidChange), Is.EqualTo("DueSoon"));
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("decidido por distancia"),
+				schedule.TheDueReasonFor(OperationKindCode.FluidChange).WhoDecided,
+				Is.EqualTo(IntervalDimension.Distance),
 				"9000 de 10000 esta dentro del anticipo de 1000; 228 dias de 365 no. Decide la "
 				+ "dimension mas avanzada, y el motivo dice cual fue.");
 		}
@@ -57,8 +57,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(schedule.ReadDueState(OperationKindCode.FluidChange), Is.EqualTo("DueSoon"));
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("decidido por tiempo"),
+				schedule.TheDueReasonFor(OperationKindCode.FluidChange).WhoDecided,
+				Is.EqualTo(IntervalDimension.Time),
 				"335 dias de 365 esta dentro del anticipo de 30; 3000 de 10000 no. La misma ley, "
 				+ "la otra dimension: ninguna de las dos domina (OINV-20).");
 		}
@@ -95,8 +95,8 @@ namespace Concesionario.Dominio.Pruebas
 				"UNA transicion, no dos: la operacion vencio una vez, aunque hayan llegado las "
 				+ "dos dimensiones juntas.");
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("decidido por tiempo y distancia"),
+				schedule.TheDueReasonFor(OperationKindCode.FluidChange).WhoDecided,
+				Is.EqualTo(ADueReason.TimeAndDistance),
 				"Empatadas deciden las dos, y decirlo importa: la persona necesita saber que "
 				+ "esta operacion vencio por las dos razones y no por una.");
 		}
@@ -135,8 +135,8 @@ namespace Concesionario.Dominio.Pruebas
 				"OINV-21: si alguien hubiera convertido, 40000 seria el limite y esto seria Due. "
 				+ "La operacion degrada a solo-tiempo -- 233 dias de 365 -- y no vence.");
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("las unidades nunca se convierten"),
+				schedule.TheDueReasonFor(OperationKindCode.FluidChange).ClauseCodes,
+				Does.Contain(LimitClause.UnitMismatch),
 				"Y el motivo lo dice con todas las letras. Ese NotDue no es evidencia de que la "
 				+ "operacion este al dia por distancia: es que no se pudo mirar (GAP G2).");
 		}

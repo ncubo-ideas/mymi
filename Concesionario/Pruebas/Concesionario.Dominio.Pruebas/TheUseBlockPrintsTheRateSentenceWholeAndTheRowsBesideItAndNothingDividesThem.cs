@@ -133,7 +133,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				use.Says,
-				Is.EqualTo(journal.Api.DescribeRateOfUse(TheWindowFrom, TheWindowTo)),
+				Is.EqualTo(journal.Api.DescribeRateOfUse(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord)),
 				"La frase del ritmo es la de la puerta LETRA POR LETRA. Es lo unico que atrapa una "
 				+ "frase rival armada en la caratula: el barrido de aritmetica no la ve, porque una "
 				+ "suma con un operando de texto es concatenacion y nunca se marca.");
@@ -156,7 +156,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				use.BothPeriodsSay,
 				Is.EqualTo(journal.Api.DescribeTwoPeriodsOfUseCompared(
-					TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo)),
+					TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo, TheLanguage.OfTheRecord)),
 				"La frase de los dos periodos es la de la puerta letra por letra, y con los CUATRO "
 				+ "limites en el orden en que se preguntaron.");
 
@@ -176,7 +176,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				use.BothPeriodsSay,
 				Is.Not.EqualTo(journal.Api.DescribeTwoPeriodsOfUseCompared(
-					TheEarlierWindowFrom, TheEarlierWindowTo, TheWindowFrom, TheWindowTo)),
+					TheEarlierWindowFrom, TheEarlierWindowTo, TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord)),
 				"Cruzar los dos pares da la misma frase, asi que el orden de los cuatro limites no "
 				+ "esta defendido por nada.");
 		}
@@ -224,7 +224,7 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (int row in Enumerable.Range(0, use.Rows.Count))
 				Assert.That(
 					use.Rows[row].Says,
-					Is.EqualTo(journal.Api.ReadingsBetween(TheWindowFrom, TheWindowTo).Says[row]),
+					Is.EqualTo(journal.Api.ReadingsBetween(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord).Says[row]),
 					"Y cada frase es la de la puerta letra por letra.");
 		}
 
@@ -241,12 +241,14 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(use.ReadingCount, Is.EqualTo(use.Rows.Count),
 				"La cuenta del dominio y el numero de filas no coinciden.");
 
-			Assert.That(use.Says, Does.Contain(use.Rows[0].Value + " " + use.Rows[0].Unit),
+			Assert.That(use.Says, Does.Contain(Said(use.Rows[0].Value) + " " + use.Rows[0].Unit),
 				"El extremo de abajo de la frase del ritmo es la PRIMERA fila del mismo periodo.");
 
 			Assert.That(
 				use.Says,
-				Does.Contain(use.Rows[use.Rows.Count - 1].Value + " " + use.Rows[use.Rows.Count - 1].Unit),
+				Does.Contain(
+					Said(use.Rows[use.Rows.Count - 1].Value) + " "
+					+ use.Rows[use.Rows.Count - 1].Unit),
 				"Y el de arriba es la ULTIMA. Los extremos y las filas son dos lecturas de la misma "
 				+ "puerta y tienen que decir lo mismo.");
 		}
@@ -263,7 +265,7 @@ namespace Concesionario.Dominio.Pruebas
 			// MEDIDA: la variante que SI tiene ritmo no dice que no se pueda decir, y dice el ritmo.
 			Assert.That(journal.Api.CanARateOfUseBeSaid(TheWindowFrom, TheWindowTo), Is.True);
 			Assert.That(
-				journal.Api.DescribeRateOfUse(TheWindowFrom, TheWindowTo),
+				journal.Api.DescribeRateOfUse(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord),
 				Does.Not.Contain("no se puede decir").And.Contains(" por día"));
 
 			// Y LAS CUATRO SUSPENSIONES DICEN LAS DOS COSAS: que no se puede decir, y CUAL es la razon
@@ -312,7 +314,7 @@ namespace Concesionario.Dominio.Pruebas
 			// nombra ninguno de los dos limites de la ventana.
 			TheFiveReadings();
 
-			string measured = journal.Api.DescribeRateOfUse(TheWindowFrom, TheWindowTo);
+			string measured = journal.Api.DescribeRateOfUse(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord);
 
 			Assert.That(measured, Does.Contain("2026-01-10 08:00:00"),
 				"La frase medida nombra el instante de su primera lectura.");
@@ -324,7 +326,7 @@ namespace Concesionario.Dominio.Pruebas
 			// ESTADO DOS: sin ninguna lectura. Ahi SI nombra los dos limites, que es lo que hace de
 			// esto una medicion y no una preferencia: la frase nombra la ventana en UNO de los dos
 			// estados, asi que el encabezado tiene que nombrarla en los dos.
-			string absent = journal.Api.DescribeRateOfUse(TheEmptyYearFrom, TheEmptyYearTo);
+			string absent = journal.Api.DescribeRateOfUse(TheEmptyYearFrom, TheEmptyYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				absent,
@@ -334,9 +336,11 @@ namespace Concesionario.Dominio.Pruebas
 			// Y EL ENCABEZADO LOS DICE, LOS CUATRO.
 			string markup = TheSectionAsItIsWritten();
 
+			// SIN EL '@' DESDE QUE LA FRASE DEL ENCABEZADO SALE DEL CATALOGO: los cuatro limites entran
+			// como valores de huecos -- ("from", Use.From) -- y ahi ya no llevan el arroba.
 			foreach (string bound in new[]
 			{
-				"@Use.From", "@Use.To", "@Use.EarlierFrom", "@Use.EarlierTo",
+				"Use.From", "Use.To", "Use.EarlierFrom", "Use.EarlierTo",
 			})
 				Assert.That(markup, Does.Contain(bound),
 					"El bloque no dice '" + bound + "'. P-11 pide que la ventana este nombrada, y la "
@@ -384,13 +388,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				taken.Select(each => each.ParameterType.Name).ToArray(),
-				Is.EqualTo(new[] { "DealershipCarAPI", "DateTime", "DateTime", "DateTime", "DateTime" }),
-				"El portador toma la puerta y los CUATRO limites. Un instante de mas seria un segundo "
-				+ "momento que se puede separar del primero.");
+				Is.EqualTo(new[]
+					{ "DealershipCarAPI", "DateTime", "DateTime", "DateTime", "DateTime", "String" }),
+				"El portador toma la puerta, los CUATRO limites y el idioma en que se pide la frase. "
+				+ "Un instante de mas seria un segundo momento que se puede separar del primero.");
 
 			Assert.That(
 				taken.Select(each => each.Name).ToArray(),
-				Is.EqualTo(new[] { "api", "from", "to", "earlierFrom", "earlierTo" }),
+				Is.EqualTo(new[] { "api", "from", "to", "earlierFrom", "earlierTo", "language" }),
 				"Y en ESE orden: el dominio dice el cambio del PRIMER periodo respecto al SEGUNDO.");
 
 			var handingOutAnInstant = new List<string>();
@@ -418,9 +423,13 @@ namespace Concesionario.Dominio.Pruebas
 				"La caratula dejo de ofrecer el ritmo de uso y la seccion Historial no tiene de donde "
 				+ "sacarlo.");
 
-			Assert.That(read.GetParameters(), Is.Empty,
-				"La lectura de la pantalla gano un argumento. La ventana la fija la pantalla con su "
-				+ "propio reloj; pedirla seria dejar que alguien pregunte por un periodo que se invento.");
+			Assert.That(
+				read.GetParameters().Select(each => each.Name).ToArray(),
+				Is.EqualTo(new[] { "language" }),
+				"La lectura de la pantalla gano un argumento que NO es el idioma. La ventana la fija la "
+				+ "pantalla con su propio reloj; pedirla seria dejar que alguien pregunte por un "
+				+ "periodo que se invento. El idioma no es un periodo: es el de la persona, y la "
+				+ "pantalla es la unica que lo sabe.");
 
 			Assert.That(read.ReturnType, Is.EqualTo(typeof(HowThisVehicleIsDriven)));
 
@@ -448,10 +457,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				Squeezed(shell),
 				Does.Contain(
-					"public HowThisVehicleIsDriven ReadHowThisVehicleIsDriven() { Require(); "
-					+ "DateTime asOf = TheInstantTheScreenAsksAt(); "
+					"public HowThisVehicleIsDriven ReadHowThisVehicleIsDriven(string language) "
+					+ "{ Require(); DateTime asOf = TheInstantTheScreenAsksAt(); "
 					+ "return HowThisVehicleIsDriven.ReadThrough( api, TheTwelveMonthsBefore(asOf), "
-					+ "asOf, TheTwentyFourMonthsBefore(asOf), TheTwelveMonthsBefore(asOf));"),
+					+ "asOf, TheTwentyFourMonthsBefore(asOf), TheTwelveMonthsBefore(asOf), "
+					+ "language);"),
 				"La lectura del ritmo dejo de derivar sus cuatro limites de UN solo asOf. Dos lecturas "
 				+ "del reloj son dos momentos, y las dos ventanas quedarian separadas por lo que pase "
 				+ "entre ellas.");
@@ -588,12 +598,12 @@ namespace Concesionario.Dominio.Pruebas
 				+ "en pantalla, quien manda las lecturas se ve en cada una.");
 
 			Assert.That(
-				TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle),
 				Does.Contain("no quiere decir que el carro no se haya movido"),
 				"La frase dejo de decir la lectura equivocada que existe para impedir.");
 
 			Assert.That(
-				TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle),
 				Does.Contain("no hay nada que tengas que llenar vos"),
 				"Y dejo de decir que no hay nada que la persona ponga, que es la mitad que un "
 				+ "formulario contradice.");
@@ -642,10 +652,19 @@ namespace Concesionario.Dominio.Pruebas
 
 		// ===== lo que hace falta para las de arriba =======================================
 
+		// El valor de una columna dicho como la frase lo dice: la columna cruza el NUMERO y la frase
+		// le pone los separadores de miles del idioma.
+		private static string Said(int value)
+		{
+			return TheSentenceTheDoorWouldCompose.ANumberAsTheSentenceSaysIt(
+				value, TheLanguage.OfTheRecord);
+		}
+
 		private HowThisVehicleIsDriven WhatTheScreenIsHanded()
 		{
 			return HowThisVehicleIsDriven.ReadThrough(
-				journal.Api, TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo);
+				journal.Api, TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo,
+				TheLanguage.OfTheRecord);
 		}
 
 		// LAS CINCO, EN ORDEN DE OBSERVACION Y CRECIENDO: el guardia de insercion mira TODA lectura
@@ -702,7 +721,7 @@ namespace Concesionario.Dominio.Pruebas
 			return new ASuspensionAsItWasRead
 			{
 				CanBeSaid = from.Api.CanARateOfUseBeSaid(start, end),
-				Says = from.Api.DescribeRateOfUse(start, end),
+				Says = from.Api.DescribeRateOfUse(start, end, TheLanguage.OfTheRecord),
 				Variant = variant,
 				Clause = clause,
 			};

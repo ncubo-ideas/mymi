@@ -51,7 +51,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(specification.IsFluidPublished(FluidKindCode.EngineOil), Is.False,
 				"Ley L12: una revision que se esta armando es invisible a toda lectura. El "
 				+ "contenido entro, y aun asi no hay nada que citar.");
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Not.Contain(TheGrade),
 				"La frase no puede filtrar el grado que se publico adentro del borrador: eso seria "
 				+ "citar la hoja a medio cargar por la puerta de atras.");
@@ -69,9 +70,11 @@ namespace Concesionario.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.IsFluidPublished(FluidKindCode.EngineOil), Is.True);
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Contain(TheGrade));
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Contain(TheRevision),
 				"Ley L1: toda respuesta nombra la revision de la que salio, en la frase misma y no "
 				+ "solo en una lectura aparte que alguien puede no hacer.");

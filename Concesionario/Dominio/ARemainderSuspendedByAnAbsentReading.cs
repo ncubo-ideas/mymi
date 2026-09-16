@@ -8,15 +8,9 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class ARemainderSuspendedByAnAbsentReading : ARemainder
 	{
-		private readonly string _said;
-
-		/// <summary>
-		/// Se llega por <see cref="ARemainder.NoReadingToCountFrom"/>, con la frase que la
-		/// dimension ya compone: es la del dominio y no una paralela.
-		/// </summary>
-		internal ARemainderSuspendedByAnAbsentReading(string said)
+		/// <summary>Se llega por <see cref="ARemainder.NoReadingToCountFrom"/>.</summary>
+		internal ARemainderSuspendedByAnAbsentReading()
 		{
-			_said = said;
 		}
 
 		/// <summary>Si: la ley mide la dimension; lo que faltan son los hechos.</summary>
@@ -37,10 +31,10 @@ namespace Concesionario.Dominio
 			return RemainderStanding.SuspendedByAnAbsentReading;
 		}
 
-		/// <summary>La frase de la dimension, tal como la compuso.</summary>
-		internal override string Describe()
+		/// <summary>La distancia, que es la unica dimension que se cuenta desde una lectura.</summary>
+		internal override string TheDimensionItMeasures()
 		{
-			return _said;
+			return IntervalDimension.Distance;
 		}
 	}
 }

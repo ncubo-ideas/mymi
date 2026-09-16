@@ -72,10 +72,14 @@ namespace Concesionario.Dominio
 			return string.Equals(_grade, other._grade, StringComparison.Ordinal);
 		}
 
-		/// <summary>El grado con su postura entre parentesis, como entra en la frase del item.</summary>
-		internal string Describe()
+		/// <summary>
+		/// La postura con que se publico, por el NOMBRE del miembro. Es lo que viaja en la clausula al
+		/// lado del texto del grado: la postura es un conjunto cerrado y como se dice es de quien la
+		/// muestra.
+		/// </summary>
+		internal string TheStandingItWasPublishedWith()
 		{
-			return _grade + " (" + _standing.HowItIsSaid + ")";
+			return _standing.Name;
 		}
 	}
 }

@@ -87,7 +87,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y CON LA OPERACION MEDIDA LA FRASE SI LLEVA LOS DOS MONTOS, que es lo que hace que la
 			// afirmacion de arriba mida una ausencia y no una frase vacia.
-			Assert.That(handed.Of(TheKindWithACountdown).Says, Does.Contain("te faltan 7345 km"));
+			Assert.That(handed.Of(TheKindWithACountdown).Says, Does.Contain("te faltan 7.345 km"));
 			Assert.That(handed.Of(TheKindWithACountdown).Says, Does.Contain("te faltan 255 días"));
 
 			// Y CON LA QUE NO ESTA AGENDADA, LA FRASE DICE ESO Y SE DICE UNA VEZ.
@@ -104,12 +104,13 @@ namespace Concesionario.Dominio.Pruebas
 			ASealedRevisionWithOnePrice();
 
 			WhatTheServicesCost handed =
-				WhatTheServicesCost.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+				WhatTheServicesCost.ReadThrough(
+					journal.Api, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord);
 
 			Assert.That(handed.Rows, Is.Not.Empty);
 
 			foreach (APublishedPriceOnTheSheet row in handed.Rows)
-				Assert.That(row.Says, Does.Contain("2026-02-01"),
+				Assert.That(row.Says, Does.Contain("1 de febrero de 2026"),
 					"La frase de un precio dejo de nombrar el instante contra el que se juzgo su "
 					+ "vigencia. Si eso pasa, el bloque de precios se queda sin decir a que momento "
 					+ "contesta y hay que ponerlo.");
@@ -125,7 +126,10 @@ namespace Concesionario.Dominio.Pruebas
 			string services = TheSectionAsItIsWritten("Servicios.razor");
 			string sheet = TheSectionAsItIsWritten("Vehiculo.razor");
 
-			Assert.That(TimesItSays(services, "@Operations.AskedAt"), Is.EqualTo(1),
+			// SIN EL '@' DESDE QUE LA FRASE DEL ENCABEZADO SALE DEL CATALOGO: el instante entra como el
+			// valor de un hueco -- ("instant", Operations.AskedAt) -- y ahi ya no lleva el arroba. Lo que
+			// se cuenta sigue siendo el sitio donde la pantalla nombra el momento.
+			Assert.That(TimesItSays(services, "Operations.AskedAt"), Is.EqualTo(1),
 				"La lista de servicios nombra el momento en que se midio " + "una cantidad de veces "
 				+ "distinta de UNA. Ninguna frase de la cuenta atras lo nombra, asi que la pantalla "
 				+ "tiene que decirlo -- y una vez, no por fila.");
@@ -160,13 +164,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (string kind in AppState.TheNineKinds)
 			{
-				string said = journal.Api.DescribeCountdown(kind, TheInstantTheScreenAsksAt);
+				string said = journal.Api.DescribeCountdown(kind, TheInstantTheScreenAsksAt,
+					TheLanguage.OfTheRecord);
 
 				string domain = said
 					.Replace("no hay ninguna operación de ", "")
 					.Replace(" agendada para este vehículo", "");
 
-				if (domain != ComoSeLee.Operacion(kind)) disagreeing.Add(kind);
+				if (domain != ComoSeLee.Operacion(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, kind)) disagreeing.Add(kind);
 			}
 
 			Assert.That(disagreeing, Is.EquivalentTo(new[] { "FluidChange", "WearPartReplacement" }),
@@ -177,9 +182,10 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y LA FORMA DE LA DISCREPANCIA, dicha: la caratula dice una y el dominio otra, y las dos
 			// aparecen en la misma fila de la pantalla.
-			Assert.That(ComoSeLee.Operacion("FluidChange"), Is.EqualTo("Cambio de líquidos"));
+			Assert.That(ComoSeLee.Operacion(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "FluidChange"), Is.EqualTo("Cambio de líquidos"));
 			Assert.That(
-				journal.Api.DescribeCountdown("FluidChange", TheInstantTheScreenAsksAt),
+				journal.Api.DescribeCountdown("FluidChange", TheInstantTheScreenAsksAt,
+					TheLanguage.OfTheRecord),
 				Does.Contain("Cambio de fluido"));
 		}
 
@@ -187,7 +193,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		private void AnOperationWithAReadingAfterIt()

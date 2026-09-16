@@ -91,6 +91,7 @@ $catalogo = @{
         Rubro       = 'laboratorio'
         Descripcion = 'Tus resultados de laboratorio, con su historia y que te toca repetir.'
         NoHace      = 'No interpreta resultados ni reemplaza a tu medico.'
+        Idioma      = 'es-CR'
         Dominio     = 'delfos.cr'
         RazonSocial = 'Laboratorio Clínico Delfos S.A.'
         Cedula      = '3-101-123456'
@@ -119,6 +120,7 @@ $catalogo = @{
         Rubro       = 'supermercado'
         Descripcion = 'Tu historial de compras, con tus garantias y lo que sueles llevar.'
         NoHace      = 'No te dice que comer ni juzga tu canasta.'
+        Idioma      = 'es-CR'
         Dominio     = 'laguaria.cr'
         RazonSocial = 'Supermercado La Guaria S.A.'
         Cedula      = '3-101-654321'
@@ -147,6 +149,7 @@ $catalogo = @{
         Rubro       = 'combustible'
         Descripcion = 'Tus cargas de combustible y el rendimiento de cada vehiculo.'
         NoHace      = ''
+        Idioma      = 'es-CR'
         Dominio     = 'faro.cr'
         RazonSocial = 'Estaciones Faro S.A.'
         Cedula      = '3-101-777888'
@@ -175,6 +178,7 @@ $catalogo = @{
         Rubro       = 'taller'
         Descripcion = 'El plan de mantenimiento de tu vehiculo y lo que le toca.'
         NoHace      = ''
+        Idioma      = 'es-CR'
         Dominio     = 'sotavento.com'
         RazonSocial = 'Sotaventos Motors Inc.'
         Cedula      = ''
@@ -202,6 +206,7 @@ $catalogo = @{
         Rubro       = 'gobierno'
         Descripcion = 'Tus cobros municipales: por qué te subieron, qué se te vence y cuánto apartar.'
         NoHace      = 'No dice cuánto debés hoy: eso lo dice el portal de tu municipalidad.'
+        Idioma      = 'es-CR'
         Dominio     = 'municipalidad.example'
         RazonSocial = 'Municipalidad del POC'
         Cedula      = ''
@@ -392,7 +397,11 @@ $manifiesto = [ordered]@{
         category    = $m.Rubro
         description = $m.Descripcion
         doesNotDo   = $m.NoHace
-        locale      = if ($Modulo -eq 'dealership') { 'en-US' } else { 'es-CR' }
+        # EL IDIOMA DEL REGISTRO de la institucion, y es lo que se le dice al modelo para que le
+        # pase sus valores de texto libre en ese idioma. Sale de la FILA, como todo lo demas de
+        # este bloque: vivio en un `if` sobre el nombre del modulo, el concesionario paso a espanol
+        # el 2026-09-08, y la linea se quedo diciendo en-US hasta que alguien la leyo.
+        locale      = $m.Idioma
     }
     '//journal'   = 'LO QUE LA INSTITUCION PROMETE SOBRE EL REGISTRO. La pantalla del alta ya decia DONDE va a vivir; esto es cuanto, cada cuanto y por cuanto tiempo.'
     journal       = [ordered]@{

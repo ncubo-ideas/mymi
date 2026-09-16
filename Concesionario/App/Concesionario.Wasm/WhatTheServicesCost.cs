@@ -34,11 +34,12 @@ namespace Concesionario.Wasm
 		/// si, y esa asimetria es la afirmacion: sellada es un ESTADO y no un instante, y el instante
 		/// mueve la FRASE de cada fila y nunca el juego de filas.
 		/// </summary>
-		public static WhatTheServicesCost ReadThrough(DealershipCarAPI api, DateTime asOf)
+		public static WhatTheServicesCost ReadThrough(
+			DealershipCarAPI api, DateTime asOf, string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
-			PublishedPriceRecord record = api.PublishedServicePricesAsOf(asOf);
+			PublishedPriceRecord record = api.PublishedServicePricesAsOf(asOf, language);
 
 			var rows = new List<APublishedPriceOnTheSheet>();
 

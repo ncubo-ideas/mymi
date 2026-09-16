@@ -10,12 +10,10 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class AnEnvelopeSuspendedByAnAbsentReading : EnvelopeAnswer
 	{
-		private readonly string _clause;
-
 		/// <summary>La compone quien pidio el odometro al instante preguntado y no habia.</summary>
-		internal AnEnvelopeSuspendedByAnAbsentReading(string clause)
+		internal AnEnvelopeSuspendedByAnAbsentReading(AnEnvelopeClause clause)
+			: base(clause)
 		{
-			_clause = clause;
 		}
 
 		/// <summary>Si: es esta clase de ausencia y no otra.</summary>
@@ -25,16 +23,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Dice que falta la lectura, y no da ningun numero en su lugar: un numero aqui se leeria
-		/// como un odometro que alguien leyo.
+		/// Suspendida por la lectura que falta, y sin ningun numero en su lugar: un numero aqui se
+		/// leeria como un odometro que alguien leyo.
 		/// </summary>
-		internal override string Describe()
+		internal override string TheShapeItHas()
 		{
-			return TheAnswerSaying(
-				"no se puede evaluar, porque no hay ninguna lectura del odómetro de este vehículo "
-				+ "al instante preguntado ni antes. Una lectura ausente no es una lectura de nada, "
-				+ "y la mitad de distancia no se puede medir sin una.",
-				_clause);
+			return NoReading;
 		}
 	}
 }

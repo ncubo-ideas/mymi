@@ -153,7 +153,9 @@ namespace Concesionario.Dominio.Pruebas
 				25000, DistanceUnitCode.UnitA, ObservedAt, InsideTheTimeHalf);
 
 			Assert.That(answer.SuspendedByAUnitMismatch(), Is.True);
-			Assert.That(answer.Describe(), Does.Contain("registrada en la entrega"),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(answer, TheLanguage.OfTheRecord),
+				Does.Contain("registrada en la entrega"),
 				"La frase dice CUAL de las dos distancias del registro no calzo. Sin eso, la "
 				+ "agencia sale a corregir el odometro y el problema estaba en la entrega.");
 		}
@@ -177,8 +179,9 @@ namespace Concesionario.Dominio.Pruebas
 
 		private string TheSentenceWith(DistanceUnitCode odometerUnit, DateTime asOf)
 		{
-			return profile.DescribeWarrantyEnvelope(
-				AReadingFarPastTheLimitIfItWereConverted, odometerUnit, ObservedAt, asOf);
+			return TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				profile, AReadingFarPastTheLimitIfItWereConverted, odometerUnit, ObservedAt, asOf,
+				TheLanguage.OfTheRecord);
 		}
 	}
 }

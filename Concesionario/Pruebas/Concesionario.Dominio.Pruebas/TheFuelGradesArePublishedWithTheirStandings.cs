@@ -44,7 +44,9 @@ namespace Concesionario.Dominio.Pruebas
 			TheThreeGradesEnter();
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFuel(), Is.EqualTo(
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Is.EqualTo(
 				"Grados de combustible: RON 95 (mínimo), RON 98 (permitido), E85 (prohibido). "
 				+ "Publicado en la revisión REV-2025-01."));
 		}
@@ -58,7 +60,9 @@ namespace Concesionario.Dominio.Pruebas
 			TheThreeGradesEnter();
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFuel(), Does.Contain("E85 (prohibido)"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Does.Contain("E85 (prohibido)"));
 		}
 
 		// TEST 8 DE §11. Sin ninguna revision no hay especificacion de combustible, y la lectura
@@ -71,7 +75,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(withoutAnything.IsFuelPublished(), Is.False);
 			Assert.That(withoutAnything.ReadFuelRevision(), Is.EqualTo(""));
 
-			string answer = withoutAnything.DescribeFuel();
+			string answer = TheSentenceTheDoorWouldCompose.TheFuel(
+				withoutAnything, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Is.Not.Empty);
 			Assert.That(answer, Does.Contain("Grados de combustible"),
@@ -90,7 +95,9 @@ namespace Concesionario.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.IsFuelPublished(), Is.False);
-			Assert.That(specification.DescribeFuel(), Does.Not.Contain("REV-2025-01"),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Does.Not.Contain("REV-2025-01"),
 				"Una respuesta sin valor no puede llevar procedencia: diria que esa revision "
 				+ "contesto por el combustible, y no contesto.");
 		}
@@ -111,8 +118,12 @@ namespace Concesionario.Dominio.Pruebas
 			specification.PublishFuelGrade(TheRevision, "E85", FuelGradeStandingCode.Prohibited);
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFuel(), Does.Contain("E85 (prohibido)"));
-			Assert.That(specification.DescribeFuel(), Does.Not.Contain("E85 (permitido)"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Does.Contain("E85 (prohibido)"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Does.Not.Contain("E85 (permitido)"));
 		}
 
 		// EL ITEM ES LA ESPECIFICACION ENTERA. La revision 2 publica un solo grado y contesta ella
@@ -129,8 +140,12 @@ namespace Concesionario.Dominio.Pruebas
 			specification.SealRevision(TheNextRevision);
 
 			Assert.That(specification.ReadFuelRevision(), Is.EqualTo(TheNextRevision));
-			Assert.That(specification.DescribeFuel(), Does.Contain("RON 91 (mínimo)"));
-			Assert.That(specification.DescribeFuel(), Does.Not.Contain("E85"),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Does.Contain("RON 91 (mínimo)"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Does.Not.Contain("E85"),
 				"La revision 2 publico LA especificacion de combustible, no un anexo a la de la "
 				+ "revision 1. Arrastrar lo viejo mezclaria dos procedencias en una sola frase.");
 		}
@@ -142,7 +157,9 @@ namespace Concesionario.Dominio.Pruebas
 			TheThreeGradesEnter();
 
 			Assert.That(specification.IsFuelPublished(), Is.False);
-			Assert.That(specification.DescribeFuel(), Does.Not.Contain("RON 95"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFuel(specification, TheLanguage.OfTheRecord),
+				Does.Not.Contain("RON 95"));
 		}
 
 		private void TheThreeGradesEnter()

@@ -59,10 +59,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				schedule.ReadRateOfUseStanding(ElAno, FinDelAno), Is.EqualTo("Measured"));
 			Assert.That(
-				schedule.DescribeRateOfUse(ElAno, FinDelAno),
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord),
 				Is.EqualTo(
-					"de 20000 km el 2026-01-10 00:00:00 a 22000 km el 2026-03-10 00:00:00: "
-					+ "2000 km en 59 días, unos 34 km por día"));
+					"de 20.000 km el 2026-01-10 00:00:00 a 22.000 km el 2026-03-10 00:00:00: "
+					+ "2.000 km en 59 días, unos 34 km por día"));
 		}
 
 		// L2: los extremos de la respuesta son la PRIMERA y la ULTIMA fila del registro del mismo
@@ -80,16 +81,27 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(values.Length, Is.EqualTo(3));
 			Assert.That(schedule.ReadingCountBetween(ElAno, FinDelAno), Is.EqualTo(3));
 
-			string said = schedule.DescribeRateOfUse(ElAno, FinDelAno);
+			string said = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.StartWith("de " + values[0] + " km el " + instants[0]));
 			Assert.That(
 				said,
-				Does.Contain("a " + values[values.Length - 1] + " km el "
+				Does.StartWith("de " + Said(values[0]) + " km el " + instants[0]));
+			Assert.That(
+				said,
+				Does.Contain("a " + Said(values[values.Length - 1]) + " km el "
 					+ instants[instants.Length - 1]));
 			Assert.That(
-				said, Does.Not.Contain(values[1].ToString()),
+				said, Does.Not.Contain(Said(values[1])),
 				"La del medio no es un extremo, y decirla haria de la frase una tabla.");
+		}
+
+		// El valor de una columna dicho como la frase lo dice: la columna cruza el NUMERO y la frase
+		// le pone los separadores de miles del idioma.
+		private static string Said(int value)
+		{
+			return TheSentenceTheDoorWouldCompose.ANumberAsTheSentenceSaysIt(
+				value, TheLanguage.OfTheRecord);
 		}
 
 		// L2, la otra mitad: el periodo recorta. Una lectura fuera de los limites no es un extremo
@@ -105,10 +117,12 @@ namespace Concesionario.Dominio.Pruebas
 				schedule.ReadingCountBetween(Enero10, Febrero10), Is.EqualTo(2),
 				"Los dos limites son inclusive.");
 			Assert.That(
-				schedule.DescribeRateOfUse(Enero10, Febrero10),
-				Does.Contain("a 21000 km el 2026-02-10 00:00:00"));
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, Enero10, Febrero10, TheLanguage.OfTheRecord),
+				Does.Contain("a 21.000 km el 2026-02-10 00:00:00"));
 			Assert.That(
-				schedule.DescribeRateOfUse(Enero10, Febrero10), Does.Not.Contain("22000"));
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, Enero10, Febrero10, TheLanguage.OfTheRecord), Does.Not.Contain("22000"));
 		}
 
 		// L6: una sola lectura es un TODAVIA NO con la lectura nombrada, nunca un cero. Cero
@@ -123,11 +137,12 @@ namespace Concesionario.Dominio.Pruebas
 				schedule.ReadRateOfUseStanding(ElAno, FinDelAno),
 				Is.EqualTo("SuspendedByASingleReading"));
 
-			string said = schedule.DescribeRateOfUse(ElAno, FinDelAno);
+			string said = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("una sola lectura"));
 			Assert.That(
-				said, Does.Contain("20000 km del 2026-01-10 00:00:00"),
+				said, Does.Contain("20.000 km del 2026-01-10 00:00:00"),
 				"L11: la suspension nombra el hecho que hay y su fecha, no solo su categoria.");
 			Assert.That(
 				said, Does.Not.Contain("0 km por día"),
@@ -146,7 +161,8 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo("SuspendedByAnAbsentReading"));
 			Assert.That(schedule.ReadingCountBetween(ElAno, FinDelAno), Is.EqualTo(0));
 
-			string said = schedule.DescribeRateOfUse(ElAno, FinDelAno);
+			string said = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				said, Does.Contain("2026-01-01 00:00:00").And.Contains("2026-12-31 00:00:00"),
@@ -170,7 +186,8 @@ namespace Concesionario.Dominio.Pruebas
 				schedule.ReadRateOfUseStanding(ElAno, FinDelAno),
 				Is.EqualTo("SuspendedByAZeroLengthSpan"));
 			Assert.That(
-				schedule.DescribeRateOfUse(ElAno, FinDelAno),
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord),
 				Does.Contain("el mismo segundo").And.Contains("2026-01-10 08:00:00"));
 
 			// La segunda mitad: ninguno de los tipos de este slice declara un umbral de tramo
@@ -236,9 +253,10 @@ namespace Concesionario.Dominio.Pruebas
 			Llega(20000, Enero10);
 			Llega(22000, Marzo10);
 
-			string antes = schedule.DescribeRateOfUse(ElAno, FinDelAno);
+			string antes = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
-			Assert.That(antes, Does.Contain("2000 km en 59 días"));
+			Assert.That(antes, Does.Contain("2.000 km en 59 días"));
 
 			// Un relleno tardio que calza en la linea: se observo en febrero y llega ahora.
 			schedule.RecordReading(
@@ -248,11 +266,13 @@ namespace Concesionario.Dominio.Pruebas
 				schedule.ReadingCountBetween(ElAno, FinDelAno), Is.EqualTo(3),
 				"Entro en su lugar de la linea de observacion, no al final.");
 			Assert.That(
-				schedule.DescribeRateOfUse(ElAno, FinDelAno), Is.EqualTo(antes),
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord), Is.EqualTo(antes),
 				"Los extremos del ANO no se movieron, asi que su ritmo tampoco.");
 			Assert.That(
-				schedule.DescribeRateOfUse(Enero10, Febrero10),
-				Does.Contain("1000 km en 31 días"),
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, Enero10, Febrero10, TheLanguage.OfTheRecord),
+				Does.Contain("1.000 km en 31 días"),
 				"Y el ritmo del periodo que la cubre SI cambio: antes ese periodo tenia una sola "
 				+ "lectura.");
 		}

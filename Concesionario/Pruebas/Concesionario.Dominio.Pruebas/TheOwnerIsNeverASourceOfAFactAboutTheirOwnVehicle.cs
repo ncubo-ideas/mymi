@@ -151,11 +151,11 @@ namespace Concesionario.Dominio.Pruebas
 		// sobrecarga es su propio sitio y el rojo lo nombra.
 		private static readonly string[] EveryMeasurementAQuestionTakes =
 		{
-			"DescribeServiceInterval/3(distanceRemaining)",
+			"DescribeServiceInterval/4(distanceRemaining)",
 
-			"DescribeServicingElsewhereRule/3(externalServicesWithEvidence)",
-			"DescribeServicingElsewhereRule/3(externalServicesWithoutEvidence)",
-			"DescribeServicingElsewhereRule/3(missedMaintenanceCount)",
+			"DescribeServicingElsewhereRule/4(externalServicesWithEvidence)",
+			"DescribeServicingElsewhereRule/4(externalServicesWithoutEvidence)",
+			"DescribeServicingElsewhereRule/4(missedMaintenanceCount)",
 
 			"CanCoverageBeEvaluated/9(envelopeMonths)",
 			"CanCoverageBeEvaluated/9(envelopeDistance)",
@@ -169,11 +169,11 @@ namespace Concesionario.Dominio.Pruebas
 			"ReadCoverageStanding/9(deliveryReading)",
 			"ReadCoverageStanding/9(currentReading)",
 
-			"DescribeCoverage/9(envelopeMonths)",
-			"DescribeCoverage/9(envelopeDistance)",
-			"DescribeCoverage/9(deliveredAt)",
-			"DescribeCoverage/9(deliveryReading)",
-			"DescribeCoverage/9(currentReading)",
+			"DescribeCoverage/10(envelopeMonths)",
+			"DescribeCoverage/10(envelopeDistance)",
+			"DescribeCoverage/10(deliveredAt)",
+			"DescribeCoverage/10(deliveryReading)",
+			"DescribeCoverage/10(currentReading)",
 		};
 
 		[Test]
@@ -206,19 +206,32 @@ namespace Concesionario.Dominio.Pruebas
 			}));
 		}
 
-		// Y LAS TRES DE COBERTURA TOMAN NUEVE Y NO DIEZ. Es el renglon que atrapa un decimo argumento
-		// antes que el censo, y con un mensaje que dice lo que paso: la aritmetica de "nueve hechos"
-		// esta escrita en cuatro documentos y en el /// de la puerta, y crecer sin decirlo la
-		// desmiente en silencio.
+		// Y LAS TRES DE COBERTURA SIGUEN PIDIENDO LOS MISMOS NUEVE HECHOS. Es el renglon que atrapa
+		// un hecho de mas antes que el censo, y con un mensaje que dice lo que paso: la aritmetica de
+		// "nueve hechos" esta escrita en cuatro documentos y en el /// de la puerta, y crecer sin
+		// decirlo la desmiente en silencio.
+		//
+		// LA QUE COMPONE UNA FRASE TOMA ADEMAS EL IDIOMA, asi que toma diez PARAMETROS y los mismos
+		// nueve HECHOS. El idioma no es un hecho de ningun vehiculo: lo pone quien pregunta, igual
+		// que asOf, y por eso el renglon de abajo lo nombra en vez de contarlo. Las otras dos
+		// contestan un bool y un codigo, que no tienen idioma.
 		[Test]
 		public void EachCoverageReadStillAsksForExactlyNineFacts()
 		{
-			foreach (string each in new[]
-				{ "CanCoverageBeEvaluated", "ReadCoverageStanding", "DescribeCoverage" })
+			foreach (string each in new[] { "CanCoverageBeEvaluated", "ReadCoverageStanding" })
 				Assert.That(TheDoorsMember(each).GetParameters().Length, Is.EqualTo(9),
 					$"'{each}' dejo de tomar nueve. Las tres son legitimas porque piden el escenario "
 					+ "COMPLETO: quien las llama monta uno entero. Una que pidiera OCHO y derivara el "
 					+ "noveno estaria componiendo con un hecho que nadie le dio.");
+
+			ParameterInfo[] said = TheDoorsMember("DescribeCoverage").GetParameters();
+
+			Assert.That(said, Has.Length.EqualTo(10),
+				"'DescribeCoverage' dejo de tomar los nueve hechos mas el idioma.");
+			Assert.That(said[9].Name, Is.EqualTo("language"),
+				"El decimo de 'DescribeCoverage' tiene que ser el IDIOMA y ningun otro. Sin este "
+				+ "renglon, un decimo hecho del vehiculo -- un odometro, un limite -- entraria con "
+				+ "el mismo conteo y la ley de los nueve seguiria verde.");
 		}
 
 		// ===== EL BARRIDO NO SE SALTA NADA ================================================
@@ -287,16 +300,16 @@ namespace Concesionario.Dominio.Pruebas
 			"ReadRateOfUseStanding/2(from)",
 			"ReadRateOfUseStanding/2(to)",
 
-			"DescribeRateOfUse/2(from)",
-			"DescribeRateOfUse/2(to)",
+			"DescribeRateOfUse/3(from)",
+			"DescribeRateOfUse/3(to)",
 
-			"DescribeTwoPeriodsOfUseCompared/4(from1)",
-			"DescribeTwoPeriodsOfUseCompared/4(to1)",
-			"DescribeTwoPeriodsOfUseCompared/4(from2)",
-			"DescribeTwoPeriodsOfUseCompared/4(to2)",
+			"DescribeTwoPeriodsOfUseCompared/5(from1)",
+			"DescribeTwoPeriodsOfUseCompared/5(to1)",
+			"DescribeTwoPeriodsOfUseCompared/5(from2)",
+			"DescribeTwoPeriodsOfUseCompared/5(to2)",
 
-			"ReadingsBetween/2(from)",
-			"ReadingsBetween/2(to)",
+			"ReadingsBetween/3(from)",
+			"ReadingsBetween/3(to)",
 
 			"ReadingCountBetween/2(from)",
 			"ReadingCountBetween/2(to)",
@@ -304,22 +317,22 @@ namespace Concesionario.Dominio.Pruebas
 			"HasAnyCostBetween/2(from)",
 			"HasAnyCostBetween/2(to)",
 
-			"DescribeSpendBetween/2(from)",
-			"DescribeSpendBetween/2(to)",
+			"DescribeSpendBetween/3(from)",
+			"DescribeSpendBetween/3(to)",
 
 			"IsSpendSaidInOneCurrencyBetween/2(from)",
 			"IsSpendSaidInOneCurrencyBetween/2(to)",
 
-			"DescribeSpendPerCurrencyBetween/2(from)",
-			"DescribeSpendPerCurrencyBetween/2(to)",
+			"DescribeSpendPerCurrencyBetween/3(from)",
+			"DescribeSpendPerCurrencyBetween/3(to)",
 
-			"DescribeTwoPeriodsOfSpendCompared/4(from1)",
-			"DescribeTwoPeriodsOfSpendCompared/4(to1)",
-			"DescribeTwoPeriodsOfSpendCompared/4(from2)",
-			"DescribeTwoPeriodsOfSpendCompared/4(to2)",
+			"DescribeTwoPeriodsOfSpendCompared/5(from1)",
+			"DescribeTwoPeriodsOfSpendCompared/5(to1)",
+			"DescribeTwoPeriodsOfSpendCompared/5(from2)",
+			"DescribeTwoPeriodsOfSpendCompared/5(to2)",
 
-			"CostEntriesBetween/2(from)",
-			"CostEntriesBetween/2(to)",
+			"CostEntriesBetween/3(from)",
+			"CostEntriesBetween/3(to)",
 
 			"CostEntryCountBetween/2(from)",
 			"CostEntryCountBetween/2(to)",
@@ -327,8 +340,8 @@ namespace Concesionario.Dominio.Pruebas
 			"CanCostPerDistanceBeSaid/2(from)",
 			"CanCostPerDistanceBeSaid/2(to)",
 
-			"DescribeCostPerDistanceBetween/2(from)",
-			"DescribeCostPerDistanceBetween/2(to)",
+			"DescribeCostPerDistanceBetween/3(from)",
+			"DescribeCostPerDistanceBetween/3(to)",
 		};
 
 		[Test]

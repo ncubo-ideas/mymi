@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -81,6 +82,10 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			"TheInstantTheBoardIsRead", "Story.Delivery", "Story.TheFirstEvaluation",
 		};
+
+		// LA CONSTANTE CON QUE EL TABLERO PIDE LA REDACCION. No es un limite de periodo y no se
+		// censa como uno: dice en que idioma se quiere la frase, no que pedazo del registro.
+		private const string TheLanguageTheBoardAsksIn = "TheVoiceOfTheDealership";
 
 		// EL ORDEN DE LOS CUATRO LIMITES DE LA COMPARACION, y es contrato: el cambio se dice del
 		// PRIMER periodo respecto al SEGUNDO, cosa que OD-2 fijo por falsificacion en la puerta. La
@@ -328,7 +333,7 @@ namespace Concesionario.Dominio.Pruebas
 					+ "se descubre corriendo.");
 
 				foreach (string arguments in calls)
-					foreach (string bound in arguments.Split(','))
+					foreach (string bound in TheBoundsOf(arguments).Split(','))
 						Assert.That(TheWrittenMomentsTheUseBlocksMayAskWith, Does.Contain(bound.Trim()),
 							"'" + read + "(" + arguments + ")' pregunta con un limite que no es ninguno "
 							+ "de los tres momentos escritos de la historia. Story.SixMonthsLater vale "
@@ -362,7 +367,7 @@ namespace Concesionario.Dominio.Pruebas
 				"La comparacion de las dos mitades se pide " + calls.Count + " veces en los bloques "
 				+ "del tablero, y se pide una.");
 
-			Assert.That(TheOneSpaced(calls[0]), Is.EqualTo(TheComparisonsFourBoundsInOrder),
+			Assert.That(TheOneSpaced(TheBoundsOf(calls[0])), Is.EqualTo(TheComparisonsFourBoundsInOrder),
 				"Los cuatro limites de la comparacion no son los cuatro esperados en ese orden. La "
 				+ "mitad TARDIA -- de la primera evaluacion al instante del tablero -- va PRIMERA, y "
 				+ "la temprana -- de la entrega a la primera evaluacion -- va segunda: el dominio dice "
@@ -533,7 +538,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheReaderSeesACallAtAnotherInstantAndAKindTheShellNamedWhenThereIsOne()
 		{
 			const string atAnother =
-				"Console.WriteLine($\"   x : {api.DescribeCountdown(kind, Story.SixMonthsLater)}\");";
+				"Console.WriteLine($\"   x : {api.DescribeCountdown(kind, Story.SixMonthsLater, "
+				+ "TheVoiceOfTheDealership)}\");";
 
 			List<string> found = TheArgumentsOfEveryCallTo(
 				TheCodeOfTheShellsAsData.OnlyWhatTheCompilerReads(atAnother, "cs"), "DescribeCountdown");
@@ -620,6 +626,19 @@ namespace Concesionario.Dominio.Pruebas
 		private static string TheOneSpaced(string arguments)
 		{
 			return new Regex(@"\s+").Replace(arguments, " ").Trim();
+		}
+
+		// LOS LIMITES DE PERIODO DE UNA LLAMADA, SIN EL IDIOMA. Desde el turno del idioma las tres
+		// lecturas que componen frase reciben ademas la clave del catalogo con que se pide la
+		// redaccion, y esa no es un momento de la historia: es una constante de esta caratula y ya la
+		// afirma NoReadOfTheBoardIsHandedAKindTheConsoleNamedItself por el lado de las clases.
+		private static string TheBoundsOf(string arguments)
+		{
+			int language = arguments.IndexOf(TheLanguageTheBoardAsksIn, StringComparison.Ordinal);
+
+			if (language < 0) return arguments;
+
+			return arguments.Substring(0, language).TrimEnd().TrimEnd(',');
 		}
 
 		private static string TheBoardsSource()

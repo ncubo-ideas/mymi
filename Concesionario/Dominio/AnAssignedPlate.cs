@@ -41,14 +41,13 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La placa y desde cuando rige. El instante va siempre: la respuesta a cual es la placa es
-		/// cual placa al instante preguntado, y sin el instante la frase no dice cual pregunta
+		/// La placa y desde cuando rige, como forma y valores. El dia va siempre: la respuesta a cual
+		/// es la placa es cual placa al instante preguntado, y sin el la frase no dice cual pregunta
 		/// contesto.
 		/// </summary>
-		internal override string Describe()
+		internal override APlateClause TheClause()
 		{
-			return "La placa de este vehículo es " + AsPublished + ", asignada desde el "
-				+ TheDay(AssignedAt) + ".";
+			return APlateClause.Assigned(AsPublished, TheDay(AssignedAt));
 		}
 
 		private static string TheDay(DateTime instant)

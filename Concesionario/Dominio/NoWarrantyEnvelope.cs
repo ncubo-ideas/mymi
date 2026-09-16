@@ -77,16 +77,38 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La UNICA que contesta, y contesta con palabras. Que no hayan publicado sobre es la
-		/// respuesta, y es la que puede citar quien no tiene ni un dato de ningun vehiculo: un
-		/// throw aqui haria que no tener el odometro de alguien volviera incitable lo que la
-		/// agencia publico -- o no publico -- para todos.
+		/// LA UNICA QUE CONTESTA. Que no hayan publicado sobre es la respuesta, y es la que puede
+		/// citar quien no tiene ni un dato de ningun vehiculo: un throw aqui haria que no tener el
+		/// odometro de alguien volviera incitable lo que la agencia publico -- o no publico -- para
+		/// todos.
 		/// </summary>
-		internal override string Describe()
+		internal override string TheShapeItHas()
 		{
-			return "El concesionario no ha publicado ningún sobre de garantía para este vehículo, "
-				+ "así que aquí no hay contra qué medir -- que no es lo mismo que este vehículo no "
-				+ "tenga garantía.";
+			return NotPublished;
+		}
+
+		/// <summary>Cero, y esa forma no lo dice: nadie publico ningun plazo.</summary>
+		internal override int TheMonthsItPublished()
+		{
+			return 0;
+		}
+
+		/// <summary>Cero, por lo mismo.</summary>
+		internal override int TheDistanceItPublished()
+		{
+			return 0;
+		}
+
+		/// <summary>Vacia: sin distancia publicada no hay unidad que nombrar.</summary>
+		internal override string TheUnitItsDistanceIsSaidIn()
+		{
+			return "";
+		}
+
+		/// <summary>Vacio: nadie publico nada, asi que no hay dia de publicacion.</summary>
+		internal override string TheDayItWasPublished()
+		{
+			return "";
 		}
 
 		private static DomainException NothingWasPublished()

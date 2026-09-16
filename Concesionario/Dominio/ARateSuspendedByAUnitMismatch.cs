@@ -48,16 +48,16 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La razon con las dos unidades y la lectura que trajo la segunda. Las unidades nunca se
-		/// convierten, y eso se dice: es la mitad que explica por que no hay un numero.
+		/// La razon con las dos unidades y la lectura que trajo la segunda. Que las unidades nunca
+		/// se convierten lo dice la frase: es la mitad que explica por que no hay un numero.
 		/// </summary>
-		internal override string Describe()
+		internal override ARateInAPeriod TheClauseOfItsPeriod()
 		{
-			return "no se puede decir cuánto se maneja: el periodo tiene lecturas en "
-				+ _unitOfThePeriod + " y en " + _introducedTheSecond.TheNameOfItsUnit()
-				+ ", y las unidades nunca se convierten. La segunda unidad la introdujo la lectura "
-				+ "de " + _introducedTheSecond.TheReadingItSays() + " del "
-				+ _introducedTheSecond.TheInstantItWasObserved();
+			return ARateInAPeriod.SuspendedByAUnitMismatch(
+				_unitOfThePeriod,
+				_introducedTheSecond.TheValueItRead(),
+				_introducedTheSecond.TheNameOfItsUnit(),
+				_introducedTheSecond.TheInstantItWasObserved());
 		}
 	}
 }

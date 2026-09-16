@@ -48,17 +48,17 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheComparisonNamesBothSpansWithTheirRatesAndSaysTheChangeInside()
 		{
-			string said = schedule.DescribeTwoPeriodsOfUseCompared(
-				NuevoDesde, NuevoHasta, ViejoDesde, ViejoHasta);
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfUseCompared(
+				schedule, NuevoDesde, NuevoHasta, ViejoDesde, ViejoHasta, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				said,
-				Does.Contain("de 20000 km el 2026-01-01 00:00:00 a 20320 km el 2026-01-11 00:00:00")
+				Does.Contain("de 20.000 km el 2026-01-01 00:00:00 a 20.320 km el 2026-01-11 00:00:00")
 					.And.Contains("320 km en 10 días, unos 32 km por día"),
 				"El primer periodo, dicho entero por su propia frase.");
 			Assert.That(
 				said,
-				Does.Contain("de 10000 km el 2025-01-01 00:00:00 a 10200 km el 2025-01-11 00:00:00")
+				Does.Contain("de 10.000 km el 2025-01-01 00:00:00 a 10.200 km el 2025-01-11 00:00:00")
 					.And.Contains("200 km en 10 días, unos 20 km por día"),
 				"Y el segundo, igual de entero.");
 			Assert.That(
@@ -89,8 +89,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheComparisonSaysADropAndSaysNoChangeToo()
 		{
-			string alaBaja = schedule.DescribeTwoPeriodsOfUseCompared(
-				ViejoDesde, ViejoHasta, NuevoDesde, NuevoHasta);
+			string alaBaja = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfUseCompared(
+				schedule, ViejoDesde, ViejoHasta, NuevoDesde, NuevoHasta, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				alaBaja, Does.Contain("un 38% menos"),
@@ -108,8 +108,8 @@ namespace Concesionario.Dominio.Pruebas
 				20200, DistanceUnitCode.UnitA, NuevoHasta, ReadingSourceCode.Telemetry);
 
 			Assert.That(
-				igual.DescribeTwoPeriodsOfUseCompared(
-					NuevoDesde, NuevoHasta, ViejoDesde, ViejoHasta),
+				TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfUseCompared(
+				igual, NuevoDesde, NuevoHasta, ViejoDesde, ViejoHasta, TheLanguage.OfTheRecord),
 				Does.Contain("el mismo ritmo"));
 		}
 
@@ -118,8 +118,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void WhenEitherSpanIsSuspendedTheSentenceSaysWhichAndSaysNoChange()
 		{
-			string said = schedule.DescribeTwoPeriodsOfUseCompared(
-				NuevoDesde, NuevoHasta, new DateTime(2020, 1, 1), new DateTime(2020, 12, 31));
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfUseCompared(
+				schedule, NuevoDesde, NuevoHasta, new DateTime(2020, 1, 1),
+				new DateTime(2020, 12, 31), TheLanguage.OfTheRecord);
 
 			Assert.That(
 				said, Does.Contain("320 km en 10 días"),
@@ -150,8 +151,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			MaintenadaATercios();
 
-			string said = aTercios.DescribeTwoPeriodsOfUseCompared(
-				nuevoDesde, nuevoHasta, viejoDesde, viejoHasta);
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfUseCompared(
+				aTercios, nuevoDesde, nuevoHasta, viejoDesde, viejoHasta, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				said, Does.Contain("200 km en 3 días, unos 67 km por día"),
@@ -204,8 +205,8 @@ namespace Concesionario.Dominio.Pruebas
 			quieto.RecordReading(
 				10320, DistanceUnitCode.UnitA, NuevoHasta, ReadingSourceCode.Telemetry);
 
-			string said = quieto.DescribeTwoPeriodsOfUseCompared(
-				NuevoDesde, NuevoHasta, ViejoDesde, ViejoHasta);
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfUseCompared(
+				quieto, NuevoDesde, NuevoHasta, ViejoDesde, ViejoHasta, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				said, Does.Contain("0 km en 10 días, unos 0 km por día"),

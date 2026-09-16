@@ -43,9 +43,11 @@ namespace Concesionario.Wasm
 
 		/// <summary>
 		/// Lee las dos mitades por la puerta con UN solo instante, para que lo que le falta a una
-		/// operacion y lo que se le hizo sean del mismo momento del registro.
+		/// operacion y lo que se le hizo sean del mismo momento del registro. Las frases del dominio
+		/// llegan en el idioma de la persona, que es lo unico que esta capa le pide a la puerta.
 		/// </summary>
-		public static WhereEachOperationStands ReadThrough(DealershipCarAPI api, DateTime asOf)
+		public static WhereEachOperationStands ReadThrough(
+			DealershipCarAPI api, DateTime asOf, string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
@@ -54,14 +56,14 @@ namespace Concesionario.Wasm
 
 			foreach (string kind in AppState.TheNineKinds)
 			{
-				HowOneOperationStands row = TheStandingOf(api, kind, asOf);
+				HowOneOperationStands row = TheStandingOf(api, kind, asOf, language);
 
 				if (row.CountdownRefused) refused = true;
 
 				operations.Add(row);
 			}
 
-			EveryKindCompletionRecord record = api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord record = api.CompletionsOfEveryKind(language);
 
 			var done = new List<AThingThatWasDone>();
 
@@ -96,10 +98,10 @@ namespace Concesionario.Wasm
 		}
 
 		private static HowOneOperationStands TheStandingOf(
-			DealershipCarAPI api, string kind, DateTime asOf)
+			DealershipCarAPI api, string kind, DateTime asOf, string language)
 		{
 			bool completed = api.HasAnyCompletion(kind);
-			string completions = api.DescribeCompletions(kind);
+			string completions = api.DescribeCompletions(kind, language);
 
 			try
 			{
@@ -109,14 +111,14 @@ namespace Concesionario.Wasm
 				return new HowOneOperationStands
 				{
 					Kind = kind,
-					Says = api.DescribeCountdown(kind, asOf),
+					Says = api.DescribeCountdown(kind, asOf, language),
 					DistanceStanding = api.ReadDistanceRemainderStanding(kind, asOf),
-					DistanceSays = api.DescribeDistanceRemaining(kind, asOf),
+					DistanceSays = api.DescribeDistanceRemaining(kind, asOf, language),
 					DistanceCanBeSaid = distance,
 					DistanceRemaining = distance ? api.ReadDistanceRemaining(kind, asOf) : 0,
 					DistanceUnit = distance ? api.ReadDistanceRemainingUnit(kind, asOf) : "",
 					TimeStanding = api.ReadTimeRemainderStanding(kind, asOf),
-					DaysSays = api.DescribeDaysRemaining(kind, asOf),
+					DaysSays = api.DescribeDaysRemaining(kind, asOf, language),
 					DaysCanBeSaid = days,
 					DaysRemaining = days ? api.ReadDaysRemaining(kind, asOf) : 0,
 					HasBeenCompleted = completed,

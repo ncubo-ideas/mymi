@@ -54,7 +54,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(
 					journal.Api.ReadEnvelopeStanding(InsideTheTimeHalf), Is.EqualTo("Reached"));
 
-				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Contain("Alcanzado por distancia, que llegó primero."));
 				Assert.That(said, Does.Not.Contain("Alcanzado por tiempo"));
@@ -62,7 +63,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(said, Does.Contain("Tiempo: quedan 28 meses de 36 meses."),
 					"Y LA MITAD COMODA VA IGUAL. Callarla dejaria a la persona sin saber que su plazo "
 					+ "todavia no se cumplio.");
-				Assert.That(said, Does.Contain("Distancia: 1000 mi pasados de un límite de 15000 mi."));
+				Assert.That(
+					said, Does.Contain("Distancia: 1.000 mi pasados de un límite de 15.000 mi."));
 			}
 		}
 
@@ -75,13 +77,15 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				Assert.That(journal.Api.ReadEnvelopeStanding(PastTheTimeHalf), Is.EqualTo("Reached"));
 
-				string said = journal.Api.DescribeWarrantyEnvelope(PastTheTimeHalf);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					PastTheTimeHalf, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Contain("Alcanzado por tiempo, que llegó primero."));
 				Assert.That(said, Does.Not.Contain("Alcanzado por distancia"));
 
-				Assert.That(said, Does.Contain("Tiempo: 7 meses pasados de un límite de 36 meses."));
-				Assert.That(said, Does.Contain("Distancia: quedan 10000 mi de 15000 mi."),
+				Assert.That(
+					said, Does.Contain("Tiempo: 7 meses pasados de un límite de 36 meses."));
+				Assert.That(said, Does.Contain("Distancia: quedan 10.000 mi de 15.000 mi."),
 					"Y LA MITAD COMODA VA IGUAL, tambien de este lado.");
 			}
 		}
@@ -94,12 +98,13 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			using (AScheduleOnARealJournal journal = AVehicleWhoseOdometerReads(35000))
 			{
-				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
 				Assert.That(journal.Api.ReadEnvelopeStanding(InsideTheTimeHalf), Is.EqualTo("Inside"));
 
 				Assert.That(said, Does.Contain("Tiempo: quedan 28 meses de 36 meses."));
-				Assert.That(said, Does.Contain("Distancia: quedan 10000 mi de 15000 mi."));
+				Assert.That(said, Does.Contain("Distancia: quedan 10.000 mi de 15.000 mi."));
 				Assert.That(said, Does.Contain("Ninguna de las dos mitades se ha alcanzado"));
 				Assert.That(said, Does.Contain("en vez de pronosticar un ritmo"));
 			}
@@ -114,9 +119,12 @@ namespace Concesionario.Dominio.Pruebas
 			using (AScheduleOnARealJournal past = AVehicleWhoseOdometerReads(46000))
 			using (AScheduleOnARealJournal inside = AVehicleWhoseOdometerReads(35000))
 			{
-				string byDistance = past.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
-				string byTime = inside.Api.DescribeWarrantyEnvelope(PastTheTimeHalf);
-				string neither = inside.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
+				string byDistance = past.Api.DescribeWarrantyEnvelope(
+					InsideTheTimeHalf, TheLanguage.OfTheRecord);
+				string byTime = inside.Api.DescribeWarrantyEnvelope(
+					PastTheTimeHalf, TheLanguage.OfTheRecord);
+				string neither = inside.Api.DescribeWarrantyEnvelope(
+					InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
 				Assert.That(byDistance, Is.Not.EqualTo(byTime));
 				Assert.That(byDistance, Is.Not.EqualTo(neither));
@@ -132,10 +140,13 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			using (AScheduleOnARealJournal journal = AVehicleWhoseOdometerReads(35000))
 			{
-				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
-				Assert.That(said, Does.Contain("odómetro de 35000 mi observado el 2026-01-20"));
-				Assert.That(said, Does.Contain("30000 mi registrados cuando el vehículo se entregó"));
+				Assert.That(
+					said, Does.Contain("odómetro de 35.000 mi observado el 20 de enero de 2026"));
+				Assert.That(
+					said, Does.Contain("30.000 mi registrados cuando el vehículo se entregó"));
 			}
 		}
 

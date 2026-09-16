@@ -14,6 +14,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class OdometerSeriesTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTE SERVIDOR PIDE LAS FRASES, que es el del REGISTRO y no el de quien
+		/// pregunta: la caratula MCP es voz de la institucion hablandole al modelo.
+		/// </summary>
+		private const string TheVoiceOfTheDealership =
+			Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public OdometerSeriesTools(JournalReader reader)
@@ -104,7 +111,8 @@ namespace Concesionario.Mcp.Tools
 						TheAssistantIsTold.MoreThanOneVehicle(reader)),
 				};
 
-			OdometerSeriesRecord record = api.ReadingsBetween(start, end);
+			OdometerSeriesRecord record = api.ReadingsBetween(
+				start, end, TheVoiceOfTheDealership);
 
 			var rows = new List<OdometerReadingRow>();
 
@@ -130,7 +138,7 @@ namespace Concesionario.Mcp.Tools
 				WholeRecord = whole,
 				CanBeSaid = canBeSaid,
 				Standing = api.ReadRateOfUseStanding(start, end),
-				Says = api.DescribeRateOfUse(start, end),
+				Says = api.DescribeRateOfUse(start, end, TheVoiceOfTheDealership),
 				ReadingCount = api.ReadingCountBetween(start, end),
 				Readings = rows,
 				Folder = reader.Folder,

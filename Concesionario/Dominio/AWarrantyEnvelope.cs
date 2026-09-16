@@ -104,14 +104,37 @@ namespace Concesionario.Dominio
 			return _distance - (currentReading - deliveryReading);
 		}
 
-		/// <summary>
-		/// Las dos mitades y la fecha en que se publicaron. Las dos van siempre: "36 meses" sin la
-		/// distancia, o al reves, no le dice nada a quien no sabe cuanto maneja.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Publicado, que es la forma con las dos mitades y la fecha.</summary>
+		internal override string TheShapeItHas()
 		{
-			return _months + " meses o " + _distance + " " + _unit.Name + ", publicado el "
-				+ TheDay(_publishedAt) + ".";
+			return Published;
+		}
+
+		/// <summary>
+		/// El plazo publicado. Va siempre junto a la distancia: "36 meses" sin ella, o al reves, no
+		/// le dice nada a quien no sabe cuanto maneja.
+		/// </summary>
+		internal override int TheMonthsItPublished()
+		{
+			return _months;
+		}
+
+		/// <summary>La distancia publicada, que va siempre junto al plazo por lo mismo.</summary>
+		internal override int TheDistanceItPublished()
+		{
+			return _distance;
+		}
+
+		/// <summary>La unidad de esa distancia, por su nombre.</summary>
+		internal override string TheUnitItsDistanceIsSaidIn()
+		{
+			return _unit.Name;
+		}
+
+		/// <summary>El dia en que la agencia lo publico, para que un sobre viejo pueda verse viejo.</summary>
+		internal override string TheDayItWasPublished()
+		{
+			return TheDay(_publishedAt);
 		}
 
 		private static string TheDay(DateTime instant)

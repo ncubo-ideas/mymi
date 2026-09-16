@@ -76,13 +76,21 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La clausula que esta exclusion aporta a una respuesta: sobre que sistema, que excluye y
-		/// bajo que condicion. Las tres, porque las tres son lo que la persona tiene que leer.
+		/// Que excluye, tal como se publico. Sale con el sistema y la condicion al lado y nunca solo:
+		/// las tres son lo que la persona tiene que leer para saber si le toca.
 		/// </summary>
-		internal string Describe()
+		internal string TheTextItPublished()
 		{
-			return "Exclusión sobre '" + _systemCode + "': " + _exclusion
-				+ " Publicada para aplicar cuando: " + _condition + ".";
+			return _exclusion;
+		}
+
+		/// <summary>
+		/// Bajo que condicion muerde, tal como se publico. Es texto PUBLICADO y no un predicado: este
+		/// modulo la nombra y no decide si se cumple, porque decidirlo seria adjudicar.
+		/// </summary>
+		internal string TheConditionItAppliesUnder()
+		{
+			return _condition;
 		}
 	}
 }

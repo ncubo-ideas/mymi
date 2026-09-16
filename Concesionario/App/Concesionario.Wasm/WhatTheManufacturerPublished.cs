@@ -44,7 +44,8 @@ namespace Concesionario.Wasm
 		/// Lee la ficha entera por la puerta, en un solo momento, para que la revision que la
 		/// pantalla nombra sea la misma de la que salieron las frases que muestra.
 		/// </summary>
-		public static WhatTheManufacturerPublished ReadThrough(DealershipCarAPI api)
+		public static WhatTheManufacturerPublished ReadThrough(
+			DealershipCarAPI api, string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
@@ -57,7 +58,7 @@ namespace Concesionario.Wasm
 				{
 					Kind = kind,
 					Published = api.IsFluidPublished(kind),
-					Says = api.DescribeFluid(kind),
+					Says = api.DescribeFluid(kind, language),
 					Revision = api.ReadFluidRevision(kind),
 				});
 
@@ -68,7 +69,7 @@ namespace Concesionario.Wasm
 				{
 					Position = position,
 					Published = api.IsTyrePublished(position),
-					Says = api.DescribeTyre(position),
+					Says = api.DescribeTyre(position, language),
 					Revision = api.ReadTyreRevision(position),
 				});
 
@@ -84,7 +85,7 @@ namespace Concesionario.Wasm
 				Fuel = new PublishedFuel
 				{
 					Published = api.IsFuelPublished(),
-					Says = api.DescribeFuel(),
+					Says = api.DescribeFuel(language),
 					MinimumGrade = api.ReadMinimumFuelGrade(),
 					PermittedGrades = api.PermittedFuelGrades(),
 					ProhibitedGrades = api.ProhibitedFuelGrades(),
@@ -93,15 +94,15 @@ namespace Concesionario.Wasm
 				Coverage = new PublishedCoverage
 				{
 					Published = api.IsCoveragePublished(),
-					Says = api.DescribeCoverageSummary(),
+					Says = api.DescribeCoverageSummary(language),
 					Revision = api.ReadCoverageRevision(),
 					CoveredSystems = api.CoveredSystems(),
-					Exclusions = api.CoverageExclusions(),
+					Exclusions = api.CoverageExclusions(language),
 				},
 				ServicingRule = new PublishedServicingRule
 				{
 					Published = api.IsServicingPolicyPublished(),
-					Says = api.DescribePublishedServicingElsewhereRule(),
+					Says = api.DescribePublishedServicingElsewhereRule(language),
 					Revision = api.ReadServicingPolicyRevision(),
 				},
 			};

@@ -94,9 +94,9 @@ namespace Concesionario.Dominio.Pruebas
 				40000, DistanceUnitCode.UnitA, TheLimitIsReached, ReadingSourceCode.Telemetry);
 			schedule.Evaluate(TheLimitIsReached);
 
-			string reason = schedule.ReadDueReason(OperationKindCode.FluidChange);
+			ADueReason reason = schedule.TheDueReasonFor(OperationKindCode.FluidChange);
 
-			Assert.That(reason, Does.Contain("no se puede evaluar"),
+			Assert.That(reason.ClauseCodes, Does.Contain(LimitClause.UnitMismatch),
 				"El limite esta en UnitA y el ancla en UnitB. Las unidades NO se convierten "
 				+ "(OINV-21, ley L7), asi que la distancia no se compara: se suspende.");
 			Assert.That(schedule.ReadDueState(OperationKindCode.FluidChange), Is.EqualTo("NotDue"),
@@ -116,8 +116,8 @@ namespace Concesionario.Dominio.Pruebas
 				Delivery, OdometerAtDelivery, DistanceUnitCode.UnitA));
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.TimedComponent),
-				Does.Contain("no tiene agendada"),
+				schedule.TheDueReasonFor(OperationKindCode.TimedComponent).Shape,
+				Is.EqualTo(ADueReason.NoOperationScheduled),
 				"E12, mutar al final: la operacion se arma y se valida ANTES de entrar. Si "
 				+ "quedara sembrada a medias, la agenda tendria una operacion cuya ley nadie "
 				+ "acepto.");
