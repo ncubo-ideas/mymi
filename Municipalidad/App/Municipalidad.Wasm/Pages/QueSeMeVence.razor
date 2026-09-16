@@ -21,21 +21,23 @@ else
                 {
                     <div class="seccion-total-bloque">
                         <span class="seccion-total-etiqueta">Total por vencer</span>
-                        <span class="seccion-total-cifra">@Colones(vence.PorVencer.Sum(p => p.Monto))</span>
+                        <span class="seccion-total-cifra">@Colones.Formatear(vence.PorVencer.Sum(p => p.Monto))</span>
                     </div>
                 }
             </div>
 
             @if (vence.PorVencer.Count == 0)
             {
-                <p class="estado-vacio">
-                    <span class="estado-vacio__marca">✓</span>
-                    Nada vence en los próximos @Formato.Dias(vence.DiasDeAviso)
-                </p>
-                <p class="explicacion-menor">
-                    Eso no dice que no tengás nada que pagar más adelante: dice que nada cae dentro de esa
-                    ventana, contado desde el @vence.PreguntadoEl.
-                </p>
+                <div class="aviso-tranquilo">
+                    <p class="estado-vacio">
+                        <span class="estado-vacio__marca">✓</span>
+                        Nada vence en los próximos @Formato.Dias(vence.DiasDeAviso)
+                    </p>
+                    <p class="explicacion-menor">
+                        Podés tener otros pagos más adelante. Este aviso solo contempla los próximos
+                        @Formato.Dias(vence.DiasDeAviso).
+                    </p>
+                </div>
             }
             else
             {
@@ -51,7 +53,7 @@ else
                                     <SelloDeUrgencia Urgencia="@periodo.Urgencia" />
                                 </span>
                                 <span class="obligacion__lado">
-                                    <span class="obligacion__monto">@Colones(periodo.Monto)</span>
+                                    <span class="obligacion__monto">@Colones.Formatear(periodo.Monto)</span>
                                     <span class="obligacion__chevron" aria-hidden="true">&rsaquo;</span>
                                 </span>
                             </summary>
@@ -64,7 +66,7 @@ else
                                     <dt>Faltan</dt>
                                     <dd>@Formato.Dias(periodo.Faltan)</dd>
                                     <dt>Monto</dt>
-                                    <dd>@Colones(periodo.Monto)</dd>
+                                    <dd>@Colones.Formatear(periodo.Monto)</dd>
                                 </dl>
                                 <span class="obligacion__detalle__titulo">Cómo se calcula</span>
                                 <p class="item__frase">@periodo.Dice</p>
@@ -82,7 +84,7 @@ else
                 {
                     <div class="seccion-total-bloque">
                         <span class="seccion-total-etiqueta">Total vencido</span>
-                        <span class="seccion-total-cifra">@Colones(vence.Vencidos.Sum(p => p.Monto))</span>
+                        <span class="seccion-total-cifra">@Colones.Formatear(vence.Vencidos.Sum(p => p.Monto))</span>
                     </div>
                 }
             </div>
@@ -112,7 +114,7 @@ else
                                     <span class="badge-atraso">@Formato.Dias(periodo.Dias) de atraso</span>
                                 </span>
                                 <span class="obligacion__lado">
-                                    <span class="obligacion__monto">@Colones(periodo.Monto)</span>
+                                    <span class="obligacion__monto">@Colones.Formatear(periodo.Monto)</span>
                                     <span class="obligacion__chevron" aria-hidden="true">&rsaquo;</span>
                                 </span>
                             </summary>
@@ -125,9 +127,9 @@ else
                                     <dt>De atraso</dt>
                                     <dd>@Formato.Dias(periodo.Dias)</dd>
                                     <dt>Monto</dt>
-                                    <dd>@Colones(periodo.Monto)</dd>
+                                    <dd>@Colones.Formatear(periodo.Monto)</dd>
                                     <dt>Proyección de mora</dt>
-                                    <dd>@Colones(periodo.CostoProyectado)</dd>
+                                    <dd>@Colones.Formatear(periodo.CostoProyectado)</dd>
                                 </dl>
                                 <span class="obligacion__detalle__titulo">Cómo se calcula</span>
                                 <p class="item__frase">@periodo.Dice</p>
@@ -138,14 +140,20 @@ else
             }
         </section>
 
-        <details class="plomeria">
-            <summary><span class="icono-info" aria-hidden="true">ⓘ</span> Sobre los vencimientos</summary>
-            <p class="item__frase">
-                Un período por vencer y uno vencido son situaciones distintas, y un total que los mezcle
-                no es un número que nadie haya calculado. Si querés saber cuánto debés en total, eso lo
-                dice tu portal.
-            </p>
-            <NumeroSinFirmar Dicho="@($"Se avisa {Formato.Dias(vence.DiasDeAviso)} antes del vencimiento, y el costo de pagar tarde se proyecta a una tasa anual del {Formato.Porcentaje(vence.TasaConQueSeProyecto)}.")" />
+        <details class="disclosure-secundaria">
+            <summary class="disclosure-secundaria__resumen">
+                <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
+                <span class="disclosure-secundaria__texto">Sobre los vencimientos</span>
+                <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
+            </summary>
+            <div class="disclosure-secundaria__contenido">
+                <p class="item__frase">
+                    Un período por vencer y uno vencido son situaciones distintas, y un total que los mezcle
+                    no es un número que nadie haya calculado. Si querés saber cuánto debés en total, eso lo
+                    dice tu portal.
+                </p>
+                <NumeroSinFirmar Dicho="@($"Se avisa {Formato.Dias(vence.DiasDeAviso)} antes del vencimiento, y el costo de pagar tarde se proyecta a una tasa anual del {Formato.Porcentaje(vence.TasaConQueSeProyecto)}.")" />
+            </div>
         </details>
 
         <p class="nota">Contestado al @vence.PreguntadoEl.</p>
@@ -163,34 +171,5 @@ else
 		if (!estado.EstaArriba) return;
 
 		vence = estado.LeerLoQueSeVence();
-	}
-
-	/// <summary>
-	/// Un monto como dinero: reusa Formato.Monto (los mismos digitos y la misma coma decimal que ya
-	/// usa el resto de la app) y solo le agrega, PARA ESTA PANTALLA, el simbolo de colones y el
-	/// separador de miles que Formato.Monto deliberadamente no pone (ese metodo es compartido por
-	/// paginas que no se tocan esta ronda, asi que no se modifica).
-	/// </summary>
-	private static string Colones(decimal monto)
-	{
-		string dicho = Formato.Monto(monto);
-		int coma = dicho.IndexOf(',');
-		string enteros = coma < 0 ? dicho : dicho[..coma];
-		string resto = coma < 0 ? "" : dicho[coma..];
-		return "₡" + ConSeparadorDeMiles(enteros) + resto;
-	}
-
-	private static string ConSeparadorDeMiles(string digitos)
-	{
-		if (digitos.Length <= 3) return digitos;
-
-		int primerGrupo = digitos.Length % 3;
-		if (primerGrupo == 0) primerGrupo = 3;
-
-		var partes = new System.Collections.Generic.List<string> { digitos[..primerGrupo] };
-		for (int i = primerGrupo; i < digitos.Length; i += 3)
-			partes.Add(digitos.Substring(i, 3));
-
-		return string.Join(' ', partes);
 	}
 }

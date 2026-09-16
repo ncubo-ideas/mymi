@@ -28,6 +28,11 @@
     --atraso-fondo: #3A1826;
     --atraso-texto: #F2B6C6;
 
+    /* Acento UNICO de la navegacion (header activo en desktop, pie-nav activo en mobile): un
+       lila mas claro que --violeta, porque --violeta solo* da 3.5:1 sobre --indigo-alto y un
+       texto de nav necesita AA. Es la misma familia, no un color nuevo sin relacion. */
+    --acento-nav: #B8A8E8;
+
     --tinta: #1A1D3C;
     --tinta-suave: #5C6088;
     --tinta-tenue: #8A8DAB;
@@ -137,8 +142,7 @@ body { min-height: 100dvh; }
 .arranque__sello {
     width: min(7rem, 30vw);
     height: auto;
-    fill: #FFFFFF;
-    opacity: .92;
+    object-fit: contain;
 }
 
 .cargando {
@@ -179,18 +183,20 @@ h2 {
     max-width: 42rem;
 }
 
+/* Mismo --indigo-alto solido que usa .pie-nav (sin degradado): header y footer deben leerse
+   como el mismo sistema conteniendo la app, no como dos superficies distintas. */
 .marco {
     position: sticky;
     top: 0;
     z-index: 30;
-    background: linear-gradient(150deg, var(--indigo-alto) 0%, var(--indigo) 62%, var(--indigo-medio) 100%);
-    box-shadow: var(--sombra-marco);
+    background: var(--indigo-alto);
+    box-shadow: 0 1px 12px rgba(0, 0, 0, .22);
 }
 
 .marco__banda {
     max-width: 52rem;
     margin: 0 auto;
-    padding: .875rem 1.25rem;
+    padding: .625rem 1.25rem;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -200,39 +206,42 @@ h2 {
 .marco__marca {
     display: flex;
     align-items: center;
-    gap: .875rem;
+    gap: .625rem;
     min-width: 0;
     text-decoration: none;
     margin-right: auto;
 }
 
-.marco__sello {
+.marco__logo {
     flex: none;
-    display: grid;
-    place-items: center;
-    color: #FFFFFF;
+    display: block;
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
 }
 
 .marco__titulos {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     min-width: 0;
 }
 
 .marco__nombre {
-    font-size: .9375rem;
+    font-size: 1rem;
     font-weight: 700;
     letter-spacing: -.01em;
-    line-height: 1.2;
+    line-height: 1.25;
     color: #FFFFFF;
 }
 
 .marco__apunte {
-    font-size: .6875rem;
+    font-size: .625rem;
     font-weight: 650;
-    letter-spacing: .14em;
+    letter-spacing: .13em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .62);
+    color: rgba(255, 255, 255, .6);
+    line-height: 1.4;
 }
 
 .marco__nav {
@@ -572,6 +581,41 @@ a.boton:hover { background: var(--indigo-alto); border-color: var(--indigo-alto)
 
 .nota a { color: var(--acento-tinta); }
 
+/* Nota informativa compacta: contexto util, no contenido principal. Fondo apenas distinto del
+   fondo (papel-hundido), borde sutil, poco padding -- nunca una tarjeta grande. */
+.nota-info {
+    display: flex;
+    align-items: flex-start;
+    gap: .625rem;
+    padding: .75rem .875rem;
+    background: var(--papel-hundido);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-chico);
+    margin: 0 0 1.5rem;
+}
+
+.nota-info__icono {
+    flex: none;
+    color: var(--calma);
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.nota-info__titulo {
+    display: block;
+    font-size: .8125rem;
+    font-weight: 650;
+    color: var(--tinta);
+    margin: 0 0 .125rem;
+}
+
+.nota-info__texto {
+    margin: 0;
+    font-size: .8125rem;
+    color: var(--tinta-suave);
+    line-height: 1.5;
+}
+
 .parte {
     border-radius: var(--radio);
     padding: 1rem 1.25rem;
@@ -777,7 +821,13 @@ a.boton:hover { background: var(--indigo-alto); border-color: var(--indigo-alto)
 .icono-sprite--calendario { width: 35.27px; height: 36px; background-size: 558.55px 372.36px; background-position: -22.55px -115.27px; }
 .icono-sprite--calendario-chico { width: 23.52px; height: 24px; background-size: 372.36px 248.24px; background-position: -15.03px -76.85px; }
 .icono-sprite--presupuesto { width: 33.82px; height: 36px; background-size: 558.55px 372.36px; background-position: -86.91px -115.27px; }
+.icono-sprite--presupuesto-chico { width: 22.55px; height: 24px; background-size: 372.36px 248.24px; background-position: -57.94px -76.85px; }
+.icono-sprite--alcancia { width: 36px; height: 34.73px; background-size: 489.35px 326.23px; background-position: -262.83px -165.03px; }
 .icono-sprite--tendencia { width: 36px; height: 32.57px; background-size: 526.63px 351.09px; background-position: -137.83px -109.03px; }
+.icono-sprite--basura { width: 27.43px; height: 32px; background-size: 501.55px 334.37px; background-position: -295.84px -103.18px; }
+.icono-sprite--policia { width: 27.35px; height: 32px; background-size: 446.84px 297.89px; background-position: -306.91px -89.89px; }
+.icono-sprite--inmuebles { width: 32px; height: 30.15px; background-size: 472.62px 315.08px; background-position: -370.77px -97.54px; }
+.icono-sprite--parques { width: 29.69px; height: 32px; background-size: 506.72px 337.81px; background-position: -454.93px -105.24px; }
 .icono-sprite--doc-x { width: 24.71px; height: 30px; background-size: 451.76px 301.18px; background-position: -170.59px -92.65px; }
 .icono-sprite--al-dia { width: 43.02px; height: 44px; background-size: 750.93px 500.62px; background-position: -24.93px -259.11px; }
 .icono-sprite--vencido { width: 43.5px; height: 44px; background-size: 768px 512px; background-position: -100px -264.5px; }
@@ -1410,8 +1460,16 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
     font-variant-numeric: tabular-nums;
 }
 
-/* ===== Bloque protagonista (Mi presupuesto): tipografia y espacio, sin otra tarjeta ===== */
-.bloque-protagonista { margin: 0 0 2rem; }
+/* ===== Bloque protagonista (Mi presupuesto): UNA tarjeta compacta, poco texto ===== */
+.bloque-protagonista {
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio);
+    padding: 1.25rem 1.25rem 1.375rem;
+    margin: 0 0 1rem;
+}
+
+.bloque-protagonista .icono-sprite { margin: 0 0 .625rem; }
 
 .bloque-protagonista__frase {
     margin: .875rem 0 0;
@@ -1419,60 +1477,153 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
     font-size: .9375rem;
 }
 
-/* ===== Items en lista: unidades reales, pero sin caja completa por cada una ===== */
-.lista-items { margin: 0 0 .5rem; }
-
-.item {
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--noche-linea);
+/* ===== Estado amigable: icono + una linea + una frase + CTA, sin tarjeta ni parrafo ===== */
+.estado-amigable {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+    margin: 0 0 .25rem;
 }
 
-.item:first-child { padding-top: 0; }
-.item:last-child { border-bottom: 0; padding-bottom: 0; }
+.estado-amigable .icono-sprite { margin-bottom: .1875rem; }
 
-.item__cabeza {
+.estado-amigable__titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin: 0;
+}
+
+.estado-amigable__texto {
+    font-size: .875rem;
+    color: var(--noche-texto-tenue);
+    margin: 0 0 .25rem;
+}
+
+/* ===== Items en lista: unidades reales, pero sin caja completa por cada una ===== */
+/* =====================================================================================
+   Cambios en mis cobros: cada rubro con historial es su propia tarjeta compacta con
+   detalle bajo demanda (mismo patron de <details> que Pagos y vencimientos). El icono real
+   del rubro (basura/policia/inmuebles/parques) vive en un contenedor violeta -- identidad,
+   no alerta. El color de la flecha/porcentaje lo decide EsSalto (si el cambio es
+   significativo), no el signo: un aumento chico no debe verse como una alerta.
+   ===================================================================================== */
+.rubros-cambio {
+    display: flex;
+    flex-direction: column;
+    gap: .625rem;
+    margin: 0 0 .5rem;
+}
+
+.rubro-cambio {
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio-chico);
+    overflow: hidden;
+}
+
+.rubro-cambio__resumen {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .875rem 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.rubro-cambio__resumen::-webkit-details-marker { display: none; }
+.rubro-cambio__resumen::marker { content: ""; }
+.rubro-cambio__resumen:hover { background: var(--noche-superficie-alta); }
+
+.rubro-cambio__icono {
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radio-chico);
+    background: rgba(128, 110, 186, .25);
+}
+
+.rubro-cambio__info { flex: 1; min-width: 0; }
+
+.rubro-cambio__cabeza {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: .5rem;
     margin: 0 0 .5rem;
 }
 
-.item__rubro { display: flex; flex-direction: column; gap: .125rem; }
+.rubro-cambio__nombre { font-weight: 700; font-size: .9375rem; color: #FFFFFF; }
 
-.item__monto {
-    font-size: 1.5rem;
+.rubro-cambio__montos {
+    display: block;
+    font-size: 1.3125rem;
     font-weight: 800;
     letter-spacing: -.01em;
     font-variant-numeric: tabular-nums;
     color: #FFFFFF;
-    margin: 0 0 .375rem;
+    margin: 0 0 .25rem;
 }
 
-.item__cambio {
+.rubro-cambio__cambio {
     display: flex;
     align-items: baseline;
-    gap: .5rem;
-    margin: 0 0 .375rem;
+    gap: .4375rem;
     flex-wrap: wrap;
+    margin: 0 0 .25rem;
 }
 
-.item__flecha {
+.rubro-cambio__flecha { font-size: 1.125rem; font-weight: 800; line-height: 1; }
+.rubro-cambio__porcentaje { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.rubro-cambio__flecha--atencion, .rubro-cambio__porcentaje--atencion { color: var(--amarillo); }
+.rubro-cambio__flecha--neutro, .rubro-cambio__porcentaje--neutro { color: var(--noche-texto-tenue); }
+
+.rubro-cambio__periodo {
+    display: block;
+    font-size: .8125rem;
+    color: var(--noche-texto-tenue);
+    margin: 0 0 .5rem;
+}
+
+.rubro-cambio__nota {
+    display: block;
+    font-size: .8125rem;
+    color: var(--noche-texto-tenue);
+    margin: .125rem 0 0;
+}
+
+.rubro-cambio__toggle {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .8125rem;
+    font-weight: 650;
+    color: var(--turquesa);
+}
+
+.rubro-cambio__toggle-cerrar { display: none; }
+.rubro-cambio[open] .rubro-cambio__toggle-abrir { display: none; }
+.rubro-cambio[open] .rubro-cambio__toggle-cerrar { display: inline; }
+
+.rubro-cambio__toggle-chevron { transition: transform .15s ease; }
+.rubro-cambio[open] .rubro-cambio__toggle-chevron { transform: rotate(90deg); }
+
+.rubro-cambio__chevron {
+    flex: none;
+    align-self: center;
+    color: var(--noche-texto-tenue);
     font-size: 1.25rem;
-    font-weight: 800;
-    line-height: 1;
+    transition: transform .15s ease;
 }
 
-.item__flecha--sube { color: var(--coral); }
-.item__flecha--baja { color: var(--turquesa); }
-.item__flecha--igual { color: var(--noche-texto-tenue); }
+.rubro-cambio[open] .rubro-cambio__chevron { transform: rotate(90deg); }
 
-.item__porcentaje {
-    font-size: 1.0625rem;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-}
+.rubro-cambio__detalle { padding: 0 1rem 1rem 3.5rem; }
 
 .item__meta {
     display: block;
@@ -1515,6 +1666,68 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 
 .icono-info { color: var(--turquesa); font-weight: 700; }
 
+/* Agrupa la confirmacion tranquila con su aclaracion secundaria SIN convertirlas en otra
+   tarjeta: una franja turquesa apenas insinuada, no un borde completo. */
+.aviso-tranquilo {
+    padding: .625rem .875rem;
+    border-left: 3px solid var(--turquesa);
+    background: rgba(44, 217, 197, .07);
+    border-radius: 0 var(--radio-chico) var(--radio-chico) 0;
+    margin: 0 0 1.25rem;
+}
+
+.aviso-tranquilo .estado-vacio { margin: 0; padding: 0; }
+.aviso-tranquilo .explicacion-menor { margin: .375rem 0 0; }
+
+/* Disclosure secundario compacto (p.ej. "Sobre los vencimientos"): una fila con icono + label +
+   chevron entre dos filetes, NO otra tarjeta y NO el simbolo pegado al texto como antes. Clase
+   propia (no .plomeria) para no tocar los demas disclosures de otras pantallas esta ronda. */
+.disclosure-secundaria {
+    border-top: 1px solid var(--noche-linea);
+    border-bottom: 1px solid var(--noche-linea);
+    margin: 1.5rem 0 0;
+}
+
+.disclosure-secundaria__resumen {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    padding: .875rem .125rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.disclosure-secundaria__resumen::-webkit-details-marker { display: none; }
+.disclosure-secundaria__resumen::marker { content: ""; }
+
+.disclosure-secundaria__resumen:hover .disclosure-secundaria__texto { color: #FFFFFF; }
+
+.disclosure-secundaria__icono {
+    flex: none;
+    color: var(--turquesa);
+    font-size: 1.0625rem;
+    line-height: 1;
+}
+
+.disclosure-secundaria__texto {
+    flex: 1;
+    font-size: .875rem;
+    font-weight: 650;
+    color: rgba(255, 255, 255, .85);
+}
+
+.disclosure-secundaria__chevron {
+    flex: none;
+    color: var(--noche-texto-tenue);
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: transform .15s ease;
+}
+
+.disclosure-secundaria[open] .disclosure-secundaria__chevron { transform: rotate(90deg); }
+
+.disclosure-secundaria__contenido { padding: 0 .125rem 1.125rem; }
+
 /* ===== Navegacion inferior (mobile) ===== */
 .pie-nav {
     display: none;
@@ -1532,23 +1745,66 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
         z-index: 30;
         background: var(--indigo-alto);
         box-shadow: 0 -1px 12px rgba(0, 0, 0, .25);
-        padding: .5rem .5rem env(safe-area-inset-bottom);
+        padding: .375rem .5rem env(safe-area-inset-bottom);
     }
 
     .pie-nav a {
+        position: relative;
         flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         gap: .25rem;
-        padding: .375rem;
+        min-height: 2.75rem;
+        padding: .25rem;
         text-decoration: none;
-        color: rgba(255, 255, 255, .58);
+        color: rgba(255, 255, 255, .48);
         font-size: .6875rem;
-        font-weight: 650;
+        font-weight: 600;
+        text-align: center;
     }
 
-    .pie-nav a.active { color: #FFFFFF; }
+    /* Un solo sistema de acento: el icono pasa de atenuado a opaco, y el texto toma el lila de
+       nav. Los iconos conservan su propio color (calendario coral, barras cyan): no se pintan
+       de un color de "seccion" distinto cada uno. */
+    .pie-nav__icono {
+        display: grid;
+        place-items: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        opacity: .5;
+        transition: opacity .15s ease;
+    }
+
+    .pie-nav__logo {
+        width: 1.375rem;
+        height: 1.375rem;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* Indicador superior corto y discreto: la marca mas clara de "estoy aca", sin pill ni
+       fondo grande detras de la opcion. */
+    .pie-nav a::before {
+        content: "";
+        position: absolute;
+        top: -.375rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1.125rem;
+        height: .1875rem;
+        border-radius: 999px;
+        background: transparent;
+    }
+
+    .pie-nav a.active {
+        color: var(--acento-nav);
+        font-weight: 700;
+    }
+
+    .pie-nav a.active::before { background: var(--acento-nav); }
+    .pie-nav a.active .pie-nav__icono { opacity: 1; }
 
     .hoja { padding-bottom: 5.5rem; }
 }

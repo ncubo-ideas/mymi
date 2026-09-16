@@ -12,8 +12,19 @@ else
 {
     <div class="fondo-noche">
         <h1>Cambios en mis cobros</h1>
+        <p class="subtitulo-pagina">Qué cambió entre tus comprobantes y qué puede explicarlo.</p>
 
-        @if (!variacion.AlgunoSePuedeVer)
+        @if (variacion.AlgunoSePuedeVer)
+        {
+            <div class="tarjeta-estado" id="resumen-cambios">
+                <span class="tarjeta-estado__icono"><IconoSprite Nombre="tendencia" /></span>
+                <span class="tarjeta-estado__texto">
+                    <span class="tarjeta-estado__estado">@ResumenTitulo()</span>
+                    <span class="tarjeta-estado__detalle">@ResumenNota()</span>
+                </span>
+            </div>
+        }
+        else
         {
             <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="Todavía no hay ninguna variación que ver.">
                 <p>
@@ -23,47 +34,77 @@ else
             </Aviso>
         }
 
-        <div class="lista-items">
-            @foreach (var rubro in variacion.Rubros.Where(r => r.SePuedeVer))
-            {
-                <article class="item" id="@("rubro-" + rubro.Rubro)">
-                    <div class="item__cabeza">
-                        <span class="item__rubro">
-                            <LlaveDelRubro Rubro="@rubro.Rubro" />
-                            <span class="periodo">@rubro.Desde &rarr; @rubro.Hasta</span>
-                        </span>
-                        <span class="sello sello--@(rubro.EsSalto ? "salto" : "quieto")">
-                            @NombreLegible.DeLaExplicacionDeVariacion(rubro.Explicacion)
-                        </span>
-                    </div>
-
-                    <span class="item__monto">@Formato.Monto(rubro.Antes) &rarr; @Formato.Monto(rubro.Ahora)</span>
-
-                    <div class="item__cambio">
-                        <span class="item__flecha item__flecha--@Direccion(rubro.Proporcion)">@Flecha(rubro.Proporcion)</span>
-                        <span class="item__porcentaje">@Formato.Porcentaje(Math.Abs(rubro.Proporcion))</span>
-                        <span class="item__meta">por período</span>
-                    </div>
-
-                    <p class="item__frase">@rubro.Dice</p>
-                </article>
-            }
-        </div>
+        @{ var conCambios = variacion.Rubros.Where(r => r.SePuedeVer).ToList(); }
+        @if (conCambios.Count > 0)
+        {
+            <h2>Cobros con cambios</h2>
+            <div class="rubros-cambio">
+                @foreach (var rubro in conCambios)
+                {
+                    <details class="rubro-cambio" id="@("rubro-" + rubro.Rubro)">
+                        <summary class="rubro-cambio__resumen">
+                            <span class="rubro-cambio__icono"><IconoSprite Nombre="@IconoDe(rubro.Rubro)" /></span>
+                            <span class="rubro-cambio__info">
+                                <span class="rubro-cambio__cabeza">
+                                    <span class="rubro-cambio__nombre"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
+                                    <span class="sello sello--@(rubro.EsSalto ? "salto" : "quieto")">
+                                        @NombreLegible.DeLaExplicacionDeVariacion(rubro.Explicacion)
+                                    </span>
+                                </span>
+                                <span class="rubro-cambio__montos">
+                                    @Colones.Formatear(rubro.Antes) &rarr; @Colones.Formatear(rubro.Ahora)
+                                </span>
+                                <span class="rubro-cambio__cambio">
+                                    <span class="rubro-cambio__flecha rubro-cambio__flecha--@Tono(rubro.EsSalto)">@Flecha(rubro.Proporcion)</span>
+                                    <span class="rubro-cambio__porcentaje rubro-cambio__porcentaje--@Tono(rubro.EsSalto)">@Formato.Porcentaje(Math.Abs(rubro.Proporcion))</span>
+                                    <span class="rubro-cambio__nota" style="margin:0">por período</span>
+                                </span>
+                                <span class="rubro-cambio__periodo">@EtiquetaLegible(rubro.Desde) &rarr; @EtiquetaLegible(rubro.Hasta)</span>
+                                <span class="rubro-cambio__toggle">
+                                    <span class="rubro-cambio__toggle-abrir">Ver explicación</span>
+                                    <span class="rubro-cambio__toggle-cerrar">Ocultar explicación</span>
+                                    <span class="rubro-cambio__toggle-chevron" aria-hidden="true">&rsaquo;</span>
+                                </span>
+                            </span>
+                        </summary>
+                        <div class="rubro-cambio__detalle">
+                            <p class="item__frase">@rubro.Dice</p>
+                        </div>
+                    </details>
+                }
+            </div>
+        }
 
         @{ var sinDatos = variacion.Rubros.Where(r => !r.SePuedeVer).ToList(); }
         @if (sinDatos.Count > 0)
         {
             <section class="bloque" id="sin-datos-todavia">
-                <h2>Todavía sin suficientes datos</h2>
-                <div class="lista-items">
+                <h2>Aún no podemos comparar</h2>
+                <div class="rubros-cambio">
                     @foreach (var rubro in sinDatos)
                     {
-                        <article class="item">
-                            <div class="item__cabeza">
-                                <span class="item__rubro"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
+                        <details class="rubro-cambio">
+                            <summary class="rubro-cambio__resumen">
+                                <span class="rubro-cambio__icono"><IconoSprite Nombre="@IconoDe(rubro.Rubro)" /></span>
+                                <span class="rubro-cambio__info">
+                                    <span class="rubro-cambio__cabeza">
+                                        <span class="rubro-cambio__nombre"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
+                                        <span class="sello">Sin historial suficiente</span>
+                                    </span>
+                                    <span class="rubro-cambio__nota">
+                                        No hay suficiente historial para comparar este rubro todavía.
+                                    </span>
+                                    <span class="rubro-cambio__toggle">
+                                        <span class="rubro-cambio__toggle-abrir">Ver explicación</span>
+                                        <span class="rubro-cambio__toggle-cerrar">Ocultar explicación</span>
+                                        <span class="rubro-cambio__toggle-chevron" aria-hidden="true">&rsaquo;</span>
+                                    </span>
+                                </span>
+                            </summary>
+                            <div class="rubro-cambio__detalle">
+                                <p class="item__frase">@rubro.Dice</p>
                             </div>
-                            <Frase Dice="@rubro.Dice" Apagada="true" />
-                        </article>
+                        </details>
                     }
                 </div>
             </section>
@@ -73,31 +114,29 @@ else
         {
             <section class="bloque" id="el-valor-de-mi-finca">
                 <h2>El valor de tu finca</h2>
+                <p class="explicacion-menor">Este dato puede influir en algunos cobros municipales.</p>
 
-                <p class="nota">
-                    Tres de los cinco rubros se cobran sobre el valor de tu finca. El
-                    <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el valor
-                    con que te cobra, y es el que se usa arriba para explicar un salto.
-                    <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
-                    movimientos.
-                </p>
+                <details class="disclosure-secundaria">
+                    <summary class="disclosure-secundaria__resumen">
+                        <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
+                        <span class="disclosure-secundaria__texto">Ver detalle de tus fincas</span>
+                        <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
+                    </summary>
+                    <div class="disclosure-secundaria__contenido">
+                        <p class="item__frase">
+                            Tres de los cinco rubros se cobran sobre el valor de tu finca. El
+                            <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el
+                            valor con que te cobra, y es el que se usa arriba para explicar un salto.
+                            <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
+                            movimientos.
+                        </p>
 
-                <div class="lista-items">
-                    @foreach (var finca in fincas.Fincas)
-                    {
-                        <article class="item">
-                            <div class="item__cabeza">
-                                <span class="item__rubro"><LlaveDelRubro Rubro="@finca.Numero" /></span>
-                                @if (finca.TieneAvaluo)
-                                {
-                                    <span class="periodo">avalúo: @Formato.Monto(finca.Avaluo)</span>
-                                }
-                                else
-                                {
-                                    <span class="periodo">sin avalúo publicado</span>
-                                }
-                            </div>
-
+                        @foreach (var finca in fincas.Fincas)
+                        {
+                            <p class="item__meta" style="display:block;margin-top:.625rem">
+                                <LlaveDelRubro Rubro="@finca.Numero" /> —
+                                <strong>@(finca.TieneAvaluo ? Colones.Formatear(finca.Avaluo) : "sin avalúo publicado")</strong>
+                            </p>
                             @if (!finca.TieneAvaluo)
                             {
                                 <p class="item__frase">
@@ -105,9 +144,9 @@ else
                                     solo, con el resto de tus movimientos, cuando ella lo publique.
                                 </p>
                             }
-                        </article>
-                    }
-                </div>
+                        }
+                    </div>
+                </details>
             </section>
         }
 
@@ -138,17 +177,63 @@ else
 		fincas = estado.LeerLasFincas();
 	}
 
-	private static string Direccion(decimal proporcion) => proporcion switch
-	{
-		> 0 => "sube",
-		< 0 => "baja",
-		_ => "igual",
-	};
-
 	private static string Flecha(decimal proporcion) => proporcion switch
 	{
 		> 0 => "↑",
 		< 0 => "↓",
 		_ => "→",
 	};
+
+	/// <summary>
+	/// El color de la flecha/porcentaje lo decide si el CAMBIO ES SIGNIFICATIVO (EsSalto), no su
+	/// signo: un aumento de 1,7% no debe verse tan alarmante como uno de 60%. "Atencion" es amarillo
+	/// (destaca algo importante); "neutro" es el gris azulado de siempre.
+	/// </summary>
+	private static string Tono(bool esSalto) => esSalto ? "atencion" : "neutro";
+
+	/// <summary>Icono real del rubro cuando el sprite lo tiene; si no, un icono generico ya existente.</summary>
+	private static string IconoDe(string rubro) => rubro switch
+	{
+		"recoleccion-de-basura" => "basura",
+		"servicio-policia" => "policia",
+		"bienes-inmuebles" => "inmuebles",
+		"parques-y-zonas-verdes" => "parques",
+		_ => "calendario-chico",
+	};
+
+	/// <summary>
+	/// Puramente presentacional: "2024-06" -> "jun 2024", "2024-T2" -> "T2 2024". Si el formato no es
+	/// ninguno de los dos que produce el dominio (Mes o Trimestre), devuelve la etiqueta tal cual.
+	/// </summary>
+	private static string EtiquetaLegible(string etiqueta)
+	{
+		string[] partes = etiqueta.Split('-', 2);
+		if (partes.Length != 2) return etiqueta;
+
+		string anio = partes[0];
+		string resto = partes[1];
+
+		if (resto.StartsWith('T')) return $"{resto} {anio}";
+
+		if (int.TryParse(resto, out int mes) && mes is >= 1 and <= 12)
+		{
+			string[] meses = { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" };
+			return $"{meses[mes - 1]} {anio}";
+		}
+
+		return etiqueta;
+	}
+
+	private string ResumenTitulo()
+	{
+		int n = variacion.Rubros.Count(r => r.SePuedeVer && r.EsSalto);
+		if (n == 0) return "Ningún cobro tuvo cambios importantes";
+		return n == 1 ? "1 cobro tuvo un cambio importante" : $"{n} cobros tuvieron cambios importantes";
+	}
+
+	private string ResumenNota()
+	{
+		int n = variacion.Rubros.Count(r => r.SePuedeVer && r.EsSalto);
+		return n == 0 ? "Los cambios que vimos son pequeños." : "Te mostramos cuáles y qué los explica.";
+	}
 }

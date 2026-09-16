@@ -11,18 +11,20 @@ else
 {
     <div class="fondo-noche">
         <h1>Mi presupuesto</h1>
+        <p class="subtitulo-pagina">
+            Una guía para organizar lo que podrías apartar cada mes según lo que ya has pagado.
+        </p>
 
         <section class="bloque-protagonista" id="la-propuesta">
-            <span class="cifra-etiqueta cifra-etiqueta--eyebrow">Propuesta de la app · Para @reserva.Anio</span>
-
             @if (reserva.SePuedeProponer)
             {
-                <span class="cifra-protagonista">@Formato.Monto(reserva.PropuestoPorMes)</span>
+                <IconoSprite Nombre="presupuesto" />
+                <span class="cifra-etiqueta cifra-etiqueta--eyebrow">Proyección @reserva.Anio</span>
+                <span class="cifra-protagonista">@Colones.Formatear(reserva.PropuestoPorMes)</span>
                 <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes</span>
                 <p class="cifra-secundaria" style="margin:.75rem 0 0">
-                    Proyección de @reserva.Anio: @Formato.Monto(reserva.ProyeccionDelAnio)
+                    @Colones.Formatear(reserva.ProyeccionDelAnio) estimados en el año
                 </p>
-                <p class="bloque-protagonista__frase nota">@reserva.DiceLaPropuesta</p>
             }
             else
             {
@@ -30,8 +32,16 @@ else
             }
         </section>
 
+        @if (reserva.SePuedeProponer)
+        {
+            <details class="plomeria">
+                <summary><span class="icono-info" aria-hidden="true">ⓘ</span> ¿Cómo calculamos esta sugerencia?</summary>
+                <p class="item__frase">@reserva.DiceLaPropuesta</p>
+            </details>
+        }
+
         <section class="bloque" id="lo-adoptado">
-            <h2>Tu reserva</h2>
+            <h2>Mi reserva mensual</h2>
 
             @if (reserva.HayReservaAdoptada)
             {
@@ -39,48 +49,61 @@ else
                     <SelloDeUrgencia Urgencia="@reserva.Urgencia" />
                 </div>
 
-                <span class="cifra-protagonista">@Formato.Monto(reserva.AdoptadoPorMes)</span>
-                <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes, adoptado por vos</span>
+                <span class="cifra-protagonista">@Colones.Formatear(reserva.AdoptadoPorMes)</span>
+                <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes, definido por vos</span>
 
                 <span class="item__meta" style="display:block;margin-top:.75rem">
-                    Le falta <strong>@Formato.Monto(reserva.Faltante)</strong>
+                    Le falta <strong>@Colones.Formatear(reserva.Faltante)</strong>
                     (@Formato.Porcentaje(reserva.ProporcionDelFaltante))
                 </span>
                 <span class="item__meta">
-                    Vence este mes: <strong>@Formato.Monto(reserva.VenceEsteMes)</strong>
+                    Vence este mes: <strong>@Colones.Formatear(reserva.VenceEsteMes)</strong>
                 </span>
 
                 <p class="item__frase">@reserva.DiceElFaltante</p>
             }
             else
             {
-                <p class="frase">Todavía no definiste una reserva mensual.</p>
-                <p><a class="boton" href="cuanto-apartar#adoptar">Definir mi reserva</a></p>
-                <p class="item__frase">@reserva.DiceElFaltante</p>
+                <div class="estado-amigable">
+                    <IconoSprite Nombre="alcancia" />
+                    <p class="estado-amigable__titulo">Aún no definiste una reserva</p>
+                    <p class="estado-amigable__texto">Podés elegir cuánto querés guardar cada mes.</p>
+                    @if (!mostrarFormulario)
+                    {
+                        <button type="button" @onclick="() => mostrarFormulario = true">Definir mi reserva</button>
+                    }
+                </div>
+                @if (mostrarFormulario)
+                {
+                    <p class="item__frase">@reserva.DiceElFaltante</p>
+                }
             }
 
             <details class="plomeria">
                 <summary>Sobre este aviso</summary>
                 <NumeroSinFirmar Firmado="true"
                                  Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
-                                 Dicho="@($"Se te avisa cuando lo adoptado queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
+                                 Dicho="@($"Se te avisa cuando tu reserva queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
             </details>
 
-            <div class="aporte" id="adoptar">
-                <label for="monto-a-apartar">Adoptar una reserva, en colones por mes</label>
-                <div class="aporte__linea">
-                    <input id="monto-a-apartar" type="number" min="1" step="1" inputmode="numeric"
-                           @bind="montoAAdoptar" @bind:event="oninput" disabled="@adoptando" />
-                    <button type="button" id="adoptar-reserva" @onclick="AdoptarAsync"
-                            disabled="@(adoptando || !EsUnMontoQuePuedoMandar())">
-                        @(adoptando ? "Guardando…" : "Adoptar")
-                    </button>
+            @if (reserva.HayReservaAdoptada || mostrarFormulario)
+            {
+                <div class="aporte" id="adoptar">
+                    <label for="monto-a-apartar">Definir mi reserva mensual, en colones por mes</label>
+                    <div class="aporte__linea">
+                        <input id="monto-a-apartar" type="number" min="1" step="1" inputmode="numeric"
+                               @bind="montoAAdoptar" @bind:event="oninput" disabled="@adoptando" />
+                        <button type="button" id="adoptar-reserva" @onclick="AdoptarAsync"
+                                disabled="@(adoptando || !EsUnMontoQuePuedoMandar())">
+                            @(adoptando ? "Guardando…" : "Definir")
+                        </button>
+                    </div>
+                    <p class="nota">
+                        Es tuyo y no de la municipalidad: nadie lo revisa y no cambia lo que te cobran. Se
+                        puede definir una vez por día, y el último monto que pongás es el que rige.
+                    </p>
                 </div>
-                <p class="nota">
-                    Es tuyo y no de la municipalidad: nadie lo revisa y no cambia lo que te cobran. Se
-                    puede adoptar una vez por día, y el último que pongás es el que rige.
-                </p>
-            </div>
+            }
 
             @if (loQuePaso is not null)
             {
@@ -115,6 +138,13 @@ else
 	private decimal montoAAdoptar;
 	private bool adoptando;
 	private LoQueDijoElAporte loQuePaso;
+
+	/// <summary>
+	/// Progressive disclosure: el formulario para definir el monto arranca oculto cuando todavia no
+	/// hay reserva, para no mostrar a la vez el CTA amigable y el control tecnico. Una vez que hay
+	/// reserva adoptada el formulario se queda visible siempre (sirve para cambiarla).
+	/// </summary>
+	private bool mostrarFormulario;
 
 	protected override void OnInitialized() => Releer();
 
