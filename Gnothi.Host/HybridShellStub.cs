@@ -12,6 +12,10 @@ namespace Gnothi.Host;
 // El archivo se llama HybridShellStub.cs para no chocar con el HybridShell.cs de Gnothi.MobileShared,
 // que es el de verdad. Gnothi.Mobile EXCLUYE este archivo de su glob; si algun dia entraran
 // los dos, chocarian dos definiciones y esa es la senal correcta.
+//
+// LA VENTANA DE ESCRITORIO ES LA EXCEPCION: Gnothi.Desktop compila el HybridShell real contra
+// este ensamblado y lo registra por Module.ShellFactory antes de cargar el catalogo, con la cara
+// como marco dentro de su ventana. Este stub queda para el Host sin ventana -el frente MCP-.
 internal sealed class HybridShell : IShell
 {
 	private const string PorQue =
