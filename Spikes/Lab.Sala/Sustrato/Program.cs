@@ -40,6 +40,23 @@ const BindingFlags Todo = BindingFlags.Public | BindingFlags.NonPublic | Binding
 var resumen = new List<string>();
 var vivos = new List<(string modulo, object instancia)>();
 
+// DOS MODOS, UN SOLO BINARIO.
+//
+// HOSPEDADA: Gnothi registro su puente, asi que la sala no hace nada por su cuenta -- se queda
+// esperando a que le pidan cargar un modulo o contestar una consulta (ver Sala.cs).
+//
+// SUELTA: no hay nadie del otro lado, asi que corre la barrida de medicion de la nota 49. Es el
+// laboratorio, y es lo que produjo los numeros del LEEME.
+Sala.Sustrato.Sala.ConfigurarDireccion(new Uri(builder.HostEnvironment.BaseAddress));
+
+if (await js.InvokeAsync<bool>("salaHospedada"))
+{
+	await Decir("la sala esta lista, hospedada por Gnothi. Esperando pedidos.");
+	await js.InvokeVoidAsync("salaLista");
+	await host.RunAsync();
+	return;
+}
+
 try
 {
 	await Decir("=== 0 · el sustrato, antes de conocer a ningun modulo ===");

@@ -23,6 +23,25 @@
             // lee la corrida sin depender de que alguien mire la pantalla del telefono.
             try { if (window.Sala) Sala.linea(linea); } catch (e) { }
         };
+        // LA SALA ESTA HOSPEDADA cuando Gnothi registro su puente. Sin el, esto es el
+        // laboratorio suelto y corre la barrida de medicion sola.
+        window.salaHospedada = function () { return !!window.SalaPuente; };
+        window.salaLista = function () { if (window.SalaPuente) SalaPuente.lista(); };
+
+        // LO QUE GNOTHI LLAMA. El id viaja de ida y de vuelta porque el puente es asincronico
+        // en las dos plataformas, igual que el de los modulos hospedados.
+        window.sala = {
+            pedido: function (id, op, a, b) {
+                var t = op === 'cargar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Cargar', a)
+                    : op === 'consultar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Consultar', a, b, arguments[4] || '{}')
+                    : op === 'repertorio' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Repertorio', a)
+                    : op === 'desalojar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Desalojar', a)
+                    : Promise.resolve(JSON.stringify({ ok: false, motivo: 'verbo desconocido: ' + op }));
+                t.then(function (r) { SalaPuente.contesta(id, r); })
+                 .catch(function (e) { SalaPuente.contesta(id, JSON.stringify({ ok: false, motivo: String(e) })); });
+            }
+        };
+
         // La memoria lineal del wasm ES el heap de .NET. Es el numero que hay que comparar
         // contra los ~45 MB que hoy agrega cada modulo hospedado.
         window.memoriaWasm = function () {

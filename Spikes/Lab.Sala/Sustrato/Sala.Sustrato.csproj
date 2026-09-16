@@ -16,6 +16,22 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.13" PrivateAssets="all" />
     <PackageReference Include="Ncubo.Puppeteer" Version="3.0.0-beta.10044" />
+
+    <!-- LO QUE EL MOTOR NECESITA Y NO ES DEL MODULO. Un paquete del BCL como este viene
+         COMPILADO POR PLATAFORMA: el que el modulo trae en su carpeta es el de Android y su IL
+         nombra las intrinsecas de ARM, que en el motor web no existen. MEDIDO: cargarlo desde la
+         carpeta del modulo revienta con
+           TypeLoadException: System.Runtime.Intrinsics.Arm.Crc32
+         Asi que lo presta el sustrato, en su build de browser-wasm. Es la misma regla que el
+         instalador ya hace cumplir con el motor: un paquete cargo que trae su propio sustrato se
+         RECHAZA, justamente para que no pase esto. -->
+    <PackageReference Include="System.IO.Hashing" Version="10.0.5" />
+
+    <!-- Y MCP, por la misma razon: los modulos instalados hoy en el telefono llevan sus tools
+         con los atributos de MCP, asi que su superficie no carga sin esta libreria. Es parte del
+         sustrato que el Host ya presta en proceso: PackageInspector la tiene en su lista de
+         motor y RECHAZA un paquete cargo que la traiga. La sala presta lo mismo. -->
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
   </ItemGroup>
 
   <!-- LO QUE EL HOST PRESTA. Se referencian sin usarse en C#, igual que en la forma cargo:
@@ -33,6 +49,9 @@
     <TrimmerRootAssembly Include="Puppets.Portador" />
     <TrimmerRootAssembly Include="Puppeteer" />
     <TrimmerRootAssembly Include="Choreography" />
+    <TrimmerRootAssembly Include="ModelContextProtocol" />
+    <TrimmerRootAssembly Include="ModelContextProtocol.Core" />
+    <TrimmerRootAssembly Include="System.IO.Hashing" />
   </ItemGroup>
 
   <!-- MEDIDO 2026-09-16, primera corrida: sin esto el modulo carga y se descubre entero, pero
@@ -57,6 +76,31 @@
     <TrimmerRootAssembly Include="System.Runtime" />
     <TrimmerRootAssembly Include="System.Linq" />
     <TrimmerRootAssembly Include="System.Collections" />
+
+    <!-- Y EL RESTO DEL BCL QUE EL SUSTRATO PRESTA. Cada uno de estos se agrego porque un modulo
+         real lo pidio y el trimmer lo habia borrado: System.Lazy primero, System.ComponentModel
+         despues. La lista no es una precaucion, es el contrato: lo que esta aca es lo que un
+         modulo va a encontrar, y lo que no esta es lo que no puede usar. -->
+    <TrimmerRootAssembly Include="System.ComponentModel" />
+    <TrimmerRootAssembly Include="System.ComponentModel.Primitives" />
+    <TrimmerRootAssembly Include="System.ComponentModel.TypeConverter" />
+    <TrimmerRootAssembly Include="System.ObjectModel" />
+    <TrimmerRootAssembly Include="System.Collections.Concurrent" />
+    <TrimmerRootAssembly Include="System.Collections.Specialized" />
+    <TrimmerRootAssembly Include="System.Linq.Expressions" />
+    <TrimmerRootAssembly Include="System.Text.RegularExpressions" />
+    <TrimmerRootAssembly Include="System.Text.Json" />
+    <TrimmerRootAssembly Include="System.Text.Encoding.Extensions" />
+    <TrimmerRootAssembly Include="System.Memory" />
+    <TrimmerRootAssembly Include="System.Threading" />
+    <TrimmerRootAssembly Include="System.Console" />
+
+    <!-- Y estos dos los pidio el MOTOR, no el dominio: su calculo de hash nombra
+         System.Runtime.Intrinsics.Arm.Crc32 aunque en wasm no se use nunca: el typeref existe
+         igual y el cargador de tipos lo resuelve antes de mirar si esta soportado. -->
+    <TrimmerRootAssembly Include="System.Runtime.Intrinsics" />
+    <TrimmerRootAssembly Include="System.Runtime.InteropServices" />
+    <TrimmerRootAssembly Include="System.Security.Cryptography" />
   </ItemGroup>
 
 </Project>

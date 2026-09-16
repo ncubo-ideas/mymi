@@ -203,6 +203,27 @@ public class MainActivity : Activity
 			s => global::Android.Util.Log.Info("gnothi", s));
 		Gnothi.Host.WebViewShell.Host = anfitrion;
 
+		// Y QUIEN SABE ABRIR LA SALA. Mismo motivo y misma costura: ChooseShell es estatico, la
+		// Activity es la que tiene Context. Es UN solo documento para todos los modulos, creado
+		// la primera vez que alguien pregunta.
+		Gnothi.Host.SalaShell.Host = new AndroidSala(
+			this, s => global::Android.Util.Log.Info("gnothi", s));
+
+		// LA SALA, FORZADA PARA MEDIR, sin tocar el installation.json de nadie:
+		//     adb shell am start -n <pkg>/crc...MainActivity --es sala "examenes,compras"
+		// El resto del camino es el de siempre: Dispatcher, catalogo, consentimiento. Lo unico
+		// que cambia es que cascara construye el Module para esos nombres.
+		string? enLaSala = Intent?.GetStringExtra("sala");
+		if (!string.IsNullOrWhiteSpace(enLaSala))
+		{
+			HashSet<string> nombres = [.. enLaSala.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+			Log($"sala: forzada para {string.Join(", ", nombres)}");
+
+			Gnothi.Host.Module.ShellFactory = (nombre, instalacion) => nombres.Contains(nombre)
+				? new Gnothi.Host.SalaShell(nombre, instalacion.Shell, instalacion.GrantedFolder)
+				: null;
+		}
+
 		// Y QUIEN SABE CERRARLOS: una actualizacion mueve la carpeta del modulo mientras su
 		// WebView puede estar encima (44 §3.6). El Shell solo nombra el gancho; aca se cumple.
 		shell.CloseModule = modulo =>

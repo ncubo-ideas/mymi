@@ -63,6 +63,14 @@ public sealed class Module : IAsyncDisposable
 			// objecion de arriba entera, porque el dll de la institucion corre nativo.
 			"hybrid"     => new HybridShell(name, installation.Shell, installation.GrantedFolder),
 
+			// LA SALA: el mismo paquete que la hibrida -- sus .dll y nada mas -- pero el dll no
+			// corre en este proceso: corre adentro del motor web, en un documento que es de
+			// Gnothi. Es la unica forma que conserva la economia de la hibrida (el modulo pesa
+			// 200 KB porque el sustrato se lo presta el Host) SIN caer en la objecion de arriba,
+			// porque lo que interpreta el codigo descargado es el motor web, que es la excepcion
+			// que las dos tiendas nombran.
+			"sala"       => new SalaShell(name, installation.Shell, installation.GrantedFolder),
+
 			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
 			_            => new StdioShell(name, installation.Shell, installation.GrantedFolder),
 		};
