@@ -34,7 +34,7 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 
 ---
 
-## Marcador: 16 corridas, 1 pendiente
+## Marcador: 17 corridas, 1 pendiente
 
 La columna de la derecha dice dónde se midió. **17 Pro** es la corrida del 2026-09-17. Ojo con las
 filas de Siri: ahí Apple Intelligence estaba **apagado** por el cruce de idiomas, y no era Siri AI
@@ -44,12 +44,12 @@ filas de Siri: ahí Apple Intelligence estaba **apagado** por el cruce de idioma
 |---|---|---|---|
 | **PISO** | t1 · Siri contesta en voz alta | ✅ | 13 Pro |
 | | t2 · lo mismo escrito | ✅ | 13 Pro |
-| | p3 · lo mismo, con exámenes | ✅ **compone los tres que piden algo** | 17 Pro |
+| | p3 · lo mismo, con exámenes | ✅ **compone los tres que piden algo** · y **también en inglés** | 17 Pro |
 | **TECHO** | t3 · sin nombrar la app | ❌ cayó en **Cartera**, y Cartera falló · **sin AI activo** | 17 Pro |
 | | t4 · por comercio | ❌ *«no puedo ayudarte con eso»* · **sin AI activo** | 17 Pro |
 | | t5 · Spotlight por comercio | ✅ | 13 Pro |
 | | t6 · Spotlight por concepto | ❌ **concluyente** | 13 Pro |
-| | t5b · Spotlight por analito (`colesterol`) | ✅ **confirma en 2ª entidad** | 13 Pro |
+| | t5b · Spotlight por analito (`colesterol`) | ✅ en el 13 Pro · ❌ en el 17 Pro, **sin aislar** — §13 | ambos |
 | | t6b · Spotlight por veredicto (`deseable`) | ❌ **sigue sin encontrarlo** (no depende de AI) | 17 Pro |
 | | t8b · sin nombrar la app, exámenes | ❌ búsqueda web · **sin AI activo** — §11 | 17 Pro |
 | **CADENA** | t7 · la pieza existe en Atajos | ✅ 11 acciones | 17 Pro |
@@ -57,8 +57,8 @@ filas de Siri: ahí Apple Intelligence estaba **apagado** por el cruce de idioma
 | | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** | 13 Pro |
 | | c6 · ¿prosa o markdown? | 🟥 markdown, también en aparato — §11 | **17 Pro** |
 | | c7 · exámenes hacia Claude | ⬜ pendiente | |
-| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica, también en aparato — §11 | **17 Pro** |
-| | t9 · encadenar sin que salga nada | ✅ **contesta en modo avión** — §11 | **17 Pro** |
+| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica por la puerta del asistente — §11 · ✅ **lo respeta por la cadena** — §13 | **17 Pro** |
+| | t9 · encadenar sin que salga nada | ✅ **en modo avión** (§11) y ✅ **la cadena entera con el modelo del aparato** (§13) | **17 Pro** |
 
 ---
 
