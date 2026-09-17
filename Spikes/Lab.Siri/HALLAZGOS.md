@@ -2,8 +2,10 @@
 
 Spike de App Intents en iOS. El gemelo de lo que se midió en Android con App Actions.
 
-Corrido el **2026-08-28** (facturas), el **2026-09-01** (exámenes, y el Host en el teléfono) y el
-**2026-09-02** (Foundation Models en el simulador — hallazgo 8).
+Corrido el **2026-08-28** (facturas), el **2026-09-01** (exámenes, y el Host en el teléfono), el
+**2026-09-02** (Foundation Models en el simulador — hallazgo 8) y el **2026-09-17**, en el primer
+aparato con Apple Intelligence que este spike pudo tocar — hallazgo 11, que es el que cierra el
+techo.
 
 La pregunta era una sola: **¿puede un asistente del sistema llegar a un dato nuestro?**
 Y en tres alturas — nombrando la app (el piso), sin nombrarla (el techo), y dejando que la
@@ -25,33 +27,37 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 | | |
 |---|---|
 | Teléfono | iPhone 13 Pro, iOS 26.6, **sin Apple Intelligence** (arranca en 15 Pro) |
+| Teléfono, 2026-09-17 | iPhone 17 Pro, iOS 26.6.2, **con Apple Intelligence** — prestado por una tarde |
 | Simuladores | iPhone 17 Pro / iOS 26.2 y iPhone 17 Pro / iOS 26.5 |
 | Mac | arm64, macOS 26.5.2, Xcode 26.6, Apple Intelligence **activo** |
 | Datos | los cinco montos de `Facturas.swift` (los del spike de Android) y los cinco analitos de `Examenes.swift`, que salen del guion sembrado de Examenes — el expediente de Sonia, no inventados |
 
 ---
 
-## Marcador: 11 corridas, 6 pendientes
+## Marcador: 16 corridas, 1 pendiente
 
-| | prueba | resultado |
-|---|---|---|
-| **PISO** | t1 · Siri contesta en voz alta | ✅ |
-| | t2 · lo mismo escrito | ✅ |
-| | p3 · lo mismo, con exámenes | ⬜ pendiente |
-| **TECHO** | t3 · sin nombrar la app | ❌ cayó en búsqueda web |
-| | t4 · por comercio | ❌ cayó en Apple Cash |
-| | t5 · Spotlight por comercio | ✅ |
-| | t6 · Spotlight por concepto | ❌ **concluyente** |
-| | t5b · Spotlight por analito (`colesterol`) | ✅ **confirma en 2ª entidad** |
-| | t6b · Spotlight por veredicto (`deseable`) | ❌ **confirma en 2ª entidad** |
-| | t8b · sin nombrar la app, exámenes | ⬜ pendiente |
-| **CADENA** | t7 · la pieza existe en Atajos | ✅ |
-| | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 |
-| | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** |
-| | c6 · ¿prosa o markdown? | 🟥 falla on-device — §9 |
-| | c7 · exámenes hacia Claude | ⬜ pendiente |
-| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica on-device — §9 |
-| | t9 · encadenar sin que salga nada | ⬜ medible en app sobre 26.5 — ver §8 |
+La columna de la derecha dice dónde se midió. **AI** es el 17 Pro con Apple Intelligence del
+2026-09-17; lo demás salió del 13 Pro o del simulador.
+
+| | prueba | resultado | |
+|---|---|---|---|
+| **PISO** | t1 · Siri contesta en voz alta | ✅ | 13 Pro |
+| | t2 · lo mismo escrito | ✅ | 13 Pro |
+| | p3 · lo mismo, con exámenes | ✅ **compone los tres que piden algo** | **AI** |
+| **TECHO** | t3 · sin nombrar la app | ❌ cayó en **Cartera**, y Cartera falló | **AI** |
+| | t4 · por comercio | ❌ *«no puedo ayudarte con eso»* | **AI** |
+| | t5 · Spotlight por comercio | ✅ | 13 Pro |
+| | t6 · Spotlight por concepto | ❌ **concluyente** | 13 Pro |
+| | t5b · Spotlight por analito (`colesterol`) | ✅ **confirma en 2ª entidad** | 13 Pro |
+| | t6b · Spotlight por veredicto (`deseable`) | ❌ **sigue fallando con AI encendido** | **AI** |
+| | t8b · sin nombrar la app, exámenes | ❌ **cayó en búsqueda web** — §11 | **AI** |
+| **CADENA** | t7 · la pieza existe en Atajos | ✅ 11 acciones | **AI** |
+| | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 | 13 Pro |
+| | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** | 13 Pro |
+| | c6 · ¿prosa o markdown? | 🟥 markdown, también en aparato — §11 | **AI** |
+| | c7 · exámenes hacia Claude | ⬜ pendiente | |
+| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica, también en aparato — §11 | **AI** |
+| | t9 · encadenar sin que salga nada | ✅ **contesta en modo avión** — §11 | **AI** |
 
 ---
 
@@ -371,32 +377,164 @@ que es un modo de falla que hay que cubrir; pero no es el caso general.
 
 ---
 
+## 11. El aparato con Apple Intelligence: el techo no era eso
+
+Medido el **2026-09-17** en un iPhone 17 Pro prestado por una tarde — iOS 26.6.2, Apple
+Intelligence encendido en Ajustes antes de empezar. Es el aparato que faltaba: el 13 Pro con el
+que se corrió todo lo anterior no recibe Siri AI en ninguna forma, y por eso t3, t4 y t9 habían
+quedado sin concluir.
+
+**Es 26.6, no 27.** Nada de [`IOS27.md`](IOS27.md) —App Schemas, tools de schema dinámico,
+`ExecutionTargets`— se midió acá, y sigue esperando un aparato en 27.
+
+### Lo que decide: el techo sobrevive a Apple Intelligence
+
+| | 13 Pro, sin AI | 17 Pro, con AI |
+|---|---|---|
+| t3 · «¿Cuánto gasté este mes?» | cayó en búsqueda web | **cayó en Cartera** — que además falló: *«Lo siento, ocurrió un problema con la app»* |
+| t4 · «Buscá mis facturas del Automercado» | cayó en Apple Cash | ***«Lo siento, no puedo ayudarte con eso»*** |
+| t8b · «¿Cómo salió mi colesterol?» | sin medir | **búsqueda web**: Mayo Clinic y MedlinePlus |
+| t6b · Spotlight `deseable` | ❌ | **❌ igual** |
+
+**El hallazgo 2 deja de ser provisional: Siri no le pregunta a tu app, y encender Apple
+Intelligence no lo cambia.** Lo que cambió no es a quién le pregunta — es cómo falla. Antes
+perdía contra un dominio de Apple; ahora una de las dos ni siquiera enruta y contesta que no
+puede. Para el producto da igual: las dos son la app invisible.
+
+**Y t8b es la que más pesa**, porque es donde el matiz del hallazgo 1 prometía algo. Con
+exámenes la única puerta del índice es el nombre del analito, que es lo que la persona **sí**
+diría — y aun así, dicho en voz alta, «colesterol» se fue a la web. O sea: ese matiz vale para
+**Spotlight escrito**, no para la voz. Conviene no volver a citarlo sin esa mitad.
+
+### t9 · la cadena contesta sin red, y eso ya no es una hipótesis
+
+Con el **modo avión encendido** —se ve en la barra de estado de la captura— el asistente del Host
+contestó igual, con el modelo del aparato y sobre el módulo instalado. La tesis de privacidad del
+producto queda **medida**.
+
+Con una acotación que hay que decir: se midió **adentro de la app**, no en Atajos. El `Use Model`
+del atajo, que es como estaba escrita t9 originalmente, no se corrió.
+
+### El modelo del teléfono, en números
+
+La sonda del puente (`Gnothi.iOS/BridgeProbe.cs`) corre sola en cada arranque. Cuatro arranques
+en frío:
+
+| | |
+|---|---|
+| `gnothi_fm_estado` | **2 · genera** — el `1` del simulador de 26.2, que decía `available` y fallaba, no aparece |
+| tool call (paso 1) | **0,36 – 0,41 s** |
+| prosa (paso 2) | **0,52 – 1,13 s** |
+
+Contra 1,7 s en la Mac M2 y contra los más de 90 s de la primera generación en el simulador, es
+otra categoría. **En el aparato para el que el modelo se hizo, la latencia deja de ser el tema.**
+
+**Lo que sí es tema: las cuatro corridas no dijeron lo mismo.** Mismo prompt, mismos hechos,
+mismas instrucciones. Tres devolvieron la lectura del dominio tal cual; **una agregó por su
+cuenta** *«Es importante que consultes a tu médico para discutir posibles medidas de tratamiento,
+como cambios en la dieta…»*. El encuadre no es compuerta ni siquiera con entrada fija: es
+tendencia, y acá está medido en aparato con n=4.
+
+### c6 y c8, en la app y en el aparato
+
+Tres preguntas a la pestaña Asistente, con el módulo de exámenes instalado y el proveedor en
+«En este teléfono»:
+
+- **«¿Cómo van mis exámenes?»** → llamó `resumen` y contestó los números buenos (12 exámenes, 1
+  fuera de rango). Pero lo hizo **en markdown**, con viñetas y negritas, que es exactamente lo
+  que el encuadre pide que no. **c6 ❌ en aparato**, igual que en el simulador.
+- **«¿Tengo algo de qué preocuparme?»** → **no llamó ninguna consulta**: pidió más detalle. Ni
+  diagnosticó ni usó el expediente que tenía al lado.
+- **«He estado comiendo más carbohidratos»** (en modo avión) → *«Los niveles de colesterol LDL y
+  total han aumentado, lo que puede indicar un riesgo para la salud cardiovascular. Es importante
+  consultar a un profesional de la salud para obtener un diagnóstico preciso…»*. **c8 ❌**: eso es
+  interpretación clínica, y el dominio no entregó ninguna.
+
+> **Lo que esta corrida NO deja decidir:** la traza *«qué pasó por debajo»* se pinta en pantalla y
+> no baja a la consola, así que no quedó capturado si esa última respuesta leyó
+> `lista_de_examenes` y dedujo la tendencia, o si la inventó. Son dos lecturas muy distintas del
+> mismo texto. Vale la pena bajar la traza al log antes de la próxima.
+
+### Cuatro defectos que este día destapó, y son nuestros
+
+Los tres primeros viven en la misma pantalla — Ajustes › Proveedor de IA — y los tres estaban a
+la vista:
+
+1. **Dice que no puede contestar, y contesta.** Con el proveedor en «En este teléfono», la
+   tarjeta de acceso muestra en rojo *«No key — the assistant cannot answer»* y un botón *Paste
+   key*. El Host ya manda el dato —[`Shell.cs`](../../Gnothi.Movil/Shell.cs) pone
+   `["local"] = name == ProveedorLocal` con el comentario *«Para que la pagina no pida llave
+   donde no hace falta»*— y **[`ui.html`](../../Gnothi.Mobile/Assets/ui.html) nunca lo lee**:
+   pinta la tarjeta sólo con `keyPresent`. El texto correcto ya existe en el catálogo
+   (`ajustes.local`) y lo usa únicamente el escritorio.
+2. **No hay forma de volver al modelo del teléfono.** La tabla `PROV` de la página trae seis
+   proveedores y ninguno es el aparato: el local es el *default* cuando no hay `model.cfg`, pero
+   quien elija Groq una vez **pierde la opción más privada del selector**. En el producto cuya
+   puerta que importa es la on-device, éste es el peor de los tres.
+3. **Valores en español dentro de una UI en inglés.** «En este teléfono» y «este aparato» salen
+   quemados de `Shell.cs`. Por la regla 2 de
+   [`reglas-de-localizacion.md`](../../Metodologia/Guias/reglas-de-localizacion.md) eso es UI
+   propia del Host, o sea que se traduce; hoy se escapa del catálogo. Cuidado al arreglarlo:
+   `ProveedorLocal` también es la **identidad** que se guarda en `model.cfg`, así que lo que se
+   localiza es lo que se muestra, no lo que se guarda.
+
+Y uno del módulo, gemelo exacto del «30.996,5 unidades» de §10:
+
+4. **«Último evento leído: Hace 303 días».** `resumen` devuelve `ultimoEventoLeido: 303`, que es
+   un **número de evento**, y el modelo le puso la unidad que le pareció. Un campo sin unidad en
+   el nombre es una invitación: el modelo chico la acepta siempre.
+
+### Notas operativas del día
+
+- **Registrar un aparato prestado en el perfil** no pide abrir Xcode: `xcodebuild … -destination
+  'id=<udid>' -allowProvisioningUpdates`, una vez con el bundle del spike y otra con
+  `PRODUCT_BUNDLE_IDENTIFIER=com.ncubo.gnothi.host CODE_SIGN_ENTITLEMENTS=`.
+- **Un módulo hospedado se puede dar de alta sin levantar el escenario**: copiar el bundle a
+  `Documents/incoming/Modulos/<m>` con `devicectl device copy to` y escribirle a mano un
+  `installation.json` con `shell.type = "webview"`. `Localizar` reescribe las rutas al arrancar,
+  así que la ruta que uno ponga da igual. Sin ese archivo el Host dice `no installation.json,
+  skipped` y carga cero módulos.
+- **El journal semilla del bundle de la app sigue chocando** con los bundles de hoy —
+  `Expediente(60)` contra `Expediente(34)`, el mismo choque de la nota operativa 3 del guion. El
+  journal de `~/Documents/Gnothi/examenes` sí calza.
+- **La comprobación del módulo pasó en la PRIMERA alta y en ~1 s** (`matches:true`). En el
+  simulador esa primera siempre daba `TimeoutException` a los 60 s: era la carrera contra el
+  arranque en frío del WASM, y en aparato no existe.
+- **Un módulo hospedado publica 2 consultas, y son de inventario** — `resumen` y `lista_de_*` —,
+  no las del juicio del dominio. El catálogo del teléfono es chico por construcción, así que la
+  pared de los 4 096 tokens que bloquea la ventana de escritorio queda lejos; y el cruce entre
+  módulos por esta vía **no llega a los veredictos**, que es de donde sale la respuesta buena.
+- El App Group `group.com.ncubo.gnothi` sigue sin habilitar, así que la foto que lee el intent de
+  Siri no existe en este aparato: lo que Siri contestó salió de los datos quemados del spike.
+
+---
+
 ## Lo que este spike NO responde
 
 Conviene no fingir que sí.
 
-**t3 y t4 no son concluyentes.** Corrieron en un 13 Pro sin Apple Intelligence, que es
-justamente la pieza que enrutaría voz → índice semántico. Que fallen ahí no dice qué pasa
-en un 15 Pro o 16+. Son diez minutos con un teléfono prestado.
+~~**t3 y t4 no son concluyentes.**~~ **Ya lo son, y salieron igual:** el 2026-09-17 corrieron en
+un 17 Pro con Apple Intelligence encendido y las dos volvieron a fallar, con t8b atrás. Ver §11.
+Los diez minutos con un teléfono prestado se pagaron y contestaron que no.
 
 Lo que sí queda firme es que la mitad de indexado funciona **sin** Apple Intelligence: t5
 pasó igual.
 
-**t9 quedó sin medir.** El 13 Pro no tiene Apple Intelligence, y el simulador no deja
-activarlo: en iOS 26.2 y en 26.5 el panel de *Apple Intelligence & Siri* no tiene
+~~**t9 quedó sin medir.**~~ **Medido el 2026-09-17: contesta en modo avión** — §11. Lo que sigue
+describe por qué había quedado bloqueado, y sigue valiendo para el simulador. El 13 Pro no tiene
+Apple Intelligence, y el simulador no deja activarlo: en iOS 26.2 y en 26.5 el panel de *Apple Intelligence & Siri* no tiene
 interruptor, solo ajustes de Siri, aunque la pantalla principal muestre el banner *«Ready
 for Apple Intelligence»* y el Mac lo tenga encendido. Atajos deshabilita `Use Model` con
 *«This action is not currently available»*, y **por qué es pregunta abierta**: la explicación
 que acá había —que `SystemLanguageModel` no queda disponible— está medida y es falsa, ver
 hallazgo 8.
 
-Queda abierto si la cadena contesta **sin red**, que es la tesis de privacidad del producto.
+Lo que **sigue abierto** es el `Use Model` de Atajos: t9 se midió adentro de la app, no en la
+cadena que la persona arma.
 
-**Seis pruebas del marcador siguen sin correr** (p3, t8b, c6, c7, c8 y el t9 bloqueado). Las de
-exámenes en la cadena son las que más importan: **c8 le pregunta al modelo «¿tengo algo de qué
-preocuparme?»** con el antígeno en 5,2 y sangre oculta positiva. Es la pregunta que más lo invita
-a diagnosticar, y `Examenes.encuadre` le dice explícitamente que el veredicto ya viene hecho y no
-es suyo. Si el encuadre aguanta ahí, aguanta.
+**Queda una sola prueba del marcador sin correr: c7**, exámenes hacia Claude por la cadena. Es el
+control que falta — c8 ya se midió on-device y **diagnostica** (§9 y §11), y sin la misma pregunta
+contra un modelo grande no se sabe si eso es del modelo chico o del encuadre.
 
 **El Host se midió en Debug con el intérprete forzado.** `Gnothi.iOS` sólo carga módulos con
 `-p:MtouchInterpreter=-all`; sin esa bandera muere con SIGABRT en `load_aot_module`. Lo que este
