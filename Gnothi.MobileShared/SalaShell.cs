@@ -297,6 +297,27 @@ internal sealed class SalaShell : IShell
 	// UN MODULO POR VEZ. El anterior se desaloja ANTES de que el siguiente monte su carpeta, y
 	// por eso la frontera entre journals existe: en el sandbox no queda nada del vecino que
 	// leer.
+	//
+	// ── LA DECISION DE NO RESERVAR LA RANURA ────────────────────────────────────────────────
+	//
+	// La cara de un modulo y el asistente entran los dos por aca, asi que se desalojan
+	// mutuamente. MEDIDO en el emulador: 42 consultas encadenadas al mismo modulo cuestan 728 ms;
+	// las mismas 42 con una consulta de otro modulo intercalada entre cada una cuestan 8.264 ms.
+	// Once veces mas.
+	//
+	// Se evaluo que la pantalla abierta RETUVIERA la ranura y que una consulta por otro modulo
+	// fallara mientras tanto. SE DESCARTO, y por la razon de fondo del producto: preguntar por
+	// cualquier modulo -- y CRUZAR dos -- es para lo que existe Gnothi. Una pregunta que cruza
+	// compras con examenes toca los dos en el mismo turno; con la ranura reservada por una
+	// pantalla abierta, esa pregunta no se podria contestar. Se estaria apagando el producto para
+	// proteger un dibujo.
+	//
+	// Y el peor caso medido no es el caso real: exige una consulta entre CADA una de las 42 idas
+	// y vueltas. Una consulta suelta durante una apertura cuesta ~450 ms, que no se ve. El costo
+	// que si se paga siempre es el del cruce: un cambio de modulo por cada modulo que la pregunta
+	// toque, ~200 a 450 ms cada uno, contra los segundos que tarda el modelo en contestar.
+	//
+	// Si algun dia una pantalla se ve lenta, el numero ya esta medido y el lugar a tocar es este.
 	private async Task Asegurar(CancellationToken ct)
 	{
 		if (string.Equals(cargado, name, StringComparison.Ordinal)) return;
