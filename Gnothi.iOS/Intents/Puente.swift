@@ -128,6 +128,41 @@ public func gnothi_fm_estado() -> Int32 {
 	return estadoImpl()
 }
 
+/// POR QUE NO HAY MODELO, en palabras. El estado 0 los mete a todos en la misma bolsa y son tres
+/// situaciones distintas: una se espera, otra se enciende y la tercera no tiene arreglo.
+///
+/// Costo medido: el 2026-09-17 el puente dijo `0` tres veces en un iPhone 17 Pro y cada una fue por
+/// un motivo distinto -el idioma de Siri cruzado con el del aparato, y despues el salto a iOS 27-.
+/// Sin el motivo, cada diagnostico fue media hora de hipotesis. La cadena la libera el C#.
+@_cdecl("gnothi_fm_razon")
+public func gnothi_fm_razon() -> UnsafeMutablePointer<CChar> {
+	guard #available(iOS 26.0, *) else { return cadena("iOS < 26: no existe FoundationModels") }
+	return cadena(razonImpl())
+}
+
+@available(iOS 26.0, *)
+private func razonImpl() -> String {
+	switch SystemLanguageModel.default.availability {
+	case .available:
+		return "disponible"
+	case .unavailable(let motivo):
+		switch motivo {
+		case .deviceNotEligible:
+			return "el aparato no es elegible para Apple Intelligence"
+		case .appleIntelligenceNotEnabled:
+			// El caso que mas cuesta: tambien cae aca el idioma de Siri cruzado con el del
+			// aparato, que Apple documenta y que no se ve como un interruptor apagado.
+			return "Apple Intelligence no esta encendido para este aparato (revisar tambien que el idioma de Siri y el del aparato coincidan)"
+		case .modelNotReady:
+			return "el modelo todavia se esta descargando o preparando: es cuestion de esperar"
+		@unknown default:
+			return "no disponible, por un motivo que esta version del puente no conoce"
+		}
+	@unknown default:
+		return "availability devolvio algo que esta version del puente no conoce"
+	}
+}
+
 @available(iOS 26.0, *)
 private func estadoImpl() -> Int32 {
 	guard SystemLanguageModel.default.isAvailable else { return 0 }
