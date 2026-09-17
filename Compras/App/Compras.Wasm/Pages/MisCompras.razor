@@ -212,7 +212,7 @@ else
             @textos.Con(cantidad == 1 ? "inicio.compraTuya" : "inicio.comprasTuyas", ("cuantas", cantidad.ToString()))
             @if (desdeCuando.Length > 0)
             {
-                @: @textos.Con("inicio.desde", ("cuando", desdeCuando))
+                @(" " + textos.Con("inicio.desde", ("cuando", desdeCuando)))
             }
             &middot; @Colones(total)
         </span>
