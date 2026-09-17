@@ -574,6 +574,56 @@ deciden cómo se lee todo lo demás:
 
 ---
 
+## 12. iOS 27 dejó de llamar la tool, y es el hallazgo más caro del día
+
+Medido el **2026-09-17 por la tarde**, en el **mismo** iPhone 17 Pro de la mañana, después de que
+su dueño lo actualizara a **iOS 27.0 (24A437)**. Mismo binario del Host, mismo puente, mismo
+prompt, misma tool declarada, aparato y Siri los dos en inglés, Apple Intelligence encendido.
+
+| | iOS 26.6.2 | iOS 27.0 |
+|---|---|---|
+| `gnothi_fm_estado` | 2 · genera | 2 · genera |
+| **el paso 1 llama `examenes_evaluar_tendencia`** | **4 de 4** | **0 de 4** |
+| el paso 2, con los hechos ya calculados | bien | bien |
+
+En vez de llamar la tool, el modelo de 27 contesta texto:
+
+> «Mi asistente de Gnothi te pregunta: ¿cómo viene tu colesterol total?»
+> «Mi asistente de Gnothi consulta la tendencia del colesterol total. ¿Desea saber si está
+> aumentando, disminuyendo o estable?»
+> «Mi asistente de Gnothi te dice que el colesterol total viene **bajando**.»
+
+La tercera es la que importa: **inventó el veredicto y lo invirtió** — el expediente dice que
+sube— sin tener un solo dato, porque no llamó a nadie. No es una respuesta pobre: es la falla que
+el producto no puede tener.
+
+**Esto contradice lo que `IOS27.md` esperaba** a partir del material de Apple: que el modelo
+reconstruido fuera *mejor* en tool calling. En esta sonda es lo contrario, 0 de 4 contra 4 de 4.
+
+### La sospecha, que NO está medida
+
+El puente declara sus tools en `LanguageModelSession(tools:)`, y además arma un `Transcript` cuya
+instrucción dice `toolDefinitions: []` — o sea que **la historia que el modelo lee declara que no
+hay ninguna tool**. Hasta 26.6.2 eso no impedía que las llamara. La hipótesis es que el modelo de
+27 toma su inventario de ahí.
+
+Está escrita, compilada e instalable en la rama
+`fix/movil-el-puente-declara-las-tools-en-el-transcript`, **sin correr**: el teléfono se fue antes.
+Si con eso da 4 de 4, la causa era nuestra y el titular de arriba se reescribe entero. Si da 0 de
+4, la causa está en el modelo nuevo y hay que buscar en otro lado. **Hasta entonces las dos
+lecturas siguen abiertas, y esta sección no debe citarse como «iOS 27 rompió el tool calling».**
+
+### De paso, dos cosas que sí quedaron firmes
+
+- **El modelo de iOS 27 genera en este aparato** (`estado = 2`), y el paso 2 —componer con hechos
+  ya calculados— sigue saliendo bien y fiel a la lectura del dominio en las cuatro corridas.
+- **`modelNotReady` dura un rato largo después de un update mayor.** Entre el salto a 27 y el
+  primer `estado = 2` pasó cerca de media hora con el teléfono enchufado y en Wi-Fi. Antes de
+  concluir nada de un `0`, hay que leer el motivo — que ahora el puente dice, rama
+  `fix/movil-el-puente-dice-por-que-no-hay-modelo`.
+
+---
+
 ## Lo que este spike NO responde
 
 Conviene no fingir que sí.
