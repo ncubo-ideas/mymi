@@ -59,6 +59,29 @@ internal sealed class AndroidSala : ISalaHost
 		return Task.CompletedTask;
 	}
 
+	// LO QUE EL MODULO ESCRIBIO, ATERRIZANDO EN EL DISCO. Y el cerco es el mismo que el puente de
+	// la forma hospedada: la ruta que el modulo da es RELATIVA, la ancla Gnothi a SU carpeta, y si
+	// el resultado se sale de ahi no se escribe. Es responsabilidad del Host, no confianza en el
+	// modulo.
+	public Task Guardar(string modulo, string ruta, string contenidoBase64, CancellationToken ct)
+	{
+		if (!preparados.TryGetValue(modulo, out Preparado? p))
+			throw new InvalidOperationException($"no hay carpeta preparada para '{modulo}'");
+
+		string raiz = Path.GetFullPath(p.Journal);
+		string destino = Path.GetFullPath(Path.Combine(raiz, ruta.Replace('/', Path.DirectorySeparatorChar)));
+
+		if (!destino.StartsWith(raiz, StringComparison.Ordinal))
+			throw new UnauthorizedAccessException($"ruta fuera del journal de {modulo}: {ruta}");
+
+		Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
+		byte[] bytes = Convert.FromBase64String(contenidoBase64);
+		File.WriteAllBytes(destino, bytes);
+
+		log($"sala/guardar {modulo}: {ruta} · {bytes.Length} bytes");
+		return Task.CompletedTask;
+	}
+
 	public async Task<string> Pedir(string verbo, string modulo, string a, string b, CancellationToken ct)
 	{
 		await Arrancar(ct);

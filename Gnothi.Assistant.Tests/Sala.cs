@@ -55,9 +55,13 @@ internal static class Sala
 			anfitrion.Olvidar();
 			compras.Invoke("resumen", null, Accepts.JsonOnly, CancellationToken.None).GetAwaiter().GetResult();
 
-			assert("cambiar de modulo desaloja al anterior ANTES de preparar al siguiente",
-				anfitrion.Secuencia is ["desalojar:examenes", "preparar:compras", "cargar:compras", "consultar:compras"],
+			assert("cambiar de modulo desaloja al anterior, GUARDA lo que escribio, y recien despues monta al siguiente",
+				anfitrion.Secuencia is ["desalojar:examenes", "guardar:examenes", "preparar:compras", "cargar:compras", "consultar:compras"],
 				anfitrion.Como());
+
+			assert("y lo guardado es del modulo que se fue, no del que entra",
+				anfitrion.Guardados is ["examenes/examenes/meta.bin"],
+				string.Join(", ", anfitrion.Guardados));
 
 			assert("y nunca hay dos modulos cargados a la vez",
 				anfitrion.MaximoCargadosALaVez == 1,
@@ -92,8 +96,16 @@ internal static class Sala
 			compras.Cursor(CancellationToken.None).GetAwaiter().GetResult();
 
 			assert("la pantalla, la entrega y el cursor no entran por la puerta del asistente",
-				anfitrion.Secuencia is ["vista:compras", "entregar:compras", "cursor:compras"],
+				anfitrion.Secuencia is ["vista:compras", "entregar:compras", "guardar:compras", "cursor:compras"],
 				anfitrion.Como());
+
+			// EL REFRESCO TIENE QUE QUEDAR, y esta es la afirmacion que lo dice: entregar un sobre
+			// no termina cuando el modulo lo aplica en memoria, termina cuando lo que escribio
+			// aterrizo en la carpeta de la persona. Sin esto el refresco se veia aplicado y
+			// desaparecia al cambiar de modulo.
+			assert("lo que el modulo asienta al entregar un sobre se guarda en el acto",
+				anfitrion.Guardados is [_, "compras/compras/journal/journal_000001.bin"],
+				string.Join(", ", anfitrion.Guardados));
 
 			// ── 6 · soltar la cascara NO tira el documento ──────────────────────────────────
 			//
@@ -134,9 +146,20 @@ internal static class Sala
 
 		public string Como() => secuencia.Count == 0 ? "(no pidio nada)" : string.Join(" -> ", secuencia);
 
+		public IReadOnlyList<string> Guardados => guardados;
+
+		private readonly List<string> guardados = [];
+
 		public Task Preparar(string modulo, string entrada, string grantedFolder, CancellationToken ct)
 		{
 			secuencia.Add($"preparar:{modulo}");
+			return Task.CompletedTask;
+		}
+
+		public Task Guardar(string modulo, string ruta, string contenidoBase64, CancellationToken ct)
+		{
+			secuencia.Add($"guardar:{modulo}");
+			guardados.Add($"{modulo}/{ruta}");
 			return Task.CompletedTask;
 		}
 
@@ -153,7 +176,9 @@ internal static class Sala
 
 				case "desalojar":
 					cargados.Remove(modulo);
-					return Task.FromResult("""{"ok":true}""");
+					// El desalojo trae lo que el modulo escribio mientras estuvo adentro.
+					return Task.FromResult(
+						$$"""{"ok":true,"escrituras":[{"ruta":"{{modulo}}/meta.bin","contenido":"AAEC"}]}""");
 
 				case "consultar":
 				case "vista":
@@ -161,7 +186,9 @@ internal static class Sala
 					return Task.FromResult("""{"ok":true,"contenido":{"hayDatos":true}}""");
 
 				case "entregar":
-					return Task.FromResult("""{"ok":true,"contenido":""}""");
+					// Con una escritura adentro: es lo que el modulo asento al aplicar el sobre.
+					return Task.FromResult(
+						"""{"ok":true,"contenido":"","escrituras":[{"ruta":"compras/journal/journal_000001.bin","contenido":"AAEC"}]}""");
 
 				case "cursor":
 					return Task.FromResult("""{"ok":true,"contenido":0}""");

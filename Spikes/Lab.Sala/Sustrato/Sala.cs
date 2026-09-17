@@ -37,7 +37,14 @@ public static class Sala
 
 	public static void ConfigurarDireccion(Uri baseAddress) => Http.BaseAddress = baseAddress;
 
-	private sealed record Modulo(Type Superficie, object Instancia, IReadOnlyDictionary<string, MethodInfo> Consultas, IReadOnlyDictionary<string, MethodInfo> Vistas);
+	// `Montado` es la FOTO de lo que Gnothi puso: ruta relativa y bytes, tal como llegaron. Sirve
+	// para una sola cosa, y es la que faltaba: saber que escribio el modulo mientras estuvo aca.
+	private sealed record Modulo(
+		Type Superficie,
+		object Instancia,
+		IReadOnlyDictionary<string, MethodInfo> Consultas,
+		IReadOnlyDictionary<string, MethodInfo> Vistas,
+		Dictionary<string, byte[]> Montado);
 
 	// ---------------------------------------------------------------- lo que Gnothi llama
 
@@ -81,13 +88,13 @@ public static class Sala
 
 			// 3 · el journal, que Gnothi deja en memoria antes de que nadie lo abra
 			string concedida = $"{Raiz}/{modulo}";
-			await TraerElJournal(modulo, concedida);
+			Dictionary<string, byte[]> montado = await TraerElJournal(modulo, concedida);
 
 			// 4 · la instancia. La convencion es la misma del Host: el string del constructor
 			//     recibe la carpeta concedida, que aca es una ruta de MEMFS y no un disco.
 			object instancia = Construir(superficie, concedida, 0);
 
-			Cargados[modulo] = new Modulo(superficie, instancia, consultas, vistas);
+			Cargados[modulo] = new Modulo(superficie, instancia, consultas, vistas, montado);
 			reloj.Stop();
 
 			return Json(new
@@ -97,6 +104,11 @@ public static class Sala
 				superficie = superficie.Name,
 				consultas = consultas.Keys,
 				vistas = vistas.Keys,
+
+				// CUANTO LE LLEGO DE SU PROPIO REGISTRO. Es lo que prueba que el viaje de vuelta
+				// funciono la vez anterior: un modulo que sembro y se fue tiene que encontrar sus
+				// archivos al volver.
+				montado = new { archivos = montado.Count, bytes = montado.Values.Sum(b => (long)b.Length) },
 
 				// LA CONFORMIDAD, NO UNA PROMESA. Se reporta que queda de los OTROS modulos en el
 				// momento en que este entra. Si algun dia una de estas lineas dice mas de cero
@@ -171,7 +183,10 @@ public static class Sala
 			if (metodo is null) return Json(new { ok = true, contenido = "" });
 
 			object? r = metodo.Invoke(m.Instancia, [sobreJson]);
-			return Json(new { ok = true, contenido = r as string ?? "" });
+
+			// Y LO QUE ASENTO SE VA CON LA RESPUESTA. Sin esto el refresco parecia funcionar y se
+			// evaporaba al desalojar, que es la peor clase de falla.
+			return Json(new { ok = true, contenido = r as string ?? "", escrituras = Escrituras(modulo, m) });
 		}
 		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
 		finally { UnaPorVez.Release(); }
@@ -243,7 +258,17 @@ public static class Sala
 		try
 		{
 			string cerrado = "";
-			if (Cargados.Remove(modulo, out Modulo? m)) cerrado = Cerrar(m.Instancia);
+			object[] escrituras = [];
+
+			if (Cargados.Remove(modulo, out Modulo? m))
+			{
+				cerrado = Cerrar(m.Instancia);
+
+				// LO QUE ESCRIBIO SE VA ANTES DE VACIAR, y el orden no es negociable: primero
+				// cerrar la superficie -- para que el motor haya volcado lo suyo --, despues
+				// recoger, y recien al final vaciar.
+				escrituras = Escrituras(modulo, m);
+			}
 
 			// NUNCA GC.WaitForPendingFinalizers() ACA. MEDIDO: el runtime se muere con 255 al
 			// cambiar de modulo. En el motor web no hay hilo finalizador -- el runtime es de un
@@ -259,6 +284,7 @@ public static class Sala
 				ok = true,
 				cerrado,
 				desmontada,
+				escrituras,
 				montadas = Directory.Exists(Raiz) ? Directory.GetDirectories(Raiz) : [],
 			});
 		}
@@ -341,10 +367,11 @@ public static class Sala
 	// EL JOURNAL LLEGA, NO SE ABRE. El modulo nunca pide un archivo: Gnothi sirve el indice y los
 	// bytes por el mismo origen de la sala, y aca aterrizan en memoria. Lo que el modulo escriba
 	// despues se queda en memoria y no toca la carpeta de la persona.
-	private static async Task TraerElJournal(string modulo, string concedida)
+	private static async Task<Dictionary<string, byte[]>> TraerElJournal(string modulo, string concedida)
 	{
 		Directory.CreateDirectory(concedida);
 
+		var montado = new Dictionary<string, byte[]>(StringComparer.Ordinal);
 		string listado = await Http.GetStringAsync($"modulo/{modulo}/journal/indice.json");
 		using JsonDocument doc = JsonDocument.Parse(listado);
 
@@ -355,7 +382,44 @@ public static class Sala
 			string destino = Path.Combine(concedida, relativa.Replace('/', Path.DirectorySeparatorChar));
 			Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
 			File.WriteAllBytes(destino, bytes);
+			montado[relativa] = bytes;
 		}
+
+		return montado;
+	}
+
+	// EL VIAJE DE VUELTA, que es lo que faltaba para que la sala sirviera para algo mas que
+	// consultar.
+	//
+	// El modulo escribe en memoria y no sabe que hay un disco del otro lado. Asi que despues de
+	// cada operacion que pudo escribir, se compara lo que hay contra la foto de lo que Gnothi
+	// puso, y lo que cambio viaja de vuelta. Gnothi lo guarda en la carpeta de la persona, con su
+	// propio cerco de ruta: el modulo no elige donde aterriza.
+	//
+	// Se devuelve en base64 porque la respuesta es JSON. Un journal pesa kilobytes -- medido, los
+	// cuatro del telefono suman 174 KB -- asi que no hay nada que optimizar todavia.
+	private static object[] Escrituras(string modulo, Modulo m)
+	{
+		string concedida = $"{Raiz}/{modulo}";
+		if (!Directory.Exists(concedida)) return [];
+
+		var cambios = new List<object>();
+
+		foreach (string archivo in Directory.EnumerateFiles(concedida, "*", SearchOption.AllDirectories))
+		{
+			string relativa = Path.GetRelativePath(concedida, archivo).Replace(Path.DirectorySeparatorChar, '/');
+
+			byte[] ahora;
+			try { ahora = File.ReadAllBytes(archivo); }
+			catch { continue; }
+
+			if (m.Montado.TryGetValue(relativa, out byte[]? antes) && antes.AsSpan().SequenceEqual(ahora)) continue;
+
+			cambios.Add(new { ruta = relativa, contenido = Convert.ToBase64String(ahora) });
+			m.Montado[relativa] = ahora;
+		}
+
+		return [.. cambios];
 	}
 
 	// LA MISMA CONVENCION QUE InProcessShell.Build, y se copia a proposito en vez de inventar otra:

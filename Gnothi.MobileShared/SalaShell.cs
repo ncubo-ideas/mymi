@@ -130,7 +130,10 @@ internal sealed class SalaShell : IShell
 		{
 			await Asegurar(ct);
 
-			object? r = Contenido(await Anfitrion().Pedir("entregar", name, envelopeJson, "", ct));
+			string crudo = await Anfitrion().Pedir("entregar", name, envelopeJson, "", ct);
+			await Persistir(name, crudo, ct);
+
+			object? r = Contenido(crudo);
 			return r as string ?? JsonSerializer.Serialize(r);
 		}
 		finally { UnaPorVez.Release(); }
@@ -155,6 +158,31 @@ internal sealed class SalaShell : IShell
 	// EL DESALOJO ES DEL LADO DE ADENTRO. Soltar esta cascara no tiene por que tirar el
 	// documento: la sala sigue viva para el proximo modulo, que es toda la ganancia.
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+	// EL VIAJE DE VUELTA DEL JOURNAL.
+	//
+	// Adentro de la sala no hay disco: el modulo escribe en memoria y no sabe que hay una carpeta
+	// del otro lado. Lo que escribio viaja en la respuesta, y Gnothi lo guarda. El modulo NO elige
+	// donde aterriza: da una ruta relativa y el anfitrion la ancla a SU carpeta, con el mismo
+	// cerco que el puente de la forma hospedada ya tiene.
+	//
+	// Falla RUIDOSA a proposito: si esto se cayera en silencio, la persona veria su refresco
+	// aplicado y al volver ya no estaria, que es la peor forma de perder un dato.
+	private async Task Persistir(string modulo, string crudo, CancellationToken ct)
+	{
+		using JsonDocument doc = JsonDocument.Parse(crudo);
+		if (!doc.RootElement.TryGetProperty("escrituras", out JsonElement escrituras)) return;
+		if (escrituras.ValueKind != JsonValueKind.Array || escrituras.GetArrayLength() == 0) return;
+
+		foreach (JsonElement e in escrituras.EnumerateArray())
+		{
+			string ruta = e.GetProperty("ruta").GetString() ?? "";
+			string contenido = e.GetProperty("contenido").GetString() ?? "";
+			if (ruta.Length == 0) continue;
+
+			await Anfitrion().Guardar(modulo, ruta, contenido, ct);
+		}
+	}
 
 	// La respuesta de la sala es siempre {ok, contenido} o {ok:false, motivo}. Un solo lugar que
 	// lo abra, para que los cuatro caminos fallen igual.
@@ -182,7 +210,11 @@ internal sealed class SalaShell : IShell
 
 		if (cargado.Length > 0)
 		{
-			await Anfitrion().Pedir("desalojar", cargado, "", "", ct);
+			// EL DESALOJO TRAE LO QUE EL MODULO ESCRIBIO, y hay que guardarlo ANTES de cargar al
+			// siguiente. Si no, lo que asento se evapora al vaciarle la carpeta: el refresco
+			// parecia funcionar y despues volvia al estado anterior.
+			string despedida = await Anfitrion().Pedir("desalojar", cargado, "", "", ct);
+			await Persistir(cargado, despedida, ct);
 			cargado = "";
 		}
 
@@ -209,4 +241,9 @@ internal interface ISalaHost
 	Task Preparar(string modulo, string entrada, string grantedFolder, CancellationToken ct);
 
 	Task<string> Pedir(string verbo, string modulo, string a, string b, CancellationToken ct);
+
+	// LO QUE EL MODULO ESCRIBIO, de vuelta a la carpeta de la persona. La ruta es RELATIVA y el
+	// que la ancla es el anfitrion: el modulo no puede nombrar donde aterriza, que es la misma
+	// regla que `WebModule.InJournal` sostiene del otro lado.
+	Task Guardar(string modulo, string ruta, string contenidoBase64, CancellationToken ct);
 }
