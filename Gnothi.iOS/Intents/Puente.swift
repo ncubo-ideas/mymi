@@ -212,10 +212,22 @@ private func pasoImpl(
 					   parameters: e, captura: captura)
 	}
 
+	// LAS TOOLS SE DECLARAN DOS VECES. ESTO ES UNA HIPOTESIS SIN MEDIR, Y ASI HAY QUE LEERLO.
+	//
+	// LO QUE SI ESTA MEDIDO (2026-09-17, iPhone 17 Pro): con `toolDefinitions: []` el modelo de
+	// iOS 26.6.2 llamaba la tool 4 de 4 veces, y el de iOS 27.0 -mismo puente, mismo prompt,
+	// misma tool- 0 de 4: contesta con texto inventado, una vez invirtiendo el veredicto.
+	//
+	// LO QUE NO: que sea POR ESTO. La sospecha es que en 27 el modelo toma su inventario de
+	// tools de la historia que lee -- donde deciamos que no habia ninguna -- y no solo de
+	// `LanguageModelSession(tools:)`. Compila; falta correrlo en el aparato y volver a contar.
+	// Si sale 4 de 4, esta linea es la causa; si sale 0 de 4, la causa es otra y hay que buscar
+	// en el modelo nuevo, no aca.
 	var previas = entradas(conv)
 	if !sistema.isEmpty {
 		previas.insert(.instructions(Transcript.Instructions(
-			segments: [.text(Transcript.TextSegment(content: sistema))], toolDefinitions: [])), at: 0)
+			segments: [.text(Transcript.TextSegment(content: sistema))],
+			toolDefinitions: tools.map { Transcript.ToolDefinition(tool: $0) })), at: 0)
 	}
 
 	// La ultima entrada es la que dispara el paso; el resto es historia.
