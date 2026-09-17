@@ -32,8 +32,26 @@ internal sealed class AndroidSala : ISalaHost
 
 	private readonly Activity actividad;
 	private readonly Action<string> log;
-	private readonly ConcurrentDictionary<string, Preparado> preparados = new(StringComparer.Ordinal);
 	private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> esperando = new(StringComparer.Ordinal);
+
+	// UNA SOLA RANURA, Y ES LA CORRECCION QUE MAS IMPORTA DE TODO ESTE ARCHIVO.
+	//
+	// Antes esto era un diccionario que ACUMULABA todos los modulos de la sesion y no se limpiaba
+	// nunca. Servir() atendia `modulo/<cualquiera>/journal/<archivo>` para cualquiera de ellos,
+	// leyendo del disco de verdad. Y la CSP deja `connect-src 'self'`, que es exactamente este
+	// origen: o sea que un dominio adentro de la sala podia pedir por HTTP el journal de OTRO
+	// modulo, directo del disco, SIN PASAR POR LA MEMORIA y sin que el desmontaje tuviera nada
+	// que ver. Toda la frontera de la sala se saltaba con un fetch.
+	//
+	// Lo encontro Jonathan razonando sobre el diseno, sin ver el codigo: en la caja la red no se
+	// puede porque la syscall no existe; aca el motor web SI la tiene, asi que lo unico que
+	// limita es el origen. Y el origen lo servimos nosotros.
+	//
+	// Con una sola ranura, lo que se sirve es lo del modulo EN VUELO y nada mas. Lo demas es 404
+	// aunque se pida por su nombre exacto.
+	private readonly object cerrojo = new();
+	private string enVuelo = "";
+	private Preparado? preparado;
 
 	private WebView? web;
 	private TaskCompletionSource<bool>? listo;
@@ -54,9 +72,45 @@ internal sealed class AndroidSala : ISalaHost
 		// `entrada` es la ruta del .dll que el manifiesto declara. Su carpeta es de donde salen
 		// los demas ensamblados del modulo, que es la convencion del paquete hibrido.
 		string dominio = Path.GetDirectoryName(entrada) ?? "";
-		preparados[modulo] = new Preparado(dominio, Path.GetFileNameWithoutExtension(entrada), grantedFolder);
+
+		lock (cerrojo)
+		{
+			// PREPARAR AL SIGUIENTE CIERRA AL ANTERIOR. No se acumula: la ranura es una.
+			if (enVuelo.Length > 0 && !string.Equals(enVuelo, modulo, StringComparison.Ordinal))
+				log($"sala: {enVuelo} deja de ser servible");
+
+			enVuelo = modulo;
+			preparado = new Preparado(dominio, Path.GetFileNameWithoutExtension(entrada), grantedFolder);
+		}
+
 		log($"sala: {modulo} preparado desde {dominio}");
 		return Task.CompletedTask;
+	}
+
+	// SOLTAR: despues de guardar lo que el modulo escribio, deja de ser servible. Entre el
+	// desalojo y la carga del siguiente NO hay ningun modulo servible, que es lo que se quiere:
+	// si en esa ventana algo pidiera un journal, la respuesta es 404.
+	public Task Soltar(string modulo, CancellationToken ct)
+	{
+		lock (cerrojo)
+		{
+			if (!string.Equals(enVuelo, modulo, StringComparison.Ordinal)) return Task.CompletedTask;
+			enVuelo = "";
+			preparado = null;
+		}
+
+		log($"sala: {modulo} soltado, ya no se sirve por el origen");
+		return Task.CompletedTask;
+	}
+
+	// LO UNICO SERVIBLE ES EL MODULO EN VUELO. Un nombre que no sea ese no existe para el origen,
+	// aunque sea un modulo instalado y aunque se pida con su ruta exacta.
+	private Preparado? Servible(string modulo)
+	{
+		lock (cerrojo)
+		{
+			return string.Equals(enVuelo, modulo, StringComparison.Ordinal) ? preparado : null;
+		}
 	}
 
 	// LO QUE EL MODULO ESCRIBIO, ATERRIZANDO EN EL DISCO. Y el cerco es el mismo que el puente de
@@ -65,8 +119,10 @@ internal sealed class AndroidSala : ISalaHost
 	// modulo.
 	public Task Guardar(string modulo, string ruta, string contenidoBase64, CancellationToken ct)
 	{
-		if (!preparados.TryGetValue(modulo, out Preparado? p))
-			throw new InvalidOperationException($"no hay carpeta preparada para '{modulo}'");
+		// Y SOLO SE LE GUARDA AL QUE ESTA EN VUELO. Guardar para un modulo que ya se solto seria
+		// escribir en la carpeta de alguien que no esta, a pedido de quien si esta.
+		if (Servible(modulo) is not Preparado p)
+			throw new InvalidOperationException($"'{modulo}' no esta en vuelo: no se le guarda nada");
 
 		string raiz = Path.GetFullPath(p.Journal);
 		string destino = Path.GetFullPath(Path.Combine(raiz, ruta.Replace('/', Path.DirectorySeparatorChar)));
@@ -158,7 +214,7 @@ internal sealed class AndroidSala : ISalaHost
 				if (partes.Length < 3) return NoEsta(ruta);
 
 				string modulo = partes[1];
-				if (!preparados.TryGetValue(modulo, out Preparado? p)) return NoEsta(ruta);
+				if (Servible(modulo) is not Preparado p) return NoEsta(ruta);
 
 				// modulo/<m>/indice.json -- que ensamblados trae y cual es la entrada
 				if (partes[2] == "indice.json")

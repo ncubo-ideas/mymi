@@ -55,8 +55,16 @@ internal static class Sala
 			anfitrion.Olvidar();
 			compras.Invoke("resumen", null, Accepts.JsonOnly, CancellationToken.None).GetAwaiter().GetResult();
 
-			assert("cambiar de modulo desaloja al anterior, GUARDA lo que escribio, y recien despues monta al siguiente",
-				anfitrion.Secuencia is ["desalojar:examenes", "guardar:examenes", "preparar:compras", "cargar:compras", "consultar:compras"],
+			assert("cambiar de modulo desaloja, GUARDA lo que escribio, lo SUELTA, y recien despues monta al siguiente",
+				anfitrion.Secuencia is ["desalojar:examenes", "guardar:examenes", "soltar:examenes", "preparar:compras", "cargar:compras", "consultar:compras"],
+				anfitrion.Como());
+
+			// SOLTAR ANTES DE PREPARAR, Y NO ES UN DETALLE DE ORDEN. El anfitrion sirve los bytes
+			// de UN modulo por el origen de la sala; si el anterior siguiera servible, un dominio
+			// adentro podria pedir su journal por HTTP y saltarse el desmontaje entero. Entre un
+			// modulo y el siguiente no hay ninguno servible.
+			assert("y suelta al anterior ANTES de preparar al siguiente",
+				Donde(anfitrion.Secuencia, "soltar:examenes") < Donde(anfitrion.Secuencia, "preparar:compras"),
 				anfitrion.Como());
 
 			assert("y lo guardado es del modulo que se fue, no del que entra",
@@ -118,8 +126,40 @@ internal static class Sala
 			assert("soltar la cascara no desaloja ni tira el sustrato",
 				anfitrion.Secuencia.Count == 0,
 				anfitrion.Como());
+
+			// ── 7 · FALLAR CERRADO: si el journal no quedo vaciado, NO se carga otro encima ──
+			//
+			// Este es el modo de falla que estaba vivo y que nadie veia. La frontera de la sala ES
+			// el vaciado; un desalojo que no vacia la deja abierta. Antes el Host seguia adelante
+			// y montaba al siguiente igual. Ahora la consulta falla, que es lo correcto para una
+			// propiedad de contencion: contestar bien con la frontera rota es peor que no
+			// contestar.
+			anfitrion.Olvidar();
+			anfitrion.NoVacia = true;
+
+			bool fallo = false;
+			try { examenes.Invoke("resumen", null, Accepts.JsonOnly, CancellationToken.None).GetAwaiter().GetResult(); }
+			catch (InvalidOperationException) { fallo = true; }
+
+			assert("un desalojo que no vacio el journal FALLA la consulta en vez de seguir",
+				fallo, anfitrion.Como());
+
+			assert("y no llega a preparar ni a cargar al siguiente",
+				!anfitrion.Secuencia.Any(v => v.StartsWith("preparar:", StringComparison.Ordinal)
+					|| v.StartsWith("cargar:", StringComparison.Ordinal)),
+				anfitrion.Como());
 		}
 		finally { SalaShell.Host = null; }
+	}
+
+	// En que lugar de la secuencia aparecio un verbo. -1 si no aparecio, que en una comparacion de
+	// orden ya dice que algo falta.
+	private static int Donde(IReadOnlyList<string> secuencia, string verbo)
+	{
+		for (int i = 0; i < secuencia.Count; i++)
+			if (string.Equals(secuencia[i], verbo, StringComparison.Ordinal)) return i;
+
+		return -1;
 	}
 
 	private static Shell Instalacion(string modulo) => new()
@@ -156,6 +196,14 @@ internal static class Sala
 			return Task.CompletedTask;
 		}
 
+		public bool NoVacia { get; set; }
+
+		public Task Soltar(string modulo, CancellationToken ct)
+		{
+			secuencia.Add($"soltar:{modulo}");
+			return Task.CompletedTask;
+		}
+
 		public Task Guardar(string modulo, string ruta, string contenidoBase64, CancellationToken ct)
 		{
 			secuencia.Add($"guardar:{modulo}");
@@ -176,9 +224,15 @@ internal static class Sala
 
 				case "desalojar":
 					cargados.Remove(modulo);
+
+					// LA SALA QUE NO PUDO VACIAR. Es el caso que antes pasaba en silencio: el Host
+					// seguia adelante y montaba al siguiente encima de lo que quedo.
+					if (NoVacia)
+						return Task.FromResult("""{"ok":true,"vaciada":false,"desmontada":"QUEDARON 2 archivos sin vaciar de 3"}""");
+
 					// El desalojo trae lo que el modulo escribio mientras estuvo adentro.
 					return Task.FromResult(
-						$$"""{"ok":true,"escrituras":[{"ruta":"{{modulo}}/meta.bin","contenido":"AAEC"}]}""");
+						$$"""{"ok":true,"vaciada":true,"escrituras":[{"ruta":"{{modulo}}/meta.bin","contenido":"AAEC"}]}""");
 
 				case "consultar":
 				case "vista":

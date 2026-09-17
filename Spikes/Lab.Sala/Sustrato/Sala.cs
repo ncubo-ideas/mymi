@@ -259,31 +259,50 @@ public static class Sala
 		{
 			string cerrado = "";
 			object[] escrituras = [];
-
-			if (Cargados.Remove(modulo, out Modulo? m))
-			{
-				cerrado = Cerrar(m.Instancia);
-
-				// LO QUE ESCRIBIO SE VA ANTES DE VACIAR, y el orden no es negociable: primero
-				// cerrar la superficie -- para que el motor haya volcado lo suyo --, despues
-				// recoger, y recien al final vaciar.
-				escrituras = Escrituras(modulo, m);
-			}
-
-			// NUNCA GC.WaitForPendingFinalizers() ACA. MEDIDO: el runtime se muere con 255 al
-			// cambiar de modulo. En el motor web no hay hilo finalizador -- el runtime es de un
-			// solo hilo -- asi que esperar a que otro hilo corra los finalizadores es esperar a
-			// nadie. Un GC.Collect() suelto si es seguro: encola, no espera.
-			GC.Collect();
-
 			string suya = $"{Raiz}/{modulo}";
-			string desmontada = Desmontar(suya);
+			(bool vaciada, string detalle) desmontaje;
+
+			// EL DESMONTAJE VA EN UN `finally`, Y NO ES UN DETALLE DE ESTILO.
+			//
+			// Antes iba despues de cerrar y de recoger, dentro del mismo `try`. Si cualquiera de
+			// esos dos tiraba, el `catch` de abajo devolvia un error y LA CARPETA NUNCA SE VACIABA.
+			// Como la frontera de la sala ES el vaciado, eso la dejaba abierta sin que nada lo
+			// dijera: el modulo siguiente entraba y encontraba el journal del anterior.
+			//
+			// Es el modo de falla «que no corra» que Jonathan nombro, y estaba vivo en el codigo.
+			// Cerrar y recoger pueden fallar; vaciar, no.
+			try
+			{
+				if (Cargados.Remove(modulo, out Modulo? m))
+				{
+					cerrado = Cerrar(m.Instancia);
+
+					// El orden importa: primero cerrar la superficie -- para que el motor haya
+					// volcado lo suyo --, despues recoger lo que escribio, y recien vaciar.
+					escrituras = Escrituras(modulo, m);
+				}
+
+				// NUNCA GC.WaitForPendingFinalizers() ACA. MEDIDO: el runtime se muere con 255 al
+				// cambiar de modulo. En el motor web no hay hilo finalizador -- es de un solo
+				// hilo -- asi que esperar a que otro hilo corra los finalizadores es esperar a
+				// nadie. Un GC.Collect() suelto si es seguro: encola, no espera.
+				GC.Collect();
+			}
+			finally
+			{
+				desmontaje = Desmontar(suya);
+			}
 
 			return Json(new
 			{
 				ok = true,
+
+				// `vaciada` ES LA AFIRMACION QUE LA CASCARA MIRA. Sin un booleano, el Host tenia
+				// que adivinar leyendo una frase, y no lo hacia: seguia adelante igual.
+				vaciada = desmontaje.vaciada,
+
 				cerrado,
-				desmontada,
+				desmontada = desmontaje.detalle,
 				escrituras,
 				montadas = Directory.Exists(Raiz) ? Directory.GetDirectories(Raiz) : [],
 			});
@@ -342,24 +361,36 @@ public static class Sala
 	// enterarse de que la persona tiene otros modulos instalados, aunque no de que dicen. Cerrar
 	// eso pide que el motor libere sus escritores de forma determinista, y eso es un pedido al
 	// equipo del motor, no algo que la sala pueda resolver sola.
-	private static string Desmontar(string carpeta)
+	private static (bool vaciada, string detalle) Desmontar(string carpeta)
 	{
-		if (!Directory.Exists(carpeta)) return "no estaba";
+		if (!Directory.Exists(carpeta)) return (true, "no estaba");
 
-		int vaciados = 0;
+		int vaciados = 0, fallados = 0;
 		long bytes = 0;
-		foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+
+		try
 		{
-			try
+			foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
 			{
-				bytes += new FileInfo(archivo).Length;
-				File.WriteAllBytes(archivo, []);
-				vaciados++;
+				try
+				{
+					bytes += new FileInfo(archivo).Length;
+					File.WriteAllBytes(archivo, []);
+					vaciados++;
+				}
+				catch { fallados++; }
 			}
-			catch { /* si no se puede escribir, tampoco se va a poder leer nada util */ }
+		}
+		catch (Exception e)
+		{
+			return (false, $"NO SE PUDO RECORRER la carpeta: {e.GetType().Name}");
 		}
 
-		return $"vaciada: {vaciados} archivos, {bytes} bytes que el proximo modulo ya no ve";
+		// UN SOLO ARCHIVO QUE NO SE PUDO VACIAR ES UNA FRONTERA ROTA, no un detalle. Se dice que
+		// no, y la cascara decide -- que es fallar la consulta, no seguir como si nada.
+		return fallados == 0
+			? (true, $"vaciada: {vaciados} archivos, {bytes} bytes que el proximo modulo ya no ve")
+			: (false, $"QUEDARON {fallados} archivos sin vaciar de {vaciados + fallados}");
 	}
 
 	// ---------------------------------------------------------------- adentro

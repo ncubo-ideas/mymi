@@ -184,6 +184,24 @@ internal sealed class SalaShell : IShell
 		}
 	}
 
+	// QUE EL DESALOJO HAYA OCURRIDO DE VERDAD. Dos cosas, y las dos tienen que ser ciertas: que la
+	// operacion no fallara, y que la carpeta quedara vaciada. La segunda es la que importa,
+	// porque es la frontera.
+	private static void Confirmar(string despedida, string modulo)
+	{
+		using JsonDocument doc = JsonDocument.Parse(despedida);
+
+		if (!doc.RootElement.TryGetProperty("ok", out JsonElement ok) || !ok.GetBoolean())
+			throw new InvalidOperationException(
+				$"no se pudo desalojar '{modulo}', asi que no se carga otro encima: "
+				+ (doc.RootElement.TryGetProperty("motivo", out JsonElement m) ? m.GetString() : "sin motivo"));
+
+		if (!doc.RootElement.TryGetProperty("vaciada", out JsonElement vaciada) || !vaciada.GetBoolean())
+			throw new InvalidOperationException(
+				$"el journal de '{modulo}' no quedo vaciado, asi que no se carga otro encima: "
+				+ (doc.RootElement.TryGetProperty("desmontada", out JsonElement d) ? d.GetString() : "sin detalle"));
+	}
+
 	// La respuesta de la sala es siempre {ok, contenido} o {ok:false, motivo}. Un solo lugar que
 	// lo abra, para que los cuatro caminos fallen igual.
 	private static object? Contenido(string crudo)
@@ -215,6 +233,22 @@ internal sealed class SalaShell : IShell
 			// parecia funcionar y despues volvia al estado anterior.
 			string despedida = await Anfitrion().Pedir("desalojar", cargado, "", "", ct);
 			await Persistir(cargado, despedida, ct);
+
+			// Y RECIEN AHORA DEJA DE SER SERVIBLE. Entre el desalojo y la carga del siguiente no
+			// hay ningun modulo servible por el origen de la sala.
+			await Anfitrion().Soltar(cargado, ct);
+
+			// FALLAR CERRADO, Y ES UN CAMBIO DE CRITERIO.
+			//
+			// Antes esto no miraba la respuesta: desalojaba, borraba su variable y cargaba al
+			// siguiente aunque el desalojo hubiera fallado. Como la frontera de la sala ES el
+			// vaciado, un desalojo fallido la dejaba abierta EN SILENCIO.
+			//
+			// Ahora una consulta falla ruidosa antes que contestar bien con la frontera rota. Un
+			// modulo trabado bloquea al resto, y eso es lo correcto para una propiedad de
+			// contencion: la alternativa es contestar como si nada mientras el vecino queda
+			// expuesto.
+			Confirmar(despedida, cargado);
 			cargado = "";
 		}
 
@@ -241,6 +275,11 @@ internal interface ISalaHost
 	Task Preparar(string modulo, string entrada, string grantedFolder, CancellationToken ct);
 
 	Task<string> Pedir(string verbo, string modulo, string a, string b, CancellationToken ct);
+
+	// DEJA DE SER SERVIBLE. El anfitrion sirve los bytes de UN modulo por su propio origen, y
+	// esto le dice cual deja de serlo. Entre un modulo y el siguiente no hay ninguno: si algo
+	// pidiera un journal en esa ventana, la respuesta es que no existe.
+	Task Soltar(string modulo, CancellationToken ct);
 
 	// LO QUE EL MODULO ESCRIBIO, de vuelta a la carpeta de la persona. La ruta es RELATIVA y el
 	// que la ancla es el anfitrion: el modulo no puede nombrar donde aterriza, que es la misma
