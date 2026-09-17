@@ -22,6 +22,13 @@
     "fechaLarga": "{numero} de {mes} de {anio}",
     "mesDeAnio": "{mes} de {anio}",
 
+    "//chrome": "LO QUE DICE LA CASCARA, no una pantalla. Las tres ultimas viven ademas escritas a mano en index.html y en app.css, porque se ven cuando la app no arranco y todavia no hay catalogo cargado: ahi quedan en el idioma del registro, y esta capa las reemplaza apenas negocia.",
+    "noEncontradaTitulo": "Página no encontrada",
+    "noEncontradaTexto": "Acá no hay nada en esta dirección.",
+    "errorInesperado": "Ocurrió un error inesperado.",
+    "recargar": "Recargar",
+    "errorEnLaPantalla": "Algo se rompió en esta parte de la pantalla.",
+
     "mes": {
       "1": "ene", "2": "feb", "3": "mar", "4": "abr", "5": "may", "6": "jun",
       "7": "jul", "8": "ago", "9": "sep", "10": "oct", "11": "nov", "12": "dic"
@@ -42,6 +49,8 @@
   },
 
   "hero": {
+    "nuevo": "NUEVO",
+    "nuevoTitulo": "Llegó algo nuevo de tus {producto}",
     "bajoDePrecio": "BAJÓ DE PRECIO",
     "bajoDePrecioTitulo": "El {producto} que comprás siempre bajó de precio",
     "verlo": "Verlo",

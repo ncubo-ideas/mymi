@@ -35,8 +35,11 @@
         <div class="loading-progress-text"></div>
     </div>
 
+    <!-- ESCRITA A MANO EN EL IDIOMA DEL REGISTRO, y es deliberado: esta caja se dibuja cuando
+         Blazor no arrancó, o sea justo cuando no hay catálogo cargado con qué decirla. Textos la
+         reemplaza apenas negocia; si nunca llega a negociar, se ve la caída de siempre. -->
     <div id="blazor-error-ui">
-        Ocurrió un error inesperado.
+        <span class="mensaje">Ocurrió un error inesperado.</span>
         <a href="." class="reload">Recargar</a>
         <span class="dismiss">🗙</span>
     </div>

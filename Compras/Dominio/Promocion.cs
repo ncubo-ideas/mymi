@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Compras.Dominio
 {
@@ -34,8 +35,11 @@ namespace Compras.Dominio
 			ValidaHasta = validaHasta;
 		}
 
-		/// <summary>Como aaaa-mm-dd, que es la forma en que la fecha viaja.</summary>
-		internal string ValidaHastaExpresada => ValidaHasta.ToString("yyyy-MM-dd");
+		/// <summary>
+		/// Como aaaa-mm-dd, que es la forma en que la fecha viaja. INVARIANTE y no de la maquina: sin
+		/// cultura fija, un calendario no gregoriano escribe otro año en el mismo instante.
+		/// </summary>
+		internal string ValidaHastaExpresada => ValidaHasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
 		/// <summary>El día del vencimiento INCLUIDO: "válida hasta el viernes" incluye el viernes.</summary>
 		internal bool VigenteEl(DateTime fecha) => fecha.Date <= ValidaHasta.Date;

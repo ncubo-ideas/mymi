@@ -230,7 +230,8 @@ namespace Compras.Dominio
 			}
 
 			internal override DateTime UltimaVez => ultimaVez;
-			internal override string UltimaVezExpresada => ultimaVez.ToString("yyyy-MM-dd");
+			internal override string UltimaVezExpresada =>
+				ultimaVez.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
 			// SOBRE TODAS SUS COMPRAS, no sobre una ventana. Si el historial viniera en cero
 			// -imposible si hay meses, pero la division no se arriesga- cae en la constancia

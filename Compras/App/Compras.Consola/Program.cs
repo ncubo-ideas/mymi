@@ -246,7 +246,7 @@ namespace Compras.Consola
 
 			Console.WriteLine($"  canasta {mesAntes}/{anioAntes}: {Formato(c.GastoAntes)}");
 			Console.WriteLine($"  canasta {mesDespues}/{anioDespues}: {Formato(c.GastoDespues)} "
-				+ $"({(c.CambioEnElTotal >= 0m ? "+" : "")}{Formato(c.CambioEnElTotal)})");
+				+ $"({(c.CambioEnElTotal >= 0m ? "+" : "-")}{Formato(Math.Abs(c.CambioEnElTotal))})");
 
 			foreach (DiferenciaPorDepartamentoVista d in c.Diferencias)
 				if (d.ExplicaElCambio)
@@ -582,11 +582,16 @@ namespace Compras.Consola
 			args.Length > i && DateTime.TryParseExact(args[i], "yyyy-MM-dd", CultureInfo.InvariantCulture,
 				DateTimeStyles.None, out DateTime valor) ? valor : porDefecto;
 
-		private static string Formato(decimal valor) =>
-			valor.ToString("N0", CultureInfo.InvariantCulture);
+		/// <summary>
+		/// LA MISMA REDACCION CON QUE LA CARATULA ESCRIBE SUS CIFRAS. Una cifra se escribe en UN solo
+		/// lugar: la consola es el arnes del dominio, y una que pusiera el separador de miles por su
+		/// cuenta mediria una app que dice un numero distinto del que la persona ve.
+		/// </summary>
+		private static readonly LasFrases LasFrasesDelRegistro = LasFrases.De(ElIdioma);
 
-		private static string Porcentaje(decimal proporcion) =>
-			(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+		private static string Formato(decimal valor) => LasFrasesDelRegistro.Monto(valor);
+
+		private static string Porcentaje(decimal proporcion) => LasFrasesDelRegistro.Porcentaje(proporcion);
 
 		private static void Ayuda()
 		{

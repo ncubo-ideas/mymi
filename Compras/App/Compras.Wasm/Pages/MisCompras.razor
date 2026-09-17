@@ -760,7 +760,7 @@ else
                                 <div class="small text-body-secondary">@(comparacion.CambioEnElTotal >= 0 ? "+" : "")@Colones(comparacion.CambioEnElTotal)</div>
                             </div>
                         </div>
-                        <div class="small mt-2">@Tuteada(comparacion.ParaElAsistente)</div>
+                        <div class="small mt-2">@comparacion.ParaElAsistente</div>
                         @foreach (var diferencia in comparacion.Diferencias)
                         {
                             if (!diferencia.ExplicaElCambio) { continue; }
@@ -1326,8 +1326,8 @@ else
             banners.Add(new HeroBanner
             {
                 Variante = "nuevo",
-                Kicker = "NUEVO",
-                Titulo = $"Llegó algo nuevo de tus {Corto(novedad.Descripcion).ToLowerInvariant()}",
+                Kicker = textos["hero.nuevo"],
+                Titulo = textos.Con("hero.nuevoTitulo", ("producto", Corto(novedad.Descripcion).ToLowerInvariant())),
                 Cta = textos["hero.verlo"],
                 Destino = $"producto/{Uri.EscapeDataString(novedad.Descripcion)}",
                 Foto = Foto(novedad.Sku),
@@ -1724,20 +1724,6 @@ else
         int hora = cuando.Hour % 12;
         if (hora == 0) hora = 12;
         return $"{hora}:{cuando.Minute:00} {textos[cuando.Hour < 12 ? "comun.am" : "comun.pm"]}";
-    }
-
-    private static string Tuteada(string frase)
-    {
-        if (frase.Length == 0) return frase;
-
-        string tuya = frase
-            .Replace("su canasta", "tu canasta")
-            .Replace("Su canasta", "Tu canasta")
-            .Replace("su semana", "tu semana")
-            .Replace(" compro ", " compraste ")
-            .Replace(" lleva ", " llevás ");
-
-        return char.ToUpperInvariant(tuya[0]) + tuya.Substring(1);
     }
 
     // Los tres tintes de la paleta rotan por posicion: no hay semantica que los distinga

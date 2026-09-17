@@ -97,11 +97,24 @@ namespace Compras.App.Frases
 				.ToString("#,##0", esEspanol ? Colon : Coma);
 		}
 
-		/// <summary>Una proporcion dicha como porcentaje: 0,18 es "18 %" en espanol y "18%" en ingles.</summary>
+		/// <summary>
+		/// Una proporcion dicha como porcentaje: 0,062 es "6,2 %" en espanol y "6.2%" en ingles. El
+		/// separador decimal es del idioma igual que el de miles, y por eso no se escribe invariante.
+		/// </summary>
 		public string Porcentaje(decimal proporcion)
 		{
-			return Math.Round(proporcion * 100m, 1).ToString("0.#", CultureInfo.InvariantCulture)
+			return Math.Round(proporcion * 100m, 1).ToString("0.#", esEspanol ? Colon : Coma)
 				+ (esEspanol ? " %" : "%");
+		}
+
+		/// <summary>
+		/// UNA CANTIDAD CON SU PARTE DECIMAL, la que lleva el contenido de una presentacion: "1,5" en
+		/// espanol y "1.5" en ingles. No lleva separador de miles porque no hay presentacion de mil
+		/// litros; lo que lleva es el separador decimal del idioma.
+		/// </summary>
+		public string Cantidad(decimal cantidad)
+		{
+			return cantidad.ToString("0.###", esEspanol ? Colon : Coma);
 		}
 
 		/// <summary>Cuantos dias, dicho entero para que "1 dias" no aparezca nunca en ningun idioma.</summary>

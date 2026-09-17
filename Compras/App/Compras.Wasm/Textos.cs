@@ -137,15 +137,21 @@ public sealed class Textos
 		AtendioLaEleccion = pedidas.Length > 0
 			&& SubetiquetaPrimaria(pedidas[0]) == SubetiquetaPrimaria(Etiqueta);
 
-		await FijarElIdiomaDelDocumentoAsync(js);
+		await FijarLaCascaraAsync(js);
 	}
 
 	/// <summary>
-	/// Le dice al documento en que idioma quedo, que es lo que leen el lector de pantalla y el
-	/// guionado. Se fija DESPUES de negociar y nunca en el HTML: el documento se sirve igual para los
-	/// dos idiomas, asi que una etiqueta escrita a mano seria falsa para la mitad de quienes lo abren.
+	/// LO QUE BLAZOR NO DIBUJA: la etiqueta de idioma del documento y los textos que la cascara trae
+	/// escritos a mano. El idioma se fija DESPUES de negociar y nunca en el HTML, porque el documento
+	/// se sirve igual para los dos y una etiqueta a mano seria falsa para la mitad de quienes lo abren.
+	/// <para>
+	/// Los textos de la cascara -- el aviso de error con su enlace, y el del limite de error -- se ven
+	/// cuando la app NO arranco, que es justo cuando no hay catalogo con que decirlos. Por eso nacen
+	/// en el idioma del registro y esto los reemplaza: quien nunca llega hasta aca ve la caida de
+	/// siempre, que es la del registro.
+	/// </para>
 	/// </summary>
-	private async Task FijarElIdiomaDelDocumentoAsync(IJSRuntime js)
+	private async Task FijarLaCascaraAsync(IJSRuntime js)
 	{
 		try
 		{
@@ -153,6 +159,10 @@ public sealed class Textos
 				await js.InvokeAsync<IJSObjectReference>("import", "./idioma-interop.js");
 
 			await modulo.InvokeVoidAsync("fijarIdiomaDelDocumento", Etiqueta);
+
+			await modulo.InvokeVoidAsync("fijarTextosDeLaCascara",
+				this["comun.errorInesperado"], this["comun.recargar"],
+				this["comun.errorEnLaPantalla"]);
 		}
 		catch (JSException)
 		{
@@ -207,9 +217,7 @@ public sealed class Textos
 		try
 		{
 			JsonElement raiz = await http.GetFromJsonAsync<JsonElement>("texto/" + etiqueta + ".json");
-			var plano = new Dictionary<string, string>(StringComparer.Ordinal);
-			Aplanar(raiz, "", plano);
-			return plano;
+			return Compras.App.Frases.CatalogoDeLaCaratula.Aplanado(raiz);
 		}
 		catch (HttpRequestException)
 		{
@@ -218,26 +226,6 @@ public sealed class Textos
 		catch (JsonException)
 		{
 			return new Dictionary<string, string>(StringComparer.Ordinal);
-		}
-	}
-
-	/// <summary>
-	/// El catalogo viene anidado por pantalla, para que se lea, y se guarda plano con la clave
-	/// separada por puntos, para que se busque.
-	/// </summary>
-	private static void Aplanar(JsonElement nodo, string prefijo, Dictionary<string, string> plano)
-	{
-		if (nodo.ValueKind != JsonValueKind.Object)
-		{
-			if (prefijo.Length > 0 && nodo.ValueKind == JsonValueKind.String)
-				plano[prefijo] = nodo.GetString() ?? "";
-			return;
-		}
-
-		foreach (JsonProperty hoja in nodo.EnumerateObject())
-		{
-			if (hoja.Name == "//") continue;
-			Aplanar(hoja.Value, prefijo.Length == 0 ? hoja.Name : prefijo + "." + hoja.Name, plano);
 		}
 	}
 

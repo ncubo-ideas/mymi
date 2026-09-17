@@ -417,7 +417,7 @@ namespace Compras.App.Frases
 			ArgumentNullException.ThrowIfNull(frases);
 
 			return frases.Diga("presentacion." + clave,
-				("contenido", contenido.ToString("0.###", CultureInfo.InvariantCulture)),
+				("contenido", frases.Cantidad(contenido)),
 				("simbolo", simbolo),
 				("piezas", Numero(piezas)));
 		}

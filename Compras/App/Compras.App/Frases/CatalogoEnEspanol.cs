@@ -40,7 +40,7 @@ namespace Compras.App.Frases
 				["cambioEnLaCanasta.sin-comparar"] =
 					"todavía no hay compras de los dos lados con las que ver si algo cambió",
 				["cambioEnLaCanasta.sin-cambio"] =
-					"su canasta viene igual: no entró ni se cayó nada de lo habitual",
+					"tu canasta viene igual: no entró ni se cayó nada de lo habitual",
 				["cambioEnLaCanasta.entraron"] = "desde {mes} entraron {productos}",
 				["cambioEnLaCanasta.salieron"] = "dejó de aparecer {productos}",
 
@@ -48,18 +48,18 @@ namespace Compras.App.Frases
 					"ningún habitual tiene un precio observado de hace {meses} o más: todavía no hay con "
 					+ "qué comparar",
 				["canastaFrenteAlPasado.mas-caro"] =
-					"comprar hoy una pieza de cada uno de sus {cuantos} habituales comparables cuesta "
+					"comprar hoy una pieza de cada uno de tus {cuantos} habituales comparables cuesta "
 					+ "{monto} más que hace {meses}",
 				["canastaFrenteAlPasado.mas-barato"] =
-					"comprar hoy una pieza de cada uno de sus {cuantos} habituales comparables cuesta "
+					"comprar hoy una pieza de cada uno de tus {cuantos} habituales comparables cuesta "
 					+ "{monto} menos que hace {meses}",
 				["canastaFrenteAlPasado.igual"] =
-					"comprar hoy una pieza de cada uno de sus {cuantos} habituales comparables cuesta lo "
+					"comprar hoy una pieza de cada uno de tus {cuantos} habituales comparables cuesta lo "
 					+ "mismo que hace {meses}",
 
 				["comparacion.sin-comparacion"] = "todavía no hay dos meses con compras para comparar",
 				["comparacion.totales"] =
-					"en {mesDespues} lleva {gastoDespues} y en {mesAntes} fueron {gastoAntes}",
+					"en {mesDespues} llevás {gastoDespues} y en {mesAntes} fueron {gastoAntes}",
 				["comparacion.repartida"] =
 					"{totales}: la diferencia está repartida, sin un pasillo que la explique",
 				["comparacion.explican"] = "la diferencia se explica sobre todo por {titulos}",
@@ -84,19 +84,19 @@ namespace Compras.App.Frases
 					"{que} pasó {tramo}, sobre {meses} con compras (el mes más alto fue {pico})",
 				["consumo.se-mantuvo"] = "{que} se mantuvo {tramo}",
 
-				["firma.sin-compras"] = "todavía no hay compras suyas con las que ver un patrón",
+				["firma.sin-compras"] = "todavía no hay compras tuyas con las que ver un patrón",
 				["firma.sin-patron"] =
-					"en sus últimas {cuantas} compras no hay nada que se repita lo suficiente como para "
-					+ "llamarlo su firma",
-				["firma.hay"] = "su semana tiene una firma: {productos}",
+					"en tus últimas {cuantas} compras no hay nada que se repita lo suficiente como para "
+					+ "llamarlo tu firma",
+				["firma.hay"] = "tu semana tiene una firma: {productos}",
 
 				["proximaCompra.sin-historial"] =
 					"todavía no hay compras suficientes para saber cada cuánto vuelve cada cosa",
-				["proximaCompra.al-dia"] = "no hay nada atrasado: todo lo que suele llevar entró hace poco",
+				["proximaCompra.al-dia"] = "no hay nada atrasado: todo lo que solés llevar entró hace poco",
 				["proximaCompra.tocan.uno"] =
-					"1 producto de los que suele llevar ya pasó su tiempo: {productos}",
+					"1 producto de los que solés llevar ya pasó su tiempo: {productos}",
 				["proximaCompra.tocan.varios"] =
-					"{cuantos} productos de los que suele llevar ya pasaron su tiempo: {productos}",
+					"{cuantos} productos de los que solés llevar ya pasaron su tiempo: {productos}",
 
 				["vaAFaltar.toca"] =
 					"{producto}: suele volver {cadencia} y hace {desdeLaUltima} que no entra",
@@ -115,16 +115,16 @@ namespace Compras.App.Frases
 
 				["rebaja.hay"] = "{producto} hoy cuesta {monto} menos que en la compra {numero}",
 				["rebaja.ninguna"] =
-					"nada de la compra {numero} está hoy más barato que lo que se pagó",
+					"nada de la compra {numero} está hoy más barato que lo que pagaste",
 
 				["sucursales.sin-datos.conCompras"] =
 					"ninguna de las {compras} dice en qué sucursal fue: los tiquetes de ese entonces no "
 					+ "traían el dato",
 				["sucursales.sin-datos.sinCompras"] = "no hay compras en el historial",
 				["sucursales.una-sola"] =
-					"todas sus compras con sucursal ({compras}) fueron en {sucursal}{sinDato}",
+					"todas tus compras con sucursal ({compras}) fueron en {sucursal}{sinDato}",
 				["sucursales.se-mueve"] =
-					"compra sobre todo en {sucursal} ({compras} de {total}); desde {desde} aparece "
+					"comprás sobre todo en {sucursal} ({compras} de {total}); desde {desde} aparecés "
 					+ "también en {otras}{sinDato}",
 				["sucursales.sinDato"] = " ({compras} más viejas no dicen sucursal)",
 
@@ -146,11 +146,11 @@ namespace Compras.App.Frases
 					+ "{corto} y el más largo de {largo})",
 
 				["ritmoDelSuper.sin-compras"] =
-					"todavía no hay compras suyas con las que ver cada cuánto va al súper",
+					"todavía no hay compras tuyas con las que ver cada cuánto vas al súper",
 				["ritmoDelSuper.pocas-compras"] =
-					"con {compras} todavía no alcanza para decir cada cuánto va al súper",
+					"con {compras} todavía no alcanza para decir cada cuánto vas al súper",
 				["ritmoDelSuper.medido"] =
-					"suele ir al súper cada {cada}, y casi siempre un {dia} por la {momento}",
+					"solés ir al súper cada {cada}, y casi siempre un {dia} por la {momento}",
 
 				["momento.fila"] = "{momento} · {compras}",
 				["momento.manana"] = "mañana",

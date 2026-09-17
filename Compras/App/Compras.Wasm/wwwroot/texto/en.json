@@ -22,6 +22,13 @@
     "fechaLarga": "{mes} {numero}, {anio}",
     "mesDeAnio": "{mes} {anio}",
 
+    "//chrome": "WHAT THE SHELL SAYS, not a screen. The last three are also written by hand in index.html and app.css, because they show when the app did not start and no catalogue is loaded yet: there they stay in the language of the record, and this layer replaces them as soon as it negotiates.",
+    "noEncontradaTitulo": "Page not found",
+    "noEncontradaTexto": "There is nothing at this address.",
+    "errorInesperado": "Something went wrong.",
+    "recargar": "Reload",
+    "errorEnLaPantalla": "Something broke in this part of the screen.",
+
     "mes": {
       "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr", "5": "May", "6": "Jun",
       "7": "Jul", "8": "Aug", "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
@@ -42,6 +49,8 @@
   },
 
   "hero": {
+    "nuevo": "NEW",
+    "nuevoTitulo": "Something new arrived in your {producto}",
     "bajoDePrecio": "PRICE WENT DOWN",
     "bajoDePrecioTitulo": "The {producto} you always buy went down in price",
     "verlo": "See it",

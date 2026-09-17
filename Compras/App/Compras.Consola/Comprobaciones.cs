@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Globalization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Compras.Dominio;
+using Compras.App.Frases;
 using LaRedaccion = Compras.App.Frases.LaRedaccion;
 using LasFrases = Compras.App.Frases.Frases;
 
@@ -88,6 +92,10 @@ namespace Compras.Consola
 			ElEspejoDeLaVentanaPorDefecto();
 			LosDosCatalogosDicenLasMismasClaves();
 			CadaFraseSeDiceEnLosDosIdiomas();
+			CadaCifraLlevaElSeparadorDeSuIdioma();
+			LaRedaccionEnEspanolLeHablaALaPersona();
+			LosCatalogosDeLaCaratulaDicenLasMismasClaves();
+			LaFechaQueViajaNoSigueALaMaquina();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -167,6 +175,213 @@ namespace Compras.Consola
 				Igual($"{caso}: no dice lo mismo en los dos", "True", (es != en).ToString());
 			}
 		}
+
+		/// <summary>
+		/// EL SEPARADOR DECIMAL ES DEL IDIOMA, igual que el de miles. Es lo que ninguna otra
+		/// comprobacion ve: una cifra escrita invariante dice algo, no deja hueco y no se parece a la
+		/// del otro idioma, asi que pasa las tres de arriba y aun asi le muestra a Costa Rica un
+		/// punto donde va una coma. Ya se midio una vez en esta app, con una pantalla que decia un
+		/// monto con punto y el de al lado con coma.
+		/// </summary>
+		private static void CadaCifraLlevaElSeparadorDeSuIdioma()
+		{
+			Titulo("cada cifra lleva el separador de su idioma");
+
+			Igual("el porcentaje en espanol lleva coma", "6,2 %", EnEspanol.Porcentaje(0.062m));
+			Igual("el porcentaje en ingles lleva punto", "6.2%", EnIngles.Porcentaje(0.062m));
+
+			Igual("el monto en espanol separa los miles con punto", "₡172.630", EnEspanol.Monto(172630m));
+			Igual("el monto en ingles los separa con coma", "₡172,630", EnIngles.Monto(172630m));
+
+			Igual("la cantidad en espanol lleva coma", "1,5", EnEspanol.Cantidad(1.5m));
+			Igual("la cantidad en ingles lleva punto", "1.5", EnIngles.Cantidad(1.5m));
+
+			Igual("la presentacion dice su contenido con la coma del espanol", "1,5 L",
+				LaRedaccion.Presentacion(EnEspanol, "pieza", 1.5m, "L", 0));
+			Igual("y con el punto del ingles", "1.5 L",
+				LaRedaccion.Presentacion(EnIngles, "pieza", 1.5m, "L", 0));
+		}
+
+		/// <summary>
+		/// LA REDACCION EN ESPANOL LE HABLA A LA PERSONA, en el voseo que su propia cabecera declara.
+		/// Lo que esto impide no es que una frase se lea rara: es que una cascara la corrija al vuelo
+		/// con un reemplazo de texto, que es lo que hacia la pantalla de inicio. Un reemplazo asi deja
+		/// de coincidir en silencio apenas alguien reescribe la frase, arregla solo la pantalla que lo
+		/// tiene, y no hace nada en el otro idioma.
+		/// </summary>
+		private static void LaRedaccionEnEspanolLeHablaALaPersona()
+		{
+			Titulo("la redaccion en espanol le habla a la persona");
+
+			foreach ((string clave, string comoLeHabla) in LasQueLeHablanALaPersona)
+				Igual($"{clave} dice «{comoLeHabla}»", "True",
+					EnEspanol.Diga(clave).Contains(comoLeHabla).ToString());
+		}
+
+		/// <summary>
+		/// LAS QUE ESTUVIERON EN TERCERA PERSONA, cada una con la palabra que prueba que ya no lo
+		/// esta. Se nombran de a una y no se barren buscando "su": en «ya pasó su tiempo» el tiempo es
+		/// del PRODUCTO y esa tercera persona es la correcta, y un barrido no sabe distinguirlas.
+		/// </summary>
+		private static readonly (string Clave, string ComoLeHabla)[] LasQueLeHablanALaPersona =
+		{
+			("cambioEnLaCanasta.sin-cambio", "tu canasta"),
+			("canastaFrenteAlPasado.mas-caro", "de tus "),
+			("canastaFrenteAlPasado.mas-barato", "de tus "),
+			("canastaFrenteAlPasado.igual", "de tus "),
+			("comparacion.totales", "llevás"),
+			("firma.sin-compras", "compras tuyas"),
+			("firma.sin-patron", "tus últimas"),
+			("firma.hay", "tu semana"),
+			("proximaCompra.al-dia", "solés llevar"),
+			("proximaCompra.tocan.uno", "solés llevar"),
+			("proximaCompra.tocan.varios", "solés llevar"),
+			("rebaja.ninguna", "pagaste"),
+			("sucursales.una-sola", "tus compras"),
+			("sucursales.se-mueve", "comprás sobre todo"),
+			("ritmoDelSuper.sin-compras", "compras tuyas"),
+			("ritmoDelSuper.pocas-compras", "vas al súper"),
+			("ritmoDelSuper.medido", "solés ir al súper"),
+		};
+
+		/// <summary>
+		/// LOS DOS CATALOGOS DE LA CARATULA, comparados igual que los del dominio. La caratula los
+		/// sirve como archivos sueltos de wwwroot, asi que ningun compilador ve que a uno le falta una
+		/// clave que el otro tiene ni que a una frase le cambiaron el nombre de un hueco. El csproj
+		/// los enlaza desde la caratula y el build los copia; nadie los sincroniza a mano.
+		/// <para>
+		/// Se comprueban LOS HUECOS y no solo las claves: una clave presente en los dos cuyo
+		/// {producto} alguien tradujo a {product} llega a la pantalla con la llave cruda a la vista, y
+		/// la comparacion de claves sola no la ve.
+		/// </para>
+		/// </summary>
+		private static void LosCatalogosDeLaCaratulaDicenLasMismasClaves()
+		{
+			Titulo("los dos catalogos de la caratula escriben las mismas claves y los mismos huecos");
+
+			IReadOnlyDictionary<string, string> es = ElCatalogoDeLaCaratula("es-CR");
+			IReadOnlyDictionary<string, string> en = ElCatalogoDeLaCaratula("en");
+
+			Igual("el catalogo en espanol se pudo leer", "True", (es.Count > 0).ToString());
+			Igual("el catalogo en ingles se pudo leer", "True", (en.Count > 0).ToString());
+
+			Igual("claves que el espanol tiene y el ingles no", "",
+				string.Join(", ", LasQueFaltan(es, en)));
+			Igual("claves que el ingles tiene y el espanol no", "",
+				string.Join(", ", LasQueFaltan(en, es)));
+
+			var huecosDistintos = new List<string>();
+			foreach (KeyValuePair<string, string> frase in es)
+			{
+				if (!en.TryGetValue(frase.Key, out string suPar)) continue;
+
+				string aca = string.Join("+", LosHuecosDe(frase.Value));
+				string alla = string.Join("+", LosHuecosDe(suPar));
+				if (aca != alla) huecosDistintos.Add($"{frase.Key} [{aca}] vs [{alla}]");
+			}
+
+			huecosDistintos.Sort(StringComparer.Ordinal);
+			Igual("claves cuyos huecos no coinciden", "", string.Join(", ", huecosDistintos));
+
+			var notasCargadas = new List<string>();
+			foreach (string clave in es.Keys)
+				foreach (string tramo in clave.Split('.'))
+					if (CatalogoDeLaCaratula.EsUnaNota(tramo)) { notasCargadas.Add(clave); break; }
+
+			notasCargadas.Sort(StringComparer.Ordinal);
+			Igual("notas del archivo que entraron como frase", "", string.Join(", ", notasCargadas));
+		}
+
+		private static IEnumerable<string> LasQueFaltan(
+			IReadOnlyDictionary<string, string> estas, IReadOnlyDictionary<string, string> aquellas)
+		{
+			var faltan = new List<string>();
+			foreach (string clave in estas.Keys) if (!aquellas.ContainsKey(clave)) faltan.Add(clave);
+			faltan.Sort(StringComparer.Ordinal);
+			return faltan;
+		}
+
+		/// <summary>Los nombres entre llaves de una frase, ordenados, para poder comparar dos idiomas.</summary>
+		private static IEnumerable<string> LosHuecosDe(string frase)
+		{
+			var huecos = new List<string>();
+			foreach (Match hueco in Regex.Matches(frase, @"\{([^{}]+)\}"))
+				huecos.Add(hueco.Groups[1].Value);
+
+			huecos.Sort(StringComparer.Ordinal);
+			return huecos;
+		}
+
+		/// <summary>
+		/// El catalogo de la caratula, aplanado POR LA CARATULA MISMA: el aplanado vive en la puerta
+		/// justamente para que el arnes no comprueba una regla propia.
+		/// </summary>
+		private static IReadOnlyDictionary<string, string> ElCatalogoDeLaCaratula(string etiqueta)
+		{
+			string archivo = Path.Combine(AppContext.BaseDirectory, "texto", etiqueta + ".json");
+			if (!File.Exists(archivo))
+				return new Dictionary<string, string>(StringComparer.Ordinal);
+
+			using (JsonDocument documento = JsonDocument.Parse(File.ReadAllText(archivo)))
+				return CatalogoDeLaCaratula.Aplanado(documento.RootElement);
+		}
+
+		/// <summary>
+		/// LA FECHA QUE CRUZA LA PUERTA NO SIGUE A LA MAQUINA. Un ToString sin cultura lee la del
+		/// proceso, y un calendario no gregoriano escribe otro año para el mismo instante: la misma
+		/// compra viajaria como 2026-05-09 en una maquina y como 2569-05-09 en otra.
+		/// <para>
+		/// La primera afirmacion es el CONTROL y prueba el arnes: si la cultura elegida no corriera el
+		/// año, las otras cuatro pasarian sin comprobar nada.
+		/// </para>
+		/// </summary>
+		private static void LaFechaQueViajaNoSigueALaMaquina()
+		{
+			Titulo("la fecha que viaja no sigue a la maquina");
+
+			CultureInfo laDeAntes = CultureInfo.CurrentCulture;
+			try
+			{
+				CultureInfo.CurrentCulture = new CultureInfo("th-TH");
+
+				Igual("CONTROL: bajo esta cultura una fecha sin cultura fija dice otra cosa", "False",
+					(UnaFecha.ToString("yyyy-MM-dd") == EnGregoriano(UnaFecha)).ToString());
+
+				Historial guion = ElGuion();
+
+				CompraConElProducto hallada = guion.ComprasCon("Olla arrocera").Compras[0];
+				Igual("la fecha de una compra hallada", EnGregoriano(hallada.Fecha),
+					hallada.FechaExpresada);
+
+				Consumo consumo = guion.ConsumoDe("Olla arrocera");
+				Igual("la ultima vez de un consumo", EnGregoriano(consumo.UltimaVez),
+					consumo.UltimaVezExpresada);
+
+				Promocion promocion = UnaPromocion();
+				Igual("hasta cuando vale una promocion", EnGregoriano(promocion.ValidaHasta),
+					promocion.ValidaHastaExpresada);
+
+				ProductoQueVaAFaltar producto = guion.LoQueVaAFaltar(Hoy).Productos[0];
+				Igual("la ultima vez de lo que va a faltar", EnGregoriano(producto.UltimaVez),
+					producto.UltimaVezExpresada);
+			}
+			finally
+			{
+				CultureInfo.CurrentCulture = laDeAntes;
+			}
+		}
+
+		/// <summary>Una fecha cualquiera, solo para que el control tenga un instante que correr.</summary>
+		private static readonly DateTime UnaFecha = new DateTime(2026, 5, 9);
+
+		/// <summary>
+		/// Ese instante en aaaa-mm-dd gregoriano, que es lo que el dominio tiene que decir sin importar
+		/// en que maquina corra. Es el valor ESPERADO de cada afirmacion de arriba: se calcula aca con
+		/// la cultura invariante puesta a mano, para que la afirmacion falle si el dominio leyera la
+		/// del proceso.
+		/// </summary>
+		private static string EnGregoriano(DateTime cuando) =>
+			cuando.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
 		// UN CASO POR RESPUESTA, y cada uno entra por el MISMO camino que la puerta: el portador
 		// del dominio entrega su clave y sus valores, y App/Frases redacta. Ninguno arma la frase
@@ -1093,7 +1308,7 @@ namespace Compras.Consola
 			Igual("  el que mas vuelve primero", "True",
 				(firma.Habituales[0].EstaEnTodas).ToString());
 			Igual("  y la linea los nombra", "True",
-				LaFraseDe(firma, EnEspanol).Contains("su semana tiene una firma").ToString());
+				LaFraseDe(firma, EnEspanol).Contains("tu semana tiene una firma").ToString());
 			Igual("  con el pan adentro", "True", LaFraseDe(firma, EnEspanol).Contains("Pan integral").ToString());
 			Igual("  y el helado AFUERA", "False", LaFraseDe(firma, EnEspanol).Contains("Helado").ToString());
 

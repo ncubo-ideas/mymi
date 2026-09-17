@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Compras.Dominio
 {
@@ -50,8 +51,11 @@ namespace Compras.Dominio
 			Cadencia = Cadencia.Para(diasTipicos);
 		}
 
-		/// <summary>Como aaaa-mm-dd, que es la forma en que la fecha viaja.</summary>
-		internal string UltimaVezExpresada => UltimaVez.ToString("yyyy-MM-dd");
+		/// <summary>
+		/// Como aaaa-mm-dd, que es la forma en que la fecha viaja. INVARIANTE y no de la maquina: sin
+		/// cultura fija, un calendario no gregoriano escribe otro año en el mismo instante.
+		/// </summary>
+		internal string UltimaVezExpresada => UltimaVez.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
 		/// <summary>Ya pasó su tiempo: si va al súper hoy, probablemente lo lleve.</summary>
 		internal bool Toca => DiasDesdeLaUltima >= DiasTipicos;
