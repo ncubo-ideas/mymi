@@ -51,6 +51,12 @@ public static class Sala
 		// que se monto, y no a una que se recalcule.
 		string Carpeta);
 
+	// LOS CASCARONES DE LAS CARGAS ANTERIORES, RETENIDOS A PROPOSITO. Ver el comentario largo en
+	// `Desalojar`: mientras estos objetos sigan alcanzables no hay finalizador que pueda despertar
+	// a escribir en una carpeta que ya no existe, y por eso la carpeta se puede BORRAR en vez de
+	// vaciar -- que es lo unico que se lleva los nombres y el lugar donde escribir.
+	private static readonly List<object> Retenidos = [];
+
 	// EL NOMBRE DE LA CARPETA NO ES EL DEL MODULO, Y ESA ES LA CORRECCION.
 	//
 	// Antes se montaba en `/journal/<modulo>`. Como el desmontaje VACIA en vez de borrar -- borrar
@@ -187,6 +193,10 @@ public static class Sala
 				// la ventana del finalizador, y la unica forma de saber si se ensancha.
 				barrido,
 
+				// CUANTOS CASCARONES SE ESTAN RETENIENDO, que es el precio de poder borrar. Si
+				// alguna vez crece la memoria de la sala, este es el numero que hay que mirar.
+				retenidos = Retenidos.Count,
+
 				vecinos = Vecinos(concedida),
 			});
 		}
@@ -310,22 +320,93 @@ public static class Sala
 	// garantiza el rechazo de mas arriba -- asi que no hay nada de nadie vivo que se pueda romper.
 	private static object Barrer()
 	{
-		if (!Directory.Exists(Raiz)) return new { carpetas = 0, bytes = 0L, vaciadas = true };
+		if (!Directory.Exists(Raiz)) return new { carpetas = 0, bytes = 0L, vaciadas = true, borradas = 0 };
 
 		string[] carpetas = Directory.GetDirectories(Raiz);
 		long bytes = 0;
+		int borradas = 0;
 		bool todas = true;
+
+		// LOS ARCHIVOS SUELTOS EN LA RAIZ TAMBIEN. Un modulo no esta obligado a escribir dentro de
+		// su carpeta: puede dejar `/journal/lo-que-vi.txt`, y eso es el mismo canal por el nombre
+		// solo que sin carpeta que lo contenga.
+		foreach (string suelto in Directory.EnumerateFiles(Raiz))
+		{
+			try { bytes += new FileInfo(suelto).Length; } catch { }
+			try { File.Delete(suelto); } catch { todas = false; }
+		}
 
 		foreach (string carpeta in carpetas)
 		{
 			foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
 				try { bytes += new FileInfo(archivo).Length; } catch { }
 
-			(bool vaciada, string _) = Desmontar(carpeta);
-			todas &= vaciada;
+			// SE BORRA, NO SE VACIA, Y ESTE ES EL CAMBIO QUE CIERRA LOS DOS HUECOS QUE QUEDABAN.
+			//
+			// Vaciar dejaba los archivos en cero pero con su NOMBRE, y la sonda de fuga lo
+			// encontro: un modulo que entraba despues leia `c1/compras/meta.bin` -- cero bytes y
+			// el nombre de la institucion igual, porque el nombre viaja ADENTRO de la estructura
+			// del journal y neutralizar la carpeta de afuera no alcanza. Y ademas podia ESCRIBIR
+			// ahi, o sea que un nombre de archivo era un canal entre modulos que el vaciado no
+			// tocaba.
+			//
+			// POR QUE AHORA SE PUEDE BORRAR Y ANTES NO. Antes se borraba EN EL DESALOJO, con el
+			// actor recien cerrado: el finalizador del JournalWriter despertaba, no encontraba su
+			// carpeta, y una excepcion en un finalizador es FATAL -- se lleva el runtime con 255.
+			// Dos cosas cambiaron:
+			//
+			//   1 · Esto corre AL ENTRAR, no al salir. Entre el desalojo y aca paso un viaje
+			//       entero de ida y vuelta al lado nativo, y el modulo anterior ya se cerro y se
+			//       recolecto. Es el momento mas tarde posible que existe para limpiar.
+			//
+			//   2 · Y si aun asi un finalizador llega despues y se muere, YA NO ES FATAL PARA
+			//       GNOTHI: el pedido no vuelve, la cascara corta por tope y tira el documento
+			//       entero. O sea que primero construimos la recuperacion y por eso ahora se
+			//       puede pagar este riesgo; al reves no se habria podido.
+			//
+			// Si el borrado falla, se vacia -- que deja la frontera donde estaba -- y se dice que
+			// no, que hace fallar la carga del lado de la cascara.
+			try
+			{
+				Directory.Delete(carpeta, recursive: true);
+				borradas++;
+			}
+			catch
+			{
+				(bool vaciada, string _) = Desmontar(carpeta);
+				todas &= vaciada;
+			}
 		}
 
-		return new { carpetas = carpetas.Length, bytes, vaciadas = todas };
+		int afuera = Barrer(["/tmp", "/home"]);
+
+		return new { carpetas = carpetas.Length, bytes, vaciadas = todas, borradas, afuera };
+	}
+
+	// Y LO QUE EL MODULO DEJA FUERA DE LA RAIZ DE LA SALA.
+	//
+	// Lo encontro la sonda de fuga: un modulo escribe `/tmp/canal.txt` y el que entra despues lo
+	// lee tal cual. Es el mismo canal que el de los nombres, solo que en una carpeta que no es de
+	// nadie -- y por eso se pasaba por alto barriendo solo `/journal`.
+	//
+	// Se borra el CONTENIDO y no las carpetas: `/home/web_user` es el directorio de trabajo del
+	// runtime y sacarlo de abajo seria romper el piso. Lo que hay adentro no es de nadie.
+	private static int Barrer(string[] carpetas)
+	{
+		int fuera = 0;
+
+		foreach (string carpeta in carpetas)
+		{
+			if (!Directory.Exists(carpeta)) continue;
+
+			foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+				try { File.Delete(archivo); fuera++; } catch { }
+
+			foreach (string sub in Directory.GetDirectories(carpeta))
+				try { Directory.Delete(sub, recursive: true); fuera++; } catch { }
+		}
+
+		return fuera;
 	}
 
 	// Y AHORA LO QUE INFORMA ES OTRA COSA, mejor: antes decia «quedo la carpeta de compras»; ahora
@@ -410,6 +491,26 @@ public static class Sala
 					// El orden importa: primero cerrar la superficie -- para que el motor haya
 					// volcado lo suyo --, despues recoger lo que escribio, y recien vaciar.
 					escrituras = Escrituras(modulo, m);
+
+					// LA INSTANCIA NO SE SUELTA, Y ES LO QUE HACE SEGURO BORRAR SU CARPETA.
+					//
+					// Todo el problema del desmontaje era este: el motor deja un JournalWriter con
+					// finalizador PENDIENTE aunque la superficie cierre, y ese finalizador
+					// despierta despues y escribe POR RUTA. Si la carpeta se vacio, repone 30
+					// bytes -- el canal que la sonda encontro. Si se borro, tira dentro de un
+					// finalizador, que es fatal: MEDIDO, «.NET runtime already exited with 255» en
+					// el cambio siguiente.
+					//
+					// Un finalizador solo corre si el objeto es INALCANZABLE. Reteniendo la
+					// instancia, el grafo entero -- superficie, actor, escritor -- sigue
+					// alcanzable y no hay finalizador que despertar nunca. Entonces la carpeta se
+					// puede borrar de verdad, y con ella los nombres y el lugar donde escribir.
+					//
+					// EL PRECIO ES MEMORIA, y hay que decirlo: queda el cascaron de cada carga de
+					// la sesion. Ya se le llamo Dispose(), asi que lo pesado deberia estar
+					// liberado, pero el objeto no se va. Se reporta `retenidos` para que sea un
+					// numero y no una esperanza.
+					Retenidos.Add(m.Instancia);
 				}
 
 				// NUNCA GC.WaitForPendingFinalizers() ACA. MEDIDO: el runtime se muere con 255 al

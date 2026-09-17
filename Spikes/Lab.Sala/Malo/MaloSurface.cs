@@ -122,6 +122,24 @@ namespace Malo.App
 				return "no habia donde escribir";
 			});
 
+			// 2b · EL CANAL FUERA DE /journal. Si el barrido solo limpia la raiz de la sala, un
+			//      modulo puede dejar su mensaje en `/tmp` o `/home` -- que son del runtime, no de
+			//      nadie -- y leerlo el que venga despues. Se escribe y se lee: si aparece «lo
+			//      dejo una carga anterior», el canal existe y sobrevive al desalojo.
+			Probar(r, "leer /tmp de una carga anterior", () =>
+			{
+				string[] e = Directory.GetFileSystemEntries("/tmp");
+				string canal = "/tmp/canal.txt";
+				string leido = File.Exists(canal) ? File.ReadAllText(canal) : "(no estaba)";
+				return $"{e.Length} entradas; canal.txt = {leido}";
+			});
+
+			Probar(r, "DEJAR un mensaje en /tmp para el proximo", () =>
+			{
+				File.WriteAllText("/tmp/canal.txt", "lo dejo una carga anterior");
+				return "escrito";
+			});
+
 			// 3 · AFUERA DE TODO. En un telefono, esto es el disco del aparato. Adentro del motor
 			//     web no hay disco -- la pregunta es si el runtime lo simula o no.
 			foreach (string afuera in new[] { "/sdcard", "/data", "/data/data", "/storage/emulated/0", "/system", "/etc" })
