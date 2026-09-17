@@ -651,6 +651,52 @@ escrito en el contenido en vez de invocado por el framework, así que el `Senuel
 **El diagnóstico se da vuelta:** no es que el modelo de 27 elija mal ni se niegue. **Elige bien y
 no puede ejecutar.** Lo que falla es la invocación estructurada, no el juicio.
 
+### Y entonces llamó dos tools: el 0 de N no era del modelo
+
+**16:12 del mismo día.** Con el encuadre ya en inglés —`fix/movil-el-encuadre-en-el-idioma-de-la-persona`—
+y la pregunta escrita como una orden en vez de como un sí/no:
+
+> **Look at my lab results and my shopping together**
+>
+> ```
+> catalog: 8 queries
+> round 1: 2 queries
+>   compras_resumen:  129 characters
+>   examenes_resumen: 122 characters
+> ```
+
+**Llamó dos tools de dos módulos distintos en un solo turno.** El cruce —lo que este proyecto llama
+el boss final— corre en iOS 27. O sea que **«iOS 27 no puede invocar tools» era falso**, y las
+secciones de arriba hay que leerlas como lo que son: el modelo no llamaba *en esas condiciones*.
+
+**PERO NO ESTÁ AISLADO, y decirlo importa más que el resultado:** en esa misma corrida cambiaron
+**dos** cosas —el idioma del encuadre y la forma de la pregunta—. Con una sola medición no se sabe
+cuál de las dos lo destrabó. El experimento que las separa es una pregunta: repetir el sí/no
+original —*«Do my last purchases have impacted my cholesterol results?»*— **con el encuadre en
+inglés ya puesto**. Si llama tools, la variable era el encuadre; si no, era la forma de la pregunta.
+
+Lo que sí se puede afirmar sin aislar nada: **la sonda del puente sigue en 0 de 12**, y la sonda
+habla en castellano con una pregunta de sí/no. Las dos pistas apuntan al mismo lado.
+
+### Lo que NO arregló el encuadre en inglés: la respuesta sigue en castellano
+
+> «Mira, te cuento lo que está registrado en tu dispositivo. Has gastado 3.2 millones de pesos en
+> 87 compras…»
+
+Encuadre en inglés, pregunta en inglés, UI en inglés, aparato en inglés — **y contesta en
+castellano igual**. La conclusión es más incómoda que la del arreglo: **el encuadre solo no decide
+el idioma**. Lo que queda tirando del otro lado son las **descripciones de las tools**, que vienen
+del manifiesto de cada institución, y el **registro**, que por la regla 3 no se traduce nunca. Un
+modelo de 3B sigue al idioma que domina su contexto, y hoy ese idioma es el del expediente.
+
+Y esa misma respuesta reproduce de una sola vez **los dos huecos que ya estaban anotados**, los dos
+del módulo y ninguno del modelo:
+
+- **«3.2 millones de pesos»** — `totalGastado` viaja sin moneda, así que el modelo eligió una, y
+  eligió mal: acá son colones. Es el «30.996,5 unidades» del §10 con otra ropa.
+- **«el último evento que leí en tu app fue hace 387 días»** y «hace 303 días» — `ultimoEventoLeido`
+  es un **número de evento**, no días. Dos módulos, el mismo campo sin unidad, la misma invención.
+
 ### Lo que queda por probar, en orden
 
 1. **Cómo se construye la sesión.** El puente arma `LanguageModelSession(tools:transcript:)` y
