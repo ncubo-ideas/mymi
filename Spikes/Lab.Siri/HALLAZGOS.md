@@ -822,6 +822,83 @@ la versión de iOS que la gente va a tener, por esta puerta, hoy se contesta neg
 
 ---
 
+## 13. La cadena que la persona arma, con el modelo del aparato — y funciona
+
+Medido el **2026-09-17 a las 17:05**, iPhone 17 Pro con iOS 27, todo en inglés, Apple Intelligence
+encendido. **Es t9 en su forma original** —la que este archivo definió como *«encadenar sin que
+salga nada»*— y es la primera vez que se corre.
+
+### Primero: `Use Model` existe y está habilitada
+
+La pregunta que el hallazgo 8 dejó abierta —*por qué Atajos deshabilitaba `Use Model`*— tiene
+respuesta simple: **necesitaba Apple Intelligence encendido**. Con el interruptor puesto, la acción
+aparece y ofrece cuatro destinos:
+
+| | |
+|---|---|
+| **Cloud** · **Cloud Pro** | los de Apple, por red |
+| **On-Device** | el del aparato — el que interesa |
+| **ChatGPT** | de fábrica, sin instalar nada |
+
+Que **ChatGPT venga de fábrica en el selector** es un dato para el pitch: por esta puerta, un
+asistente ajeno llega a los datos de la persona sin que ella instale ni configure nada nuestro.
+
+### Y la cadena entera corre, respeta el encuadre y cita bien
+
+El atajo, armado a mano en dos pasos:
+
+```
+Gnothi · «Lab results (data for an AI)»      ← la acción, ya en inglés (PR 10092)
+  ↓
+Use  On-Device  model
+```
+
+> «Los resultados de los cinco exámenes que has proporcionado muestran cambios significativos en
+> algunos indicadores, pero es importante entender que estos datos provienen de tu propio expediente
+> y **no son interpretados ni reevaluados por mí**. El análisis del antígeno prostático ha aumentado
+> de **3,0 a 5,2 ng/mL en un año**, lo cual es un cambio considerable considerando el tiempo
+> transcurrido…»
+
+Tres cosas, y las tres importan:
+
+1. **t9 ✅.** La cadena contesta con el modelo del aparato. Ya estaba medido que el asistente de la
+   app contesta en modo avión; esto es la otra mitad —la ruta que **la persona arma ella misma**—,
+   que este spike llamó *la única ruta sin techo*.
+2. **El encuadre se respeta, y se nota que se respeta.** *«no son interpretados ni reevaluados por
+   mí»* es `Examenes.encuadre` puesto en palabras por el modelo. Contra el §11 y el §12, donde el
+   mismo modelo por la puerta del asistente diagnosticaba y recetaba, **acá aguanta**.
+3. **Cita los valores buenos**: 3,0 → 5,2 ng/mL en un año es exactamente el antígeno del expediente
+   de Sonia. Sin inventar.
+
+> **La diferencia entre esta corrida y las del §12 no es el modelo: es lo que se le manda.** Por la
+> cadena, el encuadre y los hechos **viajan pegados en el mismo texto** —eso es el hallazgo 6— y el
+> modelo no tiene que decidir nada: redacta. Por la puerta del asistente tiene que elegir consultas
+> y componer, y ahí es donde se cae. **El techo del modelo chico no está en entender: está en
+> decidir.**
+
+### Y dos cosas más de la misma tanda
+
+**p3 en inglés ✅.** *«How did my lab results come out in Gnothi?»* → *«De tus 5 exámenes, 3 piden
+algo: Antígeno prostático, Colesterol total y Sangre oculta en heces. El resto está dentro de lo
+normal.»* La frase traducida de exámenes también dispara, así que la traducción sirve para las dos
+entidades y no solo para facturas.
+
+**Spotlight, en cambio, dejó de encontrar el analito — y NO está aislado.** En Spotlight, sobre este
+aparato:
+
+| busco | |
+|---|---|
+| `colesterol` | ❌ nada de Gnothi (solo la sugerencia de Safari) |
+| `cholesterol` | ❌ nada de Gnothi (el diccionario de Oxford) |
+
+El segundo era el resultado esperado —el analito se llama «Colesterol total» en el registro y por la
+regla 3 no se traduce—, **pero el primero pasaba en el 13 Pro** (t5b ✅, iOS 26.6, aparato en
+español). Acá cambiaron tres cosas a la vez: iOS 27, el idioma del aparato, y una reinstalación
+reciente de la app. **No se puede atribuir a ninguna**, y conviene volver a correrlo dejando pasar
+un rato desde la instalación antes de sacar conclusiones sobre el índice.
+
+---
+
 ## Lo que este spike NO responde
 
 Conviene no fingir que sí.
