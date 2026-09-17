@@ -669,28 +669,72 @@ y la pregunta escrita como una orden en vez de como un sí/no:
 el boss final— corre en iOS 27. O sea que **«iOS 27 no puede invocar tools» era falso**, y las
 secciones de arriba hay que leerlas como lo que son: el modelo no llamaba *en esas condiciones*.
 
-**PERO NO ESTÁ AISLADO, y decirlo importa más que el resultado:** en esa misma corrida cambiaron
-**dos** cosas —el idioma del encuadre y la forma de la pregunta—. Con una sola medición no se sabe
-cuál de las dos lo destrabó. El experimento que las separa es una pregunta: repetir el sí/no
-original —*«Do my last purchases have impacted my cholesterol results?»*— **con el encuadre en
-inglés ya puesto**. Si llama tools, la variable era el encuadre; si no, era la forma de la pregunta.
+**Se aisló media hora después, y la variable era el encuadre.** La misma pregunta de sí/no que
+antes no llamaba nada —*«Have my last purchases impacted my cholesterol results?»*, 16:26— con el
+encuadre en inglés ya puesto:
 
-Lo que sí se puede afirmar sin aislar nada: **la sonda del puente sigue en 0 de 12**, y la sonda
-habla en castellano con una pregunta de sí/no. Las dos pistas apuntan al mismo lado.
+```
+round 1: 1 query
+  compras_resumen: 129 characters
+```
 
-### Lo que NO arregló el encuadre en inglés: la respuesta sigue en castellano
+**La forma de la pregunta no era.** Con el encuadre en el idioma de la persona, las cuatro corridas
+de la tarde llamaron tools: 2, 1, 1 y 2 consultas. Antes, **0 de todas**.
 
-> «Mira, te cuento lo que está registrado en tu dispositivo. Has gastado 3.2 millones de pesos en
-> 87 compras…»
+Y encaja con lo otro que quedó firme: **la sonda del puente sigue en 0 de 12**, y la sonda le habla
+al modelo **en castellano** en un aparato en inglés. Es el mismo cruce de idiomas que apagaba Apple
+Intelligence esa mañana, ahora apagando otra cosa.
 
-Encuadre en inglés, pregunta en inglés, UI en inglés, aparato en inglés — **y contesta en
-castellano igual**. La conclusión es más incómoda que la del arreglo: **el encuadre solo no decide
+> **Lo que esto convierte en importante:** `fix/movil-el-encuadre-en-el-idioma-de-la-persona` dejó
+> de ser un arreglo de presentación. En iOS 27, con la persona en un idioma y el encuadre en otro,
+> **el modelo no consulta**, y el asistente contesta de memoria sobre datos de salud. El arreglo es
+> lo que devuelve la puerta.
+
+### Llama, cita bien, y aun así el cruce no ocurre — y la culpa no es del modelo
+
+Las tres pruebas de las 16:26, 16:27 y 16:29, todas en inglés y con el encuadre en inglés:
+
+| pregunta | consultas | qué hizo |
+|---|---|---|
+| «Have my last purchases impacted my cholesterol results?» | `compras_resumen` | recita compras y dice que no puede determinar el vínculo |
+| «Have my cholesterol been affected by what I've been eating…?» | `examenes_lista_de_examenes` (2 421 caracteres) | **cita datos reales** y dice que no puede establecer la relación |
+| «Cross my exam results with my purchases to find any correlation» | `compras_resumen` + `examenes_resumen` | recita los dos resúmenes, sin cruzar |
+
+**Y cita bien.** La segunda reportó *«LDL de 118 mg/dL a 212 mg/dL, de abril de 2021 a abril de
+2026»*, y **118, 212, 2021 y 2026 están todos en el journal**: leyó los 2 421 caracteres de la
+lista y los citó. No hay confabulación acá.
+
+**Entonces por qué no cruza.** Porque con lo que tiene **no se puede cruzar**: `compras_resumen`
+devuelve *87 compras, total X* y `examenes_resumen` devuelve *12 exámenes, 1 fuera de rango*. Dos
+inventarios no se correlacionan. El modelo diciendo *«no puedo determinar una relación»* **está en
+lo correcto**, y es además exactamente lo que el encuadre le pide: no inventar causalidad.
+
+Es lo que ya se había visto al leer los manifiestos —un módulo hospedado publica 2 consultas y son
+de inventario— pero acá tiene consecuencia medida: **el cruce no falla por el modelo, falla porque
+los bundles hospedados no publican las consultas del juicio del dominio.** En `Lab.Cruce` el cruce
+salió con `examenes_evaluar_tendencia` y `compras_consumo_de`, que son las del MCP y no viajan en
+el bundle. **Esa es la brecha que hay que cerrar, y es de los módulos, no del Host ni del modelo.**
+
+### Lo que el encuadre en inglés no arregló: la voz
+
+En las cuatro contesta **en castellano**. Y además se le va la persona gramatical: *«sus
+resultados»* (usted) en una, *«**La persona** ha tenido resultados…»* en otra — hablando **de** ella
+en vez de **a** ella, que es literalmente el «la persona que te pregunta» del encuadre devuelto como
+eco.
+
+### El idioma de la respuesta: el encuadre no alcanza
+
+Encuadre en inglés, pregunta en inglés, UI en inglés, aparato en inglés — **y contesta en castellano
+las cuatro veces**. La conclusión es más incómoda que la del arreglo: **el encuadre solo no decide
 el idioma**. Lo que queda tirando del otro lado son las **descripciones de las tools**, que vienen
 del manifiesto de cada institución, y el **registro**, que por la regla 3 no se traduce nunca. Un
-modelo de 3B sigue al idioma que domina su contexto, y hoy ese idioma es el del expediente.
+modelo de 3B sigue al idioma que domina su contexto, y hoy ese idioma es el del expediente. O las
+instituciones embarcan sus descripciones en los dos idiomas —como la Wasm embarca sus textos— o se
+acepta que el asistente hable el idioma del registro. **Es decisión de producto, no un bug.**
 
-Y esa misma respuesta reproduce de una sola vez **los dos huecos que ya estaban anotados**, los dos
-del módulo y ninguno del modelo:
+Y las respuestas reproducen, una y otra vez, **los dos huecos que ya estaban anotados**, los dos del
+módulo y ninguno del modelo — «3.2 millones de **pesos**», «322.233.6», «3.222.336 **unidades**»,
+«el último evento del supermercado lo leyó **a las 387**», «hace **387 días**», «hace **303 días**»:
 
 - **«3.2 millones de pesos»** — `totalGastado` viaja sin moneda, así que el modelo eligió una, y
   eligió mal: acá son colones. Es el «30.996,5 unidades» del §10 con otra ropa.
