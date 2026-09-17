@@ -36,28 +36,29 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 
 ## Marcador: 16 corridas, 1 pendiente
 
-La columna de la derecha dice dónde se midió. **AI** es el 17 Pro con Apple Intelligence del
-2026-09-17; lo demás salió del 13 Pro o del simulador.
+La columna de la derecha dice dónde se midió. **17 Pro** es la corrida del 2026-09-17, con Apple
+Intelligence encendido y **la Siri de siempre** — no Siri AI, que pide iOS 27, inglés y lista de
+espera (ver §11). Lo demás salió del 13 Pro o del simulador.
 
 | | prueba | resultado | |
 |---|---|---|---|
 | **PISO** | t1 · Siri contesta en voz alta | ✅ | 13 Pro |
 | | t2 · lo mismo escrito | ✅ | 13 Pro |
-| | p3 · lo mismo, con exámenes | ✅ **compone los tres que piden algo** | **AI** |
-| **TECHO** | t3 · sin nombrar la app | ❌ cayó en **Cartera**, y Cartera falló | **AI** |
-| | t4 · por comercio | ❌ *«no puedo ayudarte con eso»* | **AI** |
+| | p3 · lo mismo, con exámenes | ✅ **compone los tres que piden algo** | **17 Pro** |
+| **TECHO** | t3 · sin nombrar la app | ❌ cayó en **Cartera**, y Cartera falló | **17 Pro** |
+| | t4 · por comercio | ❌ *«no puedo ayudarte con eso»* | **17 Pro** |
 | | t5 · Spotlight por comercio | ✅ | 13 Pro |
 | | t6 · Spotlight por concepto | ❌ **concluyente** | 13 Pro |
 | | t5b · Spotlight por analito (`colesterol`) | ✅ **confirma en 2ª entidad** | 13 Pro |
-| | t6b · Spotlight por veredicto (`deseable`) | ❌ **sigue fallando con AI encendido** | **AI** |
-| | t8b · sin nombrar la app, exámenes | ❌ **cayó en búsqueda web** — §11 | **AI** |
-| **CADENA** | t7 · la pieza existe en Atajos | ✅ 11 acciones | **AI** |
+| | t6b · Spotlight por veredicto (`deseable`) | ❌ **sigue fallando con AI encendido** | **17 Pro** |
+| | t8b · sin nombrar la app, exámenes | ❌ **cayó en búsqueda web** — §11 | **17 Pro** |
+| **CADENA** | t7 · la pieza existe en Atajos | ✅ 11 acciones | **17 Pro** |
 | | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 | 13 Pro |
 | | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** | 13 Pro |
-| | c6 · ¿prosa o markdown? | 🟥 markdown, también en aparato — §11 | **AI** |
+| | c6 · ¿prosa o markdown? | 🟥 markdown, también en aparato — §11 | **17 Pro** |
 | | c7 · exámenes hacia Claude | ⬜ pendiente | |
-| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica, también en aparato — §11 | **AI** |
-| | t9 · encadenar sin que salga nada | ✅ **contesta en modo avión** — §11 | **AI** |
+| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica, también en aparato — §11 | **17 Pro** |
+| | t9 · encadenar sin que salga nada | ✅ **contesta en modo avión** — §11 | **17 Pro** |
 
 ---
 
@@ -377,34 +378,70 @@ que es un modo de falla que hay que cubrir; pero no es el caso general.
 
 ---
 
-## 11. El aparato con Apple Intelligence: el techo no era eso
+## 11. El aparato con Apple Intelligence: qué se descarta, y qué sigue sin medirse
 
 Medido el **2026-09-17** en un iPhone 17 Pro prestado por una tarde — iOS 26.6.2, Apple
-Intelligence encendido en Ajustes antes de empezar. Es el aparato que faltaba: el 13 Pro con el
-que se corrió todo lo anterior no recibe Siri AI en ninguna forma, y por eso t3, t4 y t9 habían
-quedado sin concluir.
+Intelligence encendido en Ajustes antes de empezar, aparato y Siri en español. Es el aparato que
+faltaba por hardware: el 13 Pro con el que se corrió todo lo anterior no es elegible para Apple
+Intelligence en ninguna forma.
 
-**Es 26.6, no 27.** Nada de [`IOS27.md`](IOS27.md) —App Schemas, tools de schema dinámico,
-`ExecutionTargets`— se midió acá, y sigue esperando un aparato en 27.
+> **LEER ESTO ANTES QUE LA TABLA, O LA TABLA SE LEE MAL.** Lo que corrió acá es la **Siri de
+> siempre en un aparato con Apple Intelligence encendido**. **NO es Siri AI.** Siri AI —la
+> rebautizada, la que consulta las entidades de la app y razona sobre el índice, que es lo que
+> [`IOS27.md`](IOS27.md) §1 y §2 marcaron como el cambio grande— salió el **14 de septiembre de
+> 2026**, tres días antes de esta corrida, y **pide iOS 27, lista de espera, y el idioma del
+> aparato en inglés**: arrancó en beta solo en inglés y el resto de los idiomas —español
+> incluido— llega el mes siguiente. Este teléfono estaba en **26.6.2 y en español**, así que Siri
+> AI no estaba en la cancha. Fuentes al final de la sección.
 
-### Lo que decide: el techo sobrevive a Apple Intelligence
+### Lo que sí se descarta
 
-| | 13 Pro, sin AI | 17 Pro, con AI |
+| | 13 Pro, sin AI | 17 Pro, con AI encendido |
 |---|---|---|
 | t3 · «¿Cuánto gasté este mes?» | cayó en búsqueda web | **cayó en Cartera** — que además falló: *«Lo siento, ocurrió un problema con la app»* |
 | t4 · «Buscá mis facturas del Automercado» | cayó en Apple Cash | ***«Lo siento, no puedo ayudarte con eso»*** |
 | t8b · «¿Cómo salió mi colesterol?» | sin medir | **búsqueda web**: Mayo Clinic y MedlinePlus |
 | t6b · Spotlight `deseable` | ❌ | **❌ igual** |
 
-**El hallazgo 2 deja de ser provisional: Siri no le pregunta a tu app, y encender Apple
-Intelligence no lo cambia.** Lo que cambió no es a quién le pregunta — es cómo falla. Antes
-perdía contra un dominio de Apple; ahora una de las dos ni siquiera enruta y contesta que no
-puede. Para el producto da igual: las dos son la app invisible.
+**Lo que esto cierra es una hipótesis, no el techo entero: que t3 y t4 hubieran fallado en el 13
+Pro por no ser elegible.** No fue eso. En un aparato elegible, con el interruptor puesto, las tres
+vuelven a fallar, y una de ellas ni siquiera enruta. Para el hallazgo 2 —*el índice recibe, Siri
+no consulta*— esto es respaldo, no prueba final.
 
-**Y t8b es la que más pesa**, porque es donde el matiz del hallazgo 1 prometía algo. Con
-exámenes la única puerta del índice es el nombre del analito, que es lo que la persona **sí**
-diría — y aun así, dicho en voz alta, «colesterol» se fue a la web. O sea: ese matiz vale para
-**Spotlight escrito**, no para la voz. Conviene no volver a citarlo sin esa mitad.
+**Lo que NO se decide acá es lo que más importa de iOS 27**: si Siri AI consulta el índice
+semánticamente. Sigue exactamente igual de abierto que antes de esta tarde, y la razón ahora es
+otra — ya no es el aparato, es la versión, el idioma y la lista de espera.
+
+**t6b es el que menos depende de eso.** Spotlight como buscador de texto no cambió: `deseable`
+sigue sin devolver nada con Apple Intelligence encendido. Y el matiz del hallazgo 1 —que con
+exámenes la puerta del índice es el analito, que la persona sí diría— queda con una advertencia:
+dicho en voz alta a la Siri clásica, «colesterol» se fue a la web. Hasta medir Siri AI, ese matiz
+vale para **Spotlight escrito**, no para la voz.
+
+### El idioma, que es la trampa de esta medición y casi arruina dos hallazgos
+
+Dos reglas de Apple, documentadas, que acá se cruzaron:
+
+1. **El idioma del aparato y el de Siri tienen que ser el mismo y estar soportado**, o Apple
+   Intelligence no funciona. El español **sí** está soportado desde hace tiempo; lo que es solo
+   inglés es **Siri AI**, que es otra cosa.
+2. Al cambiar el idioma de Siri, *«Apple Intelligence puede quedar no disponible hasta que el
+   idioma nuevo de Siri termine de descargarse y coincida con el del aparato»* — **palabras de
+   Apple**.
+
+De ahí salen dos cosas para este archivo:
+
+- **Probar con Siri en inglés contra este spike no mide nada.** El hallazgo de código 4 ya lo
+  decía por el otro lado: las frases son por idioma y el target declara `developmentRegion = es`.
+  Con Siri en inglés las frases en español no entran al concurso, y el fallo no dice nada sobre
+  el ruteo. **Para medir Siri AI hay que traducir las frases del spike al inglés**, porque Siri AI
+  además exige el aparato entero en inglés.
+- **Se retira una alarma que este archivo estuvo a punto de llevarse.** A las 08:38 la sonda del
+  puente pasó de `estado = 2` a `estado = 0` en 2 ms, y se levantó la hipótesis de que el modelo
+  on-device necesitara red para seguir disponible — lo que hubiera sido una grieta en la tesis de
+  privacidad. **No hay evidencia de eso.** En el medio se le había cambiado el idioma a Siri, y la
+  regla 2 de arriba describe exactamente lo observado. La hipótesis queda sin objeto, como el
+  clasificador de guardrail del hallazgo 8: no era el fenómeno, era el entorno.
 
 ### t9 · la cadena contesta sin red, y eso ya no es una hipótesis
 
@@ -507,15 +544,31 @@ Y uno del módulo, gemelo exacto del «30.996,5 unidades» de §10:
 - El App Group `group.com.ncubo.gnothi` sigue sin habilitar, así que la foto que lee el intent de
   Siri no existe en este aparato: lo que Siri contestó salió de los datos quemados del spike.
 
+### Las fuentes de lo que se afirma arriba sobre Siri AI y el idioma
+
+Lo único de esta sección que no se midió acá son las reglas de Apple, y van con fuente porque
+deciden cómo se lee todo lo demás:
+
+- Requisitos de Apple Intelligence, lista de idiomas —el español está— y la regla de que el idioma
+  del aparato y el de Siri deben coincidir, más el aviso de que al cambiar el de Siri *«Apple
+  Intelligence puede quedar no disponible hasta que el idioma nuevo termine de descargarse y
+  coincida»* · <https://support.apple.com/en-euro/121115>
+- El lanzamiento de Siri AI, 14 de septiembre de 2026: beta **solo en inglés**, con francés,
+  japonés, coreano, portugués y español *«el mes que viene»*; iPhone 15 Pro o posterior ·
+  <https://www.apple.com/newsroom/2026/09/siri-ai-a-profoundly-more-capable-and-personal-assistant-is-here/>
+- Siri AI entra por **lista de espera** en iOS 27 (Ajustes › Siri › *Try Siri AI (beta)*), y pide
+  el idioma del aparato en inglés · <https://www.macrumors.com/2026/09/15/ios-27-siri-ai-has-waitlist-how-to-join/>
+
 ---
 
 ## Lo que este spike NO responde
 
 Conviene no fingir que sí.
 
-~~**t3 y t4 no son concluyentes.**~~ **Ya lo son, y salieron igual:** el 2026-09-17 corrieron en
-un 17 Pro con Apple Intelligence encendido y las dos volvieron a fallar, con t8b atrás. Ver §11.
-Los diez minutos con un teléfono prestado se pagaron y contestaron que no.
+**t3 y t4 siguen sin ser concluyentes, y ahora se sabe por qué.** El 2026-09-17 corrieron en un
+17 Pro con Apple Intelligence encendido y volvieron a fallar, con t8b atrás — eso descarta que el
+problema fuera la elegibilidad del 13 Pro. Pero **Siri AI no estaba en la cancha**: pide iOS 27,
+lista de espera y el aparato en inglés, y salió tres días antes de esa corrida. Ver §11.
 
 Lo que sí queda firme es que la mitad de indexado funciona **sin** Apple Intelligence: t5
 pasó igual.
