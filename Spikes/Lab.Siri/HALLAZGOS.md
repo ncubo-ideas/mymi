@@ -600,18 +600,32 @@ el producto no puede tener.
 **Esto contradice lo que `IOS27.md` esperaba** a partir del material de Apple: que el modelo
 reconstruido fuera *mejor* en tool calling. En esta sonda es lo contrario, 0 de 4 contra 4 de 4.
 
-### La sospecha, que NO está medida
+### La primera sospecha, medida y DESCARTADA
 
-El puente declara sus tools en `LanguageModelSession(tools:)`, y además arma un `Transcript` cuya
-instrucción dice `toolDefinitions: []` — o sea que **la historia que el modelo lee declara que no
-hay ninguna tool**. Hasta 26.6.2 eso no impedía que las llamara. La hipótesis es que el modelo de
-27 toma su inventario de ahí.
+El puente declara sus tools en `LanguageModelSession(tools:)` y además arma un `Transcript` cuya
+instrucción decía `toolDefinitions: []` — o sea que **la historia que el modelo lee declaraba que
+no había ninguna tool**. Hasta 26.6.2 eso no impedía que las llamara, así que la hipótesis era que
+el modelo de 27 tomara su inventario de ahí.
 
-Está escrita, compilada e instalable en la rama
-`fix/movil-el-puente-declara-las-tools-en-el-transcript`, **sin correr**: el teléfono se fue antes.
-Si con eso da 4 de 4, la causa era nuestra y el titular de arriba se reescribe entero. Si da 0 de
-4, la causa está en el modelo nuevo y hay que buscar en otro lado. **Hasta entonces las dos
-lecturas siguen abiertas, y esta sección no debe citarse como «iOS 27 rompió el tool calling».**
+**Se corrió esa misma tarde, por red, en el mismo aparato: 0 de 4 otra vez.** No es la causa. El
+cambio queda igual en `fix/movil-el-puente-declara-las-tools-en-el-transcript` porque declarar las
+tools en el transcript es lo veraz, no porque arregle nada.
+
+Con eso, el conteo de iOS 27 va en **0 de 8**, y **dos de esas ocho invirtieron el veredicto** —
+«tu colesterol total viene bajando», cuando el expediente dice que sube—. Las cuatro nuevas
+también contestaron **repreguntando**: *«¿Quieres saber cuál es el estado actual?»*.
+
+**Los dos candidatos que siguen**, ninguno probado:
+
+- **El `Senuelo`.** Nuestras tools no devuelven nada: cortan la generación lanzando `Detener` desde
+  dentro de `call` para que el C# resuelva. Si el modelo de 27 decide llamar o no según lo que la
+  tool le promete devolver, el señuelo es sospechoso de primera.
+- **El texto de las instrucciones.** «Sos el asistente de Gnothi. Prosa corta, sin markdown» no
+  dice en ningún lado *consultá antes de contestar*. En 26.6.2 no hacía falta; el modelo nuevo
+  parece necesitar que se lo pidan, y eso —si se confirma— es una línea de encuadre, no un bug.
+
+**Mientras tanto la sección no debe citarse como «iOS 27 rompió el tool calling»:** lo medido es
+que **por esta puerta, tal como la tenemos escrita hoy**, el modelo de 27 no llama la tool.
 
 ### Y en la app, con los tres módulos: el cruce se contesta negándolo
 
