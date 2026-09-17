@@ -538,8 +538,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	// Los aportes son los UNICOS comandos que dispara la pantalla, y cada uno baja a
 	// disco al terminar: el flush es por comando, no por timer, igual que en el bucle
-	// de refresh. Devuelven el mensaje del Check ("" si entro): un kilometraje que
-	// retrocede se rechaza sin dejar entrada, y la pantalla lo dice.
+	// de refresh. Devuelven la CLAVE del Check ("" si entro): un kilometraje que retrocede
+	// se rechaza sin dejar entrada, y la pantalla lo dice en el idioma de la persona.
 
 	/// <summary>El kilometraje que ella leyo, EN LA UNIDAD EN QUE LO LEYO.
 	///
@@ -597,7 +597,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		if (!puente.HayDestino)
-			return "para guardar la foto hace falta una carpeta tuya";
+			return "sin-carpeta-para-la-foto";
 
 		string nombre = $"fotos/{transaccion}{extension}";
 		string motivo = await puente.GuardarArchivo(nombre, contenido);
@@ -815,7 +815,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	private void Exigir()
 	{
-		if (api is null) throw new InvalidOperationException("La app todavia no arranco.");
+		if (api is null) throw new RechazoDeLaApp("app-no-arranco");
 	}
 
 	public async ValueTask DisposeAsync()

@@ -508,13 +508,12 @@ else
     private string errorEn = "";
 
     private Task VerLaFoto(string transaccion, string nombreDeArchivo) =>
-        Intentar("abrir la foto del tablero", async () =>
+        Intentar("abrir-la-foto-del-tablero", async () =>
         {
             errorEn = transaccion;
             string base64 = await Estado.LeerFoto(nombreDeArchivo);
             if (base64.Length == 0)
-                throw new InvalidOperationException(
-                    Texto.Con("ruta.fotoIlegible", ("archivo", nombreDeArchivo)));
+                throw new RechazoDeLaApp("foto-ilegible", ("archivo", nombreDeArchivo));
 
             fotoPorCarga[transaccion] = $"data:{TipoDeImagen(nombreDeArchivo)};base64,{base64}";
         });
@@ -617,7 +616,7 @@ else
 
     // EL APORTE DE ELLA. Si mando la propuesta sin tocarla, su origen es confirmado -miro
     // el numero y dijo que si-; si lo edito, observado. Nunca entra solo.
-    private Task AgregarKilometraje(string transaccion) => Intentar("anotar el kilometraje", async () =>
+    private Task AgregarKilometraje(string transaccion) => Intentar("anotar-el-kilometraje", async () =>
     {
         errorEn = transaccion;
         decimal kilometraje = Kilometraje(transaccion);
@@ -645,7 +644,7 @@ else
         // normalizar. Mandar km sobre una lectura en millas la mete 1.6 veces mas grande.
         string rechazo = await Estado.AnotarOdometro(transaccion, kilometraje,
             unidades.Distancia, origen);
-        if (rechazo.Length > 0) throw new InvalidOperationException(Texto["ruta.kilometrajeRechazado"]);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp("kilometraje-rechazado");
 
         Enfocar(transaccion);
 
@@ -684,7 +683,7 @@ else
     // hubiera tocado de a una. La lista se copia antes porque cada ConfirmarTanque avisa y
     // Releer la reescribe abajo nuestro. Un rechazo no frena a los demas: se juntan y se
     // dicen al final.
-    private Task ConfirmarTodosLosTanques() => Intentar("confirmar los tanques estimados", async () =>
+    private Task ConfirmarTodosLosTanques() => Intentar("confirmar-los-tanques-estimados", async () =>
     {
         errorEn = "";
         var porConfirmar = new List<string>(tanquesEstimados);
@@ -704,10 +703,10 @@ else
         }
 
         if (rechazos.Count > 0)
-            throw new InvalidOperationException(Texto.Con("ruta.loteConRechazos",
+            throw new RechazoDeLaApp("lote-con-rechazos",
                 ("entraron", Entero(porConfirmar.Count - rechazos.Count)),
                 ("total", Entero(porConfirmar.Count)),
-                ("rechazos", string.Join("; ", rechazos))));
+                ("rechazos", string.Join("; ", rechazos)));
 
         listoEn = "";
         MostrarListo(porConfirmar.Count == 1
@@ -727,11 +726,11 @@ else
         return "";
     }
 
-    private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
+    private Task ConfirmarTanque(string transaccion) => Intentar("confirmar-el-tanque", async () =>
     {
         errorEn = transaccion;
         string rechazo = await Estado.ConfirmarTanque(transaccion);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
 
         listoEn = transaccion;
         Enfocar(transaccion);
@@ -743,7 +742,7 @@ else
 
     // "Era al reves": lo que la inferencia propuso no era. Se declara lo contrario, con la
     // palabra de ella (origen observado).
-    private Task CorregirTanque(string transaccion) => Intentar("corregir el tanque", async () =>
+    private Task CorregirTanque(string transaccion) => Intentar("corregir-el-tanque", async () =>
     {
         errorEn = transaccion;
         CargaEnLista? carga = null;
@@ -753,7 +752,7 @@ else
 
         string contrario = Contrario(carga.ClaveDelTanque);
         string rechazo = await Estado.DeclararTanque(transaccion, contrario);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
 
         listoEn = transaccion;
         Enfocar(transaccion);
@@ -763,13 +762,13 @@ else
     // La foto entra entera a memoria antes de ir a la carpeta: una foto de tablero ronda
     // los pocos MB y el tope evita que un archivo equivocado tumbe la pestana.
     private Task GuardarFoto(string transaccion, InputFileChangeEventArgs e) =>
-        Intentar("guardar la foto del tablero", async () =>
+        Intentar("guardar-la-foto-del-tablero", async () =>
         {
             errorEn = transaccion;
             const long topeDeBytes = 15 * 1024 * 1024;
             IBrowserFile archivo = e.File;
             if (archivo.Size > topeDeBytes)
-                throw new InvalidOperationException(Texto["ruta.fotoMuyGrande"]);
+                throw new RechazoDeLaApp("foto-muy-grande");
 
             using var memoria = new MemoryStream();
             await archivo.OpenReadStream(topeDeBytes).CopyToAsync(memoria);
@@ -779,7 +778,7 @@ else
 
             byte[] contenido = memoria.ToArray();
             string rechazo = await Estado.AdjuntarFoto(transaccion, extension, contenido);
-            if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+            if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
 
             // Se muestra en el acto y sin volver a leer la carpeta: los bytes ya están
             // acá. Es el momento en que la persona la sacó y el número que busca está en

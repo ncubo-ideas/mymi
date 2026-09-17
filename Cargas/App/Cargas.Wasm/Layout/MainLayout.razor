@@ -447,7 +447,7 @@
         // ESTO VIVIA EN MisCargas.razor, que master partio en cuatro pantallas y le mudo el
         // arranque al layout. Sin esta linea el modulo instala y corre, pero se queda en el
         // elegidor de almacenamiento —que hospedada no tiene sentido— y el actor nunca arranca:
-        // la comprobacion del Host contesta «La app todavia no arranco» y toda tool falla.
+        // la comprobacion del Host contesta el rechazo `app-no-arranco` y toda tool falla.
         // Medido en el emulador el 2026-09-08.
         //
         // CON SU PROPIO try/finally y no con un `return` pelado: `resolviendo` arranca en true
@@ -540,40 +540,40 @@
         pendientes = enFoco.Length == 0 ? 0 : estado.Faltantes(enFoco).Count;
     }
 
-    private Task CambiarDeCarro(ChangeEventArgs e) => Intentar("cambiar de carro", async () =>
+    private Task CambiarDeCarro(ChangeEventArgs e) => Intentar("cambiar-de-carro", async () =>
     {
         string placa = e.Value?.ToString() ?? "";
         if (placa.Length > 0) await estado.ElegirVehiculo(placa);
     });
 
-    private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
+    private Task ConectarCarpeta() => Intentar("elegir-carpeta", async () =>
     {
         if ((await estado.ConectarCarpeta()).Ok) await estado.Arrancar();
     });
 
-    private Task PedirPermiso() => Intentar("dar permiso a la carpeta", async () =>
+    private Task PedirPermiso() => Intentar("dar-permiso-a-la-carpeta", async () =>
     {
         if ((await estado.PedirPermiso()).Ok) await estado.Arrancar();
     });
 
-    private Task UsarNavegador() => Intentar("guardar en este navegador", async () =>
+    private Task UsarNavegador() => Intentar("guardar-en-este-navegador", async () =>
     {
         if ((await estado.UsarAlmacenamientoDelNavegador()).Ok) await estado.Arrancar();
     });
 
-    private Task Importar() => Intentar("importar una bitácora", async () =>
+    private Task Importar() => Intentar("importar-una-bitacora", async () =>
     {
         string motivo = await estado.Importar();
-        if (motivo.Length > 0) throw new InvalidOperationException(motivo);
+        if (motivo.Length > 0) throw new RechazoDeLaApp(motivo);
     });
 
-    private Task Arrancar() => Intentar("abrir la app", () => estado.Arrancar().AsTask());
+    private Task Arrancar() => Intentar("abrir-la-app", () => estado.Arrancar().AsTask());
 
     // El "Actualizando…" de la tecla ya no se lleva aca: lo dice EstadoDeLaApp, que es el
     // unico que sabe cuando empieza y termina un refresh, incluido el del arranque.
     private readonly AvisoDeListo listo = new();
 
-    private Task Refrescar() => Intentar("refrescar contra la estación", async () =>
+    private Task Refrescar() => Intentar("refrescar-contra-la-estacion", async () =>
     {
         ResultadoDeRefresh resultado = await estado.Refrescar();
         listo.Mostrar(resultado.Aplicados == 0
@@ -587,7 +587,7 @@
     // finally. Casi todo lo que decide esta cascara vive en EstadoDeLaApp, y Blazor no
     // observa servicios inyectados; sin esto, "hay que apretar dos veces". No se hereda de
     // PantallaDeCargas porque un layout tiene que heredar de LayoutComponentBase.
-    private async Task Intentar(string paso, Func<Task> accion)
+    private async Task Intentar(string claveDelPaso, Func<Task> accion)
     {
         error = Fallo.Ninguno;
         try
@@ -596,7 +596,7 @@
         }
         catch (Exception ex)
         {
-            error = Fallo.Detalle(paso, ex);
+            error = Fallo.Detalle(claveDelPaso, ex);
         }
         finally
         {

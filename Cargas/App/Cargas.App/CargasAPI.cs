@@ -231,7 +231,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.PuedeAnotarOdometro(@transaccion, @kilometros, @unidad))
-						Error 'el kilometraje no es coherente con la serie o la carga no existe';
+						Error 'kilometraje-incoherente';
 				",
 				@"
 					bitacoraDeCargas.AnotarOdometro(@transaccion, @kilometros, @unidad, @origen);
@@ -252,7 +252,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.ConoceTransaccion(@transaccion))
-						Error 'no hay una carga con esa transaccion';
+						Error 'carga-desconocida';
 				",
 				@"
 					bitacoraDeCargas.DeclararTanque(@transaccion, @estado);
@@ -273,7 +273,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.PuedeConfirmarTanque(@transaccion))
-						Error 'no hay una inferencia de tanque esperando confirmacion';
+						Error 'sin-inferencia-de-tanque';
 				",
 				@"
 					bitacoraDeCargas.ConfirmarTanque(@transaccion);
@@ -292,7 +292,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.ConoceTransaccion(@transaccion))
-						Error 'no hay una carga con esa transaccion';
+						Error 'carga-desconocida';
 				",
 				@"
 					bitacoraDeCargas.AdjuntarFoto(@transaccion, @nombre);
@@ -352,7 +352,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.ConocePlaca(@placa))
-						Error 'no hay un vehiculo con esa placa';
+						Error 'vehiculo-desconocido';
 				",
 				@"
 					bitacoraDeCargas.CompletarFicha(@placa, @alias, @marca, @modelo,

@@ -53,7 +53,12 @@ public abstract class PantallaDeCargas : ComponentBase, IDisposable
 		StateHasChanged();
 	}
 
-	protected async Task Intentar(string paso, Func<Task> accion)
+	/// <summary>
+	/// EL PASO SE NOMBRA CON UNA CLAVE y no con la frase que lo dice: la frase la pone el catalogo
+	/// del idioma de la persona, y aca estamos dentro de un catch. La clave es ademas lo que se
+	/// lee en el detalle tecnico, donde una frase traducida seria peor.
+	/// </summary>
+	protected async Task Intentar(string claveDelPaso, Func<Task> accion)
 	{
 		Error = Fallo.Ninguno;
 		try
@@ -62,7 +67,7 @@ public abstract class PantallaDeCargas : ComponentBase, IDisposable
 		}
 		catch (Exception ex)
 		{
-			Error = Fallo.Detalle(paso, ex);
+			Error = Fallo.Detalle(claveDelPaso, ex);
 		}
 		finally
 		{

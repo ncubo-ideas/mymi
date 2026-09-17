@@ -322,27 +322,27 @@ else
         }
     }
 
-    private Task Guardar() => Intentar("guardar la ficha", async () =>
+    private Task Guardar() => Intentar("guardar-la-ficha", async () =>
     {
         if (enFoco is null || alias.Trim().Length == 0) return;
 
         string rechazo = await Estado.CompletarFicha(enFoco.Placa, alias.Trim(), marca.Trim(),
             modelo.Trim(), anio ?? 0, color.Trim(), rendimientoDeFabrica ?? 0m);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
 
         MostrarListo(Texto.Con("miCarro.listoNombre", ("alias", alias.Trim())));
     });
 
-    private Task ElegirRendimiento(string simbolo) => Intentar("elegir cómo mirás el rendimiento", async () =>
+    private Task ElegirRendimiento(string simbolo) => Intentar("elegir-como-mira-el-rendimiento", async () =>
     {
         string rechazo = await Estado.ElegirPresentacionDeRendimiento(simbolo);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
     });
 
-    private Task ElegirDistancia(string simbolo) => Intentar("elegir la unidad de distancia", async () =>
+    private Task ElegirDistancia(string simbolo) => Intentar("elegir-la-unidad-de-distancia", async () =>
     {
         string rechazo = await Estado.ElegirUnidadDeDistancia(simbolo);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
     });
 
     // El primer paso de importar: se muestra el aviso; el segundo llama a Estado.Importar.
@@ -379,28 +379,28 @@ else
             : string.Join(", ", piezas.GetRange(0, piezas.Count - 1)) + " " + piezas[^1];
     }
 
-    private Task CompartirConGnothi() => Intentar("pasar tus anotaciones a Gnothi", async () =>
+    private Task CompartirConGnothi() => Intentar("pasar-las-anotaciones-a-gnothi", async () =>
     {
         ResultadoDeCompartir resultado = await Estado.CompartirConGnothi();
         if (resultado.Cancelado) return;
-        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+        if (!resultado.Ok) throw new RechazoDeLaApp(resultado.Motivo);
 
         MostrarListo(Texto[resultado.Como == "compartido"
             ? "miCarro.listoCompartido" : "miCarro.listoDescargado"]);
     });
 
-    private Task Importar() => Intentar("importar una bitácora", async () =>
+    private Task Importar() => Intentar("importar-una-bitacora", async () =>
     {
         porImportar = false;
         string motivo = await Estado.Importar();
-        if (motivo.Length > 0) throw new InvalidOperationException(motivo);
+        if (motivo.Length > 0) throw new RechazoDeLaApp(motivo);
         MostrarListo(Texto["miCarro.listoImportada"]);
     });
 
-    private Task Exportar() => Intentar("exportar la bitácora", async () =>
+    private Task Exportar() => Intentar("exportar-la-bitacora", async () =>
     {
         ResultadoDeExportacion resultado = await Estado.Exportar();
-        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+        if (!resultado.Ok) throw new RechazoDeLaApp(resultado.Motivo);
 
         // Exportar bajaba un archivo y la pantalla no decía nada: la descarga la anuncia el
         // browser donde le parece, y en una PWA instalada a veces en ningún lado. Se nombra

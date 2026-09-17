@@ -58,6 +58,13 @@ namespace Cargas.Wasm
 		public string this[string clave] => textos.TryGetValue(clave, out string dicho) ? dicho : "{" + clave + "}";
 
 		/// <summary>
+		/// Si este catalogo tiene escrita esa clave. Existe para el canal de fallos, que es el
+		/// unico que recibe claves de afuera -- el browser y el motor nombran sus errores como
+		/// quieren -- y tiene que poder caer a otra frase en vez de mostrar un {hueco} crudo.
+		/// </summary>
+		public bool Conoce(string clave) => textos.ContainsKey(clave);
+
+		/// <summary>
 		/// El texto de esa clave con sus huecos llenos. Los huecos se nombran, no se numeran: una
 		/// frase traducida cambia el orden de sus partes y un hueco numerado se va al lugar
 		/// equivocado sin que nada avise.

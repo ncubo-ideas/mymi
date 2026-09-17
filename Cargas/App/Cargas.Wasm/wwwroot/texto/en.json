@@ -19,7 +19,9 @@
     "pendientesAria": "{cuantos} details waiting for you to fill in",
     "formatoDeFechaLarga": "MMMM d, yyyy",
     "formatoDeFechaCorta": "MMM dd, yyyy",
-    "formatoDeDiaYMes": "MMM dd"
+    "formatoDeDiaYMes": "MMM dd",
+    "noEncontradoTitulo": "Not found",
+    "noEncontrado": "There is nothing at this address."
   },
 
   "arranque": {
@@ -123,7 +125,6 @@
     "confirmandoLote": "Confirming {cual} of {cuantas}…",
     "listoUnTanque": "Done: the tank is confirmed.",
     "listoVariosTanques": "Done: {cuantos} tanks confirmed.",
-    "loteConRechazos": "{entraron} of {total} were confirmed. These did not go in: {rechazos}",
     "tanque": "tank",
     "cambiar": "change",
     "cambiarTanqueAria": "Change the tank on the {fecha} fill-up: it ended up {quedo}, becomes {pasaA}",
@@ -134,8 +135,6 @@
     "fotoDelOdometro": "Odometer photo",
     "fotoAria": "Your car's dashboard on the {fecha} fill-up",
     "leeElOdometro": "Read the odometer here and write it down below.",
-    "fotoMuyGrande": "The photo is over 15 MB: choose another one.",
-    "fotoIlegible": "Could not read “{archivo}” from your folder. Is it still there?",
     "seDesbloqueo": "Unlocked:",
     "desbloqueoUnTramo": "the fuel economy of that leg: {rinde}.",
     "desbloqueoVariosTramos": "the fuel economy of the {cuantos} legs that touch this fill-up: {rinden}.",
@@ -147,7 +146,6 @@
     "campoAria": "Odometer for this fill-up, in {unidad}",
     "campoPlaceholder": "odometer in {unidad}",
     "agregarKilometraje": "Add odometer",
-    "kilometrajeRechazado": "The app did not record that odometer: it is not consistent with the series (the odometer only grows). Check the number.",
     "sugerencia": "around {odometro}? That is what your average of {promedio} per day gives.",
     "destrabaUnTramo": "With this odometer {cuantos} leg gets computed.",
     "destrabaTramos": "With this odometer {cuantos} legs get computed.",
@@ -262,5 +260,48 @@
     "nadaQuePasar": "You have not written down anything to hand over yet: odometer readings, tanks and your car's details show up here once you enter them.",
     "listoCompartido": "Done: your notes went off to Gnothi. If you hand them over again, nothing is duplicated.",
     "listoDescargado": "Saved: the file with your notes was downloaded. Open it from Gnothi when you have it."
+  },
+
+  "fallo": {
+    "//": "EL CANAL DE FALLOS. paso.* es lo que no se pudo hacer y siempre se puede decir; motivo.* es por que, cuando esta app lo sabe. Un motivo que no este aca -- el nombre de un error del browser, la negativa del dominio -- cae al paso, y el texto crudo queda en el detalle tecnico. Las claves son codigos y NO se traducen.",
+    "paso": {
+      "guardar-la-ficha": "Your car's details could not be saved.",
+      "elegir-como-mira-el-rendimiento": "The way you look at fuel economy could not be changed.",
+      "elegir-la-unidad-de-distancia": "The distance unit could not be changed.",
+      "pasar-las-anotaciones-a-gnothi": "Your notes could not be passed to Gnothi.",
+      "importar-una-bitacora": "The log could not be imported.",
+      "exportar-la-bitacora": "Your log could not be exported.",
+      "abrir-la-foto-del-tablero": "The dashboard photo could not be opened.",
+      "anotar-el-kilometraje": "The odometer reading could not be recorded.",
+      "confirmar-los-tanques-estimados": "The estimated tanks could not be confirmed.",
+      "confirmar-el-tanque": "The tank could not be confirmed.",
+      "corregir-el-tanque": "The tank could not be corrected.",
+      "guardar-la-foto-del-tablero": "The dashboard photo could not be saved.",
+      "cambiar-de-carro": "Could not switch to that car.",
+      "elegir-carpeta": "The folder could not be chosen.",
+      "dar-permiso-a-la-carpeta": "Permission for the folder could not be granted.",
+      "guardar-en-este-navegador": "Could not save in this browser.",
+      "abrir-la-app": "The app could not be opened.",
+      "refrescar-contra-la-estacion": "Could not fetch news from the station."
+    },
+    "motivo": {
+      "kilometraje-incoherente": "That odometer reading is not consistent with the series: the odometer only grows. Check the number.",
+      "kilometraje-rechazado": "The app did not record that odometer: it is not consistent with the series (the odometer only grows). Check the number.",
+      "carga-desconocida": "That fill-up is no longer in your log. Refresh and try again.",
+      "sin-inferencia-de-tanque": "That fill-up has no proposed tank to confirm.",
+      "vehiculo-desconocido": "That car is no longer in your log. Refresh and try again.",
+      "app-no-arranco": "The app has not finished opening yet. Wait a moment and try again.",
+      "sin-carpeta-para-la-foto": "Saving the photo needs a folder of your own.",
+      "sin-carpeta-donde-guardar": "There is no folder to save into.",
+      "sin-carpeta": "No folder is connected.",
+      "carpeta-colgando": "Your folder is gone: it was moved, renamed or deleted. Choose one again.",
+      "nada-que-exportar": "There is nothing to export yet.",
+      "sin-archivo-elegido": "You did not choose a file.",
+      "archivo-ajeno": "That file is not a record exported by this app.",
+      "cancelado": "You cancelled.",
+      "foto-ilegible": "Could not read “{archivo}” from your folder. Is it still there?",
+      "lote-con-rechazos": "{entraron} of {total} were confirmed. These did not go in: {rechazos}",
+      "foto-muy-grande": "The photo is over 15 MB: choose another one."
+    }
   }
 }
