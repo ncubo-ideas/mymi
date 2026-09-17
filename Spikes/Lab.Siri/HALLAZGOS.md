@@ -615,14 +615,52 @@ Con eso, el conteo de iOS 27 va en **0 de 8**, y **dos de esas ocho invirtieron 
 «tu colesterol total viene bajando», cuando el expediente dice que sube—. Las cuatro nuevas
 también contestaron **repreguntando**: *«¿Quieres saber cuál es el estado actual?»*.
 
-**Los dos candidatos que siguen**, ninguno probado:
+### La segunda sospecha, medida y también DESCARTADA — pero cambia el diagnóstico
 
-- **El `Senuelo`.** Nuestras tools no devuelven nada: cortan la generación lanzando `Detener` desde
-  dentro de `call` para que el C# resuelva. Si el modelo de 27 decide llamar o no según lo que la
-  tool le promete devolver, el señuelo es sospechoso de primera.
-- **El texto de las instrucciones.** «Sos el asistente de Gnothi. Prosa corta, sin markdown» no
-  dice en ningún lado *consultá antes de contestar*. En 26.6.2 no hacía falta; el modelo nuevo
-  parece necesitar que se lo pidan, y eso —si se confirma— es una línea de encuadre, no un bug.
+«Sos el asistente de Gnothi. Prosa corta, sin markdown» no dice en ningún lado *consultá antes de
+contestar*. Se le agregó: *«Para contestar sobre los datos de la persona TENÉS QUE LLAMAR a la
+herramienta que los trae: no contestes de memoria y no le preguntes de vuelta»*. Cuatro corridas:
+
+> «**Llama a la herramienta** para obtener la información sobre tu colesterol total.»
+
+**0 de 4 otra vez, pero ahora narra la llamada en vez de hacerla.** Eso ya no parece un modelo que
+no quiere consultar: parece uno que no tiene por dónde.
+
+### Lo que lo destapa: la tool sí llegaba, y el modelo la escribe en vez de invocarla
+
+El puente armaba el esquema dinámico con `try?`, así que una tool que no compilara se caía del
+`compactMap` **sin una línea en ningún lado** — y el modelo se quedaba sin herramientas, pudiendo
+hablar de llamarlas y no llamarlas nunca. Se instrumentó (rama
+`fix/movil-el-puente-dice-cuantas-tools-vio`) y el aparato contestó:
+
+```
+toolsDeclaradas: 1      ← en las cuatro corridas
+```
+
+**La tool llegaba.** Esa hipótesis también cae. Y entonces apareció la corrida que ordena todo: con
+la instrucción puesta, una de las cuatro devolvió
+
+```json
+{"tool": "examenes_evaluar_tendencia", "analito": "ColesterolTotal"}
+```
+
+**como el TEXTO de la respuesta.** Nombre correcto, argumento correcto, valor del enum correcto —
+escrito en el contenido en vez de invocado por el framework, así que el `Senuelo` nunca corre,
+`Detener` nunca se lanza y `captura.llamadas` queda vacía.
+
+**El diagnóstico se da vuelta:** no es que el modelo de 27 elija mal ni se niegue. **Elige bien y
+no puede ejecutar.** Lo que falla es la invocación estructurada, no el juicio.
+
+### Lo que queda por probar, en orden
+
+1. **Cómo se construye la sesión.** El puente arma `LanguageModelSession(tools:transcript:)` y
+   dispara con `respond(to:)`. Habría que medir la forma simple —`LanguageModelSession(tools:
+   instructions:)`, sin transcript— antes de culpar a nada más.
+2. **El `Senuelo`.** Sus tools no devuelven nada: cortan la generación lanzando desde dentro de
+   `call`. Si en 27 una tool que lanza queda marcada como inservible, explicaría el resto.
+3. **Y un plan B que ya se sabe que funcionaría a medias:** si el modelo escribe la llamada bien
+   formada en el texto, el puente **podría parsearla** cuando no hubo invocación. Es feo y hay que
+   decir que lo es — pero devuelve la puerta mientras se encuentra la causa.
 
 **Mientras tanto la sección no debe citarse como «iOS 27 rompió el tool calling»:** lo medido es
 que **por esta puerta, tal como la tenemos escrita hoy**, el modelo de 27 no llama la tool.
