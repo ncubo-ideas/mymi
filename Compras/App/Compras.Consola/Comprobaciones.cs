@@ -1,8 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Globalization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Compras.Dominio;
+using Compras.App.Frases;
+using LaRedaccion = Compras.App.Frases.LaRedaccion;
+using LasFrases = Compras.App.Frases.Frases;
 
 namespace Compras.Consola
 {
@@ -26,6 +32,14 @@ namespace Compras.Consola
 		// Fecha de referencia fija. Igual que el guion: si esto usara DateTime.Now, la
 		// comprobacion de "vigente hoy" cambiaria de resultado segun el dia.
 		private static readonly DateTime Hoy = new DateTime(2026, 8, 25);
+
+		// El corte con que se parten las dos epocas de un ritmo, fijo por la misma razon.
+		private static readonly DateTime ElCorte = new DateTime(2026, 2, 1);
+
+		// LAS DOS REDACCIONES. El dominio entrega clave mas valores y estas las dicen; toda
+		// afirmacion sobre una frase pasa por aca, que es el mismo camino que usa la puerta.
+		private static readonly LasFrases EnEspanol = LasFrases.De(LasFrases.IdiomaDelRegistro);
+		private static readonly LasFrases EnIngles = LasFrases.De(LasFrases.ElOtroIdioma);
 
 		internal static int Correr()
 		{
@@ -75,7 +89,13 @@ namespace Compras.Consola
 			LaSerieSaleBuscadaPorTexto();
 			LaCompraSabeDondeFue();
 			ElRecorridoDiceDesdeCuandoSeMueve();
-			LosDosPlataEscribenLoMismo();
+			ElEspejoDeLaVentanaPorDefecto();
+			LosDosCatalogosDicenLasMismasClaves();
+			CadaFraseSeDiceEnLosDosIdiomas();
+			CadaCifraLlevaElSeparadorDeSuIdioma();
+			LaRedaccionEnEspanolLeHablaALaPersona();
+			LosCatalogosDeLaCaratulaDicenLasMismasClaves();
+			LaFechaQueViajaNoSigueALaMaquina();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -84,38 +104,499 @@ namespace Compras.Consola
 			return fallas == 0 ? 0 : 1;
 		}
 
-		// ---- la duplicacion que la cerca obligo, amarrada ----
+		// ---- el espejo que la cerca obligo, amarrado ----
 		//
-		// Desde que el dominio es enteramente `internal`, la caratula y la consola no pueden
-		// nombrar `Compras.Dominio.Plata`, asi que la presentacion tiene el suyo en
-		// `Compras.App`. Son dos copias de la misma regla, y una copia sin prueba es la
-		// lista espejo de Categoria otra vez: se desincroniza y falla callada.
-		//
-		// Este fixture es el unico lugar del repo que puede ver las dos -- ve el dominio por
-		// InternalsVisibleTo y la App por referencia normal-- asi que es el unico que puede
-		// obligarlas a coincidir. Si alguien cambia una y no la otra, esto lo dice.
-		private static void LosDosPlataEscribenLoMismo()
+		// La ventana por defecto de CanastaFrenteAlPasado. El juicio es del dominio -"esta aca
+		// para que ninguna superficie invente el suyo"- pero un valor por defecto de un
+		// parametro tiene que ser constante de compilacion, y la Superficie ya no puede
+		// nombrarlo. Si alguien cambia uno y no el otro, esto lo dice.
+		private static void ElEspejoDeLaVentanaPorDefecto()
 		{
-			Titulo("el Plata del dominio y el de la presentacion dicen la misma cifra");
+			Titulo("la ventana por defecto la juzga el dominio y la superficie la copia");
 
-			decimal[] montos = { 0m, 1m, 999m, 1000m, 32910m, 172630m, 1234567m, 0.5m, 1999.6m };
-
-			foreach (decimal monto in montos)
-				Igual($"₡ de {monto}",
-					Compras.Dominio.Plata.Colones(monto),
-					Compras.App.Plata.Colones(monto));
-
-			Igual("y el simbolo es el mismo",
-				Compras.Dominio.Plata.Simbolo, Compras.App.Plata.Simbolo);
-
-			// El otro espejo que la cerca obligo: la ventana por defecto de
-			// CanastaFrenteAlPasado. El juicio es del dominio -"esta aca para que ninguna
-			// superficie invente el suyo"- pero un valor por defecto de un parametro tiene
-			// que ser constante de compilacion, y la Superficie ya no puede nombrarlo.
 			Igual("la ventana por defecto es la que juzga el dominio",
 				Compras.Dominio.CanastaFrenteAlPasado.VentanaPorDefectoEnMeses.ToString(),
 				Compras.App.ComprasAPI.VentanaPorDefectoEnMeses.ToString());
 		}
+
+		// ---- los dos catalogos dicen las mismas claves ----
+		//
+		// EL DEFECTO QUE ESTO EXISTE PARA IMPEDIR, y que ninguna otra comprobacion ve: una clave
+		// que se agrega al catalogo en espanol y se olvida en el ingles. Frases.Diga contesta
+		// "{clave}" cuando falta, y esa cadena NO es vacia, SI tiene espacios y SI termina donde
+		// termina la frase que la envuelve -- asi que toda afirmacion de "dice algo" se pone verde
+		// sobre una frase que lleva "{cadencia.semanal}" adentro, a la vista de la persona.
+		private static void LosDosCatalogosDicenLasMismasClaves()
+		{
+			Titulo("las dos redacciones escriben exactamente las mismas claves");
+
+			Igual("claves que el espanol tiene y el ingles no", "",
+				string.Join(", ", LasQueLeFaltanA(EnEspanol, EnIngles)));
+
+			Igual("claves que el ingles tiene y el espanol no", "",
+				string.Join(", ", LasQueLeFaltanA(EnIngles, EnEspanol)));
+		}
+
+		private static IEnumerable<string> LasQueLeFaltanA(LasFrases estas, LasFrases aquellas)
+		{
+			var faltan = new List<string>();
+			foreach (string clave in estas.Claves) if (!aquellas.Tiene(clave)) faltan.Add(clave);
+			faltan.Sort(StringComparer.Ordinal);
+			return faltan;
+		}
+
+		// ---- cada frase se dice entera en los dos idiomas ----
+		//
+		// La comparacion de claves atrapa la asimetria; esto atrapa el hueco que quedo sin llenar,
+		// que la comparacion no ve: la clave esta en los dos catalogos y el valor no se le paso.
+		// Un "{" en la salida es la marca de las dos fallas a la vez.
+		private static void CadaFraseSeDiceEnLosDosIdiomas()
+		{
+			Titulo("cada frase que el dominio compone se dice entera en los dos idiomas");
+
+			foreach ((string caso, Func<LasFrases, string> redactar) in LasRedacciones())
+			{
+				string es = redactar(EnEspanol);
+				string en = redactar(EnIngles);
+
+				Igual($"{caso}: dice algo en espanol", "True", (es.Length > 0).ToString());
+				Igual($"{caso}: dice algo en ingles", "True", (en.Length > 0).ToString());
+				Igual($"{caso}: sin huecos en espanol", "True",
+					(!es.Contains('{') && !es.Contains('}')).ToString());
+				Igual($"{caso}: sin huecos en ingles", "True",
+					(!en.Contains('{') && !en.Contains('}')).ToString());
+
+				// DECIRSE IGUAL EN LOS DOS IDIOMAS es la marca de una mitad sin traducir, con UNA
+				// excepcion legitima: una palabra que el espanol tomo prestada del ingles y se
+				// escribe igual en los dos. Se nombra de a una, para que la excepcion no tape un
+				// olvido de al lado.
+				if (LasQueSeDicenIgualEnLosDosIdiomas.Contains(caso)) continue;
+
+				Igual($"{caso}: no dice lo mismo en los dos", "True", (es != en).ToString());
+			}
+		}
+
+		/// <summary>
+		/// EL SEPARADOR DECIMAL ES DEL IDIOMA, igual que el de miles. Es lo que ninguna otra
+		/// comprobacion ve: una cifra escrita invariante dice algo, no deja hueco y no se parece a la
+		/// del otro idioma, asi que pasa las tres de arriba y aun asi le muestra a Costa Rica un
+		/// punto donde va una coma. Ya se midio una vez en esta app, con una pantalla que decia un
+		/// monto con punto y el de al lado con coma.
+		/// </summary>
+		private static void CadaCifraLlevaElSeparadorDeSuIdioma()
+		{
+			Titulo("cada cifra lleva el separador de su idioma");
+
+			Igual("el porcentaje en espanol lleva coma", "6,2 %", EnEspanol.Porcentaje(0.062m));
+			Igual("el porcentaje en ingles lleva punto", "6.2%", EnIngles.Porcentaje(0.062m));
+
+			Igual("el monto en espanol separa los miles con punto", "₡172.630", EnEspanol.Monto(172630m));
+			Igual("el monto en ingles los separa con coma", "₡172,630", EnIngles.Monto(172630m));
+
+			Igual("la cantidad en espanol lleva coma", "1,5", EnEspanol.Cantidad(1.5m));
+			Igual("la cantidad en ingles lleva punto", "1.5", EnIngles.Cantidad(1.5m));
+
+			Igual("la presentacion dice su contenido con la coma del espanol", "1,5 L",
+				LaRedaccion.Presentacion(EnEspanol, "pieza", 1.5m, "L", 0));
+			Igual("y con el punto del ingles", "1.5 L",
+				LaRedaccion.Presentacion(EnIngles, "pieza", 1.5m, "L", 0));
+		}
+
+		/// <summary>
+		/// LA REDACCION EN ESPANOL LE HABLA A LA PERSONA, en el voseo que su propia cabecera declara.
+		/// Lo que esto impide no es que una frase se lea rara: es que una cascara la corrija al vuelo
+		/// con un reemplazo de texto, que es lo que hacia la pantalla de inicio. Un reemplazo asi deja
+		/// de coincidir en silencio apenas alguien reescribe la frase, arregla solo la pantalla que lo
+		/// tiene, y no hace nada en el otro idioma.
+		/// </summary>
+		private static void LaRedaccionEnEspanolLeHablaALaPersona()
+		{
+			Titulo("la redaccion en espanol le habla a la persona");
+
+			foreach ((string clave, string comoLeHabla) in LasQueLeHablanALaPersona)
+				Igual($"{clave} dice «{comoLeHabla}»", "True",
+					EnEspanol.Diga(clave).Contains(comoLeHabla).ToString());
+		}
+
+		/// <summary>
+		/// LAS QUE ESTUVIERON EN TERCERA PERSONA, cada una con la palabra que prueba que ya no lo
+		/// esta. Se nombran de a una y no se barren buscando "su": en «ya pasó su tiempo» el tiempo es
+		/// del PRODUCTO y esa tercera persona es la correcta, y un barrido no sabe distinguirlas.
+		/// </summary>
+		private static readonly (string Clave, string ComoLeHabla)[] LasQueLeHablanALaPersona =
+		{
+			("cambioEnLaCanasta.sin-cambio", "tu canasta"),
+			("canastaFrenteAlPasado.mas-caro", "de tus "),
+			("canastaFrenteAlPasado.mas-barato", "de tus "),
+			("canastaFrenteAlPasado.igual", "de tus "),
+			("comparacion.totales", "llevás"),
+			("firma.sin-compras", "compras tuyas"),
+			("firma.sin-patron", "tus últimas"),
+			("firma.hay", "tu semana"),
+			("proximaCompra.al-dia", "solés llevar"),
+			("proximaCompra.tocan.uno", "solés llevar"),
+			("proximaCompra.tocan.varios", "solés llevar"),
+			("rebaja.ninguna", "pagaste"),
+			("sucursales.una-sola", "tus compras"),
+			("sucursales.se-mueve", "comprás sobre todo"),
+			("ritmoDelSuper.sin-compras", "compras tuyas"),
+			("ritmoDelSuper.pocas-compras", "vas al súper"),
+			("ritmoDelSuper.medido", "solés ir al súper"),
+		};
+
+		/// <summary>
+		/// LOS DOS CATALOGOS DE LA CARATULA, comparados igual que los del dominio. La caratula los
+		/// sirve como archivos sueltos de wwwroot, asi que ningun compilador ve que a uno le falta una
+		/// clave que el otro tiene ni que a una frase le cambiaron el nombre de un hueco. El csproj
+		/// los enlaza desde la caratula y el build los copia; nadie los sincroniza a mano.
+		/// <para>
+		/// Se comprueban LOS HUECOS y no solo las claves: una clave presente en los dos cuyo
+		/// {producto} alguien tradujo a {product} llega a la pantalla con la llave cruda a la vista, y
+		/// la comparacion de claves sola no la ve.
+		/// </para>
+		/// </summary>
+		private static void LosCatalogosDeLaCaratulaDicenLasMismasClaves()
+		{
+			Titulo("los dos catalogos de la caratula escriben las mismas claves y los mismos huecos");
+
+			IReadOnlyDictionary<string, string> es = ElCatalogoDeLaCaratula("es-CR");
+			IReadOnlyDictionary<string, string> en = ElCatalogoDeLaCaratula("en");
+
+			Igual("el catalogo en espanol se pudo leer", "True", (es.Count > 0).ToString());
+			Igual("el catalogo en ingles se pudo leer", "True", (en.Count > 0).ToString());
+
+			Igual("claves que el espanol tiene y el ingles no", "",
+				string.Join(", ", LasQueFaltan(es, en)));
+			Igual("claves que el ingles tiene y el espanol no", "",
+				string.Join(", ", LasQueFaltan(en, es)));
+
+			var huecosDistintos = new List<string>();
+			foreach (KeyValuePair<string, string> frase in es)
+			{
+				if (!en.TryGetValue(frase.Key, out string suPar)) continue;
+
+				string aca = string.Join("+", LosHuecosDe(frase.Value));
+				string alla = string.Join("+", LosHuecosDe(suPar));
+				if (aca != alla) huecosDistintos.Add($"{frase.Key} [{aca}] vs [{alla}]");
+			}
+
+			huecosDistintos.Sort(StringComparer.Ordinal);
+			Igual("claves cuyos huecos no coinciden", "", string.Join(", ", huecosDistintos));
+
+			var notasCargadas = new List<string>();
+			foreach (string clave in es.Keys)
+				foreach (string tramo in clave.Split('.'))
+					if (CatalogoDeLaCaratula.EsUnaNota(tramo)) { notasCargadas.Add(clave); break; }
+
+			notasCargadas.Sort(StringComparer.Ordinal);
+			Igual("notas del archivo que entraron como frase", "", string.Join(", ", notasCargadas));
+		}
+
+		private static IEnumerable<string> LasQueFaltan(
+			IReadOnlyDictionary<string, string> estas, IReadOnlyDictionary<string, string> aquellas)
+		{
+			var faltan = new List<string>();
+			foreach (string clave in estas.Keys) if (!aquellas.ContainsKey(clave)) faltan.Add(clave);
+			faltan.Sort(StringComparer.Ordinal);
+			return faltan;
+		}
+
+		/// <summary>Los nombres entre llaves de una frase, ordenados, para poder comparar dos idiomas.</summary>
+		private static IEnumerable<string> LosHuecosDe(string frase)
+		{
+			var huecos = new List<string>();
+			foreach (Match hueco in Regex.Matches(frase, @"\{([^{}]+)\}"))
+				huecos.Add(hueco.Groups[1].Value);
+
+			huecos.Sort(StringComparer.Ordinal);
+			return huecos;
+		}
+
+		/// <summary>
+		/// El catalogo de la caratula, aplanado POR LA CARATULA MISMA: el aplanado vive en la puerta
+		/// justamente para que el arnes no comprueba una regla propia.
+		/// </summary>
+		private static IReadOnlyDictionary<string, string> ElCatalogoDeLaCaratula(string etiqueta)
+		{
+			string archivo = Path.Combine(AppContext.BaseDirectory, "texto", etiqueta + ".json");
+			if (!File.Exists(archivo))
+				return new Dictionary<string, string>(StringComparer.Ordinal);
+
+			using (JsonDocument documento = JsonDocument.Parse(File.ReadAllText(archivo)))
+				return CatalogoDeLaCaratula.Aplanado(documento.RootElement);
+		}
+
+		/// <summary>
+		/// LA FECHA QUE CRUZA LA PUERTA NO SIGUE A LA MAQUINA. Un ToString sin cultura lee la del
+		/// proceso, y un calendario no gregoriano escribe otro año para el mismo instante: la misma
+		/// compra viajaria como 2026-05-09 en una maquina y como 2569-05-09 en otra.
+		/// <para>
+		/// La primera afirmacion es el CONTROL y prueba el arnes: si la cultura elegida no corriera el
+		/// año, las otras cuatro pasarian sin comprobar nada.
+		/// </para>
+		/// </summary>
+		private static void LaFechaQueViajaNoSigueALaMaquina()
+		{
+			Titulo("la fecha que viaja no sigue a la maquina");
+
+			CultureInfo laDeAntes = CultureInfo.CurrentCulture;
+			try
+			{
+				CultureInfo.CurrentCulture = new CultureInfo("th-TH");
+
+				Igual("CONTROL: bajo esta cultura una fecha sin cultura fija dice otra cosa", "False",
+					(UnaFecha.ToString("yyyy-MM-dd") == EnGregoriano(UnaFecha)).ToString());
+
+				Historial guion = ElGuion();
+
+				CompraConElProducto hallada = guion.ComprasCon("Olla arrocera").Compras[0];
+				Igual("la fecha de una compra hallada", EnGregoriano(hallada.Fecha),
+					hallada.FechaExpresada);
+
+				Consumo consumo = guion.ConsumoDe("Olla arrocera");
+				Igual("la ultima vez de un consumo", EnGregoriano(consumo.UltimaVez),
+					consumo.UltimaVezExpresada);
+
+				Promocion promocion = UnaPromocion();
+				Igual("hasta cuando vale una promocion", EnGregoriano(promocion.ValidaHasta),
+					promocion.ValidaHastaExpresada);
+
+				ProductoQueVaAFaltar producto = guion.LoQueVaAFaltar(Hoy).Productos[0];
+				Igual("la ultima vez de lo que va a faltar", EnGregoriano(producto.UltimaVez),
+					producto.UltimaVezExpresada);
+			}
+			finally
+			{
+				CultureInfo.CurrentCulture = laDeAntes;
+			}
+		}
+
+		/// <summary>Una fecha cualquiera, solo para que el control tenga un instante que correr.</summary>
+		private static readonly DateTime UnaFecha = new DateTime(2026, 5, 9);
+
+		/// <summary>
+		/// Ese instante en aaaa-mm-dd gregoriano, que es lo que el dominio tiene que decir sin importar
+		/// en que maquina corra. Es el valor ESPERADO de cada afirmacion de arriba: se calcula aca con
+		/// la cultura invariante puesta a mano, para que la afirmacion falle si el dominio leyera la
+		/// del proceso.
+		/// </summary>
+		private static string EnGregoriano(DateTime cuando) =>
+			cuando.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+		// UN CASO POR RESPUESTA, y cada uno entra por el MISMO camino que la puerta: el portador
+		// del dominio entrega su clave y sus valores, y App/Frases redacta. Ninguno arma la frase
+		// a mano.
+		private static IEnumerable<(string Caso, Func<LasFrases, string> Redactar)> LasRedacciones()
+		{
+			Historial guion = ElGuion();
+
+			yield return ("comparacion con dos meses", f => LaFraseDe(guion.CompararCanastas(2025, 8, 2026, 8), f));
+			yield return ("comparacion sin dos meses", f => LaFraseDe(guion.CompararCanastas(1999, 1, 1999, 2), f));
+			yield return ("firma con habituales", f => LaFraseDe(guion.FirmaDeLasUltimas(8), f));
+			yield return ("firma sin compras", f => LaFraseDe(new Historial().FirmaDeLasUltimas(4), f));
+			yield return ("cambio de la canasta", f => LaFraseDe(guion.CambioEncontrado(8), f));
+			yield return ("cambio sin los dos lados", f => LaFraseDe(new Historial().CambioEncontrado(8), f));
+			yield return ("consumo con serie", f => LaFraseDe(guion.ConsumoDe("Azucarados"), f));
+			yield return ("consumo de lo que no esta", f => LaFraseDe(guion.ConsumoDe("caviar"), f));
+			yield return ("precio de un habitual", f => LaFraseDe(guion.PrecioBuscado("leche"), f));
+			yield return ("precio de lo que no esta", f => LaFraseDe(guion.PrecioBuscado("caviar"), f));
+			yield return ("ritmo de un producto", f => LaFraseDe(guion.RitmoDeUnProducto("helado", ElCorte), f));
+			yield return ("ritmo sin los dos lados",
+				f => LaFraseDe(new Historial().RitmoDeUnProducto("helado", ElCorte), f));
+			yield return ("ritmo del super", f => LaFraseDe(guion.RitmoDelSuper(), f));
+			yield return ("ritmo del super sin compras", f => LaFraseDe(new Historial().RitmoDelSuper(), f));
+			yield return ("una fila de los momentos del dia", f => LaFraseDe(guion.RitmoDelSuper().PorMomento[0], f));
+			yield return ("lo que va a faltar", f => LaFraseDe(guion.LoQueVaAFaltar(Hoy), f));
+			yield return ("lo que va a faltar sin historial",
+				f => LaFraseDe(new Historial().LoQueVaAFaltar(Hoy), f));
+			yield return ("una fila de esa lista", f => LaFraseDe(guion.LoQueVaAFaltar(Hoy).Productos[0], f));
+			yield return ("garantia vigente", f => LaFraseDe(guion.BuscarGarantia("olla", Hoy), f));
+			yield return ("garantia que no existe", f => LaFraseDe(guion.BuscarGarantia("caviar", Hoy), f));
+			yield return ("en cuales compras", f => LaFraseDe(guion.ComprasCon("helado"), f));
+			yield return ("en cuales compras, ninguna", f => LaFraseDe(guion.ComprasCon("caviar"), f));
+			yield return ("la canasta frente a su pasado",
+				f => LaFraseDe(guion.CanastaFrenteA(Hoy, 3, 8), f));
+			yield return ("la canasta sin pasado que mirar",
+				f => LaFraseDe(new Historial().CanastaFrenteA(Hoy, 3, 8), f));
+			yield return ("el recorrido de sucursales", f => LaFraseDe(guion.Sucursales(), f));
+			yield return ("el recorrido sin compras", f => LaFraseDe(new Historial().Sucursales(), f));
+			yield return ("el hueco de un departamento",
+				f => LaFraseDe(guion.AbastecimientosPendientes(Hoy)[0], f));
+			yield return ("una promocion", f => LaFraseDe(UnaPromocion(), f));
+			yield return ("una rebaja desde el recibo", f => LaFraseDe(guion.RebajaDesde(UnRecibo(guion)), f));
+			yield return ("el ritmo de un departamento", f => LaFraseDe(guion.RitmoDe(Categoria.LacteosYHuevos), f));
+
+			foreach (Cadencia cadencia in Cadencia.Todas)
+				yield return ($"la cadencia {cadencia.Clave}", f => LaRedaccion.Cadencia(f, cadencia.Clave));
+
+			foreach (Cadencia cadencia in Cadencia.Todas)
+				yield return ($"la cadencia compacta {cadencia.Clave}",
+					f => LaRedaccion.CadenciaCompacta(f, cadencia.Clave));
+
+			foreach (Constancia constancia in Constancia.Todas)
+				yield return ($"la constancia {constancia.Clave}", f => LaRedaccion.Constancia(f, constancia.Clave));
+
+			foreach (Categoria categoria in Categoria.Todas)
+			{
+				yield return ($"el titulo de {categoria.Nombre}",
+					f => LaRedaccion.TituloDelDepartamento(f, categoria.Nombre));
+				yield return ($"la mencion de {categoria.Nombre}", f => LaRedaccion.Mencion(f, categoria.Nombre));
+			}
+
+			foreach (MomentoDelDia momento in MomentoDelDia.Todos)
+				yield return ($"el momento {momento.Nombre}", f => LaRedaccion.Momento(f, momento.Nombre));
+
+			foreach (string dia in LosDiasDeLaSemana)
+				yield return ($"el dia {dia}", f => LaRedaccion.DiaDeLaSemana(f, dia));
+
+			yield return ("la severidad que pide revisar",
+				f => LaRedaccion.Severidad(f, Severidad.ConvieneRevisar.Nombre));
+			yield return ("que hacer con la que pide revisar",
+				f => LaRedaccion.QueHacer(f, Severidad.ConvieneRevisar.Nombre));
+			yield return ("la severidad que ya cierra",
+				f => LaRedaccion.Severidad(f, Severidad.AntesDeQueSeCierre.Nombre));
+			yield return ("que hacer con la que ya cierra",
+				f => LaRedaccion.QueHacer(f, Severidad.AntesDeQueSeCierre.Nombre));
+			yield return ("la severidad informativa",
+				f => LaRedaccion.Severidad(f, Severidad.Informativo.Nombre));
+
+			yield return ("una presentacion por unidad",
+				f => LaRedaccion.Presentacion(f, "unidad", 0m, "", 0));
+			yield return ("una presentacion por paquete",
+				f => LaRedaccion.Presentacion(f, "paquete", 0m, "", 12));
+		}
+
+		// El espanol tomo "snacks" del ingles y lo escribe igual, asi que su titulo es la misma
+		// palabra en los dos catalogos. La MENCION no entra aca: esa si se dice distinto.
+		private static readonly string[] LasQueSeDicenIgualEnLosDosIdiomas =
+		{
+			"el titulo de Snacks",
+		};
+
+		private static readonly string[] LosDiasDeLaSemana =
+		{
+			"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo",
+		};
+
+		private static Promocion UnaPromocion() =>
+			new Promocion("2 x 1", "en helados de vainilla", "HELADO-1L", new DateTime(2026, 9, 30));
+
+		private static string UnRecibo(Historial guion) => guion.Lista[guion.Lista.Count - 1].Numero;
+
+		// ---- el camino de la puerta ----
+		//
+		// UNA SOBRECARGA POR PORTADOR, y cada una arma la frase con la clave y los valores que ese
+		// portador publica -- exactamente lo que hace ProyeccionDeVistas. Ninguna escribe prosa: si
+		// una lo hiciera, este arnes estaria comprobando su propia redaccion y no la del modulo.
+		private static string LaFraseDe(ComparacionDeCanastas c, LasFrases f)
+		{
+			var subieron = new List<string>();
+			var sonNuevos = new List<bool>();
+			var bajaron = new List<string>();
+			foreach (DiferenciaDeDepartamento d in c.LasQueExplican)
+			{
+				string titulo = LaRedaccion.TituloDelDepartamento(f, d.Categoria.Nombre);
+				if (d.Subio) { subieron.Add(titulo); sonNuevos.Add(d.EsNuevo); }
+				else bajaron.Add(titulo);
+			}
+
+			return LaRedaccion.Comparacion(f, c.Clave, c.Antes.MesExpresado, c.Despues.MesExpresado,
+				c.GastoAntes, c.GastoDespues, subieron, sonNuevos, bajaron);
+		}
+
+		private static string LaFraseDe(FirmaDeLaCanasta firma, LasFrases f)
+		{
+			var nombres = new List<string>();
+			foreach (ProductoHabitual habitual in firma.Habituales) nombres.Add(habitual.Descripcion);
+
+			return LaRedaccion.Firma(f, firma.Clave, firma.ComprasMiradas, nombres);
+		}
+
+		private static string LaFraseDe(CambioEnLaCanasta cambio, LasFrases f)
+		{
+			var entraron = new List<string>();
+			foreach (ProductoQueEntro entro in cambio.Entraron) entraron.Add(entro.Descripcion);
+
+			var salieron = new List<string>();
+			foreach (ProductoHabitual salio in cambio.Salieron) salieron.Add(salio.Descripcion);
+
+			string mes = cambio.Entraron.Count > 0 ? cambio.Entraron[0].DesdeExpresado : "";
+
+			return LaRedaccion.CambioEnLaCanasta(f, cambio.Clave, mes, entraron, salieron);
+		}
+
+		private static string LaFraseDe(Consumo consumo, LasFrases f) =>
+			LaRedaccion.Consumo(f, consumo.Clave, consumo.Termino, consumo.EsCategoria,
+				consumo.PrimerMesExpresado, consumo.UltimoMesExpresado, consumo.MesDelPicoExpresado,
+				consumo.GastoEnElPrimerMes, consumo.GastoEnElUltimoMes, consumo.TotalGastado,
+				consumo.MesesConConsumo);
+
+		private static string LaFraseDe(PrecioEnElTiempo precio, LasFrases f) =>
+			LaRedaccion.Precio(f, precio.Clave, precio.Descripcion, precio.Sku, precio.UnidadDeReferencia,
+				precio.PrimerMesExpresado, precio.UltimoMesExpresado,
+				precio.PrimerPrecioPorUnidad, precio.UltimoPrecioPorUnidad, precio.CambioEnProporcion);
+
+		private static string LaFraseDe(CambioDeRitmo ritmo, LasFrases f) =>
+			LaRedaccion.CambioDeRitmo(f, ritmo.Clave, ritmo.Descripcion, ritmo.ClaveDeAntes, ritmo.ClaveDeAhora);
+
+		private static string LaFraseDe(RitmoDelSuper ritmo, LasFrases f) =>
+			LaRedaccion.RitmoDelSuper(f, ritmo.Clave, ritmo.ComprasMiradas, ritmo.DiasEntreCompras,
+				ritmo.ClaveDelDiaFavorito, ritmo.ClaveDelMomentoFavorito);
+
+		private static string LaFraseDe(ComprasEnUnMomento momento, LasFrases f) =>
+			LaRedaccion.ComprasEnUnMomento(f, momento.ClaveDelMomento, momento.Cuantas);
+
+		private static string LaFraseDe(ListaParaLaProximaCompra lista, LasFrases f)
+		{
+			var nombres = new List<string>();
+			foreach (ProductoQueVaAFaltar producto in lista.LosQueTocan) nombres.Add(producto.Descripcion);
+
+			return LaRedaccion.ProximaCompra(f, lista.Clave, lista.CuantosTocan, nombres);
+		}
+
+		private static string LaFraseDe(ProductoQueVaAFaltar producto, LasFrases f) =>
+			LaRedaccion.ProductoQueVaAFaltar(f, producto.Clave, producto.Descripcion,
+				producto.ClaveDeLaCadencia, producto.DiasDesdeLaUltima, producto.DiasQueFaltan);
+
+		private static string LaFraseDe(RegistroDeGarantia registro, LasFrases f) =>
+			LaRedaccion.Garantia(f, registro.Clave, registro.TextoBuscado, registro.Descripcion,
+				f.Dia(registro.VenceEl), f.Dia(registro.FechaDeCompra), registro.DiasParaVencer);
+
+		private static string LaFraseDe(ComprasConElProducto hallazgo, LasFrases f) =>
+			LaRedaccion.Hallazgos(f, hallazgo.Clave, hallazgo.Buscado, hallazgo.Productos,
+				hallazgo.CuantasCompras, hallazgo.TotalUnidades, hallazgo.TotalGastado,
+				hallazgo.Compras.Count > 0 ? hallazgo.Compras[0].FechaExpresada : "");
+
+		private static string LaFraseDe(CanastaFrenteAlPasado frente, LasFrases f) =>
+			LaRedaccion.CanastaFrenteAlPasado(f, frente.Clave, frente.MesesDeVentana,
+				frente.Productos.Count, frente.Cambio);
+
+		private static string LaFraseDe(RecorridoDeSucursales recorrido, LasFrases f)
+		{
+			var otras = new List<string>();
+			for (int cual = 1; cual < recorrido.Sucursales.Count; cual++)
+				otras.Add(recorrido.Sucursales[cual].Nombre);
+
+			return LaRedaccion.Sucursales(f, recorrido.Clave, recorrido.NombreDeLaDeSiempre,
+				recorrido.ComprasEnLaDeSiempre, recorrido.ComprasConSucursal, recorrido.ComprasSinSucursal,
+				recorrido.SeMueveDesdeExpresado, otras);
+		}
+
+		private static string LaFraseDe(AbastecimientoPendiente pendiente, LasFrases f) =>
+			LaRedaccion.Abastecimiento(f, pendiente.Clave, pendiente.NombreDeLaCategoria,
+				pendiente.DiasDesdeLaUltima, pendiente.DiasEsperados, pendiente.EsRitmoObservado);
+
+		private static string LaFraseDe(Promocion promocion, LasFrases f) =>
+			LaRedaccion.Promocion(f, promocion.Gancho, promocion.Detalle, promocion.ValidaHastaExpresada);
+
+		private static string LaFraseDe(RebajaDesdeLaCompra rebaja, LasFrases f) =>
+			LaRedaccion.Rebaja(f, rebaja.Clave, rebaja.Descripcion, rebaja.CuantoMenos,
+				rebaja.NumeroDeCompra);
+
+		private static string LaFraseDe(RitmoDeCompra ritmo, LasFrases f) =>
+			LaRedaccion.RitmoDeCompra(f, ritmo.Clave, ritmo.Categoria.Nombre, ritmo.DiasTipicosOCero,
+				ritmo.IntervalosMedidos, ritmo.DiasMasCortoOCero, ritmo.DiasMasLargoOCero,
+				ritmo.Categoria.SeReabastece ? ritmo.Categoria.DiasDeReabastecimiento : 0);
 
 		// ---- el ticket se arma entero o no se arma ----
 		private static void LasLineasSeValidanJuntas()
@@ -160,11 +641,11 @@ namespace Compras.Consola
 			// diarios; el titulo es lo que lee una persona. Cambiar la llave rompe lo ya
 			// escrito, asi que se fija aca.
 			Igual("la llave no cambia", "FrutasYVerduras", Categoria.FrutasYVerduras.Nombre);
-			Igual("el titulo se lee", "frutas y verduras", Categoria.FrutasYVerduras.Titulo);
+			Igual("el titulo se lee", "frutas y verduras", LaRedaccion.TituloDelDepartamento(EnEspanol, Categoria.FrutasYVerduras.Nombre));
 			Igual("y la mencion entra en una frase", "una fruta o verdura",
-				Categoria.FrutasYVerduras.Mencion);
+				LaRedaccion.Mencion(EnEspanol, Categoria.FrutasYVerduras.Nombre));
 			Igual("azucarados es un pasillo, no una etiqueta", "dulces y postres",
-				Categoria.Azucarados.Titulo);
+				LaRedaccion.TituloDelDepartamento(EnEspanol, Categoria.Azucarados.Nombre));
 
 			// El resolver de la frontera: mismo string -> LA instancia (referencia).
 			Igual("Desde resuelve a la instancia", "True",
@@ -184,7 +665,7 @@ namespace Compras.Consola
 
 			foreach (Categoria categoria in Categoria.Todas)
 			{
-				string dice = (categoria.Titulo + " " + categoria.Mencion).ToLowerInvariant();
+				string dice = (LaRedaccion.TituloDelDepartamento(EnEspanol, categoria.Nombre) + " " + LaRedaccion.Mencion(EnEspanol, categoria.Nombre)).ToLowerInvariant();
 				foreach (string valoracion in valoraciones)
 					Igual($"{categoria.Nombre} no dice '{valoracion}'", "False",
 						dice.Contains(valoracion).ToString());
@@ -272,7 +753,7 @@ namespace Compras.Consola
 
 			// Ordenados del que mas pesa al que menos: es lo que hace legible la portada.
 			Igual("tres pasillos", "3", canasta.Departamentos.Count.ToString());
-			Igual("el que mas pesa es dulces", "dulces y postres", canasta.Departamentos[0].Titulo);
+			Igual("el que mas pesa es dulces", "dulces y postres", LaRedaccion.TituloDelDepartamento(EnEspanol, canasta.Departamentos[0].Categoria.Nombre));
 			Igual("  y es la mitad del mes", "0.5",
 				canasta.Departamentos[0].ProporcionDelTotal.ToString(CultureInfo.InvariantCulture));
 
@@ -313,7 +794,7 @@ namespace Compras.Consola
 
 			// Lo que ningun ticket contesta: de DONDE sale la diferencia.
 			Igual("hay pasillos que la explican", "True", comparacion.HayAlgoQueLoExplique.ToString());
-			Igual("el que mas movio es dulces", "dulces y postres", comparacion.Diferencias[0].Titulo);
+			Igual("el que mas movio es dulces", "dulces y postres", LaRedaccion.TituloDelDepartamento(EnEspanol, comparacion.Diferencias[0].Categoria.Nombre));
 			Igual("  y subio", "True", comparacion.Diferencias[0].Subio.ToString());
 		}
 
@@ -331,7 +812,7 @@ namespace Compras.Consola
 			Igual("no inventa pasillos", "0", sinDatos.Diferencias.Count.ToString());
 			Igual("y no hay nada que lo explique", "False", sinDatos.HayAlgoQueLoExplique.ToString());
 			Igual("lo dice sin rodeos", "True",
-				sinDatos.ParaElAsistente.Contains("todavía no hay dos meses").ToString());
+				LaFraseDe(sinDatos, EnEspanol).Contains("todavía no hay dos meses").ToString());
 		}
 
 		// ---- la garantia con su respaldo ----
@@ -415,7 +896,7 @@ namespace Compras.Consola
 			Igual("  asi que no explica nada", "False",
 				comparacion.Diferencias[2].CuentaEnElMovimiento.ToString());
 
-			string linea = comparacion.ParaElAsistente;
+			string linea = LaFraseDe(comparacion, EnEspanol);
 			Igual("la linea da los dos totales", "True", linea.Contains("₡").ToString());
 			Igual("  nombra el pasillo que entro", "True", linea.Contains("dulces y postres").ToString());
 			Igual("  y dice que el otro bajo", "True", linea.Contains("bajó").ToString());
@@ -448,13 +929,13 @@ namespace Compras.Consola
 				("BATID", "Batidora", 1, 18000m, "Electrohogar", 12)));
 
 			Igual("a 20 dias: antes de que se cierre", "antes de que se cierre",
-				historial.BuscarGarantia("licuadora", Hoy).Severidad.Nombre);
+				LaRedaccion.Severidad(EnEspanol, historial.BuscarGarantia("licuadora", Hoy).Severidad.Nombre));
 			Igual("  y dice que hacer", "hacé el reclamo antes de que venza",
-				historial.BuscarGarantia("licuadora", Hoy).QueHacer);
+				LaRedaccion.QueHacer(EnEspanol, historial.BuscarGarantia("licuadora", Hoy).Severidad.Nombre));
 			Igual("a ~60 dias: conviene revisar", "conviene revisar",
-				historial.BuscarGarantia("microondas", Hoy).Severidad.Nombre);
+				LaRedaccion.Severidad(EnEspanol, historial.BuscarGarantia("microondas", Hoy).Severidad.Nombre));
 			Igual("recien comprada: informativo", "informativo",
-				historial.BuscarGarantia("batidora", Hoy).Severidad.Nombre);
+				LaRedaccion.Severidad(EnEspanol, historial.BuscarGarantia("batidora", Hoy).Severidad.Nombre));
 			Igual("  y no pide nada", "False",
 				historial.BuscarGarantia("batidora", Hoy).Severidad.PideAlgo.ToString());
 
@@ -488,8 +969,8 @@ namespace Compras.Consola
 			Igual("la mas atrasada primero", "LacteosYHuevos", pendientes[0].NombreDeLaCategoria);
 			Igual("los granos ya no figuran", "139",
 				ElGuion().RitmoDe(Categoria.GranosYAbarrotes).DiasTipicos.ToString());
-			Igual("  con su severidad", "conviene revisar", pendientes[0].Severidad.Nombre);
-			Igual("  y su linea del dominio", "True", pendientes[0].ParaElAsistente.Contains("lácteo").ToString());
+			Igual("  con su severidad", "conviene revisar", LaRedaccion.Severidad(EnEspanol, pendientes[0].Severidad.Nombre));
+			Igual("  y su linea del dominio", "True", LaFraseDe(pendientes[0], EnEspanol).Contains("lácteo").ToString());
 
 			bool frutasAlDia = true;
             foreach (AbastecimientoPendiente p in pendientes)
@@ -555,7 +1036,7 @@ namespace Compras.Consola
 			var soda = new Item("SODA-12PK", "Soda 12-pack", 2, 5990m, Categoria.Azucarados, 0,
 				Presentacion.Desde("12x u"));
 			Igual("dos paquetes de 12", "24 u", soda.CantidadExpresada);
-			Igual("  y se dice como se vende", "12 u por paquete", soda.Presentacion.Expresada);
+			Igual("  y se dice como se vende", "12 u por paquete", LaRedaccion.Presentacion(EnEspanol, soda.Presentacion.Clave, soda.Presentacion.Contenido, soda.Presentacion.SimboloDelContenido, soda.Presentacion.Piezas));
 
 			// Lo que se cuenta y nada mas.
 			var brocoli = new Item("BROCOLI", "Brocoli", 3, 920m, Categoria.FrutasYVerduras, 0,
@@ -707,13 +1188,13 @@ namespace Compras.Consola
 				(leche.Observados[1].PrecioDeLinea > leche.Observados[0].PrecioDeLinea).ToString());
 			Igual("  pero el del litro BAJO", "True", (leche.Cambio < 0m).ToString());
 			Igual("  y por litro no subio", "False", leche.Subio.ToString());
-			Igual("  la linea lo dice como bajada", "True", leche.ParaElAsistente.Contains("bajó").ToString());
+			Igual("  la linea lo dice como bajada", "True", LaFraseDe(leche, EnEspanol).Contains("bajó").ToString());
 			Igual("  y la unidad de referencia es el litro", "L", leche.UnidadDeReferencia);
 
 			// Un aumento de verdad: la manteca de 1.980 a 2.050 el medio kilo.
             PrecioEnElTiempo manteca = ElGuion().PrecioDe("MANTECA-500");
 			Igual("la manteca subio", "True", manteca.Subio.ToString());
-			Igual("  y lo dice con el porcentaje", "True", manteca.ParaElAsistente.Contains("subió").ToString());
+			Igual("  y lo dice con el porcentaje", "True", LaFraseDe(manteca, EnEspanol).Contains("subió").ToString());
 
 			// Una sola compra no es una serie de precios, y se dice.
 			PrecioEnElTiempo olla = ElGuion().PrecioDe("OLLA-ARR-18");
@@ -724,7 +1205,7 @@ namespace Compras.Consola
 			// Total: un sku que nunca se compro.
 			PrecioEnElTiempo nada = ElGuion().PrecioDe("CAVIAR");
 			Igual("lo que nunca compro: no existe", "False", nada.Existe().ToString());
-			Igual("  y lo dice", "True", nada.ParaElAsistente.Contains("no hay compras").ToString());
+			Igual("  y lo dice", "True", LaFraseDe(nada, EnEspanol).Contains("no hay compras").ToString());
 
 			// El orden lo pone la FECHA, no el orden en que entraron al journal: el
 			// proveedor puede publicar un ticket viejo despues de uno nuevo.
@@ -768,7 +1249,7 @@ namespace Compras.Consola
 			Igual("a los 20 dias si", "1", pendientes.Count.ToString());
 			Igual("  y dice que el ritmo es suyo", "True", pendientes[0].EsRitmoObservado.ToString());
 			Igual("  la linea lo dice en segunda persona", "True",
-				pendientes[0].ParaElAsistente.Contains("vos lo comprás").ToString());
+				LaFraseDe(pendientes[0], EnEspanol).Contains("vos lo comprás").ToString());
 
 			// La MEDIANA y no el promedio: una compra de reserva no corre el ritmo tipico.
 			var conReserva = new Historial();
@@ -787,7 +1268,7 @@ namespace Compras.Consola
 			RitmoDeCompra sinRitmo = unaSola.RitmoDe(Categoria.Proteinas);
 			Igual("una sola compra: no hay ritmo", "False", sinRitmo.EsObservado.ToString());
 			Igual("  se cae al catalogo", "10", sinRitmo.DiasParaLeerElHueco.ToString());
-			Igual("  y lo dice", "True", sinRitmo.ParaElAsistente.Contains("del catálogo").ToString());
+			Igual("  y lo dice", "True", LaFraseDe(sinRitmo, EnEspanol).Contains("del catálogo").ToString());
 			Revienta("preguntarle el tipico revienta", () => sinRitmo.DiasTipicos);
 
 			// Dos lineas de la misma categoria en UN ticket son una compra, no dos.
@@ -827,15 +1308,15 @@ namespace Compras.Consola
 			Igual("  el que mas vuelve primero", "True",
 				(firma.Habituales[0].EstaEnTodas).ToString());
 			Igual("  y la linea los nombra", "True",
-				firma.ParaElAsistente.Contains("su semana tiene una firma").ToString());
-			Igual("  con el pan adentro", "True", firma.ParaElAsistente.Contains("Pan integral").ToString());
-			Igual("  y el helado AFUERA", "False", firma.ParaElAsistente.Contains("Helado").ToString());
+				LaFraseDe(firma, EnEspanol).Contains("tu semana tiene una firma").ToString());
+			Igual("  con el pan adentro", "True", LaFraseDe(firma, EnEspanol).Contains("Pan integral").ToString());
+			Igual("  y el helado AFUERA", "False", LaFraseDe(firma, EnEspanol).Contains("Helado").ToString());
 
 			// Sin compras no se inventa un patron.
 			Igual("historial vacio: no hay firma", "False",
 				new Historial().FirmaDeLasUltimas(4).Existe().ToString());
 			Igual("  y lo dice", "True",
-				new Historial().FirmaDeLasUltimas(4).ParaElAsistente.Contains("todavía no hay compras").ToString());
+				LaFraseDe(new Historial().FirmaDeLasUltimas(4), EnEspanol).Contains("todavía no hay compras").ToString());
 
 			// Compras sin nada en comun tampoco: la firma no es "lo que compro alguna vez".
 			var dispares = new Historial();
@@ -877,13 +1358,13 @@ namespace Compras.Consola
 			Igual("  y es el banano", "Banano kg", cambio.Salieron[0].Descripcion);
 			Igual("  siguen dos", "2", cambio.Siguen.Count.ToString());
 			Igual("  la linea dice cuando y que", "True",
-				(cambio.ParaElAsistente.Contains("2026-03") && cambio.ParaElAsistente.Contains("Helado")).ToString());
+				(LaFraseDe(cambio, EnEspanol).Contains("2026-03") && LaFraseDe(cambio, EnEspanol).Contains("Helado")).ToString());
 
 			// Y NO JUZGA: la especificacion de marca es explicita -"la app lo senala y se
 			// calla; el juicio no es suyo"-. Nada de mejor, peor, deberia ni conviene.
 			foreach (string juicio in new[] { "peor", "mejor", "debería", "conviene", "cuidado", "mal" })
 				Igual($"  la linea no dice '{juicio}'", "False",
-					cambio.ParaElAsistente.Contains(juicio).ToString());
+					LaFraseDe(cambio, EnEspanol).Contains(juicio).ToString());
 
 			// Sin quiebre lo dice sin inventar uno.
 			var estable = new Historial();
@@ -895,7 +1376,7 @@ namespace Compras.Consola
 			CambioEnLaCanasta sinCambio = estable.CambioDesde(new DateTime(2026, 1, 26), 3);
 			Igual("canasta igual: hay con que comparar", "True", sinCambio.HayConQueComparar.ToString());
 			Igual("  y no hay cambio", "False", sinCambio.HayCambio.ToString());
-			Igual("  y lo dice", "True", sinCambio.ParaElAsistente.Contains("viene igual").ToString());
+			Igual("  y lo dice", "True", LaFraseDe(sinCambio, EnEspanol).Contains("viene igual").ToString());
 			Revienta("y no hay mes de cambio que dar", () => sinCambio.MesDelCambioExpresado);
 
 			// Y si de un lado no hay compras, eso NO es que la canasta cambio: es que no
@@ -904,7 +1385,7 @@ namespace Compras.Consola
 			Igual("sin compras despues: no hay con que comparar", "False", sinLado.HayConQueComparar.ToString());
 			Igual("  y NO se afirma un cambio", "False", sinLado.HayCambio.ToString());
 			Igual("  la linea lo dice", "True",
-				sinLado.ParaElAsistente.Contains("los dos lados").ToString());
+				LaFraseDe(sinLado, EnEspanol).Contains("los dos lados").ToString());
 		}
 
 		// Una compra con presentacion por linea (la forma nueva).
@@ -972,7 +1453,7 @@ namespace Compras.Consola
 			Igual("compara el ultimo mes con el del ano pasado", "8/2025 vs 8/2026",
 				$"{porDefecto.Antes.Mes}/{porDefecto.Antes.Anio} vs {porDefecto.Despues.Mes}/{porDefecto.Despues.Anio}");
 			Igual("  y da la misma lectura que pidiendola a mano", "True",
-				(porDefecto.ParaElAsistente == ElGuion().CompararCanastas(2025, 8, 2026, 8).ParaElAsistente).ToString());
+				(LaFraseDe(porDefecto, EnEspanol) == LaFraseDe(ElGuion().CompararCanastas(2025, 8, 2026, 8), EnEspanol)).ToString());
 
 			// Total: sin compras no revienta, contesta que no hay comparacion.
 			ComparacionDeCanastas sinNada = new Historial().CompararConElAnioPasado();
@@ -1001,7 +1482,7 @@ namespace Compras.Consola
 			Igual("  el mes mas alto", "2026-08", azucarados.MesDelPicoExpresado);
 			Igual("  el cambio tiene signo positivo", "True", (azucarados.CambioDeGasto > 0m).ToString());
 			Igual("  y la linea nombra los dos extremos", "True",
-				(azucarados.ParaElAsistente.Contains("2026-02") && azucarados.ParaElAsistente.Contains("2026-08")).ToString());
+				(LaFraseDe(azucarados, EnEspanol).Contains("2026-02") && LaFraseDe(azucarados, EnEspanol).Contains("2026-08")).ToString());
 
 			// Por TEXTO de producto, no por categoria: el helado solo.
 			Consumo helado = ElGuion().ConsumoDe("helado");
@@ -1015,7 +1496,7 @@ namespace Compras.Consola
 			Consumo nada = ElGuion().ConsumoDe("langosta");
 			Igual("lo que no se compro: no existe", "False", nada.Existe().ToString());
 			Igual("  sin meses", "0", nada.MesesConConsumo.ToString());
-			Igual("  y lo dice", "True", nada.ParaElAsistente.Contains("no hay compras").ToString());
+			Igual("  y lo dice", "True", LaFraseDe(nada, EnEspanol).Contains("no hay compras").ToString());
 			Igual("  no hay cambio que leer", "False", nada.HayCambioReal.ToString());
 			Revienta("  y darle direccion revienta", () => nada.Subio);
 		}
@@ -1070,7 +1551,7 @@ namespace Compras.Consola
 			string[] juicios = { "peor", "mejor", "empeora", "mejora", "debería", "conviene", "cuidado" };
 			foreach (string juicio in juicios)
 				Igual($"la linea no dice '{juicio}'", "False",
-					dulces.ParaElAsistente.ToLowerInvariant().Contains(juicio).ToString());
+					LaFraseDe(dulces, EnEspanol).ToLowerInvariant().Contains(juicio).ToString());
 		}
 
 		// Dos meses, cada uno con sus lineas, comparados.
@@ -1095,16 +1576,16 @@ namespace Compras.Consola
 		{
 			Titulo("la cadencia se dice como habla la gente");
 
-			Igual("7 dias es todas las semanas", "todas las semanas", Cadencia.Para(7).ParaMostrar);
-			Igual("14 dias es cada dos semanas", "cada dos semanas", Cadencia.Para(14).ParaMostrar);
-			Igual("30 dias es una vez al mes", "una vez al mes", Cadencia.Para(30).ParaMostrar);
-			Igual("120 dias es de vez en cuando", "de vez en cuando", Cadencia.Para(120).ParaMostrar);
+			Igual("7 dias es todas las semanas", "todas las semanas", LaRedaccion.Cadencia(EnEspanol, Cadencia.Para(7).Clave));
+			Igual("14 dias es cada dos semanas", "cada dos semanas", LaRedaccion.Cadencia(EnEspanol, Cadencia.Para(14).Clave));
+			Igual("30 dias es una vez al mes", "una vez al mes", LaRedaccion.Cadencia(EnEspanol, Cadencia.Para(30).Clave));
+			Igual("120 dias es de vez en cuando", "de vez en cuando", LaRedaccion.Cadencia(EnEspanol, Cadencia.Para(120).Clave));
 
 			// LA HOLGURA ES A PROPOSITO: un habito no es un reloj. Una compra semanal que se
 			// corrio dos dias sigue siendo semanal, y si no, la app anunciaria un cambio de
 			// rutina cada vez que alguien fue al super un lunes en vez de un sabado.
-			Igual("9 dias todavia es semanal", "todas las semanas", Cadencia.Para(9).ParaMostrar);
-			Igual("10 dias ya no", "cada dos semanas", Cadencia.Para(10).ParaMostrar);
+			Igual("9 dias todavia es semanal", "todas las semanas", LaRedaccion.Cadencia(EnEspanol, Cadencia.Para(9).Clave));
+			Igual("10 dias ya no", "cada dos semanas", LaRedaccion.Cadencia(EnEspanol, Cadencia.Para(10).Clave));
 
 			// Conjunto cerrado comparado por REFERENCIA, como Categoria y Severidad.
 			Igual("dos intervalos semanales dan LA misma cadencia", "True",
@@ -1116,7 +1597,7 @@ namespace Compras.Consola
 				Cadencia.UnaVezAlMes.EsMasSeguidaQue(Cadencia.TodasLasSemanas).ToString());
 
 			// La forma corta, que es la que pide la pastilla del diseño de la app.
-			Igual("la compacta es para una pastilla", "1 vez/semana", Cadencia.TodasLasSemanas.Compacta);
+			Igual("la compacta es para una pastilla", "1 vez/semana", LaRedaccion.CadenciaCompacta(EnEspanol, Cadencia.TodasLasSemanas.Clave));
 
 			Revienta("cero dias no es una cadencia", () => Cadencia.Para(0));
 			Revienta("dias negativos tampoco", () => Cadencia.Para(-3));
@@ -1150,19 +1631,19 @@ namespace Compras.Consola
 
 			CambioDeRitmo helado = historial.RitmoDeUnProducto("HELADO-1L", corte);
 			Igual("hay con que comparar", "True", helado.HayConQueComparar.ToString());
-			Igual("  antes: una vez al mes", "una vez al mes", helado.Antes.ParaMostrar);
-			Igual("  ahora: todas las semanas", "todas las semanas", helado.Ahora.ParaMostrar);
+			Igual("  antes: una vez al mes", "una vez al mes", LaRedaccion.Cadencia(EnEspanol, helado.Antes.Clave));
+			Igual("  ahora: todas las semanas", "todas las semanas", LaRedaccion.Cadencia(EnEspanol, helado.Ahora.Clave));
 			Igual("  cambio", "True", helado.Cambio.ToString());
 			Igual("  y es mas seguido", "True", helado.EsMasSeguido.ToString());
 			Igual("  la linea dice de que a que", "True",
-				(helado.ParaElAsistente.Contains("una vez al mes")
-				 && helado.ParaElAsistente.Contains("todas las semanas")).ToString());
+				(LaFraseDe(helado, EnEspanol).Contains("una vez al mes")
+				 && LaFraseDe(helado, EnEspanol).Contains("todas las semanas")).ToString());
 
 			// Y NO JUZGA. "Que el helado pasara de mensual a semanal es un dato, no una
 			// falta": la app lo señala y se calla.
 			foreach (string juicio in new[] { "peor", "mejor", "debería", "conviene", "cuidado", "mal" })
 				Igual($"  la linea no dice '{juicio}'", "False",
-					helado.ParaElAsistente.Contains(juicio).ToString());
+					LaFraseDe(helado, EnEspanol).Contains(juicio).ToString());
 
 			// LO QUE NO CAMBIO NO SE ANUNCIA. La leche fue semanal de los dos lados... pero
 			// del lado de antes fueron compras MENSUALES, asi que su cadencia de antes es
@@ -1186,15 +1667,15 @@ namespace Compras.Consola
 			Igual("y el sku sigue sirviendo", "True",
 				historial.RitmoDeUnProducto("HELADO-1L", corte).HayConQueComparar.ToString());
 			Igual("las cuatro formas dan el mismo ritmo", "True",
-				(historial.RitmoDeUnProducto("helado", corte).Ahora.ParaMostrar
-				 == historial.RitmoDeUnProducto("HELADO-1L", corte).Ahora.ParaMostrar).ToString());
+				(historial.RitmoDeUnProducto("helado", corte).Ahora.Clave
+				 == historial.RitmoDeUnProducto("HELADO-1L", corte).Ahora.Clave).ToString());
 
 			// Un nombre que no existe: contesta con el texto buscado y no revienta.
 			CambioDeRitmo inventado = historial.RitmoDeUnProducto("caviar", corte);
 			Igual("un producto que nunca compro: no hay con que", "False",
 				inventado.HayConQueComparar.ToString());
 			Igual("  y la linea nombra lo que se busco", "True",
-				inventado.ParaElAsistente.Contains("caviar").ToString());
+				LaFraseDe(inventado, EnEspanol).Contains("caviar").ToString());
 
 			// El resolvedor, directo.
 			Igual("el resolvedor devuelve el sku", "HELADO-1L", historial.SkuDe("helado"));
@@ -1211,7 +1692,7 @@ namespace Compras.Consola
 				sinAntes.HayConQueComparar.ToString());
 			Igual("  y no afirma un cambio", "False", sinAntes.Cambio.ToString());
 			Igual("  y lo dice", "True",
-				sinAntes.ParaElAsistente.Contains("todavía no hay suficientes").ToString());
+				LaFraseDe(sinAntes, EnEspanol).Contains("todavía no hay suficientes").ToString());
 			Revienta("  y la cadencia de antes revienta", () => sinAntes.Antes);
 			Revienta("  y lo de mas seguido tambien", () => sinAntes.EsMasSeguido);
 
@@ -1236,7 +1717,7 @@ namespace Compras.Consola
 			CambioDeRitmo cafe = corridas.RitmoDeUnProducto("CAFE-500", new DateTime(2026, 3, 7));
 			Igual("una semana corrida no es un cambio", "False", cafe.Cambio.ToString());
 			Igual("  y la linea dice que sigue igual", "True",
-				cafe.ParaElAsistente.Contains("sigue").ToString());
+				LaFraseDe(cafe, EnEspanol).Contains("sigue").ToString());
 		}
 
 		// CADA CUANTO VA AL SUPER, que dia y a que hora. Es la pantalla "tu ritmo de super"
@@ -1256,14 +1737,14 @@ namespace Compras.Consola
 			RitmoDelSuper ritmo = historial.RitmoDelSuper();
 			Igual("el ritmo se midio", "True", ritmo.EsObservado.ToString());
 			Igual("  vuelve cada 7 dias", "7", ritmo.DiasTipicos.ToString());
-			Igual("  o sea todas las semanas", "todas las semanas", ritmo.Cadencia.ParaMostrar);
-			Igual("  y el dia es el sabado", "sábado", ritmo.DiaFavoritoExpresado);
+			Igual("  o sea todas las semanas", "todas las semanas", LaRedaccion.Cadencia(EnEspanol, ritmo.Cadencia.Clave));
+			Igual("  y el dia es el sabado", "sábado", LaRedaccion.DiaDeLaSemana(EnEspanol, ritmo.ClaveDelDiaFavorito));
 			Igual("  las 8 cayeron sabado", "8", ritmo.ComprasEnElDiaFavorito.ToString());
 			Igual("  el momento es la tarde", "tarde", ritmo.MomentoFavorito.Nombre);
 			Igual("  la linea dice cada cuanto, que dia y cuando", "True",
-				(ritmo.ParaElAsistente.Contains("cada 7 días")
-				 && ritmo.ParaElAsistente.Contains("sábado")
-				 && ritmo.ParaElAsistente.Contains("tarde")).ToString());
+				(LaFraseDe(ritmo, EnEspanol).Contains("cada 7 días")
+				 && LaFraseDe(ritmo, EnEspanol).Contains("sábado")
+				 && LaFraseDe(ritmo, EnEspanol).Contains("tarde")).ToString());
 
 			// LOS TRES MOMENTOS SIEMPRE VIENEN, y en orden del dia: la pantalla dibuja la
 			// fila sin preguntar, que es de lo que sirve una lectura total.
@@ -1273,7 +1754,7 @@ namespace Compras.Consola
 			Igual("  manana: 2 de 8", "2", ritmo.PorMomento[0].Cuantas.ToString());
 			Igual("  tarde: 5 de 8", "5", ritmo.PorMomento[1].Cuantas.ToString());
 			Igual("  noche: 1 de 8", "1", ritmo.PorMomento[2].Cuantas.ToString());
-			Igual("  y la fila se lee sola", "tarde · 5 compras", ritmo.PorMomento[1].ParaMostrar);
+			Igual("  y la fila se lee sola", "tarde · 5 compras", LaFraseDe(ritmo.PorMomento[1], EnEspanol));
 
 			// LOS CORTES DEL DIA son un juicio y estan a la vista.
 			Igual("las 12:59 son mañana", "manana",
@@ -1291,10 +1772,10 @@ namespace Compras.Consola
 			RitmoDelSuper sinRitmo = pocas.RitmoDelSuper();
 			Igual("con una compra no hay ritmo", "False", sinRitmo.EsObservado.ToString());
 			Igual("  pero dice cuantas miro", "1", sinRitmo.ComprasMiradas.ToString());
-			Igual("  y lo dice", "True", sinRitmo.ParaElAsistente.Contains("todavía no alcanza").ToString());
+			Igual("  y lo dice", "True", LaFraseDe(sinRitmo, EnEspanol).Contains("todavía no alcanza").ToString());
 			Igual("  los tres momentos vienen en cero", "3", sinRitmo.PorMomento.Count.ToString());
 			Igual("  el primero en cero", "0", sinRitmo.PorMomento[0].Cuantas.ToString());
-			Igual("  y el dia expresado va vacio", "", sinRitmo.DiaFavoritoExpresado);
+			Igual("  y el dia expresado va vacio", "", LaRedaccion.DiaDeLaSemana(EnEspanol, sinRitmo.ClaveDelDiaFavorito));
 			Revienta("  los dias tipicos revientan", () => sinRitmo.DiasTipicos);
 			Revienta("  y el dia favorito tambien", () => sinRitmo.DiaFavorito);
 
@@ -1309,7 +1790,7 @@ namespace Compras.Consola
 
 			// Un historial vacio: la otra forma de no tener respuesta.
 			Igual("sin compras lo dice distinto", "True",
-				new Historial().RitmoDelSuper().ParaElAsistente.Contains("todavía no hay compras").ToString());
+				LaFraseDe(new Historial().RitmoDelSuper(), EnEspanol).Contains("todavía no hay compras").ToString());
 		}
 
 		// LA CONSTANCIA. Una proporcion no es una respuesta: "0,875" es correcto y no se lo
@@ -1318,11 +1799,11 @@ namespace Compras.Consola
 		{
 			Titulo("la constancia se dice en palabras");
 
-			Igual("en todas: nunca falla", "nunca falla", Constancia.Para(1.0m).ParaMostrar);
-			Igual("en 7 de 8: casi nunca falta", "casi nunca falta", Constancia.Para(0.875m).ParaMostrar);
-			Igual("en la mitad: va y viene", "va y viene", Constancia.Para(0.5m).ParaMostrar);
-			Igual("en 1 de 8: de vez en cuando", "de vez en cuando", Constancia.Para(0.125m).ParaMostrar);
-			Igual("en ninguna: de vez en cuando", "de vez en cuando", Constancia.Para(0m).ParaMostrar);
+			Igual("en todas: nunca falla", "nunca falla", LaRedaccion.Constancia(EnEspanol, Constancia.Para(1.0m).Clave));
+			Igual("en 7 de 8: casi nunca falta", "casi nunca falta", LaRedaccion.Constancia(EnEspanol, Constancia.Para(0.875m).Clave));
+			Igual("en la mitad: va y viene", "va y viene", LaRedaccion.Constancia(EnEspanol, Constancia.Para(0.5m).Clave));
+			Igual("en 1 de 8: de vez en cuando", "de vez en cuando", LaRedaccion.Constancia(EnEspanol, Constancia.Para(0.125m).Clave));
+			Igual("en ninguna: de vez en cuando", "de vez en cuando", LaRedaccion.Constancia(EnEspanol, Constancia.Para(0m).Clave));
 
 			Igual("nunca falla es mas fiel que va y viene", "True",
 				Constancia.NuncaFalla.EsMasFielQue(Constancia.VaYViene).ToString());
@@ -1338,8 +1819,8 @@ namespace Compras.Consola
 			// NO JUZGA: "va y viene" describe, no reprocha.
 			foreach (Constancia c in Constancia.Todas)
 				foreach (string juicio in new[] { "peor", "mejor", "debería", "mal" })
-					Igual($"  '{c.Nombre}' no dice '{juicio}'", "False",
-						c.ParaMostrar.Contains(juicio).ToString());
+					Igual($"  '{c.Clave}' no dice '{juicio}'", "False",
+						LaRedaccion.Constancia(EnEspanol, c.Clave).Contains(juicio).ToString());
 
 			// TOTAL: cualquier proporcion valida cae en una.
 			for (int i = 0; i <= 10; i++)
@@ -1398,7 +1879,7 @@ namespace Compras.Consola
 
 			// La frase para el asistente lleva la fecha en la forma en que viaja.
 			Igual("la frase dice hasta cuando", "True",
-				vigentes[0].ParaElAsistente.Contains("2026-09-05").ToString());
+				LaFraseDe(vigentes[0], EnEspanol).Contains("2026-09-05").ToString());
 		}
 
 		// ---- lo que va a faltar en la proxima compra ----
@@ -1428,24 +1909,24 @@ namespace Compras.Consola
 			Igual("  suele volver cada 7 dias", "7", leche.DiasTipicos.ToString());
 			Igual("  y hace 9 que no entra", "9", leche.DiasDesdeLaUltima.ToString());
 			Igual("  o sea 2 de mas", "2", leche.DiasDeMas.ToString());
-			Igual("  dicho como habla la gente", "todas las semanas", leche.Cadencia.ParaMostrar);
+			Igual("  dicho como habla la gente", "todas las semanas", LaRedaccion.Cadencia(EnEspanol, leche.Cadencia.Clave));
 
 			// EL QUE NO TOCA DICE CUANTO FALTA, con el mismo numero y el signo al reves.
 			ProductoQueVaAFaltar arroz = lista.Productos[1];
 			Igual("el arroz no toca", "False", arroz.Toca.ToString());
 			Igual("  y le faltan 21 dias", "-21", arroz.DiasDeMas.ToString());
-			Igual("  su linea lo dice asi", "True", arroz.ParaElAsistente.Contains("faltan 21").ToString());
+			Igual("  su linea lo dice asi", "True", LaFraseDe(arroz, EnEspanol).Contains("faltan 21").ToString());
 
 			// LA LINEA DE LA LECHE TRAE SU RAZON, que es lo que la hace util: sin el porque,
 			// una lista sugerida es la app diciendole a alguien lo que tiene que comprar.
 			Igual("la linea del que toca trae el ritmo", "True",
-				leche.ParaElAsistente.Contains("todas las semanas").ToString());
-			Igual("  y cuanto hace", "True", leche.ParaElAsistente.Contains("9 días").ToString());
+				LaFraseDe(leche, EnEspanol).Contains("todas las semanas").ToString());
+			Igual("  y cuanto hace", "True", LaFraseDe(leche, EnEspanol).Contains("9 días").ToString());
 			// Y NO ORDENA. "Compra leche" seria un imperativo sobre una canasta que esta app
 			// no ve entera: puede tener dos litros en la heladera.
 			foreach (string orden in new[] { "comprá", "compra ", "tenés que", "deberías" })
 				Igual($"  no dice '{orden.Trim()}'", "False",
-					leche.ParaElAsistente.Contains(orden, StringComparison.OrdinalIgnoreCase).ToString());
+					LaFraseDe(leche, EnEspanol).Contains(orden, StringComparison.OrdinalIgnoreCase).ToString());
 
 			// A LOS 54 DIAS LOS DOS PRODUCTOS TOMARON CAMINOS DISTINTOS, y es justo el caso
 			// que separa las dos preguntas: la leche lleva casi ocho ciclos sin entrar -o sea
@@ -1460,7 +1941,7 @@ namespace Compras.Consola
 			ListaParaLaProximaCompra alDia = ritmos.LoQueVaAFaltar(new DateTime(2026, 2, 21));
 			Igual("recien comprado: no toca nada", "0", alDia.CuantosTocan.ToString());
 			Igual("  y se dice que viene al dia", "True",
-				alDia.ParaElAsistente.Contains("no hay nada atrasado").ToString());
+				LaFraseDe(alDia, EnEspanol).Contains("no hay nada atrasado").ToString());
 
 			// LOS ANTOJOS ENTRAN, y es a proposito: esta lista la ABRE la persona, no la
 			// levanta la app sola. Sacarle el helado seria editarle la canasta.
@@ -1505,7 +1986,7 @@ namespace Compras.Consola
 			Igual("  y no tiene productos", "0",
 				new Historial().LoQueVaAFaltar(Hoy).Productos.Count.ToString());
 			Igual("  lo dice con palabras", "True",
-				new Historial().LoQueVaAFaltar(Hoy).ParaElAsistente.Contains("no hay compras suficientes").ToString());
+				LaFraseDe(new Historial().LoQueVaAFaltar(Hoy), EnEspanol).Contains("no hay compras suficientes").ToString());
 		}
 
 		// Leche cada 7 dias (4 compras), arroz cada 30 (3 compras), olla UNA vez. La ultima
@@ -1732,7 +2213,7 @@ namespace Compras.Consola
 			Igual("  y no hay compras que mostrar", "0", nada.Compras.Count.ToString());
 			Igual("  el contador para el cable da 0", "0", nada.CuantasCompras.ToString());
 			Igual("  se dice con el termino adentro", "True",
-				nada.ParaElAsistente.Contains("caviar").ToString());
+				LaFraseDe(nada, EnEspanol).Contains("caviar").ToString());
 
 			// TOTAL DE VERDAD, sin lectores guardados: de algo que nunca se compro se
 			// llevaron cero unidades y se gastaron cero colones, y las dos son VERDAD. Es
@@ -1749,9 +2230,9 @@ namespace Compras.Consola
 			// LA FRASE NOMBRA EL PRODUCTO ENCONTRADO, no lo que se escribio: quien busco
 			// "helado" tiene que poder confirmar que la app entendio cual.
 			Igual("la frase nombra el producto hallado", "True",
-				helado.ParaElAsistente.Contains("Helado de vainilla 1L").ToString());
+				LaFraseDe(helado, EnEspanol).Contains("Helado de vainilla 1L").ToString());
 			Igual("  y con varios dice cuantos coinciden", "True",
-				dulces.ParaElAsistente.Contains("5 productos").ToString());
+				LaFraseDe(dulces, EnEspanol).Contains("5 productos").ToString());
 		}
 
 		private static Historial ElGuion()
@@ -1823,7 +2304,7 @@ namespace Compras.Consola
 			// meses el litro le costaba 1.000, o sea que ESA cantidad costaba 2.000: la
 			// leche le BAJO 40, aunque el ticket diga casi el doble.
 			ProductoFrenteAlPasado leche = frente.Productos[2];
-			Igual("la leche se lee por su presentacion de hoy", "2 L", leche.Presentacion);
+			Igual("la leche se lee por su presentacion de hoy", "2 L", LaRedaccion.Presentacion(EnEspanol, leche.Presentacion.Clave, leche.Presentacion.Contenido, leche.Presentacion.SimboloDelContenido, leche.Presentacion.Piezas));
 			Igual("  antes: 2.000", "2000", leche.Antes.ToString("0"));
 			Igual("  ahora: 1.960", "1960", leche.Ahora.ToString("0"));
 			Igual("  o sea bajo 40", "-40", leche.Cambio.ToString("0"));
@@ -1835,9 +2316,9 @@ namespace Compras.Consola
 			// LA SUMA con signo: -380 - 40 + 87 = -333. Esta canasta esta mas barata.
 			Igual("la suma da -333", "-333", frente.Cambio.ToString("0"));
 			Igual("  y la frase dice menos", "True",
-				frente.ParaElAsistente.Contains("333").ToString());
+				LaFraseDe(frente, EnEspanol).Contains("333").ToString());
 			Igual("  con la ventana adentro", "True",
-				frente.ParaElAsistente.Contains("3 meses").ToString());
+				LaFraseDe(frente, EnEspanol).Contains("3 meses").ToString());
 
 			// CON VENTANA DE 4 el corte cae el 25-abr: el aceite tambien pierde su pasado
 			// (entro el 20-may) y los dos que quedan SUBIERON: +60 la leche, +110 las
@@ -1845,7 +2326,7 @@ namespace Compras.Consola
 			CanastaFrenteAlPasado contraAbril = precios.CanastaFrenteA(Hoy, 4, 4);
 			Igual("contra abril se comparan 2", "2", contraAbril.Productos.Count.ToString());
 			Igual("  y la suma da +170", "170", contraAbril.Cambio.ToString("0"));
-			Igual("  la frase dice mas", "True", contraAbril.ParaElAsistente.Contains("más").ToString());
+			Igual("  la frase dice mas", "True", LaFraseDe(contraAbril, EnEspanol).Contains("más").ToString());
 
 			// TOTAL: una ventana que nadie alcanza contesta "no hay", con la suma en cero.
 			CanastaFrenteAlPasado sinPasado = precios.CanastaFrenteA(Hoy, 12, 4);
@@ -1871,7 +2352,7 @@ namespace Compras.Consola
 			Igual("hay rebaja", "True", rebaja.Hay.ToString());
 			Igual("  y es el aceite", "ACEITE", rebaja.Sku);
 			Igual("  380 menos por pieza", "380", rebaja.CuantoMenos.ToString("0"));
-			Igual("  la frase lo dice", "True", rebaja.ParaElAsistente.Contains("380").ToString());
+			Igual("  la frase lo dice", "True", LaFraseDe(rebaja, EnEspanol).Contains("380").ToString());
 
 			// LA LECHE NO CUENTA aunque bajo: su litro paso de 1.000 a 980, un 2%, y el
 			// umbral es el MISMO 3% de la serie de precios. Redondeo de gondola no es nota.
@@ -1885,7 +2366,7 @@ namespace Compras.Consola
 			RebajaDesdeLaCompra deNadie = precios.RebajaDesde("T-99");
 			Igual("una compra que no existe: ninguna", "False", deNadie.Hay.ToString());
 			Igual("  y la frase lo dice", "True",
-				deNadie.ParaElAsistente.Contains("nada de la compra").ToString());
+				LaFraseDe(deNadie, EnEspanol).Contains("nada de la compra").ToString());
 
 			Revienta("un numero vacio revienta", () => precios.RebajaDesde(" "));
 		}
@@ -1910,7 +2391,7 @@ namespace Compras.Consola
 			PrecioEnElTiempo nada = precios.PrecioBuscado("caviar");
 			Igual("lo que no esta: Ninguno", "False", nada.Existe().ToString());
 			Igual("  y la frase lo dice", "True",
-				nada.ParaElAsistente.Contains("no hay compras").ToString());
+				LaFraseDe(nada, EnEspanol).Contains("no hay compras").ToString());
 
 			Revienta("un texto vacio revienta", () => precios.PrecioBuscado(" "));
 		}
@@ -1968,7 +2449,7 @@ namespace Compras.Consola
 			Igual("  y la compra vieja se cuenta aparte", "1",
 				recorrido.ComprasSinSucursal.ToString());
 			Igual("  la frase cuenta el arco", "True",
-				recorrido.ParaElAsistente.Contains("desde 2026-02").ToString());
+				LaFraseDe(recorrido, EnEspanol).Contains("desde 2026-02").ToString());
 
 			// A IGUAL CANTIDAD gana la conocida primero: Zapote llego antes que Del Este.
 			Igual("a igual cantidad, la conocida primero", "La Guaria Zapote",
@@ -1983,7 +2464,7 @@ namespace Compras.Consola
 			Igual("journals viejos: sin datos", "False", sinDatos.HayDatos.ToString());
 			Igual("  pero dice que 1 calla", "1", sinDatos.ComprasSinSucursal.ToString());
 			Igual("  y la frase lo explica", "True",
-				sinDatos.ParaElAsistente.Contains("no traían el dato").ToString());
+				LaFraseDe(sinDatos, EnEspanol).Contains("no traían el dato").ToString());
 			Revienta("  preguntarle la de siempre revienta", () => sinDatos.LaDeSiempre);
 
 			Igual("historial vacio: tampoco revienta", "False",

@@ -1713,7 +1713,12 @@ h2.kicker { font-size: .74rem; margin: 0; }
     color: var(--tinta);
 }
 
-    .blazor-error-boundary::after { content: "Algo se rompió en esta parte de la pantalla." }
+    /* El valor por defecto es el idioma del registro, por la misma razón que el de index.html:
+       un límite de error puede saltar antes de que Textos negocie. La variable la fija
+       idioma-interop.js apenas hay catálogo. */
+    .blazor-error-boundary::after {
+        content: var(--texto-error-en-la-pantalla, "Algo se rompió en esta parte de la pantalla.")
+    }
 
 .loading-progress {
     position: relative;

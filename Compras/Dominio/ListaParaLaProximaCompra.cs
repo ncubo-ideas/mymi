@@ -74,7 +74,12 @@ namespace Compras.Dominio
 		/// <summary>Cuántos ya pasaron su tiempo. Cero cuando ninguno, y es verdad.</summary>
 		internal abstract int CuantosTocan { get; }
 
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice esta lista, por su nombre: `sin-historial`, `al-dia`, `tocan.uno` o
+		/// `tocan.varios`. Ninguno atrasado es una respuesta y tiene su propia clave, no una lista
+		/// vacia; y el plural lo decide la clave, porque el espanol y el ingles lo concuerdan distinto.
+		/// </summary>
+		internal abstract string Clave { get; }
 
 		private sealed class SinLista : ListaParaLaProximaCompra
 		{
@@ -88,8 +93,7 @@ namespace Compras.Dominio
 
 			internal override int CuantosTocan => 0;
 
-			internal override string ParaElAsistente =>
-				"todavía no hay compras suficientes para saber cada cuánto vuelve cada cosa";
+			internal override string Clave => "sin-historial";
 		}
 
 		private sealed class Armada : ListaParaLaProximaCompra
@@ -116,43 +120,8 @@ namespace Compras.Dominio
 			internal override IReadOnlyList<ProductoQueVaAFaltar> LosQueTocan => tocan;
 			internal override int CuantosTocan => tocan.Count;
 
-			// NINGUNO ATRASADO ES UNA RESPUESTA, no una lista vacia: quiere decir que viene al
-			// dia, y decirlo es mas util que no decir nada.
-			internal override string ParaElAsistente
-			{
-				get
-				{
-					if (tocan.Count == 0)
-						return "no hay nada atrasado: todo lo que suele llevar entró hace poco";
-
-					var nombres = new List<string>();
-					foreach (ProductoQueVaAFaltar producto in tocan) nombres.Add(producto.Descripcion);
-
-					string cuantos = tocan.Count == 1
-						? "1 producto de los que suele llevar"
-						: $"{tocan.Count} productos de los que suele llevar";
-
-					return $"{cuantos} ya pasaron su tiempo: {Nombres(nombres)}";
-				}
-			}
-
-			// "a, b y c" — la misma forma que usa el resto del dominio, y con un tope: una
-			// frase que enumera veinte productos no la lee nadie.
-			private static string Nombres(IReadOnlyList<string> nombres)
-			{
-				const int cuantosSeNombran = 4;
-
-				if (nombres.Count == 1) return nombres[0];
-
-				var primeros = new List<string>();
-				for (int i = 0; i < Math.Min(cuantosSeNombran, nombres.Count); i++) primeros.Add(nombres[i]);
-
-				string dichos = string.Join(", ", primeros.GetRange(0, primeros.Count - 1))
-					+ " y " + primeros[primeros.Count - 1];
-
-				int resto = nombres.Count - primeros.Count;
-				return resto > 0 ? $"{dichos} (y {resto} más)" : dichos;
-			}
+			internal override string Clave =>
+				tocan.Count == 0 ? "al-dia" : tocan.Count == 1 ? "tocan.uno" : "tocan.varios";
 		}
 	}
 }

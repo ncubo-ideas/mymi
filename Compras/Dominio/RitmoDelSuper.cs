@@ -49,8 +49,11 @@ namespace Compras.Dominio
 		/// <summary>El día de la semana en que más compra. Preguntar EsObservado primero.</summary>
 		internal abstract DayOfWeek DiaFavorito { get; }
 
-		/// <summary>El día favorito en español: "viernes". Vacío cuando no hay ritmo.</summary>
-		internal abstract string DiaFavoritoExpresado { get; }
+		/// <summary>
+		/// EL CODIGO del dia favorito, sin acentos: `lunes`, `martes`, `miercoles`... Vacio cuando no
+		/// hay ritmo. Como se dice lo busca con este codigo la capa que redacta, en su idioma.
+		/// </summary>
+		internal abstract string ClaveDelDiaFavorito { get; }
 
 		/// <summary>Cuántas compras cayeron en el día favorito. Total: cero cuando no hay ritmo.</summary>
 		internal abstract int ComprasEnElDiaFavorito { get; }
@@ -61,7 +64,11 @@ namespace Compras.Dominio
 		/// <summary>Cuántas compras cayeron en cada momento del día. Total: siempre trae los tres.</summary>
 		internal abstract IReadOnlyList<ComprasEnUnMomento> PorMomento { get; }
 
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice este ritmo, por su nombre: `sin-compras`, `pocas-compras` o `medido`. El dia
+		/// y el momento van en sus huecos por codigo, no por dicho.
+		/// </summary>
+		internal abstract string Clave { get; }
 
 		// LAS LECTURAS PARA LA FRONTERA, sin guarda: cero y vacio cuando no hay ritmo. Es el
 		// mismo par que RegistroDeGarantia y CambioDeRitmo -la tipada para el codigo, la
@@ -71,9 +78,12 @@ namespace Compras.Dominio
 		// Y no son un duplicado disfrazado: quien tiene el objeto en la mano debe recibir un
 		// Cadencia y un MomentoDelDia, no dos strings, o el conjunto cerrado no sirve.
 		internal abstract int DiasEntreCompras { get; }
-		internal abstract string CadenciaLegible { get; }
-		internal abstract string CadenciaCompacta { get; }
-		internal abstract string MomentoFavoritoExpresado { get; }
+
+		/// <summary>El codigo de la cadencia con que va. Vacio cuando no hay ritmo: lectura total.</summary>
+		internal abstract string ClaveDeLaCadencia { get; }
+
+		/// <summary>El codigo del momento favorito. Vacio cuando no hay ritmo: lectura total.</summary>
+		internal abstract string ClaveDelMomentoFavorito { get; }
 
 		private sealed class SinRitmo : RitmoDelSuper
 		{
@@ -104,7 +114,7 @@ namespace Compras.Dominio
 				throw new InvalidOperationException(
 					"No hay ritmo medido, asi que no hay dia favorito. Preguntar EsObservado antes.");
 
-			internal override string DiaFavoritoExpresado => "";
+			internal override string ClaveDelDiaFavorito => "";
 			internal override int ComprasEnElDiaFavorito => 0;
 
 			internal override MomentoDelDia MomentoFavorito =>
@@ -126,13 +136,10 @@ namespace Compras.Dominio
 			}
 
 			internal override int DiasEntreCompras => 0;
-			internal override string CadenciaLegible => "";
-			internal override string CadenciaCompacta => "";
-			internal override string MomentoFavoritoExpresado => "";
+			internal override string ClaveDeLaCadencia => "";
+			internal override string ClaveDelMomentoFavorito => "";
 
-			internal override string ParaElAsistente => compras == 0
-				? "todavía no hay compras suyas con las que ver cada cuánto va al súper"
-				: $"con {compras} compras todavía no alcanza para decir cada cuánto va al súper";
+			internal override string Clave => compras == 0 ? "sin-compras" : "pocas-compras";
 		}
 
 		private sealed class Medido : RitmoDelSuper
@@ -208,30 +215,30 @@ namespace Compras.Dominio
 			internal override int DiasTipicos => diasTipicos;
 			internal override Cadencia Cadencia => cadencia;
 			internal override DayOfWeek DiaFavorito => diaFavorito;
-			internal override string DiaFavoritoExpresado => EnEspanol(diaFavorito);
+			internal override string ClaveDelDiaFavorito => CodigoDelDia(diaFavorito);
 			internal override int ComprasEnElDiaFavorito => comprasEnElDia;
 			internal override MomentoDelDia MomentoFavorito => momentoFavorito;
 			internal override IReadOnlyList<ComprasEnUnMomento> PorMomento => porMomento;
 
 			internal override int DiasEntreCompras => diasTipicos;
-			internal override string CadenciaLegible => cadencia.ParaMostrar;
-			internal override string CadenciaCompacta => cadencia.Compacta;
-			internal override string MomentoFavoritoExpresado => momentoFavorito.ParaMostrar;
+			internal override string ClaveDeLaCadencia => cadencia.Clave;
+			internal override string ClaveDelMomentoFavorito => momentoFavorito.Nombre;
 
-			internal override string ParaElAsistente =>
-				$"suele ir al súper cada {diasTipicos} días, y casi siempre un "
-				+ $"{DiaFavoritoExpresado} por la {momentoFavorito.ParaMostrar}";
+			internal override string Clave => "medido";
 
-			// El nombre del dia en español. Va aca y no en una pantalla porque la frase de
-			// arriba lo necesita, y la frase la escribe el dominio.
-			private static string EnEspanol(DayOfWeek dia) => dia switch
+			/// <summary>
+			/// EL CODIGO del dia de la semana, sin acentos y en el alfabeto del calendario, no en el de
+			/// un idioma. Vive aca porque el dominio es el dueno del conjunto; como se dice cada uno lo
+			/// resuelve quien redacta.
+			/// </summary>
+			private static string CodigoDelDia(DayOfWeek dia) => dia switch
 			{
 				DayOfWeek.Monday => "lunes",
 				DayOfWeek.Tuesday => "martes",
-				DayOfWeek.Wednesday => "miércoles",
+				DayOfWeek.Wednesday => "miercoles",
 				DayOfWeek.Thursday => "jueves",
 				DayOfWeek.Friday => "viernes",
-				DayOfWeek.Saturday => "sábado",
+				DayOfWeek.Saturday => "sabado",
 				_ => "domingo",
 			};
 
@@ -270,8 +277,7 @@ namespace Compras.Dominio
 		/// <summary>Qué parte de las compras cayó en este momento. Cero cuando no hay compras.</summary>
 		internal decimal Proporcion => DeCuantas == 0 ? 0m : Math.Round((decimal)Cuantas / DeCuantas, 4);
 
-		/// <summary>La línea de la fila: "tarde · 7 compras".</summary>
-		internal string ParaMostrar =>
-			$"{Momento.ParaMostrar} · {Cuantas} {(Cuantas == 1 ? "compra" : "compras")}";
+		/// <summary>El codigo del momento, aplanado para que el print lo alcance en un solo nivel.</summary>
+		internal string ClaveDelMomento => Momento.Nombre;
 	}
 }

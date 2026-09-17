@@ -48,8 +48,11 @@ namespace Compras.Dominio
 
 		internal abstract int CuantosHabituales { get; }
 
-		/// <summary>La línea de la portada, escrita por el dominio. Sin jerga: ni sku ni categorías.</summary>
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice la portada, por su nombre: `sin-compras`, `sin-patron` o `hay`. Los nombres
+		/// de los habituales ya se publican, asi que esta lectura no los repite.
+		/// </summary>
+		internal abstract string Clave { get; }
 
 		private sealed class SinFirma : FirmaDeLaCanasta
 		{
@@ -59,10 +62,7 @@ namespace Compras.Dominio
 			internal override IReadOnlyList<ProductoHabitual> Habituales => Array.Empty<ProductoHabitual>();
 			internal override int CuantosHabituales => 0;
 
-			internal override string ParaElAsistente => ComprasMiradas == 0
-				? "todavía no hay compras suyas con las que ver un patrón"
-				: $"en sus últimas {ComprasMiradas} compras no hay nada que se repita lo suficiente "
-					+ "como para llamarlo su firma";
+			internal override string Clave => ComprasMiradas == 0 ? "sin-compras" : "sin-patron";
 		}
 
 		private sealed class Firma : FirmaDeLaCanasta
@@ -84,24 +84,7 @@ namespace Compras.Dominio
 			internal override IReadOnlyList<ProductoHabitual> Habituales => habituales;
 			internal override int CuantosHabituales => habituales.Count;
 
-			// Se nombran los productos como los nombra el supermercado, en una lista que
-			// una persona lee de corrido. Cinco alcanzan para reconocerse; mas es un
-			// inventario, y un inventario no es una firma.
-			internal override string ParaElAsistente
-			{
-				get
-				{
-					int cuantos = Math.Min(5, habituales.Count);
-					var nombres = new List<string>();
-					for (int i = 0; i < cuantos; i++) nombres.Add(habituales[i].Descripcion);
-
-					string lista = cuantos == 1
-						? nombres[0]
-						: string.Join(", ", nombres.GetRange(0, cuantos - 1)) + " y " + nombres[cuantos - 1];
-
-					return $"su semana tiene una firma: {lista}";
-				}
-			}
+			internal override string Clave => "hay";
 		}
 	}
 

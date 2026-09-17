@@ -26,24 +26,23 @@ namespace Compras.Dominio
 		/// <summary>La hora en que la tarde se termina.</summary>
 		internal const int HoraEnQueEmpiezaLaNoche = 19;
 
-		internal static readonly MomentoDelDia Manana = new MomentoDelDia("manana", "mañana", 1);
-		internal static readonly MomentoDelDia Tarde = new MomentoDelDia("tarde", "tarde", 2);
-		internal static readonly MomentoDelDia Noche = new MomentoDelDia("noche", "noche", 3);
+		internal static readonly MomentoDelDia Manana = new MomentoDelDia("manana", 1);
+		internal static readonly MomentoDelDia Tarde = new MomentoDelDia("tarde", 2);
+		internal static readonly MomentoDelDia Noche = new MomentoDelDia("noche", 3);
 
 		internal static readonly MomentoDelDia[] Todos = { Manana, Tarde, Noche };
 
-		/// <summary>La etiqueta interna, sin acentos: para comparar y serializar.</summary>
+		/// <summary>
+		/// EL CODIGO de este momento, sin acentos: identidad, para comparar y serializar. Como se le
+		/// dice a la persona lo busca con este codigo la capa que redacta, en su idioma.
+		/// </summary>
 		internal string Nombre { get; private set; }
-
-		/// <summary>Como se le dice a la persona: "en la mañana".</summary>
-		internal string ParaMostrar { get; private set; }
 
 		private readonly int orden;
 
-		private MomentoDelDia(string nombre, string paraMostrar, int orden)
+		private MomentoDelDia(string nombre, int orden)
 		{
 			Nombre = nombre;
-			ParaMostrar = paraMostrar;
 			this.orden = orden;
 		}
 

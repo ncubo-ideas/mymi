@@ -77,8 +77,11 @@ namespace Compras.Dominio
 		/// <summary>La direccion del cambio, sin valorarla. Preguntar HayCambioReal primero.</summary>
 		internal abstract bool Subio { get; }
 
-		/// <summary>La linea, escrita por el dominio con SUS hechos. Nunca un consejo.</summary>
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice esta serie, por su nombre: `sin-consumo`, `un-solo-mes`, `cambio` o
+		/// `se-mantuvo`. Nunca un consejo: la clave nombra lo que paso y nada mas.
+		/// </summary>
+		internal abstract string Clave { get; }
 
 		// LO QUE LA FICHA DE UN PRODUCTO NECESITA, y que la serie por mes no contesta sola.
 		//
@@ -133,8 +136,7 @@ namespace Compras.Dominio
 				throw new InvalidOperationException(
 					$"No hay compras de «{Termino}»: no hay direccion que dar. Preguntar HayCambioReal antes.");
 
-			internal override string ParaElAsistente =>
-				$"no hay compras de «{Termino}» en el historial";
+			internal override string Clave => "sin-consumo";
 		}
 
 		private sealed class Serie : Consumo
@@ -228,7 +230,8 @@ namespace Compras.Dominio
 			}
 
 			internal override DateTime UltimaVez => ultimaVez;
-			internal override string UltimaVezExpresada => ultimaVez.ToString("yyyy-MM-dd");
+			internal override string UltimaVezExpresada =>
+				ultimaVez.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
 			// SOBRE TODAS SUS COMPRAS, no sobre una ventana. Si el historial viniera en cero
 			// -imposible si hay meses, pero la division no se arriesga- cae en la constancia
@@ -284,29 +287,8 @@ namespace Compras.Dominio
 				}
 			}
 
-			internal override string ParaElAsistente
-			{
-				get
-				{
-					string que = esCategoria ? Termino : $"«{Termino}»";
-
-					if (meses.Count == 1)
-						return $"{que} aparece una sola vez, en {PrimerMesExpresado}, por "
-							+ $"{Colones(TotalGastado)}: todavía no hay serie para decir para dónde viene";
-
-					string tramo = $"de {Colones(GastoEnElPrimerMes)} en {PrimerMesExpresado} a "
-						+ $"{Colones(GastoEnElUltimoMes)} en {UltimoMesExpresado}";
-
-					if (HayCambioReal)
-						return $"{que} pasó {tramo}, sobre {MesesConConsumo} meses con compras "
-							+ $"(el mes más alto fue {MesDelPicoExpresado})";
-
-					return $"{que} se mantuvo {tramo}";
-				}
-			}
-
-			private static string Colones(decimal monto) =>
-				Plata.Colones(monto);
+			internal override string Clave =>
+				meses.Count == 1 ? "un-solo-mes" : HayCambioReal ? "cambio" : "se-mantuvo";
 		}
 	}
 }

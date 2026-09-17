@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Compras.Dominio
 {
@@ -40,8 +41,11 @@ namespace Compras.Dominio
 			TotalDeLaCompra = compra.Total;
 		}
 
-		/// <summary>Como aaaa-mm-dd, que es la forma en que la fecha viaja.</summary>
-		internal string FechaExpresada => Fecha.ToString("yyyy-MM-dd");
+		/// <summary>
+		/// Como aaaa-mm-dd, que es la forma en que la fecha viaja. INVARIANTE y no de la maquina: sin
+		/// cultura fija, un calendario no gregoriano escribe otro año en el mismo instante.
+		/// </summary>
+		internal string FechaExpresada => Fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
 		internal void Sumar(int unidades, decimal gasto)
 		{

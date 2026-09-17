@@ -228,7 +228,6 @@ namespace Compras.App
 							item.PrecioUnitario precioUnitario,
 							item.Total totalDeLinea,
 							item.Categoria.Nombre categoria,
-							item.Categoria.Titulo titulo,
 							item.TieneGarantia tieneGarantia;
 					}
 				}
@@ -256,7 +255,6 @@ namespace Compras.App
 						canasta.HayCompras hayCompras;
 					foreach (departamento in canasta.Departamentos) {
 						print departamento.Categoria.Nombre categoria,
-							departamento.Titulo titulo,
 							departamento.Monto monto,
 							departamento.ProporcionDelTotal proporcionDelTotal;
 					}
@@ -288,7 +286,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaElAsistente paraElAsistente,
+						comparacion.Clave clave,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -297,7 +295,6 @@ namespace Compras.App
 						comparacion.Despues.GastoComestible gastoComestibleDespues;
 					foreach (diferencia in comparacion.Diferencias) {
 						print diferencia.Categoria.Nombre categoria,
-							diferencia.Titulo titulo,
 							diferencia.MontoAntes montoAntes,
 							diferencia.MontoDespues montoDespues,
 							diferencia.Cambio cambioDelPasillo,
@@ -328,7 +325,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaElAsistente paraElAsistente,
+						comparacion.Clave clave,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -337,7 +334,6 @@ namespace Compras.App
 						comparacion.Despues.GastoComestible gastoComestibleDespues;
 					foreach (diferencia in comparacion.Diferencias) {
 						print diferencia.Categoria.Nombre categoria,
-							diferencia.Titulo titulo,
 							diferencia.MontoAntes montoAntes,
 							diferencia.MontoDespues montoDespues,
 							diferencia.Cambio cambioDelPasillo,
@@ -367,7 +363,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaElAsistente paraElAsistente,
+						comparacion.Clave clave,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -376,7 +372,6 @@ namespace Compras.App
 						comparacion.Despues.GastoComestible gastoComestibleDespues;
 					foreach (diferencia in comparacion.Diferencias) {
 						print diferencia.Categoria.Nombre categoria,
-							diferencia.Titulo titulo,
 							diferencia.MontoAntes montoAntes,
 							diferencia.MontoDespues montoDespues,
 							diferencia.Cambio cambioDelPasillo,
@@ -400,7 +395,7 @@ namespace Compras.App
 					firma = compras.FirmaDeLasUltimas(@cuantas);
 					print firma.ComprasMiradas comprasMiradas,
 						firma.CuantosHabituales cuantosHabituales,
-						firma.ParaElAsistente paraElAsistente;
+						firma.Clave clave;
 					foreach (habitual in firma.Habituales) {
 						print habitual.Sku sku,
 							habitual.Descripcion descripcion,
@@ -408,7 +403,7 @@ namespace Compras.App
 							habitual.ComprasMiradas deCuantas,
 							habitual.Proporcion proporcion,
 							habitual.EstaEnTodas estaEnTodas,
-							habitual.Constancia.ParaMostrar constancia;
+							habitual.Constancia.Clave constancia;
 					}
 				}
 			")
@@ -429,7 +424,7 @@ namespace Compras.App
 					cambio = compras.CambioDesde(@corte, @cuantas);
 					print cambio.HayConQueComparar hayConQueComparar,
 						cambio.HayCambio hayCambio,
-						cambio.ParaElAsistente paraElAsistente;
+						cambio.Clave clave;
 					foreach (entro in cambio.Entraron) {
 						print entro.Sku sku,
 							entro.Descripcion descripcion,
@@ -464,7 +459,7 @@ namespace Compras.App
 					print cambio.HayConQueComparar hayConQueComparar,
 						cambio.HayCambio hayCambio,
 						cambio.CorteExpresado corte,
-						cambio.ParaElAsistente paraElAsistente;
+						cambio.Clave clave;
 					foreach (entro in cambio.Entraron) {
 						print entro.Sku sku,
 							entro.Descripcion descripcion,
@@ -503,9 +498,9 @@ namespace Compras.App
 						ritmo.Descripcion descripcion,
 						ritmo.HayConQueComparar hayConQueComparar,
 						ritmo.Cambio cambio,
-						ritmo.AntesCompacto antes,
-						ritmo.AhoraCompacto ahora,
-						ritmo.ParaElAsistente paraElAsistente;
+						ritmo.ClaveDeAntes antes,
+						ritmo.ClaveDeAhora ahora,
+						ritmo.Clave clave;
 				}
 			")
 			.WithParameters(p => {
@@ -535,18 +530,16 @@ namespace Compras.App
 					print ritmo.ComprasMiradas comprasMiradas,
 						ritmo.EsObservado esObservado,
 						ritmo.DiasEntreCompras diasEntreCompras,
-						ritmo.CadenciaLegible cadencia,
-						ritmo.CadenciaCompacta cadenciaCompacta,
-						ritmo.DiaFavoritoExpresado diaFavorito,
+						ritmo.ClaveDeLaCadencia cadencia,
+						ritmo.ClaveDelDiaFavorito diaFavorito,
 						ritmo.ComprasEnElDiaFavorito comprasEnElDiaFavorito,
-						ritmo.MomentoFavoritoExpresado momentoFavorito,
-						ritmo.ParaElAsistente paraElAsistente;
+						ritmo.ClaveDelMomentoFavorito momentoFavorito,
+						ritmo.Clave clave;
 					foreach (momento in ritmo.PorMomento) {
-						print momento.Momento.ParaMostrar nombre,
+						print momento.ClaveDelMomento nombre,
 							momento.Cuantas cuantas,
 							momento.DeCuantas deCuantas,
-							momento.Proporcion proporcion,
-							momento.ParaMostrar paraMostrar;
+							momento.Proporcion proporcion;
 					}
 				}
 			")
@@ -565,10 +558,10 @@ namespace Compras.App
 					foreach (ritmo in cambios) {
 						print ritmo.Sku sku,
 							ritmo.Descripcion descripcion,
-							ritmo.AntesCompacto antes,
-							ritmo.AhoraCompacto ahora,
+							ritmo.ClaveDeAntes antes,
+							ritmo.ClaveDeAhora ahora,
 							ritmo.EsMasSeguido esMasSeguido,
-							ritmo.ParaElAsistente paraElAsistente;
+							ritmo.Clave clave;
 					}
 				}
 			")
@@ -588,10 +581,10 @@ namespace Compras.App
 					foreach (ritmo in cambios) {
 						print ritmo.Sku sku,
 							ritmo.Descripcion descripcion,
-							ritmo.AntesCompacto antes,
-							ritmo.AhoraCompacto ahora,
+							ritmo.ClaveDeAntes antes,
+							ritmo.ClaveDeAhora ahora,
 							ritmo.EsMasSeguido esMasSeguido,
-							ritmo.ParaElAsistente paraElAsistente;
+							ritmo.Clave clave;
 					}
 				}
 			")
@@ -619,7 +612,9 @@ namespace Compras.App
 							precio.CambioEnProporcion cambioEnProporcion,
 							precio.Subio subio,
 							precio.VecesQueLoCompro vecesQueLoCompro,
-							precio.ParaElAsistente paraElAsistente;
+							precio.PrimerMesExpresado desde,
+							precio.UltimoMesExpresado hasta,
+							precio.Clave clave;
 					}
 				}
 			")
@@ -638,9 +633,12 @@ namespace Compras.App
 					print recorrido.HayDatos hayDatos,
 						recorrido.CuantasDistintas cuantasDistintas,
 						recorrido.ComprasSinSucursal comprasSinSucursal,
+						recorrido.ComprasConSucursal comprasConSucursal,
+						recorrido.NombreDeLaDeSiempre laDeSiempre,
+						recorrido.ComprasEnLaDeSiempre comprasEnLaDeSiempre,
 						recorrido.SeMueve seMueve,
 						recorrido.SeMueveDesdeExpresado seMueveDesde,
-						recorrido.ParaElAsistente paraElAsistente;
+						recorrido.Clave clave;
 					foreach (sucursal in recorrido.Sucursales) {
 						print sucursal.Nombre nombre,
 							sucursal.Compras compras,
@@ -676,13 +674,18 @@ namespace Compras.App
 						serie.Cambio cambio,
 						serie.CambioEnProporcion cambioEnProporcion,
 						serie.HayCambioReal hayCambioReal,
-						serie.ParaElAsistente paraElAsistente;
+						serie.PrimerMesExpresado desde,
+						serie.UltimoMesExpresado hasta,
+						serie.Clave clave;
 					foreach (observado in serie.Observados) {
 						print observado.Fecha fecha,
 							observado.MesExpresado mes,
 							observado.PrecioPorUnidad precioPorUnidad,
 							observado.PrecioDeLinea precioDeLinea,
-							observado.PresentacionExpresada presentacion,
+							observado.ClaveDeLaPresentacion presentacion,
+							observado.ContenidoDeLaPresentacion contenido,
+							observado.PiezasDeLaPresentacion piezas,
+							observado.SimboloDeLaPresentacion simbolo,
 							observado.NumeroDeCompra numeroDeCompra;
 					}
 				}
@@ -704,11 +707,14 @@ namespace Compras.App
 					print frente.HayConQueComparar hayConQueComparar,
 						frente.MesesDeVentana mesesDeVentana,
 						frente.Cambio cambio,
-						frente.ParaElAsistente paraElAsistente;
+						frente.Clave clave;
 					foreach (producto in frente.Productos) {
 						print producto.Sku sku,
 							producto.Descripcion descripcion,
-							producto.Presentacion presentacion,
+							producto.ClaveDeLaPresentacion presentacion,
+							producto.ContenidoDeLaPresentacion contenido,
+							producto.PiezasDeLaPresentacion piezas,
+							producto.SimboloDeLaPresentacion simbolo,
 							producto.Antes antes,
 							producto.Ahora ahora,
 							producto.Cambio cambio;
@@ -735,8 +741,9 @@ namespace Compras.App
 					print rebaja.Hay hay,
 						rebaja.Sku sku,
 						rebaja.Descripcion descripcion,
+						rebaja.NumeroDeCompra numeroDeCompra,
 						rebaja.CuantoMenos cuantoMenos,
-						rebaja.ParaElAsistente paraElAsistente;
+						rebaja.Clave clave;
 				}
 			")
 			.WithParameters(p => {
@@ -766,8 +773,7 @@ namespace Compras.App
 						registro.Vigente vigente,
 						registro.DiasParaVencer diasParaVencer,
 						registro.NombreDeLaSeveridad severidad,
-						registro.QueHacer queHacer,
-						registro.ParaElAsistente paraElAsistente;
+						registro.Clave clave;
 				}
 			")
 			.WithParameters(p => {
@@ -791,8 +797,7 @@ namespace Compras.App
 							registro.VenceEl venceEl,
 							registro.DiasParaVencer diasParaVencer,
 							registro.NombreDeLaSeveridad severidad,
-							registro.QueHacer queHacer,
-							registro.ParaElAsistente paraElAsistente;
+							registro.Clave clave;
 					}
 				}
 			")
@@ -818,8 +823,7 @@ namespace Compras.App
 							registro.VenceEl venceEl,
 							registro.DiasParaVencer diasParaVencer,
 							registro.NombreDeLaSeveridad severidad,
-							registro.QueHacer queHacer,
-							registro.ParaElAsistente paraElAsistente;
+							registro.Clave clave;
 					}
 				}
 			")
@@ -850,10 +854,10 @@ namespace Compras.App
 						consumo.CambioDeGasto cambioDeGasto,
 						consumo.TotalCompras totalCompras,
 						consumo.UltimaVezExpresada ultimaVez,
-						consumo.Constancia.ParaMostrar constancia,
+						consumo.Constancia.Clave constancia,
 						consumo.HaySerie haySerie,
 						consumo.HayCambioReal hayCambioReal,
-						consumo.ParaElAsistente paraElAsistente;
+						consumo.Clave clave;
 					foreach (mes in consumo.Meses) {
 						print mes.MesExpresado mes,
 							mes.Unidades unidades,
@@ -895,7 +899,7 @@ namespace Compras.App
 						busqueda.CuantasCompras cuantasCompras,
 						busqueda.TotalUnidades totalUnidades,
 						busqueda.TotalGastado totalGastado,
-						busqueda.ParaElAsistente paraElAsistente;
+						busqueda.Clave clave;
 					foreach (producto in busqueda.Productos) {
 						print producto nombre;
 					}
@@ -928,18 +932,18 @@ namespace Compras.App
 					lista = compras.LoQueVaAFaltar(@hoy);
 					print lista.Existe() existe,
 						lista.CuantosTocan cuantosTocan,
-						lista.ParaElAsistente paraElAsistente;
+						lista.Clave clave;
 					foreach (producto in lista.Productos) {
 						print producto.Sku sku,
 							producto.Descripcion descripcion,
-							producto.Cadencia.ParaMostrar cadencia,
-							producto.Cadencia.Compacta cadenciaCompacta,
+							producto.ClaveDeLaCadencia cadencia,
 							producto.DiasTipicos diasTipicos,
 							producto.UltimaVezExpresada ultimaVez,
 							producto.DiasDesdeLaUltima diasDesdeLaUltima,
 							producto.DiasDeMas diasDeMas,
+							producto.DiasQueFaltan diasQueFaltan,
 							producto.Toca toca,
-							producto.ParaElAsistente paraElAsistente;
+							producto.Clave clave;
 					}
 				}
 			")
@@ -959,7 +963,7 @@ namespace Compras.App
 							promocion.Sku sku,
 							promocion.ValidaHastaExpresada validaHasta,
 							promocion.DiasQueQuedanEl(@fecha) diasQueQuedan,
-							promocion.ParaElAsistente paraElAsistente;
+							promocion.Clave clave;
 					}
 				}
 			")
@@ -976,14 +980,13 @@ namespace Compras.App
 					pendientes = compras.AbastecimientosPendientes(@fecha);
 					foreach (pendiente in pendientes) {
 						print pendiente.NombreDeLaCategoria categoria,
-							pendiente.Categoria.Titulo titulo,
 							pendiente.UltimaCompra ultimaCompra,
 							pendiente.DiasDesdeLaUltima diasDesdeLaUltima,
 							pendiente.DiasEsperados diasEsperados,
 							pendiente.EsRitmoObservado esRitmoObservado,
 							pendiente.EsComestible esComestible,
 							pendiente.NombreDeLaSeveridad severidad,
-							pendiente.ParaElAsistente paraElAsistente;
+							pendiente.Clave clave;
 					}
 				}
 			")
@@ -992,47 +995,63 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		/// <summary>
+		/// EL IDIOMA DEL REGISTRO del supermercado, que es el que contestan las caras que le hablan al
+		/// modelo y la consola. Su dueno es la redaccion; esto es el nombre con que las cascaras lo
+		/// piden, para que no tengan que nombrarla.
+		/// </summary>
+		public const string IdiomaDelRegistro = Frases.Frases.IdiomaDelRegistro;
+
 		// Las mismas vistas, ya tipadas. Es lo que consumen la UI y las tools MCP; las
 		// variantes que devuelven el string crudo quedan para diagnostico.
+		//
+		// CADA UNA PIDE UN IDIOMA, y no lo adivina: el dominio entrega una clave y sus valores, y
+		// quien pregunta es el unico que sabe en que idioma quiere leerlos. La caratula pasa el de la
+		// persona; el servidor del asistente y la consola pasan el del registro.
 		public IReadOnlyList<CompraEnLista> Compras() =>
 			ProyeccionDeVistas.Lista(ListaDeCompras());
 
-		public CompraDetallada Detalle(string numero) =>
-			ProyeccionDeVistas.Detalle(DetalleDeCompra(numero));
+		public CompraDetallada Detalle(string numero, string idioma) =>
+			ProyeccionDeVistas.Detalle(DetalleDeCompra(numero), Frases.Frases.De(idioma));
 
-		public CanastaDelMesVista Canasta(int anio, int mes) =>
-			ProyeccionDeVistas.Canasta(CanastaDelMes(anio, mes));
+		public CanastaDelMesVista Canasta(int anio, int mes, string idioma) =>
+			ProyeccionDeVistas.Canasta(CanastaDelMes(anio, mes), Frases.Frases.De(idioma));
 
 		/// <summary>Cuántas compras se miran para reconocer la firma, si nadie dice otra cosa.</summary>
 		// Ocho son unas dos meses de compras semanales: alcanza para que "lo de siempre"
 		// se repita y es poco para que un cambio de habitos quede sepultado.
 		public const int ComprasQueSeMiranParaLaFirma = 8;
 
-		public FirmaDeLaSemana Firma(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
-			ProyeccionDeVistas.Firma(FirmaDeLaSemana(cuantasCompras));
+		public FirmaDeLaSemana Firma(string idioma, int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Firma(FirmaDeLaSemana(cuantasCompras), Frases.Frases.De(idioma));
 
-		public CambioDeLaCanasta Cambio(DateTime corte, int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
-			ProyeccionDeVistas.Cambio(CambioEnLaCanasta(corte, cuantasCompras));
+		public CambioDeLaCanasta Cambio(DateTime corte, string idioma,
+			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Cambio(CambioEnLaCanasta(corte, cuantasCompras), Frases.Frases.De(idioma));
 
 		// LAS DOS DEL QUIEBRE QUE ENCUENTRA EL DOMINIO. Son las que usa la portada; las
 		// que reciben el corte se quedan para quien quiera preguntar por una fecha suya.
-		public CambioDeLaCanasta CambioDelQuiebre(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
-			ProyeccionDeVistas.Cambio(CambioEncontrado(cuantasCompras));
+		public CambioDeLaCanasta CambioDelQuiebre(string idioma,
+			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Cambio(CambioEncontrado(cuantasCompras), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<RitmoQueCambio> RitmosDelQuiebre(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
-			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmoDelQuiebre(cuantasCompras));
+		public IReadOnlyList<RitmoQueCambio> RitmosDelQuiebre(string idioma,
+			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmoDelQuiebre(cuantasCompras),
+				Frases.Frases.De(idioma));
 
-		public Vistas.RitmoDeUnProducto Ritmo(string producto, DateTime corte) =>
-			ProyeccionDeVistas.Ritmo(RitmoDeUnProducto(producto, corte));
+		public Vistas.RitmoDeUnProducto Ritmo(string producto, DateTime corte, string idioma) =>
+			ProyeccionDeVistas.Ritmo(RitmoDeUnProducto(producto, corte), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(DateTime corte) =>
-			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmo(corte));
+		public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(DateTime corte, string idioma) =>
+			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmo(corte), Frases.Frases.De(idioma));
 
-		public RitmoDelSuperVista Ritmo() =>
-			ProyeccionDeVistas.RitmoDelSuper(RitmoDelSuper());
+		public RitmoDelSuperVista Ritmo(string idioma) =>
+			ProyeccionDeVistas.RitmoDelSuper(RitmoDelSuper(), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<PrecioQueCambio> Precios(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
-			ProyeccionDeVistas.Precios(PreciosDeLosHabituales(cuantasCompras));
+		public IReadOnlyList<PrecioQueCambio> Precios(string idioma,
+			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Precios(PreciosDeLosHabituales(cuantasCompras), Frases.Frases.De(idioma));
 
 		/// <summary>La ventana contra la que se mira el pasado, si nadie pide otra.</summary>
 		// ESPEJO DEL JUICIO DEL DOMINIO, y la copia esta AMARRADA. El juicio es suyo
@@ -1044,55 +1063,60 @@ namespace Compras.App
 		// mirar una ventana distinta de la que el dominio documenta.
 		public const int VentanaPorDefectoEnMeses = 3;
 
-		public CanastaFrenteAlPasadoVista FrenteAlPasado(DateTime hoy,
+		public CanastaFrenteAlPasadoVista FrenteAlPasado(DateTime hoy, string idioma,
 			int mesesAtras = VentanaPorDefectoEnMeses,
 			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
-			ProyeccionDeVistas.FrenteAlPasado(CanastaFrenteA(hoy, mesesAtras, cuantasCompras));
+			ProyeccionDeVistas.FrenteAlPasado(CanastaFrenteA(hoy, mesesAtras, cuantasCompras),
+				Frases.Frases.De(idioma));
 
-		public RebajaVista Rebaja(string numeroDeCompra) =>
-			ProyeccionDeVistas.Rebaja(RebajaDesde(numeroDeCompra));
+		public RebajaVista Rebaja(string numeroDeCompra, string idioma) =>
+			ProyeccionDeVistas.Rebaja(RebajaDesde(numeroDeCompra), Frases.Frases.De(idioma));
 
-		public SerieDePreciosVista Serie(string termino) =>
-			ProyeccionDeVistas.Serie(SerieDePrecios(termino));
+		public SerieDePreciosVista Serie(string termino, string idioma) =>
+			ProyeccionDeVistas.Serie(SerieDePrecios(termino), Frases.Frases.De(idioma));
 
-		public RecorridoDeSucursalesVista Recorrido() =>
-			ProyeccionDeVistas.Recorrido(SucursalesQueFrecuenta());
+		public RecorridoDeSucursalesVista Recorrido(string idioma) =>
+			ProyeccionDeVistas.Recorrido(SucursalesQueFrecuenta(), Frases.Frases.De(idioma));
 
-		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
-			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));
+		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues,
+			string idioma) =>
+			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues),
+				Frases.Frases.De(idioma));
 
-		public CanastasComparadas ComparacionConElMesAnterior() =>
-			ProyeccionDeVistas.Comparacion(ComparacionConElMesPasado());
+		public CanastasComparadas ComparacionConElMesAnterior(string idioma) =>
+			ProyeccionDeVistas.Comparacion(ComparacionConElMesPasado(), Frases.Frases.De(idioma));
 
-		public CanastasComparadas ComparacionConElAnioAnterior() =>
-			ProyeccionDeVistas.Comparacion(ComparacionConElAnioPasado());
+		public CanastasComparadas ComparacionConElAnioAnterior(string idioma) =>
+			ProyeccionDeVistas.Comparacion(ComparacionConElAnioPasado(), Frases.Frases.De(idioma));
 
 		public RangoDelHistorialVista Rango() =>
 			ProyeccionDeVistas.Rango(RangoDelHistorial());
 
-		public ConsumoEnElTiempo Consumo(string termino) =>
-			ProyeccionDeVistas.Consumo(ConsumoDe(termino));
+		public ConsumoEnElTiempo Consumo(string termino, string idioma) =>
+			ProyeccionDeVistas.Consumo(ConsumoDe(termino), Frases.Frases.De(idioma));
 
-		public ComprasHalladas Halladas(string termino) =>
-			ProyeccionDeVistas.Halladas(ComprasCon(termino));
+		public ComprasHalladas Halladas(string termino, string idioma) =>
+			ProyeccionDeVistas.Halladas(ComprasCon(termino), Frases.Frases.De(idioma));
 
-		public ListaDeLaProximaCompra Lista(DateTime hoy) =>
-			ProyeccionDeVistas.LaProximaCompra(LoQueVaAFaltar(hoy));
+		public ListaDeLaProximaCompra Lista(DateTime hoy, string idioma) =>
+			ProyeccionDeVistas.LaProximaCompra(LoQueVaAFaltar(hoy), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<PromocionVista> Promociones(DateTime fecha) =>
-			ProyeccionDeVistas.Promociones(PromocionesVigentesEl(fecha));
+		public IReadOnlyList<PromocionVista> Promociones(DateTime fecha, string idioma) =>
+			ProyeccionDeVistas.Promociones(PromocionesVigentesEl(fecha), Frases.Frases.De(idioma));
 
-		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
-			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));
+		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta, string idioma) =>
+			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes(DateTime fechaDeConsulta) =>
-			ProyeccionDeVistas.GarantiasVigentes(GarantiasVigentesEl(fechaDeConsulta));
+		public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes(DateTime fechaDeConsulta, string idioma) =>
+			ProyeccionDeVistas.GarantiasVigentes(GarantiasVigentesEl(fechaDeConsulta), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<GarantiaDeProducto> GarantiasPorVencer(DateTime fechaDeConsulta) =>
-			ProyeccionDeVistas.GarantiasVigentes(GarantiasPorVencerEl(fechaDeConsulta));
+		public IReadOnlyList<GarantiaDeProducto> GarantiasPorVencer(DateTime fechaDeConsulta, string idioma) =>
+			ProyeccionDeVistas.GarantiasVigentes(GarantiasPorVencerEl(fechaDeConsulta), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes(DateTime fechaDeConsulta) =>
-			ProyeccionDeVistas.Abastecimientos(AbastecimientosPendientesEl(fechaDeConsulta));
+		public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes(DateTime fechaDeConsulta,
+			string idioma) =>
+			ProyeccionDeVistas.Abastecimientos(AbastecimientosPendientesEl(fechaDeConsulta),
+				Frases.Frases.De(idioma));
 
 		// ------------------------------------------------- IDiarioDeLaApp (Portador)
 

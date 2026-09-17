@@ -30,8 +30,21 @@ namespace Compras.Dominio
 	/// No es sealed: existe para que se herede (las hojas sí se sellan).
 	internal abstract class Presentacion
 	{
-		/// <summary>La forma en que se vende, ya dicha: "unidad", "1 L", "12 u por paquete".</summary>
-		internal abstract string Expresada { get; }
+		/// <summary>
+		/// EL CODIGO de la forma en que se vende: `unidad`, `pieza` o `paquete`. Identidad, y lo unico
+		/// que cruza el wire junto con los tres valores de abajo. Como se DICE -- "unidad", "1 L",
+		/// "12 u por paquete" -- lo busca con este codigo la capa que redacta, en su idioma.
+		/// </summary>
+		internal abstract string Clave { get; }
+
+		/// <summary>Cuanto mide una pieza. TOTAL: cero donde la forma no lo tiene, y el codigo lo dice.</summary>
+		internal abstract decimal Contenido { get; }
+
+		/// <summary>Cuantas piezas trae un empaque. TOTAL: cero donde la forma no lo tiene.</summary>
+		internal abstract int Piezas { get; }
+
+		/// <summary>El simbolo de la unidad con que se mide una pieza. Vacio donde la forma no mide.</summary>
+		internal abstract string SimboloDelContenido { get; }
 
 		/// <summary>La unidad en la que se expresa el total: u, kg o L.</summary>
 		internal abstract UnidadDeVenta UnidadBase { get; }
@@ -99,7 +112,10 @@ namespace Compras.Dominio
 
 		private sealed class Suelta : Presentacion
 		{
-			internal override string Expresada => "unidad";
+			internal override string Clave => "unidad";
+			internal override decimal Contenido => 0m;
+			internal override int Piezas => 0;
+			internal override string SimboloDelContenido => "";
 			internal override UnidadDeVenta UnidadBase => UnidadDeVenta.Unidad;
 
 			internal override decimal TotalEnBase(int cantidad) => Positiva(cantidad);
@@ -121,8 +137,10 @@ namespace Compras.Dominio
 				this.unidad = unidad;
 			}
 
-			internal override string Expresada =>
-				$"{contenido.ToString("0.###", CultureInfo.InvariantCulture)} {unidad.Simbolo}";
+			internal override string Clave => "pieza";
+			internal override decimal Contenido => contenido;
+			internal override int Piezas => 0;
+			internal override string SimboloDelContenido => unidad.Simbolo;
 
 			internal override UnidadDeVenta UnidadBase => unidad.Base;
 
@@ -143,7 +161,10 @@ namespace Compras.Dominio
 				piezas = piezasPorEmpaque;
 			}
 
-			internal override string Expresada => $"{piezas} u por paquete";
+			internal override string Clave => "paquete";
+			internal override decimal Contenido => 0m;
+			internal override int Piezas => piezas;
+			internal override string SimboloDelContenido => "";
 			internal override UnidadDeVenta UnidadBase => UnidadDeVenta.Unidad;
 
 			internal override decimal TotalEnBase(int cantidad) => piezas * Positiva(cantidad);

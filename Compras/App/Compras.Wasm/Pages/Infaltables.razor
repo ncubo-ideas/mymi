@@ -1,6 +1,7 @@
 @page "/infaltables"
 @using Compras.App.Vistas
 @using Compras.App
+@inject Textos textos
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 
@@ -11,20 +12,20 @@
    lectura tiene que caber en una tarjeta, y ahí lo que importa es reconocerse de un
    vistazo; acá lo que importa es poder recorrer la lista y entrar a un producto. *@
 
-<PageTitle>Los que nunca faltan · La Guaria y vos</PageTitle>
+<PageTitle>@textos["infaltables.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
 <Volver Respaldo="" />
 
-<h1>Los que nunca faltan</h1>
+<h1>@textos["infaltables.titulo"]</h1>
 <p class="text-body-secondary mb-4">
-    Esos productos que una y otra vez terminan en tu carrito.
+    @textos["infaltables.bajada"]
 </p>
 
 @if (!estado.EstaArriba)
 {
     <div class="aviso">
-        La app todavía no abrió en esta computadora.
-        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+        @textos["comun.sinAbrir"]
+        <a href="">@textos["comun.sinAbrirEnlace"]</a> @textos["comun.sinAbrirCola"]
     </div>
 }
 else if (firma is null || !firma.Existe)
@@ -32,12 +33,12 @@ else if (firma is null || !firma.Existe)
     @* LAS DOS FORMAS DE NO TENER RESPUESTA vienen distinguidas por el dominio, y acá se
        imprime la línea que él escribió en vez de inventar una: "no hay compras todavía" no
        es lo mismo que "no hay nada que se repita". *@
-    <p class="text-body-secondary">@(firma?.ParaElAsistente ?? "Todavía no hay compras.")</p>
+    <p class="text-body-secondary">@(firma?.ParaElAsistente ?? textos["comun.sinCompras"])</p>
 }
 else
 {
     <p class="ritmo-rotulo mb-3">
-        Mirando tus últimas @firma.ComprasMiradas compras.
+        @textos.Con("comun.mirando", ("compras", firma.ComprasMiradas.ToString()))
     </p>
 
     <div class="list-group mb-4">
@@ -59,7 +60,7 @@ else
                     @* "casi cada vez que vas" y no "en 7 de 8 compras": la fraccion es el
                        mecanismo de la firma, no como ella piensa su despensa. Los puntos de
                        al lado dibujan la proporcion exacta para quien la quiera. *@
-                    <span class="ritmo-rotulo">@EnPalabras(habitual)</span>
+                    <span class="ritmo-rotulo">@textos[habitual.EstaEnTodas ? "infaltables.cadaVez" : "infaltables.casiCadaVez"]</span>
                 </span>
                 <span class="d-inline-flex align-items-center gap-2">
                     <span class="puntos" aria-hidden="true">
@@ -80,9 +81,9 @@ else
        dos cortes de la misma canasta. *@
     @if (canasta is not null && canasta.HayCompras)
     {
-        <h2>¿En qué se llena tu carrito?</h2>
+        <h2>@textos["infaltables.enQueSeLlena"]</h2>
         <p class="ritmo-rotulo mb-2">
-            @Mes(canasta.Mes)/@canasta.Anio &middot; @Colones(canasta.GastoTotal)
+            @textos[$"comun.mes.{canasta.Mes}"]/@canasta.Anio &middot; @Colones(canasta.GastoTotal)
         </p>
         <div class="list-group mb-4">
             @foreach (var departamento in canasta.Departamentos)
@@ -119,20 +120,7 @@ else
     private void VerProducto(string descripcion) =>
         navegacion.NavigateTo($"producto/{Uri.EscapeDataString(descripcion)}");
 
-    // La frecuencia dicha como se dice. El corte de "casi" es la propia firma: para entrar
-    // hay que estar en la mitad o mas, asi que aca no llega nada raro.
-    private static string EnPalabras(ProductoQueVuelve habitual) =>
-        habitual.EstaEnTodas
-            ? "cada vez que vas"
-            : "casi cada vez que vas";
-
     private static string Foto(string sku) => Compras.App.Vistas.Fotos.De(sku);
 
-    private static string Mes(int mes) => mes switch
-    {
-        1 => "ene", 2 => "feb", 3 => "mar", 4 => "abr", 5 => "may", 6 => "jun",
-        7 => "jul", 8 => "ago", 9 => "sep", 10 => "oct", 11 => "nov", _ => "dic",
-    };
-
-    private static string Colones(decimal monto) => Plata.Colones(monto);
+    private string Colones(decimal monto) => textos.Monto(monto);
 }
