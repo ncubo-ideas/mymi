@@ -613,6 +613,37 @@ Si con eso da 4 de 4, la causa era nuestra y el titular de arriba se reescribe e
 4, la causa está en el modelo nuevo y hay que buscar en otro lado. **Hasta entonces las dos
 lecturas siguen abiertas, y esta sección no debe citarse como «iOS 27 rompió el tool calling».**
 
+### Y en la app, con los tres módulos: el cruce se contesta negándolo
+
+A las 12:08, en la pestaña Asistente del Host sobre iOS 27 y con exámenes, compras y cargas
+instalados, la pregunta que este proyecto llama el boss final — **el cruce entre módulos**, escrita
+en inglés porque el teléfono está en inglés:
+
+> **Do my last purchases have anything to do with my cholesterol levels?**
+>
+> «Mis últimos compras no tienen nada a hacer con mis niveles de colesterol. Los datos de mis
+> compras están registrados en mi dispositivo y no están vinculados directamente a los niveles de
+> colesterol que están siendo monitoreados por mi institución médica.»
+
+Tres cosas, y ninguna es el modelo siendo tonto:
+
+1. **Niega el cruce en vez de consultarlo.** Tenía `compras_resumen` y `examenes_resumen` a mano y
+   la respuesta no muestra un solo dato: afirma que no hay vínculo y se inventa el porqué. Es la
+   misma forma del §12 —contestar en vez de llamar— ahora en el camino del producto y no en la
+   sonda. *La traza «qué pasó por debajo» quedó plegada en la captura, así que **no está medido**
+   cuántas consultas hizo; lo que se ve es que la respuesta no se apoya en ninguna.*
+2. **Contesta en español una pregunta escrita en inglés**, en un teléfono en inglés y con la UI en
+   inglés. El encuadre corto del teléfono está escrito en español y arrastra la respuesta con él.
+   Por la regla 1 de [`reglas-de-localizacion.md`](../../Metodologia/Guias/reglas-de-localizacion.md)
+   el idioma del Host sigue **a la persona**, así que esto es un defecto nuestro, no del modelo.
+   Y encima sale con la gramática rota —«mis últimos compras», «no tienen nada a hacer»—, que es lo
+   que pasa cuando un modelo chico traduce a un idioma al que nadie le pidió ir.
+3. **Habla en primera persona como si fuera la persona** — «mis compras», «mi dispositivo», «mi
+   institución médica»—, en vez de hablarle a ella. El encuadre tampoco sujeta eso.
+
+**Para el producto, el punto 1 es el que duele**: el cruce entre módulos es la promesa grande, y en
+la versión de iOS que la gente va a tener, por esta puerta, hoy se contesta negándolo.
+
 ### De paso, dos cosas que sí quedaron firmes
 
 - **El modelo de iOS 27 genera en este aparato** (`estado = 2`), y el paso 2 —componer con hechos
