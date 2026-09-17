@@ -75,7 +75,7 @@ namespace Municipalidad.Dominio.Pruebas
 
 			// M-4: la lectura ya no devuelve un JSON que haya que partir, asi que la afirmacion pasa de
 			// buscar una subcadena a nombrar la FILA: el rubro y el periodo de la fila 0.
-			RegistroDeVencimientos loQueVence = api.VencimientosAl(new DateTime(2025, 10, 15), 7);
+			RegistroDeVencimientos loQueVence = api.VencimientosAl(new DateTime(2025, 10, 15), 7, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -114,7 +114,7 @@ namespace Municipalidad.Dominio.Pruebas
 					"MunicipalidadAPI.PonerAlCobro, con tres partes");
 
 				Assert.That(
-					api.VencimientosAl(new DateTime(2025, 10, 15), 7).Periodo,
+					api.VencimientosAl(new DateTime(2025, 10, 15), 7, "es").Periodo,
 					Is.Empty,
 					"Y nada de eso llego al actor: la guarda de C# corre antes del perform. Cero filas "
 					+ "es el mismo hecho que antes decia la ausencia de la etiqueta 'periodo' en el JSON.");
@@ -174,7 +174,7 @@ namespace Municipalidad.Dominio.Pruebas
 			MunicipalidadApp otraVez = LaAppSobreEstaCarpeta();
 			MunicipalidadAPI despues = new MunicipalidadAPI(otraVez);
 
-			RegistroDeVencimientos loQueVence = despues.VencimientosAl(new DateTime(2025, 10, 15), 7);
+			RegistroDeVencimientos loQueVence = despues.VencimientosAl(new DateTime(2025, 10, 15), 7, "es");
 
 			Assert.Multiple(() =>
 			{

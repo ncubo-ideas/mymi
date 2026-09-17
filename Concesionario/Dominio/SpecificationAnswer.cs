@@ -6,6 +6,10 @@ namespace Concesionario.Dominio
 	/// Cualquier respuesta que da esta especificacion: el valor publicado JUNTO CON la revision de
 	/// la que salio, o la constancia de que no hay nada publicado. Una respuesta sin procedencia
 	/// no existe -- es lo que separa este modulo de un PDF.
+	/// <para>
+	/// Sale como FORMA mas valores ya tipados y nunca como una frase: la redaccion vive donde se
+	/// elige el idioma, y el dominio no elige uno.
+	/// </para>
 	/// </summary>
 	internal abstract class SpecificationAnswer
 	{
@@ -37,10 +41,22 @@ namespace Concesionario.Dominio
 		internal abstract bool IsPublished();
 
 		/// <summary>
-		/// La respuesta en una frase, con su procedencia adentro. Total: la ausencia tambien se
-		/// dice con palabras, y nunca con un cero ni con una cadena vacia.
+		/// Si hay algo publicado, por su codigo. Total, y es lo mismo que <see cref="IsPublished"/>
+		/// dicho como nombre: el booleano lo pregunta quien decide, el codigo lo lleva quien redacta.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract string TheShapeItHas();
+
+		/// <summary>
+		/// Lo que el item mismo tiene que decir, sin la procedencia. Total: lo no publicado contesta
+		/// vacio, porque no hay ningun item que haya dicho nada.
+		/// </summary>
+		internal abstract string TheClauseItCarries();
+
+		/// <summary>
+		/// De que se pregunto, para que la ausencia nombre lo que falta. Total: lo publicado contesta
+		/// vacio, porque ahi el sujeto ya esta dentro de la clausula.
+		/// </summary>
+		internal abstract string TheSubjectItIsAbout();
 
 		/// <summary>
 		/// El codigo de la revision de la que salio. Total: lo no publicado contesta vacio, y eso

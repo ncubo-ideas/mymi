@@ -97,7 +97,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(assessment.DistanceIsSuspended, Is.True);
 			Assert.That(assessment.SuspendedByAnAbsentReading, Is.True);
 			Assert.That(assessment.SuspendedByUnitMismatch, Is.False);
-			Assert.That(assessment.Describe(), Does.Contain("ninguna lectura usable"));
+			Assert.That(
+				assessment.TheReason().ClauseCodes, Does.Contain(LimitClause.AbsentReading));
 		}
 
 		// ===== LA OTRA MITAD OPCIONAL DEL SLICE: la del ancla =============================

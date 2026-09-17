@@ -46,17 +46,47 @@ public sealed class ConsentWatch : IDisposable
 		string root = dispatcher.Modules.Root;
 		if (!Directory.Exists(root)) return;
 
-		peephole = new FileSystemWatcher(root, "installation.json")
+		// HAY PLATAFORMAS QUE NO MIRAN ARCHIVOS, y en ellas esto NO ES UNA FALLA: es que no hay
+		// nada que mirar. iOS no implementa System.IO.FileSystemWatcher -- lanza
+		// PlatformNotSupportedException -- y hasta el 2026-09-15 eso subia hasta el arranque del
+		// shell, que lo registraba como «shell fallo». Se veia como un Host roto y no lo era.
+		//
+		// LO QUE SE PIERDE AHI, Y ES NADA: este watch existe para UN solo caso -- que installation
+		// .json lo edite algo de AFUERA de la app. El switch que la persona mueve DENTRO ya no
+		// pasa por aca: Shell.SetConsent escribe el archivo, llama a ReloadConsent() en el acto y
+		// rehace la foto, justamente porque esperar la rafaga de 300 ms seria un switch que tarda.
+		//
+		// Y en iOS el caso de afuera no existe: los modulos viven en Library/Application Support,
+		// y UIFileSharingEnabled solo expone Documents/. No hay editor, no hay adb, no hay como
+		// alcanzar ese archivo. En el escritorio si importa -- HostTools documenta editarlo a mano
+		// -- y en Android tambien, donde ademas inotify funciona.
+		//
+		// SE PREGUNTA CAZANDO LA EXCEPCION Y NO CON OperatingSystem.IsIOS(). Que la plataforma
+		// soporte o no mirar archivos lo contesta el runtime; una lista de plataformas escrita a
+		// mano se queda vieja sin que nadie se entere, y falla en la direccion peor -- silencio
+		// donde si habia algo que vigilar.
+		try
 		{
-			IncludeSubdirectories = true,
-			NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
-			EnableRaisingEvents = true,
-		};
+			peephole = new FileSystemWatcher(root, "installation.json")
+			{
+				IncludeSubdirectories = true,
+				NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
+				EnableRaisingEvents = true,
+			};
 
-		peephole.Changed += Wake;
-		peephole.Created += Wake;
-		peephole.Deleted += Wake;
-		peephole.Renamed += Wake;
+			peephole.Changed += Wake;
+			peephole.Created += Wake;
+			peephole.Deleted += Wake;
+			peephole.Renamed += Wake;
+		}
+		catch (PlatformNotSupportedException)
+		{
+			trace?.Invoke(
+				"consent: this platform cannot watch files, so an edit from outside the app will "
+				+ "not be noticed. The person's own switch does not depend on this: it reloads as "
+				+ "it is moved.");
+			return;
+		}
 
 		trace?.Invoke($"watching consent in {root}");
 

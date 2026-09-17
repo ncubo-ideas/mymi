@@ -166,9 +166,9 @@ namespace Concesionario.Dominio.Pruebas
 
 		private string TheSentenceFor(string systemCode)
 		{
-			return specification.DescribeCoverage(
-				systemCode, 36, 100000, DistanceUnitCode.UnitA,
-				DeliveredAt, 10, 20000, DistanceUnitCode.UnitA, AsOf);
+			return TheSentenceTheDoorWouldCompose.TheCoverage(
+				specification, systemCode, 36, 100000, DistanceUnitCode.UnitA,
+				DeliveredAt, 10, 20000, DistanceUnitCode.UnitA, AsOf, TheLanguage.OfTheRecord);
 		}
 	}
 }

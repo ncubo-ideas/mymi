@@ -4,7 +4,7 @@ namespace Concesionario.Dominio
 {
 	/// <summary>
 	/// La dimension de distancia suspendida porque el limite y las mediciones estan en unidades
-	/// distintas. No se convierte: se deja de comparar y se dice cual contra
+	/// distintas. No se convierte: se deja de comparar y se nombran las dos, cual contra
 	/// cual.
 	/// </summary>
 	internal sealed class ADimensionSuspendedByAUnitMismatch : LimitStanding
@@ -34,21 +34,37 @@ namespace Concesionario.Dominio
 			get { return true; }
 		}
 
-		/// <summary>Nombra las dos unidades y dice que no se convierten.</summary>
-		internal override string Describe()
+		/// <summary><see cref="LimitClause.UnitMismatch"/>.</summary>
+		internal override string TheClauseItAdds()
 		{
-			return "distancia: no se puede evaluar porque el límite está en " + _limitUnit.Name
-				+ " y las mediciones están en " + _mismatchedUnit.Name
-				+ ", y las unidades nunca se convierten";
+			return LimitClause.UnitMismatch;
+		}
+
+		/// <summary>La distancia.</summary>
+		internal override string TheDimensionItMeasures()
+		{
+			return IntervalDimension.Distance;
+		}
+
+		/// <summary>La unidad en que esta el limite, por su nombre.</summary>
+		internal override string TheUnitOfTheLimit()
+		{
+			return _limitUnit.Name;
+		}
+
+		/// <summary>La unidad en que estan las mediciones, por su nombre.</summary>
+		internal override string TheUnitTheMeasurementsAreIn()
+		{
+			return _mismatchedUnit.Name;
 		}
 
 		/// <summary>
-		/// No hay resta que hacer entre dos unidades distintas. La frase es la del dominio, que
-		/// nombra cual contra cual.
+		/// No hay resta que hacer entre dos unidades distintas, y lo que queda nombra las mismas dos
+		/// unidades que la clausula.
 		/// </summary>
 		internal override ARemainder WhatRemains()
 		{
-			return ARemainder.UnitsThatDoNotMatch(Describe());
+			return ARemainder.UnitsThatDoNotMatch(_limitUnit.Name, _mismatchedUnit.Name);
 		}
 	}
 }

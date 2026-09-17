@@ -1,9 +1,10 @@
 @inject IJSRuntime js
+@inject Texts texts
 
 <button type="button" id="theme-toggle" @onclick="Flip"
         class="@(OnNight ? "iconbtn iconbtn--onNight" : "iconbtn")"
-        title="@(dark ? "Cambiar al tema claro" : "Cambiar al tema oscuro")"
-        aria-label="@(dark ? "Cambiar al tema claro" : "Cambiar al tema oscuro")">
+        title="@(dark ? texts["appearance.toLight"] : texts["appearance.toDark"])"
+        aria-label="@(dark ? texts["appearance.toLight"] : texts["appearance.toDark"])">
     <Glyph Name="@(dark ? "sun" : "moon")" Size="19" />
 </button>
 

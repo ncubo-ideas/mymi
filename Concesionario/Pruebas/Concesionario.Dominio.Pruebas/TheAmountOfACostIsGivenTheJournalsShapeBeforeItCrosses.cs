@@ -15,7 +15,7 @@ namespace Concesionario.Dominio.Pruebas
 	// POR QUE ESTA PRUEBA MIRA EL FUENTE Y NO UNA RESPUESTA, dicho antes de que alguien lo tome por
 	// pereza. CL-2 §3.1 midio que Money.Expressed tapa esa perdida SOLO para una moneda que el
 	// conjunto NOMBRA: la vuelve a decir con los decimales de esa moneda, asi que 145.00 y 145 salen
-	// los dos como ₡145.00. Para una que no nombra, la escala SE VE -- y es ahi donde el Normalized de
+	// los dos como ₡145,00. Para una que no nombra, la escala SE VE -- y es ahi donde el Normalized de
 	// la puerta es lo unico que impide que vivo y replayado discrepen.
 	//
 	// Y CL-4 CIERRA ESA MISMA PUERTA: WireName.Currency rechaza en el borde todo codigo que el

@@ -56,6 +56,18 @@ namespace Concesionario.App
 		private const string TheModelAtDelivery = "YARIS-2019";
 		private const string TheVinAtDelivery = "1HGCM82633A004352";
 
+		// THE LANGUAGE THIS SURFACE ASKS THE DOOR IN, and it is the RECORD'S, not the person's.
+		//
+		// The standalone screen has a choice to read -navigator.languages, read once at boot- and
+		// passes what it read. This form has nothing to read: the Host hands a surface a granted
+		// folder and nothing else, and Gnothi.Contract carries no language. So the sentences the
+		// domain composes come back in the language the dealership keeps its record in, which is
+		// exactly what these views said before the door learned a second language.
+		//
+		// A LANGUAGE CHANNEL FOR THE HOSTED FORM IS A DECISION WITH AN OWNER, not something a merge
+		// settles: it is the contract that would have to carry it.
+		private const string TheLanguageOfTheRecord = Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly string folder;
 
 		public DealershipSurface(string grantedFolder)
@@ -113,8 +125,8 @@ namespace Concesionario.App
 		{
 			hasData = true,
 			vin = api.ReadVin(),
-			plate = ThePlateOfThisVehicle.ReadThrough(api, Now()),
-			specification = WhatTheManufacturerPublished.ReadThrough(api),
+			plate = ThePlateOfThisVehicle.ReadThrough(api, Now(), TheLanguageOfTheRecord),
+			specification = WhatTheManufacturerPublished.ReadThrough(api, TheLanguageOfTheRecord),
 			due = api.CountDue(),
 			overdue = api.CountOverdue(),
 			scheduled = api.CountScheduled(),
@@ -150,8 +162,9 @@ namespace Concesionario.App
 
 			return (object)new
 			{
-				vehicle = WhereThisVehicleStands.ReadThrough(api, asOf),
-				operations = WhereEachOperationStands.ReadThrough(api, asOf),
+				vehicle = WhereThisVehicleStands.ReadThrough(api, asOf, TheLanguageOfTheRecord),
+				operations =
+					WhereEachOperationStands.ReadThrough(api, asOf, TheLanguageOfTheRecord),
 				dueStates,
 			};
 		});
@@ -164,7 +177,8 @@ namespace Concesionario.App
 			DateTime asOf = Now();
 			return (object)new
 			{
-				stays = TheStaysOfThisVehicle.ReadThrough(api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf),
+				stays = TheStaysOfThisVehicle.ReadThrough(
+					api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf, TheLanguageOfTheRecord),
 			};
 		});
 
@@ -179,9 +193,11 @@ namespace Concesionario.App
 
 			return (object)new
 			{
-				spent = WhatThisVehicleHasCost.ReadThrough(api, aYearBack, asOf, twoYearsBack, aYearBack),
-				driven = HowThisVehicleIsDriven.ReadThrough(api, aYearBack, asOf, twoYearsBack, aYearBack),
-				services = WhatTheServicesCost.ReadThrough(api, asOf),
+				spent = WhatThisVehicleHasCost.ReadThrough(
+					api, aYearBack, asOf, twoYearsBack, aYearBack, TheLanguageOfTheRecord),
+				driven = HowThisVehicleIsDriven.ReadThrough(
+					api, aYearBack, asOf, twoYearsBack, aYearBack, TheLanguageOfTheRecord),
+				services = WhatTheServicesCost.ReadThrough(api, asOf, TheLanguageOfTheRecord),
 			};
 		});
 

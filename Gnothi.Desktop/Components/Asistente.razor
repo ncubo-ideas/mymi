@@ -11,21 +11,21 @@
     manana Puerta 2 se borra, este archivo se va con ella y el Host no cambia una linea.
 *@
 
-<h1>Asistente</h1>
-<p class="sub">Tus módulos responden; el modelo redacta.</p>
+<h1>@T("asistente.titulo")</h1>
+<p class="sub">@T("asistente.sub")</p>
 
 @if (Config.NeedsKey && !Config.KeyPresent)
 {
     <div class="notice">
-        Todavía no hay una llave para <strong>@Config.Provider().Name</strong>.
-        Ponela en <button class="link" @onclick="OpenSettings">Ajustes</button> para usar el asistente.
+        @T("asistente.sin-llave", ("proveedor", Config.Provider().Name))
+        <button class="link" @onclick="OpenSettings">@T("asistente.sin-llave.accion")</button>
     </div>
 }
 
 <div class="chat">
     @if (turns.Count == 0)
     {
-        <div class="empty">Preguntá algo sobre tus módulos.</div>
+        <div class="empty">@T("asistente.vacio")</div>
     }
     @foreach (Turn t in turns)
     {
@@ -33,7 +33,7 @@
 
         @if (t.Trace.Count > 0)
         {
-            <div class="trace-label">· qué pasó por debajo</div>
+            <div class="trace-label">· @T("asistente.traza")</div>
             @foreach (string line in t.Trace)
             {
                 <div class="trace">@line</div>
@@ -50,15 +50,15 @@
         }
         else
         {
-            <div class="bubble bot pending">pensando…</div>
+            <div class="bubble bot pending">@T("asistente.pensando")</div>
         }
     }
 </div>
 
 <div class="ask">
-    <input type="text" placeholder="Escribí tu pregunta…" @bind="draft" @bind:event="oninput"
+    <input type="text" placeholder="@T("asistente.placeholder")" @bind="draft" @bind:event="oninput"
            @onkeydown="OnKey" disabled="@busy" />
-    <button class="small" disabled="@(busy || draft.Trim().Length == 0)" @onclick="Send">Enviar</button>
+    <button class="small" disabled="@(busy || draft.Trim().Length == 0)" @onclick="Send">@T("asistente.enviar")</button>
 </div>
 
 @code {

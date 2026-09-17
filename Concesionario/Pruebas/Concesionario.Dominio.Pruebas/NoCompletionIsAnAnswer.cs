@@ -22,6 +22,11 @@ namespace Concesionario.Dominio.Pruebas
 		private const int TheTimeLimitInDays = 180;
 		private const int TheDistanceLimit = 8000;
 
+		// EL IDIOMA EN QUE SE PIDE LA FRASE. La ley de aqui es que la ausencia CONTESTE y que las dos
+		// ausencias no sean la misma respuesta, que vale igual en los dos idiomas; que las dos
+		// redacciones lo digan palabra por palabra lo afirma TheHistoryIsSaidInTheLanguageItIsAskedIn.
+		private const string InSpanish = TheLanguage.OfTheRecord;
+
 		private static readonly DateTime TheSeededAnchor = new DateTime(2025, 1, 10, 7, 30, 0);
 		private const int TheSeededAnchorReading = 30000;
 
@@ -33,7 +38,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(schedule.HasAnyCompletion(OperationKindCode.Inspection), Is.False);
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.Inspection),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Inspection, InSpanish),
 				Is.EqualTo(
 					"Revisión: no hay ninguna completación registrada para este vehículo."),
 				"La frase nombra la clase. Sin el nombre, las nueve clases sin completar dirian todas "
@@ -55,11 +61,13 @@ namespace Concesionario.Dominio.Pruebas
 				TheSeededAnchor, TheSeededAnchorReading, DistanceUnitCode.UnitA);
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.SoftwareUpdate),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.SoftwareUpdate, InSpanish),
 				Does.StartWith("Actualización de software:"));
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.Inspection),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Inspection, InSpanish),
 				Does.StartWith("Revisión:"));
 		}
 
@@ -73,11 +81,18 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(schedule.CompletionCount(OperationKindCode.Inspection), Is.EqualTo(0));
 			Assert.That(schedule.CompletionInstantsOf(OperationKindCode.Inspection), Is.Empty);
-			Assert.That(schedule.CompletionReadingsOf(OperationKindCode.Inspection), Is.Empty);
-			Assert.That(schedule.DescribeEachCompletionOf(OperationKindCode.Inspection), Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.Inspection, InSpanish),
+				Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.EachCompletionOf(
+					schedule, OperationKindCode.Inspection, InSpanish),
+				Is.Empty);
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.Inspection), Is.Not.Empty,
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Inspection, InSpanish), Is.Not.Empty,
 				"El conteo en cero y las columnas vacias son ciertos; lo que no puede faltar es la "
 				+ "frase. Un cero solo es lo que L7 llama no ser una respuesta.");
 		}
@@ -95,14 +110,17 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(schedule.CompletionCount(OperationKindCode.Repair), Is.EqualTo(0));
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.Repair),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Repair, InSpanish),
 				Is.EqualTo(
 					"Este vehículo no tiene agendada ninguna operación de reparación, así que no hay "
 					+ "ninguna completación que registrar."));
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.Repair),
-				Is.Not.EqualTo(schedule.DescribeCompletions(OperationKindCode.Inspection)));
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Repair, InSpanish),
+				Is.Not.EqualTo(TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Inspection, InSpanish)));
 		}
 
 		// UN CODIGO QUE NO NOMBRA NINGUN MIEMBRO SIGUE SIENDO UN DEFECTO DE QUIEN LLAMA. La polaridad
@@ -113,7 +131,7 @@ namespace Concesionario.Dominio.Pruebas
 			MaintenanceSchedule schedule = AnInspectionSeededAndNeverCompleted();
 
 			Assert.Throws<DomainException>(
-				() => schedule.DescribeCompletions((OperationKindCode)99));
+				() => schedule.TheCompletionsClauseFor((OperationKindCode)99));
 			Assert.Throws<DomainException>(
 				() => schedule.HasAnyCompletion((OperationKindCode)99));
 			Assert.Throws<DomainException>(
@@ -121,10 +139,15 @@ namespace Concesionario.Dominio.Pruebas
 		}
 
 		// LO QUE EL JUEGO DE TODAS LAS CLASES NO DICE, dicho aca en vez de omitido en silencio (C56).
-		// §5.3 no le declara ninguna frase: sin completaciones sus cuatro columnas vienen vacias y
-		// paralelas, y no hay ningun miembro que describa el juego entero. La ausencia de la frase es
-		// una DECISION de alcance -- la que nombra una clase es DescribeCompletions -- y quien agregue
-		// una tiene que ponerse rojo aca primero.
+		// §5.3 no le declara ninguna frase: sin completaciones sus columnas vienen vacias y paralelas,
+		// y no hay ningun miembro que describa el juego entero. La ausencia de la frase es una
+		// DECISION de alcance -- la que nombra una clase es el portador del historial -- y quien
+		// agregue una tiene que ponerse rojo aca primero.
+		//
+		// EL CENSO NOMBRA LAS DOS FORMAS QUE UNA FRASE PUEDE TOMAR HOY. Hasta que la redaccion se fue
+		// al catalogo, una frase del juego entero habria sido un miembro sin argumentos que devuelve
+		// string; desde este turno seria uno que devuelve el PORTADOR. Censar solo la primera dejaria
+		// la decision sin defensa el dia que alguien la tome por la puerta nueva.
 		[Test]
 		public void TheEveryKindReadHasNoSentenceOfItsOwnAndThatIsSaidRatherThanOmitted()
 		{
@@ -132,13 +155,17 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(schedule.CompletionKindsOnRecord(), Is.Empty);
 			Assert.That(schedule.CompletionInstantsOnRecord(), Is.Empty);
-			Assert.That(schedule.CompletionReadingsOnRecord(), Is.Empty);
-			Assert.That(schedule.DescribeEachCompletionOnRecord(), Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOnRecord(schedule, InSpanish),
+				Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.EachCompletionOnRecord(schedule, InSpanish), Is.Empty);
 
 			List<string> describers = typeof(MaintenanceSchedule)
 				.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
 					| BindingFlags.DeclaredOnly)
-				.Where(member => member.ReturnType == typeof(string))
+				.Where(member => member.ReturnType == typeof(string)
+					|| member.ReturnType == typeof(ACompletionsClause))
 				.Where(member => member.GetParameters().Length == 0)
 				.Where(member => member.Name.IndexOf(
 					"Completion", StringComparison.Ordinal) >= 0)

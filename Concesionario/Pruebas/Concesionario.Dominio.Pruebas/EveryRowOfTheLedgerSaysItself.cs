@@ -52,8 +52,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EachRowCarriesItsOwnMoneyWithItsOwnCurrency()
 		{
-			Assert.That(ledger.CostEntryMoniesBetween(TheStart, TheEnd),
-				Is.EqualTo(new[] { "₡25000.00", "₡240000.00" }),
+			Assert.That(TheSentenceTheDoorWouldCompose.EachCostEntryMoney(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
+				Is.EqualTo(new[] { "₡25.000,00", "₡240.000,00" }),
 				"L1: el monto sale dicho con su moneda, siempre, y la moneda que el conjunto nombra "
 				+ "se dice con su signo.");
 		}
@@ -82,16 +83,17 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndTheRowsOwnSentenceSaysAllOfItAtOnce()
 		{
-			string[] said = ledger.DescribeEachCostEntryBetween(TheStart, TheEnd);
+			string[] said = TheSentenceTheDoorWouldCompose.EachCostEntry(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 
 			Assert.That(said[0],
-				Does.Contain("₡25000.00").And.Contain(TheFuel).And.Contain("2026-01-15 09:30:00"));
+				Does.Contain("₡25.000,00").And.Contain(TheFuel).And.Contain("2026-01-15 09:30:00"));
 			Assert.That(said[0], Does.Contain("Recurrente"),
 				"La clasificacion en palabras la dice el dominio, asi que ninguna caratula necesita "
 				+ "una tabla propia -- que es el costo que DEC-84 midio.");
 
 			Assert.That(said[1],
-				Does.Contain("₡240000.00").And.Contain(TheTyres).And.Contain("2026-02-03 14:00:00"));
+				Does.Contain("₡240.000,00").And.Contain(TheTyres).And.Contain("2026-02-03 14:00:00"));
 			Assert.That(said[1], Does.Contain("Duradero").And.Contain("48 meses"),
 				"La duradera dice ademas su vida util, que es la mitad que hace revisable la parte "
 				+ "que se le imputa a un periodo.");
@@ -103,16 +105,19 @@ namespace Concesionario.Dominio.Pruebas
 		public void AndTheSixColumnsLineUpRowByRowAndNotOnlyInLength()
 		{
 			string[] subjects = ledger.CostEntrySubjectsBetween(TheStart, TheEnd);
-			string[] monies = ledger.CostEntryMoniesBetween(TheStart, TheEnd);
+			string[] monies = TheSentenceTheDoorWouldCompose.EachCostEntryMoney(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 			string[] classifications = ledger.CostEntryClassificationsBetween(TheStart, TheEnd);
-			string[] lives = ledger.CostEntryExpectedLivesBetween(TheStart, TheEnd);
+			string[] lives = TheSentenceTheDoorWouldCompose.EachCostEntryExpectedLife(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 			string[] instants = ledger.CostEntryInstantsBetween(TheStart, TheEnd);
-			string[] sentences = ledger.DescribeEachCostEntryBetween(TheStart, TheEnd);
+			string[] sentences = TheSentenceTheDoorWouldCompose.EachCostEntry(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 
 			int theTyresRow = Array.IndexOf(subjects, TheTyres);
 
 			Assert.That(theTyresRow, Is.EqualTo(1));
-			Assert.That(monies[theTyresRow], Is.EqualTo("₡240000.00"));
+			Assert.That(monies[theTyresRow], Is.EqualTo("₡240.000,00"));
 			Assert.That(classifications[theTyresRow], Is.EqualTo("Durable"));
 			Assert.That(lives[theTyresRow], Is.EqualTo("48 meses"));
 			Assert.That(instants[theTyresRow], Is.EqualTo("2026-02-03 14:00:00"));
@@ -134,7 +139,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(ledger.HasAnyCostBetween(marchFrom, marchTo), Is.True,
 				"Y sin embargo marzo SI tiene gasto, porque consumio parte de las llantas. Un cero "
 				+ "de filas y un gasto que existe son dos hechos distintos y los dos se contestan.");
-			Assert.That(ledger.DescribeSpendBetween(marchFrom, marchTo),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, marchFrom, marchTo, TheLanguage.OfTheRecord),
 				Does.Contain("2026-02-03"),
 				"Y la frase nombra la fecha en que se compro, asi que quien lea ve de donde sale la "
 				+ "cifra sin tener la fila delante.");

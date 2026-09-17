@@ -1023,6 +1023,14 @@ h1:focus, h2:focus { outline: none; }
     font-weight: 500;
 }
 
+.detail__said {
+    display: block;
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
 .detail {
     display: block;
     font-family: var(--mono);
@@ -1095,7 +1103,7 @@ h1:focus, h2:focus { outline: none; }
     color: #5B7292;
 }
 
-.loading-progress-text:after { content: var(--blazor-load-percentage-text, "Loading"); }
+.loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
 #blazor-error-ui {
     position: fixed;

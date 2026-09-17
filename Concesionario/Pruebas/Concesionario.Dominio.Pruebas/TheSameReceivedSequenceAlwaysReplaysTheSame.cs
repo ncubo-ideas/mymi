@@ -36,8 +36,14 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				Assert.That(second.ReadDueState(kind), Is.EqualTo(first.ReadDueState(kind)),
 					"El estado de " + kind + " difiere entre dos corridas de la misma historia.");
-				Assert.That(second.ReadDueReason(kind), Is.EqualTo(first.ReadDueReason(kind)),
+				Assert.That(
+					second.TheDueReasonFor(kind).Shape,
+					Is.EqualTo(first.TheDueReasonFor(kind).Shape),
 					"El motivo de " + kind + " difiere entre dos corridas de la misma historia.");
+				Assert.That(
+					second.TheDueReasonFor(kind).ClauseAmounts,
+					Is.EqualTo(first.TheDueReasonFor(kind).ClauseAmounts),
+					"Y los montos de sus clausulas tambien.");
 				Assert.That(second.DeferralsUsed(kind), Is.EqualTo(first.DeferralsUsed(kind)));
 			}
 

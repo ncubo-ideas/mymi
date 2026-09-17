@@ -1,13 +1,11 @@
 @page "/cuanto-apartar"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Cuánto apartar · Mi cuenta municipal</PageTitle>
+<PageTitle>@textos["cuantoApartar.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
-<h1>Cuánto apartar</h1>
-<p class="bajada">
-    Dos cosas de dos dueños: lo que <strong>esta app propone</strong> a partir de lo que ya
-    pagaste, y lo que <strong>vos adoptaste</strong>. Que no coincidan no es un error.
-</p>
+<h1>@textos["cuantoApartar.titulo"]</h1>
+<p class="bajada">@((MarkupString)textos["cuantoApartar.bajada"])</p>
 
 @if (!estado.EstaArriba)
 {
@@ -16,7 +14,7 @@
 else
 {
     <section class="bloque" id="la-propuesta">
-        <h2>Lo que esta app propone</h2>
+        <h2>@textos["cuantoApartar.laPropuesta"]</h2>
 
         <article class="tarjeta">
             <Frase Dice="@reserva.DiceLaPropuesta" Apagada="@(!reserva.SePuedeProponer)" />
@@ -24,17 +22,17 @@ else
             @if (reserva.SePuedeProponer)
             {
                 <dl class="renglones">
-                    <dt>Proyección de @reserva.Anio</dt>
-                    <dd>@Formato.Monto(reserva.ProyeccionDelAnio)</dd>
-                    <dt>Por mes</dt>
-                    <dd class="cifra">@Formato.Monto(reserva.PropuestoPorMes)</dd>
+                    <dt>@textos.Con("cuantoApartar.proyeccionDe", ("anio", reserva.Anio.ToString()))</dt>
+                    <dd>@textos.Monto(reserva.ProyeccionDelAnio)</dd>
+                    <dt>@textos["cuantoApartar.porMes"]</dt>
+                    <dd class="cifra">@textos.Monto(reserva.PropuestoPorMes)</dd>
                 </dl>
             }
         </article>
     </section>
 
     <section class="bloque" id="lo-adoptado">
-        <h2>Lo que vos adoptaste</h2>
+        <h2>@textos["cuantoApartar.loAdoptado"]</h2>
 
         <article class="tarjeta">
             <div class="tarjeta__cabeza">
@@ -46,60 +44,57 @@ else
             @if (reserva.HayReservaAdoptada)
             {
                 <dl class="renglones">
-                    <dt>Adoptado por mes</dt>
-                    <dd class="cifra">@Formato.Monto(reserva.AdoptadoPorMes)</dd>
-                    <dt>Le falta</dt>
-                    <dd>@Formato.Monto(reserva.Faltante) (@Formato.Porcentaje(reserva.ProporcionDelFaltante))</dd>
-                    <dt>Vence este mes</dt>
-                    <dd>@Formato.Monto(reserva.VenceEsteMes)</dd>
+                    <dt>@textos["cuantoApartar.adoptadoPorMes"]</dt>
+                    <dd class="cifra">@textos.Monto(reserva.AdoptadoPorMes)</dd>
+                    <dt>@textos["cuantoApartar.leFalta"]</dt>
+                    <dd>@textos.Monto(reserva.Faltante) (@textos.Porcentaje(reserva.ProporcionDelFaltante))</dd>
+                    <dt>@textos["cuantoApartar.venceEsteMes"]</dt>
+                    <dd>@textos.Monto(reserva.VenceEsteMes)</dd>
                 </dl>
             }
         </article>
 
         <NumeroSinFirmar Firmado="true"
                          Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
-                         Dicho="@($"Se te avisa cuando lo adoptado queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
+                         Dicho="@textos.Con("cuantoApartar.umbral", ("umbral", textos.Porcentaje(reserva.UmbralConQueSeAvisa)))" />
 
         <div class="aporte" id="adoptar">
-            <label for="monto-a-apartar">Adoptar una reserva, en colones por mes</label>
+            <label for="monto-a-apartar">@textos["cuantoApartar.etiquetaDelAporte"]</label>
             <div class="aporte__linea">
                 <input id="monto-a-apartar" type="number" min="1" step="1" inputmode="numeric"
                        @bind="montoAAdoptar" @bind:event="oninput" disabled="@adoptando" />
                 <button type="button" id="adoptar-reserva" @onclick="AdoptarAsync"
                         disabled="@(adoptando || !EsUnMontoQuePuedoMandar())">
-                    @(adoptando ? "Guardando…" : "Adoptar")
+                    @(adoptando ? textos["cuantoApartar.guardando"] : textos["cuantoApartar.adoptar"])
                 </button>
             </div>
-            <p class="nota">
-                Es tuyo y no de la municipalidad: nadie lo revisa y no cambia lo que te cobran. Se
-                puede adoptar una vez por día, y el último que pongás es el que rige.
-            </p>
+            <p class="nota">@textos["cuantoApartar.notaDelAporte"]</p>
         </div>
 
         @if (loQuePaso is not null)
         {
             @if (loQuePaso.QuedoSinRespaldo)
             {
-                <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="Quedó registrado y NO se guardó.">
-                    <p>@loQuePaso.Dice</p>
+                <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="@textos["cuantoApartar.sinRespaldo"]">
+                    <p>@textos.Diga(loQuePaso.Apunte)</p>
                 </Aviso>
             }
             else if (loQuePaso.QuedoRegistrado)
             {
-                <Aviso Tono="quieta" Id="aporte-entro" Titulo="Listo, quedó tuyo.">
-                    <p>Tu reserva quedó registrada y guardada en tu carpeta.</p>
+                <Aviso Tono="quieta" Id="aporte-entro" Titulo="@textos["cuantoApartar.entro"]">
+                    <p>@textos["cuantoApartar.entroCuerpo"]</p>
                 </Aviso>
             }
             else
             {
-                <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="No se registró, y ésta es la razón.">
-                    <p>@loQuePaso.Dice</p>
+                <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="@textos["cuantoApartar.rechazado"]">
+                    <p>@(loQuePaso.Dice.Length > 0 ? loQuePaso.Dice : textos.Diga(loQuePaso.Apunte))</p>
                 </Aviso>
             }
         }
     </section>
 
-    <p class="nota">Contestado al @reserva.PreguntadoEl.</p>
+    <p class="nota">@textos.Con("comun.contestadoAl", ("dia", reserva.PreguntadoEl))</p>
 }
 
 @code {

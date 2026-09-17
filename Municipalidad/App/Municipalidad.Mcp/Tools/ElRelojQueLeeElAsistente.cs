@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Municipalidad.Mcp.Tools
 {
@@ -22,10 +23,14 @@ namespace Municipalidad.Mcp.Tools
 				ahora.Ticks - ahora.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
 		}
 
-		/// <summary>El dia de un instante, en el formato con que el dominio escribe un dia.</summary>
+		/// <summary>
+		/// El dia de un instante, en el formato con que el dominio escribe un dia. La cultura es
+		/// invariante y no la de la maquina: anio-mes-dia es una llave de calendario, y un calendario
+		/// que no fuera el gregoriano la escribiria con otro anio.
+		/// </summary>
 		internal static string ElDiaDe(DateTime instante)
 		{
-			return instante.ToString("yyyy-MM-dd");
+			return instante.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 		}
 	}
 }

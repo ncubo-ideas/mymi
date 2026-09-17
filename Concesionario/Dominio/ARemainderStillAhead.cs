@@ -8,19 +8,16 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class ARemainderStillAhead : ARemainder
 	{
-		private readonly string _dimensionName;
+		private readonly string _dimension;
 		private readonly int _amount;
 		private readonly string _unitName;
-		private readonly string _amountInWords;
 
 		/// <summary>Se llega por <see cref="ARemainder.StillAhead"/>, que la compone la dimension.</summary>
-		internal ARemainderStillAhead(
-			string dimensionName, int amount, string unitName, string amountInWords)
+		internal ARemainderStillAhead(string dimension, int amount, string unitName)
 		{
-			_dimensionName = dimensionName;
+			_dimension = dimension;
 			_amount = amount;
 			_unitName = unitName;
-			_amountInWords = amountInWords;
 		}
 
 		/// <summary>Si.</summary>
@@ -53,14 +50,22 @@ namespace Concesionario.Dominio
 			return _unitName;
 		}
 
-		/// <summary>
-		/// Lo que falta, con la dimension al frente. Uno solo se dice en singular: "te faltan 1 km"
-		/// se leeria mal escrito y no como una respuesta.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>La dimension que lo mide, por su codigo.</summary>
+		internal override string TheDimensionItMeasures()
 		{
-			return _dimensionName + ": " + (_amount == 1 ? "te falta " : "te faltan ")
-				+ _amountInWords;
+			return _dimension;
+		}
+
+		/// <summary>El monto que falta, en una fila.</summary>
+		internal override int[] TheAmountItCounts()
+		{
+			return new[] { _amount };
+		}
+
+		/// <summary>La unidad en que esta dicho el monto, por su nombre.</summary>
+		internal override string TheUnitItIsExpressedIn()
+		{
+			return _unitName;
 		}
 	}
 }

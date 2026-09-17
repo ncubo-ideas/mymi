@@ -67,8 +67,8 @@ namespace Concesionario.Dominio.Pruebas
 				"L2: la mitad de tiempo se recalcula contra el instante preguntado. Guardada, "
 				+ "seguiria diciendo 12 seis meses despues.");
 
-			Assert.That(atTwoYears, Does.Contain("quedan 35010 km"));
-			Assert.That(sixMonthsLater, Does.Contain("quedan 35010 km"),
+			Assert.That(atTwoYears, Does.Contain("quedan 35.010 km"));
+			Assert.That(sixMonthsLater, Does.Contain("quedan 35.010 km"),
 				"Y la de distancia NO se movio: no llego ninguna lectura nueva. Si se hubiera "
 				+ "movido, algo la estaria derivando del reloj -- que es la mitad que no depende "
 				+ "del reloj.");
@@ -93,8 +93,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void NothingWasPublishedBetweenTheTwoQuestionsAndBothNameTheSamePublication()
 		{
-			Assert.That(TheSentenceAt(TwoYearsIn), Does.Contain("2023-12-01"));
-			Assert.That(TheSentenceAt(SixMonthsLater), Does.Contain("2023-12-01"));
+			Assert.That(TheSentenceAt(TwoYearsIn), Does.Contain("1 de diciembre de 2023"));
+			Assert.That(TheSentenceAt(SixMonthsLater), Does.Contain("1 de diciembre de 2023"));
 		}
 
 		// La respuesta es un OBJETO INMUTABLE, no una ventana al agregado: se captura, se mueve el
@@ -107,7 +107,10 @@ namespace Concesionario.Dominio.Pruebas
 
 			string later = TheSentenceAt(SixMonthsLater);
 
-			Assert.That(captured.Describe(), Does.Contain("quedan 12 meses"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					captured, TheLanguage.OfTheRecord),
+				Does.Contain("quedan 12 meses"));
 			Assert.That(later, Does.Contain("quedan 6 meses"));
 		}
 
@@ -198,8 +201,9 @@ namespace Concesionario.Dominio.Pruebas
 
 		private string TheSentenceAt(DateTime asOf)
 		{
-			return profile.DescribeWarrantyEnvelope(
-				TheReadingObserved, DistanceUnitCode.UnitA, ObservedAt, asOf);
+			return TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				profile, TheReadingObserved, DistanceUnitCode.UnitA, ObservedAt, asOf,
+				TheLanguage.OfTheRecord);
 		}
 
 		private EnvelopeAnswer TheAnswerAt(DateTime asOf)

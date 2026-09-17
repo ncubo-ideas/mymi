@@ -65,7 +65,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			WhatTheServicesCost handed = WhatTheScreenIsHanded();
 			PublishedPriceRecord record =
-				journal.Api.PublishedServicePricesAsOf(TheInstantTheScreenAsksAt);
+				journal.Api.PublishedServicePricesAsOf(
+					TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				handed.Rows.Select(each => each.Operation).ToArray(), Is.EqualTo(record.Operation));
@@ -83,19 +84,19 @@ namespace Concesionario.Dominio.Pruebas
 			APublishedPriceOnTheSheet inspection = TheRowOf(handed, "Inspection");
 			APublishedPriceOnTheSheet fluid = TheRowOf(handed, "FluidChange");
 
-			Assert.That(inspection.Milestone, Is.EqualTo("10000 km"),
+			Assert.That(inspection.Milestone, Is.EqualTo("10.000 km"),
 				"El hito DICHO con su unidad, como lo lee una persona.");
 			// EL MONTO CON SU SIGNO Y SUS DECIMALES, como el dominio lo dice desde CL-2: se publico
 			// 120.50, el decimal se NORMALIZA a 120.5 al cruzar la puerta, y Money.Expressed lo vuelve
 			// a decir con los dos decimales de su moneda. Asi que la normalizacion sigue ocurriendo y
 			// ESTA FRASE ya no la muestra -- lo que la sigue impidiendo es el Normalized de la puerta,
 			// que esta en el camino de ESCRITURA y por eso vivo y replayado coinciden.
-			Assert.That(inspection.Says, Does.Contain("₡120.50"),
+			Assert.That(inspection.Says, Does.Contain("₡120,50"),
 				"Una sola afirmacion en vez de dos: el monto y su moneda son un valor y se dicen "
 				+ "juntos, asi que separarlos dejaria pasar una fila con el monto de una y la moneda "
 				+ "de otra.");
 
-			Assert.That(fluid.Milestone, Is.EqualTo("20000 km"),
+			Assert.That(fluid.Milestone, Is.EqualTo("20.000 km"),
 				"Y el otro hito es OTRO: cruzar las dos filas cambia esta afirmacion y la de arriba.");
 			Assert.That(fluid.Says, Does.Contain("340"));
 		}
@@ -109,14 +110,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			WhatTheServicesCost handed = WhatTheScreenIsHanded();
 
-			Assert.That(TheRowOf(handed, "Inspection").Says, Does.Contain("2026-02-01"),
+			Assert.That(TheRowOf(handed, "Inspection").Says, Does.Contain("1 de febrero de 2026"),
 				"La frase nombra el instante contra el que se juzgo la vigencia. La pantalla no lo dice "
 				+ "por su cuenta justamente porque cada fila lo trae adentro.");
 
 			Assert.That(
 				TheRowOf(handed, "Inspection").Says, Is.Not.EqualTo(TheRowOf(handed, "FluidChange").Says));
 
-			Assert.That(TheRowOf(handed, "FluidChange").Says, Does.Contain("2025-06-30"),
+			Assert.That(TheRowOf(handed, "FluidChange").Says, Does.Contain("30 de junio de 2025"),
 				"Y la que vencio nombra el dia en que su vigencia termino.");
 		}
 
@@ -212,11 +213,14 @@ namespace Concesionario.Dominio.Pruebas
 					typeof(DealershipCarAPI).GetMethod(takesNone).GetParameters(), Is.Empty,
 					"'" + takesNone + "' gano un instante. Las dos contestan sobre un ESTADO.");
 
-			Assert.That(
-				typeof(DealershipCarAPI).GetMethod("PublishedServicePricesAsOf")
-					.GetParameters().Length,
-				Is.EqualTo(1),
-				"Y la de las filas dejo de tomar el suyo. El instante mueve la frase de cada fila.");
+			ParameterInfo[] filas =
+				typeof(DealershipCarAPI).GetMethod("PublishedServicePricesAsOf").GetParameters();
+
+			Assert.That(filas, Has.Length.EqualTo(2),
+				"Y la de las filas dejo de tomar el suyo. El instante mueve la frase de cada fila, y "
+				+ "el idioma en que se dice lo pone quien pregunta.");
+			Assert.That(filas[0].Name, Is.EqualTo("asOf"));
+			Assert.That(filas[1].Name, Is.EqualTo("language"));
 		}
 
 		// REGLA 4 DE LA CONVENCION: la cuenta que el dominio compone y las filas de la pantalla dicen lo
@@ -235,7 +239,8 @@ namespace Concesionario.Dominio.Pruebas
 			// Y AL MISMO REGISTRO PREGUNTADO EN OTRO MOMENTO, la cuenta y las filas siguen de acuerdo:
 			// las dos frases cambian y ninguna fila aparece ni desaparece.
 			WhatTheServicesCost earlier = WhatTheServicesCost.ReadThrough(
-				journal.Api, new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc));
+				journal.Api, new DateTime(
+					2025, 4, 1, 0, 0, 0, DateTimeKind.Utc), TheLanguage.OfTheRecord);
 
 			Assert.That(earlier.Rows, Has.Count.EqualTo(earlier.PriceCountOnRecord));
 			Assert.That(earlier.PriceCountOnRecord, Is.EqualTo(handed.PriceCountOnRecord));
@@ -294,7 +299,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhatTheServicesCost WhatTheScreenIsHanded()
 		{
-			return WhatTheServicesCost.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhatTheServicesCost.ReadThrough(
+				journal.Api, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord);
 		}
 
 		private static APublishedPriceOnTheSheet TheRowOf(WhatTheServicesCost handed, string operation)

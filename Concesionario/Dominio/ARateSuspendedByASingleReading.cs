@@ -39,14 +39,15 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El todavia no, con la lectura que hay nombrada y con su fecha. La frase dice que faltan
-		/// dos puntos, no que el ritmo sea cero.
+		/// El todavia no, con la lectura que hay nombrada y con su fecha. Lo que se dice es que
+		/// faltan dos puntos, no que el ritmo sea cero.
 		/// </summary>
-		internal override string Describe()
+		internal override ARateInAPeriod TheClauseOfItsPeriod()
 		{
-			return "todavía no se puede decir cuánto se maneja: en el periodo hay una sola lectura, "
-				+ _theOnlyOne.TheReadingItSays() + " del " + _theOnlyOne.TheInstantItWasObserved()
-				+ ", y un ritmo necesita dos";
+			return ARateInAPeriod.SuspendedByASingleReading(
+				_theOnlyOne.TheValueItRead(),
+				_theOnlyOne.TheNameOfItsUnit(),
+				_theOnlyOne.TheInstantItWasObserved());
 		}
 	}
 }

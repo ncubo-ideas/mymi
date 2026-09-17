@@ -13,6 +13,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class LicensePlateTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTE SERVIDOR PIDE LAS FRASES, que es el del REGISTRO y no el de quien
+		/// pregunta: la caratula MCP es voz de la institucion hablandole al modelo.
+		/// </summary>
+		private const string TheVoiceOfTheDealership =
+			Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public LicensePlateTools(JournalReader reader)
@@ -102,7 +109,7 @@ namespace Concesionario.Mcp.Tools
 				PlatePublished = published,
 				AsPublished = published ? api.ReadPlateAsPublished(askedAt) : "",
 				JoinKey = published ? api.ReadPlateJoinKey(askedAt) : "",
-				Says = api.DescribePlate(askedAt),
+				Says = api.DescribePlate(askedAt, TheVoiceOfTheDealership),
 				Assignments = rows,
 				Folder = reader.Folder,
 				Detail = TheAssistantIsTold.EverythingWorthSaying(

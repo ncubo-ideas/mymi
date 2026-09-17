@@ -90,10 +90,23 @@ public sealed record Manifest
 	//
 	// Que sea una lista y no un bool es la parte que importa: un tope que no se puede nombrar no
 	// se puede arreglar, y quien tiene que arreglarlo es la institucion, que no ve este proceso.
+	//
+	// ESTOS MENSAJES VAN EN INGLES Y NO PASAN POR Textos.cs, y es una decision, no un olvido.
+	// Hablan de 'brand.shortName' y de 'about.category': son diagnostico para QUIEN EMPAQUETA EL
+	// MODULO, no copy para la persona que lo usa. Traducirlos seria traducir un mensaje de
+	// compilador.
+	//
+	// Estaban en espanol y ModuleCatalog.Load los envuelve en un prefijo ingles, asi que salian
+	// mezclados con los suyos EN LA MISMA LISTA -- y esa lista se pinta entera en la ventana del
+	// escritorio (ModuleList.razor). Un idioma por lista; el que ya hablaba el resto de este
+	// proyecto.
+	//
+	// Que la persona los vea es una decision aparte y sigue abierta: ver el comentario de
+	// ModuleCatalog.Load donde se toma.
 	public IEnumerable<string> Problems()
 	{
 		if (Txt(Title).Length > MaxTitle)
-			yield return $"title tiene {Txt(Title).Length} caracteres y el tope es {MaxTitle}";
+			yield return $"title is {Txt(Title).Length} characters and the cap is {MaxTitle}";
 
 		foreach (string p in Brand?.Problems() ?? []) yield return p;
 		foreach (string p in Publisher?.Problems() ?? []) yield return p;
@@ -203,7 +216,7 @@ public sealed record Brand
 	[JsonPropertyName("banner")] public string Banner { get; init; } = "";
 
 	// THE TYPEFACE (2026-09-09): the family the institution's name and slogan are set in, on its
-	// own card and detail, so La Guaria reads like La Guaria and Sotavento like Sotavento. A font
+	// own card and detail, so La Guaria reads like La Guaria and Sotaventos like Sotaventos. A font
 	// file inside the bundle (woff2, woff, ttf or otf), optionally a second one for bold. The Host
 	// embeds it as a data URI under a name of its own: no CSS from the institution ever runs.
 	[JsonPropertyName("font")] public BrandFont? Font { get; init; }
@@ -243,46 +256,46 @@ public sealed record Brand
 	public IEnumerable<string> Problems()
 	{
 		if (Manifest.Txt(ShortName).Length > MaxShortName)
-			yield return $"brand.shortName tiene {Manifest.Txt(ShortName).Length} caracteres y el tope es {MaxShortName}";
+			yield return $"brand.shortName is {Manifest.Txt(ShortName).Length} characters and the cap is {MaxShortName}";
 
 		if (Manifest.Txt(Slogan).Length > MaxSlogan)
-			yield return $"brand.slogan tiene {Manifest.Txt(Slogan).Length} caracteres y el tope es {MaxSlogan}";
+			yield return $"brand.slogan is {Manifest.Txt(Slogan).Length} characters and the cap is {MaxSlogan}";
 
 		string logo = Manifest.Txt(Logo);
 		if (logo.Length > 0)
 		{
 			if (logo.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(logo) || logo.Contains(':'))
-				yield return $"brand.logo debe ser una ruta dentro del modulo, y '{logo}' no lo es";
+				yield return $"brand.logo must be a path inside the module, and '{logo}' is not";
 			else if (!AllowedLogo.Contains(Path.GetExtension(logo), StringComparer.OrdinalIgnoreCase))
-				yield return $"brand.logo es '{Path.GetExtension(logo)}' y solo se aceptan png, jpg y webp -- un svg ejecuta";
+				yield return $"brand.logo is '{Path.GetExtension(logo)}' and only png, jpg and webp are accepted -- an svg executes";
 		}
 
 		string color = Manifest.Txt(Color);
 		if (color.Length > 0 && ValidColor(color) is null)
-			yield return $"brand.color debe ser #rrggbb y es '{color}'";
+			yield return $"brand.color must be #rrggbb and it is '{color}'";
 
 		string banner = Manifest.Txt(Banner);
 		if (banner.Length > 0)
 		{
 			if (!InsideBundle(banner))
-				yield return $"brand.banner debe ser una ruta dentro del modulo, y '{banner}' no lo es";
+				yield return $"brand.banner must be a path inside the module, and '{banner}' is not";
 			else if (!AllowedBanner.Contains(Path.GetExtension(banner), StringComparer.OrdinalIgnoreCase))
-				yield return $"brand.banner es '{Path.GetExtension(banner)}' y solo se aceptan png, jpg y webp";
+				yield return $"brand.banner is '{Path.GetExtension(banner)}' and only png, jpg and webp are accepted";
 		}
 
 		if (Font is not null)
 		{
 			if (Manifest.Txt(Font.Family).Length == 0)
-				yield return "brand.font declara un archivo sin decir la familia (family)";
+				yield return "brand.font declares a file without saying the family (family)";
 			else if (Manifest.Txt(Font.Family).Length > MaxFontFamily)
-				yield return $"brand.font.family tiene {Manifest.Txt(Font.Family).Length} caracteres y el tope es {MaxFontFamily}";
+				yield return $"brand.font.family is {Manifest.Txt(Font.Family).Length} characters and the cap is {MaxFontFamily}";
 			foreach ((string key, string file) in new[] { ("file", Manifest.Txt(Font.File)), ("bold", Manifest.Txt(Font.Bold)) })
 			{
-				if (file.Length == 0) { if (key == "file") yield return "brand.font no dice que archivo (file)"; continue; }
+				if (file.Length == 0) { if (key == "file") yield return "brand.font does not say which file (file)"; continue; }
 				if (!InsideBundle(file))
-					yield return $"brand.font.{key} debe ser una ruta dentro del modulo, y '{file}' no lo es";
+					yield return $"brand.font.{key} must be a path inside the module, and '{file}' is not";
 				else if (!AllowedFont.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase))
-					yield return $"brand.font.{key} es '{Path.GetExtension(file)}' y solo se aceptan woff2, woff, ttf y otf";
+					yield return $"brand.font.{key} is '{Path.GetExtension(file)}' and only woff2, woff, ttf and otf are accepted";
 			}
 		}
 	}
@@ -342,10 +355,10 @@ public sealed record Publisher
 	public IEnumerable<string> Problems()
 	{
 		if (Manifest.Txt(Legal).Length > MaxLegal)
-			yield return $"publisher.legal tiene {Manifest.Txt(Legal).Length} caracteres y el tope es {MaxLegal}";
+			yield return $"publisher.legal is {Manifest.Txt(Legal).Length} characters and the cap is {MaxLegal}";
 		string dom = Manifest.Txt(Domain);
 		if (dom.Contains('/') || dom.Contains(':'))
-			yield return $"publisher.domain es un dominio, no una url: '{dom}'";
+			yield return $"publisher.domain is a domain, not a url: '{dom}'";
 	}
 }
 
@@ -396,12 +409,12 @@ public sealed record About
 	public IEnumerable<string> Problems()
 	{
 		if (Manifest.Txt(Description).Length > MaxDescription)
-			yield return $"about.description tiene {Manifest.Txt(Description).Length} caracteres y el tope es {MaxDescription}";
+			yield return $"about.description is {Manifest.Txt(Description).Length} characters and the cap is {MaxDescription}";
 		if (Manifest.Txt(DoesNotDo).Length > MaxDoesNotDo)
-			yield return $"about.doesNotDo tiene {Manifest.Txt(DoesNotDo).Length} caracteres y el tope es {MaxDoesNotDo}";
+			yield return $"about.doesNotDo is {Manifest.Txt(DoesNotDo).Length} characters and the cap is {MaxDoesNotDo}";
 		string cat = Manifest.Txt(Category);
 		if (cat.Length > 0 && !Known.Contains(cat, StringComparer.OrdinalIgnoreCase))
-			yield return $"about.category '{cat}' no esta en la lista que el Host conoce, asi que cae al icono generico";
+			yield return $"about.category '{cat}' is not in the list the Host knows, so it falls to the generic icon";
 	}
 }
 

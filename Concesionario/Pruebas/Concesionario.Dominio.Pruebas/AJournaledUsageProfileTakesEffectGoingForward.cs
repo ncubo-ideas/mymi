@@ -154,7 +154,7 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.DeclareUsageProfile("SevereDuty", TheProfileTakesEffect);
 			journal.Api.Evaluate(AfterTheProfileTookEffect);
 
-			string reason = journal.Api.ReadDueReason("FluidChange");
+			string reason = journal.Api.ReadDueReason("FluidChange", TheLanguage.OfTheRecord);
 
 			Assert.That(reason, Does.Contain("tiempo:"));
 			Assert.That(reason, Does.Contain("distancia:"),
@@ -175,7 +175,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("NotDue"),
 				"15000 unidades recorridas de un limite de 10000, y la operacion NO vence: con "
 				+ "LowDistance la dimension de distancia no se evalua.");
-			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("de poca distancia"),
+			Assert.That(journal.Api.ReadDueReason("FluidChange",
+				TheLanguage.OfTheRecord), Does.Contain("de poca distancia"),
 				"Y lo dice: OHS-07 exige poder mostrar cual perfil aplico.");
 		}
 

@@ -75,7 +75,7 @@ namespace Municipalidad.Mcp.Tools
 
 			DateTime laConsulta = api.ConsultaMasReciente();
 
-			RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(laConsulta);
+			RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(laConsulta, ConsultasDelModulo.IdiomaDelRegistro);
 
 			List<PeriodoSinRecibo> filas = new List<PeriodoSinRecibo>();
 

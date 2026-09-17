@@ -81,7 +81,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheDomainsTotalIsTheSumOfTheDaysOfTheRows()
 		{
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			int overTheRows = 0;
 
@@ -106,7 +107,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndBothAreTheDaysThatWereReceived()
 		{
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(
 				record.CoveredDays[0], Is.EqualTo(string.Join(" ", TheMarchDaysTheBranchSaid)),
@@ -143,7 +145,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			const string cutAtTheTwentieth = "2026-07-20";
 
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, cutAtTheTwentieth);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, cutAtTheTwentieth,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(record.Branch, Has.Length.EqualTo(2),
 				"La estadia de julio entra al periodo: uno de sus dias cae adentro.");
@@ -188,7 +191,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DaysInTheShopCountBetween("2026-03-01", "2026-03-31"), Is.EqualTo(4));
 
-			ShopStayRecord record = journal.Api.StaysBetween("2026-03-01", "2026-03-31");
+			ShopStayRecord record = journal.Api.StaysBetween("2026-03-01", "2026-03-31",
+				TheLanguage.OfTheRecord);
 
 			int overTheRows = 0;
 

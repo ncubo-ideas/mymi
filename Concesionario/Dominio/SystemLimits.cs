@@ -75,10 +75,24 @@ namespace Concesionario.Dominio
 		internal abstract bool TheDistanceHalfIsPast(int deliveryReading, int currentReading);
 
 		/// <summary>
-		/// Los limites en palabras, con la mitad o las mitades que se publicaron. Accesor
-		/// GUARDADO: unos limites que no existen no se pueden nombrar.
+		/// El plazo publicado, o cero donde solo se publico la mitad de distancia. Accesor GUARDADO:
+		/// unos limites que no existen no tienen ninguna mitad que nombrar.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract int TheMonthsItLimits();
+
+		/// <summary>
+		/// La distancia publicada, o cero donde solo se publico el plazo. Accesor GUARDADO por lo
+		/// mismo, y el cero de aqui es el de una mitad que no se publico, nunca el de unos limites
+		/// que no existen: esa ausencia es un tipo.
+		/// </summary>
+		internal abstract int TheDistanceItLimits();
+
+		/// <summary>
+		/// La unidad de esa distancia, por su NOMBRE, o vacia donde no hay mitad de distancia. Accesor
+		/// GUARDADO por la existencia y TOTAL sobre la mitad, a diferencia de
+		/// <see cref="TheUnitItsDistanceIsMeasuredIn"/>, que entrega el miembro y exige que la haya.
+		/// </summary>
+		internal abstract string TheNameOfTheUnitItsDistanceIsIn();
 
 		private static SystemLimits TheseLimits(int months, int distance, DistanceUnit unit)
 		{

@@ -27,6 +27,10 @@ namespace Concesionario.Dominio.Pruebas
 		private const int TheOdometerAtDelivery = 30000;
 		private const int TheReadingWellInsideTheLimit = 38800;
 		private const int TheAmountLeft = 1200;
+
+		// El mismo monto tal como lo escribe el renderizador del idioma del registro: el separador
+		// de miles se fue con la redaccion y una cifra se escribe en un solo lugar.
+		private const string TheAmountLeftAsTheScreenWritesIt = "1.200";
 		private const int TheTimeLimitInDays = 400;
 		private const int TheDaysElapsedWhenAsked = 334;
 		private const int TheDaysLeft = 66;
@@ -56,17 +60,17 @@ namespace Concesionario.Dominio.Pruebas
 					OperationKindCode.FluidChange, TheInstantAsked),
 				Is.EqualTo(DistanceUnit.UnitA.Name));
 
-			string said = schedule.DescribeDistanceRemaining(
-				OperationKindCode.FluidChange, TheInstantAsked);
+			string said = TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain(TheAmountLeft.ToString()));
+			Assert.That(said, Does.Contain(TheAmountLeftAsTheScreenWritesIt));
 			Assert.That(said, Does.Contain(DistanceUnit.UnitA.Name),
 				"El monto sin su unidad es un numero suelto, y el mismo numero en la otra unidad es "
 				+ "otra distancia.");
 
 			// LA MITAD DE TIEMPO TAMBIEN, y su unidad son los dias -- que si se pluralizan.
-			string saidInDays = schedule.DescribeDaysRemaining(
-				OperationKindCode.FluidChange, TheInstantAsked);
+			string saidInDays = TheSentenceTheDoorWouldCompose.TheTimeRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(saidInDays, Does.Contain(TheDaysLeft.ToString()));
 			Assert.That(saidInDays, Does.Contain("días"));
@@ -83,12 +87,12 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				schedule.ReadDistanceRemainingUnit(
 					OperationKindCode.FluidChange, TheInstantAsked),
-				schedule.DescribeDistanceRemaining(
-					OperationKindCode.FluidChange, TheInstantAsked),
-				schedule.DescribeDaysRemaining(
-					OperationKindCode.FluidChange, TheInstantAsked),
-				schedule.DescribeCountdown(
-					OperationKindCode.FluidChange, TheInstantAsked),
+				TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord),
+				TheSentenceTheDoorWouldCompose.TheTimeRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord),
+				TheSentenceTheDoorWouldCompose.TheCountdown(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord),
 			})
 			{
 				Assert.That(said, Does.Not.Contain("UnitA"),
@@ -122,10 +126,10 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			MaintenanceSchedule schedule = AScheduleMeasuredInBothDimensions();
 
-			string countdown = schedule.DescribeCountdown(
-				OperationKindCode.FluidChange, TheInstantAsked);
+			string countdown = TheSentenceTheDoorWouldCompose.TheCountdown(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 
-			Assert.That(countdown, Does.Contain(TheAmountLeft.ToString()));
+			Assert.That(countdown, Does.Contain(TheAmountLeftAsTheScreenWritesIt));
 			Assert.That(countdown, Does.Contain(DistanceUnit.UnitA.Name));
 			Assert.That(countdown, Does.Contain(TheDaysLeft.ToString()));
 			Assert.That(countdown, Does.Contain("días"),
@@ -140,8 +144,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			MaintenanceSchedule schedule = AScheduleWithNoReadingAtAll();
 
-			string countdown = schedule.DescribeCountdown(
-				OperationKindCode.FluidChange, TheInstantAsked);
+			string countdown = TheSentenceTheDoorWouldCompose.TheCountdown(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(countdown, Does.Contain("lectura"),
 				"La mitad que no se pudo medir dice POR QUE, dentro de la misma frase.");
@@ -157,12 +161,12 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			MaintenanceSchedule schedule = AScheduleMeasuredInBothDimensions();
 
-			string countdown = schedule.DescribeCountdown(
-				OperationKindCode.RecallRemedy, TheInstantAsked);
+			string countdown = TheSentenceTheDoorWouldCompose.TheCountdown(
+					schedule, OperationKindCode.RecallRemedy, TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(countdown,
-				Is.EqualTo(schedule.DescribeDistanceRemaining(
-					OperationKindCode.RecallRemedy, TheInstantAsked)),
+				Is.EqualTo(TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.RecallRemedy, TheInstantAsked, TheLanguage.OfTheRecord)),
 				"No hay dos mitades que decir cuando no hay operacion: decirlo dos veces es la "
 				+ "duplicacion de §6 de E48 en una sola linea.");
 		}

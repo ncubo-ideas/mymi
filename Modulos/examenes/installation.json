@@ -1,14 +1,14 @@
 {
   "//": "THIS FILE BELONGS TO THE HOST. Kept apart from the manifest on purpose: these are two authorities. The institution declares who it is and what it offers; the HOST decides how it is run and which folder it grants it. If the shell came in the manifest, the module would choose how it is run.",
 
-  "//paths": "With forward slashes. Windows accepts them just the same and they avoid JSON's double escaping, which broke this file once already.",
+  "//paths": "With forward slashes. Windows accepts them just the same and they avoid JSON's double escaping, which broke this file once already. And RELATIVE TO THIS FOLDER when not rooted: shell.arguments[0] is the dll that gets loaded, and the Host anchors it to the folder of this installation.json. That is what lets the versioned bench in Modulos/ start on any machine that has built the module (dotnet build Examenes/App/Examenes.Mcp), instead of carrying the disk of whoever assembled the POC. The real installer keeps writing absolute paths: the dll lives inside the module folder and both forms name the same file.",
 
   "//shell": "Stage 1: child process + stdio, because in this POC the module ships its own MCP server. Stage 2 changes ONLY this block for a wasm runtime with --dir, and neither the manifest nor the module notices. The granted folder is appended as the last argument; it does not go here.",
   "shell": {
     "type": "in-process",
     "command": "dotnet",
     "arguments": [
-      "C:/Users/edgar/Documents/Game/Gnothi/Examenes/App/Examenes.Mcp/bin/Debug/net9.0/Examenes.Mcp.dll"
+      "../../Examenes/App/Examenes.Mcp/bin/Debug/net9.0/Examenes.Mcp.dll"
     ]
   },
 

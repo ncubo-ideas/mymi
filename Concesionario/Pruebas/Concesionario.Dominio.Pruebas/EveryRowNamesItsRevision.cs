@@ -56,7 +56,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheSentenceNamesTheSameRevisionAsTheColumn()
 		{
 			string[] revisions = specification.PublishedPriceRevisionsAsOf(WhileItIsInForce);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(WhileItIsInForce);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			for (int row = 0; row < revisions.Length; row++)
 				Assert.That(said[row], Does.Contain("Publicado en la revisión " + revisions[row] + "."),
@@ -92,7 +93,7 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void ARowRefusesToBeBuiltFromAnUnpublishedAnswer()
 		{
-			SpecificationAnswer absent = specification.ARevisionAppliesForward(
+			APriceClause absent = specification.ARevisionAppliesForward(
 				OperationKindCode.Repair,
 				new PublishedMilestone(90000, DistanceUnit.UnitA),
 				WhileItIsInForce);

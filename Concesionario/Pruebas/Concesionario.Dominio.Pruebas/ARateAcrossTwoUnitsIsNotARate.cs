@@ -53,7 +53,8 @@ namespace Concesionario.Dominio.Pruebas
 				schedule.ReadRateOfUseStanding(ElAno, FinDelAno),
 				Is.EqualTo("SuspendedByAUnitMismatch"));
 
-			string said = schedule.DescribeRateOfUse(ElAno, FinDelAno);
+			string said = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("km").And.Contains("mi"));
 			Assert.That(
@@ -75,7 +76,8 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.RecordReading(
 				500, DistanceUnitCode.UnitB, Marzo10, ReadingSourceCode.CustomerDeclared);
 
-			string said = schedule.DescribeRateOfUse(ElAno, FinDelAno);
+			string said = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				said, Does.Contain("500 mi del 2026-03-10 00:00:00"),

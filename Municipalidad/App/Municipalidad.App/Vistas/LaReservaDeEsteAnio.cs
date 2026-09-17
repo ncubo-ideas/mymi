@@ -51,20 +51,21 @@ namespace Municipalidad.App.Vistas
 
 		/// <summary>Las dos mitades leidas en un momento, cada una detras de su propio par.</summary>
 		public static LaReservaDeEsteAnio LeerPor(
-			MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho)
+			MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho, Textos textos)
 		{
 			ArgumentNullException.ThrowIfNull(api);
+			ArgumentNullException.ThrowIfNull(textos);
 
 			bool sePuedeProponer = api.SePuedeProyectar();
 			bool sePuedeVerElFaltante = api.SePuedeVerElFaltanteDeReserva();
 
 			decimal proyeccion = 0m;
 			decimal propuesto = 0m;
-			string diceLaPropuesta = SinUnPagoNoHayDeDondeProyectar;
+			string diceLaPropuesta = textos["cuantoApartar.sinUnPago"];
 
 			if (sePuedeProponer)
 			{
-				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(fechaDeCorte.Year);
+				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(fechaDeCorte.Year, textos.Idioma);
 
 				proyeccion = propuesta.Proyeccion;
 				propuesto = propuesta.PropuestoPorMes;
@@ -77,12 +78,14 @@ namespace Municipalidad.App.Vistas
 			decimal venceEsteMes = 0m;
 			string urgencia = "";
 			string diceElFaltante =
-				sePuedeProponer ? TodaviaNoHaAdoptadoNinguna : SinProyeccionNoHayContraQueMedir;
+				sePuedeProponer
+					? textos["cuantoApartar.sinReservaAdoptada"]
+					: textos["cuantoApartar.sinNingunaDeLasDos"];
 
 			if (sePuedeVerElFaltante)
 			{
 				RegistroDelFaltanteDeReserva elFaltante =
-					api.FaltanteDeReservaAl(fechaDeCorte, LosJuiciosSinFirmar.UmbralDeReserva);
+					api.FaltanteDeReservaAl(fechaDeCorte, LosJuiciosSinFirmar.UmbralDeReserva, textos.Idioma);
 
 				adoptado = elFaltante.Declarado;
 				faltante = elFaltante.Faltante;
@@ -113,17 +116,7 @@ namespace Municipalidad.App.Vistas
 			};
 		}
 
-		private const string SinUnPagoNoHayDeDondeProyectar =
-			"Tu app todavía no ha visto ningún comprobante, así que no hay de dónde proyectar lo que vas "
-			+ "a pagar este año. En cuanto entre el primer pago, esta propuesta aparece sola.";
 
-		private const string TodaviaNoHaAdoptadoNinguna =
-			"Todavía no adoptaste una reserva, así que no hay con qué comparar la propuesta. Adoptar una "
-			+ "es tuyo y no de la municipalidad: es cuánto decidís apartar cada mes.";
 
-		private const string SinProyeccionNoHayContraQueMedir =
-			"Sin un pago del que proyectar y sin una reserva adoptada, no hay dos mitades que comparar. "
-			+ "Las dos entran solas: la propuesta con el primer comprobante, la adoptada cuando la "
-			+ "pongás.";
 	}
 }

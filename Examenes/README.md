@@ -108,6 +108,19 @@ cd Examenes && ./PaginaDeDescarga/generar-certificado.sh && docker compose up -d
 Y queda en **`http://localhost:8090`** — la página de descarga de la institución — con la
 app colgando de **`/app/`**.
 
+La página trae el **paso a paso para usar Delfos con Gnothi**, por ambiente (Android, iPhone,
+computadora), y sus tres descargables **no van al repo**: se arman antes de levantar URL1.
+La forma hospedada lleva el origen adentro y tiene que ser el que sirve la página, o Gnothi
+rechaza el paquete («dice ser de otro origen»).
+
+```powershell
+pwsh Gnothi.Mobile/armar-bundle.ps1 -Modulo examenes -Forma hospedada -Origen http://localhost:8090 -Salida Examenes/PaginaDeDescarga/descarga/descargas/movil
+pwsh Gnothi.Mobile/armar-bundle.ps1 -Modulo examenes -Forma cargo -Salida Examenes/PaginaDeDescarga/descarga/descargas
+```
+
+Y `descargas/gnothi/Gnothi.Host.zip`, Gnothi para Windows, con la receta de
+`PRUEBA-MANUAL-DESKTOP.md`.
+
 Que la app no esté en la raíz no es cosmético. El service worker de la PWA toma scope del
 directorio donde se registra y contesta **toda** navegación de ese scope con su `index.html`
 cacheado. Con la app en `/`, la página de descarga era inalcanzable en cuanto alguien

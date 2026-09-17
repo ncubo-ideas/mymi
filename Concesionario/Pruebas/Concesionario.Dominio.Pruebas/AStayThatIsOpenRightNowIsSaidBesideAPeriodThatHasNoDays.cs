@@ -63,7 +63,11 @@ namespace Concesionario.Dominio.Pruebas
 				"La frase del periodo dejo de decir que lo que falta son los DIAS. Un cero o una lista "
 				+ "vacia se leen como 'el carro no estuvo en el taller', que es falso: esta adentro.");
 
-			Assert.That(stays.Says, Does.Contain(TheYearFrom).And.Contains(TheYearTo),
+			// LOS DOS LIMITES SON DIAS Y LA FRASE LOS DICE EN PALABRAS, asi que el literal del registro
+			// no calza con ella: lo que se espera se compone con el mismo renderizador.
+			Assert.That(
+				stays.Says,
+				Does.Contain(ADay(TheYearFrom)).And.Contains(ADay(TheYearTo)),
 				"Y nombra sus DOS limites. Es lo que hace que el encabezado no tenga que repetirlos: "
 				+ "la persona sabe entre cuando y cuando se pregunto porque lo dice la frase.");
 
@@ -130,7 +134,14 @@ namespace Concesionario.Dominio.Pruebas
 		private TheStaysOfThisVehicle WhatTheScreenIsHanded()
 		{
 			return TheStaysOfThisVehicle.ReadThrough(
-				journal.Api, TheYearFrom, TheYearTo, TheInstantInsideTheOpenStay);
+				journal.Api, TheYearFrom, TheYearTo, TheInstantInsideTheOpenStay,
+				TheLanguage.OfTheRecord);
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

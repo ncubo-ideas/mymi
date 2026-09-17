@@ -87,21 +87,18 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La clausula del combustible: todos los grados publicados, cada uno con su postura, en el
-		/// orden en que se publicaron. Ninguna postura se omite y ninguna se resume.
+		/// La clausula del combustible, como forma y valores: todos los grados publicados, cada uno
+		/// con su postura, en el orden en que se publicaron. Ninguna postura se omite y ninguna se
+		/// resume.
 		/// </summary>
-		internal string Describe()
+		internal AFuelClause TheClauseItComposes(string revisionCode)
 		{
 			if (!HasAGrade())
 				throw new DomainException(
-					"Se pidio la frase de una especificacion de combustible sin ningun grado "
+					"Se pidio la clausula de una especificacion de combustible sin ningun grado "
 					+ "adentro. Hay que preguntar primero si entro alguno.");
 
-			List<string> dichos = new List<string>();
-
-			foreach (FuelGrade grade in _grades) dichos.Add(grade.Describe());
-
-			return "Grados de combustible: " + string.Join(", ", dichos) + ".";
+			return AFuelClause.Published(revisionCode, _grades);
 		}
 	}
 }

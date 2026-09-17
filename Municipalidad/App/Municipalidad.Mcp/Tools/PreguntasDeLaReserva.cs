@@ -73,7 +73,7 @@ namespace Municipalidad.Mcp.Tools
 
 			if (sePuedeProponer)
 			{
-				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(preguntadoEn.Year);
+				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(preguntadoEn.Year, ConsultasDelModulo.IdiomaDelRegistro);
 
 				proyeccionDelAnio = propuesta.Proyeccion;
 				propuestoPorMes = propuesta.PropuestoPorMes;
@@ -91,7 +91,7 @@ namespace Municipalidad.Mcp.Tools
 			if (sePuedeVerElFaltante)
 			{
 				RegistroDelFaltanteDeReserva faltante =
-					api.FaltanteDeReservaAl(preguntadoEn, LosJuiciosSinFirmar.UmbralDeReserva);
+					api.FaltanteDeReservaAl(preguntadoEn, LosJuiciosSinFirmar.UmbralDeReserva, ConsultasDelModulo.IdiomaDelRegistro);
 
 				adoptado = faltante.Declarado;
 				loQueFalta = faltante.Faltante;

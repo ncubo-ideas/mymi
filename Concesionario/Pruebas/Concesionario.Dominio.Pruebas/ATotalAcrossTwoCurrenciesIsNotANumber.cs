@@ -68,11 +68,11 @@ namespace Concesionario.Dominio.Pruebas
 			ledger.RecordRecurringCost(
 				new DateTime(2026, 2, 10, 9, 0, 0), 120m, "USD", "Repuesto importado");
 
-			string said = ledger.DescribeSpendPerCurrencyBetween(TheStart, TheEnd);
+			string said = TheSentenceTheDoorWouldCompose.TheSpendPerCurrency(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡85000.00"),
+			Assert.That(said, Does.Contain("₡85.000,00"),
 				"La moneda que el conjunto nombra se dice con su signo, por DEC-87.");
-			Assert.That(said, Does.Contain("$120.00"));
+			Assert.That(said, Does.Contain("$120,00"));
 			Assert.That(said, Does.Contain("2 monedas"),
 				"El estado con nombre dice CUANTAS monedas hay, que es lo que hace la frase "
 				+ "revisable.");
@@ -88,11 +88,11 @@ namespace Concesionario.Dominio.Pruebas
 			ledger.RecordRecurringCost(
 				new DateTime(2026, 2, 10, 9, 0, 0), 120m, "USD", "Repuesto importado");
 
-			string whole = ledger.DescribeSpendBetween(TheStart, TheEnd);
+			string whole = TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 
 			Assert.That(whole, Does.Not.Contain("85120"),
 				"Sumar 85000 con 120 seria decir un total que el dominio no puede construir.");
-			Assert.That(whole, Does.Contain("₡85000.00").And.Contain("$120.00"),
+			Assert.That(whole, Does.Contain("₡85.000,00").And.Contain("$120,00"),
 				"Las dos siguen dichas: contestar solo la mayor perderia una de las dos.");
 			Assert.That(whole, Does.Not.Contain("₡0").And.Not.Contain("$0"));
 		}
@@ -113,7 +113,7 @@ namespace Concesionario.Dominio.Pruebas
 				+ "misma, asi que decir que hay una sola moneda seria decir algo que el modulo no "
 				+ "sabe.");
 
-			string said = ledger.DescribeSpendPerCurrencyBetween(TheStart, TheEnd);
+			string said = TheSentenceTheDoorWouldCompose.TheSpendPerCurrency(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("500 XYZ").And.Contain("700 XYZ"));
 			Assert.That(said, Does.Not.Contain("1200"),

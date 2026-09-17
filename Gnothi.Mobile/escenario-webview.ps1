@@ -46,8 +46,12 @@ $logs    = "$env:TEMP\gnothi-escenario"
 # armar-bundle.ps1: el manifiesto los lleva ADENTRO y el modulo no los puede cambiar despues.
 #
 # Y el directorio del concesionario ahora es Concesionario, no DealershipCar: master lo renombro
-# en 0110017. Cambio la RUTA, no la marca -- su Titulo sigue en ingles porque el modulo entero
-# esta en ingles, y sus tipos tambien (DealershipCarAPI). Si esto se vuelve a romper, es esto.
+# en 0110017. Cambio la RUTA, no la marca -- y sus tipos siguen diciendo DealershipCar a
+# proposito (DealershipCarAPI). Si esto se vuelve a romper, es esto.
+#
+# SU SUBTITULO ES EL TITULO QUE EL MODULO DECLARA, igual que en las otras cuatro filas. Decia
+# "Your maintenance", de cuando el modulo entero estaba en ingles: hoy habla los dos idiomas y
+# sigue al aparato, y el idioma de su registro es el espanol.
 #
 # El publicador de municipalidad es el 8121 y NO es una eleccion libre: es el mismo puerto que su
 # docker-compose publica, asi que los contenedores del modulo hay que bajarlos antes de correr
@@ -60,7 +64,7 @@ $catalogo = [ordered]@{
     'cargas'        = @{ Mock = "$raiz\Cargas\EndPointDeEventos";        Pub = 8111; Web = 8112
                          Titulo = 'Estaciones Faro';            Subtitulo = 'Tus cargas' }
     'dealership'    = @{ Mock = "$raiz\Concesionario\EndPointDeEventos"; Pub = 8092; Web = 8093
-                         Titulo = 'Sotavento Motors';           Subtitulo = 'Your maintenance' }
+                         Titulo = 'Sotaventos Motors';           Subtitulo = 'Mi plan de mantenimiento' }
     'municipalidad' = @{ Mock = "$raiz\Municipalidad\EndPointDeEventos"; Pub = 8121; Web = 8122
                          Titulo = 'Tu municipalidad';           Subtitulo = 'Mi cuenta municipal' }
 }

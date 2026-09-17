@@ -45,7 +45,7 @@ Seis pasos con veredicto; el primero que falla es la respuesta. **Reportar cuatr
 ```
 paso 3   ¿dotnet build dejó Metadata.appintents?          SI / NO   (se espera NO)
 paso 4   ¿se generó e inyectó extract.actionsdata?         SI / NO
-6a       ¿Atajos muestra «Lo que Gnothi tiene»?            SI / NO
+6a       ¿Atajos muestra «Lo que Mymi tiene»?              SI / NO
 6b       ¿al correrla dice el encuadre + las facturas REALES con fecha?   TEXTO COMPLETO
 ```
 

@@ -1,5 +1,12 @@
 using Foundation;
 using Gnothi.Assistant;
+// EL CATALOGO DE TEXTOS, por alias y no importando el namespace entero: `Gnothi.Host`
+// tambien declara un `Shell` -- el bloque de installation.json -- y este archivo usa el
+// `Shell` de Gnothi.MobileShared. Importar los dos namespaces deja el nombre ambiguo y el iOS
+// deja de compilar. Es el MISMO error que 898edec arreglo en MainActivity, y aca sobrevivio porque
+// el SDK de iOS exige una version exacta de Xcode y el build ni empieza: hay que pasarle
+// -p:ValidateXcodeVersion=false, que esta en la receta del equipo y no en el camino de nadie.
+using Textos = Gnothi.Host.Textos;
 using Gnothi.MobileShared;
 using UIKit;
 using WebKit;
@@ -65,6 +72,18 @@ public sealed class ViewController : UIViewController
 		// pierde todo lo demas, y eso rompe cualquier otra deteccion de la pagina.
 		config.ApplicationNameForUserAgent = "GnothiHost";
 
+		// LA CAMARA DEL LECTOR SE QUEDA EN LA PAGINA. En iPhone un WKWebView manda TODO video al
+		// reproductor nativo de pantalla completa, y el playsinline del <video> de ui.html no
+		// alcanza solo: hace falta esta linea. Sin ella el stream de getUserMedia salia como
+		// una pelicula -X, imagen en imagen, LIVE- y al cerrarla iOS lo dejaba pausado detras
+		// del recuadro. Medido en el 13 Pro el 2026-09-11.
+		//
+		// Y la segunda es la gemela de MediaPlaybackRequiresUserGesture = false en
+		// MainActivity.cs: el play() viene despues del await de getUserMedia, y WebKit puede
+		// dar por perdido el gesto de la persona para entonces.
+		config.AllowsInlineMediaPlayback = true;
+		config.MediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypes.None;
+
 		web = new WKWebView(View!.Bounds, config)
 		{
 			AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
@@ -91,6 +110,17 @@ public sealed class ViewController : UIViewController
 		Directory.CreateDirectory(files);
 
 		SeedFromBundle(incoming);
+
+		// EL IDIOMA DE LA PERSONA, RESUELTO UNA VEZ Y AQUI, antes de que la cascara componga su
+		// primera frase. Sale del APARATO: no hay selector adentro de Mymi.
+		//
+		// CurrentUICulture sirve porque este proceso es NATIVO -- la advertencia de
+		// Municipalidad.Wasm, que dice de no leer la cultura del proceso, es para wasm, donde
+		// esa cultura es la del runtime y no la de quien usa el telefono. Aca no.
+		//
+		// Y la pagina NO lo resuelve por su cuenta: se lo dice la cascara. Dos resolutores
+		// serian dos fuentes de verdad.
+		Textos.Idioma = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		shell = new Shell(
 			// ReescribirRutas: true, y es obligatorio aca. El paquete lo arma armar-paquete.ps1
@@ -314,14 +344,14 @@ public sealed class ViewController : UIViewController
 		// "Mis compras" es lo que la persona reconoce.
 		var quien = new UILabel
 		{
-			Text = $"{shell?.TitleOf(nombre) ?? nombre} · adentro de Gnothi",
+			Text = Textos.T("ios.adentro-de", ("titulo", shell?.TitleOf(nombre) ?? nombre)),
 			Font = UIFont.SystemFontOfSize(13, UIFontWeight.Medium),
 			TextColor = UIColor.FromRGB(0x3B, 0x2E, 0x63),
 			TranslatesAutoresizingMaskIntoConstraints = false,
 		};
 
 		var listo = UIButton.FromType(UIButtonType.System);
-		listo.SetTitle("Listo", UIControlState.Normal);
+		listo.SetTitle(Textos.T("general.listo"), UIControlState.Normal);
 		listo.TitleLabel!.Font = UIFont.SystemFontOfSize(15, UIFontWeight.Semibold);
 		listo.TranslatesAutoresizingMaskIntoConstraints = false;
 		listo.TouchUpInside += (_, _) => Cerrar();
@@ -496,7 +526,7 @@ public sealed class ViewController : UIViewController
 		catch (Exception ex)
 		{
 			Log($"alta: no se pudo leer el archivo '{name}': {ex.GetType().Name}: {ex.Message}");
-			shell?.ReportEnrollmentError($"No se pudo leer el archivo {name}.");
+			shell?.ReportUnreadableFile(name);
 			return null;
 		}
 		finally

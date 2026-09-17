@@ -142,14 +142,14 @@ namespace Concesionario.Dominio
 		/// que esta revision no publico es un defecto de quien llama, no una clausula vacia -- una
 		/// clausula vacia se leeria como una especificacion sin grado y sin capacidad.
 		/// </summary>
-		internal string DescribeFluidSpecification(FluidKindCode kind)
+		internal AFluidClause TheFluidClause(FluidKindCode kind)
 		{
 			if (!HasAFluidSpecification(kind))
 				throw new DomainException(
 					$"La revision '{Code}' no publico nada sobre {FluidKind.OfCode(kind).Name}. Hay "
 					+ "que preguntar primero si lo publico.");
 
-			return _fluids[kind].Describe();
+			return _fluids[kind].TheClauseItComposes(Code);
 		}
 
 		/// <summary>
@@ -183,7 +183,7 @@ namespace Concesionario.Dominio
 		/// posicion que esta revision no publico es un defecto de quien llama, no una clausula vacia
 		/// -- y aca una clausula vacia es una presion que alguien va a marcar en la bomba.
 		/// </summary>
-		internal string DescribeTyreSpecification(TyrePositionCode position)
+		internal ATyreClause TheTyreClause(TyrePositionCode position)
 		{
 			if (!HasATyreSpecification(position))
 				throw new DomainException(
@@ -191,7 +191,7 @@ namespace Concesionario.Dominio
 					+ $"{TyrePosition.OfCode(position).Name}. Hay que preguntar primero si lo "
 					+ "publico.");
 
-			return _tyres[position].Describe();
+			return _tyres[position].TheClauseItComposes(Code);
 		}
 
 		/// <summary>
@@ -220,11 +220,11 @@ namespace Concesionario.Dominio
 		/// publico ningun grado es un defecto de quien llama -- una lista vacia se leeria como que
 		/// no hay ningun combustible prohibido.
 		/// </summary>
-		internal string DescribeFuelSpecification()
+		internal AFuelClause TheFuelClause()
 		{
 			RefuseFuelUnlessItWasPublished();
 
-			return _fuel.Describe();
+			return _fuel.TheClauseItComposes(Code);
 		}
 
 		/// <summary>
@@ -284,11 +284,11 @@ namespace Concesionario.Dominio
 		/// La clausula publicada del intervalo de esa operacion. Accesor GUARDADO: pedirla de una
 		/// clase que esta revision no publico es un defecto de quien llama.
 		/// </summary>
-		internal string DescribeServiceInterval(OperationKindCode kind)
+		internal AServiceIntervalClause TheServiceIntervalClause(OperationKindCode kind)
 		{
 			RefuseAnIntervalThisRevisionNeverPublished(kind);
 
-			return _serviceIntervals[kind].Describe();
+			return _serviceIntervals[kind].TheClauseItComposes(Code);
 		}
 
 		/// <summary>
@@ -297,12 +297,13 @@ namespace Concesionario.Dominio
 		/// distancias son comparables necesita la unidad publicada, que solo la revision tiene a
 		/// mano; nada de lo recibido se guarda. Accesor GUARDADO, igual que la clausula publicada.
 		/// </summary>
-		internal string DescribeAgainstTheServiceInterval(
+		internal AServiceIntervalClause TheServiceIntervalClauseAgainst(
 			OperationKindCode kind, int distanceRemaining, DistanceUnit remainingUnit)
 		{
 			RefuseAnIntervalThisRevisionNeverPublished(kind);
 
-			return _serviceIntervals[kind].DescribeAgainst(distanceRemaining, remainingUnit);
+			return _serviceIntervals[kind].TheClauseItComposesAgainst(
+				Code, distanceRemaining, remainingUnit);
 		}
 
 		/// <summary>
@@ -351,25 +352,25 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El precio dicho con su vigencia. Accesor GUARDADO: pedirlo de un hito que esta revision
-		/// no publico es un defecto de quien llama, no un monto en cero.
+		/// La clausula del precio con su vigencia. Accesor GUARDADO: pedirlo de un hito que esta
+		/// revision no publico es un defecto de quien llama, no un monto en cero.
 		/// </summary>
-		internal string DescribeServicePrice(
+		internal APriceClause TheServicePriceClause(
 			MaintenanceOperationKind kind, PublishedMilestone milestone)
 		{
 			return _servicePrices[ThePlaceOfAPublishedPrice(kind, milestone)]
-				.APriceCarriesItsValidity();
+				.APriceCarriesItsValidity(Code);
 		}
 
 		/// <summary>
-		/// Lo mismo, y ademas si esa vigencia rige en el instante recibido. Accesor GUARDADO por la
-		/// misma razon.
+		/// Lo mismo, y ademas donde cae el instante recibido dentro de esa vigencia. Accesor
+		/// GUARDADO por la misma razon.
 		/// </summary>
-		internal string DescribeServicePrice(
+		internal APriceClause TheServicePriceClause(
 			MaintenanceOperationKind kind, PublishedMilestone milestone, DateTime asOf)
 		{
 			return _servicePrices[ThePlaceOfAPublishedPrice(kind, milestone)]
-				.APriceCarriesItsValidity(asOf);
+				.APriceCarriesItsValidity(Code, asOf);
 		}
 
 		/// <summary>
@@ -400,21 +401,21 @@ namespace Concesionario.Dominio
 		/// La clausula publicada de la regla. Accesor GUARDADO por la ausencia misma: la regla dice
 		/// que no revienta preguntarle si existe, y si revienta pedirle el texto que no tiene.
 		/// </summary>
-		internal string DescribeServicingPolicy()
+		internal AServicingClause TheServicingPolicyClause()
 		{
-			return _servicingPolicy.Describe();
+			return _servicingPolicy.TheClauseItComposes(Code);
 		}
 
 		/// <summary>
 		/// La mitad RECIBIDA de la respuesta de la regla: los conteos de este vehiculo, dichos como
 		/// conteos y sin concluir nada de ellos. Accesor GUARDADO, y nada de lo recibido se guarda.
 		/// </summary>
-		internal string DescribeAgainstTheServicingPolicy(
+		internal AServicingClause TheServicingPolicyClauseAgainst(
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
 			int missedMaintenanceCount)
 		{
-			return _servicingPolicy.DescribeAgainst(
-				externalServicesWithEvidence, externalServicesWithoutEvidence,
+			return _servicingPolicy.TheClauseItComposesAgainst(
+				Code, externalServicesWithEvidence, externalServicesWithoutEvidence,
 				missedMaintenanceCount);
 		}
 
@@ -451,15 +452,15 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El alcance publicado en una frase. Accesor GUARDADO: pedirlo de una revision que no
-		/// publico alcance se leeria como un alcance vacio, o sea como que el fabricante dijo que
-		/// no cubre nada.
+		/// El alcance publicado como forma y valores, con esta revision adentro. Accesor GUARDADO:
+		/// pedirlo de una revision que no publico alcance se leeria como un alcance vacio, o sea como
+		/// que el fabricante dijo que no cubre nada.
 		/// </summary>
-		internal string DescribeWarrantyCoverage()
+		internal ACoverageScope TheWarrantyScopePublished()
 		{
 			RefuseCoverageUnlessItWasPublished();
 
-			return _coverage.DescribeTheScope();
+			return _coverage.TheScopePublished(Code);
 		}
 
 		/// <summary>
@@ -471,17 +472,6 @@ namespace Concesionario.Dominio
 			RefuseCoverageUnlessItWasPublished();
 
 			return _coverage.TheCoveredSystemsPublished();
-		}
-
-		/// <summary>
-		/// Las exclusiones que esta revision publico, con su texto y su condicion. Accesor
-		/// GUARDADO.
-		/// </summary>
-		internal string[] TheCoverageExclusionsPublished()
-		{
-			RefuseCoverageUnlessItWasPublished();
-
-			return _coverage.TheExclusionsPublished();
 		}
 
 		/// <summary>
@@ -509,7 +499,7 @@ namespace Concesionario.Dominio
 			RefuseCoverageUnlessItWasPublished();
 
 			return _coverage.TheStandingFor(
-				systemCode, vehicleEnvelope, deliveredAt, deliveryReading, currentReading,
+				Code, systemCode, vehicleEnvelope, deliveredAt, deliveryReading, currentReading,
 				odometerUnit, asOf);
 		}
 

@@ -95,7 +95,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Los dos dias por valor. DOS es el control que mata una constante: una estadia de tres "
 				+ "dias y una de dos no pueden contestar lo mismo.");
 
-			string says = api.DescribeTheStayAt(Collected);
+			string says = api.DescribeTheStayAt(Collected, TheLanguage.OfTheRecord);
 
 			Assert.That(says, Does.Contain(TheBranch));
 			Assert.That(says, Does.Contain("2026-03-02 07:15:00"),
@@ -139,12 +139,12 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			api.RecordShopStay(TheBranch, TheSubject, Entered, Collected, TheDaysItCovered);
 
-			string live = api.DescribeTheStayAt(Collected);
+			string live = api.DescribeTheStayAt(Collected, TheLanguage.OfTheRecord);
 			string[] liveDays = api.DaysInTheShopBetween(TheYearFrom, TheYearTo);
 
 			CloseAndReopenFromTheJournal();
 
-			Assert.That(api.DescribeTheStayAt(Collected), Is.EqualTo(live));
+			Assert.That(api.DescribeTheStayAt(Collected, TheLanguage.OfTheRecord), Is.EqualTo(live));
 			Assert.That(api.DaysInTheShopBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(liveDays));
 		}

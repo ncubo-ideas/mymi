@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Gnothi.Host;
 using System.Text.Json;
 
 namespace Gnothi.Desktop;
@@ -25,6 +26,11 @@ internal sealed class ModelConfig
         get
         {
             string d = Path.Combine(
+                // "Gnothi" Y NO "Mymi", aunque el producto ya se llame Mymi de cara a la persona.
+                // Esto es una RUTA EN DISCO, no un texto: renombrarla deja el model.cfg y las llaves
+                // de todo el que ya tiene la app en una carpeta que nadie vuelve a leer, y el sintoma
+                // seria «se me borro el proveedor» sin ningun error. Se renombra el dia que alguien
+                // escriba la migracion, no antes.
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Gnothi");
             Directory.CreateDirectory(d);
             return d;
@@ -141,7 +147,7 @@ internal sealed class ModelConfig
 
         string? key = KeyPresent ? File.ReadAllText(KeyPath).Trim() : null;
         if (NeedsKey && string.IsNullOrWhiteSpace(key))
-            return new ModelsResult(false, [], "Poné primero la API key de este proveedor.");
+            return new ModelsResult(false, [], Textos.T("ajustes.error.sin-llave"));
 
         string endpoint = url.TrimEnd('/') + "/models";
 
@@ -164,11 +170,11 @@ internal sealed class ModelConfig
             string text = await res.Content.ReadAsStringAsync(ct);
 
             if (!res.IsSuccessStatusCode)
-                return new ModelsResult(false, [], $"El proveedor respondió {(int)res.StatusCode}. Revisá la llave.");
+                return new ModelsResult(false, [], Textos.T("ajustes.error.respondio", ("codigo", ((int)res.StatusCode).ToString())));
 
             JsonElement root = JsonSerializer.Deserialize<JsonElement>(text);
             if (!root.TryGetProperty("data", out JsonElement data) || data.ValueKind != JsonValueKind.Array)
-                return new ModelsResult(false, [], "El proveedor no devolvió una lista de modelos reconocible.");
+                return new ModelsResult(false, [], Textos.T("ajustes.error.ilegible"));
 
             List<string> ids = [];
             foreach (JsonElement m in data.EnumerateArray())
@@ -178,7 +184,7 @@ internal sealed class ModelConfig
             ids.Sort(StringComparer.OrdinalIgnoreCase);
             return ids.Count > 0
                 ? new ModelsResult(true, ids, null)
-                : new ModelsResult(false, [], "El proveedor no listó modelos.");
+                : new ModelsResult(false, [], Textos.T("ajustes.error.vacia"));
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception e)

@@ -31,14 +31,16 @@ namespace Municipalidad.App.Vistas
 			new List<UnPeriodoVencido>();
 
 		/// <summary>Las dos listas leidas en un solo momento, para que hablen del mismo dia.</summary>
-		public static LoQueSeVence LeerPor(MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho)
+		public static LoQueSeVence LeerPor(MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho,
+			Textos textos)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
 			RegistroDeVencimientos vencimientos =
-				api.VencimientosAl(fechaDeCorte, LosJuiciosSinFirmar.DiasDeAviso);
+				api.VencimientosAl(fechaDeCorte, LosJuiciosSinFirmar.DiasDeAviso, textos.Idioma);
 
-			RegistroDeAtrasos atrasos = api.AtrasosAl(fechaDeCorte, LosJuiciosSinFirmar.TasaDeMora);
+			RegistroDeAtrasos atrasos =
+				api.AtrasosAl(fechaDeCorte, LosJuiciosSinFirmar.TasaDeMora, textos.Idioma);
 
 			var porVencer = new List<UnPeriodoPorVencer>();
 

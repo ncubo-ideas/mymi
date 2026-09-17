@@ -39,11 +39,10 @@ namespace Municipalidad.Dominio
 		internal abstract string Etiqueta { get; }
 
 		/// <summary>
-		/// La frase que una persona lee cuando esta serie trae lo que trae. TOTAL: las tres hojas
-		/// dicen la suya, INCLUSO la que no aplica -- ahi la ausencia es justamente la respuesta a
-		/// "por que no hay nada?", y callarla dejaria una pantalla vacia sin motivo.
+		/// CUANTAS LINEAS TRAE LA SERIE, y cero donde no trae ninguna. Es un valor para el hueco de una
+		/// frase: cual hoja es lo dice <c>Etiqueta</c>.
 		/// </summary>
-		internal abstract string Dice();
+		internal virtual int CuantasLineas { get { return 0; } }
 
 		/// <summary>
 		/// Resuelve el estado desde el nombre pedido y la serie que salio. TOTAL: cualquier nombre y
@@ -70,21 +69,6 @@ namespace Municipalidad.Dominio
 		internal override bool Aplica { get { return false; } }
 		internal override bool HayLineas { get { return false; } }
 		internal override string Etiqueta { get { return "rubro-desconocido"; } }
-
-		/// <summary>
-		/// Dice que el rubro no existe y CUALES si hay, leidos del catalogo y no de una lista escrita
-		/// aqui. Un nombre en blanco es una peticion legal y tiene su propia clausula.
-		/// </summary>
-		internal override string Dice()
-		{
-			if (string.IsNullOrWhiteSpace(NombreDelRubro))
-				return "No se pidió ningún rubro, así que no hay serie que mostrar. Los rubros que esta "
-					+ "app conoce son " + string.Join(", ", Rubro.LosQueHay()) + ".";
-
-			return "«" + NombreDelRubro + "» no es ninguno de los rubros que esta app conoce, así que no "
-				+ "hay serie que mostrar. No es que falte información: ese rubro no existe en esta "
-				+ "cuenta. Los que hay son " + string.Join(", ", Rubro.LosQueHay()) + ".";
-		}
 	}
 
 	/// <summary>
@@ -98,34 +82,23 @@ namespace Municipalidad.Dominio
 		internal override bool Aplica { get { return true; } }
 		internal override bool HayLineas { get { return false; } }
 		internal override string Etiqueta { get { return "sin-historia"; } }
-
-		internal override string Dice()
-		{
-			return "Esta app no vio pagar nada de " + NombreDelRubro + ", así que su serie viene vacía. "
-				+ "El rubro sí existe, y la serie deja de venir vacía en cuanto entre un recibo suyo.";
-		}
 	}
 
 	/// <summary>El rubro existe y la serie trae lineas.</summary>
 	internal sealed class ElRubroTieneHistoria : EstadoDeLaSerie
 	{
 		/// <summary>Cuantas lineas de comprobante trae la serie, que es lo que la frase cuenta.</summary>
-		internal int CuantasLineas { get; }
+		internal override int CuantasLineas { get { return cuantasLineas; } }
+
+		private readonly int cuantasLineas;
 
 		internal ElRubroTieneHistoria(string nombreDelRubro, int cuantasLineas) : base(nombreDelRubro)
 		{
-			CuantasLineas = cuantasLineas;
+			this.cuantasLineas = cuantasLineas;
 		}
 
 		internal override bool Aplica { get { return true; } }
 		internal override bool HayLineas { get { return true; } }
 		internal override string Etiqueta { get { return "con-historia"; } }
-
-		internal override string Dice()
-		{
-			return "La serie de " + NombreDelRubro + " trae " + CuantasLineas
-				+ (CuantasLineas == 1 ? " línea" : " líneas") + " de comprobante, de la más vieja a la "
-				+ "más reciente.";
-		}
 	}
 }

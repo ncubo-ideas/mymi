@@ -90,15 +90,15 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La estadia que cubre ese instante, dicha entera, o la constancia de que ninguna lo cubre.
-		/// TOTAL.
+		/// La estadia que cubre ese instante como forma y valores, o la constancia de que ninguna lo
+		/// cubre. TOTAL.
 		/// </summary>
-		internal string DescribeTheStayAt(DateTime asOf)
+		internal AStayClause TheStayClauseAt(DateTime asOf)
 		{
 			foreach (AStay stay in _stays)
-				if (stay.IsInsideAt(asOf)) return stay.Describe();
+				if (stay.IsInsideAt(asOf)) return stay.TheClause();
 
-			return "No hay ninguna estadía en el taller que cubra el " + TheInstant(asOf) + ".";
+			return AStayClause.NoStayCovers(TheInstant(asOf));
 		}
 
 		/// <summary>Si alguna estadia con dias registrados se cruza con ese periodo. TOTAL.</summary>
@@ -130,18 +130,33 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El periodo en una frase: los dias en que estuvo adentro y en cuantas estadias, o la
+		/// El periodo como forma y valores: los dias en que estuvo adentro y en cuantas estadias, o la
 		/// constancia de que no hay ninguna. TOTAL.
 		/// </summary>
-		internal string DescribeDaysInTheShopBetween(string fromDay, string toDay)
+		internal AStayPeriodClause TheStayPeriodClauseBetween(string fromDay, string toDay)
 		{
-			return TheStaysBetween(fromDay, toDay).Describe();
+			return TheStaysBetween(fromDay, toDay).TheClause();
 		}
 
 		/// <summary>Cuantas estadias se cruzan con ese periodo. TOTAL.</summary>
 		internal int StayCountBetween(string fromDay, string toDay)
 		{
 			return TheStaysBetween(fromDay, toDay).HowManyStays();
+		}
+
+		/// <summary>
+		/// En cual situacion esta cada estadia del periodo, por su codigo, una por fila y en orden de
+		/// entrada. TOTAL, y es lo que dice si las celdas de la salida y de los dias dicen algo.
+		/// </summary>
+		internal string[] StayShapesBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			string[] said = new string[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++) said[row] = stays[row].TheShapeItHas();
+
+			return said;
 		}
 
 		/// <summary>
@@ -188,6 +203,40 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
+		/// Cuando salio cada estadia del periodo, dicho como INSTANTE con su hora, una por fila y en
+		/// el mismo orden. Una estadia abierta no tiene salida, asi que su celda no dice nada: cual de
+		/// las dos es lo dice su forma. TOTAL.
+		/// </summary>
+		internal string[] StayCollectionInstantsBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			string[] said = new string[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++)
+				said[row] = stays[row].IsOpen() ? "" : TheInstant(stays[row].CollectedAt);
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cuantos dias cubrio cada estadia del periodo -- los SUYOS enteros --, una por fila y en el
+		/// mismo orden. Una estadia abierta todavia no tiene ninguno, asi que cuenta cero, y cual de
+		/// las dos es lo dice su forma y nunca ese cero. TOTAL.
+		/// </summary>
+		internal int[] StayDayCountsBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			int[] said = new int[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++)
+				said[row] = stays[row].IsOpen() ? 0 : stays[row].TheDaysItCovered().Length;
+
+			return said;
+		}
+
+		/// <summary>
 		/// Los dias que cubrio cada estadia del periodo -- los SUYOS enteros, que es lo que la fila
 		/// dice de si misma -- separados por espacio, una fila por estadia y en el mismo orden. Una
 		/// estadia abierta todavia no tiene ninguno, asi que su celda no dice nada. TOTAL.
@@ -200,21 +249,6 @@ namespace Concesionario.Dominio
 
 			for (int row = 0; row < stays.Count; row++)
 				said[row] = stays[row].IsOpen() ? "" : TheDaysOf(stays[row]);
-
-			return said;
-		}
-
-		/// <summary>
-		/// Cada estadia del periodo en su propia frase, una por fila y en el mismo orden. TOTAL: la
-		/// que sigue abierta tambien se dice con palabras.
-		/// </summary>
-		internal string[] DescribeEachStayBetween(string fromDay, string toDay)
-		{
-			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
-
-			string[] said = new string[stays.Count];
-
-			for (int row = 0; row < stays.Count; row++) said[row] = stays[row].Describe();
 
 			return said;
 		}

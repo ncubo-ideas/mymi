@@ -8,15 +8,15 @@
 
   <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Puppets.Portador'">
 
-    <Company>Sotavento Motors</Company>
+    <Company>Sotaventos Motors</Company>
     <Product>My maintenance schedule</Product>
-    <Copyright>Copyright (c) Sotavento Motors 2026</Copyright>
+    <Copyright>Copyright (c) Sotaventos Motors 2026</Copyright>
 
     <VersionDeLaApp Condition="'$(VersionDeLaApp)' == ''">0.2.0</VersionDeLaApp>
     <Version>$(VersionDeLaApp)</Version>
     <AssemblyVersion>0.2.0.0</AssemblyVersion>
 
-    <Description>Part of the Sotavento Motors maintenance schedule app.</Description>
+    <Description>Part of the Sotaventos Motors maintenance schedule app.</Description>
 
   </PropertyGroup>
 

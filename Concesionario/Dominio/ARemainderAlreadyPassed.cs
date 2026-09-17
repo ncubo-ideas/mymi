@@ -4,18 +4,16 @@ namespace Concesionario.Dominio
 {
 	/// <summary>
 	/// El limite ya llego: el monto es el EXCESO y nunca es negativo. Cero es el limite alcanzado
-	/// exacto y tiene frase propia -- "0 de mas" se leeria como defecto y no como respuesta.
+	/// exacto y tiene clausula propia -- "0 de mas" se leeria como defecto y no como respuesta.
 	/// </summary>
 	internal sealed class ARemainderAlreadyPassed : ARemainder
 	{
-		private readonly string _dimensionName;
+		private readonly string _dimension;
 		private readonly int _overshoot;
 		private readonly string _unitName;
-		private readonly string _overshootInWords;
 
 		/// <summary>Se llega por <see cref="ARemainder.AlreadyPassed"/>, que la compone la dimension.</summary>
-		internal ARemainderAlreadyPassed(
-			string dimensionName, int overshoot, string unitName, string overshootInWords)
+		internal ARemainderAlreadyPassed(string dimension, int overshoot, string unitName)
 		{
 			if (overshoot < 0)
 				throw new DomainException(
@@ -23,10 +21,9 @@ namespace Concesionario.Dominio
 					+ "eso no puede ser negativo: lo que todavia falta es la otra variante, y el "
 					+ "signo de la resta es lo que elige entre las dos.");
 
-			_dimensionName = dimensionName;
+			_dimension = dimension;
 			_overshoot = overshoot;
 			_unitName = unitName;
-			_overshootInWords = overshootInWords;
 		}
 
 		/// <summary>Si.</summary>
@@ -65,12 +62,22 @@ namespace Concesionario.Dominio
 			return _unitName;
 		}
 
-		/// <summary>Cuanto se paso, o que esta justo en el limite, con la dimension al frente.</summary>
-		internal override string Describe()
+		/// <summary>La dimension que lo mide, por su codigo.</summary>
+		internal override string TheDimensionItMeasures()
 		{
-			if (_overshoot == 0) return _dimensionName + ": justo en el límite";
+			return _dimension;
+		}
 
-			return _dimensionName + ": lleva " + _overshootInWords + " de más";
+		/// <summary>El exceso, en una fila. Cero es el limite exacto y no la ausencia de monto.</summary>
+		internal override int[] TheAmountItCounts()
+		{
+			return new[] { _overshoot };
+		}
+
+		/// <summary>La unidad en que esta dicho el exceso, por su nombre.</summary>
+		internal override string TheUnitItIsExpressedIn()
+		{
+			return _unitName;
 		}
 	}
 }

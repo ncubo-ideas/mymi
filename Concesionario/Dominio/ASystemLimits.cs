@@ -94,19 +94,25 @@ namespace Concesionario.Dominio
 			return currentReading - deliveryReading >= _distance;
 		}
 
-		/// <summary>
-		/// Los limites en palabras. La mitad que no se publico no se nombra: un cero ahi se
-		/// leeria como un limite cumplido desde siempre.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>El plazo publicado, tal como entro.</summary>
+		internal override int TheMonthsItLimits()
 		{
-			if (!HasADistanceHalf()) return _months + " meses";
+			return _months;
+		}
 
-			string byDistance = _distance + " " + _unit.Name;
+		/// <summary>La distancia publicada, tal como entro.</summary>
+		internal override int TheDistanceItLimits()
+		{
+			return _distance;
+		}
 
-			if (_months == 0) return byDistance;
-
-			return _months + " meses o " + byDistance;
+		/// <summary>
+		/// El nombre de la unidad, o vacio sin mitad de distancia. La mitad que no se publico no se
+		/// nombra: un cero con unidad ahi se leeria como un limite cumplido desde siempre.
+		/// </summary>
+		internal override string TheNameOfTheUnitItsDistanceIsIn()
+		{
+			return HasADistanceHalf() ? _unit.Name : string.Empty;
 		}
 
 		private static int WholeMonthsBetween(DateTime from, DateTime to)

@@ -68,8 +68,15 @@ public sealed class AgentLoop
 		ToolIndex index = ToolIndex.Of(host);
 		IReadOnlyList<ToolForTheModel> tools = ForTheModel(index);
 
-		Say($"catalog: {tools.Count} tools");
-		if (tools.Count == 0) return "You have no module with available queries.";
+		// LA TRAZA ES PARA LA PERSONA -- la despliega en «que paso por debajo» -- asi que va al
+		// catalogo. Lo que se le DEVUELVE AL MODELO mas abajo no: eso sigue en ingles.
+		//
+		// Los numeros van en digitos pelados y no con separador de miles: son conteos de una traza
+		// tecnica -- cuantas consultas, cuantos caracteres --, no cantidades en prosa.
+		Say(tools.Count == 1
+			? Textos.T("traza.catalogo.una")
+			: Textos.T("traza.catalogo.varias", ("n", tools.Count.ToString())));
+		if (tools.Count == 0) return Textos.T("asistente.sin-consultas");
 
 		List<Exchange> conversation = [new Asked(question)];
 
@@ -81,16 +88,18 @@ public sealed class AgentLoop
 			// No calls means the model is done: this step IS the composition. The facts are the
 			// modules'; the sentence is the assistant's.
 			if (said.Calls.Count == 0)
-				return said.Text ?? "(the model answered nothing)";
+				return said.Text ?? Textos.T("asistente.sin-respuesta");
 
-			Say($"round {round}: {said.Calls.Count} " + (said.Calls.Count == 1 ? "query" : "queries"));
+			Say(said.Calls.Count == 1
+				? Textos.T("traza.vuelta.una", ("vuelta", round.ToString()))
+				: Textos.T("traza.vuelta.varias", ("vuelta", round.ToString()), ("n", said.Calls.Count.ToString())));
 
 			// EVERY call of the round. This is the line the cross lives on.
 			foreach (ToolCall call in said.Calls)
 				conversation.Add(await Run(index, call, Say, ct));
 		}
 
-		return "I could not finish the answer: the assistant kept asking for queries and I stopped it.";
+		return Textos.T("asistente.no-termino");
 	}
 
 	// ONE CALL. A failure is handed BACK TO THE MODEL as a result, not thrown: if one of the two
@@ -104,7 +113,11 @@ public sealed class AgentLoop
 		// called 'mi_super' -- and nothing enforces that.
 		if (!index.TryFind(call.PublicName, out ToolIndex.Entry e))
 		{
-			say($"  {call.PublicName}: does not exist");
+			say("  " + Textos.T("traza.no-existe", ("consulta", call.PublicName)));
+			// ESTO NO VA AL CATALOGO. Es lo que se le devuelve al MODELO como resultado de la tool,
+			// para que sepa que esa consulta no existe y siga. No lo lee un ojo: lo lee el modelo, que
+			// despues le contesta a la persona en SU idioma. Traducirlo cambiaria lo que el modelo
+			// entiende, que es una decision aparte. Lo mismo con r.Reason, unas lineas abajo.
 			return new Returned(call.Id, $"there is no query called '{call.PublicName}'", Failed: true);
 		}
 
@@ -112,7 +125,7 @@ public sealed class AgentLoop
 
 		if (!r.Authorized)
 		{
-			say($"  {call.PublicName}: denied");
+			say("  " + Textos.T("traza.denegada", ("consulta", call.PublicName)));
 			return new Returned(call.Id, r.Reason, Failed: true);
 		}
 
@@ -120,7 +133,9 @@ public sealed class AgentLoop
 		// used to send the model the MCP envelope whenever the module ran over stdio: the facts
 		// escaped inside a string, 525 characters where in-process sent 126.
 		string json = Json.Write(r.Content);
-		say($"  {call.PublicName}: {json.Length} characters");
+		say("  " + (json.Length == 1
+			? Textos.T("traza.caracteres.uno", ("consulta", call.PublicName))
+			: Textos.T("traza.caracteres.varios", ("consulta", call.PublicName), ("n", json.Length.ToString()))));
 		return new Returned(call.Id, json, Failed: false);
 	}
 }

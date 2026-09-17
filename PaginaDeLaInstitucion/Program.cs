@@ -1,10 +1,10 @@
 // LA PRESENCIA WEB DE UNA INSTITUCION, en chiquito. Son las tres cosas que publica, y las
 // tres viven en el MISMO origen porque asi es como funciona de verdad:
 //
-//   /              su pagina, con el boton "Agregar a Gnothi"
+//   /              su pagina, con el boton "Agregar a Mymi"
 //   /app/          su PWA, la app suelta que la persona usa hoy
 //   /app/eventos/  su narrativa, relevada al publicador
-//   /<modulo>.gmod el bundle que Gnothi baja al dar de alta el modulo (un zip, con su mime propio)
+//   /<modulo>.gmod el bundle que Mymi baja al dar de alta el modulo (un zip, con su mime propio)
 //
 // ES LA MISMA PLANTILLA PARA LAS CUATRO instituciones del POC -- laboratorio, supermercado,
 // estacion, concesionario -- y todo lo que cambia entra por configuracion: el bundle, la app
@@ -33,7 +33,7 @@ string bundle = app.Configuration["Bundle"]
     ?? Path.Combine(AppContext.BaseDirectory, "examenes.gmod");
 
 // THE PACKAGE'S OWN TYPE. Served as this, and not as application/zip, so a phone that receives
-// the file -a download, a share- knows what it is without opening it: Gnothi's intent filters
+// the file -a download, a share- knows what it is without opening it: Mymi's intent filters
 // match on the mime, because for content:// files the path is opaque and the extension is not
 // there to match. A file that went through chat as plain application/zip is caught too, and the
 // inspection tells a module from any other zip.
@@ -50,7 +50,7 @@ string suPropiaUrl = app.Configuration["UrlPublica"] ?? "http://127.0.0.1:8096";
 
 // THE INSTITUTION'S SIGNING KEY, the file armar-bundle.ps1 / Gnothi.Host --sign keep. Only its
 // public half is published here; the private half never leaves that file. Optional: without it
-// the origin publishes no keys, and Gnothi's sheet says the package's key is unknown to it.
+// the origin publishes no keys, and Mymi's sheet says the package's key is unknown to it.
 string? llave = app.Configuration["Llave"];
 
 // THE KEYS THE INSTITUTION RETIRED, the list Gnothi.Host --revoke keeps (public halves and dates).
@@ -92,7 +92,7 @@ app.UseRouting();
 // cualquier institucion y el nombre del bundle es lo unico que cambia.
 string nombreDelZip = Path.GetFileName(bundle);
 
-// THE BUNDLE, with its length announced -Gnothi draws a progress bar from it- and, for rehearsing
+// THE BUNDLE, with its length announced -Mymi draws a progress bar from it- and, for rehearsing
 // a slow network on a fast machine, an optional throttle: --LentoKBps 600 serves it at ~600 KB/s,
 // which is what lets a person actually see the download happen in the emulator. Development only.
 int lentoKBps = int.TryParse(app.Configuration["LentoKBps"], out int kbps) ? kbps : 0;
@@ -124,13 +124,13 @@ app.MapGet($"/{nombreDelZip}", async (HttpContext ctx) =>
     }
 });
 
-// WHAT THIS ORIGIN PUBLISHES. Gnothi asks the origin that served a bundle whether that bundle is
+// WHAT THIS ORIGIN PUBLISHES. Mymi asks the origin that served a bundle whether that bundle is
 // its own -here- and compares with the origin the manifest declares: that is the backing of
 // origin. TLS is what makes the answer worth anything; over http, as in development, it only
-// proves that the three pieces are consistent, and Gnothi's sheet says so.
+// proves that the three pieces are consistent, and Mymi's sheet says so.
 app.MapGet("/.well-known/gnothi/modules.json", () =>
 {
-    // `version` next to the seal (2026-09-09): Gnothi compares it with what it has installed and
+    // `version` next to the seal (2026-09-09): Mymi compares it with what it has installed and
     // shows "hay una versión nueva" on the card. The seal alone says "different"; the version
     // says "newer", which is the thing worth a label.
     (string? module, string? version) = ModuleFactsOf(bundle);
@@ -195,18 +195,18 @@ if (Directory.Exists(appSuelta))
 app.MapGet("/", () =>
 {
     // ONE LINK FOR THE BUTTON AND FOR THE CODE. It carries the bundle's address and, when the
-    // bundle is there to be read, the seal of its manifest (&h=): Gnothi refuses a package whose
+    // bundle is there to be read, the seal of its manifest (&h=): Mymi refuses a package whose
     // manifest no longer hashes to it, so whoever made this link or printed this code fixed
     // WHICH package it points at, and a swap on the server afterwards is caught. Integrity, not
     // authenticity -- the one who prints the code chooses both the address and the seal -- and
-    // Gnothi's sheet says exactly that.
+    // Mymi's sheet says exactly that.
     string? seal = SealOf(bundle);
     string alta = "https://go.gnothi.app/alta?bundle="
         + Uri.EscapeDataString($"{suPropiaUrl}/{nombreDelZip}")
         + (seal is null ? "" : "&h=" + seal);
 
     // THE CODE, drawn here. The same link as the button, for the person who is reading this
-    // page on a laptop and has Gnothi on her phone: no link crosses that gap, a code does.
+    // page on a laptop and has Mymi on her phone: no link crosses that gap, a code does.
     string qr;
     using (var generator = new QRCoder.QRCodeGenerator())
     using (QRCoder.QRCodeData data = generator.CreateQrCode(alta, QRCoder.QRCodeGenerator.ECCLevel.M))
@@ -235,13 +235,13 @@ app.MapGet("/", () =>
         </style>
         <h1>{{titulo}}</h1>
         <p>{{subtitulo}}</p>
-        <p>Llevate tu registro a Gnothi. Se instala en tu telefono y a partir de ahi
+        <p>Llevate tu registro a Mymi. Se instala en tu telefono y a partir de ahi
            tus datos viven ahi, no en nuestro servidor.</p>
-        <a class="cta" href="{{alta}}">Agregar a Gnothi</a>
+        <a class="cta" href="{{alta}}">Agregar a Mymi</a>
         <br><a class="otra" href="/app/">o abrir la app en el navegador</a>
         <div class="qr">
           <div>{{qr}}</div>
-          <p>Si estas leyendo esto en una computadora, escanea el codigo desde Gnothi en tu
+          <p>Si estas leyendo esto en una computadora, escanea el codigo desde Mymi en tu
              telefono: <b>Agregar modulo &rarr; Escanear el codigo de la institucion</b>.
              Es el mismo enlace que el boton.</p>
         </div>
@@ -265,7 +265,7 @@ app.MapGet("/salud", () => Results.Ok(new
 app.Run();
 
 // THE SEAL OF A BUNDLE: the first 16 bytes of the SHA-256 of manifest.json exactly as it sits
-// in the zip, base64url without padding. Gnothi computes the same thing over the same bytes
+// in the zip, base64url without padding. Mymi computes the same thing over the same bytes
 // (ModuleEnrollment.SealOf) and the two have to agree byte for byte, so nothing is normalised
 // on either side. Null when there is no bundle to read: the link then carries no seal, which is
 // what it did before, not an error.

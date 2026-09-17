@@ -1,13 +1,11 @@
 @page "/cuanto-he-pagado"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Cuánto he pagado · Mi cuenta municipal</PageTitle>
+<PageTitle>@textos["cuantoHePagado.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
-<h1>Cuánto he pagado</h1>
-<p class="bajada">
-    Lo que pagaste en un año, y la serie de comprobantes de cada rubro. El total trae la mora adentro,
-    porque es lo que pagaste de verdad.
-</p>
+<h1>@textos["cuantoHePagado.titulo"]</h1>
+<p class="bajada">@textos["cuantoHePagado.bajada"]</p>
 
 @if (!estado.EstaArriba)
 {
@@ -16,11 +14,11 @@
 else
 {
     <section class="bloque" id="el-total">
-        <h2>El total del año</h2>
+        <h2>@textos["cuantoHePagado.totalDelAnio"]</h2>
 
         <article class="tarjeta">
             <div class="tarjeta__cabeza">
-                <label for="el-anio">Año</label>
+                <label for="el-anio">@textos["cuantoHePagado.anio"]</label>
                 <select id="el-anio" @bind="anioElegido" @bind:after="Releer">
                     @foreach (var anio in pagado.AniosQueSePuedenPedir)
                     {
@@ -30,32 +28,22 @@ else
             </div>
 
             <dl class="renglones">
-                <dt>Pagado en @pagado.Anio</dt>
-                <dd class="cifra">@Formato.Monto(pagado.TotalDelAnio)</dd>
+                <dt>@textos.Con("cuantoHePagado.pagadoEn", ("anio", pagado.Anio.ToString()))</dt>
+                <dd class="cifra">@textos.Monto(pagado.TotalDelAnio)</dd>
             </dl>
 
             @if (!pagado.HayAlgunComprobante)
             {
-                <p class="nota">
-                    Esta app todavía no ha visto ningún comprobante tuyo, así que no hay serie que
-                    mostrar y el total viene en cero. Llegan solos, con el resto de tus movimientos.
-                </p>
+                <p class="nota">@textos["cuantoHePagado.sinNingunComprobante"]</p>
             }
             else if (pagado.ElAnioPedidoNoTieneComprobantes)
             {
-                <p class="nota">
-                    De @pagado.Anio esta app no tiene ningún comprobante. Un total en cero no es un año
-                    sin pagos: puede ser que los recibos de ese año todavía no hayan llegado aquí. Los
-                    años de los que sí hay están en la lista de arriba.
-                </p>
+                <p class="nota">@textos.Con("cuantoHePagado.anioSinComprobantes", ("anio", pagado.Anio.ToString()))</p>
             }
         </article>
 
-        <Aviso Tono="quieta" Id="el-total-trae-la-mora" Titulo="El total incluye la mora">
-            <p>
-                Es lo que pagaste de verdad, no el precio del servicio. Cada línea trae la mora en su
-                propia columna si querés verlas aparte, y no hay que restar un total de otro.
-            </p>
+        <Aviso Tono="quieta" Id="el-total-trae-la-mora" Titulo="@textos["cuantoHePagado.incluyeLaMora"]">
+            <p>@textos["cuantoHePagado.incluyeLaMoraCuerpo"]</p>
         </Aviso>
     </section>
 
@@ -64,7 +52,7 @@ else
         <section class="bloque" id="@("serie-" + serie.Rubro)">
             <div class="tarjeta__cabeza">
                 <LlaveDelRubro Rubro="@serie.Rubro" />
-                <span class="periodo">@serie.Estado</span>
+                <span class="periodo">@textos.ComoSeDice(serie.Estado)</span>
             </div>
 
             <Frase Dice="@serie.Dice" Apagada="@(serie.Lineas.Count == 0)" />
@@ -75,11 +63,11 @@ else
                     <table>
                         <thead>
                             <tr>
-                                <th scope="col">Período</th>
-                                <th scope="col" class="tabla__cifra">Monto</th>
-                                <th scope="col" class="tabla__cifra">Mora</th>
-                                <th scope="col" class="tabla__cifra">Cubre</th>
-                                <th scope="col" class="tabla__cifra">Por período</th>
+                                <th scope="col">@textos["cuantoHePagado.periodo"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.monto"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.mora"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.cubre"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.porPeriodo"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,13 +78,13 @@ else
                                         @linea.Periodo
                                         @if (linea.Inferido)
                                         {
-                                            <span class="sello sello--inferido">inferido</span>
+                                            <span class="sello sello--inferido">@textos["cuantoHePagado.inferido"]</span>
                                         }
                                     </td>
-                                    <td class="tabla__cifra">@Formato.Monto(linea.Monto)</td>
-                                    <td class="tabla__cifra">@Formato.Monto(linea.Mora)</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.Monto)</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.Mora)</td>
                                     <td class="tabla__cifra">@linea.Cubre</td>
-                                    <td class="tabla__cifra">@Formato.Monto(linea.PorPeriodo)</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.PorPeriodo)</td>
                                 </tr>
                             }
                         </tbody>
@@ -108,20 +96,12 @@ else
 
     @if (HayAlgunaLineaInferida())
     {
-        <Aviso Tono="tibia" Id="lo-que-se-infirio" Titulo="Las líneas marcadas «inferido» las dedujo esta app">
-            <p>
-                Cuando una línea es la primera de un rubro no hay una anterior con que saber cuántos
-                períodos cubre, así que esta app supone uno. Es una suposición suya y no un dato de tu
-                recibo.
-            </p>
+        <Aviso Tono="tibia" Id="lo-que-se-infirio" Titulo="@textos["cuantoHePagado.loQueSeInfirio"]">
+            <p>@textos["cuantoHePagado.loQueSeInfirioCuerpo"]</p>
         </Aviso>
     }
 
-    <p class="nota">
-        Una línea puede cubrir varios períodos, así que comparar montos de líneas distintas no compara
-        nada: para eso está la columna <strong>por período</strong>. Las series vienen enteras y el año
-        no las recorta, para que se vea de qué años sí hay comprobantes.
-    </p>
+    <p class="nota">@((MarkupString)textos["cuantoHePagado.pie"])</p>
 }
 
 @code {

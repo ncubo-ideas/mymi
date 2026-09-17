@@ -7,6 +7,10 @@ namespace Concesionario.Dominio
 	/// unidad, o cual de las seis razones impide decirlo. Se compone en cada lectura y nunca se
 	/// guarda -- es correcto para un solo instante y esta viejo desde el siguiente.
 	/// <para>
+	/// Sale como SITUACION mas valores ya tipados y nunca como una frase: la redaccion vive donde se
+	/// elige el idioma, y el dominio no elige uno.
+	/// </para>
+	/// <para>
 	/// La resta vive adentro, una sola vez, en <see cref="AMeasuredDimension"/>: lo recorrido y el
 	/// limite ya escalado no llegan nunca los dos a un llamador. Lo que sale es este monto, que
 	/// esta completo.
@@ -15,58 +19,58 @@ namespace Concesionario.Dominio
 	internal abstract class ARemainder
 	{
 		/// <summary>
-		/// Queda algo por delante: la dimension que lo mide, el monto, su unidad y como se dice esa
-		/// cantidad. Las palabras las trae la dimension, que es la que sabe si su unidad se
-		/// pluraliza.
+		/// Queda algo por delante: la dimension que lo mide por su CODIGO, el monto y la unidad en
+		/// que esta dicho. Ninguna palabra: la dimension aporta los valores y la redaccion es de
+		/// quien la muestra.
 		/// </summary>
-		internal static ARemainder StillAhead(
-			string dimensionName, int amount, string unitName, string amountInWords)
+		internal static ARemainder StillAhead(string dimension, int amount, string unitName)
 		{
-			return new ARemainderStillAhead(dimensionName, amount, unitName, amountInWords);
+			return new ARemainderStillAhead(dimension, amount, unitName);
 		}
 
 		/// <summary>
 		/// El limite ya llego. El monto es el EXCESO y nunca es negativo; cero es el limite exacto,
-		/// que tiene frase propia.
+		/// que tiene clausula propia.
 		/// </summary>
-		internal static ARemainder AlreadyPassed(
-			string dimensionName, int overshoot, string unitName, string overshootInWords)
+		internal static ARemainder AlreadyPassed(string dimension, int overshoot, string unitName)
 		{
-			return new ARemainderAlreadyPassed(
-				dimensionName, overshoot, unitName, overshootInWords);
+			return new ARemainderAlreadyPassed(dimension, overshoot, unitName);
 		}
 
-		/// <summary>La ley evaluada no mide esa dimension, dicha por su nombre.</summary>
-		internal static ARemainder NotMeasuredByThisLaw(string dimensionName)
+		/// <summary>La ley evaluada no mide esa dimension, dicha por su codigo.</summary>
+		internal static ARemainder NotMeasuredByThisLaw(string dimension)
 		{
-			return new ARemainderOutsideTheLaw(dimensionName);
+			return new ARemainderOutsideTheLaw(dimension);
 		}
 
-		/// <summary>No hay de donde contar. La frase es la que la dimension ya compone.</summary>
-		internal static ARemainder NoReadingToCountFrom(string said)
+		/// <summary>No hay de donde contar.</summary>
+		internal static ARemainder NoReadingToCountFrom()
 		{
-			return new ARemainderSuspendedByAnAbsentReading(said);
-		}
-
-		/// <summary>El limite y las mediciones no calzan. La frase es la de la dimension.</summary>
-		internal static ARemainder UnitsThatDoNotMatch(string said)
-		{
-			return new ARemainderSuspendedByAUnitMismatch(said);
-		}
-
-		/// <summary>El perfil de uso la ignora. La frase es la de la dimension.</summary>
-		internal static ARemainder IgnoredByTheUsageProfile(string said)
-		{
-			return new ARemainderSuspendedByTheUsageProfile(said);
+			return new ARemainderSuspendedByAnAbsentReading();
 		}
 
 		/// <summary>
-		/// La agenda no tiene ninguna operacion activa de esa clase, que se nombra: sin el nombre
-		/// las clases no agendadas dirian todas la misma frase.
+		/// El limite y las mediciones no calzan, y se nombran las dos unidades: la del limite y la
+		/// que no coincidio.
 		/// </summary>
-		internal static ARemainder WithNoOperationScheduled(string kindName)
+		internal static ARemainder UnitsThatDoNotMatch(string limitUnit, string measuredUnit)
 		{
-			return new ARemainderWithNoOperationScheduled(kindName);
+			return new ARemainderSuspendedByAUnitMismatch(limitUnit, measuredUnit);
+		}
+
+		/// <summary>El perfil de uso la ignora, nombrado por su codigo.</summary>
+		internal static ARemainder IgnoredByTheUsageProfile(string usageProfile)
+		{
+			return new ARemainderSuspendedByTheUsageProfile(usageProfile);
+		}
+
+		/// <summary>
+		/// La agenda no tiene ninguna operacion activa de esa clase, que se nombra por su codigo:
+		/// sin el nombre las clases no agendadas dirian todas la misma clausula.
+		/// </summary>
+		internal static ARemainder WithNoOperationScheduled(string kind)
+		{
+			return new ARemainderWithNoOperationScheduled(kind);
 		}
 
 		/// <summary>
@@ -121,10 +125,59 @@ namespace Concesionario.Dominio
 		internal abstract RemainderStanding Standing();
 
 		/// <summary>
-		/// Lo que queda, en palabras, con la dimension al frente. TOTAL: las siete situaciones
-		/// dicen algo, y ninguna dice la frase vacia.
+		/// La dimension que esta mitad mide, por su CODIGO. TOTAL, y vacia donde la situacion no
+		/// habla de una dimension.
 		/// </summary>
-		internal abstract string Describe();
+		internal virtual string TheDimensionItMeasures()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// El monto que falta o que se paso, en UNA fila, o en CERO filas donde no hay ninguno.
+		/// TOTAL, y la ausencia nunca se dice con un cero: un cero se leeria como que no falta nada.
+		/// </summary>
+		internal virtual int[] TheAmountItCounts()
+		{
+			return new int[0];
+		}
+
+		/// <summary>
+		/// La unidad en que esta dicho este monto, por su nombre, o vacia donde la situacion no
+		/// nombra ninguna. TOTAL, a diferencia de <see cref="UnitName"/>, que es la lectura guardada
+		/// de la misma unidad.
+		/// </summary>
+		internal virtual string TheUnitItIsExpressedIn()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// La unidad en que estan las mediciones cuando no coincide con la del limite, o vacia donde
+		/// coinciden. TOTAL.
+		/// </summary>
+		internal virtual string TheUnitTheMeasurementsAreIn()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// El perfil de uso que ignora esta dimension, por su codigo, o vacio donde no la ignora
+		/// ninguno. TOTAL.
+		/// </summary>
+		internal virtual string TheUsageProfileThatIgnoresIt()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// La clase que no tiene ninguna operacion agendada, por su codigo, o vacia donde si la
+		/// tiene. TOTAL.
+		/// </summary>
+		internal virtual string TheKindWithNoOperationScheduled()
+		{
+			return "";
+		}
 
 		/// <summary>
 		/// El monto. Accesor GUARDADO: revienta si no se pudo medir, porque un cero aqui se leeria

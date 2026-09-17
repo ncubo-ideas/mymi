@@ -56,6 +56,17 @@ steps:
   # Cuatro aserciones sobre el grafo de referencias: la flecha va Assistant -> Host y nunca
   # al reves. Si alguien pone un using del bucle dentro del Host, el build queda verde y esto
   # es lo unico que se entera. Devuelve 1 si falla, asi que el paso falla solo.
+  # LOS MODULOS DEL BANCO, en Debug. La suite arranca cada modulo de Modulos/ y cruza su manifiesto
+  # contra las tools que expone de verdad; los installation.json apuntan, relativo a su carpeta,
+  # al bin/Debug del proyecto Mcp de cada uno. El solution se compila en Release y dos de estos
+  # tres ni estan en el solution, asi que sin este paso ningun modulo arranca y la asercion
+  # "al menos un modulo se pudo verificar contra su superficie real" queda roja.
+  - script: |
+      dotnet build Compras/App/Compras.Mcp -c Debug
+      dotnet build Examenes/App/Examenes.Mcp -c Debug
+      dotnet build HolaMundo/Facturas/App/Facturas.Mcp -c Debug
+    displayName: Compilar los modulos del banco
+
   - script: dotnet run --project Gnothi.Assistant.Tests --no-build -c Release
     displayName: "Guardian 1 - la Puerta 2 se puede borrar"
 

@@ -56,16 +56,16 @@ enum FotoLocal {
             f.locale = Locale(identifier: "es_CR")
             f.dateStyle = .medium
             f.timeStyle = .short
-            cuando = "La ultima vez que Gnothi actualizo esto fue el \(f.string(from: d))."
+            cuando = "La ultima vez que Mymi actualizo esto fue el \(f.string(from: d))."
         } else {
             cuando = "No se sabe cuando se actualizo por ultima vez."
         }
         return """
-        Estos son los datos REALES de la persona que te esta preguntando, leidos por Gnothi de \
+        Estos son los datos REALES de la persona que te esta preguntando, leidos por Mymi de \
         los registros que sus instituciones le entregaron y que viven en su propio telefono. No \
         vienen de ningun servidor.
 
-        \(cuando) Si ella espera ver algo mas nuevo, decile que abra la app de Gnothi.
+        \(cuando) Si ella espera ver algo mas nuevo, decile que abra la app de Mymi.
 
         Contestale sobre SUS numeros, en su idioma, sin explicarle la estructura del json. En \
         prosa corrida, sin markdown: nada de tablas, pipes, asteriscos ni encabezados, porque \
@@ -76,10 +76,10 @@ enum FotoLocal {
 
 struct LoQueGnothiTieneIntent: AppIntent {
 
-    static let title: LocalizedStringResource = "Lo que Gnothi tiene"
+    static let title: LocalizedStringResource = "Lo que Mymi tiene"
 
     static let description = IntentDescription(
-        "Devuelve los datos reales que Gnothi tiene en este telefono -- facturas, examenes, lo que la persona haya autorizado -- con la fecha en que los actualizo."
+        "Devuelve los datos reales que Mymi tiene en este telefono -- facturas, examenes, lo que la persona haya autorizado -- con la fecha en que los actualizo."
     )
 
     static let openAppWhenRun = false
@@ -91,7 +91,7 @@ struct LoQueGnothiTieneIntent: AppIntent {
             // Distinguir "nunca corrio" de "corrio y no escribio" es lo que el log GNOTHI: hace
             // del otro lado: si dice "instantanea: N modulos" y esto sale, las rutas no
             // coinciden.
-            dicho = "Gnothi todavia no dejo ninguna foto. Abri la app una vez y volve a preguntar. Se busco en: \(ruta)"
+            dicho = "Mymi todavia no dejo ninguna foto. Abri la app una vez y volve a preguntar. Se busco en: \(ruta)"
         case .ilegible(let ruta):
             dicho = "Hay un archivo en \(ruta) pero no se pudo leer como json."
         case .foto(let json, let escritaEn):
@@ -103,9 +103,10 @@ struct LoQueGnothiTieneIntent: AppIntent {
 
 struct GnothiShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
-        // El nombre de la app va en la frase porque Apple lo exige. Hoy es "Gnothi Host" para
-        // no chocar con el spike de Swift, que se llama "Gnothi"; el dia que el spike se retire,
-        // esta app recupera el nombre corto y las frases mejoran solas.
+        // El nombre de la app va en la frase porque Apple lo exige, y hoy es "Mymi", que es como
+        // se llama el producto. Antes decia "Gnothi Host", para no chocar con el spike de Swift
+        // llamado "Gnothi"; el nombre nuevo no choca con el spike y ademas se dice mejor en voz
+        // alta: «Que tiene Mymi».
         AppShortcut(
             intent: LoQueGnothiTieneIntent(),
             phrases: [
@@ -113,7 +114,7 @@ struct GnothiShortcuts: AppShortcutsProvider {
                 "Mis datos en \(.applicationName)",
                 "Qué sabe \(.applicationName) de mí"
             ],
-            shortTitle: "Lo que Gnothi tiene",
+            shortTitle: "Lo que Mymi tiene",
             systemImageName: "externaldrive.badge.checkmark"
         )
     }

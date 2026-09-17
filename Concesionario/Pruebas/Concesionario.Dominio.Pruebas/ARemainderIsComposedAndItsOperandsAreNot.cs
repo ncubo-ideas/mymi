@@ -188,23 +188,46 @@ namespace Concesionario.Dominio.Pruebas
 				+ string.Join(", ", carriers) + ". Quien la reciba los resta el mismo.");
 		}
 
-		// Y LA MISMA CENSURA SOBRE LA AGENDA, que es la que las diez lecturas de part A cuelgan:
-		// ninguna de ellas entrega un ARemainder. Lo que sale son escalares (regla de salida de E3).
+		// Y LA MISMA CENSURA SOBRE LA AGENDA, con la forma que tiene desde que el dominio dejo de
+		// redactar. Antes se leia "ninguna lectura de la agenda entrega un ARemainder"; hoy hay DOS
+		// que si, y no son lecturas: son los dos resolvedores que el script de la puerta ata a una
+		// LOCAL para sacarle sus escalares en un solo momento del registro. Esa forma esta medida --
+		// ../CLAUDE.md, la asignacion intermedia de una query es local del script y NO acuna una
+		// global -- y la alternativa que ahi mismo se pesa es un miembro plano por campo, cada uno
+		// recomponiendo el portador.
+		//
+		// LO QUE LA LEY PROTEGE SIGUE PROTEGIDO, y por dos mitades:
+		//
+		//   NINGUNO ES PUBLICO. Un portador publico si cruzaria a un llamador de C#.
+		//
+		//   Y LOS INTERNOS SON EXACTAMENTE ESOS DOS, escritos. Un tercero es un sitio nuevo por donde
+		//   alguien puede volver a derivar lo que el agregado ya compuso, y tiene que costar un rojo.
+		//
+		// LA TERCERA MITAD NO HACE FALTA AQUI: Concesionario.App no esta en el InternalsVisibleTo del
+		// dominio, asi que la puerta NO PUEDE nombrar un ARemainder ni para recibirlo. Eso lo afirma
+		// TheDomainHasNoDependencies.
 		[Test]
-		public void NoRemainderCarrierCrossesTheScheduleSurface()
+		public void TheOnlyRemainderCarriersOnTheScheduleAreTheTwoTheDoorBindsAsALocal()
 		{
-			List<string> exposed = typeof(MaintenanceSchedule)
+			List<MethodInfo> carriers = typeof(MaintenanceSchedule)
 				.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public
 					| BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
 				.Where(member => member.ReturnType == typeof(ARemainder))
 				.Where(member => member.IsPublic || member.IsAssembly)
-				.Select(member => member.Name)
 				.ToList();
 
-			Assert.That(exposed, Is.Empty,
-				"La agenda expone un portador ARemainder: " + string.Join(", ", exposed)
-				+ ". El perform no lo puede llevar de vuelta, y quien lo reciba puede volver a "
-				+ "derivar lo que el agregado ya compuso.");
+			Assert.That(carriers.Where(member => member.IsPublic).Select(member => member.Name),
+				Is.Empty,
+				"Un portador PUBLICO cruzaria a un llamador de C#, que puede volver a derivar lo que "
+				+ "el agregado ya compuso.");
+
+			Assert.That(
+				carriers.Select(member => member.Name)
+					.OrderBy(name => name, StringComparer.Ordinal),
+				Is.EqualTo(new[] { "TheDistanceRemainderFor", "TheTimeRemainderFor" }),
+				"La agenda gano o perdio un resolvedor de portador. Los dos que hay existen para que "
+				+ "el script de la puerta los ate a una local y saque sus escalares de UN momento; un "
+				+ "tercero es un sitio nuevo y se decide a proposito.");
 		}
 
 		private static IEnumerable<MethodInfo> EveryMemberOfTheRemainder()

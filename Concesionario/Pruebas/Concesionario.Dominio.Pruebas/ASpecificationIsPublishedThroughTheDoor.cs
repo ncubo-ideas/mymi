@@ -59,11 +59,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			string live = TheFluidClause("EngineOil");
 
-			Assert.That(live, Does.Contain("capacidad 2.4 L"),
+			Assert.That(live, Does.Contain("capacidad 2,4 L"),
 				"Con la forma que va a tener despues del journal, desde la primera lectura.");
-			Assert.That(live, Does.Not.Contain("2.40"),
+			Assert.That(live, Does.Not.Contain("2,40"),
 				"Y no con la que el editorial escribio, porque esa no sobrevive al replay. El "
-				+ "residuo se dice en voz alta: un 2.40 del fabricante se muestra 2.4.");
+				+ "residuo se dice en voz alta: un 2.40 del fabricante se muestra 2,4.");
 
 			journal.CloseAndReopenFromTheJournal();
 
@@ -83,7 +83,7 @@ namespace Concesionario.Dominio.Pruebas
 			string program = TheSecondProgramOf(journal.Folder);
 
 			Assert.That(program, Does.Contain("2.4"));
-			Assert.That(program, Does.Not.Contain("2.40"),
+			Assert.That(program, Does.Not.Contain("2,40"),
 				"Un 2.40 en el blob de argumentos querria decir que la puerta mando una forma que el "
 				+ "journal no puede devolver.");
 		}
@@ -181,7 +181,7 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.PublishCoveredSystem(TheRevision, "POWERTRAIN", 0, 0, "UnitA");
 			journal.Api.SealRevision(TheRevision);
 
-			string scope = journal.Api.DescribeCoverageSummary();
+			string scope = journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord);
 
 			Assert.That(scope, Does.Contain("'POWERTRAIN' está dentro del alcance publicado"));
 			Assert.That(scope, Does.Not.Contain("con límites propios"),
@@ -245,7 +245,7 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.SealRevision(TheRevision);
 
 			Assert.That(
-				journal.Api.DescribeCoverageSummary(),
+				journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
 				Does.Contain("'Powertrain-Hybrid' está dentro del alcance publicado"),
 				"Recortado en los extremos, y nada mas: tal como lo publicaron.");
 
@@ -458,12 +458,13 @@ namespace Concesionario.Dominio.Pruebas
 		// lo demas, y lo que se observa es exactamente lo que un shell observaria.
 		private string TheFluidClause(string kind)
 		{
-			return journal.Api.DescribeFluid(kind);
+			return journal.Api.DescribeFluid(kind, TheLanguage.OfTheRecord);
 		}
 
 		private string ThePriceClauseAsOf(DateTime asOf)
 		{
-			return journal.Api.DescribeServicePrice("FluidChange", 10000, "UnitA", asOf);
+			return journal.Api.DescribeServicePrice(
+				"FluidChange", 10000, "UnitA", asOf, TheLanguage.OfTheRecord);
 		}
 
 		// El arbol entero del journal reducido a una cadena: nombre relativo mas hash del contenido,

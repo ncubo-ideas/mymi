@@ -30,7 +30,7 @@ namespace Municipalidad.App.Vistas
 			new List<UnPeriodoSinRecibo>();
 
 		/// <summary>El cotejo, detras de su par: sin consulta no se pregunta por la consulta.</summary>
-		public static LoSinComprobante LeerPor(MunicipalidadAPI api)
+		public static LoSinComprobante LeerPor(MunicipalidadAPI api, Textos textos)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
@@ -39,12 +39,12 @@ namespace Municipalidad.App.Vistas
 				{
 					HayAlgunaConsulta = false,
 					Estado = "sin-consulta",
-					Dice = NuncaSeHaRegistradoUnaConsulta,
+					Dice = textos["sinComprobante.nuncaHuboConsulta"],
 				};
 
 			DateTime laConsulta = api.ConsultaMasReciente();
 
-			RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(laConsulta);
+			RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(laConsulta, textos.Idioma);
 
 			var filas = new List<UnPeriodoSinRecibo>();
 
@@ -70,10 +70,6 @@ namespace Municipalidad.App.Vistas
 		private static string ElDiaDe(DateTime instante) =>
 			instante.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
-		private const string NuncaSeHaRegistradoUnaConsulta =
-			"Tu app no tiene ninguna consulta al portal registrada, así que no hay con qué cotejar lo que "
-			+ "sí vio pagar. Esto NO dice que todo esté en orden: dice que la pregunta todavía no se "
-			+ "puede contestar, y se va a poder en cuanto entre una consulta.";
 	}
 
 	/// <summary>Un periodo que el portal da por saldado y del que aqui no hay recibo.</summary>

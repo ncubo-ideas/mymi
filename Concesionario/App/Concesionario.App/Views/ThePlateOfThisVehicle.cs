@@ -46,7 +46,8 @@ namespace Concesionario.App.Views
 		/// texto publicado: sin placa esa lectura revienta, y una excepcion aqui se lleva por delante
 		/// la pagina entera en vez de dejar una frase.
 		/// </summary>
-		public static ThePlateOfThisVehicle ReadThrough(DealershipCarAPI api, DateTime asOf)
+		public static ThePlateOfThisVehicle ReadThrough(
+			DealershipCarAPI api, DateTime asOf, string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 			bool published = api.IsAPlatePublished(asOf);
@@ -55,7 +56,7 @@ namespace Concesionario.App.Views
 				AskedAt = TheMoment(asOf),
 				PlatePublished = published,
 				AsPublished = published ? api.ReadPlateAsPublished(asOf) : "",
-				Says = api.DescribePlate(asOf),
+				Says = api.DescribePlate(asOf, language),
 			};
 		}
 		private static string TheMoment(DateTime instant)

@@ -102,7 +102,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				stays.Says,
-				Is.EqualTo(journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo)),
+				Is.EqualTo(journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo,
+					TheLanguage.OfTheRecord)),
 				"La frase del periodo es la de la puerta LETRA POR LETRA. Es lo unico que atrapa una "
 				+ "frase rival armada en la caratula: el barrido de aritmetica no la ve, porque una "
 				+ "suma con un operando de texto es concatenacion y nunca se marca.");
@@ -186,7 +187,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y EL CONTROL DE QUE SE PARTIO DE LA CELDA DE LA PUERTA Y NO DE OTRA COSA: la celda cruda
 			// pegada con espacios vuelve a ser exactamente lo que la puerta mando.
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(
 				string.Join(" ", stays.Rows[0].CoveredDays), Is.EqualTo(record.CoveredDays[0]),
@@ -216,7 +218,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				stays.TheStayRightNowSays,
-				Is.EqualTo(journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay)),
+				Is.EqualTo(journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay,
+					TheLanguage.OfTheRecord)),
 				"Y es la de la puerta letra por letra, al MISMO instante.");
 
 			// Y LA ABIERTA NO ESTA EN NINGUNA DE LAS SEIS: ni en los dias, ni en las filas, ni en las
@@ -248,14 +251,16 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				taken.Select(each => each.ParameterType.Name).ToArray(),
-				Is.EqualTo(new[] { "DealershipCarAPI", "String", "String", "DateTime" }),
-				"El portador toma la puerta, los DOS limites de dia y UN instante. Dos instantes son "
-				+ "dos momentos que se pueden separar, y las dos mitades de este bloque contestarian "
-				+ "sobre estados distintos del mismo registro.");
+				Is.EqualTo(new[] { "DealershipCarAPI", "String", "String", "DateTime", "String" }),
+				"El portador toma la puerta, los DOS limites de dia, UN instante y el idioma. Dos "
+				+ "instantes son dos momentos que se pueden separar, y las dos mitades de este bloque "
+				+ "contestarian sobre estados distintos del mismo registro.");
 
 			Assert.That(
 				taken.Select(each => each.Name).ToArray(),
-				Is.EqualTo(new[] { "api", "fromDay", "toDay", "asOf" }));
+				Is.EqualTo(new[] { "api", "fromDay", "toDay", "asOf", "language" }),
+				"Y el quinto es el IDIOMA y ningun otro: sin este renglon, un segundo instante o un "
+				+ "limite mas entrarian con el mismo conteo y la ley de arriba seguiria verde.");
 		}
 
 		// Y LA PANTALLA NO LE PIDE NINGUNO DE LOS TRES A NADIE. Los dos limites y el instante salen del
@@ -270,9 +275,13 @@ namespace Concesionario.Dominio.Pruebas
 				"La caratula dejo de ofrecer las estadias y la seccion Historial no tiene de donde "
 				+ "sacarlas.");
 
-			Assert.That(read.GetParameters(), Is.Empty,
-				"La lectura de la pantalla gano un argumento. La ventana la fija la pantalla con su "
-				+ "propio reloj; pedirla seria dejar que alguien pregunte por un periodo que se invento.");
+			Assert.That(
+				read.GetParameters().Select(each => each.Name + ":" + each.ParameterType.Name),
+				Is.EqualTo(new[] { "language:String" }),
+				"La lectura de la pantalla gano un parametro que no es el idioma. La ventana la fija "
+				+ "la pantalla con su propio reloj; pedirla seria dejar que alguien pregunte por un "
+				+ "periodo que se invento. El IDIOMA si entra, y no es una medicion: es la etiqueta "
+				+ "con la que se elige catalogo.");
 
 			Assert.That(read.ReturnType, Is.EqualTo(typeof(TheStaysOfThisVehicle)));
 
@@ -301,9 +310,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (string read in new[]
 			{
-				"state.ReadTheSpecification()",
-				"state.ReadWhereThisVehicleStands()",
-				"state.ReadTheStaysOfThisVehicle()",
+				"state.ReadTheSpecification(texts.Language)",
+				"state.ReadWhereThisVehicleStands(texts.Language)",
+				"state.ReadTheStaysOfThisVehicle(texts.Language)",
 			})
 				Assert.That(page, Does.Contain(read),
 					"La pagina no hace la lectura '" + read + "'. Las tres se leen en el mismo Reread: "
@@ -323,7 +332,7 @@ namespace Concesionario.Dominio.Pruebas
 		private TheStaysOfThisVehicle WhatTheScreenIsHanded()
 		{
 			return TheStaysOfThisVehicle.ReadThrough(
-				journal.Api, TheYearFrom, TheYearTo, TheInstantInsideTheOpenStay);
+				journal.Api, TheYearFrom, TheYearTo, TheInstantInsideTheOpenStay, TheLanguage.OfTheRecord);
 		}
 
 		// LAS TRES, EN ESTE ORDEN Y NO EN OTRO. La abierta va de ULTIMA porque la puerta pre-chequea la

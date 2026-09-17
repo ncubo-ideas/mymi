@@ -97,9 +97,9 @@ namespace Concesionario.Dominio.Pruebas
 					TheSystem, 36, 100000, DistanceUnitCode.UnitA,
 					DeliveredAt, 20000, 12000, DistanceUnitCode.UnitA, AsOf));
 			Assert.Throws<DomainException>(
-				() => specification.DescribeCoverage(
-					TheSystem, 36, 100000, DistanceUnitCode.UnitA,
-					DeliveredAt, 20000, 12000, DistanceUnitCode.UnitA, AsOf));
+				() => TheSentenceTheDoorWouldCompose.TheCoverage(
+					specification, TheSystem, 36, 100000, DistanceUnitCode.UnitA,
+					DeliveredAt, 20000, 12000, DistanceUnitCode.UnitA, AsOf, TheLanguage.OfTheRecord));
 		}
 
 		private string TheStandingOf(

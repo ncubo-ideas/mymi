@@ -92,10 +92,10 @@ namespace Concesionario.Dominio.Pruebas
 			string after = TheSentence();
 
 			Assert.That(before, Does.Contain("17 meses de 36 meses"));
-			Assert.That(before, Does.Contain("35500 km de 60000 km"));
+			Assert.That(before, Does.Contain("35.500 km de 60.000 km"));
 
 			Assert.That(after, Does.Contain("12 meses de 36 meses"));
-			Assert.That(after, Does.Contain("35010 km de 60000 km"),
+			Assert.That(after, Does.Contain("35.010 km de 60.000 km"),
 				"Las dos mitades se miden desde el ancla, asi que corregirla las mueve las dos. Si "
 				+ "solo se moviera una, algo estaria guardando la otra.");
 		}
@@ -170,8 +170,9 @@ namespace Concesionario.Dominio.Pruebas
 
 		private string TheSentence()
 		{
-			return profile.DescribeWarrantyEnvelope(
-				AReading, DistanceUnitCode.UnitA, ObservedAt, TheInstantAsked);
+			return TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				profile, AReading, DistanceUnitCode.UnitA, ObservedAt, TheInstantAsked,
+				TheLanguage.OfTheRecord);
 		}
 
 		private static string TheStandingOf(VehicleProfile subject)

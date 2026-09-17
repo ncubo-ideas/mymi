@@ -31,6 +31,11 @@ namespace Concesionario.Dominio.Pruebas
 		private const string TheKindMeasuredOnlyInTime = "TimedComponent";
 		private const string TheUnitEverythingIsIn = "UnitA";
 
+		// EL IDIOMA EN QUE SE LE PIDEN LAS FRASES A LA PUERTA. Este fixture es sobre las COLUMNAS y su
+		// paralelismo, asi que pregunta en uno solo; que las dos redacciones digan lo mismo palabra por
+		// palabra lo afirma TheHistoryIsSaidInTheLanguageItIsAskedIn.
+		private const string InSpanish = TheLanguage.OfTheRecord;
+
 		private const int TwelveMonthsInDays = 365;
 		private const int TheDistanceLimit = 12345;
 
@@ -83,10 +88,10 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(0));
 
 			Assert.That(
-				journal.Api.DescribeCompletions(TheKindThatMeasuresDistance),
+				journal.Api.DescribeCompletions(TheKindThatMeasuresDistance, InSpanish),
 				Is.EqualTo("Cambio de fluido: no hay ninguna completación registrada para este vehículo."));
 
-			CompletionRecord none = journal.Api.CompletionsOf(TheKindThatMeasuresDistance);
+			CompletionRecord none = journal.Api.CompletionsOf(TheKindThatMeasuresDistance, InSpanish);
 
 			Assert.That(none.CompletedAt, Is.Empty);
 			Assert.That(none.Reading, Is.Empty);
@@ -101,14 +106,14 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasAnyCompletion("Inspection"), Is.False);
 
 			Assert.That(
-				journal.Api.DescribeCompletions("Inspection"),
+				journal.Api.DescribeCompletions("Inspection", InSpanish),
 				Is.EqualTo(
 					"Este vehículo no tiene agendada ninguna operación de revisión, así que no hay "
 					+ "ninguna completación que registrar."));
 
 			Assert.That(
-				journal.Api.DescribeCompletions("Inspection"),
-				Is.Not.EqualTo(journal.Api.DescribeCompletions(TheKindThatMeasuresDistance)));
+				journal.Api.DescribeCompletions("Inspection", InSpanish),
+				Is.Not.EqualTo(journal.Api.DescribeCompletions(TheKindThatMeasuresDistance, InSpanish)));
 		}
 
 		// ===== EL SEGUNDO ESTADO: TRES COMPLETACIONES =====================================
@@ -122,7 +127,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasAnyCompletion(TheKindThatMeasuresDistance), Is.True);
 			Assert.That(journal.Api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(3));
 
-			CompletionRecord rows = journal.Api.CompletionsOf(TheKindThatMeasuresDistance);
+			CompletionRecord rows = journal.Api.CompletionsOf(TheKindThatMeasuresDistance, InSpanish);
 
 			Assert.That(rows.CompletedAt, Is.EqualTo(new[]
 			{
@@ -131,16 +136,16 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(rows.Reading, Is.EqualTo(new[]
 			{
-				"31900 km", "27300 km", "22500 km",
+				"31.900 km", "27.300 km", "22.500 km",
 			}));
 
 			// LA FORMA FUERTE: cada frase lleva su conectiva, asi que una columna cruzada con la de al
 			// lado se ve. Dos valores sueltos que se contienen no lo verian.
 			Assert.That(rows.Says, Is.EqualTo(new[]
 			{
-				"Cambio de fluido: se hizo el 2026-01-15 16:05:00 con el odómetro en 31900 km.",
-				"Cambio de fluido: se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km.",
-				"Cambio de fluido: se hizo el 2025-04-11 12:00:00 con el odómetro en 22500 km.",
+				"Cambio de fluido: se hizo el 2026-01-15 16:05:00 con el odómetro en 31.900 km.",
+				"Cambio de fluido: se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km.",
+				"Cambio de fluido: se hizo el 2025-04-11 12:00:00 con el odómetro en 22.500 km.",
 			}));
 		}
 
@@ -151,14 +156,14 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			AnOperationThatMeasuresDistance();
 
-			CompletionRecord empty = journal.Api.CompletionsOf(TheKindThatMeasuresDistance);
+			CompletionRecord empty = journal.Api.CompletionsOf(TheKindThatMeasuresDistance, InSpanish);
 
 			Assert.That(empty.Reading, Has.Length.EqualTo(empty.CompletedAt.Length));
 			Assert.That(empty.Says, Has.Length.EqualTo(empty.CompletedAt.Length));
 
 			ThreeCompletionsOfIt();
 
-			CompletionRecord full = journal.Api.CompletionsOf(TheKindThatMeasuresDistance);
+			CompletionRecord full = journal.Api.CompletionsOf(TheKindThatMeasuresDistance, InSpanish);
 
 			Assert.That(full.CompletedAt, Has.Length.EqualTo(3));
 			Assert.That(full.Reading, Has.Length.EqualTo(3));
@@ -185,7 +190,7 @@ namespace Concesionario.Dominio.Pruebas
 				"El registro de una sola clase gano o perdio una columna. La clase la puso quien "
 				+ "pregunta: una columna que repitiera el argumento recibido no la contesta el dominio.");
 
-			foreach (string said in journal.Api.CompletionsOf(TheKindThatMeasuresDistance).Says)
+			foreach (string said in journal.Api.CompletionsOf(TheKindThatMeasuresDistance, InSpanish).Says)
 				Assert.That(said, Does.StartWith("Cambio de fluido: "));
 		}
 
@@ -205,7 +210,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Kind", "CompletedAt", "Reading", "Says",
 			}));
 
-			EveryKindCompletionRecord rows = journal.Api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord rows = journal.Api.CompletionsOfEveryKind(InSpanish);
 
 			Assert.That(rows.Kind, Is.EqualTo(new[]
 			{
@@ -231,7 +236,7 @@ namespace Concesionario.Dominio.Pruebas
 			ThreeCompletionsOfIt();
 			TheTimedCompletionOfIt();
 
-			EveryKindCompletionRecord rows = journal.Api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord rows = journal.Api.CompletionsOfEveryKind(InSpanish);
 
 			Assert.That(rows.CompletedAt, Is.EqualTo(new[]
 			{
@@ -241,15 +246,15 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(rows.Reading, Is.EqualTo(new[]
 			{
-				"31900 km", "sin lectura registrada", "27300 km", "22500 km",
+				"31.900 km", "sin lectura registrada", "27.300 km", "22.500 km",
 			}));
 
 			Assert.That(rows.Says, Is.EqualTo(new[]
 			{
-				"Cambio de fluido: se hizo el 2026-01-15 16:05:00 con el odómetro en 31900 km.",
+				"Cambio de fluido: se hizo el 2026-01-15 16:05:00 con el odómetro en 31.900 km.",
 				"Componente por tiempo: se hizo el 2025-11-05 07:45:00, sin lectura del odómetro registrada.",
-				"Cambio de fluido: se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km.",
-				"Cambio de fluido: se hizo el 2025-04-11 12:00:00 con el odómetro en 22500 km.",
+				"Cambio de fluido: se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km.",
+				"Cambio de fluido: se hizo el 2025-04-11 12:00:00 con el odómetro en 22.500 km.",
 			}));
 		}
 
@@ -261,7 +266,7 @@ namespace Concesionario.Dominio.Pruebas
 			AnOperationMeasuredOnlyInTime();
 			TheTimedCompletionOfIt();
 
-			CompletionRecord rows = journal.Api.CompletionsOf(TheKindMeasuredOnlyInTime);
+			CompletionRecord rows = journal.Api.CompletionsOf(TheKindMeasuredOnlyInTime, InSpanish);
 
 			Assert.That(rows.Reading, Is.EqualTo(new[] { "sin lectura registrada" }));
 			Assert.That(rows.Reading[0], Is.Not.EqualTo("0"));
@@ -287,7 +292,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(3));
 			Assert.That(
-				journal.Api.CompletionsOf(TheKindThatMeasuresDistance).Says, Has.Length.EqualTo(3));
+				journal.Api.CompletionsOf(TheKindThatMeasuresDistance, InSpanish).Says, Has.Length.EqualTo(3));
 
 			Assert.That(journal.Api.CompletionCount(TheKindMeasuredOnlyInTime), Is.EqualTo(1));
 
@@ -297,7 +302,7 @@ namespace Concesionario.Dominio.Pruebas
 				overTheKinds += journal.Api.CompletionCount(kind);
 
 			Assert.That(
-				journal.Api.CompletionsOfEveryKind().Says, Has.Length.EqualTo(overTheKinds),
+				journal.Api.CompletionsOfEveryKind(InSpanish).Says, Has.Length.EqualTo(overTheKinds),
 				"El juego entero tiene tantas filas como completaciones cuentan las clases una por una.");
 		}
 

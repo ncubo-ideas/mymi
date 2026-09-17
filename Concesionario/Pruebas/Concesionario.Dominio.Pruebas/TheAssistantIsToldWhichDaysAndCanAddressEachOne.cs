@@ -150,7 +150,8 @@ namespace Concesionario.Dominio.Pruebas
 			ShopStays answered = TheAssistantAsksForTheWholeRecord();
 
 			Assert.That(answered.Says, Is.EqualTo(
-				journal.Api.DescribeDaysInTheShopBetween(answered.From, answered.To)),
+				journal.Api.DescribeDaysInTheShopBetween(answered.From, answered.To,
+					TheLanguage.OfTheRecord)),
 				"La frase es la de la puerta, letra por letra y con los mismos dos limites. Una que la "
 				+ "caratula rearmara seria una frase rival que el dominio nunca dijo.");
 
@@ -240,8 +241,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(quiet.AnyStayInThePeriod, Is.False,
 				"Y lo dice tambien como respuesta y no solo como una lista vacia: false con los limites "
 				+ "entendidos quiere decir que en ESE periodo no hay ninguna registrada.");
+			// LOS DOS LIMITES SON DIAS y la frase los dice en palabras: lo que se espera se compone
+			// con el mismo renderizador, y el literal del registro no calza con ella.
 			Assert.That(quiet.Says,
-				Does.Contain("2020-01-01").And.Contains("2020-01-31").And.Contains("ninguna estadía"));
+				Does.Contain(ADay("2020-01-01")).And.Contains(ADay("2020-01-31"))
+					.And.Contains("ninguna estadía"));
 		}
 
 		// UN LIMITE QUE NO DICE UN DIA NO REVIENTA EL PROTOCOLO. La puerta lo rechaza con un
@@ -436,6 +440,12 @@ namespace Concesionario.Dominio.Pruebas
 				})
 				.PerformCommand();
 			}
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

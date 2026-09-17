@@ -151,6 +151,11 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public bool HayCarpeta => puente.HayCarpeta;
 
+	// SI HAY DONDE GUARDAR, en cualquiera de los dos modos. HayCarpeta es el handle del modo
+	// suelto y hospedada es siempre false; lo que decide si un archivo se puede guardar es
+	// esto. La pantalla que ofrece la foto pregunta aca, no alla.
+	public bool HayDestino => puente.HayDestino;
+
 	public bool FaltaReotorgarPermiso => puente.FaltaReotorgarPermiso;
 
 	public string NombreDeLaCarpeta => puente.NombreDeLaCarpeta;
@@ -221,7 +226,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 		// Lo importado vive en MEMFS. Si hay destino, se baja para que quede persistido
 		// tambien ahi; sin destino se pierde al cerrar, igual que todo lo demas.
-		if (puente.HayCarpeta) await BajarADisco();
+		if (puente.HayDestino) await BajarADisco();
 
 		UltimoMensaje = $"importados {escritos} archivos del expediente";
 		return "";
@@ -260,6 +265,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		if (app is not null) return;
 
 		int precargados = puente.HayDestino ? await puente.PrecargarEnMemfs() : 0;
+		// DICHO EN EL LOG, no adivinado: hospedada, esta linea sale por el log de Gnothi como
+		// «modulo:cargas: log: ...» y es la unica forma de saber desde afuera si el boton de la
+		// foto tiene donde guardar. Medido el 2026-09-11: el boton no salia y nadie decia por que.
+		Console.WriteLine($"[cargas] destino: hospedada={modo.Hospedada} hayDestino={puente.HayDestino} hayCarpeta={puente.HayCarpeta}");
 
 		var arrancada = new CargasApp(NombreDelActor);
 		arrancada.ConfigureStorage(DatabaseType.FileSystem, "path=" + PuenteDeJournal.RaizEnMemfs);
@@ -584,7 +593,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		byte[] contenido)
 	{
 		Exigir();
-		if (!puente.HayCarpeta)
+		if (!puente.HayDestino)
 			return "para guardar la foto hace falta una carpeta tuya";
 
 		string nombre = $"fotos/{transaccion}{extension}";
@@ -652,10 +661,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		return resultado;
 	}
 
-	// RECIBIR EL TRASPASO. Es el verbo que Gnothi le va a llamar al modulo hospedado
-	// -`window.gnothi.traspasar`, como en Examenes- cuando la capa de hospedaje llegue a
-	// esta rama; hasta entonces no tiene quien lo llame, y esta aca para que el que la traiga
-	// solo tenga que cablearlo.
+	// RECIBIR EL TRASPASO. Es el verbo que Gnothi le llama al modulo hospedado por
+	// `window.gnothi.traspasar` (SuperficieDelModulo.Traspasar), como en Examenes, cuando
+	// la persona comparte el sobre desde la app suelta.
 	//
 	// NO ENTRA POR EL CAMINO DE LOS EVENTOS. Los eventos de la estacion vienen numerados,
 	// mueven el cursor y la guarda Check los hace idempotentes. Esto son comandos de la

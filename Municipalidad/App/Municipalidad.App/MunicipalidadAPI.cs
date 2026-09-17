@@ -691,13 +691,13 @@ namespace Municipalidad.App
 		/// municipalidad cobro, cuantos periodos cubre, lo que costo un periodo y si eso se dedujo, en
 		/// columnas paralelas y en orden de periodo. TOTAL, y contesta CERO filas donde no hay ninguna.
 		/// </summary>
-		public RegistroDelHistorial HistorialDe(string nombreDelRubro)
+		public RegistroDelHistorial HistorialDe(string nombreDelRubro, string idioma)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
 					@estado      = cuenta.EtiquetaDelEstadoDeLaSerieDe(@nombreDelRubro);
-					@estadoDicho = cuenta.FraseDelEstadoDeLaSerieDe(@nombreDelRubro);
+					@losQueHay   = Rubro.LosQueHay();
 					@periodo     = cuenta.PeriodosDelHistorialDe(@nombreDelRubro);
 					@monto       = cuenta.MontosDelHistorialDe(@nombreDelRubro);
 					@mora        = cuenta.MorasDelHistorialDe(@nombreDelRubro);
@@ -707,7 +707,7 @@ namespace Municipalidad.App
 				")
 				.WithParameters(alquilados, p => {
 					p[Parameter.Out, "estado",      typeof(string)]    = default;
-					p[Parameter.Out, "estadoDicho", typeof(string)]    = default;
+					p[Parameter.Out, "losQueHay",   typeof(string[])]  = default;
 					p[Parameter.Out, "periodo",     typeof(string[])]  = default;
 					p[Parameter.Out, "monto",       typeof(decimal[])] = default;
 					p[Parameter.Out, "mora",        typeof(decimal[])] = default;
@@ -718,10 +718,15 @@ namespace Municipalidad.App
 				})
 				.PerformQuery();
 
+				Frases.Frases frases = Frases.Frases.De(idioma);
+				string estado = alquilados["estado"].GetValue<string>();
+				string[] periodos = alquilados["periodo"].GetValue<string[]>();
+
 				return RegistroDelHistorial.Of(
-					alquilados["estado"].GetValue<string>(),
-					alquilados["estadoDicho"].GetValue<string>(),
-					alquilados["periodo"].GetValue<string[]>(),
+					estado,
+					Frases.LaRedaccion.EstadoDeLaSerie(frases, estado, nombreDelRubro, periodos.Length,
+						string.Join(", ", alquilados["losQueHay"].GetValue<string[]>())),
+					periodos,
 					alquilados["monto"].GetValue<decimal[]>(),
 					alquilados["mora"].GetValue<decimal[]>(),
 					alquilados["cubre"].GetValue<int[]>(),
@@ -748,7 +753,8 @@ namespace Municipalidad.App
 		/// quien pregunta -- estan propuestos y sin firmar-, y el dominio hace la comparacion.
 		/// GUARDADO: preguntar SePuedeVerLaVariacionDe antes.
 		/// </summary>
-		public RegistroDeLaVariacion VariacionDe(string nombreDelRubro, decimal umbralDeSalto, decimal ruido)
+		public RegistroDeLaVariacion VariacionDe(string nombreDelRubro, decimal umbralDeSalto, decimal ruido,
+			string idioma)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
@@ -764,9 +770,13 @@ namespace Municipalidad.App
 						@explicacion = laVariacion.Etiqueta;
 						@esSalto     = laVariacion.EsSalto;
 						@urgencia    = laVariacion.Urgencia().Etiqueta;
-						@dice        = laVariacion.Dice();
+						@cambio      = laVariacion.ClaveDelCambio;
+						@ley         = laVariacion.NombreDeLaLey;
 						@hayAvaluo   = laVariacion.SePuedeDecirElAvaluo;
 						@elAvaluo    = laVariacion.EtiquetaDelAvaluo;
+						@finca       = laVariacion.NumeroDeLaFincaDelAvaluo;
+						@fincas      = laVariacion.CuantasFincasDelAvaluo;
+						@avaluos     = laVariacion.LosAvaluosDelSalto;
 					}
 				")
 				.WithParameters(alquilados, p => {
@@ -779,28 +789,45 @@ namespace Municipalidad.App
 					p[Parameter.Out, "explicacion", typeof(string)]  = default;
 					p[Parameter.Out, "esSalto",     typeof(bool)]    = default;
 					p[Parameter.Out, "urgencia",    typeof(string)]  = default;
-					p[Parameter.Out, "dice",        typeof(string)]  = default;
+					p[Parameter.Out, "cambio",      typeof(string)]  = default;
+					p[Parameter.Out, "ley",         typeof(string)]  = default;
 					p[Parameter.Out, "hayAvaluo",   typeof(bool)]    = default;
 					p[Parameter.Out, "elAvaluo",    typeof(string)]  = default;
+					p[Parameter.Out, "finca",       typeof(string)]  = default;
+					p[Parameter.Out, "fincas",      typeof(int)]     = default;
+					p[Parameter.Out, "avaluos",     typeof(decimal[])] = default;
 					p["nombreDelRubro", typeof(string)] = nombreDelRubro;
 					p["umbralDeSalto", typeof(decimal)] = umbralDeSalto;
 					p["ruido", typeof(decimal)] = ruido;
 				})
 				.PerformQuery();
 
+				Frases.Frases frases = Frases.Frases.De(idioma);
+
+				string rubro = alquilados["rubro"].GetValue<string>();
+				string desde = alquilados["desde"].GetValue<string>();
+				string hasta = alquilados["hasta"].GetValue<string>();
+				decimal antes = alquilados["antes"].GetValue<decimal>();
+				decimal ahora = alquilados["ahora"].GetValue<decimal>();
+				decimal proporcion = alquilados["proporcion"].GetValue<decimal>();
+				string explicacion = alquilados["explicacion"].GetValue<string>();
+				string elAvaluo = alquilados["elAvaluo"].GetValue<string>();
+
 				return RegistroDeLaVariacion.Of(
-					alquilados["rubro"].GetValue<string>(),
-					alquilados["desde"].GetValue<string>(),
-					alquilados["hasta"].GetValue<string>(),
-					alquilados["antes"].GetValue<decimal>(),
-					alquilados["ahora"].GetValue<decimal>(),
-					alquilados["proporcion"].GetValue<decimal>(),
-					alquilados["explicacion"].GetValue<string>(),
+					rubro, desde, hasta, antes, ahora, proporcion,
+					explicacion,
 					alquilados["esSalto"].GetValue<bool>(),
 					alquilados["urgencia"].GetValue<string>(),
-					alquilados["dice"].GetValue<string>(),
+					Frases.LaRedaccion.Variacion(frases, rubro, desde, hasta, antes, ahora, proporcion,
+						alquilados["cambio"].GetValue<string>(),
+						explicacion,
+						alquilados["ley"].GetValue<string>(),
+						elAvaluo,
+						alquilados["finca"].GetValue<string>(),
+						alquilados["fincas"].GetValue<int>(),
+						alquilados["avaluos"].GetValue<decimal[]>()),
 					alquilados["hayAvaluo"].GetValue<bool>(),
-					alquilados["elAvaluo"].GetValue<string>());
+					elAvaluo);
 			}
 		}
 
@@ -811,7 +838,7 @@ namespace Municipalidad.App
 		/// Los dias de aviso los pone quien pregunta, y la fecha de corte tambien: el dominio no lee
 		/// el reloj.
 		/// </summary>
-		public RegistroDeVencimientos VencimientosAl(DateTime fechaDeCorte, int diasDeAviso)
+		public RegistroDeVencimientos VencimientosAl(DateTime fechaDeCorte, int diasDeAviso, string idioma)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
@@ -822,7 +849,6 @@ namespace Municipalidad.App
 					@monto    = cuenta.MontosDeLosVencimientosAl(@fechaDeCorte);
 					@faltan   = cuenta.DiasQueFaltanDeLosVencimientosAl(@fechaDeCorte);
 					@urgencia = cuenta.UrgenciasDeLosVencimientosAl(@fechaDeCorte, @diasDeAviso);
-					@dice     = cuenta.FrasesDeLosVencimientosAl(@fechaDeCorte, @diasDeAviso);
 				")
 				.WithParameters(alquilados, p => {
 					p[Parameter.Out, "rubro",    typeof(string[])]  = default;
@@ -831,20 +857,25 @@ namespace Municipalidad.App
 					p[Parameter.Out, "monto",    typeof(decimal[])] = default;
 					p[Parameter.Out, "faltan",   typeof(int[])]     = default;
 					p[Parameter.Out, "urgencia", typeof(string[])]  = default;
-					p[Parameter.Out, "dice",     typeof(string[])]  = default;
 					p["fechaDeCorte", typeof(DateTime)] = fechaDeCorte;
 					p["diasDeAviso", typeof(int)] = diasDeAviso;
 				})
 				.PerformQuery();
 
-				return RegistroDeVencimientos.Of(
-					alquilados["rubro"].GetValue<string[]>(),
-					alquilados["periodo"].GetValue<string[]>(),
-					alquilados["vence"].GetValue<string[]>(),
-					alquilados["monto"].GetValue<decimal[]>(),
-					alquilados["faltan"].GetValue<int[]>(),
-					alquilados["urgencia"].GetValue<string[]>(),
-					alquilados["dice"].GetValue<string[]>());
+				Frases.Frases frases = Frases.Frases.De(idioma);
+				string[] rubro = alquilados["rubro"].GetValue<string[]>();
+				string[] periodo = alquilados["periodo"].GetValue<string[]>();
+				string[] vence = alquilados["vence"].GetValue<string[]>();
+				decimal[] monto = alquilados["monto"].GetValue<decimal[]>();
+				int[] faltan = alquilados["faltan"].GetValue<int[]>();
+				string[] urgencia = alquilados["urgencia"].GetValue<string[]>();
+
+				string[] dice = new string[rubro.Length];
+				for (int fila = 0; fila < rubro.Length; fila++)
+					dice[fila] = Frases.LaRedaccion.Vencimiento(frases, periodo[fila], rubro[fila],
+						vence[fila], monto[fila], urgencia[fila], faltan[fila], fechaDeCorte, diasDeAviso);
+
+				return RegistroDeVencimientos.Of(rubro, periodo, vence, monto, faltan, urgencia, dice);
 			}
 		}
 
@@ -855,7 +886,7 @@ namespace Municipalidad.App
 		/// despues. TOTAL, y contesta CERO filas donde no hay ninguna. La proyeccion nunca contradice
 		/// lo que la municipalidad cobro: eso llega en el recibo.
 		/// </summary>
-		public RegistroDeAtrasos AtrasosAl(DateTime fechaDeCorte, decimal tasaAnual)
+		public RegistroDeAtrasos AtrasosAl(DateTime fechaDeCorte, decimal tasaAnual, string idioma)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
@@ -867,7 +898,6 @@ namespace Municipalidad.App
 					@dias            = cuenta.DiasDeAtrasoDeLosAtrasosAl(@fechaDeCorte);
 					@costoProyectado = cuenta.CostosDePagarTardeDeLosAtrasosAl(@fechaDeCorte, @tasaAnual);
 					@urgencia        = cuenta.UrgenciasDeLosAtrasosAl(@fechaDeCorte);
-					@dice            = cuenta.FrasesDeLosAtrasosAl(@fechaDeCorte, @tasaAnual);
 				")
 				.WithParameters(alquilados, p => {
 					p[Parameter.Out, "rubro",           typeof(string[])]  = default;
@@ -877,21 +907,26 @@ namespace Municipalidad.App
 					p[Parameter.Out, "dias",            typeof(int[])]     = default;
 					p[Parameter.Out, "costoProyectado", typeof(decimal[])] = default;
 					p[Parameter.Out, "urgencia",        typeof(string[])]  = default;
-					p[Parameter.Out, "dice",            typeof(string[])]  = default;
 					p["fechaDeCorte", typeof(DateTime)] = fechaDeCorte;
 					p["tasaAnual", typeof(decimal)] = tasaAnual;
 				})
 				.PerformQuery();
 
-				return RegistroDeAtrasos.Of(
-					alquilados["rubro"].GetValue<string[]>(),
-					alquilados["periodo"].GetValue<string[]>(),
-					alquilados["vencio"].GetValue<string[]>(),
-					alquilados["monto"].GetValue<decimal[]>(),
-					alquilados["dias"].GetValue<int[]>(),
-					alquilados["costoProyectado"].GetValue<decimal[]>(),
-					alquilados["urgencia"].GetValue<string[]>(),
-					alquilados["dice"].GetValue<string[]>());
+				Frases.Frases frases = Frases.Frases.De(idioma);
+				string[] rubro = alquilados["rubro"].GetValue<string[]>();
+				string[] periodo = alquilados["periodo"].GetValue<string[]>();
+				string[] vencio = alquilados["vencio"].GetValue<string[]>();
+				decimal[] monto = alquilados["monto"].GetValue<decimal[]>();
+				int[] dias = alquilados["dias"].GetValue<int[]>();
+				decimal[] costoProyectado = alquilados["costoProyectado"].GetValue<decimal[]>();
+
+				string[] dice = new string[rubro.Length];
+				for (int fila = 0; fila < rubro.Length; fila++)
+					dice[fila] = Frases.LaRedaccion.Atraso(frases, periodo[fila], rubro[fila], vencio[fila],
+						monto[fila], dias[fila], fechaDeCorte, tasaAnual, costoProyectado[fila]);
+
+				return RegistroDeAtrasos.Of(rubro, periodo, vencio, monto, dias, costoProyectado,
+					alquilados["urgencia"].GetValue<string[]>(), dice);
 			}
 		}
 
@@ -909,7 +944,7 @@ namespace Municipalidad.App
 		/// GUARDADO: preguntar SePuedeProyectar antes -- sin un pago registrado no hay con que proyectar
 		/// y no se inventa un numero.
 		/// </summary>
-		public RegistroDeLaReservaPropuesta ReservaPropuestaPara(int anioProyectado)
+		public RegistroDeLaReservaPropuesta ReservaPropuestaPara(int anioProyectado, string idioma)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
@@ -919,23 +954,22 @@ namespace Municipalidad.App
 						@anio            = laPropuesta.Anio;
 						@proyeccion      = laPropuesta.ProyeccionDelAnio;
 						@propuestoPorMes = laPropuesta.MontoMensual;
-						@dice            = laPropuesta.Dice();
 					}
 				")
 				.WithParameters(alquilados, p => {
 					p[Parameter.Out, "anio",            typeof(int)]     = default;
 					p[Parameter.Out, "proyeccion",      typeof(decimal)] = default;
 					p[Parameter.Out, "propuestoPorMes", typeof(decimal)] = default;
-					p[Parameter.Out, "dice",            typeof(string)]  = default;
 					p["anioProyectado", typeof(int)] = anioProyectado;
 				})
 				.PerformQuery();
 
-				return RegistroDeLaReservaPropuesta.Of(
-					alquilados["anio"].GetValue<int>(),
-					alquilados["proyeccion"].GetValue<decimal>(),
-					alquilados["propuestoPorMes"].GetValue<decimal>(),
-					alquilados["dice"].GetValue<string>());
+				int anio = alquilados["anio"].GetValue<int>();
+				decimal proyeccion = alquilados["proyeccion"].GetValue<decimal>();
+				decimal mensual = alquilados["propuestoPorMes"].GetValue<decimal>();
+
+				return RegistroDeLaReservaPropuesta.Of(anio, proyeccion, mensual,
+					Frases.LaRedaccion.ReservaPropuesta(Frases.Frases.De(idioma), anio, proyeccion, mensual));
 			}
 		}
 
@@ -954,7 +988,8 @@ namespace Municipalidad.App
 		/// umbral del 10 % esta firmado y entra por parametro igual, para que se pueda mover sin tocar
 		/// una clase. GUARDADO: preguntar SePuedeVerElFaltanteDeReserva antes.
 		/// </summary>
-		public RegistroDelFaltanteDeReserva FaltanteDeReservaAl(DateTime fechaDeCorte, decimal umbralDeReserva)
+		public RegistroDelFaltanteDeReserva FaltanteDeReservaAl(DateTime fechaDeCorte, decimal umbralDeReserva,
+			string idioma)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
@@ -967,7 +1002,9 @@ namespace Municipalidad.App
 						@proporcion   = elFaltante.Proporcion;
 						@venceEsteMes = elFaltante.VenceEsteMes;
 						@urgencia     = elFaltante.Urgencia(@umbralDeReserva).Etiqueta;
-						@dice         = elFaltante.Dice(@umbralDeReserva);
+						@falta        = elFaltante.ClaveDeLoQueFalta;
+						@aviso        = elFaltante.ClaveDelAviso(@umbralDeReserva);
+						@vence        = elFaltante.ClaveDeLoQueVence(@umbralDeReserva);
 					}
 				")
 				.WithParameters(alquilados, p => {
@@ -977,20 +1014,27 @@ namespace Municipalidad.App
 					p[Parameter.Out, "proporcion",   typeof(decimal)] = default;
 					p[Parameter.Out, "venceEsteMes", typeof(decimal)] = default;
 					p[Parameter.Out, "urgencia",     typeof(string)]  = default;
-					p[Parameter.Out, "dice",         typeof(string)]  = default;
+					p[Parameter.Out, "falta",        typeof(string)]  = default;
+					p[Parameter.Out, "aviso",        typeof(string)]  = default;
+					p[Parameter.Out, "vence",        typeof(string)]  = default;
 					p["fechaDeCorte", typeof(DateTime)] = fechaDeCorte;
 					p["umbralDeReserva", typeof(decimal)] = umbralDeReserva;
 				})
 				.PerformQuery();
 
+				decimal propuesto = alquilados["propuesto"].GetValue<decimal>();
+				decimal declarado = alquilados["declarado"].GetValue<decimal>();
+				decimal faltante = alquilados["faltante"].GetValue<decimal>();
+				decimal proporcion = alquilados["proporcion"].GetValue<decimal>();
+				decimal venceEsteMes = alquilados["venceEsteMes"].GetValue<decimal>();
+
 				return RegistroDelFaltanteDeReserva.Of(
-					alquilados["propuesto"].GetValue<decimal>(),
-					alquilados["declarado"].GetValue<decimal>(),
-					alquilados["faltante"].GetValue<decimal>(),
-					alquilados["proporcion"].GetValue<decimal>(),
-					alquilados["venceEsteMes"].GetValue<decimal>(),
+					propuesto, declarado, faltante, proporcion, venceEsteMes,
 					alquilados["urgencia"].GetValue<string>(),
-					alquilados["dice"].GetValue<string>());
+					Frases.LaRedaccion.Faltante(Frases.Frases.De(idioma), propuesto, declarado,
+						alquilados["falta"].GetValue<string>(), faltante, proporcion,
+						alquilados["aviso"].GetValue<string>(), umbralDeReserva,
+						alquilados["vence"].GetValue<string>(), venceEsteMes));
 			}
 		}
 
@@ -1019,33 +1063,37 @@ namespace Municipalidad.App
 		/// Se dice, no se tapa. TOTAL: cero filas donde no hay ninguna, y cero filas con otro estado
 		/// donde no hay consulta de ese dia.
 		/// </summary>
-		public RegistroDePeriodosSinComprobante PeriodosPagadosSinComprobante(DateTime fechaDeLaConsulta)
+		public RegistroDePeriodosSinComprobante PeriodosPagadosSinComprobante(DateTime fechaDeLaConsulta,
+			string idioma)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
 				app.Actor.Using(@"
 					@estado      = cuenta.EtiquetaDelEstadoDeLoSinComprobante(@fechaDeLaConsulta);
-					@estadoDicho = cuenta.FraseDelEstadoDeLoSinComprobante(@fechaDeLaConsulta);
 					@rubro       = cuenta.RubrosDeLoPagadoSinComprobante(@fechaDeLaConsulta);
 					@periodo     = cuenta.PeriodosDeLoPagadoSinComprobante(@fechaDeLaConsulta);
-					@dice        = cuenta.FrasesDeLoPagadoSinComprobante(@fechaDeLaConsulta);
 				")
 				.WithParameters(alquilados, p => {
 					p[Parameter.Out, "estado",      typeof(string)]   = default;
-					p[Parameter.Out, "estadoDicho", typeof(string)]   = default;
 					p[Parameter.Out, "rubro",       typeof(string[])] = default;
 					p[Parameter.Out, "periodo",     typeof(string[])] = default;
-					p[Parameter.Out, "dice",        typeof(string[])] = default;
 					p["fechaDeLaConsulta", typeof(DateTime)] = fechaDeLaConsulta;
 				})
 				.PerformQuery();
 
+				Frases.Frases frases = Frases.Frases.De(idioma);
+				string estado = alquilados["estado"].GetValue<string>();
+				string[] rubro = alquilados["rubro"].GetValue<string[]>();
+				string[] periodo = alquilados["periodo"].GetValue<string[]>();
+
+				string[] dice = new string[rubro.Length];
+				for (int fila = 0; fila < rubro.Length; fila++)
+					dice[fila] = Frases.LaRedaccion.PeriodoSinComprobante(frases, periodo[fila], rubro[fila]);
+
 				return RegistroDePeriodosSinComprobante.Of(
-					alquilados["estado"].GetValue<string>(),
-					alquilados["estadoDicho"].GetValue<string>(),
-					alquilados["rubro"].GetValue<string[]>(),
-					alquilados["periodo"].GetValue<string[]>(),
-					alquilados["dice"].GetValue<string[]>());
+					estado,
+					Frases.LaRedaccion.Cotejo(frases, estado, fechaDeLaConsulta, rubro.Length),
+					rubro, periodo, dice);
 			}
 		}
 

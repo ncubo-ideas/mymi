@@ -49,13 +49,14 @@ namespace Concesionario.App.Views
 		public string TheStayRightNowSays { get; init; } = "";
 		/// <summary>
 		/// Lee las dos mitades por la puerta con UN solo instante y UN solo periodo, para que lo que
-		/// dice el periodo y lo que dice la estadia de ahora mismo sean del mismo momento.
+		/// dice el periodo y lo que dice la estadia de ahora mismo sean del mismo momento. El idioma
+		/// va en las tres frases: la pantalla lo elige una vez y las tres contestan igual.
 		/// </summary>
 		public static TheStaysOfThisVehicle ReadThrough(
-			DealershipCarAPI api, string fromDay, string toDay, DateTime asOf)
+			DealershipCarAPI api, string fromDay, string toDay, DateTime asOf, string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
-			ShopStayRecord record = api.StaysBetween(fromDay, toDay);
+			ShopStayRecord record = api.StaysBetween(fromDay, toDay, language);
 			var rows = new List<AStayOnTheRecord>();
 			foreach (int row in Enumerable.Range(0, record.Branch.Length))
 				rows.Add(new AStayOnTheRecord
@@ -72,13 +73,13 @@ namespace Concesionario.App.Views
 				ToDay = toDay,
 				AskedAt = TheMoment(asOf),
 				AnyStayInThePeriod = api.HasAnyStayBetween(fromDay, toDay),
-				Says = api.DescribeDaysInTheShopBetween(fromDay, toDay),
+				Says = api.DescribeDaysInTheShopBetween(fromDay, toDay, language),
 				Days = api.DaysInTheShopBetween(fromDay, toDay),
 				DayCount = api.DaysInTheShopCountBetween(fromDay, toDay),
 				StayCount = api.StayCountBetween(fromDay, toDay),
 				Rows = rows,
 				InsideRightNow = api.IsInsideTheShopAt(asOf),
-				TheStayRightNowSays = api.DescribeTheStayAt(asOf),
+				TheStayRightNowSays = api.DescribeTheStayAt(asOf, language),
 			};
 		}
 		/// <summary>
