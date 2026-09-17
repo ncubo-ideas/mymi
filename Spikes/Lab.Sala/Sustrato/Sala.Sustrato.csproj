@@ -10,6 +10,18 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>Sala.Sustrato</RootNamespace>
+
+    <!-- SIN LOS DATOS DE GLOBALIZACION, y no es gratis decirlo: apagar ICU cambia como .NET
+         formatea numeros y fechas. Aca se puede porque el que formatea para la persona es la CARA,
+         en JavaScript: la superficie devuelve numeros y fechas ISO y el cara.js los pinta con el
+         Intl del navegador. VERIFICADO el 2026-09-17 en el emulador: la respuesta es identica
+         (195830 / 7 / evento 307) y la pantalla dibuja igual, con su moneda y sus porcentajes.
+
+         Costo de tenerlo: 2,5 MB en tres archivos icudt, y buena parte de los 3 segundos de
+         arranque. Sacarlo bajo la primera consulta de 3.245 ms a 1.110 ms.
+
+         SI ALGUN DIA UNA SUPERFICIE FORMATEA PARA LA PERSONA, esto deja de ser seguro. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,11 +39,16 @@
          RECHAZA, justamente para que no pase esto. -->
     <PackageReference Include="System.IO.Hashing" Version="10.0.5" />
 
-    <!-- Y MCP, por la misma razon: los modulos instalados hoy en el telefono llevan sus tools
-         con los atributos de MCP, asi que su superficie no carga sin esta libreria. Es parte del
-         sustrato que el Host ya presta en proceso: PackageInspector la tiene en su lista de
-         motor y RECHAZA un paquete cargo que la traiga. La sala presta lo mismo. -->
-    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <!-- MCP NO SE PRESTA, Y SE COMPROBO ANTES DE SACARLO. Estaba aca porque se penso que los
+         modulos llevaban sus tools con los atributos de MCP y su superficie no cargaria sin la
+         libreria. Verificado el 2026-09-17: NINGUNA de las cinco superficies del repo la
+         referencia (ni Compras, ni Examenes, ni Cargas, ni Concesionario, ni Municipalidad):
+         todas usan los marcadores de Gnothi.Contract. Los nombres de MCP siguen aceptandose por
+         cadena en Borde.cs, asi que un modulo viejo que los use seria reconocido; lo que NO
+         podria es cargar, porque le faltaria el ensamblado. Si alguna vez aparece uno, esta es la
+         linea que hay que volver a poner.
+
+         Costo de tenerla: 1,7 MB entre ModelContextProtocol.Core y Microsoft.Extensions.AI. -->
   </ItemGroup>
 
   <!-- LO QUE EL HOST PRESTA. Se referencian sin usarse en C#, igual que en la forma cargo:
@@ -49,8 +66,7 @@
     <TrimmerRootAssembly Include="Puppets.Portador" />
     <TrimmerRootAssembly Include="Puppeteer" />
     <TrimmerRootAssembly Include="Choreography" />
-    <TrimmerRootAssembly Include="ModelContextProtocol" />
-    <TrimmerRootAssembly Include="ModelContextProtocol.Core" />
+
     <TrimmerRootAssembly Include="System.IO.Hashing" />
   </ItemGroup>
 
