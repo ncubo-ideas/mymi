@@ -55,6 +55,10 @@ internal static class BridgeProbe
 				  "description":"Dice si un analito de la persona viene subiendo, bajando o estable.",
 				  "params":[{"name":"analito","description":"Cual analito. Valores validos: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."}]}]
 				""";
+			// ESTA LINEA NO SE TOCA SIN SABER QUE SE PIERDE: es la misma con la que se midio
+			// 4 de 4 en iOS 26.6.2 y 0 de 4 en 27, asi que cambiarla rompe la comparacion. El
+			// experimento de pedirle explicitamente que llame la tool se corrio aparte y esta
+			// en Lab.Siri/HALLAZGOS.md seccion 12: no la hizo llamar, la hizo NARRAR la llamada.
 			const string instrucciones = "Sos el asistente de Gnothi. Prosa corta, sin markdown.";
 
 			// PASO 1 · la intencion: se espera que pida la tool, no que conteste.

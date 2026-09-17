@@ -68,8 +68,15 @@ private func esquema(_ nombre: String, _ params: [[String: Any]]) -> GenerationS
 			schema: DynamicGenerationSchema(type: String.self))
 	}
 	let raiz = DynamicGenerationSchema(name: nombre, description: nil, properties: propiedades)
-	return try? GenerationSchema(root: raiz, dependencies: [])
+	// EL try? SE FUE, Y POR QUE. Si esto falla, la tool se caia del compactMap sin una linea en
+	// ningun lado y el modelo se quedaba sin herramientas: podia hablar de llamarlas y no
+	// llamarlas nunca. Es exactamente el sintoma del hallazgo 12. Ahora el motivo sale.
+	do { return try GenerationSchema(root: raiz, dependencies: []) }
+	catch { fallosDeEsquema.append("\(nombre): \(error)"); return nil }
 }
+
+/// Lo que se cayo al armar los esquemas de esta llamada. Se vacia en cada paso.
+private var fallosDeEsquema: [String] = []
 
 @available(iOS 26.0, *)
 private func entradas(_ conversacion: [[String: Any]]) -> [Transcript.Entry] {
@@ -205,6 +212,7 @@ private func pasoImpl(
 	let sistema = String(cString: instrucciones)
 
 	let captura = Captura()
+	fallosDeEsquema = []
 	let tools: [any Tool] = decl.compactMap { d in
 		guard let n = d["name"] as? String,
 			  let e = esquema(n, d["params"] as? [[String: Any]] ?? []) else { return nil }
@@ -241,6 +249,10 @@ private func pasoImpl(
 	let sesion = LanguageModelSession(tools: tools, transcript: Transcript(entries: previas))
 
 	var respuesta: [String: Any] = [:]
+	// CUANTAS TOOLS VIO DE VERDAD EL MODELO. Sin esto, «declare 3 y usó 0» y «declaré 3, se
+	// cayeron las 3 y usó 0» se leen igual desde el C#, y son cosas opuestas.
+	respuesta["toolsDeclaradas"] = tools.count
+	if !fallosDeEsquema.isEmpty { respuesta["toolsRechazadas"] = fallosDeEsquema }
 	let sem = DispatchSemaphore(value: 0)
 
 	Task {
