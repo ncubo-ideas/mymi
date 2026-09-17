@@ -34,7 +34,7 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 
 ---
 
-## Marcador: 17 corridas, 1 pendiente
+## Marcador: 18 corridas, 0 pendientes
 
 La columna de la derecha dice dónde se midió. **17 Pro** es la corrida del 2026-09-17. Ojo con las
 filas de Siri: ahí Apple Intelligence estaba **apagado** por el cruce de idiomas, y no era Siri AI
@@ -56,7 +56,7 @@ filas de Siri: ahí Apple Intelligence estaba **apagado** por el cruce de idioma
 | | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 | 13 Pro |
 | | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** | 13 Pro |
 | | c6 · ¿prosa o markdown? | 🟥 markdown, también en aparato — §11 | **17 Pro** |
-| | c7 · exámenes hacia Claude | ⬜ pendiente | |
+| | c7 · exámenes hacia un modelo grande | ✅ **con ChatGPT, por la cadena** — §13 · falta la variante con Claude | 17 Pro |
 | | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica por la puerta del asistente — §11 · ✅ **lo respeta por la cadena** — §13 | **17 Pro** |
 | | t9 · encadenar sin que salga nada | ✅ **en modo avión** (§11) y ✅ **la cadena entera con el modelo del aparato** (§13) | **17 Pro** |
 
@@ -875,6 +875,41 @@ Tres cosas, y las tres importan:
 > modelo no tiene que decidir nada: redacta. Por la puerta del asistente tiene que elegir consultas
 > y componer, y ahí es donde se cae. **El techo del modelo chico no está en entender: está en
 > decidir.**
+
+### El control que faltaba: el mismo atajo, con el modelo grande
+
+**17:12.** Mismo atajo, mismo dato, cambiando una sola cosa: `On-Device` → `ChatGPT`, que Atajos
+trae de fábrica.
+
+> «Tu expediente muestra cinco exámenes recientes. Tres de ellos requieren atención. El antígeno
+> prostático subió de 3,0 a 5,2 ng/mL en un año, **lo que tu registro califica** como un cambio
+> demasiado rápido y por eso indica que consultes pronto. El colesterol total llegó a 280 mg/dL, por
+> encima de lo deseable, y se recomienda vigilarlo. La hemoglobina está en 14,2 g/dL, estable y
+> dentro de lo normal. La sangre oculta en heces volvió a salir…»
+
+**«lo que tu registro califica».** Eso es el encuadre respetado en su forma exacta: el veredicto ya
+viene hecho, no es del modelo, y el modelo lo **atribuye** en vez de apropiárselo. Y los cuatro
+números —3,0 → 5,2; 280 mg/dL; 14,2 g/dL— son los del expediente.
+
+**Esto es la pregunta de c7 contestada, aunque no sea c7 tal como está escrita:** c7 decía «hacia
+Claude» porque t8 usaba la app `Ask Claude`; acá el modelo viene de fábrica en Atajos y no hay que
+instalar nada. Queda sin correr la variante con Claude, pero **el control que c7 existía para dar ya
+está dado**.
+
+| | por la cadena | lo que dijo |
+|---|---|---|
+| **On-Device** | ✅ respeta | «no son interpretados ni reevaluados por mí» · vago: *«cambios significativos en algunos indicadores»* |
+| **ChatGPT** | ✅ respeta | analito por analito, con el veredicto **atribuido al registro** |
+
+**Y eso cierra la discusión del §12 desde el otro lado.** El encuadre no es débil y el modelo chico
+no es incapaz de respetarlo: **por esta puerta lo respetan los dos**. Lo que se rompía en el §11 y
+el §12 era la puerta del asistente, donde el modelo tiene que **decidir** qué consultar y componer.
+La diferencia entre los dos modelos acá no es obediencia sino **precisión**: el grande recorre los
+cinco analitos, el del aparato generaliza.
+
+> **El precio, que hay que decir en la misma frase:** la columna de ChatGPT es más precisa **porque
+> el expediente sale del teléfono**. La de On-Device es más vaga y no sale nada. Esa es la elección
+> real del producto, y ahora está medida en las dos direcciones en vez de argumentada.
 
 ### Y dos cosas más de la misma tanda
 
