@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Malo.App
@@ -18,6 +19,50 @@ namespace Malo.App
 
 	[AttributeUsage(AttributeTargets.Method)]
 	internal sealed class QueryAttribute : Attribute { }
+
+	// EL BORDE QUE TRAE EL MODULO, y esto es lo que prueba la costura de la mudanza.
+	//
+	// El sustrato busca en el ensamblado un tipo llamado `Borde` o `ElBorde` con un
+	// `Atender(verbo, nombre, carga)`. Si lo encuentra, DEJA DE REFLEXIONAR sobre la superficie:
+	// le pide que declare, le cree la lista de nombres, y de ahi en adelante le pasa verbos. Si no
+	// lo encuentra, le presta el suyo -- que es el caso de los modulos de hoy.
+	//
+	// La forma del sobre y de la respuesta son las de `Spikes/Lab.WasiCaja/ElBorde.cs`, o sea las
+	// que cruzan a wasm. Un modulo que escribe ESTO ya esta listo para la caja: lo que cambia
+	// despues es quien lo llama, no que contesta.
+	public sealed class Borde
+	{
+		private readonly MaloSurface superficie;
+
+		public Borde(object superficie) => this.superficie = (MaloSurface)superficie;
+
+		// DEVUELVE `object` Y NO `string`, y no es descuido: `declarar` contesta texto en el acto
+		// -- el sustrato lo pide en un constructor y no puede esperar -- y `preguntar` devuelve una
+		// TAREA de texto, porque en el motor web el runtime es de un solo hilo y bloquear aca
+		// adentro tira «Cannot wait on monitors on this runtime». El sustrato espera lo que haya
+		// que esperar.
+		public object Atender(string verbo, string nombre, string carga)
+		{
+			switch (verbo)
+			{
+				case "declarar":
+					return """{"ok":true,"dice":{"consultas":["resumen"],"vistas":[],"entrega":false,"cursor":false}}""";
+
+				case "preguntar":
+					if (nombre != "resumen") return """{"ok":false,"dice":"no expongo eso"}""";
+					return Preguntar();
+
+				default:
+					return """{"ok":false,"dice":"verbo que este modulo no atiende"}""";
+			}
+		}
+
+		private async Task<string> Preguntar()
+		{
+			object r = await superficie.resumen();
+			return "{\"ok\":true,\"dice\":" + JsonSerializer.Serialize(r) + "}";
+		}
+	}
 
 	// EL MODULO QUE SE PORTA MAL, ADENTRO DE LA SALA.
 	//

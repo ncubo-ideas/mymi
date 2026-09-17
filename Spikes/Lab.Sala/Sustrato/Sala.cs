@@ -42,8 +42,12 @@ public static class Sala
 	private sealed record Modulo(
 		Type Superficie,
 		object Instancia,
-		IReadOnlyDictionary<string, MethodInfo> Consultas,
-		IReadOnlyDictionary<string, MethodInfo> Vistas,
+
+		// EL BORDE, Y NO UNA LISTA DE METODOS. Aca habia dos diccionarios de MethodInfo de la
+		// institucion: el sustrato se quedaba con pedazos de un ensamblado ajeno. Ahora guarda el
+		// borde, que expone NOMBRES y un solo verbo de entrada. Ver Borde.cs.
+		Borde Borde,
+
 		Dictionary<string, byte[]> Montado,
 
 		// DONDE QUEDO MONTADO, y ya no se puede deducir del nombre: ver `Neutral`. Se guarda aca
@@ -92,7 +96,7 @@ public static class Sala
 		try
 		{
 			if (Cargados.ContainsKey(modulo))
-				return Json(new { ok = true, yaEstaba = true, consultas = Cargados[modulo].Consultas.Keys });
+				return Json(new { ok = true, yaEstaba = true, consultas = Cargados[modulo].Borde.Consultas });
 
 			// UN MODULO POR VEZ, Y LO SOSTIENE EL SUSTRATO, NO LA CASCARA.
 			//
@@ -136,8 +140,7 @@ public static class Sala
 				.Any(x => x.GetType().Name is "ModuleSurfaceAttribute" or "McpServerToolTypeAttribute"));
 			if (superficie is null) return Json(new { ok = false, motivo = "el ensamblado no trae [ModuleSurface]" });
 
-			Dictionary<string, MethodInfo> consultas = PorMarcador(superficie, "QueryAttribute", "McpServerToolAttribute");
-			Dictionary<string, MethodInfo> vistas = PorMarcador(superficie, "ViewAttribute");
+			// (la superficie se arma mas abajo; el borde se le pone encima ahi mismo)
 
 			// 3 · SE BARRE AL ENTRAR, NO SOLO AL SALIR. Y esta es la mitad que faltaba.
 			//
@@ -167,7 +170,11 @@ public static class Sala
 			//     recibe la carpeta concedida, que aca es una ruta de MEMFS y no un disco.
 			object instancia = Construir(superficie, concedida, 0);
 
-			Cargados[modulo] = new Modulo(superficie, instancia, consultas, vistas, montado, concedida);
+			// EL BORDE SE ARMA UNA VEZ, ACA, Y ES LA UNICA VEZ QUE ALGUIEN REFLEXIONA SOBRE LA
+			// SUPERFICIE DE LA INSTITUCION. De aca en adelante el sustrato habla nombres.
+			Borde borde = Borde.Para(instancia);
+
+			Cargados[modulo] = new Modulo(superficie, instancia, borde, montado, concedida);
 			reloj.Stop();
 
 			return Json(new
@@ -175,8 +182,13 @@ public static class Sala
 				ok = true,
 				ms = reloj.ElapsedMilliseconds,
 				superficie = superficie.Name,
-				consultas = consultas.Keys,
-				vistas = vistas.Keys,
+				// LO QUE EL MODULO DECLARA. Ya no es lo que el sustrato encontro hurgando: es lo
+				// que el borde publica, que es lo unico que el Host va a saber de el.
+				// DE QUIEN ES EL BORDE: «propio» si el modulo lo trajo, «prestado» si se lo dio la sala.
+				borde = borde.Dueno,
+
+				consultas = borde.Consultas,
+				vistas = borde.Vistas,
 
 				// CUANTO LE LLEGO DE SU PROPIO REGISTRO. Es lo que prueba que el viaje de vuelta
 				// funciono la vez anterior: un modulo que sembro y se fue tiene que encontrar sus
@@ -218,45 +230,23 @@ public static class Sala
 			if (!Cargados.TryGetValue(modulo, out Modulo? m))
 				return Json(new { ok = false, motivo = $"el modulo '{modulo}' no esta cargado" });
 
-			// LAS DOS PUERTAS NO SE MEZCLAN. Una vista se busca solo entre las vistas; una
-			// consulta puede caer en cualquiera de las dos porque el asistente pregunta por lo
-			// declarado y eso ya esta filtrado antes de llegar aca.
-			MethodInfo? metodo;
-			bool hay = soloVistas
-				? m.Vistas.TryGetValue(tool, out metodo)
-				: m.Consultas.TryGetValue(tool, out metodo) || m.Vistas.TryGetValue(tool, out metodo);
-
-			if (!hay || metodo is null)
-				return Json(new { ok = false, motivo = $"el modulo '{modulo}' no expone '{tool}'" });
-
-			Dictionary<string, JsonElement> argumentos = string.IsNullOrWhiteSpace(argumentosJson)
-				? []
-				: JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(argumentosJson) ?? [];
-
-			object?[] valores = [.. metodo.GetParameters().Select(p => Atar(p, argumentos))];
+			// TODO PASA POR EL BORDE, Y EL SUSTRATO YA NO GUARDA UN METODO DEL MODULO.
+			//
+			// Antes esto tenia los `MethodInfo` de la institucion en un diccionario y los
+			// invocaba: reflexion del sustrato sobre un ensamblado ajeno, que es exactamente lo
+			// que Jonathan marco como el borde que la sala decia dejar declarado y no dejaba. Ver
+			// `Borde.cs`.
+			//
+			// Y LAS DOS PUERTAS SE SEPARAN MEJOR QUE ANTES. Aca habia un `||`: una consulta que no
+			// aparecia entre las [Query] CAIA a buscarse entre las [View]. O sea que el asistente
+			// podia alcanzar una vista por la puerta equivocada. Ahora el verbo elige el conjunto
+			// ANTES de buscar el nombre, y no hay a donde caer.
+			string sobre = string.IsNullOrWhiteSpace(argumentosJson)
+				? """{"args":{}}"""
+				: $$"""{"args":{{argumentosJson}}}""";
 
 			var reloj = System.Diagnostics.Stopwatch.StartNew();
-			object? crudo = metodo.Invoke(metodo.IsStatic ? null : m.Instancia, valores);
-
-			// UNA CONSULTA PUEDE SER ASINCRONA, y hasta aca el sustrato devolvia el `Task`
-			// aplanado -- o sea, basura con forma de objeto -- en vez de su resultado.
-			//
-			// Y EN EL MOTOR WEB NO ES UN LUJO. El runtime es de UN SOLO HILO: un modulo que
-			// intente esperar el suyo con `.GetAwaiter().GetResult()` no se cuelga, tira
-			// «PlatformNotSupportedException: Cannot wait on monitors on this runtime». O sea que
-			// devolver la tarea y que la espere el sustrato no es una comodidad: es el unico
-			// camino que tiene un modulo para hacer algo asincrono aca adentro.
-			//
-			// Salio de correr la sonda de fuga: sus intentos de red daban «no pudo» sin haber
-			// tocado la red.
-			if (crudo is Task tarea)
-			{
-				await tarea;
-				crudo = tarea.GetType().IsGenericType
-					? tarea.GetType().GetProperty("Result")?.GetValue(tarea)
-					: null;
-			}
-
+			object? crudo = await m.Borde.Atender(soloVistas ? "consultar" : "preguntar", tool, sobre);
 			reloj.Stop();
 
 			return Json(new { ok = true, ms = reloj.ElapsedMilliseconds, contenido = Aplanar(crudo) });
@@ -280,10 +270,8 @@ public static class Sala
 		try
 		{
 			if (!Cargados.TryGetValue(modulo, out Modulo? m)) return Json(new { ok = false, motivo = $"'{modulo}' no esta cargado" });
-			MethodInfo? metodo = PorMarcadorSuelto(m.Superficie, "DeliverAttribute");
-			if (metodo is null) return Json(new { ok = true, contenido = "" });
 
-			object? r = metodo.Invoke(m.Instancia, [sobreJson]);
+			object? r = await m.Borde.Atender("entregar", "", sobreJson);
 
 			// Y LO QUE ASENTO SE VA CON LA RESPUESTA. Sin esto el refresco parecia funcionar y se
 			// evaporaba al desalojar, que es la peor clase de falla.
@@ -301,10 +289,8 @@ public static class Sala
 		try
 		{
 			if (!Cargados.TryGetValue(modulo, out Modulo? m)) return Json(new { ok = true, contenido = 0L });
-			MethodInfo? metodo = PorMarcadorSuelto(m.Superficie, "CursorAttribute");
-			if (metodo is null) return Json(new { ok = true, contenido = 0L });
 
-			return Json(new { ok = true, contenido = Convert.ToInt64(metodo.Invoke(m.Instancia, null) ?? 0L) });
+			return Json(new { ok = true, contenido = Convert.ToInt64(await m.Borde.Atender("cursor", "", "") ?? 0L) });
 		}
 		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
 		finally { UnaPorVez.Release(); }
@@ -437,16 +423,12 @@ public static class Sala
 		return [.. salida];
 	}
 
-	private static MethodInfo? PorMarcadorSuelto(Type superficie, string marcador) =>
-		superficie.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-			.FirstOrDefault(m => m.GetCustomAttributes(false).Any(a => a.GetType().Name == marcador));
-
 	// LO QUE EL MODULO EXPONE DE VERDAD, para el contraste declarado-contra-real que el Host ya
 	// hace con las otras cascaras.
 	[JSInvokable]
 	public static Task<string> Repertorio(string modulo) =>
 		Task.FromResult(Cargados.TryGetValue(modulo, out Modulo? m)
-			? Json(new { ok = true, consultas = m.Consultas.Keys, vistas = m.Vistas.Keys })
+			? Json(new { ok = true, consultas = m.Borde.Consultas, vistas = m.Borde.Vistas })
 			: Json(new { ok = false, motivo = $"el modulo '{modulo}' no esta cargado" }));
 
 	// DESALOJAR: cierra la superficie y borra su carpeta de memoria. EL ORDEN IMPORTA y esta
@@ -709,42 +691,6 @@ public static class Sala
 		return elegido.Invoke(valores);
 	}
 
-	private static Dictionary<string, MethodInfo> PorMarcador(Type superficie, params string[] marcadores)
-	{
-		const BindingFlags Todo = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-		var encontradas = new Dictionary<string, MethodInfo>(StringComparer.Ordinal);
-
-		foreach (MethodInfo m in superficie.GetMethods(Todo))
-		{
-			object? marca = m.GetCustomAttributes(false).FirstOrDefault(a => marcadores.Contains(a.GetType().Name));
-			if (marca is null) continue;
-
-			// El nombre publico sale del marcador cuando lo trae. MCP lo deja en `Name`; si
-			// viniera vacio, el metodo se llama como se llama.
-			string nombre = (string?)marca.GetType().GetProperty("Name")?.GetValue(marca) is { Length: > 0 } n
-				? n
-				: m.Name;
-
-			encontradas[nombre] = m;
-		}
-
-		return encontradas;
-	}
-
-	private static object? Atar(ParameterInfo p, Dictionary<string, JsonElement> argumentos)
-	{
-		if (!argumentos.TryGetValue(p.Name ?? "", out JsonElement v))
-			return p.HasDefaultValue ? p.DefaultValue : (p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null);
-
-		if (p.ParameterType == typeof(string)) return v.ValueKind == JsonValueKind.String ? v.GetString() : v.ToString();
-		if (p.ParameterType == typeof(int)) return v.ValueKind == JsonValueKind.Number ? v.GetInt32() : int.Parse(v.ToString());
-		if (p.ParameterType == typeof(long)) return v.ValueKind == JsonValueKind.Number ? v.GetInt64() : long.Parse(v.ToString());
-		if (p.ParameterType == typeof(bool)) return v.ValueKind == JsonValueKind.True || (v.ValueKind != JsonValueKind.False && bool.Parse(v.ToString()));
-		if (p.ParameterType == typeof(decimal)) return decimal.Parse(v.ToString());
-
-		return v.ToString();
-	}
-
 	// El mismo aplanado que InProcessShell.Project: el grafo .NET a dict/lista/primitivo, porque
 	// el [JsonPropertyName] del modulo no es el mismo Type que conoce el serializador del Host.
 	private static object? Aplanar(object? v)
@@ -753,6 +699,11 @@ public static class Sala
 		Type t = v.GetType();
 
 		if (t.IsPrimitive || v is string || v is decimal || v is DateTime || v is DateTimeOffset) return v;
+
+		// UN JsonElement YA ES JSON. Viene de un modulo que trae su propio borde y contesto texto;
+		// aplanarlo por reflexion lo convertiria en {"ValueKind":1}, que es basura con forma de
+		// objeto. El serializador lo escribe tal cual.
+		if (v is JsonElement) return v;
 		if (v is System.Collections.IEnumerable lista) return lista.Cast<object?>().Select(Aplanar).ToList();
 
 		var salida = new Dictionary<string, object?>(StringComparer.Ordinal);
