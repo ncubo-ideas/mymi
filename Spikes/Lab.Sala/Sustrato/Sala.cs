@@ -227,6 +227,26 @@ public static class Sala
 
 			var reloj = System.Diagnostics.Stopwatch.StartNew();
 			object? crudo = metodo.Invoke(metodo.IsStatic ? null : m.Instancia, valores);
+
+			// UNA CONSULTA PUEDE SER ASINCRONA, y hasta aca el sustrato devolvia el `Task`
+			// aplanado -- o sea, basura con forma de objeto -- en vez de su resultado.
+			//
+			// Y EN EL MOTOR WEB NO ES UN LUJO. El runtime es de UN SOLO HILO: un modulo que
+			// intente esperar el suyo con `.GetAwaiter().GetResult()` no se cuelga, tira
+			// «PlatformNotSupportedException: Cannot wait on monitors on this runtime». O sea que
+			// devolver la tarea y que la espere el sustrato no es una comodidad: es el unico
+			// camino que tiene un modulo para hacer algo asincrono aca adentro.
+			//
+			// Salio de correr la sonda de fuga: sus intentos de red daban «no pudo» sin haber
+			// tocado la red.
+			if (crudo is Task tarea)
+			{
+				await tarea;
+				crudo = tarea.GetType().IsGenericType
+					? tarea.GetType().GetProperty("Result")?.GetValue(tarea)
+					: null;
+			}
+
 			reloj.Stop();
 
 			return Json(new { ok = true, ms = reloj.ElapsedMilliseconds, contenido = Aplanar(crudo) });

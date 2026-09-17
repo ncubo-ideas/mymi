@@ -62,3 +62,45 @@ obligatorio. Una pregunta cruzada que toque cinco módulos los paga cinco veces.
 **Salvedad:** los otros tres módulos del teléfono están instalados como `in-process` y no
 contestaron (`does not expose <tool>`), así que esa forma quedó sin medir. La instalación de esos
 módulos es del 9 de septiembre.
+
+---
+
+## `Malo/` — el módulo que se porta mal
+
+El mismo papel que `Spikes/Lab.WasiCaja/LosIntentos.cs` hace dentro de la caja de wasmtime, pero
+**adentro de la sala y como código de una institución**, no como código del sustrato. Esa
+distinción es toda la prueba: lo que el sustrato alcanza no dice nada, porque el sustrato es de
+Gnothi.
+
+No referencia nada — ni `Gnothi.Contract`, ni el motor. Declara sus propios `[ModuleSurface]` y
+`[Query]`, porque el descubrimiento es **por nombre de tipo**. Que eso alcance para entrar a la
+sala es, en sí mismo, parte de lo que se está midiendo.
+
+**Cómo se corre, y esto no es opcional.** Jonathan lo dejó escrito: con un solo módulo cargado la
+corrida da «no pudo» ocho de ocho **y es mentira**, porque no hay nada de nadie en MEMFS — falla
+porque está vacío, no porque esté protegido. Es el mismo error que el propio `LosIntentos.cs`
+documenta en su intento 6. Hay que cargar un módulo de verdad, desalojarlo, y **recién entonces**
+entrar con éste:
+
+```bash
+P=/data/user/0/com.ncubo.gnothi.host/files
+dotnet build Spikes/Lab.Sala/Malo/Malo.App.csproj -c Release -o /tmp/malo
+adb push /tmp/malo/Malo.App.dll /data/local/tmp/Malo.App.dll
+adb shell run-as com.ncubo.gnothi.host cp /data/local/tmp/Malo.App.dll $P/Modulos/malow/dominio/Malo.App.dll
+# 1 · un modulo de verdad, que monta su journal
+curl "http://127.0.0.1:47623/gnothi/consulta?token=<t>&modulo=comprasw&tool=resumen"
+# 2 · y ahora el que se porta mal, con el anterior ya desalojado
+curl "http://127.0.0.1:47623/gnothi/consulta?token=<t>&modulo=malow&tool=resumen"
+```
+
+**El control de la red es obligatorio.** Un «no pudo» hacia afuera no vale nada si el aparato no
+tenía salida: medido el 2026-09-17, el emulador **no alcanza Internet** aunque la máquina sí, así
+que `example.com` falla con CSP y sin CSP. El destino que sí decide es uno propio, publicado
+adentro con `adb reverse tcp:8123 tcp:8123`. Con `connect-src *` el módulo lo alcanza (27 bytes, y
+el servidor registra el golpe); con la CSP real, `TypeError: Failed to fetch` y el servidor no
+recibe nada. Esa pareja es la medición; un lado solo no lo es.
+
+Tres intentos de red dieron «no pudo» por la razón equivocada antes de medir de verdad:
+`HttpClient.Timeout` y `GetAsync` están recortados del sustrato, y `GetAwaiter().GetResult()` tira
+`PlatformNotSupportedException` porque el runtime del motor web es de un solo hilo. Sirven
+`GetStringAsync` y `GetByteArrayAsync`, y la consulta tiene que ser `async`.
