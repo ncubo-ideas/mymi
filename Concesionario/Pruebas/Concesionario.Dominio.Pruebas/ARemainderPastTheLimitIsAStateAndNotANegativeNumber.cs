@@ -65,8 +65,8 @@ namespace Concesionario.Dominio.Pruebas
 				+ "numero y solo la frase los separaria.");
 
 			Assert.That(
-				schedule.DescribeDistanceRemaining(
-					OperationKindCode.FluidChange, TheInstantAsked),
+				TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord),
 				Does.Not.Contain("te faltan"),
 				"Pasado el limite no falta nada.");
 		}
@@ -88,8 +88,8 @@ namespace Concesionario.Dominio.Pruebas
 				schedule.ReadDistanceRemaining(OperationKindCode.FluidChange, TheInstantAsked),
 				Is.EqualTo(0));
 
-			string said = schedule.DescribeDistanceRemaining(
-				OperationKindCode.FluidChange, TheInstantAsked);
+			string said = TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("justo en el límite"));
 			Assert.That(said, Does.Not.Contain("0"),
@@ -116,8 +116,8 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo(1));
 
 			Assert.That(
-				schedule.DescribeDistanceRemaining(
-					OperationKindCode.FluidChange, TheInstantAsked),
+				TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord),
 				Does.Contain("te falta "),
 				"Uno solo se dice en singular, como ARemainingEnvelope ya hace con 'queda' y "
 				+ "'quedan'.");

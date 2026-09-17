@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace Concesionario.Dominio
 {
 	/// <summary>
 	/// El costo por distancia de un periodo cuyo tramo de uso SI se pudo medir: el ancla con su
-	/// instante, la distancia recorrida desde ella con su unidad, y lo gastado despues de ella dicho
-	/// moneda por moneda.
+	/// instante, la distancia recorrida desde ella con su unidad, y lo gastado despues de ella
+	/// dicho moneda por moneda.
 	/// <para>
-	/// Dos cosas que este tipo dice con palabras y nunca con una cifra: que despues del ancla no se
-	/// gasto nada, y que el odometro no se movio. Un cero por unidad en cualquiera de las dos se
+	/// Dos cosas que este tipo dice con un NOMBRE y nunca con una cifra: que despues del ancla no
+	/// se gasto nada, y que el odometro no se movio. Un cero por unidad en cualquiera de las dos se
 	/// leeria como un vehiculo que anduvo gratis.
 	/// </para>
 	/// </summary>
@@ -21,7 +20,8 @@ namespace Concesionario.Dominio
 		private readonly DistanceUnit _unitOfTravel;
 		private readonly List<ACostEntry> _incurredAfterTheAnchor;
 
-		/// <summary>Se llega por <see cref="ACostPerDistance.Of"/>, que filtra por el ancla.</summary>
+		/// <summary>Se llega por <see cref="ACostPerDistance.Of"/>, que filtra por el
+		/// ancla.</summary>
 		internal AMeasuredCostPerDistance(
 			DateTime from, DateTime to, DateTime firstReading, int distanceTravelled,
 			DistanceUnit unitOfTravel, List<ACostEntry> incurredAfterTheAnchor)
@@ -34,37 +34,29 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El periodo, el ancla con su instante, la distancia con su unidad, y una cifra por moneda con
-		/// las dos unidades dichas -- el signo de la moneda y la unidad de la distancia. TOTAL.
+		/// El periodo, el ancla con su instante, la distancia con su unidad, y una cifra por moneda
+		/// -- o cual de las dos situaciones sin cifra le toca a este periodo. TOTAL.
 		/// </summary>
-		internal override string Describe()
-		{
-			return ThePeriodClause() + ", desde la primera lectura del odómetro del período -- la del "
-				+ TheInstant(_firstReading) + " -- el vehículo recorrió " + TheDistanceSaid() + ": "
-				+ TheFiguresOrWhyThereAreNone() + " " + TheAnchorRule();
-		}
-
-		private string TheDistanceSaid()
-		{
-			return _distanceTravelled.ToString(CultureInfo.InvariantCulture) + " "
-				+ _unitOfTravel.Name;
-		}
-
-		private string TheFiguresOrWhyThereAreNone()
+		internal override ACostPerDistanceClause TheClauseItComposes()
 		{
 			if (_incurredAfterTheAnchor.Count == 0)
-				return "después de esa lectura no se gastó nada.";
+				return ACostPerDistanceClause.NothingSpentAfterTheAnchor(
+					TheInstantItStartsAt(), TheInstantItEndsAt(), TheInstant(_firstReading),
+					_distanceTravelled, _unitOfTravel.Name);
 
 			if (_distanceTravelled == 0)
-				return "no hay distancia recorrida por la que dividir lo que se gastó después de esa "
-					+ "lectura, y eso no es un costo de cero por " + _unitOfTravel.Name + ".";
+				return ACostPerDistanceClause.NoDistanceTravelled(
+					TheInstantItStartsAt(), TheInstantItEndsAt(), TheInstant(_firstReading),
+					_unitOfTravel.Name);
 
-			return "lo que se gastó después de ella sale a " + TheFigurePerCurrency() + ".";
+			return ACostPerDistanceClause.Measured(
+				TheInstantItStartsAt(), TheInstantItEndsAt(), TheInstant(_firstReading),
+				_distanceTravelled, _unitOfTravel.Name, TheFigurePerCurrency());
 		}
 
-		private string TheFigurePerCurrency()
+		private List<Money> TheFigurePerCurrency()
 		{
-			string said = "";
+			List<Money> said = new List<Money>();
 
 			foreach (List<ACostEntry> ofOneCurrency in ByCurrency())
 			{
@@ -73,18 +65,10 @@ namespace Concesionario.Dominio
 				for (int entry = 1; entry < ofOneCurrency.Count; entry++)
 					whole = whole.Plus(ofOneCurrency[entry].TheMoneyItCost());
 
-				string figure = whole.Prorated(1, _distanceTravelled).Expressed()
-					+ " por " + _unitOfTravel.Name;
-
-				said = said.Length == 0 ? figure : said + " y " + figure;
+				said.Add(whole.Prorated(1, _distanceTravelled));
 			}
 
 			return said;
-		}
-
-		private string TheAnchorRule()
-		{
-			return "Lo que se pagó en esa lectura o antes pagó el recorrido anterior y no cuenta acá.";
 		}
 
 		private List<List<ACostEntry>> ByCurrency()

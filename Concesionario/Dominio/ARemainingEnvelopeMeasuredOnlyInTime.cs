@@ -4,10 +4,11 @@ namespace Concesionario.Dominio
 {
 	/// <summary>
 	/// El par derivado cuya mitad de distancia NO se pudo medir: la de tiempo lleva su numero y la
-	/// otra dice que falta y por que. La mitad ausente se dice; no vale cero, ni la lectura de la
-	/// entrega haciendo de la de hoy, ni el limite entero como si nada se hubiera recorrido.
+	/// otra dice cual de las dos razones lo impidio. La mitad ausente se dice; no vale cero, ni la
+	/// lectura de la entrega haciendo de la de hoy, ni el limite entero como si nada se hubiera
+	/// recorrido.
 	/// <para>
-	/// El motivo llega en palabras y no como un tipo por cada uno: quien compone es quien sabe cual
+	/// El motivo llega por su CODIGO y no como un tipo por cada uno: quien compone es quien sabe cual
 	/// de las dos distancias del registro no calzo, y en la respuesta el motivo ya tiene su propio
 	/// tipo un piso mas arriba.
 	/// </para>
@@ -15,15 +16,21 @@ namespace Concesionario.Dominio
 	internal sealed class ARemainingEnvelopeMeasuredOnlyInTime : RemainingEnvelope
 	{
 		private readonly string _whyItCouldNotBeMeasured;
+		private readonly string _whoseDistance;
+		private readonly string _itsUnit;
 
 		/// <summary>
-		/// Se llega por <see cref="RemainingEnvelope.MeasuredOnlyInTime"/>, que lleva las guardas.
+		/// Se llega por las dos fabricas suspendidas de <see cref="RemainingEnvelope"/>, que llevan
+		/// las guardas.
 		/// </summary>
 		internal ARemainingEnvelopeMeasuredOnlyInTime(
-			int monthsLeft, int monthsLimit, string whyItCouldNotBeMeasured)
+			int monthsLeft, int monthsLimit, string whyItCouldNotBeMeasured,
+			string whoseDistance, string itsUnit)
 			: base(monthsLeft, monthsLimit)
 		{
 			_whyItCouldNotBeMeasured = whyItCouldNotBeMeasured;
+			_whoseDistance = whoseDistance;
+			_itsUnit = itsUnit;
 		}
 
 		/// <summary>No.</summary>
@@ -47,10 +54,22 @@ namespace Concesionario.Dominio
 			get { throw TheDistanceHalfWasNotMeasured(); }
 		}
 
-		/// <summary>Dice que falta y por que, y no da ningun numero en su lugar.</summary>
-		protected override string TheDistanceHalfInWords()
+		/// <summary>Cual de las dos razones impidio medirla, y no da ningun numero en su lugar.</summary>
+		internal override string TheDistanceHalfShape()
 		{
-			return "Distancia: no se puede medir, " + _whyItCouldNotBeMeasured.Trim();
+			return _whyItCouldNotBeMeasured;
+		}
+
+		/// <summary>La unidad que no coincidio con la del limite, o vacia si no fue por unidades.</summary>
+		internal override string TheUnitThatDidNotMatch()
+		{
+			return _itsUnit;
+		}
+
+		/// <summary>Cual de las dos distancias del registro no calzo, o vacio por lo mismo.</summary>
+		internal override string WhoseDistanceDidNotMatch()
+		{
+			return _whoseDistance;
 		}
 
 		private static DomainException TheDistanceHalfWasNotMeasured()

@@ -321,7 +321,8 @@ namespace Concesionario.Dominio.Pruebas
 				+ "replay, y reemplazaria 'ledger' por un CostLedger recien hecho y vacio.");
 
 			Assert.That(
-				new DealershipCarAPI(real).CostEntriesBetween(TheYearFrom, TheYearTo).Says[0],
+				new DealershipCarAPI(real).CostEntriesBetween(
+					TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Says[0],
 				Does.Contain(TheCostSubject),
 				"Y es EL MISMO gasto y no otro: un libro recien hecho tendria cero filas, pero una "
 				+ "cuenta sola no distingue un uno de otro uno.");

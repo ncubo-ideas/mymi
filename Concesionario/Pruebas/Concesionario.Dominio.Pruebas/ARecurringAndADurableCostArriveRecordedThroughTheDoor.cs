@@ -86,13 +86,13 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo(1),
 				"El script parseo, ato sus cuatro parametros y el gasto llego al libro.");
 
-			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
+			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Says;
 
 			TestContext.Out.WriteLine("RECURRENTE -- " + rows[0]);
 
 			Assert.That(rows[0], Does.Contain(TheOilChange), "Dice en que se fue, con las palabras "
 				+ "que llegaron.");
-			Assert.That(rows[0], Does.Contain("₡25000.00"),
+			Assert.That(rows[0], Does.Contain("₡25.000,00"),
 				"Y cuanto, dicho por el dominio con el signo y los decimales de su moneda.");
 			Assert.That(rows[0], Does.Contain("2026-05-04 09:15:00"),
 				"Y cuando, como INSTANTE con su hora: de que dia local es un instante necesitaria una "
@@ -110,12 +110,12 @@ namespace Concesionario.Dominio.Pruebas
 			api.RecordDurableCost(
 				TheTyresIncurred, TheTyresCost, TheColon, TheTyres, FourYearsOfLife);
 
-			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
+			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Says;
 
 			TestContext.Out.WriteLine("DURADERO -- " + rows[0]);
 
 			Assert.That(rows[0], Does.Contain(TheTyres));
-			Assert.That(rows[0], Does.Contain("₡240000.00"));
+			Assert.That(rows[0], Does.Contain("₡240.000,00"));
 			Assert.That(rows[0], Does.Contain("Duradero"),
 				"DURADERO, y por el mismo motivo: el comando que se llamo.");
 			Assert.That(rows[0], Does.Contain("48 meses"),
@@ -140,13 +140,13 @@ namespace Concesionario.Dominio.Pruebas
 				api.CostEntryCountBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(3));
 
-			string period = api.DescribeSpendBetween(TheYearFrom, TheYearTo);
+			string period = api.DescribeSpendBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			TestContext.Out.WriteLine("EL PERIODO -- " + period);
 
-			Assert.That(period, Does.Contain("₡265000.00"),
+			Assert.That(period, Does.Contain("₡265.000,00"),
 				"La caja del colon: 240000 mas 25000, sumados por el DOMINIO.");
-			Assert.That(period, Does.Contain("$120.50"),
+			Assert.That(period, Does.Contain("$120,50"),
 				"Y el dolar por su lado, con su propio signo.");
 			Assert.That(period, Does.Not.Contain("385"),
 				"Y NINGUN total entre las dos monedas: no hay factor con que sumarlas, y no lo hay a "
@@ -164,21 +164,21 @@ namespace Concesionario.Dominio.Pruebas
 				TheTyresIncurred, TheTyresCost, TheColon, TheTyres, FourYearsOfLife);
 			api.RecordRecurringCost(TheOilChangeIncurred, TheOilChangeCost, TheColon, TheOilChange);
 
-			string[] live = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
-			string livePeriod = api.DescribeSpendBetween(TheYearFrom, TheYearTo);
+			string[] live = api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Says;
+			string livePeriod = api.DescribeSpendBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			Close();
 			Open();
 
 			string[] replayed =
-				api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
+				api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Says;
 
 			TestContext.Out.WriteLine("VIVO      -- " + live[0]);
 			TestContext.Out.WriteLine("REPLAYADO -- " + replayed[0]);
 
 			Assert.That(replayed, Is.EqualTo(live));
 			Assert.That(
-				api.DescribeSpendBetween(TheYearFrom, TheYearTo),
+				api.DescribeSpendBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
 				Is.EqualTo(livePeriod));
 		}
 
@@ -192,7 +192,7 @@ namespace Concesionario.Dominio.Pruebas
 				new DateTime(2026, 5, 4, 9, 15, 42, 987, DateTimeKind.Utc), TheOilChangeCost,
 				TheColon, TheOilChange);
 
-			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
+			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Says;
 
 			Assert.That(rows[0], Does.Contain("2026-05-04 09:15:42"),
 				"El segundo entero llega; los milisegundos no, porque el journal los deja caer y el "

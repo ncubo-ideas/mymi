@@ -40,10 +40,13 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void APeriodWithNoStayAnswersInWordsAndNamesItsTwoDays()
 		{
-			string said = stays.DescribeDaysInTheShopBetween(TheFirstOfJune, TheLastOfJune);
+			string said = TheSentenceTheDoorWouldCompose.TheStayPeriod(
+				stays, TheFirstOfJune, TheLastOfJune, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain(TheFirstOfJune), "L8: la frase nombra el periodo...");
-			Assert.That(said, Does.Contain(TheLastOfJune), "...los DOS dias.");
+			// LOS DOS LIMITES SON DIAS y la frase los dice en palabras, asi que el literal del registro
+			// no calza: lo que se espera se compone con el mismo renderizador.
+			Assert.That(said, Does.Contain(ADay(TheFirstOfJune)), "L8: la frase nombra el periodo...");
+			Assert.That(said, Does.Contain(ADay(TheLastOfJune)), "...los DOS dias.");
 			Assert.That(said, Does.Contain("días registrados"),
 				"y dice de que habla: de dias REGISTRADOS, no de si el carro estuvo adentro.");
 		}
@@ -51,7 +54,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void ItIsNeitherAZeroNorAnEmptyStringNorAThrow()
 		{
-			string said = stays.DescribeDaysInTheShopBetween(TheFirstOfJune, TheLastOfJune);
+			string said = TheSentenceTheDoorWouldCompose.TheStayPeriod(
+				stays, TheFirstOfJune, TheLastOfJune, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Is.Not.Empty);
 			Assert.That(said, Does.Not.Contain("0 días"),
@@ -72,11 +76,16 @@ namespace Concesionario.Dominio.Pruebas
 				new DateTime(2026, 6, 10, 8, 30, 0), new DateTime(2026, 6, 12, 16, 45, 0),
 				new[] { "2026-06-10", "2026-06-11", "2026-06-12" });
 
-			string july = stays.DescribeDaysInTheShopBetween(TheFirstOfJuly, TheLastOfJuly);
+			string july = TheSentenceTheDoorWouldCompose.TheStayPeriod(
+				stays, TheFirstOfJuly, TheLastOfJuly, TheLanguage.OfTheRecord);
 
-			Assert.That(july, Does.Contain(TheFirstOfJuly));
-			Assert.That(july, Does.Contain(TheLastOfJuly));
-			Assert.That(july, Does.Not.Contain("2026-06-10"),
+			Assert.That(july, Does.Contain(ADay(TheFirstOfJuly)));
+			Assert.That(july, Does.Contain(ADay(TheLastOfJuly)));
+
+			// Y EL CONTROL SE DICE EN LA FORMA EN QUE UNA LISTA DE DIAS SE DICE, que es la corta: con
+			// el literal del registro esta afirmacion pasaria sin mirar nada, porque esa forma ya no
+			// aparece en ninguna frase.
+			Assert.That(july, Does.Not.Contain(AShortDay("2026-06-10")),
 				"la ausencia de julio no puede nombrar los dias de junio");
 			Assert.That(stays.HasAnyStayBetween(TheFirstOfJuly, TheLastOfJuly), Is.False);
 			Assert.That(stays.StayCountBetween(TheFirstOfJuly, TheLastOfJuly), Is.EqualTo(0));
@@ -90,12 +99,25 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AnInstantWithNoStayAnswersInWordsToo()
 		{
-			string said = stays.DescribeTheStayAt(new DateTime(2026, 6, 11, 12, 0, 0));
+			string said = TheSentenceTheDoorWouldCompose.TheStay(
+				stays, new DateTime(2026, 6, 11, 12, 0, 0), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Is.Not.Empty);
 			Assert.That(said, Does.Contain("2026-06-11 12:00:00"),
 				"nombra el instante por el que se pregunto");
 			Assert.That(stays.IsInsideTheShopAt(new DateTime(2026, 6, 11, 12, 0, 0)), Is.False);
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
+		}
+
+		private static string AShortDay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.AShortDayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

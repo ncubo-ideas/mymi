@@ -42,13 +42,13 @@ namespace Concesionario.Dominio.Pruebas
 		}
 
 		// TRES PERIODOS, TRES PARTES, cada una por literal.
-		[TestCase("2026-01-01", "2026-02-01", "₡62000.00")]
-		[TestCase("2026-02-01", "2026-03-01", "₡56000.00")]
-		[TestCase("2026-03-01", "2026-03-16", "₡30000.00")]
+		[TestCase("2026-01-01", "2026-02-01", "₡62.000,00")]
+		[TestCase("2026-02-01", "2026-03-01", "₡56.000,00")]
+		[TestCase("2026-03-01", "2026-03-16", "₡30.000,00")]
 		public void TheSameDurableEntryReadFromThreePeriodsAnswersThreeDifferentShares(
 			string from, string to, string theShare)
 		{
-			string said = ledger.DescribeSpendBetween(TheInstant(from), TheInstant(to));
+			string said = TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheInstant(from), TheInstant(to), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain(theShare),
 				"La parte se deriva del periodo preguntado. Una parte guardada contestaria la misma "
@@ -63,8 +63,8 @@ namespace Concesionario.Dominio.Pruebas
 			DateTime from = TheInstant("2026-01-01");
 			DateTime to = TheInstant("2026-02-01");
 
-			string first = ledger.DescribeSpendBetween(from, to);
-			string second = ledger.DescribeSpendBetween(from, to);
+			string first = TheSentenceTheDoorWouldCompose.TheSpend(ledger, from, to, TheLanguage.OfTheRecord);
+			string second = TheSentenceTheDoorWouldCompose.TheSpend(ledger, from, to, TheLanguage.OfTheRecord);
 
 			Assert.That(second, Is.EqualTo(first));
 			Assert.That(second, Does.Not.Contain("₡124000"),

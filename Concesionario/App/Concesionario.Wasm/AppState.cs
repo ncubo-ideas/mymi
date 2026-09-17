@@ -63,9 +63,17 @@ namespace Concesionario.Wasm
 
 		public string SavingIsFailing { get; private set; } = "";
 
-		public string DealershipUnreachable { get; private set; } = "";
+		/// <summary>
+		/// Que no se pudo llegar al concesionario, como CLAVE MAS VALORES y no como frase: esta capa no
+		/// elige un idioma, y la pantalla que lo dice tiene el catalogo.
+		/// </summary>
+		public Note DealershipUnreachable { get; private set; } = Note.None;
 
-		public string EvaluationSkipped { get; private set; } = "";
+		/// <summary>
+		/// Por que no se evaluo, del mismo modo. Cuando el rechazo lo escribio el dominio va como CITA:
+		/// esas palabras son suyas y se muestran tal como llegaron.
+		/// </summary>
+		public Note EvaluationSkipped { get; private set; } = Note.None;
 
 		public string WhereTheDealershipIs => http.BaseAddress?.ToString() ?? "(sin configurar)";
 
@@ -181,7 +189,7 @@ namespace Concesionario.Wasm
 				ResultadoDeRefresh onOpen = await loop.Ejecutar(CancellationToken.None);
 				if (onOpen.Cuenta is not null) Account = onOpen.Cuenta;
 				await FlushAfterTheBlockAsync();
-				DealershipUnreachable = "";
+				DealershipUnreachable = Note.None;
 				LastMessage += $" | al abrir: {onOpen}";
 			}
 			catch (WriteRefusedException)
@@ -190,9 +198,11 @@ namespace Concesionario.Wasm
 			}
 			catch (Exception ex)
 			{
-				DealershipUnreachable =
-					$"No se pudo alcanzar {WhereTheDealershipIs} ({ex.GetType().Name}: {ex.Message}).";
-				LastMessage += " | " + DealershipUnreachable;
+				DealershipUnreachable = Note.Of("state.unreachable",
+					("where", WhereTheDealershipIs),
+					("kind", ex.GetType().Name),
+					("detail", ex.Message));
+				LastMessage += $" | no se pudo alcanzar {WhereTheDealershipIs} ({ex.GetType().Name})";
 			}
 
 			try
@@ -341,14 +351,14 @@ namespace Concesionario.Wasm
 
 			ResultadoDeRefresh result = await loop.Ejecutar(ct);
 
-			DealershipUnreachable = "";
+			DealershipUnreachable = Note.None;
 			LastMessage = $"actualización: {result}";
 
 			await FlushAfterTheBlockAsync();
 			return result;
 		}
 
-		private async ValueTask<string> EvaluateNowAsync()
+		private async ValueTask EvaluateNowAsync()
 		{
 			Require();
 
@@ -358,21 +368,20 @@ namespace Concesionario.Wasm
 			if (!outcome.WasEvaluated)
 			{
 				EvaluationSkipped = api.HasBeenEvaluated()
-					? $"Este registro ya se evaluó hasta el {Instant(api.LastEvaluatedAt())}, que es "
-					  + $"posterior a ahora ({Instant(asOf)}). El plan de abajo está a ese instante "
-					  + "posterior, no al de hoy, y no se puede volver a evaluar hacia atrás."
-					: Unwrap(outcome.Rejection);
+					? Note.Of("state.alreadyEvaluated",
+						("when", Instant(api.LastEvaluatedAt())),
+						("now", Instant(asOf)))
+					: Note.AsItArrived(Unwrap(outcome.Rejection));
 				LastMessage = $"evaluación: omitida. {Unwrap(outcome.Rejection)}";
-				return EvaluationSkipped;
+				return;
 			}
 
-			EvaluationSkipped = "";
+			EvaluationSkipped = Note.None;
 			await FlushToDiskAsync();
 			LastMessage = $"evaluación: {outcome.TransitionCount} "
 			            + (outcome.TransitionCount == 1 ? "transición" : "transiciones")
 			            + (outcome.AnythingBecameDue ? ", algo venció" : "")
 			            + (outcome.AnythingBecameOverdue ? ", algo se atrasó" : "");
-			return "";
 		}
 
 		/// <summary>
@@ -452,7 +461,11 @@ namespace Concesionario.Wasm
 
 		public string ReadDueState(string kind) { Require(); return api.ReadDueState(kind); }
 
-		public string ReadDueReason(string kind) { Require(); return api.ReadDueReason(kind); }
+		public string ReadDueReason(string kind, string language)
+		{
+			Require();
+			return api.ReadDueReason(kind, language);
+		}
 
 		public int DeferralsUsed(string kind) { Require(); return api.DeferralsUsed(kind); }
 
@@ -488,10 +501,10 @@ namespace Concesionario.Wasm
 		/// La ficha del fabricante entera, leida en un solo momento para que las dos secciones que
 		/// la muestran nombren la misma revision de la que salieron sus frases.
 		/// </summary>
-		public WhatTheManufacturerPublished ReadTheSpecification()
+		public WhatTheManufacturerPublished ReadTheSpecification(string language)
 		{
 			Require();
-			return WhatTheManufacturerPublished.ReadThrough(api);
+			return WhatTheManufacturerPublished.ReadThrough(api, language);
 		}
 
 		/// <summary>
@@ -499,10 +512,11 @@ namespace Concesionario.Wasm
 		/// pregunta. Va aparte de la ficha porque la ficha es de un modelo y esto es de un carro, y
 		/// porque solo esta mitad depende del instante.
 		/// </summary>
-		public WhereThisVehicleStands ReadWhereThisVehicleStands()
+		public WhereThisVehicleStands ReadWhereThisVehicleStands(string language)
 		{
 			Require();
-			return WhereThisVehicleStands.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return WhereThisVehicleStands.ReadThrough(
+				api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		/// <summary>
@@ -511,14 +525,14 @@ namespace Concesionario.Wasm
 		/// La ventana la fija la pantalla con su propio reloj y no se le pide a nadie -- esta app no
 		/// tiene ningun control que recoja un valor de una persona, asi que no hay selector de periodo.
 		/// </summary>
-		public TheStaysOfThisVehicle ReadTheStaysOfThisVehicle()
+		public TheStaysOfThisVehicle ReadTheStaysOfThisVehicle(string language)
 		{
 			Require();
 
 			DateTime asOf = TheInstantTheScreenAsksAt();
 
 			return TheStaysOfThisVehicle.ReadThrough(
-				api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf);
+				api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf, language);
 		}
 
 		/// <summary>
@@ -527,20 +541,21 @@ namespace Concesionario.Wasm
 		/// la maquina y no se le pide a nadie -- pedirlo seria dejar que alguien pregunte por un momento
 		/// que se invento.
 		/// </summary>
-		public WhereEachOperationStands ReadWhereEachOperationStands()
+		public WhereEachOperationStands ReadWhereEachOperationStands(string language)
 		{
 			Require();
-			return WhereEachOperationStands.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return WhereEachOperationStands.ReadThrough(
+				api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		/// <summary>
 		/// Lo que el fabricante publico que cuestan los servicios, leido entero al instante en que la
 		/// pantalla pregunta, porque la vigencia de un precio se juzga contra un momento.
 		/// </summary>
-		public WhatTheServicesCost ReadWhatTheServicesCost()
+		public WhatTheServicesCost ReadWhatTheServicesCost(string language)
 		{
 			Require();
-			return WhatTheServicesCost.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return WhatTheServicesCost.ReadThrough(api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		/// <summary>
@@ -550,7 +565,7 @@ namespace Concesionario.Wasm
 		/// ventana la fija la pantalla y no se le pide a nadie -- esta app no tiene ningun control que
 		/// recoja un valor de una persona, asi que no hay selector de periodo.
 		/// </summary>
-		public HowThisVehicleIsDriven ReadHowThisVehicleIsDriven()
+		public HowThisVehicleIsDriven ReadHowThisVehicleIsDriven(string language)
 		{
 			Require();
 
@@ -558,7 +573,7 @@ namespace Concesionario.Wasm
 
 			return HowThisVehicleIsDriven.ReadThrough(
 				api, TheTwelveMonthsBefore(asOf), asOf, TheTwentyFourMonthsBefore(asOf),
-				TheTwelveMonthsBefore(asOf));
+				TheTwelveMonthsBefore(asOf), language);
 		}
 
 		/// <summary>
@@ -568,7 +583,7 @@ namespace Concesionario.Wasm
 		/// mismo momento. La ventana la fija la pantalla y no se le pide a nadie -- esta app no tiene
 		/// ningun control que recoja un valor de una persona, asi que no hay selector de periodo.
 		/// </summary>
-		public WhatThisVehicleHasCost ReadWhatThisVehicleHasCost()
+		public WhatThisVehicleHasCost ReadWhatThisVehicleHasCost(string language)
 		{
 			Require();
 
@@ -576,7 +591,7 @@ namespace Concesionario.Wasm
 
 			return WhatThisVehicleHasCost.ReadThrough(
 				api, TheTwelveMonthsBefore(asOf), asOf, TheTwentyFourMonthsBefore(asOf),
-				TheTwelveMonthsBefore(asOf));
+				TheTwelveMonthsBefore(asOf), language);
 		}
 
 		/// <summary>
@@ -584,10 +599,10 @@ namespace Concesionario.Wasm
 		/// rige se decide contra un momento. El instante lo lee la pantalla del reloj de la maquina y
 		/// no se lo pide a nadie: la placa la publica el concesionario y esta app solo la muestra.
 		/// </summary>
-		public ThePlateOfThisVehicle ReadThePlateOfThisVehicle()
+		public ThePlateOfThisVehicle ReadThePlateOfThisVehicle(string language)
 		{
 			Require();
-			return ThePlateOfThisVehicle.ReadThrough(api, TheInstantTheScreenAsksAt());
+			return ThePlateOfThisVehicle.ReadThrough(api, TheInstantTheScreenAsksAt(), language);
 		}
 
 		// HasCredential() vive mas arriba y pregunta al ALMACEN, no al journal: el api ya no

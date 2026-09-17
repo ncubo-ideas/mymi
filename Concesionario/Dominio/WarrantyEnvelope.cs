@@ -8,12 +8,22 @@ namespace Concesionario.Dominio
 	/// Guarda LIMITES y nunca lo que queda: lo que queda es correcto para un solo instante y esta
 	/// viejo desde el siguiente, asi que se calcula cada vez que alguien pregunta.
 	/// <para>
+	/// Sale como FORMA mas valores ya tipados y nunca como una frase: la redaccion vive donde se
+	/// elige el idioma, y el dominio no elige uno.
+	/// </para>
+	/// <para>
 	/// No es <see cref="WarrantyCoverage"/>, que es el alcance que el FABRICANTE publico sobre un
 	/// modelo. Este es de este carro y lo dice la agencia.
 	/// </para>
 	/// </summary>
 	internal abstract class WarrantyEnvelope
 	{
+		/// <summary>La agencia publico un sobre, con sus dos mitades.</summary>
+		internal const string Published = "Published";
+
+		/// <summary>La agencia no publico ninguno, que es una respuesta y no una ausencia de dato.</summary>
+		internal const string NotPublished = "NotPublished";
+
 		/// <summary>La agencia no publico sobre. Instancia unica, compartida.</summary>
 		internal static readonly WarrantyEnvelope None = new NoWarrantyEnvelope();
 
@@ -95,11 +105,34 @@ namespace Concesionario.Dominio
 		internal abstract int DistanceLeftFrom(int deliveryReading, int currentReading);
 
 		/// <summary>
-		/// El sobre en palabras: las dos mitades, su unidad y cuando se publico, sin ningun hecho
-		/// del vehiculo adentro. TOTAL, tambien cuando no hay sobre -- que no hayan publicado
-		/// ninguno tambien es una respuesta, y es la que puede citar quien no tiene ni un dato de
-		/// ningun carro.
+		/// Que forma tiene lo que la agencia publico, por su codigo. TOTAL, tambien cuando no hay
+		/// sobre -- que no hayan publicado ninguno tambien es una respuesta, y es la que puede citar
+		/// quien no tiene ni un dato de ningun carro.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract string TheShapeItHas();
+
+		/// <summary>
+		/// El plazo publicado, o cero donde no hay sobre. TOTAL, a diferencia de <see cref="Months"/>,
+		/// que es la lectura guardada del mismo plazo.
+		/// </summary>
+		internal abstract int TheMonthsItPublished();
+
+		/// <summary>
+		/// La distancia publicada, o cero donde no hay sobre. TOTAL, a diferencia de
+		/// <see cref="Distance"/>.
+		/// </summary>
+		internal abstract int TheDistanceItPublished();
+
+		/// <summary>
+		/// La unidad de esa distancia, por su nombre, o vacia donde no hay sobre. TOTAL, a diferencia
+		/// de <see cref="TheUnitItsDistanceIsMeasuredIn"/>.
+		/// </summary>
+		internal abstract string TheUnitItsDistanceIsSaidIn();
+
+		/// <summary>
+		/// El dia en que la agencia lo publico, o vacio donde no hay sobre. TOTAL, a diferencia de
+		/// <see cref="PublishedAt"/>.
+		/// </summary>
+		internal abstract string TheDayItWasPublished();
 	}
 }

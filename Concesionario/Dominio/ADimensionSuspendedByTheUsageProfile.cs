@@ -8,12 +8,12 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class ADimensionSuspendedByTheUsageProfile : LimitStanding
 	{
-		private readonly string _profileName;
+		private readonly string _usageProfile;
 
-		/// <summary>El perfil que declaro la decision, para poder mostrar cual aplico.</summary>
-		internal ADimensionSuspendedByTheUsageProfile(string profileName)
+		/// <summary>El perfil que declaro la decision, por su codigo, para poder decir cual aplico.</summary>
+		internal ADimensionSuspendedByTheUsageProfile(string usageProfile)
 		{
-			_profileName = profileName;
+			_usageProfile = usageProfile;
 		}
 
 		/// <summary>Si: la ley mide distancia; lo que la ignora es el perfil.</summary>
@@ -28,20 +28,31 @@ namespace Concesionario.Dominio
 			get { return true; }
 		}
 
-		/// <summary>Nombra el perfil, que es el que decidio.</summary>
-		internal override string Describe()
+		/// <summary><see cref="LimitClause.UsageProfile"/>, que nombra el perfil que decidio.</summary>
+		internal override string TheClauseItAdds()
 		{
-			return "distancia: no se puede evaluar porque el perfil de uso " + _profileName
-				+ " ignora los límites de distancia";
+			return LimitClause.UsageProfile;
+		}
+
+		/// <summary>La distancia.</summary>
+		internal override string TheDimensionItMeasures()
+		{
+			return IntervalDimension.Distance;
+		}
+
+		/// <summary>El perfil que decidio ignorarla, por su codigo.</summary>
+		internal override string TheUsageProfileThatIgnoresIt()
+		{
+			return _usageProfile;
 		}
 
 		/// <summary>
-		/// No hay contra que medir cuando el perfil ignora la dimension. La frase es la del
-		/// dominio, que nombra el perfil que decidio.
+		/// No hay contra que medir cuando el perfil ignora la dimension, y lo que queda nombra el
+		/// mismo perfil que la clausula.
 		/// </summary>
 		internal override ARemainder WhatRemains()
 		{
-			return ARemainder.IgnoredByTheUsageProfile(Describe());
+			return ARemainder.IgnoredByTheUsageProfile(_usageProfile);
 		}
 	}
 }

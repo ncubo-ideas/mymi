@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using Concesionario.App;
 using NUnit.Framework;
@@ -17,10 +18,10 @@ namespace Concesionario.Dominio.Pruebas
 	// -- recibe NINGUNA, incluida la mitad publicada que tenia todo el derecho de mostrar. Que un
 	// carro no tenga odometro no puede volver incitable lo que la agencia publico.
 	//
-	// LO QUE HACE QUE ESTO NO SEA UN Is.Not.Empty (C60). Se afirma la forma POR REFLEXION -- cero
-	// parametros, asi que estructuralmente no puede pedir un hecho de nadie -- y se compara la frase
-	// entre un registro que tiene TODOS los hechos del vehiculo y uno que no tiene NINGUNO. Si la
-	// mitad publicada se dejara colar un hecho personal, las dos frases se separarian.
+	// LO QUE HACE QUE ESTO NO SEA UN Is.Not.Empty (C60). Se afirma la forma POR REFLEXION -- un solo
+	// parametro, el IDIOMA, asi que estructuralmente no puede pedir un hecho de nadie -- y se compara
+	// la frase entre un registro que tiene TODOS los hechos del vehiculo y uno que no tiene NINGUNO.
+	// Si la mitad publicada se dejara colar un hecho personal, las dos frases se separarian.
 	[TestFixture]
 	public sealed class ThePublishedHalfIsQuotableWithNoVehicleFactAtAll
 	{
@@ -64,18 +65,28 @@ namespace Concesionario.Dominio.Pruebas
 				"Y sin ninguna lectura del odometro. Es el estado en que la frase compuesta no puede "
 				+ "contestar, y es donde esta lectura tiene que contestar igual.");
 
-			string published = journal.Api.DescribePublishedWarrantyEnvelope();
+			string published = journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord);
 
 			Assert.That(published, Does.Contain("36 meses"));
-			Assert.That(published, Does.Contain("60000 mi"),
+			Assert.That(published, Does.Contain("60.000 mi"),
 				"Las dos mitades con su unidad. 'mi' es UnitB: si el codigo no hubiera cruzado, aca "
 				+ "diria 'km', que es el primer miembro del conjunto.");
-			Assert.That(published, Does.Contain("2023-11-15"),
+			Assert.That(published, Does.Contain("15 de noviembre de 2023"),
 				"Y cuando se publico, que es lo que hace que un sobre viejo se pueda ver viejo.");
 		}
 
-		// LA FORMA, POR REFLEXION: cero parametros. Es la mitad estructural -- una lectura que no
-		// toma nada no puede pedirle un hecho a quien no lo tiene, con ningun nombre.
+		// LA FORMA, POR REFLEXION. Era CERO PARAMETROS hasta que el dominio dejo de redactar: ahora
+		// toma EL IDIOMA en que se le pide la frase, y uno solo.
+		//
+		// EL NOMBRE DE ESTA PRUEBA OVERCLAIMS DESDE ESE DIA y se dejo igual a proposito: renombrarla
+		// orfana la citacion que PLAN-WarrantyEnvelope.md lleva, que es el RECORD de esa tarea.
+		// Decidir el renombre es del usuario; lo que la prueba AFIRMA si dice la verdad, y es la que
+		// importaba: ningun argumento de esta lectura es un hecho de ningun vehiculo.
+		//
+		// UN IDIOMA NO ES UN HECHO DEL VEHICULO: es en que se dice la respuesta, lo elige quien
+		// pregunta por si mismo, y una etiqueta inventada cae al idioma del registro en vez de
+		// producir una medicion falsa. Por eso se afirma por TIPO Y POR NOMBRE, que es lo que impide
+		// que un odometro entre por esta puerta llamandose 'language'.
 		[Test]
 		public void ThePublishedHalfAsksForNothingAtAll()
 		{
@@ -84,9 +95,12 @@ namespace Concesionario.Dominio.Pruebas
 				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
 
 			Assert.That(published, Is.Not.Null);
-			Assert.That(published.GetParameters(), Is.Empty,
-				"El dia que esta lectura tome un argumento, dejo de ser la mitad publicada: pedirle "
-				+ "el odometro a quien pregunta es la misma invencion con un contrato encima.");
+			Assert.That(
+				published.GetParameters().Select(each => each.ParameterType.Name + " " + each.Name),
+				Is.EqualTo(new[] { "String language" }),
+				"El dia que esta lectura tome un argumento QUE NO SEA el idioma, dejo de ser la mitad "
+				+ "publicada: pedirle el odometro a quien pregunta es la misma invencion con un "
+				+ "contrato encima.");
 		}
 
 		// Y LA FRASE ES LA MISMA CON Y SIN LOS HECHOS DEL VEHICULO, palabra por palabra. Es lo que
@@ -98,7 +112,7 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.PublishWarrantyEnvelope(
 				ThirtySixMonths, SixtyThousand, TheUnitTheLimitIsIn, TheDayItWasPublished);
 
-			string withNoVehicleFactAtAll = journal.Api.DescribePublishedWarrantyEnvelope();
+			string withNoVehicleFactAtAll = journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord);
 
 			journal.Api.RecordDelivery(
 				new DateTime(2024, 1, 1, 8, 0, 0, DateTimeKind.Utc), 1200, TheUnitTheLimitIsIn);
@@ -111,7 +125,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasAnOdometerReading(TheInstantAsked), Is.True);
 
 			Assert.That(
-				journal.Api.DescribePublishedWarrantyEnvelope(),
+				journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
 				Is.EqualTo(withNoVehicleFactAtAll),
 				"Los dos hechos del vehiculo entraron al registro y la mitad publicada no se movio. "
 				+ "Si se moviera, seria porque compone algo personal adentro -- y entonces volveria a "
@@ -124,7 +138,7 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AnUnpublishedEnvelopeIsSaidInWordsAndWithoutADigit()
 		{
-			string said = journal.Api.DescribePublishedWarrantyEnvelope();
+			string said = journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("no ha publicado"));
 			Assert.That(said, Does.Not.Match(@"\d"));

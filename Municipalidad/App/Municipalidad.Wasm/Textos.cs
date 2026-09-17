@@ -113,10 +113,18 @@ namespace Municipalidad.Wasm
 			ArgumentNullException.ThrowIfNull(http);
 
 			string[] pedidas = await LoQuePidioElDispositivoAsync(js);
+
 			Etiqueta = LaPrimeraQueHablamos(pedidas);
+			textos = await CargarAsync(http, Etiqueta);
+
+			if (textos.Count == 0 && Etiqueta != LaDelRegistro)
+			{
+				Etiqueta = LaDelRegistro;
+				textos = await CargarAsync(http, Etiqueta);
+			}
+
 			AtendioLaEleccion = pedidas.Length > 0
 				&& SubetiquetaPrimaria(pedidas[0]) == SubetiquetaPrimaria(Etiqueta);
-			textos = await CargarAsync(http, Etiqueta);
 
 			await FijarElIdiomaDelDocumentoAsync(js);
 		}

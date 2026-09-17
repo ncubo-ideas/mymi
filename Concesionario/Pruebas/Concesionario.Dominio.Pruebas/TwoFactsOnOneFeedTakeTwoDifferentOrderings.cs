@@ -77,8 +77,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(2L),
 				"Y el punto de control avanza por los dos, como con cualquier hecho aceptado.");
 
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 meses").And.Contains("60000 mi"),
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("36 meses").And.Contains("60.000 mi"),
 				"PERO NO GOBIERNA: sigue rigiendo el publicado despues, que es el que llego primero. "
 				+ "El orden de LLEGADA no es el de vigencia.");
 
@@ -99,8 +99,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(Apply(ADealershipNarrative.Envelope(
 				2, 36, 60000, TheUnit, "2026-01-01T00:00:00Z")), Is.EqualTo(""));
 
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 meses").And.Contains("60000 mi"));
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("36 meses").And.Contains("60.000 mi"));
 
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(), Is.EqualTo(TheFirstPublication));
 		}
@@ -157,8 +157,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.ReadDeliveryReading(), Is.EqualTo(50),
 				"La entrega se movio a la que llego ultima.");
 
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 meses").And.Contains("60000 mi"),
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("36 meses").And.Contains("60.000 mi"),
 				"Y el sobre NO se movio a la que llego ultima. Un bloque, dos ordenamientos.");
 		}
 
@@ -212,8 +212,8 @@ namespace Concesionario.Dominio.Pruebas
 				"Y el punto de control avanza igual, en un comando aparte: se pierde el hecho, no el "
 				+ "registro. Sin esto el proveedor volveria a servir el 2 en cada refresh.");
 
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 meses").And.Contains("60000 mi"),
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("36 meses").And.Contains("60.000 mi"),
 				"El sobre que regia quedo intacto: un hecho refusado adentro del cuerpo no deja el "
 				+ "agregado a medio escribir.");
 
@@ -222,8 +222,8 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo(""),
 				"Y el hecho siguiente entra normal: la narrativa no quedo atascada en el refusado.");
 
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("24 meses").And.Contains("40000 mi"));
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("24 meses").And.Contains("40.000 mi"));
 		}
 
 		// LA ENTREGA NO TIENE ESA MITAD, y decirlo es un hallazgo y no una omision: sus DOS guardas del
@@ -273,7 +273,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(Apply(ADealershipNarrative.Reading(
 				3, 9000, TheUnit, "2026-05-01T00:00:00Z", "Telemetry")), Is.EqualTo(""));
 
-			Assert.That(journal.Api.DescribeWarrantyEnvelope(TheInstantAsked),
+			Assert.That(journal.Api.DescribeWarrantyEnvelope(TheInstantAsked, TheLanguage.OfTheRecord),
 				Does.Contain("Inside").Or.Contains("meses"),
 				"Antes de la correccion el registro contesta.");
 
@@ -290,7 +290,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Y deja su entrada como cualquier hecho aceptado: no es un rechazo.");
 
 			Assert.Throws<DomainException>(
-				() => journal.Api.DescribeWarrantyEnvelope(TheInstantAsked),
+				() => journal.Api.DescribeWarrantyEnvelope(TheInstantAsked, TheLanguage.OfTheRecord),
 				"PERO AHORA LA LECTURA REVIENTA. El odometro de hoy quedo por debajo de la lectura de "
 				+ "la entrega, y eso el dominio lo clasifica como un hecho imposible -- correctamente, "
 				+ "para quien le pasa los nueve datos, y no para quien solo pregunto por un instante.");

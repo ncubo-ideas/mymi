@@ -134,7 +134,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheUnpublishedEnvelopeStillSaysSoInWords()
 		{
-			string said = WarrantyEnvelope.None.Describe();
+			string said = TheSentenceTheDoorWouldCompose.ThePublishedWarrantyEnvelope(
+				WarrantyEnvelope.None, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Is.Not.Empty,
 				"Una cadena vacia no es 'no publicado': la vista la renderiza como un blanco.");
@@ -165,13 +166,14 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void ThePublishedEnvelopeSaysBothLimitsAndWhenItWasPublished()
 		{
-			string said = APublishedEnvelopeIn(DistanceUnit.UnitA).Describe();
+			string said = TheSentenceTheDoorWouldCompose.ThePublishedWarrantyEnvelope(
+				APublishedEnvelopeIn(DistanceUnit.UnitA), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("36"));
-			Assert.That(said, Does.Contain("60000"));
+			Assert.That(said, Does.Contain("60.000"));
 			Assert.That(said, Does.Contain("km"),
 				"La unidad se dice con su nombre del mundo real, no con 'UnitA'.");
-			Assert.That(said, Does.Contain("2024-01-01"),
+			Assert.That(said, Does.Contain("1 de enero de 2024"),
 				"Ley L9: sin el instante de publicacion nadie puede ver que el sobre esta viejo.");
 		}
 

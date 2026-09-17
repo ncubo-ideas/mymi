@@ -57,32 +57,32 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La respuesta cuando el periodo no tiene tramo de uso que medir. El motivo llega DICHO por el
-		/// agregado que lo sabe -- la serie del odometro -- y aca se pasa entero: escribirlo de nuevo
-		/// seria una segunda version de una ley que no es de este libro.
+		/// La respuesta cuando el periodo no tiene tramo de uso que medir. El motivo lo compone el
+		/// agregado que lo sabe -- la serie del odometro -- en su propia clausula, y este libro
+		/// no lo escribe ni lo transporta: una segunda version de una ley que no es suya podria
+		/// discrepar sin que nada lo vea.
 		/// </summary>
-		internal static ACostPerDistance WithNoSpanOfUse(
-			DateTime from, DateTime to, string whyTheRateCannotBeSaid)
+		internal static ACostPerDistance WithNoSpanOfUse(DateTime from, DateTime to)
 		{
-			if (string.IsNullOrWhiteSpace(whyTheRateCannotBeSaid))
-				throw new DomainException(
-					"Se pidio el costo por distancia de un periodo sin tramo de uso y sin decir por "
-					+ "que. El motivo lo dice la serie del odometro y este libro no lo vuelve a "
-					+ "escribir: sin el, la respuesta seria una negativa sin causa.");
-
-			return new NoSpanOfUseToDivideBy(from, to, whyTheRateCannotBeSaid);
+			return new NoSpanOfUseToDivideBy(from, to);
 		}
 
 		/// <summary>
-		/// El costo por distancia del periodo en una frase. TOTAL: las dos situaciones dicen algo, y
-		/// ninguna contesta un cero por no poder dividir.
+		/// El costo por distancia del periodo, como forma y valores. TOTAL: las dos situaciones
+		/// dicen algo, y ninguna contesta un cero por no poder dividir.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract ACostPerDistanceClause TheClauseItComposes();
 
-		/// <summary>La clausula que las dos situaciones comparten: entre cuando y cuando.</summary>
-		protected string ThePeriodClause()
+		/// <summary>Donde empieza el periodo, como instante con su hora.</summary>
+		protected string TheInstantItStartsAt()
 		{
-			return "Entre el " + TheInstant(_from) + " y el " + TheInstant(_to);
+			return TheInstant(_from);
+		}
+
+		/// <summary>Donde termina el periodo, como instante con su hora.</summary>
+		protected string TheInstantItEndsAt()
+		{
+			return TheInstant(_to);
 		}
 
 		/// <summary>Un instante dicho como instante, con su hora.</summary>

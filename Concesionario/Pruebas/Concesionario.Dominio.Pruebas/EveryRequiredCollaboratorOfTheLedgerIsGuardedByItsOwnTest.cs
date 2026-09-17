@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 
 namespace Concesionario.Dominio.Pruebas
@@ -241,33 +242,46 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(refused.Message, Does.Contain("no va para atras"));
 
 			Assert.That(
-				ACostPerDistance.Of(
-					TheStart, TheEnd, TheStart, 0, DistanceUnit.UnitA, new List<ACostEntry>())
-					.Describe(),
+				TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+					ACostPerDistance.Of(
+						TheStart, TheEnd, TheStart, 0, DistanceUnit.UnitA, new List<ACostEntry>())
+						.TheClauseItComposes(),
+					TheLanguage.OfTheRecord),
 				Is.Not.Empty,
 				"Y cero no se rechaza: es un tramo en el que el vehiculo no se movio, que es un hecho.");
 		}
 
-		// Y LA VARIANTE SIN TRAMO NECESITA EL MOTIVO DICHO. Sin el, la respuesta seria una negativa sin
-		// causa, y este libro NO vuelve a escribir la razon: es de la serie del odometro.
-		[TestCase(null)]
-		[TestCase("")]
-		[TestCase("   ")]
-		public void AndACostPerDistanceWithNoSpanNeedsTheReasonTheOtherAggregateSaid(string why)
+		// LA VARIANTE SIN TRAMO YA NO RECIBE NINGUN MOTIVO, asi que no hay colaborador que guardar.
+		// Hasta el turno de la serie el motivo cruzaba por aqui ya redactado en espanol y una guarda
+		// exigia que viniera; desde que el ritmo compone su propia clausula, el motivo no lo lleva
+		// este libro y quien redacta pone una frase dentro de la otra. La ley que reemplaza a esa
+		// guarda es por VALOR y en los dos idiomas: TheReasonForANoSpanPeriodIsTheOdometerSeriesOwn
+		// SentenceInBothLanguages, en TheRateOfUseIsSaidInTheLanguageItIsAskedIn.
+		[Test]
+		public void ACostPerDistanceWithNoSpanCarriesNoReasonOfItsOwn()
 		{
-			DomainException refused = Assert.Throws<DomainException>(
-				() => ACostPerDistance.WithNoSpanOfUse(TheStart, TheEnd, why));
+			Assert.That(
+				typeof(ACostPerDistance).GetMethod(
+					"WithNoSpanOfUse",
+					BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+					.GetParameters().Length,
+				Is.EqualTo(2),
+				"Un tercer parametro aqui es el motivo volviendo a cruzar como texto ya redactado, "
+				+ "que es justo lo que deja dos versiones de una razon que no es de este libro.");
 
-			Assert.That(refused.Message, Does.Contain("serie del odometro"),
-				"El rechazo dice de quien es el motivo, que es lo que impide escribirlo aca.");
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+					ACostPerDistance.WithNoSpanOfUse(TheStart, TheEnd).TheClauseItComposes(),
+					TheLanguage.OfTheRecord),
+				Is.Not.Empty);
 		}
 
-		// Y LAS DIEZ SON DEL DOMINIO Y NINGUNA ES UNA ArgumentException, censado de una vez sobre los
-		// diez sitios en vez de repetir el assert en cada test.
+		// Y LAS NUEVE SON DEL DOMINIO Y NINGUNA ES UNA ArgumentException, censado de una vez sobre los
+		// nueve sitios en vez de repetir el assert en cada test.
 		[Test]
 		public void AndEveryOneOfTheseRefusalsIsTheDomainsOwn()
 		{
-			List<TestDelegate> theTenWays = new List<TestDelegate>
+			List<TestDelegate> theNineWays = new List<TestDelegate>
 			{
 				() => new CostLedger("  "),
 				() => new CostSubject("  "),
@@ -281,10 +295,9 @@ namespace Concesionario.Dominio.Pruebas
 					TheStart, TheEnd, TheStart, 3200, DistanceUnit.UnitA, null),
 				() => ACostPerDistance.Of(
 					TheStart, TheEnd, TheStart, -1, DistanceUnit.UnitA, new List<ACostEntry>()),
-				() => ACostPerDistance.WithNoSpanOfUse(TheStart, TheEnd, "  "),
 			};
 
-			foreach (TestDelegate way in theTenWays)
+			foreach (TestDelegate way in theNineWays)
 				Assert.That(Assert.Catch(way),
 					Is.InstanceOf<DomainException>().And.Not.InstanceOf<ArgumentException>(),
 					"C22/C36/C37: una guarda que tira algo que no es DomainException se escapa de "

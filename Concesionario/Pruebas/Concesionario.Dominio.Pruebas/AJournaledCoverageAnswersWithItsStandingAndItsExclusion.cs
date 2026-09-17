@@ -146,7 +146,7 @@ namespace Concesionario.Dominio.Pruebas
 					"La clausula de alcance falta en la respuesta sobre '" + code + "'.");
 
 			Assert.That(
-				journal.Api.DescribeCoverageSummary(),
+				journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
 				Does.Contain("nada sobre cómo se resolvería un reclamo"));
 		}
 
@@ -193,7 +193,7 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			return journal.Api.DescribeCoverage(
 				systemCode, TheEnvelopeMonths, TheEnvelopeDistance, "UnitA",
-				Delivered, OdometerAtDelivery, OdometerNow, "UnitA", AsOf);
+				Delivered, OdometerAtDelivery, OdometerNow, "UnitA", AsOf, TheLanguage.OfTheRecord);
 		}
 	}
 }

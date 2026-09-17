@@ -103,32 +103,57 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EachMeasuredDimensionNamesItselfInItsOwnClause()
 		{
-			Assert.That(LaDimensionDeTiempo().Describe(), Does.Contain("tiempo"));
-			Assert.That(LaDimensionDeDistancia().Describe(), Does.Contain("distancia"));
+			Assert.That(
+				LaDimensionDeTiempo().TheDimensionItMeasures(), Is.EqualTo(IntervalDimension.Time));
+			Assert.That(
+				LaDimensionDeDistancia().TheDimensionItMeasures(),
+				Is.EqualTo(IntervalDimension.Distance));
 		}
 
-		// Y el nombre NO SALE como valor: el miembro que lo lleva no es alcanzable desde afuera
-		// del tipo. Es la mitad que vuelve innecesario el vocabulario -- si el nombre saliera,
-		// alguien de afuera tendria que tener con que compararlo.
+		// LA RAZON 2 DE D2 SE CAYO EL DIA QUE EL DOMINIO DEJO DE REDACTAR, y esta prueba lo dice en
+		// vez de esconderlo. D2 se apoyaba en que "nada en la superficie devuelve una dimension":
+		// el nombre vivia en un miembro PROTEGIDO y solo salia adentro de la frase que el dominio
+		// componia. Desde que la redaccion vive en App -- una por idioma -- la frase la arma el
+		// renderizador, y para poner "tiempo" o "time" en su hueco necesita que el dominio le diga
+		// CUAL de las dos es. El codigo cruza; el dicho se queda afuera.
+		//
+		// LAS RAZONES 1 Y 3 SIGUEN EN PIE y son las que esta prueba defiende ahora: el subtipo es
+		// el que se nombra -- ningun dato guardado lo hace -- y "cual decidio" sigue teniendo TRES
+		// respuestas, que es lo que ningun conjunto de dos miembros puede dar.
+		//
+		// QUE HACER CON D2 ES DECISION DEL USUARIO Y NO EFECTO SECUNDARIO DE ESTA REBANADA.
 		[Test]
-		public void TheDimensionsNameNeverLeavesTheTypeAsAValue()
+		public void TheDimensionLeavesTheTypeAsACodeAndTheSubtypeIsStillWhatNamesIt()
 		{
 			foreach (Type tipo in new[]
 				{ typeof(AMeasuredTimeDimension), typeof(AMeasuredDistanceDimension) })
 			{
-				PropertyInfo nombre = tipo.GetProperty("Name",
+				MethodInfo nombra = tipo.GetMethod("TheDimensionItMeasures",
 					BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
 					| BindingFlags.DeclaredOnly);
 
-				Assert.That(nombre, Is.Not.Null, tipo.Name + " dejo de nombrarse solo.");
+				Assert.That(nombra, Is.Not.Null, tipo.Name + " dejo de nombrarse solo.");
 
-				MethodInfo lector = nombre.GetGetMethod(true);
-
-				Assert.That(lector.IsPublic || lector.IsAssembly, Is.False,
-					tipo.Name + ".Name se volvio alcanzable desde afuera del tipo. Un nombre de "
-					+ "dimension que sale como valor es un vocabulario, y entonces D2 hay que "
-					+ "volver a decidirlo.");
+				Assert.That(
+					tipo.GetFields(BindingFlags.Instance | BindingFlags.Public
+							| BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+						.Where(campo => campo.FieldType == typeof(string)),
+					Is.Empty,
+					tipo.Name + " se guardo el nombre de su dimension como dato. Lo que D2 dejo "
+					+ "decidido es que la distincion la lleva el SUBTIPO; un campo con el nombre "
+					+ "adentro es el vocabulario otra vez, con otro envase.");
 			}
+		}
+
+		// Y LOS DOS CODIGOS NO SON UN CONJUNTO CERRADO DE RESPUESTAS: son las dos dimensiones que
+		// una ley mide. "Cual decidio" tiene una tercera que no esta aqui, y donde vive es en la
+		// respuesta y no en el vocabulario de las dimensiones.
+		[Test]
+		public void TheThirdAnswerToWhichOneDecidedIsNotOneOfTheTwoDimensions()
+		{
+			Assert.That(
+				new[] { IntervalDimension.Time, IntervalDimension.Distance },
+				Does.Not.Contain(ADueReason.TimeAndDistance));
 		}
 
 		// RAZON 3, Y LA QUE DECIDE. Las dos dimensiones pueden decidir A LA VEZ, y la respuesta lo
@@ -147,7 +172,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(tie.DecidedByDistance, Is.True,
 				"Las dos llegaron igual de lejos, asi que deciden las dos. Con un solo miembro de "
 				+ "un conjunto de dos habria que elegir una, y elegir seria inventar.");
-			Assert.That(tie.Describe(), Does.Contain("tiempo y distancia"));
+			Assert.That(
+				tie.TheReason().WhoDecided, Is.EqualTo(ADueReason.TimeAndDistance));
 		}
 
 		// Y cuando decide UNA sola, los dos predicados tambien lo dicen -- asi que la forma de dos
@@ -161,7 +187,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(porDistancia.DecidedByDistance, Is.True);
 			Assert.That(porDistancia.DecidedByTime, Is.False);
-			Assert.That(porDistancia.Describe(), Does.Contain("decidido por distancia"));
+			Assert.That(
+				porDistancia.TheReason().WhoDecided, Is.EqualTo(IntervalDimension.Distance));
 		}
 
 		private LimitStanding LaDimensionDeTiempo()

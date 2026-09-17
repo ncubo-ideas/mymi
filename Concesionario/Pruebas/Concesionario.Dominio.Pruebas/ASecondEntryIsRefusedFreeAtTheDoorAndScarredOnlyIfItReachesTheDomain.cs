@@ -135,7 +135,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(
 				() => api.RecordShopEntry(TheSecondBranch, TheOtherSubject, EnteredAgainLater));
 
-			string says = api.DescribeTheStayAt(EnteredAgainLater);
+			string says = api.DescribeTheStayAt(EnteredAgainLater, TheLanguage.OfTheRecord);
 
 			Assert.That(says, Does.Contain(TheBranch), "La abierta sigue siendo la PRIMERA...");
 			Assert.That(says, Does.Not.Contain(TheSecondBranch), "...y la segunda no entro a medias.");

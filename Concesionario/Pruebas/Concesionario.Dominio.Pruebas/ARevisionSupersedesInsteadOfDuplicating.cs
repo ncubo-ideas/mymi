@@ -180,8 +180,8 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.RemoveOwnerOperation(OperationKindCode.Diagnostic);
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.Diagnostic),
-				Does.Not.Contain("no tiene agendada"),
+				schedule.TheDueReasonFor(OperationKindCode.Diagnostic).Shape,
+				Is.Not.EqualTo(ADueReason.NoOperationScheduled),
 				"La clase quedo en manos del plan, asi que la ley L9 la protege: la persona ya no "
 				+ "la puede quitar. Si el reemplazo hubiera heredado el origen de la persona, "
 				+ "esta remocion habria borrado una operacion del fabricante.");

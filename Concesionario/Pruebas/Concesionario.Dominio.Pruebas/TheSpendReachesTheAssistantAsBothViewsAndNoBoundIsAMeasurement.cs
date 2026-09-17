@@ -116,20 +116,19 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(answer.SaidInOneCurrency, Is.False,
 				"El anio mezcla colones y dolares. Es un estado con nombre y no un error.");
 
-			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribeSpendBetween(start, end)));
+			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribeSpendBetween(start, end, TheLanguage.OfTheRecord)));
 			Assert.That(
 				answer.PerCurrencySays,
-				Is.EqualTo(journal.Api.DescribeSpendPerCurrencyBetween(start, end)));
+				Is.EqualTo(journal.Api.DescribeSpendPerCurrencyBetween(start, end, TheLanguage.OfTheRecord)));
 			Assert.That(
 				answer.BothPeriodsSay,
-				Is.EqualTo(journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					start, end, earlierStart, earlierEnd)));
+				Is.EqualTo(journal.Api.DescribeTwoPeriodsOfSpendCompared(start, end, earlierStart, earlierEnd, TheLanguage.OfTheRecord)));
 			Assert.That(
 				answer.CostPerDistanceCanBeSaid,
 				Is.EqualTo(journal.Api.CanCostPerDistanceBeSaid(start, end)));
 			Assert.That(
 				answer.CostPerDistanceSays,
-				Is.EqualTo(journal.Api.DescribeCostPerDistanceBetween(start, end)));
+				Is.EqualTo(journal.Api.DescribeCostPerDistanceBetween(start, end, TheLanguage.OfTheRecord)));
 			Assert.That(
 				answer.EntryCount, Is.EqualTo(journal.Api.CostEntryCountBetween(start, end)));
 			Assert.That(answer.EntryCount, Is.EqualTo(3));
@@ -137,9 +136,9 @@ namespace Concesionario.Dominio.Pruebas
 				"La cuenta y las filas son la misma cosa contada dos veces, y tienen que coincidir.");
 
 			// LAS DOS VISTAS, POR VALOR Y ADENTRO DE LA MISMA FRASE. L6 en el borde del asistente.
-			Assert.That(answer.Says, Does.Contain("Salieron ₡285000.00 del banco"));
+			Assert.That(answer.Says, Does.Contain("Salieron ₡285.000,00 del banco"));
 			Assert.That(answer.Says, Does.Contain("el período consumió ₡"));
-			Assert.That(answer.Says, Does.Contain("Salieron $120.50 del banco"));
+			Assert.That(answer.Says, Does.Contain("Salieron $120,50 del banco"));
 
 			// Y NINGUN TOTAL ENTRE LAS DOS MONEDAS, que es L3 en el mismo borde.
 			Assert.That(answer.Says, Does.Contain("2 monedas distintas"));
@@ -148,7 +147,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			// LAS SEIS COLUMNAS, FILA POR FILA, CONTRA EL REGISTRO DE LA PUERTA. Se afirman por
 			// separado para que un cruce diga CUAL columna perdio sus datos (C60).
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(start, end);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(start, end, TheLanguage.OfTheRecord);
 
 			for (int row = 0; row < record.Says.Length; row++)
 			{
@@ -163,8 +162,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y EL DINERO LLEGA DICHO POR SU MONEDA, con DOS signos distintos: con una sola moneda en
 			// el registro, una caratula que escribiera el signo fijo pasaria.
-			Assert.That(answer.Entries[0].Money, Is.EqualTo("₡240000.00"));
-			Assert.That(answer.Entries[2].Money, Is.EqualTo("$120.50"));
+			Assert.That(answer.Entries[0].Money, Is.EqualTo("₡240.000,00"));
+			Assert.That(answer.Entries[2].Money, Is.EqualTo("$120,50"));
 		}
 
 		// NINGUNO DE LOS CUATRO PARAMETROS ES UNA MEDICION, Y SE MIRA POR LA FORMA Y NO POR EL NOMBRE.

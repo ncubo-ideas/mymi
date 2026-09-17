@@ -86,14 +86,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				perKind,
-				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km"),
+				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km"),
 				"LA MEDICION: la frase por clase lleva ADENTRO la clausula de la fila mas reciente. Es "
 				+ "por esto que no se pinta al lado de las filas -- pintar las dos imprime la misma "
 				+ "clausula dos veces en una sola columna.");
 
 			Assert.That(
 				newest.Says,
-				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km"),
+				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km"),
 				"Y es la MISMA clausula, que es lo que hace que la de arriba sea una duplicacion y no un "
 				+ "parecido.");
 		}
@@ -183,7 +183,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (string translating in new[]
 			{
-				"ComoSeLee.Operacion(hecho.Kind)", "ComoSeLee.OperacionCorta(hecho.Kind)",
+				"hecho.Kind)",
 			})
 				Assert.That(markup, Does.Not.Contain(translating),
 					"La fila del historial gano un titulo traducido ('" + translating + "'). Su frase ya "
@@ -214,14 +214,22 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			string markup = TheBlockAsItIsWritten();
 
-			Assert.That(markup, Does.Contain("Lo que le han hecho"),
+			Assert.That(markup, Does.Contain(TheHeadingKey),
 				"El encabezado del bloque cambio de nombre.");
+
+			// Y LA CLAVE SIGUE DICIENDO LO QUE DECIA, en el idioma del registro. Desde que la pantalla
+			// habla dos idiomas su texto vive en el catalogo, asi que el markup nombra la CLAVE y quien
+			// afirma lo que la persona lee tiene que ir al catalogo: sin este renglon, una clave escrita
+			// en el markup y ausente del catalogo dejaria el encabezado en blanco y esto verde.
+			Assert.That(TheCatalogueOfTheScreen.InSpanish(TheHeadingKey),
+				Is.EqualTo("Lo que le han hecho"),
+				"El encabezado del bloque cambio de palabras en el idioma del registro.");
 
 			string heading = TheHeadingOfThisBlockIn(markup);
 
 			foreach (string bounded in new[]
 			{
-				"Lo que le han hecho en", "Lo que le han hecho desde", "últimos", "este año",
+				"history.doneTitleIn", "history.doneTitleSince", "últimos", "este año",
 			})
 			{
 				Assert.That(heading, Does.Not.Contain(bounded),
@@ -234,7 +242,7 @@ namespace Concesionario.Dominio.Pruebas
 				// verde.
 				Assert.That(
 					TheHeadingOfThisBlockIn(markup.Replace(
-						"Lo que le han hecho", "Lo que le han hecho, " + bounded)),
+						TheHeadingKey, TheHeadingKey + ", " + bounded)),
 					Does.Contain(bounded),
 					"El recorte del sujeto dejo de ver una palabra de periodo puesta en ESTE "
 					+ "encabezado, asi que la afirmacion de arriba no mide nada.");
@@ -281,7 +289,7 @@ namespace Concesionario.Dominio.Pruebas
 				"La frase se pinta en mas de un sitio, y las dos ramas se dibujan juntas cuando no hay "
 				+ "ninguna completacion.");
 
-			string said = TheOwnerIsTold.TheCompletionsAreRecordedByTheWorkshopThatDoesTheWork;
+			string said = TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheCompletionsAreRecordedByTheWorkshopThatDoesTheWork);
 
 			Assert.That(said, Does.Contain("no quiere decir que nunca se le haya hecho al carro"),
 				"La frase no dice al reves lo que se lee al reves.");
@@ -326,7 +334,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		private void TwoCompletionsOfOneKind()
@@ -368,9 +377,15 @@ namespace Concesionario.Dominio.Pruebas
 		/// apertura hasta su cierre. Hace falta porque el archivo tiene mas de un bloque y cada uno
 		/// decide por su cuenta si nombra una ventana.
 		/// </summary>
+		/// <summary>
+		/// La CLAVE con que el markup nombra el encabezado de este bloque. El texto vive en el catalogo
+		/// de la caratula, uno por idioma, y se afirma aparte.
+		/// </summary>
+		private const string TheHeadingKey = "history.doneTitle";
+
 		private static string TheHeadingOfThisBlockIn(string markup)
 		{
-			int title = markup.IndexOf("Lo que le han hecho", StringComparison.Ordinal);
+			int title = markup.IndexOf(TheHeadingKey, StringComparison.Ordinal);
 
 			Assert.That(title, Is.GreaterThanOrEqualTo(0),
 				"El titulo del bloque no esta en el markup, asi que no hay encabezado que recortar.");

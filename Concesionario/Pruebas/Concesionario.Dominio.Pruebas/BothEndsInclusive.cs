@@ -81,7 +81,8 @@ namespace Concesionario.Dominio.Pruebas
 				new DateTime(2026, 6, 10, 8, 30, 0), new DateTime(2026, 6, 12, 16, 45, 0),
 				new[] { "2026-06-10", "2026-06-11", "2026-06-12" });
 
-			string said = stays.DescribeTheStayAt(new DateTime(2026, 6, 11, 12, 0, 0));
+			string said = TheSentenceTheDoorWouldCompose.TheStay(
+				stays, new DateTime(2026, 6, 11, 12, 0, 0), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("3 días"));
 			Assert.That(said, Does.Contain("2026-06-10"));
@@ -97,7 +98,8 @@ namespace Concesionario.Dominio.Pruebas
 				new DateTime(2026, 7, 5, 9, 0, 0), new DateTime(2026, 7, 5, 17, 0, 0),
 				new[] { "2026-07-05" });
 
-			string said = stays.DescribeTheStayAt(new DateTime(2026, 7, 5, 12, 0, 0));
+			string said = TheSentenceTheDoorWouldCompose.TheStay(
+				stays, new DateTime(2026, 7, 5, 12, 0, 0), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("1 día"));
 			Assert.That(said, Does.Not.Contain("1 días"));

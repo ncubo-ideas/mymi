@@ -77,7 +77,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(api.IsInsideTheShopAt(Collected), Is.True,
 				"Y sigue adentro despues, porque nadie ha registrado que lo entregaran.");
 
-			string says = api.DescribeTheStayAt(Collected);
+			string says = api.DescribeTheStayAt(Collected, TheLanguage.OfTheRecord);
 
 			Assert.That(says, Does.Contain(TheBranch), "La frase dice DONDE esta.");
 			Assert.That(says, Does.Contain("2026-06-10 08:30:00"),
@@ -119,12 +119,12 @@ namespace Concesionario.Dominio.Pruebas
 			api.RecordShopEntry(TheBranch, TheSubject, Entered);
 			api.RecordShopCollection(Collected, TheDaysItCovered);
 
-			string live = api.DescribeTheStayAt(Collected);
+			string live = api.DescribeTheStayAt(Collected, TheLanguage.OfTheRecord);
 			string[] liveDays = api.DaysInTheShopBetween(TheYearFrom, TheYearTo);
 
 			CloseAndReopenFromTheJournal();
 
-			Assert.That(api.DescribeTheStayAt(Collected), Is.EqualTo(live),
+			Assert.That(api.DescribeTheStayAt(Collected, TheLanguage.OfTheRecord), Is.EqualTo(live),
 				"La misma frase, palabra por palabra. Si el borde de la puerta le hiciera algo al "
 				+ "instante que el journal no repite, aca vendria otra.");
 			Assert.That(api.DaysInTheShopBetween(TheYearFrom, TheYearTo),

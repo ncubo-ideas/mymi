@@ -98,12 +98,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(answer.Standing, Is.EqualTo(journal.Api.ReadRateOfUseStanding(start, end)));
 			Assert.That(answer.Standing, Is.EqualTo("Measured"));
 
-			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribeRateOfUse(start, end)),
+			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribeRateOfUse(start, end, TheLanguage.OfTheRecord)),
 				"La frase del ritmo es la de la puerta, letra por letra. Rearmarla en la caratula "
 				+ "seria una frase rival que el dominio nunca dijo, y el barrido de aritmetica NO la "
 				+ "puede ver: una concatenacion contra un texto no es aritmetica para el detector.");
-			Assert.That(answer.Says, Does.Contain("10000 km"));
-			Assert.That(answer.Says, Does.Contain("12000 km"));
+			Assert.That(answer.Says, Does.Contain("10.000 km"));
+			Assert.That(answer.Says, Does.Contain("12.000 km"));
 			Assert.That(answer.Says, Does.Contain("por día"));
 
 			Assert.That(answer.ReadingCount, Is.EqualTo(journal.Api.ReadingCountBetween(start, end)));
@@ -114,7 +114,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			// LAS CINCO COLUMNAS, FILA POR FILA, CONTRA EL REGISTRO DE LA PUERTA. Se afirman las cinco
 			// por separado para que un cruce diga CUAL columna perdio sus datos (C60).
-			OdometerSeriesRecord record = journal.Api.ReadingsBetween(start, end);
+			OdometerSeriesRecord record = journal.Api.ReadingsBetween(start, end, TheLanguage.OfTheRecord);
 
 			for (int row = 0; row < record.Says.Length; row++)
 			{
@@ -135,7 +135,7 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo(new[] { "Telemetry", "CustomerDeclared", "HumanEntry" }));
 
 			// Y EL RITMO NO CAMBIA POR LAS FUENTES: L5 es una ley de divulgacion y no de ponderacion.
-			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribeRateOfUse(start, end)));
+			Assert.That(answer.Says, Is.EqualTo(journal.Api.DescribeRateOfUse(start, end, TheLanguage.OfTheRecord)));
 		}
 
 		// NINGUN CAMPO DE ESTA SUPERFICIE ES EL RITMO, NI UNA MITAD DE EL, y se comprueba de las dos
@@ -207,7 +207,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(answer.ReadingCount, Is.EqualTo(2));
 			Assert.That(answer.Standing, Is.EqualTo("Measured"));
 			Assert.That(answer.CanBeSaid, Is.True);
-			Assert.That(answer.Says, Does.Contain("12000 km"),
+			Assert.That(answer.Says, Does.Contain("12.000 km"),
 				"La lectura de las 08:30 de ese mismo dia esta ADENTRO de la respuesta.");
 
 			// EL CONTROL QUE HACE QUE ESTO SEA UNA MEDICION Y NO UNA AFIRMACION: la otra eleccion
@@ -318,7 +318,7 @@ namespace Concesionario.Dominio.Pruebas
 			// misma inversion, con excepcion. Si dejara de hacerlo, esta prueba estaria comparando
 			// contra nada.
 			Assert.Throws<ArgumentException>(
-				() => journal.Api.StaysBetween("2026-03-10", "2026-01-01"),
+				() => journal.Api.StaysBetween("2026-03-10", "2026-01-01", TheLanguage.OfTheRecord),
 				"El normalizador de periodos dichos en DIAS rechaza un periodo invertido. Es el que "
 				+ "esta tool NO usa, y por eso su rechazo no llega al asistente.");
 		}

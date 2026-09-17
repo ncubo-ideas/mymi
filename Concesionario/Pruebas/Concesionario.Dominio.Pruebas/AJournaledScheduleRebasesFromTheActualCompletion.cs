@@ -141,7 +141,7 @@ namespace Concesionario.Dominio.Pruebas
 			journal.Api.Evaluate(TheDay(2026, 6, 1));
 
 			Assert.That(
-				journal.Api.ReadDueReason("FluidChange"),
+				journal.Api.ReadDueReason("FluidChange", TheLanguage.OfTheRecord),
 				Does.Contain("las unidades nunca se convierten"),
 				"El limite esta en UnitA y el ancla nueva quedo en UnitB.");
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("NotDue"),

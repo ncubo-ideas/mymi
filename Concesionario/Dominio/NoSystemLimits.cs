@@ -49,8 +49,20 @@ namespace Concesionario.Dominio
 			throw NothingToMeasureAgainst();
 		}
 
-		/// <summary>Revienta: no hay limites que decir.</summary>
-		internal override string Describe()
+		/// <summary>Revienta: no hay plazo que nombrar.</summary>
+		internal override int TheMonthsItLimits()
+		{
+			throw NothingToMeasureAgainst();
+		}
+
+		/// <summary>Revienta: no hay distancia que nombrar.</summary>
+		internal override int TheDistanceItLimits()
+		{
+			throw NothingToMeasureAgainst();
+		}
+
+		/// <summary>Revienta: sin limites no hay unidad que nombrar.</summary>
+		internal override string TheNameOfTheUnitItsDistanceIsIn()
 		{
 			throw NothingToMeasureAgainst();
 		}

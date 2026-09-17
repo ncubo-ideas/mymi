@@ -142,6 +142,42 @@ namespace Concesionario.Dominio.Pruebas
 			return file.Substring(FolderOf(root).Length + 1).Replace('\\', '/');
 		}
 
+		/// <summary>
+		/// LA CARPETA DE App\ DONDE VIVEN LOS PORTADORES desde que la forma hibrida los mudo. Son
+		/// proyecciones del dominio y no de la pantalla, y estan de ese lado para que la superficie de
+		/// carga pueda leerlos sin arrastrar la UI.
+		/// </summary>
+		private const string WhereTheCarriersLive = "Views/";
+
+		/// <summary>
+		/// EL FUENTE DE LOS PORTADORES DE LA CARATULA, EN LAS DOS RAICES DONDE HOY VIVE. Los censos de
+		/// columnas -- cuales son un dia, cuales son un numero -- se leen de aqui y de ningun otro
+		/// lado.
+		/// <para>
+		/// VA EN UN SOLO SITIO PORQUE LA MUDANZA YA COSTO UNA VEZ: los ocho portadores salieron de la
+		/// raiz Wasm hacia App\Views, y un censo que siguiera mirando solo Wasm vuelve VACIO -- no
+		/// rojo por haber encontrado otra cosa, sino verde por no haber leido, que es la forma exacta
+		/// de falla que estos barridos existen para no tener.
+		/// </para>
+		/// </summary>
+		internal static string[] EveryCarrierFile()
+		{
+			var found = new List<string>();
+
+			foreach (string file in EveryFileOf(Wasm))
+				if (file.EndsWith(".cs", StringComparison.Ordinal)) found.Add(file);
+
+			foreach (string file in EveryFileOf(App))
+				if (file.EndsWith(".cs", StringComparison.Ordinal)
+					&& InsideItsRoot(App, file).StartsWith(
+						WhereTheCarriersLive, StringComparison.Ordinal))
+					found.Add(file);
+
+			found.Sort(StringComparer.Ordinal);
+
+			return found.ToArray();
+		}
+
 		internal static List<ArithmeticHit> TheArithmeticIn(string root)
 		{
 			var hits = new List<ArithmeticHit>();

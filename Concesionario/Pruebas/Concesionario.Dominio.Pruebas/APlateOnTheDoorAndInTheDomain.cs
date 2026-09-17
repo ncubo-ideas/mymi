@@ -83,7 +83,7 @@ namespace Concesionario.Dominio.Pruebas
 
 		internal static string Describe(DealershipCarAPI door, DateTime asOf)
 		{
-			return door.DescribePlate(asOf);
+			return door.DescribePlate(asOf, TheLanguage.OfTheRecord);
 		}
 
 		internal static string AsPublished(DealershipCarAPI door, DateTime asOf)

@@ -115,7 +115,12 @@ namespace Concesionario.Dominio.Pruebas
 			List<EnvelopeAnswer> tres = LasTresSuspensionesQueElPerfilCompone();
 
 			Assert.That(tres.Select(answer => answer.GetType()).Distinct().Count(), Is.EqualTo(3));
-			Assert.That(tres.Select(answer => answer.Describe()).Distinct().Count(), Is.EqualTo(3));
+			Assert.That(
+				tres
+					.Select(answer => TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+						answer, TheLanguage.OfTheRecord))
+					.Distinct().Count(),
+				Is.EqualTo(3));
 
 			foreach (EnvelopeAnswer answer in tres)
 				Assert.That(NumberOfReasonsDeclaredBy(answer), Is.EqualTo(1),
@@ -128,9 +133,18 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EachAbsenceAsksForDifferentWork()
 		{
-			Assert.That(TheAbsentDelivery().Describe(), Does.Contain("ninguna entrega"));
-			Assert.That(TheAbsentReading().Describe(), Does.Contain("ninguna lectura del odómetro"));
-			Assert.That(TheUnitMismatch().Describe(), Does.Contain("nunca se convierten"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					TheAbsentDelivery(), TheLanguage.OfTheRecord),
+				Does.Contain("ninguna entrega"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					TheAbsentReading(), TheLanguage.OfTheRecord),
+				Does.Contain("ninguna lectura del odómetro"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					TheUnitMismatch(), TheLanguage.OfTheRecord),
+				Does.Contain("nunca se convierten"));
 		}
 
 		// NINGUN LLAMADOR RAMIFICA POR EL TIPO CONCRETO, y esto lo hace ejecutable: cada una de las
