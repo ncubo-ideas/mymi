@@ -17,11 +17,34 @@
          Intl del navegador. VERIFICADO el 2026-09-17 en el emulador: la respuesta es identica
          (195830 / 7 / evento 307) y la pantalla dibuja igual, con su moneda y sus porcentajes.
 
-         Costo de tenerlo: 2,5 MB en tres archivos icudt, y buena parte de los 3 segundos de
-         arranque. Sacarlo bajo la primera consulta de 3.245 ms a 1.110 ms.
+         Costo de tenerlo: 2,5 MB en tres archivos icudt. EN TIEMPO NO SE NOTA, y conviene decirlo
+         porque primero se creyo que si: una corrida dio 1.110 ms contra los 3.245 de antes, pero
+         repetida sobre una instalacion recien puesta vuelve a dar 3,1 a 3,5 s. Aquella era la
+         cache del motor web caliente de la corrida anterior, no la dieta. La ganancia es DISCO.
 
          SI ALGUN DIA UNA SUPERFICIE FORMATEA PARA LA PERSONA, esto deja de ser seguro. -->
     <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- LO QUE SE PROBO Y NO SIRVE, para que nadie lo vuelva a intentar creyendo que gana algo.
+         MEDIDO el 2026-09-17, los cinco a la vez:
+
+           EventSourceSupport, UseSystemResourceKeys, MetadataUpdaterSupport,
+           HttpActivityPropagationSupport, EnableUnsafeBinaryFormatterSerialization
+
+         El sustrato quedo EXACTAMENTE igual: 14,43 MB en 99 archivos. Y tiene explicacion: esos
+         interruptores le dicen al trimmer que borre codigo, y aca la lista de abajo ROOTEA una
+         veintena de ensamblados enteros. Dentro de un ensamblado rooteado el trimmer no borra
+         nada, asi que no hay sobre que actuar.
+
+         O sea: EL TAMANO DEL SUSTRATO LO DECIDE LA LISTA DE PRESTAMO, no los interruptores. Y esa
+         lista es el contrato con los modulos: lo que esta ahi es lo que un modulo va a encontrar.
+         Recortarla no es una optimizacion, es romper el contrato.
+
+         Y EL HEAP INICIAL NO SE PUEDE TOCAR DESDE ACA. `EmccInitialHeapSize` exige el workload
+         `wasm-tools-net9`, que relinka el runtime nativo y no esta instalado en esta maquina. El
+         .wasm publicado declara 512 paginas (32 MB) y en reposo la memoria lineal esta en 55,4 MB:
+         crecio porque los necesito, asi que bajar el arranque probablemente solo mueva cuando
+         crece, no cuanto. Sin medirlo, es una suposicion. -->
   </PropertyGroup>
 
   <ItemGroup>
