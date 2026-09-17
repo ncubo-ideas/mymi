@@ -168,7 +168,11 @@ internal sealed class BundleServer
 	// The failure is nasty in both directions: Gnothi ends up forbidding the very script it just
 	// hashed, and it only shows on documents that have a multi-line inline script -- so it hides
 	// behind whatever formatting the institution happens to use.
-	private static string CspFor(byte[] document)
+	// INTERNAL Y NO PRIVATE, para que la sala use ESTA y no una copia. Ya paso una vez: AndroidSala
+	// reimplemento el hash copiando el patron del spike viejo, sin la normalizacion de saltos de
+	// linea de `AsTheParserSeesIt`, y el documento se quedo en blanco en el emulador. El repo ya
+	// tenia el arreglo; lo que faltaba era una sola copia.
+	internal static string CspFor(byte[] document)
 	{
 		string html = Encoding.UTF8.GetString(document);
 

@@ -273,31 +273,16 @@ internal sealed class AndroidSala : ISalaHost
 		}
 	}
 
-	// LA CSP DEL DOCUMENTO DE LA SALA, y no es un tramite: es lo que hace la contencion
-	// verificable en vez de declarada. Adentro de la sala corre el dominio de una institucion, y
-	// esto es lo que le impide alcanzar cualquier cosa que no sea su propio origen -- que lo
-	// atiende ShouldInterceptRequest, o sea Gnothi.
+	// LA CSP DEL DOCUMENTO DE LA SALA, Y LA CALCULA BundleServer, NO ESTA CLASE.
 	//
-	// connect-src 'self' y no 'none': el propio runtime pide su manifiesto con fetch, y la sala
-	// pide los .dll y el journal por el mismo camino. Con 'none' no arranca. Con 'self' arranca
-	// y sigue sin poder salir. 'wasm-unsafe-eval' porque sin el no se compila wasm.
+	// Tuve una copia aca y se rompio exactamente como el repo ya tenia documentado: el analizador
+	// de HTML normaliza CRLF a LF antes de hashear el script en linea, y mi copia hasheaba los
+	// bytes crudos. Con el archivo en LF funcionaba; en cuanto git lo dejo en CRLF, el motor
+	// rechazo el script que Gnothi acababa de permitir y el documento quedo EN BLANCO.
 	//
-	// EL HASH SE CALCULA, NO SE ESCRIBE: uno a mano se desincroniza en silencio la primera vez
-	// que se republica el sustrato, y el sintoma es una pantalla en blanco sin ninguna pista.
-	private const string CspSinScript =
-		"default-src 'self'; " +
-		"style-src 'self' 'unsafe-inline'; " +
-		"connect-src 'self'; " +
-		"img-src 'self' data:; " +
-		"frame-src 'none'; " +
-		"object-src 'none'; " +
-		"base-uri 'self'; " +
-		"form-action 'none'";
-
-	private static readonly System.Text.RegularExpressions.Regex ScriptsEnLinea =
-		new(@"<script\b(?![^>]*\bsrc\s*=)[^>]*>(.*?)</script\s*>",
-			System.Text.RegularExpressions.RegexOptions.Singleline
-			| System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+	// El arreglo ya existia en BundleServer.AsTheParserSeesIt. Lo que faltaba no era el arreglo:
+	// era que hubiera UNA sola copia. Y de paso la sala hereda la misma politica que la forma
+	// hospedada, que es una cosa menos que auditar.
 
 	private WebResourceResponse Assets(string ruta)
 	{
@@ -311,33 +296,13 @@ internal sealed class AndroidSala : ISalaHost
 			byte[] documento = buffer.ToArray();
 
 			Dictionary<string, string> cabeceras = Cabeceras();
-			cabeceras["Content-Security-Policy"] = CspPara(documento);
+			cabeceras["Content-Security-Policy"] = Gnothi.MobileShared.BundleServer.CspFor(documento);
 
 			return new WebResourceResponse(Tipo(ruta), "utf-8", 200, "OK", cabeceras, new MemoryStream(documento));
 		}
 
 		Stream cuerpo = actividad.Assets!.Open("sala/" + ruta);
 		return new WebResourceResponse(Tipo(ruta), "utf-8", 200, "OK", Cabeceras(), cuerpo);
-	}
-
-	private string CspPara(byte[] documento)
-	{
-		string html = Encoding.UTF8.GetString(documento);
-
-		var hashes = new List<string>();
-		foreach (System.Text.RegularExpressions.Match m in ScriptsEnLinea.Matches(html))
-		{
-			string cuerpo = m.Groups[1].Value;
-			if (cuerpo.Length == 0) continue;
-
-			byte[] resumen = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(cuerpo));
-			hashes.Add($"'sha256-{Convert.ToBase64String(resumen)}'");
-		}
-
-		log($"sala: CSP con {hashes.Count} script(s) en linea");
-
-		string script = string.Join(" ", new[] { "'self'", "'wasm-unsafe-eval'" }.Concat(hashes));
-		return $"{CspSinScript}; script-src {script}";
 	}
 
 	private static WebResourceResponse Archivo(string ruta, string tipo) =>
