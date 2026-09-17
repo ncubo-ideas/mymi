@@ -32,15 +32,15 @@ namespace Municipalidad.App.Vistas
 
 		/// <summary>Las dos listas leidas en un solo momento, para que hablen del mismo dia.</summary>
 		public static LoQueSeVence LeerPor(MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho,
-			Textos textos)
+			string idioma)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
 			RegistroDeVencimientos vencimientos =
-				api.VencimientosAl(fechaDeCorte, LosJuiciosSinFirmar.DiasDeAviso, textos.Idioma);
+				api.VencimientosAl(fechaDeCorte, LosJuiciosSinFirmar.DiasDeAviso, idioma);
 
 			RegistroDeAtrasos atrasos =
-				api.AtrasosAl(fechaDeCorte, LosJuiciosSinFirmar.TasaDeMora, textos.Idioma);
+				api.AtrasosAl(fechaDeCorte, LosJuiciosSinFirmar.TasaDeMora, idioma);
 
 			var porVencer = new List<UnPeriodoPorVencer>();
 

@@ -46,6 +46,25 @@ namespace Municipalidad.App
 
 		private bool HayJournal => MunicipalidadApp.HayJournalEn(carpeta);
 
+		/// <summary>
+		/// EN QUE IDIOMA CONTESTA ESTA SUPERFICIE, y hoy es el del registro de la municipalidad.
+		/// <para>
+		/// La app suelta se lo pregunta al dispositivo -- <c>navigator.languages</c>, por JSInterop --
+		/// porque ahi la carátula ES el navegador. Aca no hay navegador: esta clase corre en proceso
+		/// adentro de Gnothi, y en la caja de wasm, donde no hay ni <c>navigator</c> ni una carpeta que
+		/// servir. Preguntarselo al dispositivo desde aca ataria el paquete de carga al navegador, que
+		/// es exactamente lo que la forma hibrida existe para no hacer.
+		/// </para>
+		/// <para>
+		/// ASI QUE CAE AL IDIOMA DEL REGISTRO, que es la misma caida que la app suelta ya hace cuando no
+		/// puede leer la eleccion. NO es la respuesta final: el dia que Gnothi le pase al modulo el
+		/// idioma de la persona -- el Host ya lo hace viajar con cada parametro de texto libre -- este
+		/// miembro deja de ser una constante y pasa a ser lo que el Host dijo. Esa es la unica linea
+		/// que cambia, y vive aca justamente para que sea una.
+		/// </para>
+		/// </summary>
+		private static string ElIdioma => Frases.Frases.IdiomaDelRegistro;
+
 		// ------------------------------------------------------------ lo que contesta al asistente
 
 		[Query(ConsultasDelModulo.Resumen)]
@@ -75,7 +94,7 @@ namespace Municipalidad.App
 		[View("por-que-pago-mas")]
 		public object PorQuePagoMas() => Leer(api => (object)new
 		{
-			variacion = LaVariacionDeCadaRubro.LeerPor(api),
+			variacion = LaVariacionDeCadaRubro.LeerPor(api, ElIdioma),
 		});
 
 		/// <summary>Lo que esta por vencerse y lo que ya vencio.</summary>
@@ -83,7 +102,7 @@ namespace Municipalidad.App
 		public object QueSeMeVence() => Leer(api =>
 		{
 			DateTime alDia = ElInstanteEnQueSePregunto();
-			return (object)new { vence = LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia)) };
+			return (object)new { vence = LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), ElIdioma) };
 		});
 
 		/// <summary>Lo que esta app propone apartar por mes, y lo que la persona adopto.</summary>
@@ -91,14 +110,14 @@ namespace Municipalidad.App
 		public object CuantoApartar() => Leer(api =>
 		{
 			DateTime alDia = ElInstanteEnQueSePregunto();
-			return (object)new { reserva = LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia)) };
+			return (object)new { reserva = LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), ElIdioma) };
 		});
 
 		/// <summary>Lo que el portal da por pagado y aca no tiene recibo.</summary>
 		[View("sin-comprobante")]
 		public object SinComprobante() => Leer(api => (object)new
 		{
-			sinComprobante = LoSinComprobante.LeerPor(api),
+			sinComprobante = LoSinComprobante.LeerPor(api, ElIdioma),
 		});
 
 		/// <summary>
@@ -112,7 +131,7 @@ namespace Municipalidad.App
 			bool loEligio = anio > 0;
 			int elAnio = loEligio ? anio : ElInstanteEnQueSePregunto().Year;
 
-			return (object)new { pagado = LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligio) };
+			return (object)new { pagado = LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligio, ElIdioma) };
 		});
 
 		/// <summary>Que entro de lo que el portal publica, y que falta.</summary>

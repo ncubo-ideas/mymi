@@ -265,6 +265,32 @@
                 if (pr.length) dibujo = tira(pr, (r.presencia || {}).positivasSeguidas,
                     pos === 0 ? pr.length + ' pruebas, ninguna' : pos + ' de ' + pr.length,
                     pr.length ? pr[pr.length - 1].texto : '', l.paraSonia);
+
+            // LA TERCERA FORMA, que faltaba. Un color no tiene valor continuo NI presencia: tiene
+            // CATEGORIAS, y el dominio las manda en `constancia` + `observaciones`. Sin esta rama
+            // la tarjeta caia por la puerta continua y pedia `hechos.valorFinal`, que para un
+            // nominal no existe: la pantalla imprimia literalmente **undefined** en la cifra
+            // grande, con la referencia y el relato correctos abajo. Visto en el telefono el
+            // 2026-09-16 en «Color de la orina» y «Color de las heces».
+            //
+            // Ya estaba escrito que eran tres: `repartir` manda `r.constancia` a atencion desde
+            // antes, y la app suelta las separa en TRES puertas explicitas -- MisExamenes:1740,
+            // «un color no tiene tendencia ni puntos con numero: tiene categorias». Lo que faltaba
+            // era el dibujo y la cifra, no el reparto.
+            //
+            // LA TIRA SIRVE IGUAL, y por eso no hay forma nueva: lo que marca no es «positivo»
+            // sino «se salio de lo esperable», que es la misma pregunta -- cuando pasa y cuantas
+            // veces seguidas -- sobre otro conjunto de valores.
+            } else if (r.observaciones) {
+                var ob = (r.observaciones || []).map(function (x) {
+                    return { fecha: x.fecha, marcada: !x.esEsperable, texto: x.expresado };
+                });
+                var c = r.constancia || {};
+                var dentro = (c.mediciones || ob.length) - (c.noEsperables || 0);
+                if (ob.length) dibujo = tira(ob, c.noEsperablesSeguidas,
+                    dentro + ' de ' + (c.mediciones || ob.length) + ' dentro de lo esperable',
+                    c.ultimaCategoria || (ob[ob.length - 1] || {}).texto, l.paraSonia);
+
             } else if (l.forma === 'trayectoria con linea base' && t.haySerie) {
                 dibujo = trayectoria(puntos, r.referencias, l.pideAlgo, l.paraSonia);
             } else if (l.forma === 'posicion en banda') {
@@ -272,9 +298,15 @@
             }
         }
 
-        var nombre = l.paraMostrar || t.paraMostrar || r.analito;
+        var nombre = l.paraMostrar || t.paraMostrar || (r.constancia || {}).paraMostrar || r.analito;
+
+        // TRES FORMAS, TRES CIFRAS. Esto tenia dos ramas y el dominio manda tres, asi que la
+        // tercera caia en la rama continua y salia `undefined`. Para un nominal la cifra ES la
+        // categoria -- no hay unidad, no hay «de cuanto a cuanto» -- y no hace falta `haySerie`:
+        // un color con una sola observacion ya esta leido.
         var v = r.presencia ? texto(r.presencia.ultimoResultado)
-                            : valor(t.valorFinal) + ' <span>' + texto(t.unidad) + '</span>';
+              : r.constancia ? texto((r.constancia || {}).ultimaCategoria)
+                             : valor(t.valorFinal) + ' <span>' + texto(t.unidad) + '</span>';
 
         return '<div class="inicio-atencion-tarjeta">' +
             '<div class="inicio-atencion-cabeza">' +
