@@ -630,15 +630,21 @@ namespace Concesionario.Dominio.Pruebas
 		}
 
 		// PLAN-BuildOrder.md §2.2 PREDIJO CERO ACIERTOS AQUI Y LA PREDICCION ES FALSA, medido: son
-		// diez, y los diez son una directiva de nginx seguida de un camino. No hay forma de afinar el
+		// once, y los once son una directiva de nginx seguida de un camino. No hay forma de afinar el
 		// detector que los quite sin quitar tambien una division de verdad: "root /usr/share" y
 		// "a / b" son la misma forma. Quedan enumerados uno por uno, que es lo que hace que un
 		// archivo NUEVO en esta raiz se ponga rojo y alguien lo lea.
+		//
+		// EL RENGLON ONCE LLEGO ASI, Y VALE LA PENA DECIRLO: 2b2648d abrio
+		// "location /descargas/ {" para los descargables del paso a paso con Gnothi y no escribio su
+		// renglon, asi que la lista quedo corta y esta prueba en rojo. La lista funciono exactamente
+		// como se queria -- una directiva nueva no pasa en silencio -- y lo que faltaba era cerrarla.
 		private static readonly AllowedArithmetic[] TheDownloadPagesDirectives =
 		{
 			Nginx("ssl_certificate", "ssl_certificate_key /etc/nginx/certs/localhost.key;"),
 			Nginx("location = /", "root /usr/share/nginx/descarga;"),
 			Nginx("location = /", "try_files /index.html =404;"),
+			Nginx("server", "location /descargas/ {"),
 			Nginx("server", "location = /app { return 301 /app/; }"),
 			Nginx("server", "location /app/eventos/ {"),
 			Nginx("location = /app/service-worker.js", "alias /usr/share/nginx/app/service-worker.js;"),
