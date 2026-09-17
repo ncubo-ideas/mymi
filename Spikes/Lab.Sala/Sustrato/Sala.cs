@@ -44,7 +44,36 @@ public static class Sala
 		object Instancia,
 		IReadOnlyDictionary<string, MethodInfo> Consultas,
 		IReadOnlyDictionary<string, MethodInfo> Vistas,
-		Dictionary<string, byte[]> Montado);
+		Dictionary<string, byte[]> Montado,
+
+		// DONDE QUEDO MONTADO, y ya no se puede deducir del nombre: ver `Neutral`. Se guarda aca
+		// porque el desalojo y la recoleccion de escrituras tienen que ir a la MISMA carpeta a la
+		// que se monto, y no a una que se recalcule.
+		string Carpeta);
+
+	// EL NOMBRE DE LA CARPETA NO ES EL DEL MODULO, Y ESA ES LA CORRECCION.
+	//
+	// Antes se montaba en `/journal/<modulo>`. Como el desmontaje VACIA en vez de borrar -- borrar
+	// mata el runtime desde un finalizador, esta medido y explicado en `Desmontar` --, las
+	// carpetas de los modulos anteriores quedaban ahi, vacias pero CON SU NOMBRE. Un modulo que
+	// entraba despues listaba `/journal` y se enteraba de que la persona tiene compras, examenes,
+	// facturas. Cero bytes de contenido y toda la lista de instituciones.
+	//
+	// Lo habia dado por perdido -- "que el motor libere sus escritores de forma determinista es un
+	// pedido al equipo del motor" --, y Jonathan devolvio que no: eso es la mitad del invariante
+	// de la sala, no un problema ajeno. Tiene razon, y no hacia falta el motor: hacia falta que la
+	// carpeta no se llamara como el modulo.
+	//
+	// Ahora cada carga monta en una carpeta NUEVA y neutra. Lo que queda de las anteriores es
+	// `c1`, `c2`, `c3`: dice cuantas veces se cargo algo en esta sesion, y nada mas. Que hubo
+	// alguien antes es inevitable en un sistema de archivos compartido; QUIEN era, no.
+	//
+	// Y de yapa arregla algo que el nombre por modulo escondia: una carpeta nueva no puede traer
+	// restos de la anterior, asi que el modulo que entra no encuentra segmentos de journal vacios
+	// que su motor no escribio.
+	private static int cargas;
+
+	private static string Neutral() => $"{Raiz}/c{++cargas}";
 
 	// ---------------------------------------------------------------- lo que Gnothi llama
 
@@ -58,6 +87,24 @@ public static class Sala
 		{
 			if (Cargados.ContainsKey(modulo))
 				return Json(new { ok = true, yaEstaba = true, consultas = Cargados[modulo].Consultas.Keys });
+
+			// UN MODULO POR VEZ, Y LO SOSTIENE EL SUSTRATO, NO LA CASCARA.
+			//
+			// Hasta aca "uno por vez" vivia entero en un `static string` de `SalaShell`: si esa
+			// variable se equivocaba, la cascara se saltaba el desalojo y ESTE metodo cargaba el
+			// segundo modulo encima, con los dos journals montados. Justo la unica situacion que
+			// la sala no puede permitir, y sin una linea de log.
+			//
+			// Jonathan lo puso en una frase: toda la contencion de la sala colgaba de una
+			// variable. Ahora el que decide es el que tiene los journals a la vista, y ante la
+			// duda no carga: una consulta que falla es recuperable, dos journals montados no.
+			if (Cargados.Count > 0)
+				return Json(new
+				{
+					ok = false,
+					motivo = $"ya hay un modulo cargado ('{Cargados.Keys.First()}') y la sala carga uno por vez: "
+						+ $"hay que desalojarlo antes de montar '{modulo}'",
+				});
 
 			var reloj = System.Diagnostics.Stopwatch.StartNew();
 
@@ -86,15 +133,35 @@ public static class Sala
 			Dictionary<string, MethodInfo> consultas = PorMarcador(superficie, "QueryAttribute", "McpServerToolAttribute");
 			Dictionary<string, MethodInfo> vistas = PorMarcador(superficie, "ViewAttribute");
 
-			// 3 · el journal, que Gnothi deja en memoria antes de que nadie lo abra
-			string concedida = $"{Raiz}/{modulo}";
+			// 3 · SE BARRE AL ENTRAR, NO SOLO AL SALIR. Y esta es la mitad que faltaba.
+			//
+			// MEDIDO EN EL EMULADOR, y es la falla «corre tarde» que Jonathan nombro sin verla:
+			// al desalojar, la carpeta queda en 0 bytes; dos cargas despues tiene 30. Los escribe
+			// el FINALIZADOR del JournalWriter del motor, que se despierta cuando le toca -- ya
+			// vaciada la carpeta -- y vuelve a poner el encabezado del archivo. El propio §2⑤ de
+			// la nota decia que eso pasaba; lo que no decia es que esos bytes quedan a la vista
+			// del modulo que entre despues.
+			//
+			// Un vaciado al salir no puede cerrarlo, porque el escritor llega tarde por
+			// definicion. Barrer al ENTRAR si: sea cuando sea que el finalizador haya escrito,
+			// fue antes de este momento.
+			//
+			// Queda una ventana angosta -- un finalizador que se despierte con el modulo nuevo ya
+			// adentro -- y no se cierra desde aca: pide que el motor libere sus escritores de
+			// forma determinista. La diferencia con antes es que ahora esta ACOTADA y MEDIDA, y
+			// que `vecinos` la reporta en bytes para que la cascara falle si alguna vez no es
+			// cero.
+			object barrido = Barrer();
+
+			// 4 · el journal, que Gnothi deja en memoria antes de que nadie lo abra
+			string concedida = Neutral();
 			Dictionary<string, byte[]> montado = await TraerElJournal(modulo, concedida);
 
-			// 4 · la instancia. La convencion es la misma del Host: el string del constructor
+			// 5 · la instancia. La convencion es la misma del Host: el string del constructor
 			//     recibe la carpeta concedida, que aca es una ruta de MEMFS y no un disco.
 			object instancia = Construir(superficie, concedida, 0);
 
-			Cargados[modulo] = new Modulo(superficie, instancia, consultas, vistas, montado);
+			Cargados[modulo] = new Modulo(superficie, instancia, consultas, vistas, montado, concedida);
 			reloj.Stop();
 
 			return Json(new
@@ -116,7 +183,11 @@ public static class Sala
 				//
 				// Mismo espiritu que la sonda de CSP de Lab.WebViewWasm: la contencion se
 				// afirma intentandola, no declarandola.
-				vecinos = Vecinos(modulo),
+				// QUE HABIA QUE BARRER AL ENTRAR. No es un detalle de limpieza: es la medida de
+				// la ventana del finalizador, y la unica forma de saber si se ensancha.
+				barrido,
+
+				vecinos = Vecinos(concedida),
 			});
 		}
 		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
@@ -212,7 +283,36 @@ public static class Sala
 	// QUE QUEDA DE LOS DEMAS. Lo que este metodo ve, lo ve tambien el dominio de la institucion:
 	// corre en el mismo heap y sobre el mismo sistema de archivos en memoria. Por eso sirve como
 	// prueba y no como comentario.
-	private static object[] Vecinos(string propio)
+	// BARRER LO QUE DEJARON LAS CARGAS ANTERIORES, y devolver cuanto habia. Corre al ENTRAR, que
+	// es el unico momento desde el que se puede afirmar algo sobre un escritor que llega tarde.
+	//
+	// Vacia TODO lo que haya bajo la raiz. En este punto no hay ningun modulo cargado -- lo
+	// garantiza el rechazo de mas arriba -- asi que no hay nada de nadie vivo que se pueda romper.
+	private static object Barrer()
+	{
+		if (!Directory.Exists(Raiz)) return new { carpetas = 0, bytes = 0L, vaciadas = true };
+
+		string[] carpetas = Directory.GetDirectories(Raiz);
+		long bytes = 0;
+		bool todas = true;
+
+		foreach (string carpeta in carpetas)
+		{
+			foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+				try { bytes += new FileInfo(archivo).Length; } catch { }
+
+			(bool vaciada, string _) = Desmontar(carpeta);
+			todas &= vaciada;
+		}
+
+		return new { carpetas = carpetas.Length, bytes, vaciadas = todas };
+	}
+
+	// Y AHORA LO QUE INFORMA ES OTRA COSA, mejor: antes decia «quedo la carpeta de compras»; ahora
+	// dice «quedaron 3 carpetas de cargas anteriores, 0 bytes». El nombre ya no esta -- ver
+	// `Neutral` --, asi que lo unico que se puede afirmar es lo unico que importa: cuanto pesa lo
+	// que quedo. Si algun dia eso no es cero, la frontera se rompio.
+	private static object[] Vecinos(string propia)
 	{
 		if (!Directory.Exists(Raiz)) return [];
 
@@ -220,7 +320,7 @@ public static class Sala
 		foreach (string carpeta in Directory.GetDirectories(Raiz))
 		{
 			string nombre = Path.GetFileName(carpeta);
-			if (string.Equals(nombre, propio, StringComparison.Ordinal)) continue;
+			if (string.Equals(carpeta, propia, StringComparison.Ordinal)) continue;
 
 			long bytes = 0;
 			int archivos = 0;
@@ -230,7 +330,7 @@ public static class Sala
 				try { bytes += new FileInfo(f).Length; } catch { }
 			}
 
-			salida.Add(new { modulo = nombre, archivos, bytes });
+			salida.Add(new { carga = nombre, archivos, bytes });
 		}
 
 		return [.. salida];
@@ -259,8 +359,18 @@ public static class Sala
 		{
 			string cerrado = "";
 			object[] escrituras = [];
-			string suya = $"{Raiz}/{modulo}";
 			(bool vaciada, string detalle) desmontaje;
+
+			// SU CARPETA, SI SE SABE CUAL ES. Ya no se puede deducir del nombre del modulo, asi
+			// que la fuente es el propio `Modulo`. Y si no esta cargado -- porque un desalojo
+			// anterior fallo a la mitad, o porque la cascara se equivoco de nombre -- se vacia
+			// TODO lo que haya bajo la raiz.
+			//
+			// Vaciar de mas es seguro: lo que esta montado es de un solo modulo y ya se le
+			// recogieron las escrituras, o no hay nadie. Vaciar de menos es dejar la frontera
+			// abierta, que es lo unico que no se puede.
+			Cargados.Remove(modulo, out Modulo? m);
+			string suya = m?.Carpeta ?? Raiz;
 
 			// EL DESMONTAJE VA EN UN `finally`, Y NO ES UN DETALLE DE ESTILO.
 			//
@@ -273,7 +383,7 @@ public static class Sala
 			// Cerrar y recoger pueden fallar; vaciar, no.
 			try
 			{
-				if (Cargados.Remove(modulo, out Modulo? m))
+				if (m is not null)
 				{
 					cerrado = Cerrar(m.Instancia);
 
@@ -431,7 +541,9 @@ public static class Sala
 	// cuatro del telefono suman 174 KB -- asi que no hay nada que optimizar todavia.
 	private static object[] Escrituras(string modulo, Modulo m)
 	{
-		string concedida = $"{Raiz}/{modulo}";
+		// LA CARPETA SALE DEL MODULO, NO DE SU NOMBRE. Recalcularla desde el nombre era posible
+		// cuando la carpeta SE LLAMABA como el modulo; ahora es `c7` y la unica fuente es esta.
+		string concedida = m.Carpeta;
 		if (!Directory.Exists(concedida)) return [];
 
 		var cambios = new List<object>();

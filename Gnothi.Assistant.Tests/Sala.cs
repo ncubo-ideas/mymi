@@ -196,6 +196,35 @@ internal static class Sala
 				anfitrion.Como());
 
 			SalaShell.Tope = tope;
+
+			// ── 9 · LO QUE QUEDA DE LA CARGA ANTERIOR NO ES UNA LINEA DE LOG ────────────────
+			//
+			// El sustrato reporta al cargar cuanto quedo de las cargas anteriores, porque el
+			// desmontaje VACIA en vez de borrar -- borrar mata el runtime desde un finalizador.
+			// Eso se escribia en el log y el modulo entraba igual.
+			//
+			// Cero bytes ES la frontera de la sala. Una frontera que no se chequea es una
+			// expectativa, asi que ahora la carga falla.
+			anfitrion.Olvidar();
+			anfitrion.BytesDeAntes = 48;
+
+			bool quedoAlgo = false;
+			try { compras.Invoke("resumen", null, Accepts.JsonOnly, CancellationToken.None).GetAwaiter().GetResult(); }
+			catch (InvalidOperationException) { quedoAlgo = true; }
+
+			assert("si quedaron bytes de una carga anterior, NO se carga el siguiente encima",
+				quedoAlgo, anfitrion.Como());
+
+			// Y LOS ARCHIVOS SI PUEDEN QUEDAR: son carpetas de cero bytes, con nombres neutros
+			// (`c1`, `c2`) desde que la carpeta dejo de llamarse como el modulo. Dicen cuantas
+			// cargas hubo, no de quien. Ese es el residuo conocido, y no tiene que fallar nada.
+			anfitrion.Olvidar();
+			anfitrion.BytesDeAntes = 0;
+			compras.Invoke("resumen", null, Accepts.JsonOnly, CancellationToken.None).GetAwaiter().GetResult();
+
+			assert("pero carpetas vacias de cargas anteriores no impiden cargar",
+				anfitrion.Secuencia is ["preparar:compras", "cargar:compras", "consultar:compras"],
+				anfitrion.Como());
 		}
 		finally { SalaShell.Host = null; }
 	}
@@ -252,6 +281,10 @@ internal static class Sala
 
 		public string Descartado { get; private set; } = "";
 
+		// CUANTO PESA LO QUE QUEDO DE LAS CARGAS ANTERIORES. Cero es lo normal: carpetas vaciadas.
+		// Mas que cero es la frontera rota.
+		public long BytesDeAntes { get; set; }
+
 		public Task Descartar(string motivo, CancellationToken ct)
 		{
 			secuencia.Add("descartar");
@@ -289,7 +322,12 @@ internal static class Sala
 				case "cargar":
 					cargados.Add(modulo);
 					MaximoCargadosALaVez = Math.Max(MaximoCargadosALaVez, cargados.Count);
-					return Task.FromResult("""{"ok":true,"consultas":["resumen"]}""");
+
+					// `vecinos` es lo que quedo de las cargas anteriores. Los nombres son neutros
+					// -- `c1`, `c2` -- porque la carpeta ya no se llama como el modulo, asi que
+					// lo unico que se puede afirmar es el peso.
+					return Task.FromResult(
+						$$"""{"ok":true,"consultas":["resumen"],"vecinos":[{"carga":"c1","archivos":3,"bytes":{{BytesDeAntes}}}]}""");
 
 				case "desalojar":
 					cargados.Remove(modulo);

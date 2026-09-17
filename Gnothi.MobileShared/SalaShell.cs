@@ -210,6 +210,34 @@ internal sealed class SalaShell : IShell
 				+ (doc.RootElement.TryGetProperty("desmontada", out JsonElement d) ? d.GetString() : "sin detalle"));
 	}
 
+	// QUE QUEDO DE LAS CARGAS ANTERIORES, Y QUE PASA SI QUEDO ALGO.
+	//
+	// El sustrato ya reportaba esto al cargar, porque la contencion se afirma intentandola. Pero
+	// era una LINEA DE LOG: si alguna vez hubiera dicho mas de cero bytes, el modulo entraba
+	// igual y nadie se enteraba hasta leer el logcat de una corrida vieja.
+	//
+	// Ahora es una condicion. Cero bytes es la frontera de la sala, y una frontera que no se
+	// chequea no es una frontera: es una expectativa.
+	//
+	// LOS ARCHIVOS SI PUEDEN QUEDAR, y la diferencia importa. El desmontaje VACIA en vez de
+	// borrar -- borrar mata el runtime desde un finalizador --, asi que quedan carpetas de cero
+	// bytes. Desde el cambio a nombres neutros esas carpetas se llaman `c1`, `c2`: dicen cuantas
+	// cargas hubo, no de quien. Eso es el residuo conocido y acotado; bytes, no.
+	private static void Vecindario(JsonElement respuesta, string modulo)
+	{
+		if (!respuesta.TryGetProperty("vecinos", out JsonElement vecinos)
+			|| vecinos.ValueKind != JsonValueKind.Array) return;
+
+		long bytes = 0;
+		foreach (JsonElement v in vecinos.EnumerateArray())
+			if (v.TryGetProperty("bytes", out JsonElement b) && b.TryGetInt64(out long n)) bytes += n;
+
+		if (bytes > 0)
+			throw new InvalidOperationException(
+				$"no se carga '{modulo}': quedaron {bytes} bytes de cargas anteriores montados en la sala, "
+				+ $"y eso es la frontera rota -- {vecinos.GetRawText()}");
+	}
+
 	// La respuesta de la sala es siempre {ok, contenido} o {ok:false, motivo}. Un solo lugar que
 	// lo abra, para que los cuatro caminos fallen igual.
 	private static object? Contenido(string crudo)
@@ -306,6 +334,7 @@ internal sealed class SalaShell : IShell
 		if (!doc.RootElement.GetProperty("ok").GetBoolean())
 			throw new InvalidOperationException(doc.RootElement.GetProperty("motivo").GetString());
 
+		Vecindario(doc.RootElement, name);
 		cargado = name;
 	}
 }
