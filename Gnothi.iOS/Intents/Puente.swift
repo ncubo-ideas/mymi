@@ -212,17 +212,23 @@ private func pasoImpl(
 					   parameters: e, captura: captura)
 	}
 
-	// LAS TOOLS SE DECLARAN DOS VECES. ESTO ES UNA HIPOTESIS SIN MEDIR, Y ASI HAY QUE LEERLO.
+	// LAS TOOLS SE DECLARAN DOS VECES. MEDIDO: NO ES LA CAUSA DE NADA, y se deja igual.
 	//
-	// LO QUE SI ESTA MEDIDO (2026-09-17, iPhone 17 Pro): con `toolDefinitions: []` el modelo de
-	// iOS 26.6.2 llamaba la tool 4 de 4 veces, y el de iOS 27.0 -mismo puente, mismo prompt,
-	// misma tool- 0 de 4: contesta con texto inventado, una vez invirtiendo el veredicto.
+	// EL HECHO (2026-09-17, iPhone 17 Pro): el modelo de iOS 26.6.2 llama la tool 4 de 4 veces y
+	// el de iOS 27.0 -mismo puente, mismo prompt, misma tool- 0 de 4. Contesta con texto
+	// inventado y dos de esas ocho corridas INVIRTIERON el veredicto: «tu colesterol total viene
+	// bajando», cuando el expediente dice que sube.
 	//
-	// LO QUE NO: que sea POR ESTO. La sospecha es que en 27 el modelo toma su inventario de
-	// tools de la historia que lee -- donde deciamos que no habia ninguna -- y no solo de
-	// `LanguageModelSession(tools:)`. Compila; falta correrlo en el aparato y volver a contar.
-	// Si sale 4 de 4, esta linea es la causa; si sale 0 de 4, la causa es otra y hay que buscar
-	// en el modelo nuevo, no aca.
+	// LA HIPOTESIS QUE ESTO ERA: que en 27 el modelo tomara su inventario de tools de la historia
+	// que lee, donde antes deciamos `toolDefinitions: []`, o sea que no habia ninguna. Se corrio
+	// con esta linea puesta: **0 de 4 otra vez**. Queda descartada.
+	//
+	// SE DEJA porque declarar las tools en el transcript es lo veraz -- la historia decia una
+	// mentira -- y porque asi el proximo que sospeche de esto encuentra la respuesta acá en vez
+	// de volver a probarlo. La causa del 0 de 4 esta en otro lado: el candidato que sigue es el
+	// `Senuelo`, que corta la generacion lanzando `Detener` desde dentro de `call`, y despues el
+	// texto de las instrucciones, que en las cuatro corridas empujo al modelo a repreguntar en
+	// vez de actuar.
 	var previas = entradas(conv)
 	if !sistema.isEmpty {
 		previas.insert(.instructions(Transcript.Instructions(
