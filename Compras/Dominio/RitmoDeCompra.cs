@@ -58,7 +58,21 @@ namespace Compras.Dominio
 		internal int DiasParaLeerElHueco =>
 			EsObservado ? DiasTipicos : Categoria.DiasDeReabastecimiento;
 
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice este ritmo, por su nombre: `sin-ritmo`, `un-intervalo` o `medido`. Se dice de
+		/// donde sale el numero con el que se esta leyendo el hueco, porque no es lo mismo que lo haya
+		/// medido la persona a que salga del catalogo.
+		/// </summary>
+		internal abstract string Clave { get; }
+
+		/// <summary>El intervalo tipico en dias, o cero cuando no hay ritmo medido: lectura total.</summary>
+		internal int DiasTipicosOCero => EsObservado ? DiasTipicos : 0;
+
+		/// <summary>El mas corto de los intervalos medidos, o cero cuando no hay: lectura total.</summary>
+		internal int DiasMasCortoOCero => EsObservado ? DiasMasCorto : 0;
+
+		/// <summary>El mas largo de los intervalos medidos, o cero cuando no hay: lectura total.</summary>
+		internal int DiasMasLargoOCero => EsObservado ? DiasMasLargo : 0;
 
 		private sealed class SinRitmo : RitmoDeCompra
 		{
@@ -75,9 +89,7 @@ namespace Compras.Dominio
 			internal override int DiasMasCorto => DiasTipicos;
 			internal override int DiasMasLargo => DiasTipicos;
 
-			internal override string ParaElAsistente =>
-				$"todavía no hay con qué medir cada cuánto comprás {Categoria.Nombre}: "
-				+ $"se lee con los {Categoria.DiasDeReabastecimiento} días del catálogo";
+			internal override string Clave => "sin-ritmo";
 		}
 
 		private sealed class Observado : RitmoDeCompra
@@ -114,18 +126,7 @@ namespace Compras.Dominio
 			internal override int DiasMasCorto => intervalos[0];
 			internal override int DiasMasLargo => intervalos[intervalos.Count - 1];
 
-			internal override string ParaElAsistente
-			{
-				get
-				{
-					string cada = $"cada {DiasTipicos} días";
-					if (IntervalosMedidos == 1)
-						return $"solo hay un intervalo medido de {Categoria.Nombre}: {cada}";
-
-					return $"{Categoria.Nombre} lo comprás {cada}, sobre {IntervalosMedidos} intervalos "
-						+ $"(el más corto de {DiasMasCorto} y el más largo de {DiasMasLargo})";
-				}
-			}
+			internal override string Clave => IntervalosMedidos == 1 ? "un-intervalo" : "medido";
 		}
 	}
 }

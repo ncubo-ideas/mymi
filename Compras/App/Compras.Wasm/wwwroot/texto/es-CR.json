@@ -1,0 +1,276 @@
+{
+  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Las frases que compone el dominio NO estan aca: esas las trae la puerta ya dichas, en el idioma que se le pidio. El espanol de este archivo es de Costa Rica y es voseo -comprás, elegí, andá-: no lo pases a tuteo. Las descripciones de los productos, los nombres de las sucursales y los numeros de tiquete son del registro del supermercado y no se traducen. El nombre del super y su bajada tampoco: son voz de la institucion. {clave} es un hueco que el codigo llena.",
+
+  "comun": {
+    "volver": "Volver",
+    "inicio": "Inicio",
+    "compras": "Compras",
+    "abriendo": "Abriendo tus compras…",
+    "nuestroSitio": "Nuestro sitio",
+    "verTodos": "Ver todos",
+    "sinAbrir": "La app todavía no abrió en esta computadora.",
+    "sinAbrirEnlace": "Andá a Inicio",
+    "sinAbrirCola": "y elegí tu carpeta.",
+    "sinCompras": "Todavía no hay compras.",
+    "mirando": "Mirando tus últimas {compras} compras.",
+    "deTotal": "{cuantos} de {total}",
+    "yMas": "y {cuantos} más",
+    "compra": "compra",
+    "comprasPlural": "compras",
+    "am": "a.m.",
+    "pm": "p.m.",
+    "fechaLarga": "{numero} de {mes} de {anio}",
+    "mesDeAnio": "{mes} de {anio}",
+
+    "mes": {
+      "1": "ene", "2": "feb", "3": "mar", "4": "abr", "5": "may", "6": "jun",
+      "7": "jul", "8": "ago", "9": "sep", "10": "oct", "11": "nov", "12": "dic"
+    },
+    "mesLargo": {
+      "1": "enero", "2": "febrero", "3": "marzo", "4": "abril", "5": "mayo", "6": "junio",
+      "7": "julio", "8": "agosto", "9": "setiembre", "10": "octubre", "11": "noviembre",
+      "12": "diciembre"
+    },
+    "dia": {
+      "lunes": "lunes", "martes": "martes", "miercoles": "miércoles", "jueves": "jueves",
+      "viernes": "viernes", "sabado": "sábado", "domingo": "domingo"
+    },
+    "diaLargo": {
+      "lunes": "Lunes", "martes": "Martes", "miercoles": "Miércoles", "jueves": "Jueves",
+      "viernes": "Viernes", "sabado": "Sábado", "domingo": "Domingo"
+    }
+  },
+
+  "hero": {
+    "bajoDePrecio": "BAJÓ DE PRECIO",
+    "bajoDePrecioTitulo": "El {producto} que comprás siempre bajó de precio",
+    "verlo": "Verlo",
+    "puedeInteresarte": "PUEDE INTERESARTE",
+    "asiVienen": "Así vienen tus compras",
+    "casiTodoHabitual": {
+      "uno": "Casi todo habitual · {cuantos} cambio de ritmo",
+      "varios": "Casi todo habitual · {cuantos} cambios de ritmo"
+    },
+    "todoComoSiempre": "Todo como siempre por acá.",
+    "bienvenida": "Bienvenida a La Guaria",
+    "bienvenidaBajada": "Descubrí lo que siempre vuelve y cómo cambia tu carrito."
+  },
+
+  "inicio": {
+    "saludo": "¡Hola!",
+    "sitioDe": "Sitio de {marca}",
+    "errorOperacion": "No se pudo completar la operación.",
+    "errorAbrir": "No se pudo abrir la app.",
+    "permisoCaduca": "Tu carpeta es <strong>«{carpeta}»</strong>. El browser pide confirmar el permiso de escritura cada vez que volvés a abrir la app.",
+    "darPermiso": "Dar permiso a «{carpeta}»",
+    "elegirCarpeta": "Elegir carpeta",
+    "guardaEnTuCarpeta": "Esta app guarda <strong>tus</strong> compras en una carpeta <strong>tuya</strong>. Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.",
+    "modoCarpeta": "Una carpeta tuya",
+    "modoCarpetaDa": "Queda en tu disco, y <strong>tu asistente la puede consultar</strong>.",
+    "sinSelector": "Este navegador no tiene el selector de carpetas.",
+    "enEstaApp": "En esta app",
+    "enEsteNavegador": "En este navegador",
+    "modoNavegadorDa": "También se guarda y sobrevive al cierre, pero lo administra el navegador: <strong>tu asistente no lo puede leer</strong>.",
+    "noDisponible": "No disponible acá.",
+    "guardarAca": "Guardar acá",
+    "contextoInseguro": "Esta página no es un <strong>contexto seguro</strong>, y el navegador apaga las dos formas de guardar. Entrá por <code>https</code> o por <code>localhost</code> y aparecen las dos. No es tu navegador.",
+    "sinAlmacenamiento": "Este navegador no puede guardar nada de forma permanente. La app funciona igual, pero el registro vive solo en memoria y se pierde al cerrar.",
+    "abrirSinGuardar": "Abrir sin guardar nada",
+
+    "yaNoSeActualiza": "Ya no se actualiza",
+    "buscando": "Buscando…",
+    "buscarNuevas": "Buscar compras nuevas",
+    "compraTuya": "{cuantas} compra tuya",
+    "comprasTuyas": "{cuantas} compras tuyas",
+    "desde": "desde {cuando}",
+
+    "migrada": "<strong>Tus compras nuevas ahora entran por {donde}, en este mismo teléfono.</strong> Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de hacer es buscar novedades.",
+    "hospedada": "<strong>Se está guardando en este teléfono.</strong> Tu registro es tuyo y está acá: Gnothi le dio a este supermercado una carpeta en tu teléfono, y tu asistente la puede leer desde ahí.",
+    "sinCarpeta": "<strong>No se está guardando nada.</strong> Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor cada vez que abrís, y no queda registro tuyo en disco.",
+    "guardarEnNavegador": "Guardar en este navegador",
+    "guardadoEnApp": "Guardado en esta app",
+    "guardadoEnNavegador": "Guardado en este navegador",
+    "asistenteNoLoVe": "tu asistente no lo puede consultar.",
+    "escrituraRechazada": "<strong>La carpeta rechazó la escritura.</strong> Lo que ves en pantalla no está guardado en «{carpeta}». Suele ser el permiso, que caduca al reabrir.",
+    "volverADarPermiso": "Volver a dar permiso",
+
+    "tusCompras": "Tus compras",
+    "cambioReciente": "Hay {cuantos} cambio reciente",
+    "cambiosRecientes": "Hay {cuantos} cambios recientes",
+    "todoComoSiempre": "Todo como siempre",
+
+    "cambioPill": "CAMBIÓ",
+    "cambioDesde": "cambió desde {mes}",
+    "verLosCambios": "Ver los cambios",
+    "verMenos": "Ver menos",
+    "entraron": "entraron",
+    "dejoDeAparecer": "dejó de aparecer",
+
+    "enQueSeLlena": "En qué se llena tu carrito",
+    "categoriaPrincipal": "Tu categoría principal representa",
+    "categoriasPrincipales": "Tus {cuantas} categorías principales representan",
+    "representanEl": "{cuantas} el <strong class=\"mk-carrito-cifra\">{porcentaje}</strong> de tus compras.",
+    "otros": "Otros",
+    "verTodasLasCategorias": "Ver todas las categorías",
+    "estaCategoria": "esta categoría",
+    "estasCategorias": "estas {cuantas} categorías",
+    "carrito": {
+      "mayoria": "La mayoría de tu carrito se va en {cuantas}.",
+      "masDeLaMitad": "Más de la mitad de tu carrito está en {cuantas}.",
+      "casiLaMitad": "Casi la mitad de tu carrito está en {cuantas}.",
+      "parteImportante": "Una parte importante de tu carrito está en {cuantas}."
+    },
+
+    "tuHabitual": "TU HABITUAL",
+    "mejorPrecio": "MEJOR PRECIO",
+    "ahora": "Ahora",
+    "menos": "{monto} menos",
+
+    "quizaTeToque": "Quizá ya te toque",
+    "sueleVolver": "suele volver {cadencia}",
+    "hace": "hace {dias}",
+    "yMasFaltantes": "Y {cuantos} más. Tu asistente te puede dar la lista completa.",
+
+    "loQueCasiNuncaFalta": "Lo que casi nunca falta",
+
+    "tuMes": "Tu mes en el súper",
+    "esteMes": "Este mes",
+    "ritmoHabitual": "Vas con tu ritmo habitual.",
+    "gastasteMas": "gastaste más",
+    "gastasteMenos": "gastaste menos",
+    "mismaFrecuencia": "Compraste con la misma frecuencia, pero {gasto}.",
+    "esteMesGasto": "Este mes {gasto} que en {mes}.",
+    "entreCompras": "entre compras",
+    "menosQueEn": "menos que en {mes}",
+    "masQueEn": "más que en {mes}",
+    "graficaEtiqueta": "Las compras del mes, una por punto.",
+    "verLaGrafica": "Ver la gráfica",
+    "verTuRitmo": "Ver tu ritmo",
+    "versus": "vs",
+    "entroEsteAnio": "entró este año",
+
+    "asiTeFue": "Así te fue con los productos que comprás siempre.",
+    "habituales": {
+      "cambio": {
+        "uno": "{cuantos} habitual cambió de precio",
+        "varios": "{cuantos} habituales cambiaron de precio"
+      },
+      "subio": {
+        "uno": "{cuantos} habitual subió de precio",
+        "varios": "{cuantos} habituales subieron de precio"
+      },
+      "bajo": {
+        "uno": "{cuantos} habitual bajó de precio",
+        "varios": "{cuantos} habituales bajaron de precio"
+      }
+    },
+
+    "tuUltimaCompra": "Tu última compra",
+
+    "loQueDejoDeEntrar": "Lo que dejó de entrar",
+    "haceMasDeLoHabitual": "{que} hace más de lo habitual",
+    "dondeCompras": "Dónde comprás",
+    "sobreTodoEn": "sobre todo en {sucursal} · desde el {desde} también en {otras}",
+    "siempreEn": "siempre en {sucursal}",
+    "primeraYUltima": "la primera vez el {primera} · la última el {ultima}",
+    "sinSucursal": {
+      "una": "{cuantas} compra más vieja no dice en qué sucursal fue.",
+      "varias": "{cuantas} compras más viejas no dicen en qué sucursal fueron."
+    },
+    "tusGarantias": "Tus garantías",
+    "teCubreHasta": "{producto} te cubre hasta el {fecha}",
+    "cubreHasta": "te cubre hasta el {fecha}",
+    "laCompraste": "la compraste el {fecha} · {meses} de garantía",
+    "numeroDelReclamo": "el número para el reclamo es {numero}",
+
+    "ultimoDia": "último día",
+    "validaHasta": "válida hasta el {dia} {numero}",
+    "quedanDias": "quedan {dias}",
+
+    "verTodosTusRecibos": "Ver todos tus recibos",
+    "historialAMano": "Tu historial siempre a mano",
+    "promocionesYMas": "Promociones y más",
+    "sinCarpetaAviso": "Sin carpeta: el registro vive solo en memoria y se pierde al cerrar."
+  },
+
+  "infaltables": {
+    "titulo": "Los que nunca faltan",
+    "bajada": "Esos productos que una y otra vez terminan en tu carrito.",
+    "cadaVez": "cada vez que vas",
+    "casiCadaVez": "casi cada vez que vas",
+    "enQueSeLlena": "¿En qué se llena tu carrito?"
+  },
+
+  "precios": {
+    "titulo": "Tus habituales",
+    "bajada": "Los productos que comprás seguido y cambiaron de precio.",
+    "sinCambios": "Ningún habitual cambió de precio todavía.",
+    "loLlevasCadaVez": "lo llevás cada vez que vas",
+    "loLlevasCasiCadaVez": "lo llevás casi cada vez que vas"
+  },
+
+  "producto": {
+    "unoDeTusInfaltables": "Uno de tus infaltables",
+    "sinCompras": "No hay ninguna compra tuya con <strong>«{nombre}»</strong>.",
+    "verLosQueNuncaFaltan": "Ver los que nunca faltan",
+    "comprasEnQueAparecio": "compras en las que apareció",
+    "unidadesLlevadas": "unidades llevadas",
+    "gastadoEnEsto": "gastado en este producto",
+    "ultimaVez": "última vez que lo llevaste",
+    "comoLoFuisteLlevando": "Cómo lo fuiste llevando",
+    "unidadesPorAnio": "Unidades por año.",
+    "unidadesPorMes": "Unidades por mes.",
+    "mesAMes": "{anio}, mes a mes."
+  },
+
+  "recibos": {
+    "pestana": "Tus compras",
+    "titulo": "Encontrá eso que llevaste",
+    "bajada": "Buscá un producto o recorré tus compras anteriores.",
+    "buscarPlaceholder": "Buscar leche, arroz, galletas…",
+    "buscarEtiqueta": "Buscar en tus compras",
+    "sinCompras": "Todavía no hay compras. Apretá <em>Refresh</em> en Inicio.",
+    "probaConOtro": "Probá con otro producto, o con un pasillo entero — <em>limpieza</em>, <em>proteinas</em>.",
+    "hoy": "HOY",
+    "producto": {
+      "uno": "{cuantos} producto",
+      "varios": "{cuantos} productos"
+    },
+    "deProducto": {
+      "uno": "de {cuantos} producto",
+      "varios": "de {cuantos} productos"
+    },
+    "masRecientes": "Las {cuantas} más recientes de {total}. Buscá arriba para encontrar una más vieja — y tu asistente las puede consultar todas.",
+    "resultadosRecientes": "Las {cuantas} más recientes de {total}. Los totales de arriba sí son de todas — y tu asistente las puede consultar una por una."
+  },
+
+  "detalle": {
+    "unaCompra": "Una compra",
+    "sinAbrir": "La app todavía no abrió. Volvé a la lista y abrila ahí.",
+    "sinEsaCompra": "No hay ninguna compra con número «{numero}».",
+    "tuCompraDel": "Tu compra del",
+    "diaLargo": "{dia} {numero} de {mes}",
+    "aLas": "a las {hora}",
+    "estoLlevaste": "Esto fue lo que llevaste",
+    "conGarantia": "con garantía",
+    "rebaja": "<strong>{producto}</strong> hoy cuesta <strong>{monto} menos</strong> que en esta compra.",
+    "paraReclamar": "Si tenés que reclamar algo de esta compra, el número es <strong>{numero}</strong>.",
+    "verRestantes": "Ver las {cuantas} líneas restantes",
+    "soloLasPrimeras": "Mostrar solo las primeras {cuantas}",
+    "paginas": "Páginas de esta compra",
+    "paginaAnterior": "Página anterior",
+    "paginaSiguiente": "Página siguiente",
+    "deLineas": "{desde}–{hasta} de {total} líneas"
+  },
+
+  "ritmo": {
+    "titulo": "Tu ritmo de súper",
+    "bajada": "Hay días y momentos que se repiten más de lo que parece.",
+    "sinRitmo": "Todavía no hay compras suficientes para medir un ritmo.",
+    "mirando": "Mirando tus últimas {compras} compras.",
+    "cada": "Cada {dias}",
+    "volves": "volvés al súper",
+    "diaQueMasCompras": "el día en que más comprás",
+    "aQueHora": "A qué hora solés ir"
+  }
+}

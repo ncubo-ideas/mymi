@@ -214,7 +214,7 @@ namespace Compras.Dominio
 				decimal antes = Math.Round(deEntonces.PrecioPorUnidad * contenido, 2);
 
 				comparados.Add((new ProductoFrenteAlPasado(serie.Sku, serie.Descripcion,
-					deHoy.PresentacionExpresada, antes, deHoy.PrecioDeLinea), comparados.Count));
+					deHoy.Presentacion, antes, deHoy.PrecioDeLinea), comparados.Count));
 			}
 
 			if (comparados.Count == 0) return CanastaFrenteAlPasado.SinConQueComparar(mesesAtras);
@@ -687,7 +687,7 @@ namespace Compras.Dominio
 					if (!string.Equals(item.Sku, sku, StringComparison.OrdinalIgnoreCase)) continue;
 
 					observados.Add(new PrecioObservado(compra.Fecha, compra.Numero, item.PrecioUnitario,
-						item.PrecioPorUnidadBase, item.Presentacion.Expresada));
+						item.PrecioPorUnidadBase, item.Presentacion));
 				}
 
 			return observados.Count == 0

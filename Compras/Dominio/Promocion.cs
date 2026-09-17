@@ -43,7 +43,10 @@ namespace Compras.Dominio
 		/// <summary>Cuántos días le quedan mirándola ese día. Cero el último día; negativo, vencida.</summary>
 		internal int DiasQueQuedanEl(DateTime fecha) => (int)(ValidaHasta.Date - fecha.Date).TotalDays;
 
-		internal string ParaElAsistente =>
-			$"{Gancho}: {Detalle}, válida hasta el {ValidaHastaExpresada}";
+		/// <summary>
+		/// QUE FRASE dice una promocion. Es UNA sola: el gancho y el detalle los escribio el super y
+		/// no se traducen en ningun idioma; lo unico que pone la redaccion es el marco.
+		/// </summary>
+		internal string Clave => "promocion";
 	}
 }

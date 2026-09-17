@@ -47,10 +47,7 @@ namespace Compras.Dominio
 		/// línea. Sin rebaja es cero, y Hay lo dice.</summary>
 		internal decimal CuantoMenos { get; private set; }
 
-		internal string ParaElAsistente =>
-			Hay
-				? $"{Descripcion} hoy cuesta {Plata.Colones(CuantoMenos)} menos que en la "
-					+ $"compra {NumeroDeCompra}"
-				: $"nada de la compra {NumeroDeCompra} está hoy más barato que lo que se pagó";
+		/// <summary>QUE FRASE dice esta nota al pie, por su nombre: `hay` o `ninguna`.</summary>
+		internal string Clave => Hay ? "hay" : "ninguna";
 	}
 }

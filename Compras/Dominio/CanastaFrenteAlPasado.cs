@@ -66,25 +66,16 @@ namespace Compras.Dominio
 			}
 		}
 
-		internal string ParaElAsistente
-		{
-			get
-			{
-				if (!HayConQueComparar)
-					return $"ningún habitual tiene un precio observado de hace {MesesDeVentana} "
-						+ "meses o más: todavía no hay con qué comparar";
-
-				string canasta = $"una pieza de cada uno de sus {Productos.Count} habituales comparables";
-				if (Cambio > 0m)
-					return $"comprar hoy {canasta} cuesta {Plata.Colones(Cambio)} más que hace "
-						+ $"{MesesDeVentana} meses";
-				if (Cambio < 0m)
-					return $"comprar hoy {canasta} cuesta {Plata.Colones(Math.Abs(Cambio))} menos "
-						+ $"que hace {MesesDeVentana} meses";
-
-				return $"comprar hoy {canasta} cuesta lo mismo que hace {MesesDeVentana} meses";
-			}
-		}
+		/// <summary>
+		/// QUE FRASE dice esta canasta, por su nombre: `sin-comparar`, `mas-caro`, `mas-barato` o
+		/// `igual`. La direccion la decide el dominio y no el signo leido afuera: quien redacta no
+		/// tiene por que saber que un cambio positivo es mas caro.
+		/// </summary>
+		internal string Clave =>
+			!HayConQueComparar ? "sin-comparar"
+			: Cambio > 0m ? "mas-caro"
+			: Cambio < 0m ? "mas-barato"
+			: "igual";
 	}
 
 	/// <summary>
@@ -97,14 +88,26 @@ namespace Compras.Dominio
 		internal string Descripcion { get; private set; }
 
 		/// <summary>La presentación contra la que se leen los dos precios: la más reciente.</summary>
-		internal string Presentacion { get; private set; }
+		internal Presentacion Presentacion { get; private set; }
+
+		/// <summary>El codigo de la presentacion, aplanado para que el print lo alcance en un solo nivel.</summary>
+		internal string ClaveDeLaPresentacion => Presentacion.Clave;
+
+		/// <summary>Cuanto mide una pieza de esa presentacion, aplanado por la misma razon.</summary>
+		internal decimal ContenidoDeLaPresentacion => Presentacion.Contenido;
+
+		/// <summary>Cuantas piezas trae el empaque de esa presentacion, aplanado por la misma razon.</summary>
+		internal int PiezasDeLaPresentacion => Presentacion.Piezas;
+
+		/// <summary>El simbolo con que se mide una pieza de esa presentacion, aplanado por la misma razon.</summary>
+		internal string SimboloDeLaPresentacion => Presentacion.SimboloDelContenido;
 
 		internal decimal Antes { get; private set; }
 		internal decimal Ahora { get; private set; }
 
 		internal decimal Cambio => Ahora - Antes;
 
-		internal ProductoFrenteAlPasado(string sku, string descripcion, string presentacion,
+		internal ProductoFrenteAlPasado(string sku, string descripcion, Presentacion presentacion,
 			decimal antes, decimal ahora)
 		{
 			ArgumentNullException.ThrowIfNull(sku);

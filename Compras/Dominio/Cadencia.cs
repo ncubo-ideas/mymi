@@ -28,46 +28,36 @@ namespace Compras.Dominio
 		/// <summary>Hasta cuántos días de intervalo cuenta como "todas las semanas".</summary>
 		internal const int DiasDeLoSemanal = 9;
 
-		internal static readonly Cadencia TodasLasSemanas =
-			new Cadencia("todas las semanas", "todas las semanas", "1 vez/semana", DiasDeLoSemanal, 5);
+		internal static readonly Cadencia TodasLasSemanas = new Cadencia("semanal", DiasDeLoSemanal, 5);
 
-		internal static readonly Cadencia CadaDosSemanas =
-			new Cadencia("cada dos semanas", "cada dos semanas", "1 vez/quincena", 18, 4);
+		internal static readonly Cadencia CadaDosSemanas = new Cadencia("quincenal", 18, 4);
 
-		internal static readonly Cadencia UnaVezAlMes =
-			new Cadencia("una vez al mes", "una vez al mes", "1 vez/mes", 45, 3);
+		internal static readonly Cadencia UnaVezAlMes = new Cadencia("mensual", 45, 3);
 
-		internal static readonly Cadencia CadaDosMeses =
-			new Cadencia("cada dos meses", "cada dos meses", "1 vez/2 meses", 75, 2);
+		internal static readonly Cadencia CadaDosMeses = new Cadencia("bimensual", 75, 2);
 
 		// El ultimo del conjunto: cualquier intervalo mas largo cae aca. No dice un numero
 		// a proposito — a partir de dos meses y medio, "de vez en cuando" es mas honesto
 		// que fingir una regularidad que no hay.
-		internal static readonly Cadencia DeVezEnCuando =
-			new Cadencia("de vez en cuando", "de vez en cuando", "de vez en cuando", int.MaxValue, 1);
+		internal static readonly Cadencia DeVezEnCuando = new Cadencia("esporadica", int.MaxValue, 1);
 
 		internal static readonly Cadencia[] Todas =
 		{
 			TodasLasSemanas, CadaDosSemanas, UnaVezAlMes, CadaDosMeses, DeVezEnCuando,
 		};
 
-		/// <summary>La etiqueta interna, para comparar y serializar.</summary>
-		internal string Nombre { get; private set; }
-
-		/// <summary>Como se le dice a la persona, en una frase que encadena: "compra leche todas las semanas".</summary>
-		internal string ParaMostrar { get; private set; }
-
-		/// <summary>La forma corta, para una pastilla: "1 vez/semana".</summary>
-		internal string Compacta { get; private set; }
+		/// <summary>
+		/// EL CODIGO de esta cadencia: identidad, para comparar y serializar. Es lo unico que cruza el
+		/// wire, y con el una capa de presentacion busca como se dice en el idioma que le pidieron.
+		/// </summary>
+		internal string Clave { get; private set; }
 
 		private readonly int hastaDias;
 		private readonly int peso;
 
-		private Cadencia(string nombre, string paraMostrar, string compacta, int hastaDias, int peso)
+		private Cadencia(string clave, int hastaDias, int peso)
 		{
-			Nombre = nombre;
-			ParaMostrar = paraMostrar;
-			Compacta = compacta;
+			Clave = clave;
 			this.hastaDias = hastaDias;
 			this.peso = peso;
 		}
@@ -95,6 +85,6 @@ namespace Compras.Dominio
 			return peso > otra.peso;
 		}
 
-		public override string ToString() => Nombre;
+		public override string ToString() => Clave;
 	}
 }

@@ -3,6 +3,7 @@
 @using Compras.App.Vistas
 @using Compras.App
 @using Microsoft.JSInterop
+@inject Textos textos
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 @inject Pantalla pantalla
@@ -11,8 +12,8 @@
 @* Hasta el titulo de la pestaña: decia "Compra T-90349". Si alguien guarda esto en
    favoritos, lo que tiene que reconocer es la fecha. *@
 <PageTitle>@(compra is null || compra.Numero.Length == 0
-    ? "Una compra · La Guaria y vos"
-    : $"{Dia(compra.Fecha)} {compra.Fecha.Day} de {MesLargo(compra.Fecha.Month)} · La Guaria y vos")</PageTitle>
+    ? textos["detalle.unaCompra"] + " · " + Textos.TituloDelModulo
+    : ElDiaLargo(compra.Fecha) + " · " + Textos.TituloDelModulo)</PageTitle>
 
 @* Decia "← Mis compras" y navegaba a la PORTADA con destino fijo — pero a un recibo se
    llega desde recibos, desde la portada y desde la busqueda, y ese boton acertaba solo en
@@ -21,21 +22,21 @@
 
 @if (!estado.EstaArriba)
 {
-    <div class="aviso">La app todavía no abrió. Volvé a la lista y abrila ahí.</div>
+    <div class="aviso">@textos["detalle.sinAbrir"]</div>
 }
 else if (compra is null || compra.Numero.Length == 0)
 {
-    <div class="aviso">No hay ninguna compra con número «@Numero».</div>
+    <div class="aviso">@textos.Con("detalle.sinEsaCompra", ("numero", Numero))</div>
 }
 else
 {
     @* LA FECHA ES EL TITULO, no el numero de ticket. Decia "Compra T-90349": ese numero es
        como el super identifica ese papel en SU sistema, y encabezar con el convierte la
        pantalla en una factura. Lo que ella recuerda de una compra es CUANDO fue. *@
-    <p class="kicker mb-1">Tu compra del</p>
-    <h1 class="h3 mb-0">@Dia(compra.Fecha).ToLower() @compra.Fecha.Day de @MesLargo(compra.Fecha.Month)</h1>
+    <p class="kicker mb-1">@textos["detalle.tuCompraDel"]</p>
+    <h1 class="h3 mb-0">@ElDiaLargo(compra.Fecha).ToLower()</h1>
     <p class="text-body-secondary">
-        a las @Hora(compra.Fecha)@(compra.Sucursal.Length > 0 ? " · " + compra.Sucursal : "")
+        @textos.Con("detalle.aLas", ("hora", Hora(compra.Fecha)))@(compra.Sucursal.Length > 0 ? " · " + compra.Sucursal : "")
     </p>
 
     @* EL RESUMEN ANTES DE LA LISTA, del mock de Fernanda: tres fotos de muestra y el total
@@ -75,7 +76,7 @@ else
                 <path d="M3.5 8h13l-1.4 7.5H4.9z"/><path d="M7 8l3-4.5L13 8"/>
             </svg>
         </span>
-        <span class="kicker">Esto fue lo que llevaste</span>
+        <span class="kicker">@textos["detalle.estoLlevaste"]</span>
     </div>
     <div class="list-group lineas-compra">
         @foreach (LineaDeCompra linea in Visibles())
@@ -94,7 +95,7 @@ else
                         <strong>@linea.Descripcion</strong>
                         @if (linea.TieneGarantia)
                         {
-                            <span class="etiqueta etiqueta-verde">con garantía</span>
+                            <span class="etiqueta etiqueta-verde">@textos["detalle.conGarantia"]</span>
                         }
                     </span>
                     <span class="linea-precio">@linea.Cantidad &times; @Colones(linea.PrecioUnitario)</span>
@@ -128,8 +129,7 @@ else
                 }
             </span>
             <span class="small">
-                <strong>@rebaja.Descripcion</strong> hoy cuesta
-                <strong>@Colones(rebaja.CuantoMenos) menos</strong> que en esta compra.
+                @((MarkupString)textos.Con("detalle.rebaja", ("producto", rebaja.Descripcion), ("monto", Colones(rebaja.CuantoMenos))))
             </span>
         </div>
     }
@@ -139,7 +139,7 @@ else
        de garantias ya lo nombra-, pero encabezar con el es hablarle en el idioma del
        sistema. Abajo y con su para-que, es una herramienta suya. *@
     <p class="small text-body-secondary numero-de-compra">
-        Si tenés que reclamar algo de esta compra, el número es <strong>@compra.Numero</strong>.
+        @((MarkupString)textos.Con("detalle.paraReclamar", ("numero", compra.Numero)))
     </p>
 
     @if (Paginas() > 1)
@@ -149,21 +149,21 @@ else
             @if (!todas)
             {
                 <button class="btn btn-link p-0" @onclick="() => todas = true">
-                    Ver las @(compra.Lineas.Count - LineasQueSeMuestran) líneas restantes
+                    @textos.Con("detalle.verRestantes", ("cuantas", (compra.Lineas.Count - LineasQueSeMuestran).ToString()))
                 </button>
             }
             else
             {
                 <button class="btn btn-link p-0" @onclick="() => todas = false">
-                    Mostrar solo las primeras @LineasQueSeMuestran
+                    @textos.Con("detalle.soloLasPrimeras", ("cuantas", LineasQueSeMuestran.ToString()))
                 </button>
             }
         }
         else
         {
-            <nav class="paginas" aria-label="Páginas de esta compra">
+            <nav class="paginas" aria-label="@textos["detalle.paginas"]">
                 <button class="pagina-salto" @onclick="Anterior" disabled="@(pagina == 0)"
-                        aria-label="Página anterior">&lsaquo;</button>
+                        aria-label="@textos["detalle.paginaAnterior"]">&lsaquo;</button>
                 @for (int i = 0; i < Paginas(); i++)
                 {
                     int destino = i;
@@ -172,12 +172,12 @@ else
                             aria-current="@(i == pagina ? "page" : null)">@(i + 1)</button>
                 }
                 <button class="pagina-salto" @onclick="Siguiente" disabled="@(pagina >= Paginas() - 1)"
-                        aria-label="Página siguiente">&rsaquo;</button>
+                        aria-label="@textos["detalle.paginaSiguiente"]">&rsaquo;</button>
                 @* CUÁNTAS SON EN TOTAL, siempre. Un "3 de 3" con los números al lado suena
                    redundante hasta que el recibo tiene once páginas y los números no caben
                    todos en la fila. *@
                 <span class="paginas-cuenta">
-                    @Desde()–@Hasta() de @compra.Lineas.Count líneas
+                    @textos.Con("detalle.deLineas", ("desde", Desde().ToString()), ("hasta", Hasta().ToString()), ("total", compra.Lineas.Count.ToString()))
                 </span>
             </nav>
         }
@@ -294,33 +294,32 @@ else
         return deLaPagina;
     }
 
-    // Los nombres van a mano: en wasm la globalizacion viene recortada y pedirle a la
-    // cultura los dias o los meses devuelve los ingleses o vacio.
-    private static string Dia(DateTime cuando) => cuando.DayOfWeek switch
-    {
-        DayOfWeek.Monday => "Lunes",
-        DayOfWeek.Tuesday => "Martes",
-        DayOfWeek.Wednesday => "Miércoles",
-        DayOfWeek.Thursday => "Jueves",
-        DayOfWeek.Friday => "Viernes",
-        DayOfWeek.Saturday => "Sábado",
-        _ => "Domingo",
-    };
+    // EL DIA ENTERO EN UNA SOLA CLAVE, y no pegando dia + numero + mes: el orden de esas
+    // tres partes es del idioma, y armarlo aca lo dejaria en espanol para siempre.
+    private string ElDiaLargo(DateTime cuando) =>
+        textos.Con("detalle.diaLargo",
+            ("dia", textos["comun.diaLargo." + ElCodigoDelDia(cuando.DayOfWeek)]),
+            ("numero", cuando.Day.ToString(CultureInfo.InvariantCulture)),
+            ("mes", textos[$"comun.mesLargo.{cuando.Month}"]));
 
-    private static string MesLargo(int mes) => mes switch
+    private static string ElCodigoDelDia(DayOfWeek dia) => dia switch
     {
-        1 => "enero", 2 => "febrero", 3 => "marzo", 4 => "abril", 5 => "mayo", 6 => "junio",
-        7 => "julio", 8 => "agosto", 9 => "setiembre", 10 => "octubre", 11 => "noviembre",
-        _ => "diciembre",
+        DayOfWeek.Monday => "lunes",
+        DayOfWeek.Tuesday => "martes",
+        DayOfWeek.Wednesday => "miercoles",
+        DayOfWeek.Thursday => "jueves",
+        DayOfWeek.Friday => "viernes",
+        DayOfWeek.Saturday => "sabado",
+        _ => "domingo",
     };
 
     // "7:30 p.m." y no "19:30": nadie dice que fue al super a las diecinueve treinta.
-    private static string Hora(DateTime cuando)
+    private string Hora(DateTime cuando)
     {
         int hora = cuando.Hour % 12;
         if (hora == 0) hora = 12;
 
-        return $"{hora}:{cuando.Minute:00} {(cuando.Hour < 12 ? "a.m." : "p.m.")}";
+        return $"{hora}:{cuando.Minute:00} {textos[cuando.Hour < 12 ? "comun.am" : "comun.pm"]}";
     }
 
     // LA FOTO VIENE DEL MISMO MAPA de toda la app; sin foto, la fila dibuja su hueco.
@@ -349,7 +348,5 @@ else
 
         return string.Join(" · ", nombres);
     }
-
-    private static string Colones(decimal monto) =>
-        Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@
+    private string Colones(decimal monto) => textos.Monto(monto);
 }

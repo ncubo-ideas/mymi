@@ -3,11 +3,12 @@
 @using Compras.App.Vistas
 @using Compras.App
 @using Puppets.Portador
+@inject Textos textos
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 @inject ConfiguracionDeLaInstitucion institucion
 
-<PageTitle>La Guaria y vos</PageTitle>
+<PageTitle>@Textos.TituloDelModulo</PageTitle>
 
 @* BLOQUE 1 -IDENTIDAD + CARRUSEL DE BANNERS-, quinta pasada: el hero de una sola señal
    (texto + canasta de fondo + producto superpuesto, compitiendo entre si) se retira por
@@ -32,7 +33,7 @@
     </span>
 </div>
 
-<p class="lg-home-saludo">¡Hola!</p>
+<p class="lg-home-saludo">@textos["inicio.saludo"]</p>
 
 @if (heroBanners.Count > 0)
 {
@@ -104,7 +105,7 @@
 @if (error.Length > 0)
 {
     <div class="aviso-fuerte mb-3">
-        <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
+        <strong>@textos[estado.EstaArriba ? "inicio.errorOperacion" : "inicio.errorAbrir"]</strong>
         <pre class="mb-0 mt-2 small" style="white-space:pre-wrap">@error</pre>
     </div>
 }
@@ -115,24 +116,22 @@
         @if (estado.FaltaReotorgarPermiso)
         {
             <p class="mb-2">
-                Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El browser pide
-                confirmar el permiso de escritura cada vez que volvés a abrir la app.
+                @((MarkupString)textos.Con("inicio.permisoCaduca", ("carpeta", estado.NombreDeLaCarpeta)))
             </p>
             <div class="d-flex flex-wrap gap-2">
                 <button class="btn btn-aviso" @onclick="PedirPermiso">
-                    Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
+                    @textos.Con("inicio.darPermiso", ("carpeta", estado.NombreDeLaCarpeta))
                 </button>
                 <button class="btn btn-primary" @onclick="ConectarCarpeta"
                         disabled="@(soportado == false)">
-                    Elegir carpeta
+                    @textos["inicio.elegirCarpeta"]
                 </button>
             </div>
         }
         else
         {
             <p class="mb-2">
-                Esta app guarda <strong>tus</strong> compras en una carpeta <strong>tuya</strong>.
-                Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.
+                @((MarkupString)textos["inicio.guardaEnTuCarpeta"])
             </p>
 
             @* DOS MODOS, Y SE DICE QUE DA CADA UNO. El briefing §6.2 pide que la app no
@@ -144,31 +143,30 @@
                mitad "tu IA lo consulta" no funciona ahí, y callarlo sería vender de más. *@
             <div class="modos">
                 <div class="modo @(soportado == false ? "modo--nodisponible" : "")">
-                    <div class="modo-que">Una carpeta tuya</div>
+                    <div class="modo-que">@textos["inicio.modoCarpeta"]</div>
                     <div class="modo-da">
-                        Queda en tu disco, y <strong>tu asistente la puede consultar</strong>.
+                        @((MarkupString)textos["inicio.modoCarpetaDa"])
                         @if (soportado == false)
                         {
-                            <span class="modo-falta">Este navegador no tiene el selector de carpetas.</span>
+                            <span class="modo-falta">@textos["inicio.sinSelector"]</span>
                         }
                     </div>
                     <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
-                        Elegir carpeta
+                        @textos["inicio.elegirCarpeta"]
                     </button>
                 </div>
 
                 <div class="modo @(opfs == false ? "modo--nodisponible" : "")">
-                    <div class="modo-que">@(instalada == true ? "En esta app" : "En este navegador")</div>
+                    <div class="modo-que">@textos[instalada == true ? "inicio.enEstaApp" : "inicio.enEsteNavegador"]</div>
                     <div class="modo-da">
-                        También se guarda y sobrevive al cierre, pero lo administra el navegador:
-                        <strong>tu asistente no lo puede leer</strong>.
+                        @((MarkupString)textos["inicio.modoNavegadorDa"])
                         @if (opfs == false)
                         {
-                            <span class="modo-falta">No disponible acá.</span>
+                            <span class="modo-falta">@textos["inicio.noDisponible"]</span>
                         }
                     </div>
                     <button class="btn btn-secundario" @onclick="UsarNavegador" disabled="@(opfs == false)">
-                        Guardar acá
+                        @textos["inicio.guardarAca"]
                     </button>
                 </div>
             </div>
@@ -180,22 +178,19 @@
             @if (sinAlmacenamiento == "inseguro")
             {
                 <p class="text-danger mt-3 mb-0">
-                    Esta página no es un <strong>contexto seguro</strong>, y el navegador apaga las
-                    dos formas de guardar. Entrá por <code>https</code> o por <code>localhost</code>
-                    y aparecen las dos. No es tu navegador.
+                    @((MarkupString)textos["inicio.contextoInseguro"])
                 </p>
             }
             else if (sinAlmacenamiento == "navegador")
             {
                 <p class="text-danger mt-3 mb-0">
-                    Este navegador no puede guardar nada de forma permanente. La app funciona igual,
-                    pero el registro vive solo en memoria y se pierde al cerrar.
+                    @textos["inicio.sinAlmacenamiento"]
                 </p>
             }
         }
 
         <div class="mt-3">
-            <button class="btn btn-link p-0" @onclick="Arrancar">Abrir sin guardar nada</button>
+            <button class="btn btn-link p-0" @onclick="Arrancar">@textos["inicio.abrirSinGuardar"]</button>
         </div>
     </div>
 }
@@ -211,13 +206,13 @@ else
        app esta al dia SI hace falta— pero eso lo mira el asistente, no ella. *@
     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
         <button class="btn btn-primary" @onclick="Refrescar" disabled="@(refrescando || estado.Migrada)">
-            @(estado.Migrada ? "Ya no se actualiza" : refrescando ? "Buscando…" : "Buscar compras nuevas")
+            @textos[estado.Migrada ? "inicio.yaNoSeActualiza" : refrescando ? "inicio.buscando" : "inicio.buscarNuevas"]
         </button>
         <span class="text-body-secondary">
-            @cantidad @(cantidad == 1 ? "compra tuya" : "compras tuyas")
+            @textos.Con(cantidad == 1 ? "inicio.compraTuya" : "inicio.comprasTuyas", ("cuantas", cantidad.ToString()))
             @if (desdeCuando.Length > 0)
             {
-                @: desde @desdeCuando
+                @: @textos.Con("inicio.desde", ("cuando", desdeCuando))
             }
             &middot; @Colones(total)
         </span>
@@ -232,10 +227,7 @@ else
     {
         <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
-                <strong>Tus compras nuevas ahora entran por @estado.DondeVive, en este
-                mismo teléfono.</strong>
-                Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
-                hacer es buscar novedades.
+                @((MarkupString)textos.Con("inicio.migrada", ("donde", estado.DondeVive)))
             </div>
         </div>
     }
@@ -243,9 +235,7 @@ else
     {
         <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
-                <strong>Se está guardando en este teléfono.</strong>
-                Tu registro es tuyo y está acá: Gnothi le dio a este supermercado una
-                carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
+                @((MarkupString)textos["inicio.hospedada"])
             </div>
         </div>
     }
@@ -253,15 +243,13 @@ else
     {
         <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
-                <strong>No se está guardando nada.</strong>
-                Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor
-                cada vez que abrís, y no queda registro tuyo en disco.
+                @((MarkupString)textos["inicio.sinCarpeta"])
             </div>
             <button class="btn btn-aviso" @onclick="ConectarCarpeta"
-                    disabled="@(soportado == false)">Elegir carpeta</button>
+                    disabled="@(soportado == false)">@textos["inicio.elegirCarpeta"]</button>
             @if (opfs == true)
             {
-                <button class="btn btn-aviso" @onclick="UsarNavegador">Guardar en este navegador</button>
+                <button class="btn btn-aviso" @onclick="UsarNavegador">@textos["inicio.guardarEnNavegador"]</button>
             }
         </div>
     }
@@ -275,12 +263,12 @@ else
            mismo que hay que saber; el porque completo vive en la pantalla de eleccion. *@
         <div class="aviso aviso-linea d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1 small">
-                <strong>Guardado @(instalada == true ? "en esta app" : "en este navegador")</strong>
-                &middot; tu asistente no lo puede consultar.
+                <strong>@textos[instalada == true ? "inicio.guardadoEnApp" : "inicio.guardadoEnNavegador"]</strong>
+                &middot; @textos["inicio.asistenteNoLoVe"]
             </div>
             @if (soportado == true)
             {
-                <button class="btn btn-aviso btn-sm" @onclick="ConectarCarpeta">Elegir carpeta</button>
+                <button class="btn btn-aviso btn-sm" @onclick="ConectarCarpeta">@textos["inicio.elegirCarpeta"]</button>
             }
         </div>
     }
@@ -288,12 +276,10 @@ else
     {
         <div class="aviso-fuerte d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
-                <strong>La carpeta rechazó la escritura.</strong>
-                Lo que ves en pantalla no está guardado en &laquo;@estado.NombreDeLaCarpeta&raquo;.
-                Suele ser el permiso, que caduca al reabrir.
+                @((MarkupString)textos.Con("inicio.escrituraRechazada", ("carpeta", estado.NombreDeLaCarpeta)))
                 <div class="small mt-1">@estado.GuardadoFallando</div>
             </div>
-            <button class="btn btn-aviso" @onclick="PedirPermiso">Volver a dar permiso</button>
+            <button class="btn btn-aviso" @onclick="PedirPermiso">@textos["inicio.volverADarPermiso"]</button>
         </div>
     }
     @* SIN "ELSE": cuando no hay ningun aviso que dar -el caso de todos los dias- no se
@@ -323,15 +309,15 @@ else
        historia de "un cambio en tu rutina" bien abajo: no se inventa una cuenta aparte. *@
     <div class="lg-home-estado mb-3">
         <a class="lg-home-estado-link" href="recibos">
-            <span class="lg-home-estado-fuerte">Tus compras</span>
+            <span class="lg-home-estado-fuerte">@textos["inicio.tusCompras"]</span>
             <span class="lg-home-estado-punto" aria-hidden="true">&middot;</span>
             @if (ritmos.Count > 0)
             {
-                <span class="lg-home-estado-cambio">Hay @ritmos.Count @(ritmos.Count == 1 ? "cambio reciente" : "cambios recientes")</span>
+                <span class="lg-home-estado-cambio">@textos.Con(ritmos.Count == 1 ? "inicio.cambioReciente" : "inicio.cambiosRecientes", ("cuantos", ritmos.Count.ToString()))</span>
             }
             else
             {
-                <span class="lg-home-estado-cambio lg-home-estado-cambio--calmo">Todo como siempre</span>
+                <span class="lg-home-estado-cambio lg-home-estado-cambio--calmo">@textos["inicio.todoComoSiempre"]</span>
             }
             <svg class="lg-home-estado-flecha" width="12" height="12" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
@@ -339,7 +325,7 @@ else
             </svg>
         </a>
         <button class="lg-home-estado-refrescar" @onclick="Refrescar" disabled="@refrescando"
-                aria-label="Buscar compras nuevas" title="Buscar compras nuevas">
+                aria-label="@textos["inicio.buscarNuevas"]" title="@textos["inicio.buscarNuevas"]">
             <svg class="@(refrescando ? "lg-home-girando" : "")" width="15" height="15" viewBox="0 0 24 24"
                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M21 12a9 9 0 1 1-2.6-6.36"/>
@@ -368,7 +354,7 @@ else
             <span class="mk-cambio-que">
                 <span class="mk-cambio-nombre">
                     <strong>@ritmos[0].Descripcion</strong>
-                    <span class="mk-cambio-pill">CAMBIÓ</span>
+                    <span class="mk-cambio-pill">@textos["inicio.cambioPill"]</span>
                 </span>
                 <span class="mk-cambio-linea">
                     <span>@ritmos[0].Antes</span>
@@ -377,12 +363,12 @@ else
                 </span>
                 @if (cambio is not null && cambio.Corte.Length > 0)
                 {
-                    <span class="mk-cambio-desde">cambió desde @MesLegible(cambio.Corte)</span>
+                    <span class="mk-cambio-desde">@textos.Con("inicio.cambioDesde", ("mes", MesLegible(cambio.Corte)))</span>
                 }
                 @if (!verCambios && (ritmos.Count > 1 || (cambio is not null && cambio.HayCambio)))
                 {
                     <button class="mk-cambio-mas" @onclick="() => verCambios = true">
-                        Ver los cambios &rarr;
+                        @textos["inicio.verLosCambios"] &rarr;
                     </button>
                 }
             </span>
@@ -409,7 +395,7 @@ else
                 @if (cambio is not null && cambio.Entraron.Count > 0)
                 {
                     <div class="mt-2">
-                        <span class="small text-body-secondary me-2">entraron</span>
+                        <span class="small text-body-secondary me-2">@textos["inicio.entraron"]</span>
                         <span class="d-inline-flex flex-wrap gap-2 align-middle">
                             @foreach (var entro in cambio.Entraron)
                             {
@@ -421,7 +407,7 @@ else
                 @if (cambio is not null && cambio.Salieron.Count > 0)
                 {
                     <div class="mt-2">
-                        <span class="small text-body-secondary me-2">dejó de aparecer</span>
+                        <span class="small text-body-secondary me-2">@textos["inicio.dejoDeAparecer"]</span>
                         <span class="d-inline-flex flex-wrap gap-2 align-middle">
                             @foreach (var salio in cambio.Salieron)
                             {
@@ -431,7 +417,7 @@ else
                     </div>
                 }
                 <button class="mk-cambio-mas" @onclick="() => verCambios = false">
-                    Ver menos
+                    @textos["inicio.verMenos"]
                 </button>
             </div>
         }
@@ -455,15 +441,15 @@ else
         var otrasCategorias = OtrasCategorias();
         decimal proporcionTop = topCategorias.Sum(d => d.ProporcionDelTotal);
         string cuantasTop = topCategorias.Count == 1
-            ? "Tu categoría principal representa"
-            : $"Tus {topCategorias.Count} categorías principales representan";
+            ? textos["inicio.categoriaPrincipal"]
+            : textos.Con("inicio.categoriasPrincipales", ("cuantas", topCategorias.Count.ToString()));
         string conclusionCarrito = ConclusionDeCategorias();
         <div class="card mk-carrito mb-3">
             <div class="card-body">
                 <div class="mk-carrito-cabeza">
                     <div class="mk-carrito-titulos">
-                        <h2 class="mk-carrito-titulo">En qué se llena tu carrito</h2>
-                        <p class="mk-carrito-periodo">@Mes(canasta.Mes)/@canasta.Anio &middot; @Colones(canasta.GastoTotal)</p>
+                        <h2 class="mk-carrito-titulo">@textos["inicio.enQueSeLlena"]</h2>
+                        <p class="mk-carrito-periodo">@textos[$"comun.mes.{canasta.Mes}"]/@canasta.Anio &middot; @Colones(canasta.GastoTotal)</p>
                     </div>
                     @* LA MISMA ilustracion de canasta que ya trae wwwroot/assets (hoy sin usar en
                        ninguna pantalla): aca aparece chica, a la derecha, como adorno -nunca como
@@ -474,7 +460,7 @@ else
                 </div>
 
                 <p class="mk-carrito-destacado">
-                    @cuantasTop el <strong class="mk-carrito-cifra">@Porcentaje(proporcionTop)</strong> de tus compras.
+                    @textos.Con("inicio.representanEl", ("cuantas", cuantasTop), ("porcentaje", textos.Porcentaje(proporcionTop)))
                 </p>
 
                 <div class="mk-carrito-barra" aria-hidden="true">
@@ -497,7 +483,7 @@ else
                             <span class="mk-carrito-punto mk-carrito-punto--@(i + 1)" aria-hidden="true"></span>
                             <span class="mk-carrito-dato-texto">
                                 <span class="mk-carrito-dato-nombre">@topCategorias[i].Titulo</span>
-                                <span class="mk-carrito-dato-cifras">@Colones(topCategorias[i].Monto) &middot; @Porcentaje(topCategorias[i].ProporcionDelTotal)</span>
+                                <span class="mk-carrito-dato-cifras">@Colones(topCategorias[i].Monto) &middot; @textos.Porcentaje(topCategorias[i].ProporcionDelTotal)</span>
                             </span>
                         </div>
                     }
@@ -506,8 +492,8 @@ else
                         <div class="mk-carrito-dato mk-carrito-dato--otros">
                             <span class="mk-carrito-punto mk-carrito-punto--otros" aria-hidden="true"></span>
                             <span class="mk-carrito-dato-texto">
-                                <span class="mk-carrito-dato-nombre">Otros</span>
-                                <span class="mk-carrito-dato-cifras">@Colones(OtrasMonto()) &middot; @Porcentaje(OtrasProporcion())</span>
+                                <span class="mk-carrito-dato-nombre">@textos["inicio.otros"]</span>
+                                <span class="mk-carrito-dato-cifras">@Colones(OtrasMonto()) &middot; @textos.Porcentaje(OtrasProporcion())</span>
                             </span>
                         </div>
                     }
@@ -527,7 +513,7 @@ else
                             <p class="mk-carrito-conclusion">@conclusionCarrito</p>
                         </div>
                     }
-                    <a class="mk-carrito-cta" href="infaltables">Ver todas las categorías &rarr;</a>
+                    <a class="mk-carrito-cta" href="infaltables">@textos["inicio.verTodasLasCategorias"] &rarr;</a>
                 </div>
             </div>
         </div>
@@ -560,18 +546,18 @@ else
             }
             <div class="mk-oportunidad-que">
                 <div class="mk-oportunidad-kicker-fila">
-                    <span class="mk-oportunidad-kicker">TU HABITUAL</span>
-                    <span class="mk-oportunidad-badge">MEJOR PRECIO</span>
+                    <span class="mk-oportunidad-kicker">@textos["inicio.tuHabitual"]</span>
+                    <span class="mk-oportunidad-badge">@textos["inicio.mejorPrecio"]</span>
                 </div>
                 <strong class="mk-oportunidad-nombre">@oportunidadDeHoy.Descripcion</strong>
                 <div class="mk-oportunidad-precio">
-                    <span>Ahora</span>
+                    <span>@textos["inicio.ahora"]</span>
                     <strong>@Colones(oportunidadDeHoy.Ahora)</strong>
                 </div>
                 <div class="mk-oportunidad-ahorro">
                     <span class="precio-antes">@Colones(oportunidadDeHoy.Antes)</span>
                     &middot;
-                    <strong>@Colones(oportunidadDeHoy.Antes - oportunidadDeHoy.Ahora) menos</strong>
+                    <strong>@textos.Con("inicio.menos", ("monto", Colones(oportunidadDeHoy.Antes - oportunidadDeHoy.Ahora)))</strong>
                 </div>
             </div>
         </div>
@@ -586,7 +572,7 @@ else
     @if (porCaer is not null && porCaer.CuantosTocan > 0)
     {
         <div class="mb-3">
-            <span class="mk-proxima-kicker">Quizá ya te toque</span>
+            <span class="mk-proxima-kicker">@textos["inicio.quizaTeToque"]</span>
 
             @* LA LISTA, COMPACTA: la foto, el nombre y SU RAZON -cada cuanto vuelve y
                hace cuanto no entra-, nunca una afirmacion de que falta. *@
@@ -605,9 +591,9 @@ else
                         }
                         <span class="mk-proxima-que">
                             <strong>@producto.Descripcion</strong>
-                            <span class="mk-proxima-razon">suele volver @producto.CadenciaCompacta</span>
+                            <span class="mk-proxima-razon">@textos.Con("inicio.sueleVolver", ("cadencia", producto.CadenciaCompacta))</span>
                         </span>
-                        <span class="mk-proxima-hace">hace @producto.DiasDesdeLaUltima días</span>
+                        <span class="mk-proxima-hace">@textos.Con("inicio.hace", ("dias", textos.Dias(producto.DiasDesdeLaUltima)))</span>
                     </div>
                 }
             </div>
@@ -615,7 +601,7 @@ else
             @if (porCaer.CuantosTocan > FaltantesQueSeMuestran)
             {
                 <div class="small text-body-secondary mt-1">
-                    Y @(porCaer.CuantosTocan - FaltantesQueSeMuestran) más. Tu asistente te puede dar la lista completa.
+                    @textos.Con("inicio.yMasFaltantes", ("cuantos", (porCaer.CuantosTocan - FaltantesQueSeMuestran).ToString()))
                 </div>
             }
         </div>
@@ -646,9 +632,9 @@ else
                     }
                 </span>
                 <span class="firma-que">
-                    <strong>Lo que casi nunca falta</strong>
+                    <strong>@textos["inicio.loQueCasiNuncaFalta"]</strong>
                     <span class="ritmo-rotulo">
-                        @string.Join(" · ", firma.Habituales.Take(3).Select(h => Corto(h.Descripcion)))@(firma.CuantosHabituales > 3 ? $" · y {firma.CuantosHabituales - 3} más" : "")
+                        @string.Join(" · ", firma.Habituales.Take(3).Select(h => Corto(h.Descripcion)))@(firma.CuantosHabituales > 3 ? " · " + textos.Con("comun.yMas", ("cuantos", (firma.CuantosHabituales - 3).ToString())) : "")
                     </span>
                 </span>
                 <span class="firma-flecha" aria-hidden="true">&rsaquo;</span>
@@ -670,8 +656,8 @@ else
         <div class="card mb-4">
             <div class="card-body">
                 <div class="mes-cabeza">
-                    <h2 class="mk-titulo mes-cabeza-titulo">Tu mes en el súper</h2>
-                    <span class="mes-chip">Este mes <span class="mes-chip-flecha" aria-hidden="true">&#9662;</span></span>
+                    <h2 class="mk-titulo mes-cabeza-titulo">@textos["inicio.tuMes"]</h2>
+                    <span class="mes-chip">@textos["inicio.esteMes"] <span class="mes-chip-flecha" aria-hidden="true">&#9662;</span></span>
                 </div>
                 <p class="mes-conclusion">@ConclusionDelMes()</p>
 
@@ -685,7 +671,7 @@ else
                             </svg>
                         </span>
                         <span class="mes-resumen-numero">@ComprasDelMes().Count</span>
-                        <span class="mes-resumen-rotulo">@(ComprasDelMes().Count == 1 ? "compra" : "compras")</span>
+                        <span class="mes-resumen-rotulo">@textos[ComprasDelMes().Count == 1 ? "comun.compra" : "comun.comprasPlural"]</span>
                     </div>
                     @if (ritmo is not null && ritmo.EsObservado)
                     {
@@ -697,8 +683,8 @@ else
                                     <path d="M3.5 8h13M7 3v3M13 3v3" />
                                 </svg>
                             </span>
-                            <span class="mes-resumen-numero">@ritmo.DiasEntreCompras días</span>
-                            <span class="mes-resumen-rotulo">entre compras</span>
+                            <span class="mes-resumen-numero">@textos.Dias(ritmo.DiasEntreCompras)</span>
+                            <span class="mes-resumen-rotulo">@textos["inicio.entreCompras"]</span>
                         </div>
                     }
                     <div class="mes-resumen-item mes-resumen-item--foco @(mes.CambioEnElTotal > 0 ? "mes-resumen-item--sube" : "mes-resumen-item--baja")">
@@ -716,7 +702,7 @@ else
                             </svg>
                         </span>
                         <span class="mes-resumen-numero">@Colones(Math.Abs(mes.CambioEnElTotal))</span>
-                        <span class="mes-resumen-rotulo">@(mes.CambioEnElTotal <= 0 ? "menos" : "más") que en @Mes(mes.MesAntes)</span>
+                        <span class="mes-resumen-rotulo">@textos.Con(mes.CambioEnElTotal <= 0 ? "inicio.menosQueEn" : "inicio.masQueEn", ("mes", textos[$"comun.mes.{mes.MesAntes}"]))</span>
                     </div>
                 </div>
 
@@ -727,7 +713,7 @@ else
                 @if (verGrafica && delMes.Count > 1)
                 {
                     <svg class="serie-mes" viewBox="0 0 300 60" preserveAspectRatio="none"
-                         role="img" aria-label="Las compras del mes, una por punto.">
+                         role="img" aria-label="@textos["inicio.graficaEtiqueta"]">
                         <polyline points="@Puntos(delMes)" />
                         @* PUNTOS QUE NO SE DEFORMAN. Con preserveAspectRatio="none" un
                            <circle> se estira al ancho de la carta y sale OVALO. Un trazo de
@@ -750,7 +736,7 @@ else
                 <div class="d-flex flex-wrap gap-3 mt-2">
                     @if (!verGrafica && ComprasDelMes().Count > 1)
                     {
-                        <button class="btn btn-link p-0 ver-todos" @onclick="() => verGrafica = true">Ver la gráfica &rarr;</button>
+                        <button class="btn btn-link p-0 ver-todos" @onclick="() => verGrafica = true">@textos["inicio.verLaGrafica"] &rarr;</button>
                     }
                     @* "VER TU RITMO" YA NO DESPLIEGA ACA: lleva a /ritmo, su propia
                        pantalla -el mismo patron que /infaltables para la firma-, porque el
@@ -758,7 +744,7 @@ else
                        dia) es una historia completa y no un parrafo mas de esta carta. *@
                     @if (ritmo is not null && ritmo.EsObservado)
                     {
-                        <a class="btn btn-link p-0 ver-todos" href="ritmo">Ver tu ritmo &rarr;</a>
+                        <a class="btn btn-link p-0 ver-todos" href="ritmo">@textos["inicio.verTuRitmo"] &rarr;</a>
                     }
                 </div>
 
@@ -767,7 +753,7 @@ else
                     <div class="mt-3">
                         <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                             <div class="ritmo-rotulo">
-                                @Mes(comparacion.MesAntes)/@comparacion.AnioAntes vs @Mes(comparacion.MesDespues)/@comparacion.AnioDespues
+                                @textos[$"comun.mes.{comparacion.MesAntes}"]/@comparacion.AnioAntes @textos["inicio.versus"] @textos[$"comun.mes.{comparacion.MesDespues}"]/@comparacion.AnioDespues
                             </div>
                             <div class="text-end">
                                 <div>@Colones(comparacion.GastoAntes) &rarr; @Colones(comparacion.GastoDespues)</div>
@@ -781,8 +767,8 @@ else
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-1 small">
                                 <span>
                                     @diferencia.Titulo
-                                    @if (diferencia.EsNuevo) { <span class="etiqueta etiqueta-cambio ms-1">entró este año</span> }
-                                    @if (diferencia.Desaparecio) { <span class="etiqueta etiqueta-neutra ms-1">dejó de aparecer</span> }
+                                    @if (diferencia.EsNuevo) { <span class="etiqueta etiqueta-cambio ms-1">@textos["inicio.entroEsteAnio"]</span> }
+                                    @if (diferencia.Desaparecio) { <span class="etiqueta etiqueta-neutra ms-1">@textos["inicio.dejoDeAparecer"]</span> }
                                 </span>
                                 <span>@Colones(diferencia.MontoAntes) &rarr; @Colones(diferencia.MontoDespues)</span>
                             </div>
@@ -805,14 +791,14 @@ else
         <div class="card mb-4">
             <div class="card-body">
                 <div class="habituales-cabeza">
-                    <h2 class="mk-titulo habituales-cabeza-titulo">Tus habituales</h2>
+                    <h2 class="mk-titulo habituales-cabeza-titulo">@textos["precios.titulo"]</h2>
                     @if (precios.Count > 3)
                     {
-                        <a class="ver-todos" href="precios">Ver todos &rarr;</a>
+                        <a class="ver-todos" href="precios">@textos["comun.verTodos"] &rarr;</a>
                     }
                 </div>
                 <p class="mb-1"><strong>@ConclusionDeHabituales()</strong></p>
-                <p class="ritmo-rotulo habituales-contexto">Así te fue con los productos que comprás siempre.</p>
+                <p class="ritmo-rotulo habituales-contexto">@textos["inicio.asiTeFue"]</p>
 
                 <div class="list-group list-group-flush habituales-lista">
                     @foreach (var precio in precios.Take(3))
@@ -842,7 +828,7 @@ else
                                 }
                             </span>
                             <span class="etiqueta @(precio.Subio ? "etiqueta-cambio" : "etiqueta-verde")">
-                                @(precio.Subio ? "▲" : "▼") @Porcentaje(precio.CambioEnProporcion)
+                                @(precio.Subio ? "▲" : "▼") @textos.Porcentaje(Math.Abs(precio.CambioEnProporcion))
                             </span>
                             <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
                         </button>
@@ -857,16 +843,16 @@ else
     @if (compras.Count > 0)
     {
         var ultima = compras[compras.Count - 1];
-        <h2 class="mk-titulo">Tu última compra</h2>
+        <h2 class="mk-titulo">@textos["inicio.tuUltimaCompra"]</h2>
         <div class="list-group mb-4">
             <button class="list-group-item list-group-item-action recibo ultima-compra"
                     @onclick="@(() => navegacion.NavigateTo($"compra/{Uri.EscapeDataString(ultima.Numero)}"))">
                 <span class="recibo-dia">
                     <span class="recibo-numero-dia">@ultima.Fecha.Day</span>
-                    <span class="recibo-mes">@Mes(ultima.Fecha.Month)</span>
+                    <span class="recibo-mes">@textos[$"comun.mes.{ultima.Fecha.Month}"]</span>
                 </span>
                 <span class="recibo-que">
-                    <strong>@ultima.Lineas @(ultima.Lineas == 1 ? "producto" : "productos")</strong>
+                    <strong>@textos.Con(ultima.Lineas == 1 ? "recibos.producto.uno" : "recibos.producto.varios", ("cuantos", ultima.Lineas.ToString()))</strong>
                     <span class="small text-body-secondary">@DiaSemana(ultima.Fecha), @HoraCorta(ultima.Fecha)@(ultima.Sucursal.Length > 0 ? " · " + ultima.Sucursal : "")</span>
                 </span>
                 <span class="recibo-total numero">@Colones(ultima.Total)</span>
@@ -889,9 +875,9 @@ else
             {
                 <button class="mk-secundario-fila" @onclick="() => verHueco = !verHueco">
                     <span class="firma-que">
-                        <strong>Lo que dejó de entrar</strong>
+                        <strong>@textos["inicio.loQueDejoDeEntrar"]</strong>
                         <span class="ritmo-rotulo">
-                            @pendientes[0].Titulo@(pendientes.Count > 1 ? $" · y {pendientes.Count - 1} más" : "") hace más de lo habitual
+                            @textos.Con("inicio.haceMasDeLoHabitual", ("que", pendientes[0].Titulo + (pendientes.Count > 1 ? " · " + textos.Con("comun.yMas", ("cuantos", (pendientes.Count - 1).ToString())) : "")))
                         </span>
                     </span>
                     <span class="recibo-flecha" aria-hidden="true">@(verHueco ? "⌄" : "›")</span>
@@ -907,7 +893,7 @@ else
                                     <div class="small text-body-secondary">@p.ParaElAsistente</div>
                                 </div>
                                 <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
-                                    @p.DiasDesdeLaUltima días
+                                    @textos.Dias(p.DiasDesdeLaUltima)
                                 </span>
                             </div>
                         }
@@ -922,15 +908,15 @@ else
             {
                 <button class="mk-secundario-fila" @onclick="() => verSucursales = !verSucursales">
                     <span class="firma-que">
-                        <strong>Dónde comprás</strong>
+                        <strong>@textos["inicio.dondeCompras"]</strong>
                         <span class="ritmo-rotulo">
                             @if (recorrido.SeMueve)
                             {
-                                <text>sobre todo en @recorrido.Sucursales[0].Nombre · desde el @Fecha(DesdeCuandoSeMueve()) también en @SucursalesNuevas()</text>
+                                <text>@textos.Con("inicio.sobreTodoEn", ("sucursal", recorrido.Sucursales[0].Nombre), ("desde", Fecha(DesdeCuandoSeMueve())), ("otras", SucursalesNuevas()))</text>
                             }
                             else
                             {
-                                <text>siempre en @recorrido.Sucursales[0].Nombre</text>
+                                <text>@textos.Con("inicio.siempreEn", ("sucursal", recorrido.Sucursales[0].Nombre))</text>
                             }
                         </span>
                     </span>
@@ -945,18 +931,18 @@ else
                                 <div>
                                     <strong>@s.Nombre</strong>
                                     <div class="small text-body-secondary">
-                                        la primera vez el @Fecha(s.PrimeraVez) &middot; la última el @Fecha(s.UltimaVez)
+                                        @textos.Con("inicio.primeraYUltima", ("primera", Fecha(s.PrimeraVez)), ("ultima", Fecha(s.UltimaVez)))
                                     </div>
                                 </div>
                                 <span class="etiqueta etiqueta-neutra">
-                                    @s.Compras @(s.Compras == 1 ? "compra" : "compras")
+                                    @textos.CuantasCompras(s.Compras)
                                 </span>
                             </div>
                         }
                         @if (recorrido.ComprasSinSucursal > 0)
                         {
                             <div class="small text-body-secondary">
-                                @recorrido.ComprasSinSucursal @(recorrido.ComprasSinSucursal == 1 ? "compra más vieja no dice" : "compras más viejas no dicen") en qué sucursal fueron.
+                                @textos.Con(recorrido.ComprasSinSucursal == 1 ? "inicio.sinSucursal.una" : "inicio.sinSucursal.varias", ("cuantas", recorrido.ComprasSinSucursal.ToString()))
                             </div>
                         }
                     </div>
@@ -968,9 +954,9 @@ else
             {
                 <button class="mk-secundario-fila" @onclick="() => verGarantias = !verGarantias">
                     <span class="firma-que">
-                        <strong>Tus garantías</strong>
+                        <strong>@textos["inicio.tusGarantias"]</strong>
                         <span class="ritmo-rotulo">
-                            @garantias[0].Descripcion te cubre hasta el @Fecha(garantias[0].VenceEl)@(garantias.Count > 1 ? $" · y {garantias.Count - 1} más" : "")
+                            @textos.Con("inicio.teCubreHasta", ("producto", garantias[0].Descripcion), ("fecha", Fecha(garantias[0].VenceEl)))@(garantias.Count > 1 ? " · " + textos.Con("comun.yMas", ("cuantos", (garantias.Count - 1).ToString())) : "")
                         </span>
                     </span>
                     <span class="recibo-flecha" aria-hidden="true">@(verGarantias ? "⌄" : "›")</span>
@@ -984,19 +970,18 @@ else
                                 <div>
                                     <strong>@g.Descripcion</strong>
                                     <div class="small text-body-secondary">
-                                        la compraste el @Fecha(g.FechaDeCompra) &middot;
-                                        @g.MesesDeCobertura meses de garantía
+                                        @textos.Con("inicio.laCompraste", ("fecha", Fecha(g.FechaDeCompra)), ("meses", textos.Meses(g.MesesDeCobertura)))
                                     </div>
                                     @if (g.QueHacer.Length > 0)
                                     {
                                         <div class="small mt-1">
                                             <strong>@g.QueHacer</strong> &middot;
-                                            el número para el reclamo es @g.NumeroDeCompra
+                                            @textos.Con("inicio.numeroDelReclamo", ("numero", g.NumeroDeCompra))
                                         </div>
                                     }
                                 </div>
                                 <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
-                                    te cubre hasta el @Fecha(g.VenceEl)
+                                    @textos.Con("inicio.cubreHasta", ("fecha", Fecha(g.VenceEl)))
                                 </span>
                             </div>
                         }
@@ -1036,8 +1021,8 @@ else
                     </svg>
                 </span>
                 <span class="mk-acceso-que">
-                    <strong class="mk-acceso-titulo">Ver todos tus recibos</strong>
-                    <span class="mk-acceso-sub">Tu historial siempre a mano</span>
+                    <strong class="mk-acceso-titulo">@textos["inicio.verTodosTusRecibos"]</strong>
+                    <span class="mk-acceso-sub">@textos["inicio.historialAMano"]</span>
                 </span>
                 <span class="mk-acceso-flecha" aria-hidden="true">&rsaquo;</span>
             </a>
@@ -1053,8 +1038,8 @@ else
                         </svg>
                     </span>
                     <span class="mk-acceso-que">
-                        <strong class="mk-acceso-titulo">Sitio de La Guaria</strong>
-                        <span class="mk-acceso-sub">Promociones y más</span>
+                        <strong class="mk-acceso-titulo">@textos.Con("inicio.sitioDe", ("marca", Textos.MarcaCorta))</strong>
+                        <span class="mk-acceso-sub">@textos["inicio.promocionesYMas"]</span>
                     </span>
                     <span class="mk-acceso-flecha" aria-hidden="true">&rsaquo;</span>
                 </a>
@@ -1065,7 +1050,7 @@ else
            la persona todavia no eligio donde vive su registro. *@
         @if (!estado.Hospedada && !estado.HayCarpeta)
         {
-            <p class="mk-ayuda-aviso">Sin carpeta: el registro vive solo en memoria y se pierde al cerrar.</p>
+            <p class="mk-ayuda-aviso">@textos["inicio.sinCarpetaAviso"]</p>
         }
     </div>
 }
@@ -1343,7 +1328,7 @@ else
                 Variante = "nuevo",
                 Kicker = "NUEVO",
                 Titulo = $"Llegó algo nuevo de tus {Corto(novedad.Descripcion).ToLowerInvariant()}",
-                Cta = "Verlo",
+                Cta = textos["hero.verlo"],
                 Destino = $"producto/{Uri.EscapeDataString(novedad.Descripcion)}",
                 Foto = Foto(novedad.Sku),
             });
@@ -1355,11 +1340,11 @@ else
             {
                 Variante = "habitual",
                 // Plain words (Geaninna, 2026-09-09): "tu habitual" meant nothing to a reader.
-                Kicker = "BAJÓ DE PRECIO",
-                Titulo = $"El {Corto(oportunidad.Descripcion).ToLowerInvariant()} que comprás siempre bajó de precio",
+                Kicker = textos["hero.bajoDePrecio"],
+                Titulo = textos.Con("hero.bajoDePrecioTitulo", ("producto", Corto(oportunidad.Descripcion).ToLowerInvariant())),
                 PrecioAntes = oportunidad.Antes,
                 PrecioAhora = oportunidad.Ahora,
-                Cta = "Verlo",
+                Cta = textos["hero.verlo"],
                 Destino = $"producto/{Uri.EscapeDataString(oportunidad.Descripcion)}",
                 Foto = Foto(oportunidad.Sku),
             });
@@ -1370,7 +1355,7 @@ else
             banners.Add(new HeroBanner
             {
                 Variante = "promo",
-                Kicker = "PUEDE INTERESARTE",
+                Kicker = textos["hero.puedeInteresarte"],
                 Titulo = promo.Gancho,
                 Secundario = $"{promo.Detalle} · {Vigencia(promo)}",
                 Foto = Foto(promo.Sku),
@@ -1387,10 +1372,11 @@ else
                 banners.Add(new HeroBanner
                 {
                     Variante = "neutro",
-                    Titulo = "Así vienen tus compras",
+                    Titulo = textos["hero.asiVienen"],
                     Secundario = (ritmos.Count > 0
-                        ? $"Casi todo habitual · {ritmos.Count} {(ritmos.Count == 1 ? "cambio" : "cambios")} de ritmo"
-                        : "Todo como siempre por acá.") + Sucursales(),
+                        ? textos.Con(ritmos.Count == 1 ? "hero.casiTodoHabitual.uno" : "hero.casiTodoHabitual.varios",
+                            ("cuantos", ritmos.Count.ToString()))
+                        : textos["hero.todoComoSiempre"]) + Sucursales(),
                 });
             }
             else
@@ -1398,8 +1384,8 @@ else
                 banners.Add(new HeroBanner
                 {
                     Variante = "neutro",
-                    Titulo = "Bienvenida a La Guaria",
-                    Secundario = "Descubrí lo que siempre vuelve y cómo cambia tu carrito.",
+                    Titulo = textos["hero.bienvenida"],
+                    Secundario = textos["hero.bienvenidaBajada"],
                 });
             }
         }
@@ -1422,13 +1408,6 @@ else
     private void VerDetalle(string numero) =>
         navegacion.NavigateTo($"compra/{Uri.EscapeDataString(numero)}");
 
-    private static string Mes(int mes) =>
-        CultureInfo.GetCultureInfo("es").DateTimeFormat.GetAbbreviatedMonthName(mes);
-
-    // SIN SIGNO, a proposito: los dos lugares que lo usan ponen una flecha al lado, y un
-    // "-8%" junto a un ▼ dice la misma cosa dos veces.
-    private static string Porcentaje(decimal proporcion) =>
-        Math.Abs(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
     // Formato explicito SIEMPRE (la escala del decimal no sobrevive el journal).
     // CUANTOS RECIBOS SE PINTAN. Con 87 compras semanales la tabla volcaba las 87 filas, y
@@ -1476,13 +1455,13 @@ else
         if (mes is null) return "";
 
         if (!HayCambioSignificativoEnElGasto())
-            return "Vas con tu ritmo habitual.";
+            return textos["inicio.ritmoHabitual"];
 
-        string masOMenos = mes.CambioEnElTotal > 0 ? "gastaste más" : "gastaste menos";
+        string masOMenos = textos[mes.CambioEnElTotal > 0 ? "inicio.gastasteMas" : "inicio.gastasteMenos"];
 
         return ritmo is not null && ritmo.EsObservado
-            ? $"Compraste con la misma frecuencia, pero {masOMenos}."
-            : $"Este mes {masOMenos} que en {Mes(mes.MesAntes)}.";
+            ? textos.Con("inicio.mismaFrecuencia", ("gasto", masOMenos))
+            : textos.Con("inicio.esteMesGasto", ("gasto", masOMenos), ("mes", textos[$"comun.mes.{mes.MesAntes}"]));
     }
 
     // "SIGNIFICATIVO" se mide en proporcion al gasto del mes anterior -no en colones fijos:
@@ -1552,12 +1531,7 @@ else
             ? $" · desde {MesCorto(DesdeCuandoSeMueve())} en {recorrido.CuantasDistintas} sucursales"
             : "";
 
-    private static string MesCorto(DateTime cuando) => cuando.Month switch
-    {
-        1 => "enero", 2 => "febrero", 3 => "marzo", 4 => "abril", 5 => "mayo", 6 => "junio",
-        7 => "julio", 8 => "agosto", 9 => "setiembre", 10 => "octubre", 11 => "noviembre",
-        _ => "diciembre",
-    };
+    private string MesCorto(DateTime cuando) => textos[$"comun.mesLargo.{cuando.Month}"];
 
     // La primera compra fuera de la de siempre: la fecha desde la que "se mueve".
     private DateTime DesdeCuandoSeMueve()
@@ -1600,10 +1574,8 @@ else
 
     // La frecuencia dicha como se dice, no la fraccion del mecanismo. La cuenta exacta la
     // da la tool la_firma_de_mi_canasta, que es quien la necesita.
-    private static string Frecuencia(ProductoQueVuelve habitual) =>
-        habitual.EstaEnTodas
-            ? "lo llevás cada vez que vas"
-            : "lo llevás casi cada vez que vas";
+    private string Frecuencia(ProductoQueVuelve habitual) =>
+        textos[habitual.EstaEnTodas ? "precios.loLlevasCadaVez" : "precios.loLlevasCasiCadaVez"];
 
     // LA CONCLUSION de "Tus habituales", primero: que paso, no la tabla que lo sostiene.
     // Solo afirma UNA direccion ("subieron"/"bajaron") cuando TODOS los cambios van para
@@ -1614,15 +1586,14 @@ else
         int total = precios.Count;
         bool haySubidas = precios.Any(p => p.Subio);
         bool hayBajadas = precios.Any(p => !p.Subio);
-        string sustantivo = total == 1 ? "habitual" : "habituales";
 
-        if (haySubidas && hayBajadas)
-            return $"{total} {sustantivo} cambiaron de precio";
+        string clave = haySubidas && hayBajadas
+            ? (total == 1 ? "inicio.habituales.cambio.uno" : "inicio.habituales.cambio.varios")
+            : haySubidas
+                ? (total == 1 ? "inicio.habituales.subio.uno" : "inicio.habituales.subio.varios")
+                : (total == 1 ? "inicio.habituales.bajo.uno" : "inicio.habituales.bajo.varios");
 
-        string verbo = total == 1
-            ? (haySubidas ? "subió" : "bajó")
-            : (haySubidas ? "subieron" : "bajaron");
-        return $"{total} {sustantivo} {verbo} de precio";
+        return textos.Con(clave, ("cuantos", total.ToString()));
     }
 
     // LA LINEA DE CONTEXTO por fila: solo aparece si el producto tambien vive en la firma
@@ -1663,16 +1634,20 @@ else
         if (top.Count == 0) return "";
 
         decimal proporcionTop = top.Sum(d => d.ProporcionDelTotal);
-        string cuantas = top.Count == 1 ? "esta categoría" : $"estas {top.Count} categorías";
+        string cuantas = top.Count == 1
+            ? textos["inicio.estaCategoria"]
+            : textos.Con("inicio.estasCategorias", ("cuantas", top.Count.ToString()));
 
-        return proporcionTop switch
+        string clave = proporcionTop switch
         {
-            >= .66m => $"La mayoría de tu carrito se va en {cuantas}.",
-            >= .5m => $"Más de la mitad de tu carrito está en {cuantas}.",
-            >= .4m => $"Casi la mitad de tu carrito está en {cuantas}.",
-            >= .25m => $"Una parte importante de tu carrito está en {cuantas}.",
+            >= .66m => "inicio.carrito.mayoria",
+            >= .5m => "inicio.carrito.masDeLaMitad",
+            >= .4m => "inicio.carrito.casiLaMitad",
+            >= .25m => "inicio.carrito.parteImportante",
             _ => "",
         };
+
+        return clave.Length == 0 ? "" : textos.Con(clave, ("cuantas", cuantas));
     }
 
     // LOS QUE SE PINTAN: solo los atrasados, y unos pocos. El dia de ir al super casi todos
@@ -1705,53 +1680,50 @@ else
     // aporta, la pantalla escribe la suya y listo — que es lo que se hizo en las otras tres.
     // "9 de mayo de 2026": la fecha como se dice. Los meses van a mano por la globalizacion
     // recortada de wasm, igual que en todas las pantallas.
-    private static string Fecha(DateTime cuando)
+    private string Fecha(DateTime cuando)
     {
-        string[] meses = { "enero", "febrero", "marzo", "abril", "mayo", "junio",
-            "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre" };
-
-        return $"{cuando.Day} de {meses[cuando.Month - 1]} de {cuando.Year}";
+        return textos.Con("comun.fechaLarga",
+            ("numero", cuando.Day.ToString(CultureInfo.InvariantCulture)),
+            ("mes", textos[$"comun.mesLargo.{cuando.Month}"]),
+            ("anio", cuando.Year.ToString(CultureInfo.InvariantCulture)));
     }
 
     // "enero de 2025" desde el aaaa-mm que devuelve el dominio. El formato con guion es
     // como la fecha VIAJA -y asi la da la tool del MCP, que es lo correcto para una
     // maquina-; en pantalla se lee.
-    private static string DesdeCuando(RangoDelHistorialVista rango)
+    private string DesdeCuando(RangoDelHistorialVista rango)
     {
         if (rango is null || rango.PrimerMes.Length < 7) return "";
 
         string[] partes = rango.PrimerMes.Split('-');
         if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return "";
 
-        string[] meses = { "enero", "febrero", "marzo", "abril", "mayo", "junio",
-            "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre" };
-
-        return $"{meses[mes - 1]} de {partes[0]}";
+        return textos.Con("comun.mesDeAnio", ("mes", textos[$"comun.mesLargo.{mes}"]), ("anio", partes[0]));
     }
 
     // "enero" desde el aaaa-mm del corte, para decir "cambio desde enero" como el rediseño.
-    private static string MesLegible(string aaaaMm)
+    private string MesLegible(string aaaaMm)
     {
         string[] partes = aaaaMm.Split('-');
         if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return aaaaMm;
 
-        string[] meses = { "enero", "febrero", "marzo", "abril", "mayo", "junio",
-            "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre" };
-        return meses[mes - 1];
+        return textos[$"comun.mesLargo.{mes}"];
     }
 
-    private static string DiaSemana(DateTime cuando) => cuando.DayOfWeek switch
+    private string DiaSemana(DateTime cuando) => textos["comun.dia." + CodigoDelDia(cuando)];
+
+    private static string CodigoDelDia(DateTime cuando) => cuando.DayOfWeek switch
     {
         DayOfWeek.Monday => "lunes", DayOfWeek.Tuesday => "martes",
-        DayOfWeek.Wednesday => "miércoles", DayOfWeek.Thursday => "jueves",
-        DayOfWeek.Friday => "viernes", DayOfWeek.Saturday => "sábado", _ => "domingo",
+        DayOfWeek.Wednesday => "miercoles", DayOfWeek.Thursday => "jueves",
+        DayOfWeek.Friday => "viernes", DayOfWeek.Saturday => "sabado", _ => "domingo",
     };
 
-    private static string HoraCorta(DateTime cuando)
+    private string HoraCorta(DateTime cuando)
     {
         int hora = cuando.Hour % 12;
         if (hora == 0) hora = 12;
-        return $"{hora}:{cuando.Minute:00} {(cuando.Hour < 12 ? "a.m." : "p.m.")}";
+        return $"{hora}:{cuando.Minute:00} {textos[cuando.Hour < 12 ? "comun.am" : "comun.pm"]}";
     }
 
     private static string Tuteada(string frase)
@@ -1777,22 +1749,15 @@ else
     // del evento viaja como aaaa-mm-dd y aca se dice como se dice.
     private string Vigencia(PromocionVista promo)
     {
-        if (promo.DiasQueQuedan == 0) return "último día";
+        if (promo.DiasQueQuedan == 0) return textos["inicio.ultimoDia"];
 
         if (DateTime.TryParse(promo.ValidaHasta, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out DateTime hasta))
-            return $"válida hasta el {DiaCorto(hasta)} {hasta.Day}";
+            return textos.Con("inicio.validaHasta", ("dia", DiaCorto(hasta)), ("numero", hasta.Day.ToString(CultureInfo.InvariantCulture)));
 
-        return $"quedan {promo.DiasQueQuedan} días";
+        return textos.Con("inicio.quedanDias", ("dias", textos.Dias(promo.DiasQueQuedan)));
     }
 
-    private static string DiaCorto(DateTime cuando) => cuando.DayOfWeek switch
-    {
-        DayOfWeek.Monday => "lunes", DayOfWeek.Tuesday => "martes",
-        DayOfWeek.Wednesday => "miércoles", DayOfWeek.Thursday => "jueves",
-        DayOfWeek.Friday => "viernes", DayOfWeek.Saturday => "sábado", _ => "domingo",
-    };
-
-    private static string Colones(decimal monto) =>
-        Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@
+    private string DiaCorto(DateTime cuando) => textos["comun.dia." + CodigoDelDia(cuando)];
+    private string Colones(decimal monto) => textos.Monto(monto);
 }
