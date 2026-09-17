@@ -11,7 +11,10 @@
 else
 {
     <div class="fondo-noche">
-        <h1>Cambios en mis cobros</h1>
+        <div class="titulo-con-volver">
+            <a class="volver" href="" aria-label="Volver a Inicio">&larr;</a>
+            <h1>Cambios en mis cobros</h1>
+        </div>
         <p class="subtitulo-pagina">Qué cambió entre tus comprobantes y qué puede explicarlo.</p>
 
         @if (variacion.AlgunoSePuedeVer)
@@ -43,7 +46,7 @@ else
                 {
                     <details class="rubro-cambio" id="@("rubro-" + rubro.Rubro)">
                         <summary class="rubro-cambio__resumen">
-                            <span class="rubro-cambio__icono"><IconoSprite Nombre="@IconoDe(rubro.Rubro)" /></span>
+                            <span class="rubro-cambio__icono"><IconoSprite Nombre="@NombreLegible.IconoDelRubro(rubro.Rubro)" /></span>
                             <span class="rubro-cambio__info">
                                 <span class="rubro-cambio__cabeza">
                                     <span class="rubro-cambio__nombre"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
@@ -54,12 +57,21 @@ else
                                 <span class="rubro-cambio__montos">
                                     @Colones.Formatear(rubro.Antes) &rarr; @Colones.Formatear(rubro.Ahora)
                                 </span>
-                                <span class="rubro-cambio__cambio">
-                                    <span class="rubro-cambio__flecha rubro-cambio__flecha--@Tono(rubro.EsSalto)">@Flecha(rubro.Proporcion)</span>
-                                    <span class="rubro-cambio__porcentaje rubro-cambio__porcentaje--@Tono(rubro.EsSalto)">@Formato.Porcentaje(Math.Abs(rubro.Proporcion))</span>
-                                    <span class="rubro-cambio__nota" style="margin:0">por período</span>
-                                </span>
-                                <span class="rubro-cambio__periodo">@EtiquetaLegible(rubro.Desde) &rarr; @EtiquetaLegible(rubro.Hasta)</span>
+                                @if (rubro.EsSalto)
+                                {
+                                    <span class="rubro-cambio__cambio">
+                                        <span class="rubro-cambio__flecha rubro-cambio__flecha--atencion">@Flecha(rubro.Proporcion)</span>
+                                        <span class="rubro-cambio__porcentaje rubro-cambio__porcentaje--atencion">@Formato.Porcentaje(Math.Abs(rubro.Proporcion))</span>
+                                        <span class="rubro-cambio__nota" style="margin:0">por período</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="rubro-cambio__cambio-leve">
+                                        @Signo(rubro.Proporcion)@Formato.Porcentaje(Math.Abs(rubro.Proporcion)) por período
+                                    </span>
+                                }
+                                <span class="rubro-cambio__periodo">@NombreLegible.Periodo(rubro.Desde) &rarr; @NombreLegible.Periodo(rubro.Hasta)</span>
                                 <span class="rubro-cambio__toggle">
                                     <span class="rubro-cambio__toggle-abrir">Ver explicación</span>
                                     <span class="rubro-cambio__toggle-cerrar">Ocultar explicación</span>
@@ -85,14 +97,11 @@ else
                     {
                         <details class="rubro-cambio">
                             <summary class="rubro-cambio__resumen">
-                                <span class="rubro-cambio__icono"><IconoSprite Nombre="@IconoDe(rubro.Rubro)" /></span>
+                                <span class="rubro-cambio__icono"><IconoSprite Nombre="@NombreLegible.IconoDelRubro(rubro.Rubro)" /></span>
                                 <span class="rubro-cambio__info">
                                     <span class="rubro-cambio__cabeza">
                                         <span class="rubro-cambio__nombre"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
                                         <span class="sello">Sin historial suficiente</span>
-                                    </span>
-                                    <span class="rubro-cambio__nota">
-                                        No hay suficiente historial para comparar este rubro todavía.
                                     </span>
                                     <span class="rubro-cambio__toggle">
                                         <span class="rubro-cambio__toggle-abrir">Ver explicación</span>
@@ -189,40 +198,16 @@ else
 	/// signo: un aumento de 1,7% no debe verse tan alarmante como uno de 60%. "Atencion" es amarillo
 	/// (destaca algo importante); "neutro" es el gris azulado de siempre.
 	/// </summary>
-	private static string Tono(bool esSalto) => esSalto ? "atencion" : "neutro";
-
-	/// <summary>Icono real del rubro cuando el sprite lo tiene; si no, un icono generico ya existente.</summary>
-	private static string IconoDe(string rubro) => rubro switch
-	{
-		"recoleccion-de-basura" => "basura",
-		"servicio-policia" => "policia",
-		"bienes-inmuebles" => "inmuebles",
-		"parques-y-zonas-verdes" => "parques",
-		_ => "calendario-chico",
-	};
-
 	/// <summary>
-	/// Puramente presentacional: "2024-06" -> "jun 2024", "2024-T2" -> "T2 2024". Si el formato no es
-	/// ninguno de los dos que produce el dominio (Mes o Trimestre), devuelve la etiqueta tal cual.
+	/// El signo para un cambio que el dominio NO considera salto: sigue siendo el numero real,
+	/// solo que sin la flecha grande ni el color de atencion que se reservan para los saltos.
 	/// </summary>
-	private static string EtiquetaLegible(string etiqueta)
+	private static string Signo(decimal proporcion) => proporcion switch
 	{
-		string[] partes = etiqueta.Split('-', 2);
-		if (partes.Length != 2) return etiqueta;
-
-		string anio = partes[0];
-		string resto = partes[1];
-
-		if (resto.StartsWith('T')) return $"{resto} {anio}";
-
-		if (int.TryParse(resto, out int mes) && mes is >= 1 and <= 12)
-		{
-			string[] meses = { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" };
-			return $"{meses[mes - 1]} {anio}";
-		}
-
-		return etiqueta;
-	}
+		> 0 => "+",
+		< 0 => "-",
+		_ => "",
+	};
 
 	private string ResumenTitulo()
 	{

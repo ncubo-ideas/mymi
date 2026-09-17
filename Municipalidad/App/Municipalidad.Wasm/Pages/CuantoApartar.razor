@@ -34,9 +34,15 @@ else
 
         @if (reserva.SePuedeProponer)
         {
-            <details class="plomeria">
-                <summary><span class="icono-info" aria-hidden="true">ⓘ</span> ¿Cómo calculamos esta sugerencia?</summary>
-                <p class="item__frase">@reserva.DiceLaPropuesta</p>
+            <details class="disclosure-secundaria">
+                <summary class="disclosure-secundaria__resumen">
+                    <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
+                    <span class="disclosure-secundaria__texto">¿Cómo calculamos esta sugerencia?</span>
+                    <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="disclosure-secundaria__contenido">
+                    <p class="item__frase">@reserva.DiceLaPropuesta</p>
+                </div>
             </details>
         }
 
@@ -65,8 +71,10 @@ else
             else
             {
                 <div class="estado-amigable">
-                    <IconoSprite Nombre="alcancia" />
-                    <p class="estado-amigable__titulo">Aún no definiste una reserva</p>
+                    <div class="estado-amigable__cabeza">
+                        <span class="estado-amigable__icono"><IconoSprite Nombre="alcancia" /></span>
+                        <p class="estado-amigable__titulo">Aún no definiste una reserva</p>
+                    </div>
                     <p class="estado-amigable__texto">Podés elegir cuánto querés guardar cada mes.</p>
                     @if (!mostrarFormulario)
                     {
@@ -79,11 +87,17 @@ else
                 }
             }
 
-            <details class="plomeria">
-                <summary>Sobre este aviso</summary>
-                <NumeroSinFirmar Firmado="true"
-                                 Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
-                                 Dicho="@($"Se te avisa cuando tu reserva queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
+            <details class="disclosure-secundaria">
+                <summary class="disclosure-secundaria__resumen">
+                    <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
+                    <span class="disclosure-secundaria__texto">Sobre este aviso</span>
+                    <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="disclosure-secundaria__contenido">
+                    <NumeroSinFirmar Firmado="true"
+                                     Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
+                                     Dicho="@($"Se te avisa cuando tu reserva queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
+                </div>
             </details>
 
             @if (reserva.HayReservaAdoptada || mostrarFormulario)

@@ -22,12 +22,6 @@
     --coral: #FF7A54;
     --coral-tenue: rgba(255, 122, 84, .16);
 
-    /* Chip de "N dias de atraso" en Pagos y vencimientos: un vino/borgoña oscuro y propio, no
-       --coral (ese lo siguen usando Inicio y Cambios en mis cobros, sin tocar esta ronda). Menos
-       naranja, mas integrado con el navy de la tarjeta. */
-    --atraso-fondo: #3A1826;
-    --atraso-texto: #F2B6C6;
-
     /* Acento UNICO de la navegacion (header activo en desktop, pie-nav activo en mobile): un
        lila mas claro que --violeta, porque --violeta solo* da 3.5:1 sobre --indigo-alto y un
        texto de nav necesita AA. Es la misma familia, no un color nuevo sin relacion. */
@@ -1095,6 +1089,14 @@ a.boton:hover { background: var(--indigo-alto); border-color: var(--indigo-alto)
 a.tarjeta-estado:hover,
 button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 
+/* Variante compacta: solo Pagos sin comprobante, que no necesita el mismo aire que el resumen
+   de Inicio (que ademas es un link con flecha y mas jerarquia que resolver). */
+.tarjeta-estado--compacta {
+    padding: .875rem 1rem;
+    gap: .875rem;
+    margin-bottom: 1.25rem;
+}
+
 .tarjeta-estado__icono {
     flex: none;
     display: grid;
@@ -1272,6 +1274,46 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 }
 
 /* =====================================================================================
+   Flecha de regreso junto al titulo: para pantallas secundarias (accesibles solo desde
+   Inicio, no desde el footer) que necesitan una salida coherente sin duplicar el header
+   global ni el footer. El h1 conserva su propio margen; el circulo es el unico elemento
+   nuevo.
+   ===================================================================================== */
+.titulo-con-volver {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* Titulo mas chico que el h1 de las pantallas principales (1.75rem): esta es una pantalla
+   secundaria, y el titulo compartia peso visual con la flecha en vez de quedar claramente al
+   mando. white-space:nowrap solo baja de tamano si el texto no entra en una linea; el "Cambios
+   en mis cobros"/"Pagos sin comprobante" mas largos siguen envolviendo si hiciera falta, nunca
+   se recortan. */
+.titulo-con-volver h1 {
+    min-width: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+.volver {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .1);
+    color: #FFFFFF;
+    text-decoration: none;
+    font-size: .9375rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.volver:hover { background: rgba(255, 255, 255, .18); }
+
+/* =====================================================================================
    Pagos y vencimientos: encabezado corto (sin segunda portada) y obligaciones como filas
    compactas con el detalle bajo demanda (<details> nativo, sin JS).
    ===================================================================================== */
@@ -1375,15 +1417,14 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
     color: var(--noche-texto-tenue);
 }
 
-.badge-atraso {
-    display: inline-block;
-    align-self: flex-start;
-    font-size: .75rem;
+/* El dato de atraso ya no es una capsula solida (fondo vino + texto rosado de poco contraste):
+   una diferencia tipografica -- coral sobre el navy de la tarjeta, sin fondo -- alcanza para que
+   se note sin volverse una alerta repetida cuatro veces, y deja al monto como protagonista. */
+.obligacion__atraso {
+    display: block;
+    font-size: .8125rem;
     font-weight: 700;
-    padding: .1875rem .5625rem;
-    border-radius: var(--radio-pastilla);
-    background: var(--atraso-fondo);
-    color: var(--atraso-texto);
+    color: var(--coral);
 }
 
 .obligacion__lado {
@@ -1486,7 +1527,19 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
     margin: 0 0 .25rem;
 }
 
-.estado-amigable .icono-sprite { margin-bottom: .1875rem; }
+/* El icono acompaña el titulo en la misma linea -- antes quedaba solo, arriba de todo, como un
+   elemento suelto sin relacion visual con el texto. */
+.estado-amigable__cabeza {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+}
+
+.estado-amigable__icono {
+    flex: none;
+    display: grid;
+    place-items: center;
+}
 
 .estado-amigable__titulo {
     font-size: 1rem;
@@ -1581,7 +1634,18 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
 .rubro-cambio__porcentaje { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 .rubro-cambio__flecha--atencion, .rubro-cambio__porcentaje--atencion { color: var(--amarillo); }
-.rubro-cambio__flecha--neutro, .rubro-cambio__porcentaje--neutro { color: var(--noche-texto-tenue); }
+
+/* Un cambio que el dominio NO marca como salto (p.ej. 1,7%) se dice en una sola linea de peso
+   liviano -- ni flecha grande, ni numero en negrita, ni color de atencion: nada compite con el
+   monto de arriba por un cambio que la propia regla real considera ruido. */
+.rubro-cambio__cambio-leve {
+    display: block;
+    font-size: .8125rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--noche-texto-tenue);
+    margin: 0 0 .25rem;
+}
 
 .rubro-cambio__periodo {
     display: block;
@@ -1596,6 +1660,26 @@ button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
     color: var(--noche-texto-tenue);
     margin: .125rem 0 0;
 }
+
+/* Pagos sin comprobante: dos estados por fila -- lo que dice el portal (positivo, turquesa)
+   y lo que le falta a la app (neutro, nunca coral: no es una alerta ni una deuda real). */
+.comprobante-estados {
+    display: flex;
+    flex-direction: column;
+    gap: .1875rem;
+    margin: 0 0 .5rem;
+}
+
+.comprobante-estado { font-size: .8125rem; font-weight: 650; }
+.comprobante-estado--pagado { color: var(--turquesa); }
+.comprobante-estado--pendiente { color: var(--noche-texto-tenue); }
+
+/* Variante compacta: solo Pagos sin comprobante. Sus tarjetas dicen menos que las de Cambios en
+   mis cobros (no hay montos ni periodo comparado), asi que no necesitan el mismo aire. */
+.rubro-cambio--compacta .rubro-cambio__resumen { padding: .75rem .875rem; gap: .625rem; }
+.rubro-cambio--compacta .rubro-cambio__icono { width: 2.25rem; height: 2.25rem; }
+.rubro-cambio--compacta .rubro-cambio__cabeza { margin-bottom: .375rem; }
+.rubro-cambio--compacta .comprobante-estados { margin-bottom: .375rem; }
 
 .rubro-cambio__toggle {
     display: flex;

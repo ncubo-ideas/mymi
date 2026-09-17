@@ -1,13 +1,7 @@
 @page "/sin-comprobante"
 @inject EstadoDeLaApp estado
 
-<PageTitle>Qué quedó sin comprobante · Mi cuenta municipal</PageTitle>
-
-<h1>Qué quedó sin comprobante</h1>
-<p class="bajada">
-    Los períodos que tu portal da por pagados y de los que esta app nunca vio un recibo. Se dice, no
-    se tapa: un hueco nombrado es una respuesta, y uno callado se ve igual que no tener huecos.
-</p>
+<PageTitle>Pagos sin comprobante · Mi cuenta municipal</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -15,55 +9,124 @@
 }
 else
 {
-    @if (!cotejo.HayAlgunaConsulta)
-    {
-        <Aviso Tono="tibia" Id="sin-consulta" Titulo="Todavía no se puede cotejar">
-            <Frase Dice="@cotejo.Dice" Apagada="true" />
-            <p>
-                <strong>No poder cotejar no es estar en orden.</strong> Es una tercera respuesta, y
-                cambia en cuanto entre una consulta al portal.
-            </p>
-        </Aviso>
-    }
-    else
-    {
-        <article class="tarjeta" id="el-estado">
-            <div class="tarjeta__cabeza">
-                <span class="sello sello--@cotejo.Estado">@cotejo.Estado</span>
-                <span class="periodo">cotejado contra el @cotejo.DiaDeLaConsulta</span>
+    <div class="fondo-noche">
+        <div class="titulo-con-volver">
+            <a class="volver" href="" aria-label="Volver a Inicio">&larr;</a>
+            <h1>Pagos sin comprobante</h1>
+        </div>
+        <p class="subtitulo-pagina">
+            Pagos que aparecen saldados, pero cuyo comprobante aún no llegó a esta app.
+        </p>
+
+        @if (!cotejo.HayAlgunaConsulta)
+        {
+            <Aviso Tono="tibia" Id="sin-consulta" Titulo="Todavía no se puede cotejar">
+                <Frase Dice="@cotejo.Dice" Apagada="true" />
+            </Aviso>
+
+            <details class="disclosure-secundaria">
+                <summary class="disclosure-secundaria__resumen">
+                    <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
+                    <span class="disclosure-secundaria__texto">¿Qué significa no poder cotejar?</span>
+                    <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="disclosure-secundaria__contenido">
+                    <p class="item__frase">
+                        <strong>No poder cotejar no es estar en orden.</strong> Es una tercera respuesta,
+                        y cambia en cuanto entre una consulta al portal.
+                    </p>
+                </div>
+            </details>
+        }
+        else if (cotejo.Periodos.Count == 0)
+        {
+            <div class="aviso-tranquilo">
+                <p class="estado-vacio">
+                    <span class="estado-vacio__marca">✓</span>
+                    Ningún pago aparece sin comprobante
+                </p>
+                <p class="explicacion-menor">@cotejo.Dice</p>
             </div>
 
-            <Frase Dice="@cotejo.Dice" />
-        </article>
-
-        @foreach (var periodo in cotejo.Periodos)
-        {
-            <article class="tarjeta">
-                <div class="tarjeta__cabeza">
-                    <LlaveDelRubro Rubro="@periodo.Rubro" />
-                    <span class="periodo">@periodo.Periodo</span>
-                </div>
-
-                <Frase Dice="@periodo.Dice" />
-            </article>
+            <p class="nota">Cotejado con el portal · @NombreLegible.Fecha(cotejo.DiaDeLaConsulta)</p>
         }
-
-        @if (cotejo.Periodos.Count > 0)
+        else
         {
-            <Aviso Tono="quieta" Id="no-es-una-deuda" Titulo="Esto no es una deuda">
-                <p>
-                    Tu portal da esos períodos por saldados; lo que falta es el respaldo aquí, casi
-                    siempre porque se pagaron por un camino que no deja comprobante digital —la
-                    ventanilla, por ejemplo. No los sumés a nada que se te venza.
+            <div class="tarjeta-estado tarjeta-estado--compacta" id="resumen-comprobantes">
+                <span class="tarjeta-estado__icono"><IconoSprite Nombre="calendario-chico" /></span>
+                <span class="tarjeta-estado__texto">
+                    <span class="tarjeta-estado__estado">@ResumenTitulo()</span>
+                    <span class="tarjeta-estado__detalle">
+                        Estos pagos aparecen saldados en el portal municipal, pero su comprobante
+                        todavía no llegó a esta app.
+                    </span>
+                </span>
+            </div>
+
+            <h2>Pagos encontrados</h2>
+            <div class="rubros-cambio">
+                @foreach (var periodo in cotejo.Periodos)
+                {
+                    <details class="rubro-cambio rubro-cambio--compacta">
+                        <summary class="rubro-cambio__resumen">
+                            <span class="rubro-cambio__icono"><IconoSprite Nombre="@NombreLegible.IconoDelRubro(periodo.Rubro)" /></span>
+                            <span class="rubro-cambio__info">
+                                <span class="rubro-cambio__cabeza">
+                                    <span class="rubro-cambio__nombre"><LlaveDelRubro Rubro="@periodo.Rubro" /></span>
+                                    <span class="periodo" style="margin:0">@NombreLegible.Periodo(periodo.Periodo)</span>
+                                </span>
+                                <span class="comprobante-estados">
+                                    <span class="comprobante-estado comprobante-estado--pagado">✓ Pagado según el portal</span>
+                                    <span class="comprobante-estado comprobante-estado--pendiente">Comprobante pendiente en la app</span>
+                                </span>
+                                <span class="rubro-cambio__toggle">
+                                    <span class="rubro-cambio__toggle-abrir">Ver detalle</span>
+                                    <span class="rubro-cambio__toggle-cerrar">Ocultar detalle</span>
+                                    <span class="rubro-cambio__toggle-chevron" aria-hidden="true">&rsaquo;</span>
+                                </span>
+                            </span>
+                        </summary>
+                        <div class="rubro-cambio__detalle">
+                            <p class="item__frase">@periodo.Dice</p>
+                        </div>
+                    </details>
+                }
+            </div>
+
+            <section class="bloque" id="pagos-aparecen-pagados">
+                <h2>Estos pagos aparecen como pagados</h2>
+                <p class="explicacion-menor">
+                    El portal los registra como saldados. Lo único pendiente es que el comprobante
+                    llegue a esta app.
                 </p>
-            </Aviso>
-        }
 
-        <p class="nota">
-            La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana dice
-            otra cosa. El cotejo es contra el @cotejo.DiaDeLaConsulta y no contra hoy.
-        </p>
-    }
+                <details class="disclosure-secundaria">
+                    <summary class="disclosure-secundaria__resumen">
+                        <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
+                        <span class="disclosure-secundaria__texto">¿Por qué puede pasar?</span>
+                        <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
+                    </summary>
+                    <div class="disclosure-secundaria__contenido">
+                        <p class="item__frase">
+                            Tu portal da esos períodos por saldados; lo que falta es el respaldo aquí,
+                            casi siempre porque se pagaron por un camino que no deja comprobante
+                            digital —la ventanilla, por ejemplo. No los sumés a nada que se te venza.
+                        </p>
+                    </div>
+                </details>
+            </section>
+
+            <p class="nota">Cotejado con el portal · @NombreLegible.Fecha(cotejo.DiaDeLaConsulta)</p>
+
+            <details class="plomeria">
+                <summary>¿Qué significa esta fecha?</summary>
+                <p class="item__frase">
+                    La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana
+                    dice otra cosa. El cotejo es contra el @cotejo.DiaDeLaConsulta y no contra hoy.
+                </p>
+            </details>
+        }
+    </div>
 }
 
 @code {
@@ -71,9 +134,15 @@ else
 
 	protected override void OnInitialized() => Releer();
 
-	/// <summary>La unica pasada de lectura de esta pantalla.</summary>
+	/// <summary>La unica pasada de lectura de esta pantalla.
 	private void Releer()
 	{
 		if (estado.EstaArriba) cotejo = estado.LeerLoSinComprobante();
+	}
+
+	private string ResumenTitulo()
+	{
+		int n = cotejo.Periodos.Count;
+		return n == 1 ? "1 pago sin comprobante" : $"{n} pagos sin comprobante";
 	}
 }
