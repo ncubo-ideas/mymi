@@ -557,6 +557,25 @@ Y uno del módulo, gemelo exacto del «30.996,5 unidades» de §10:
 - El App Group `group.com.ncubo.gnothi` sigue sin habilitar, así que la foto que lee el intent de
   Siri no existe en este aparato: lo que Siri contestó salió de los datos quemados del spike.
 
+### El piso, en inglés, en aparato
+
+**16:55.** Con el spike bilingüe instalado (PR 10092), en el 17 Pro con iOS 27 y todo en inglés:
+
+> **«How much did I spend in Gnothi?»**
+> → *«Tenés 5 facturas registradas, por un total de ₡30.996,50.»*
+
+**La frase traducida dispara.** El piso deja de depender del idioma del aparato, que era el
+requisito previo para poder medir Siri AI cuando salga de la lista de espera.
+
+Y el detalle que confirma el diseño: **contestó en castellano en un teléfono en inglés**. Es la
+señal de atribución que se dejó a propósito —solo las frases, los títulos y las descripciones se
+tradujeron; el texto que la intent devuelve no—, así que una respuesta en español prueba que
+disparó **nuestra** intent y no otra cosa del sistema.
+
+De paso, el contraste que conviene no perder: acá el monto sale **«₡30.996,50»**, con símbolo y
+todo, porque los datos del spike lo llevan. La misma cifra, por la puerta del asistente, sale como
+«30.996,5 unidades» (§10) — el hueco es del módulo, y esta corrida lo deja a la par.
+
 ### Las fuentes de lo que se afirma arriba sobre Siri AI y el idioma
 
 Lo único de esta sección que no se midió acá son las reglas de Apple, y van con fuente porque
