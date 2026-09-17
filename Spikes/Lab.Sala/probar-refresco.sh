@@ -43,12 +43,25 @@ echo "2 · Gnothi, con la sala forzada para comprasw"
 "$ADB" -s "$D" shell input keyevent KEYCODE_WAKEUP >/dev/null
 "$ADB" -s "$D" logcat -c
 ACT=$("$ADB" -s "$D" shell cmd package resolve-activity --brief com.ncubo.gnothi.host | tail -1 | tr -d '\r')
-"$ADB" -s "$D" shell am start -n "$ACT" --es sala "comprasw,examenesw" >/dev/null 2>&1
+# EL INTERRUPTOR YA NO VIAJA EN EL INTENT. MainActivity es exportada, asi que un extra era un
+# canal abierto a cualquier app del aparato; ahora sale de la carpeta privada del paquete, que
+# solo alcanza `run-as` -- y solo en un build depurable.
+#
+# Y LA RUTA VA ABSOLUTA CON MSYS_NO_PATHCONV: en Git Bash, un argumento con barra -- hasta uno
+# relativo como `files/sala` -- lo reescribe MSYS a una ruta de Windows antes de que adb lo vea, y
+# el error que vuelve es `can't create files/sala: No such file or directory`, que se lee como si
+# la carpeta no existiera.
+MSYS_NO_PATHCONV=1 "$ADB" -s "$D" shell run-as com.ncubo.gnothi.host \
+	sh -c "'echo comprasw,examenesw > /data/user/0/com.ncubo.gnothi.host/files/sala'"
+"$ADB" -s "$D" shell am start -n "$ACT" >/dev/null 2>&1
 sleep 18
 "$ADB" -s "$D" shell am start-foreground-service -n com.ncubo.gnothi.host/com.ncubo.gnothi.host.LoopbackSpikeService >/dev/null 2>&1
 sleep 5
 "$ADB" -s "$D" forward tcp:47623 tcp:47623 >/dev/null
-TOKEN=$("$ADB" -s "$D" logcat -d | grep -o "token=[a-f0-9]*" | tail -1 | cut -d= -f2)
+# EL PATRON ANCLADO EN "listening on", y no es cosmetica: `token=` tambien aparece en cada GET
+# que el loopback registra, asi que con el buffer lleno esto tomaba el de una URL -- vacio -- y
+# las tres consultas contestaban 401 sin que nada dijera por que.
+TOKEN=$("$ADB" -s "$D" logcat -d | grep -o "listening on .*token=[a-f0-9]*" | tail -1 | sed 's/.*token=//' | tr -d '\r')
 
 echo
 echo "3 · el total ANTES del refresco"
@@ -56,7 +69,7 @@ ANTES=$(pedir comprasw resumen); echo "   $ANTES"
 
 echo
 echo "4 · abrir la pantalla, que dispara el pull contra el publicador"
-"$ADB" -s "$D" shell am start -n "$ACT" --es sala "comprasw,examenesw" --es "gnothi.modulo" "comprasw" >/dev/null 2>&1
+"$ADB" -s "$D" shell am start -n "$ACT" --es "gnothi.modulo" "comprasw" >/dev/null 2>&1
 sleep 25
 
 echo

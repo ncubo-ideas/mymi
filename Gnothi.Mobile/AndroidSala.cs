@@ -162,6 +162,50 @@ internal sealed class AndroidSala : ISalaHost
 
 	// ---------------------------------------------------------------- el documento
 
+	// TIRAR EL DOCUMENTO, que es lo unico que recupera una sala que no contesta. Lo pide la
+	// cascara cuando un pedido paso del tope, y el caso que lo motiva es el desalojo: ahi adentro
+	// corre el Dispose() del modulo, o sea codigo que el modulo eligio, y un ciclo infinito no se
+	// puede interrumpir desde adentro de un motor web de un solo hilo.
+	//
+	// DESDE ACA SI, porque el documento es un objeto de Android y el motor corre en OTRO proceso:
+	// destruirlo se lleva el ciclo puesto.
+	//
+	// Y SE LLEVA LA FRONTERA CONSIGO, que es lo que hace que esto sea una salida honesta y no un
+	// parche: lo que el modulo tenia montado vive en la memoria del documento, no en el disco, asi
+	// que aca no hay nada que desmontar ni que confirmar. Ademas suelta la ranura, porque un
+	// modulo sin documento no tiene por que seguir siendo servible por el origen.
+	public Task Descartar(string motivo, CancellationToken ct)
+	{
+		log($"sala: se tira el documento -- {motivo}");
+
+		lock (cerrojo)
+		{
+			enVuelo = "";
+			preparado = null;
+		}
+
+		// Las esperas pendientes no se quedan colgando: la que se trabo, y cualquier otra, fallan
+		// con el motivo. El documento donde iban a contestarse ya no existe.
+		foreach (string id in esperando.Keys)
+			if (esperando.TryRemove(id, out TaskCompletionSource<string>? espera))
+				espera.TrySetException(new InvalidOperationException($"se tiro la sala: {motivo}"));
+
+		WebView? viejo = Interlocked.Exchange(ref web, null);
+
+		// Y RECIEN AHORA se olvida el arranque, para que nadie se quede esperando un documento
+		// muerto. El proximo pedido crea uno nuevo; los pedidos vienen serializados por
+		// `UnaPorVez` del lado de la cascara, asi que no hay dos creandolo a la vez.
+		listo = null;
+
+		actividad.RunOnUiThread(() =>
+		{
+			try { viejo?.StopLoading(); viejo?.Destroy(); }
+			catch (Exception e) { log($"sala: al tirar el documento -- {e.GetType().Name}: {e.Message}"); }
+		});
+
+		return Task.CompletedTask;
+	}
+
 	private async Task Arrancar(CancellationToken ct)
 	{
 		if (listo is not null) { await listo.Task; return; }

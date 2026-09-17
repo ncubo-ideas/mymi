@@ -148,6 +148,54 @@ internal static class Sala
 				!anfitrion.Secuencia.Any(v => v.StartsWith("preparar:", StringComparison.Ordinal)
 					|| v.StartsWith("cargar:", StringComparison.Ordinal)),
 				anfitrion.Como());
+
+			// ── 8 · EL MODULO QUE NO VUELVE DE SU PROPIO DESALOJO ───────────────────────────
+			//
+			// El 7 cubre el desalojo que TIRA. Este cubre el que NO VUELVE, que es otro modo de
+			// falla y no se arregla igual: adentro del desalojo corre el Dispose() del modulo --
+			// codigo que el modulo eligio -- y un ciclo infinito ahi no se interrumpe desde
+			// adentro, porque el motor web es de un solo hilo. Sin tope, ese modulo se queda con
+			// el semaforo tomado y NINGUN modulo vuelve a contestar hasta que maten la app: un
+			// modulo cualquiera apagando el Host entero.
+			//
+			// La salida es tirar el documento. Y no es solo recuperarse: la memoria del modulo
+			// vive adentro del documento, asi que tirarlo CIERRA la frontera en vez de dejarla
+			// dependiendo de que el modulo cooperara.
+			anfitrion.Olvidar();
+			anfitrion.NoVacia = false;
+			anfitrion.SeTraba = true;
+
+			TimeSpan tope = SalaShell.Tope;
+			SalaShell.Tope = TimeSpan.FromMilliseconds(200);
+
+			bool trabo = false;
+			try { examenes.Invoke("resumen", null, Accepts.JsonOnly, CancellationToken.None).GetAwaiter().GetResult(); }
+			catch (InvalidOperationException) { trabo = true; }
+
+			assert("un modulo que no vuelve de su desalojo no cuelga la sala: la consulta falla",
+				trabo, anfitrion.Como());
+
+			assert("y se tira el documento, nombrando al modulo que no contesto",
+				anfitrion.Descartado.Contains("compras", StringComparison.Ordinal),
+				anfitrion.Descartado.Length == 0 ? "(no se descarto nada)" : anfitrion.Descartado);
+
+			assert("y no se monta al siguiente encima del que quedo trabado",
+				!anfitrion.Secuencia.Any(v => v.StartsWith("preparar:", StringComparison.Ordinal)
+					|| v.StartsWith("cargar:", StringComparison.Ordinal)),
+				anfitrion.Como());
+
+			// LA AFIRMACION QUE HACE QUE ESTO SEA UNA RECUPERACION Y NO UN ERROR MAS PROLIJO: la
+			// consulta siguiente tiene que andar, en una sala nueva. Si se quedara trabada, el
+			// tope no habria servido de nada.
+			anfitrion.Olvidar();
+			anfitrion.SeTraba = false;
+			examenes.Invoke("resumen", null, Accepts.JsonOnly, CancellationToken.None).GetAwaiter().GetResult();
+
+			assert("y la consulta siguiente contesta, en una sala nueva y sin rastro del anterior",
+				anfitrion.Secuencia is ["preparar:examenes", "cargar:examenes", "consultar:examenes"],
+				anfitrion.Como());
+
+			SalaShell.Tope = tope;
 		}
 		finally { SalaShell.Host = null; }
 	}
@@ -198,6 +246,23 @@ internal static class Sala
 
 		public bool NoVacia { get; set; }
 
+		// EL MODULO QUE NO VUELVE. El doble no simula un ciclo infinito con un ciclo infinito:
+		// devuelve una tarea que nunca se completa, que es lo que la cascara ve de este lado.
+		public bool SeTraba { get; set; }
+
+		public string Descartado { get; private set; } = "";
+
+		public Task Descartar(string motivo, CancellationToken ct)
+		{
+			secuencia.Add("descartar");
+			Descartado = motivo;
+
+			// Tirar el documento se lleva lo que hubiera cargado adentro: no queda nada montado
+			// que el siguiente pueda leer, que es justamente por lo que se tira.
+			cargados.Clear();
+			return Task.CompletedTask;
+		}
+
 		public Task Soltar(string modulo, CancellationToken ct)
 		{
 			secuencia.Add($"soltar:{modulo}");
@@ -214,6 +279,10 @@ internal static class Sala
 		public Task<string> Pedir(string verbo, string modulo, string a, string b, CancellationToken ct)
 		{
 			secuencia.Add($"{verbo}:{modulo}");
+
+			// Una tarea que no se completa nunca: para la cascara es indistinguible de un
+			// Dispose() que se colgo adentro del motor web, que es lo que se quiere probar.
+			if (SeTraba && verbo == "desalojar") return new TaskCompletionSource<string>().Task;
 
 			switch (verbo)
 			{

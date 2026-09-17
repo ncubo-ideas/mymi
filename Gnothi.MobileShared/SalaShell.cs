@@ -34,6 +34,14 @@ internal sealed class SalaShell : IShell
 	private static readonly SemaphoreSlim UnaPorVez = new(1, 1);
 	private static string cargado = "";
 
+	// EL TOPE DE UN PEDIDO A LA SALA. Generoso a proposito: lo medido en un A54 y en el emulador
+	// es 36-120 ms para cargar y para desalojar, asi que diez segundos no se alcanzan trabajando,
+	// solo trabado.
+	//
+	// No es `const` para que la prueba pueda bajarlo: sin eso, afirmar que un modulo trabado no
+	// cuelga la sala costaria diez segundos de suite, y una prueba cara termina sin correrse.
+	internal static TimeSpan Tope = TimeSpan.FromSeconds(10);
+
 	private readonly string name;
 	private readonly string entrada;
 	private readonly string granted;
@@ -66,7 +74,7 @@ internal sealed class SalaShell : IShell
 			await Asegurar(ct);
 
 			string args = JsonSerializer.Serialize(arguments ?? new Dictionary<string, object?>());
-			string crudo = await Anfitrion().Pedir("consultar", name, tool, args, ct);
+			string crudo = await Pedir("consultar", name, tool, args, ct);
 
 			using JsonDocument doc = JsonDocument.Parse(crudo);
 			if (!doc.RootElement.GetProperty("ok").GetBoolean())
@@ -88,7 +96,7 @@ internal sealed class SalaShell : IShell
 		{
 			await Asegurar(ct);
 
-			string crudo = await Anfitrion().Pedir("repertorio", name, "", "", ct);
+			string crudo = await Pedir("repertorio", name, "", "", ct);
 			using JsonDocument doc = JsonDocument.Parse(crudo);
 			if (!doc.RootElement.GetProperty("ok").GetBoolean()) return [];
 
@@ -115,7 +123,7 @@ internal sealed class SalaShell : IShell
 			await Asegurar(ct);
 
 			string args = JsonSerializer.Serialize(arguments ?? new Dictionary<string, object?>());
-			return Contenido(await Anfitrion().Pedir("vista", this.name, name, args, ct));
+			return Contenido(await Pedir("vista", this.name, name, args, ct));
 		}
 		finally { UnaPorVez.Release(); }
 	}
@@ -130,7 +138,7 @@ internal sealed class SalaShell : IShell
 		{
 			await Asegurar(ct);
 
-			string crudo = await Anfitrion().Pedir("entregar", name, envelopeJson, "", ct);
+			string crudo = await Pedir("entregar", name, envelopeJson, "", ct);
 			await Persistir(name, crudo, ct);
 
 			object? r = Contenido(crudo);
@@ -148,7 +156,7 @@ internal sealed class SalaShell : IShell
 		{
 			await Asegurar(ct);
 
-			object? r = Contenido(await Anfitrion().Pedir("cursor", name, "", "", ct));
+			object? r = Contenido(await Pedir("cursor", name, "", "", ct));
 			return r is JsonElement j && j.TryGetInt64(out long v) ? v : 0L;
 		}
 		catch (Exception) { return 0L; }
@@ -219,6 +227,45 @@ internal sealed class SalaShell : IShell
 		?? throw new InvalidOperationException(
 			"no hay sala registrada: la app tiene que poner SalaShell.Host antes de despachar.");
 
+	// NINGUN PEDIDO A LA SALA ES ILIMITADO, Y ESE ERA EL AGUJERO.
+	//
+	// Adentro del desalojo corre codigo QUE ELIGE EL MODULO: el sustrato le llama a su Dispose(),
+	// su Cerrar(), su Close(). Un ciclo infinito ahi no se interrumpe desde adentro -- el motor
+	// web es de un solo hilo, no hay otro que pueda apropiarse -- y el dano no se queda en el
+	// modulo: se queda tambien con `UnaPorVez` tomado, asi que TODOS dejan de contestar hasta que
+	// alguien mate la app.
+	//
+	// Son dos modos de falla distintos y hubo que arreglarlos por separado: el `finally` del
+	// sustrato cubre el que TIRA, este cubre el que NO VUELVE.
+	//
+	// DESDE AFUERA SI SE PUEDE, y la forma correcta no es un timeout comun sino TIRAR EL
+	// DOCUMENTO. El motor web corre en su propio proceso, asi que destruirlo se lleva el ciclo
+	// puesto; y lo que el modulo tenia montado vive ADENTRO del documento, no en el disco, asi
+	// que al descartarlo no queda nada que desmontar. La frontera la cierra la plataforma, y no
+	// la cooperacion del modulo -- que es lo que se le estaba pidiendo.
+	//
+	// LO QUE SE PIERDE es lo que ese modulo no habia devuelto todavia, y es SUYO: el que traba su
+	// propio desalojo paga su propio dato, y no el del vecino. La consulta en curso falla ruidosa
+	// -- mismo criterio que `Confirmar` -- y la siguiente arranca una sala nueva.
+	private async Task<string> Pedir(string verbo, string modulo, string a, string b, CancellationToken ct)
+	{
+		try { return await Anfitrion().Pedir(verbo, modulo, a, b, ct).WaitAsync(Tope, ct); }
+		catch (TimeoutException)
+		{
+			// Primero la variable y despues el documento: si descartar tirara, el proximo intento
+			// tiene que creer que no hay nadie cargado en vez de reintentar un desalojo imposible.
+			cargado = "";
+
+			// Sin `ct`: el que se cancelo puede ser justamente el pedido que quedo trabado, y
+			// dejar el documento muerto en pie es peor que cualquier cancelacion.
+			await Anfitrion().Descartar($"'{modulo}' no contesto a '{verbo}'", CancellationToken.None);
+
+			throw new InvalidOperationException(
+				$"la sala no contesto a '{verbo}' de '{modulo}' en {Tope.TotalSeconds:0} s; se tiro el "
+				+ "documento, y con el todo lo que ese modulo tenia montado");
+		}
+	}
+
 	// UN MODULO POR VEZ. El anterior se desaloja ANTES de que el siguiente monte su carpeta, y
 	// por eso la frontera entre journals existe: en el sandbox no queda nada del vecino que
 	// leer.
@@ -231,7 +278,7 @@ internal sealed class SalaShell : IShell
 			// EL DESALOJO TRAE LO QUE EL MODULO ESCRIBIO, y hay que guardarlo ANTES de cargar al
 			// siguiente. Si no, lo que asento se evapora al vaciarle la carpeta: el refresco
 			// parecia funcionar y despues volvia al estado anterior.
-			string despedida = await Anfitrion().Pedir("desalojar", cargado, "", "", ct);
+			string despedida = await Pedir("desalojar", cargado, "", "", ct);
 			await Persistir(cargado, despedida, ct);
 
 			// Y RECIEN AHORA DEJA DE SER SERVIBLE. Entre el desalojo y la carga del siguiente no
@@ -254,7 +301,7 @@ internal sealed class SalaShell : IShell
 
 		await Anfitrion().Preparar(name, entrada, granted, ct);
 
-		string crudo = await Anfitrion().Pedir("cargar", name, "", "", ct);
+		string crudo = await Pedir("cargar", name, "", "", ct);
 		using JsonDocument doc = JsonDocument.Parse(crudo);
 		if (!doc.RootElement.GetProperty("ok").GetBoolean())
 			throw new InvalidOperationException(doc.RootElement.GetProperty("motivo").GetString());
@@ -285,4 +332,13 @@ internal interface ISalaHost
 	// que la ancla es el anfitrion: el modulo no puede nombrar donde aterriza, que es la misma
 	// regla que `WebModule.InJournal` sostiene del otro lado.
 	Task Guardar(string modulo, string ruta, string contenidoBase64, CancellationToken ct);
+
+	// TIRAR EL DOCUMENTO ENTERO, y es lo unico que recupera una sala que no contesta. Lo pide la
+	// cascara cuando un pedido paso del tope; el anfitrion suelta la ranura -- un modulo sin
+	// documento no es servible por el origen --, falla las esperas pendientes, y el proximo
+	// pedido crea un documento nuevo.
+	//
+	// No tiene que confirmar nada ni desmontar nada: lo que el modulo tenia montado vive en la
+	// memoria del documento, asi que se va con el.
+	Task Descartar(string motivo, CancellationToken ct);
 }
