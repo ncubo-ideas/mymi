@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Concesionario.App;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 

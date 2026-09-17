@@ -1,5 +1,5 @@
 using Android.Security.Keystore;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 using Java.Security;
 using Javax.Crypto;
 using Javax.Crypto.Spec;
@@ -16,7 +16,7 @@ namespace Gnothi.Mobile;
 //
 // THIS WAS HALF OF THE CREDENTIAL CLASS and was split off when the iOS one had to be written.
 // The other half -- what those bytes mean -- does not change between platforms and stayed in
-// Gnothi.Movil. There is no decision about credentials below: only how a piece of text is
+// Gnothi.MobileShared. There is no decision about credentials below: only how a piece of text is
 // kept so that it cannot be read from outside.
 internal sealed class AndroidSecretStore : ISecretStore
 {

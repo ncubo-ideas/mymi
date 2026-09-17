@@ -1,7 +1,12 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
+using Choreography.Theater;
 using Gnothi.Contract;
+using Municipalidad.App.Events;
+using Municipalidad.App.Vistas;
 using Puppeteer;
+using Puppets.Portador;
 
 namespace Municipalidad.App
 {
@@ -15,13 +20,19 @@ namespace Municipalidad.App
 	/// concede: el modulo no elige la carpeta ni abre el journal por su cuenta.
 	/// </para>
 	/// <para>
-	/// ES DE SOLO LECTURA, y son dos disciplinas y no una: ninguna consulta manda un comando, y el
-	/// anfitrion que abre es el que no siembra. El de la app deja una entrada al hidratar, asi que abrir
-	/// con el pondria una entrada en el journal de la persona por cada pregunta del Host.
+	/// TRES PUBLICOS, TRES MARCADORES, y ninguno entra por la puerta del otro. <c>[Query]</c> es lo que
+	/// el ASISTENTE puede preguntar -- dos, gruesas, declaradas en el manifiesto y apagables una por
+	/// una --; <c>[View]</c> es lo que la PANTALLA necesita para pintar, no esta en el manifiesto y el
+	/// modelo no lo ve nunca; <c>[Deliver]</c> es lo que el CARTERO deja, y es lo unico que escribe.
+	/// </para>
+	/// <para>
+	/// ESTE MODULO NO ES UN TABLERO: es un menu de SEIS PREGUNTAS, cada una su propia pantalla en la
+	/// app suelta. Por eso hay una vista por pregunta y no una vista grande: partirlas es la
+	/// arquitectura de informacion que la institucion eligio, no una decision de esta clase.
 	/// </para>
 	/// </summary>
 	[ModuleSurface]
-	public sealed class MunicipalidadSurface
+	public sealed class MunicipalidadSurface : IDisposable
 	{
 		private readonly string carpeta;
 
@@ -30,9 +41,32 @@ namespace Municipalidad.App
 			ArgumentException.ThrowIfNullOrWhiteSpace(carpetaConcedida);
 
 			carpeta = Path.GetFullPath(carpetaConcedida);
+			app = new Lazy<MunicipalidadApp>(Arrancar);
 		}
 
-		/// <summary>Una linea de resumen: lo que una pantalla del Host pone arriba.</summary>
+		private bool HayJournal => MunicipalidadApp.HayJournalEn(carpeta);
+
+		/// <summary>
+		/// EN QUE IDIOMA CONTESTA ESTA SUPERFICIE, y hoy es el del registro de la municipalidad.
+		/// <para>
+		/// La app suelta se lo pregunta al dispositivo -- <c>navigator.languages</c>, por JSInterop --
+		/// porque ahi la carátula ES el navegador. Aca no hay navegador: esta clase corre en proceso
+		/// adentro de Gnothi, y en la caja de wasm, donde no hay ni <c>navigator</c> ni una carpeta que
+		/// servir. Preguntarselo al dispositivo desde aca ataria el paquete de carga al navegador, que
+		/// es exactamente lo que la forma hibrida existe para no hacer.
+		/// </para>
+		/// <para>
+		/// ASI QUE CAE AL IDIOMA DEL REGISTRO, que es la misma caida que la app suelta ya hace cuando no
+		/// puede leer la eleccion. NO es la respuesta final: el dia que Gnothi le pase al modulo el
+		/// idioma de la persona -- el Host ya lo hace viajar con cada parametro de texto libre -- este
+		/// miembro deja de ser una constante y pasa a ser lo que el Host dijo. Esa es la unica linea
+		/// que cambia, y vive aca justamente para que sea una.
+		/// </para>
+		/// </summary>
+		private static string ElIdioma => Frases.Frases.IdiomaDelRegistro;
+
+		// ------------------------------------------------------------ lo que contesta al asistente
+
 		[Query(ConsultasDelModulo.Resumen)]
 		public object Resumen() =>
 			Leer(api => ConsultasDelModulo.HacerResumen(api, ElInstanteEnQueSePregunto()));
@@ -42,36 +76,186 @@ namespace Municipalidad.App
 		public object ListaDeVencimientos() =>
 			Leer(api => ConsultasDelModulo.HacerListaDeVencimientos(api, ElInstanteEnQueSePregunto()));
 
-		/// <summary>
-		/// Abre el journal para UNA pregunta y lo cierra. Se rehidrata en cada consulta a proposito: la
-		/// app instalada escribe en esta carpeta mientras este proceso vive, asi que un actor guardado
-		/// contestaria con el estado de la primera pregunta.
-		/// </summary>
-		private object Leer(Func<MunicipalidadAPI, object> pregunta)
+		// ------------------------------------------------------------ lo que pinta la cara
+		//
+		// UNA VISTA POR PREGUNTA, con el nombre de la pregunta. No es una traduccion floja de los
+		// nombres del dominio: es que la app suelta tiene seis pantallas y cada una contesta UNA cosa,
+		// y esa reparticion es lo que la institucion decidio que es su app.
+
+		/// <summary>Las fincas que tiene, para poder elegir de cual se habla.</summary>
+		[View("fincas")]
+		public object Fincas() => Leer(api => (object)new
 		{
-			if (!MunicipalidadApp.HayJournalEn(carpeta)) return ConsultasDelModulo.SinDatos(carpeta);
+			hayDatos = true,
+			fincas = LasFincasQueTengo.LeerPor(api, ElInstanteEnQueSePregunto()),
+		});
 
-			AppDeMunicipalidadSoloLectura lector = new AppDeMunicipalidadSoloLectura();
-			try
-			{
-				lector.ConfigureStorage(DatabaseType.FileSystem, "path=" + carpeta);
-				lector.Start();
+		/// <summary>Que cambio entre los dos ultimos comprobantes de cada rubro, y que lo explica.</summary>
+		[View("por-que-pago-mas")]
+		public object PorQuePagoMas() => Leer(api => (object)new
+		{
+			variacion = LaVariacionDeCadaRubro.LeerPor(api, ElIdioma),
+		});
 
-				if (lector.Actor.CurrentEntryId == 0) return ConsultasDelModulo.SinDatos(carpeta);
+		/// <summary>Lo que esta por vencerse y lo que ya vencio.</summary>
+		[View("que-se-me-vence")]
+		public object QueSeMeVence() => Leer(api =>
+		{
+			DateTime alDia = ElInstanteEnQueSePregunto();
+			return (object)new { vence = LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), ElIdioma) };
+		});
 
-				return pregunta(new MunicipalidadAPI(lector));
-			}
-			finally
-			{
-				try { lector.Actor.GracefulExit(); } catch { }
-			}
+		/// <summary>Lo que esta app propone apartar por mes, y lo que la persona adopto.</summary>
+		[View("cuanto-apartar")]
+		public object CuantoApartar() => Leer(api =>
+		{
+			DateTime alDia = ElInstanteEnQueSePregunto();
+			return (object)new { reserva = LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), ElIdioma) };
+		});
+
+		/// <summary>Lo que el portal da por pagado y aca no tiene recibo.</summary>
+		[View("sin-comprobante")]
+		public object SinComprobante() => Leer(api => (object)new
+		{
+			sinComprobante = LoSinComprobante.LeerPor(api, ElIdioma),
+		});
+
+		/// <summary>
+		/// El total de un anio con la mora adentro. El anio lo elige la cara -- es la unica vista con
+		/// un parametro de verdad -- y <c>loEligioLaPersona</c> dice si fue una eleccion o el ano por
+		/// omision, porque el dominio lo redacta distinto.
+		/// </summary>
+		[View("cuanto-he-pagado")]
+		public object CuantoHePagado(int anio) => Leer(api =>
+		{
+			bool loEligio = anio > 0;
+			int elAnio = loEligio ? anio : ElInstanteEnQueSePregunto().Year;
+
+			return (object)new { pagado = LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligio, ElIdioma) };
+		});
+
+		/// <summary>Que entro de lo que el portal publica, y que falta.</summary>
+		[View("que-tan-al-dia")]
+		public object QueTanAlDia() => Leer(api =>
+		{
+			DateTime alDia = ElInstanteEnQueSePregunto();
+			return (object)new { alDia = LoQueEntroYLoQueFalta.LeerPor(api, alDia, ElDiaDe(alDia)) };
+		});
+
+		// ------------------------------------------------------------ lo que el cartero deja
+
+		/// <summary>
+		/// Gnothi hizo la red -- con SU credencial, contra el endpoint que EL fijo al instalar -- y
+		/// entrega un sobre ya leido. Esta superficie lo asienta.
+		/// <para>
+		/// Es el mismo armado que hace la app suelta: la misma ruta, la misma guarda Check y el mismo
+		/// actor, y de ahi sale gratis que entregar dos veces el mismo sobre no duplique nada. Las dos
+		/// diferencias son que aca el sobre YA llego -- no hay a quien pedirselo -- y que no hay flush:
+		/// el journal de esta forma vive en la carpeta que Gnothi concedio, no en un MEMFS.
+		/// </para>
+		/// </summary>
+		[Deliver]
+		public string Entregar(string sobreJson)
+		{
+			ArgumentNullException.ThrowIfNull(sobreJson);
+
+			var unaVez = new BucleDeRefresh(
+				new MunicipalidadAPI(app.Value),
+				new FuenteDeEventosPorGnothi((_, _) => Task.FromResult(sobreJson), "gnothi.deliver"),
+				MunicipalidadEventRoute.Route);
+
+			ResultadoDeRefresh resultado = unaVez.Ejecutar().GetAwaiter().GetResult();
+			return resultado.ToString();
 		}
 
 		/// <summary>
-		/// El instante en que el Host pregunta, en UTC y truncado al segundo, que es la resolucion con la
-		/// que el journal guarda un instante. Es argumento de una CONSULTA y por eso NO es monotono: una
-		/// consulta no escribe nada, asi que exigir que avance rechazaria una segunda pregunta legitima un
-		/// segundo despues.
+		/// Hasta donde ya leyo, para que el cartero pida de ahi en adelante y no el historial entero.
+		/// Sale del MISMO actor que asienta: es el cursor real del journal, no una cuenta que lleve la
+		/// pantalla. Cero cuando todavia no hay journal, y cero significa «traeme todo».
+		/// </summary>
+		[Cursor]
+		public long HastaDondeLei() =>
+			!HayJournal ? 0L : new MunicipalidadAPI(app.Value).UltimoEventoAplicado();
+
+		// ------------------------------------------------------------ el actor
+
+		/// <summary>
+		/// UN SOLO ACTOR, VIVO, compartido por las tres puertas. Medido en Examenes el 2026-09-11 y
+		/// traido tal cual, porque el problema no era del laboratorio sino de la forma.
+		/// <para>
+		/// Antes habia un <c>AppDeMunicipalidadSoloLectura</c> que se REHIDRATABA en cada consulta, y
+		/// su razon estaba escrita: «la app instalada escribe en esta carpeta mientras este proceso
+		/// vive». Es cierta en A2/A3; en la forma HIBRIDA no hay app externa -- Gnothi es el unico
+		/// dueno del journal, que era el punto entero de la forma.
+		/// </para>
+		/// <para>
+		/// Y DOS ACTORES SOBRE UN JOURNAL ERA EL PROBLEMA, no la solucion: el lector abria mientras el
+		/// escritor todavia cerraba su operacion atomica, y eso se veia como
+		/// <c>FileNotFoundException: Temp file not found</c>.
+		/// </para>
+		/// <para>
+		/// LA SEMILLA HACE FALTA. Un anfitrion que no siembra deja al DSL sin sus globales, y el bucle
+		/// muere al pedir el cursor. La guarda del upgrade es una-vez-por-actor, asi que no habia nada
+		/// que evitar. Y las escrituras no son alcanzables desde afuera: <c>[Deliver]</c> lo busca la
+		/// cascara por su propio marcador, no esta en el manifiesto, y <c>consultar</c> solo llega a
+		/// <c>[View]</c>.
+		/// </para>
+		/// <para>
+		/// UN CAMPO NORMAL, y antes era <c>static</c> con candado. Lo era por una razon que no
+		/// era de esta institucion: la cascara reconstruia esta clase en cada llamada, asi que
+		/// el actor -- arrancarlo es rehidratar el journal entero -- estaba obligado a
+		/// sobrevivir a la instancia. Las CINCO instituciones copiaron el mismo parche, que es
+		/// como se supo que el hueco era de la cascara. Ahora <c>InProcessShell</c> guarda la
+		/// instancia y la vida del actor es la vida de este objeto.
+		/// </para>
+		/// <para>
+		/// PEREZOSO CON <c>Lazy&lt;T&gt;</c>: <c>ActualTools</c> -- la comprobacion de modulos,
+		/// al instalar y al arrancar -- construye esta clase sin preguntarle nada, y listar dos
+		/// nombres no tiene que rehidratar el journal. Publica una sola vez por omision, asi que
+		/// es una linea donde habia cuatro campos y un doble chequeo.
+		/// </para>
+		/// <para>
+		/// Y SIN CANDADO, porque no hace falta: dos preguntas simultaneas sobre el mismo actor
+		/// las ordena el motor, con el <c>ReaderWriterLockSlim</c> de <c>ActorHandler</c> --
+		/// <c>PerformQry</c> toma el de lectura, <c>PerformCmd</c> el de escritura.
+		/// </para>
+		/// </summary>
+		private readonly Lazy<MunicipalidadApp> app;
+
+		private MunicipalidadApp Arrancar()
+		{
+			var arrancando = new MunicipalidadApp(MunicipalidadApp.ElActor);
+			arrancando.ConfigureStorage(DatabaseType.FileSystem, "path=" + carpeta);
+			arrancando.Start();
+			return arrancando;
+		}
+
+		/// <summary>
+		/// SE CIERRA CUANDO LA CASCARA DESALOJA. El <c>Unload</c> del contexto es cooperativo y
+		/// no completa si el actor dejo referencias vivas; por <c>IDisposable</c>, que es lo que
+		/// <c>InProcessShell.Evict</c> pregunta, y no por una etiqueta nueva de Gnothi.
+		/// </summary>
+		public void Dispose()
+		{
+			if (!app.IsValueCreated) return;
+
+			try { app.Value.Actor.GracefulExit(); } catch { /* ya se estaba yendo */ }
+		}
+
+		private object Leer(Func<MunicipalidadAPI, object> pregunta)
+		{
+			if (!HayJournal) return ConsultasDelModulo.SinDatos(carpeta);
+
+			MunicipalidadApp abierto = app.Value;
+			if (abierto.Actor.CurrentEntryId == 0) return ConsultasDelModulo.SinDatos(carpeta);
+
+			return pregunta(new MunicipalidadAPI(abierto));
+		}
+
+		/// <summary>
+		/// El instante en que se pregunto, al segundo entero. No <c>UtcNow</c> pelado: la precision de
+		/// sub-segundo hace que dos lecturas tomadas en el mismo aliento no coincidan, y todas estas
+		/// vistas se calculan CONTRA un instante.
 		/// </summary>
 		private static DateTime ElInstanteEnQueSePregunto()
 		{
@@ -79,5 +263,9 @@ namespace Municipalidad.App
 
 			return new DateTime(ahora.Ticks - ahora.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
 		}
+
+		/// <summary>Ese instante dicho como el dia de calendario en que cae.</summary>
+		private static string ElDiaDe(DateTime instante) =>
+			instante.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 	}
 }

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Guaria y vos</title>
+
+<!-- LA PILA DE LA INSTITUCION, TAL CUAL Y EN SU ORDEN, copiada de Compras.Wasm/wwwroot a los
+     Assets del apk. Es la tercera pieza de andamio que hace falta y no es codigo: los .razor
+     traen las CLASES, no la hoja. El Host tiene que servir css/, lib/, fuentes/, brand/ y
+     assets/ -- lo mismo que ya hace el BundleServer para una cara hibrida. -->
+<link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  /* Lo unico propio del spike: el log, que en la app no existe. */
+  #log{margin:18px;font:11.5px ui-monospace,monospace;color:#77766f;white-space:pre-wrap}
+</style>
+</head>
+<body>
+
+<!--
+  EL OTRO LADO DEL PUENTE, y lo importante es lo que NO tiene: ni runtime, ni framework, ni una
+  linea de logica de la institucion. Solo sabe aplicar ediciones a un DOM.
+
+  ESTO ES LO QUE VIAJARIA EN UN MODULO DE LA CUARTA FORMA. En la hibrida, la cara son entre 9 y 13
+  KB de JS escritos a mano POR MODULO. Aca es este archivo, uno solo, puesto por el Host, y el
+  modulo no trae nada.
+
+  LO QUE APLICA son las ediciones que el arbol de render produce de verdad. No estan todas: falta
+  el bloque de permutaciones, que es reordenamiento de listas con @key. Cuando llega se dice en el
+  log en vez de ignorarse -- un spike que se come lo que no entiende contesta que si por no haber
+  mirado.
+-->
+
+<!-- EL ENVOLTORIO DEL LAYOUT, y hace falta por lo mismo que en la cara JS de examenes: la portada
+     lleva `margin: -1.5rem -.75rem` para SANGRAR el padding de `main.container py-4`. Montada sin
+     el, esos margenes negativos tiran el hero afuera de la pantalla.
+     Esto es `MainLayout.razor` reducido a lo que envuelve. Una cuarta forma tendria que montar el
+     layout de verdad como componente raiz, con la pagina como su `@Body`. -->
+<main class="container py-4" style="max-width:56rem">
+  <div id="raiz"></div>
+</main>
+
+<!-- La nav del pie, tambien de MainLayout. Sin router no lleva a ningun lado; esta para que la
+     pantalla se vea como se ve, que es lo que este paso vino a probar. -->
+<nav class="pestanas">
+  <div class="pestanas-dentro">
+    <a class="pestana active" href="#">
+      <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+           stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/><path d="M7.8 16.6v-4.7h4.4v4.7"/>
+      </svg>
+      Inicio
+    </a>
+    <a class="pestana" href="#">
+      <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+           stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/><path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
+      </svg>
+      Compras
+    </a>
+  </div>
+</nav>
+
+<div id="log"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var raiz = document.getElementById('raiz');
+  var log = document.getElementById('log');
+  var lotes = 0;
+
+  function decir(s) { log.textContent = s + '\n' + log.textContent; }
+
+  // LOS HIJOS DE UN NODO, como lista plana, que es el modelo que las ediciones suponen: cada
+  // edicion trae un `SiblingIndex` dentro del padre en que esta parada.
+  var pila = [];
+  function actual() { return pila.length ? pila[pila.length - 1] : raiz; }
+
+  // UN MARCO A UN NODO REAL. Devuelve tambien cuantos marcos consumio, porque un elemento se
+  // lleva a sus hijos: `largo` es el tamano del subarbol, contandose a si mismo.
+  function nodoDe(marcos, i) {
+    var f = marcos[i];
+
+    if (f.t === 'x') return { nodo: document.createTextNode(f.v), usados: 1 };
+
+    if (f.t === 'm') {
+      var molde = document.createElement('template');
+      molde.innerHTML = f.v;
+      return { nodo: molde.content.firstChild || document.createTextNode(''), usados: 1 };
+    }
+
+    if (f.t === 'e') {
+      var el = document.createElement(f.n);
+      var j = i + 1, fin = i + f.largo;
+      while (j < fin) {
+        var h = marcos[j];
+        if (h.t === 'a') { atributo(el, h); j++; continue; }
+        var hijo = nodoDe(marcos, j);
+        el.appendChild(hijo.nodo);
+        j += hijo.usados;
+      }
+      return { nodo: el, usados: f.largo };
+    }
+
+    // Un componente hijo: sus marcos llegan en SU propio diff, no acá. Se deja un ancla.
+    if (f.t === 'c') return { nodo: document.createComment('c' + f.id), usados: f.largo || 1 };
+
+    if (f.t === 'r') return { nodo: document.createComment('region'), usados: f.largo || 1 };
+
+    decir('marco no manejado: ' + f.t);
+    return { nodo: document.createComment('?'), usados: 1 };
+  }
+
+  // UN ATRIBUTO, y el caso interesante es el evento: si trae `ev`, lo que se cablea es una vuelta
+  // al Host con ESE numero. El manejador no está acá y no puede estar.
+  function atributo(el, f) {
+    if (f.ev) {
+      var evento = f.n.replace(/^on/, '');
+      el.addEventListener(evento, function (e) {
+        e.preventDefault();
+        console.log('clic -> manejador ' + f.ev); window.spikePuente.evento(String(f.ev));
+      });
+      return;
+    }
+    // LA REGLA DE BLAZOR, TAL CUAL: `false` y `null` QUITAN el atributo; `true` lo pone vacio.
+    // Antes esto comparaba contra el booleano de JS y del otro lado llegaba la cadena «True»,
+    // asi que `aria-hidden` salia con valor «True» y un atributo en `false` quedaba PUESTO --
+    // que en HTML significa lo contrario de lo que el razor dijo.
+    if (f.v === null || f.v === false) el.removeAttribute(f.n);
+    else el.setAttribute(f.n, f.v === true ? '' : String(f.v));
+  }
+
+  window.aplicar = function (lote) {
+    if (lote.tipo === 'error') { decir('ERROR del Host: ' + lote.dice); return; }
+
+    var t0 = performance.now();
+    pila = [];
+
+    lote.componentes.forEach(function (c) {
+      c.ediciones.forEach(function (ed) {
+        var padre = actual();
+        var hijos = padre.childNodes;
+
+        switch (ed.t) {
+          case 'PrependFrame':
+            var hecho = nodoDe(lote.marcos, ed.ref);
+            padre.insertBefore(hecho.nodo, hijos[ed.i] || null);
+            break;
+
+          case 'RemoveFrame':
+            if (hijos[ed.i]) padre.removeChild(hijos[ed.i]);
+            break;
+
+          case 'UpdateText':
+            if (hijos[ed.i]) hijos[ed.i].textContent = lote.marcos[ed.ref].v;
+            break;
+
+          case 'UpdateMarkup':
+            if (hijos[ed.i]) hijos[ed.i].textContent = lote.marcos[ed.ref].v;
+            break;
+
+          case 'SetAttribute':
+            if (hijos[ed.i]) atributo(hijos[ed.i], lote.marcos[ed.ref]);
+            break;
+
+          case 'RemoveAttribute':
+            if (hijos[ed.i] && ed.attr) hijos[ed.i].removeAttribute(ed.attr);
+            break;
+
+          case 'StepIn':
+            pila.push(hijos[ed.i]);
+            break;
+
+          case 'StepOut':
+            pila.pop();
+            break;
+
+          default:
+            decir('edicion no manejada: ' + ed.t);
+        }
+      });
+    });
+
+    lotes++;
+    decir('lote ' + lotes + ': ' + lote.componentes.length + ' componente(s), ' +
+          lote.marcos.length + ' marco(s), aplicado en ' +
+          (Math.round((performance.now() - t0) * 100) / 100) + ' ms');
+  };
+
+  // EL AVISO, igual que `gnothiPuente.listo`: el Host no empuja nada hasta que hay documento.
+  console.log('pagina lista, avisando al Host');
+  window.spikePuente.listo();
+})();
+</script>
+</body>
+</html>

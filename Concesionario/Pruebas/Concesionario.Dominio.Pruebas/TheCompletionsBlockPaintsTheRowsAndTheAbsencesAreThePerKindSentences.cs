@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 

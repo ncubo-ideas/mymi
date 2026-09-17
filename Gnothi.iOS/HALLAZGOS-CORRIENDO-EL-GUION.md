@@ -68,13 +68,13 @@ los módulos arrancaran, así que estuvo contestada mientras todavía peleábamo
 Los dos daban **pantalla en blanco sin un solo error**, y por eso el primero tapaba al segundo.
 Los dos están corregidos y commiteados en esta rama.
 
-**a) `Localizar` componía `bin/web`** — `Gnothi.Movil/Shell.cs`. El molde era el de un módulo
+**a) `Localizar` componía `bin/web`** — `Gnothi.MobileShared/Shell.cs`. El molde era el de un módulo
 cargo (`<dir>/bin/<dll>`) y se aplicaba a todos. Para uno hospedado, cuyo bundle vive en `web/`,
 daba `<dir>/bin/web`: una ruta inexistente. `BaseOf` no encontraba el `index.html`, caía en su
 `return "/"`, y el bundle publicado para `/app/` se servía en la raíz. **Y además se comía
 `arguments[1]`** —la URL del publicador— porque reemplazaba el array entero.
 
-**b) El base pedido sin la barra final** — `Gnothi.Movil/BundleServer.cs`. El origen es
+**b) El base pedido sin la barra final** — `Gnothi.MobileShared/BundleServer.cs`. El origen es
 `gnothi-mod://<módulo>/app/` y WebKit navega pidiendo **`/app`**, sin barra. El
 `StartsWith(basePath)` no matcheaba, no se recortaba nada, y se buscaba `<bundle>/app`.
 

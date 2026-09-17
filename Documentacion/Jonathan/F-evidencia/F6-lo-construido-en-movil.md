@@ -15,6 +15,12 @@ modos.
 | `cargas` | Estaciones Faro | `resumen`, `lista_de_vehiculos` |
 | `dealership` | Sotaventos Motors (en inglés) | `resumen`, `hasta_donde_leyo` |
 
+**Y la quinta, que llegó después y por eso importa:** `municipalidad` (Tu municipalidad) se hospedó
+el 2026-09-16 y **no abrió**. No por la forma: por una línea que las cuatro de arriba tienen y ella
+no. Está en [`E5`](../E-trampas/E5-la-app-hospedada-que-no-sabe-que-lo-esta.md), y desde `2.4.0`
+corre igual que las otras cuatro. Lo que la quinta institución demostró es que **la forma hospedada
+tiene una convención que nada verifica**.
+
 ---
 
 ## 1 · El alta del módulo, con permiso

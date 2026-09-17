@@ -40,14 +40,46 @@ public sealed class Module : IAsyncDisposable
 	//
 	// Practical consequence: facturas can stay on stdio while examenes runs in-process, both
 	// over the same journals. Migrating is changing one word in a json.
+	// THE SEAM FOR A FACE THAT BRINGS ITS OWN SHELLS. The phones compile the real WebViewShell
+	// and HybridShell in place of the stubs below, by source inclusion. The desktop window keeps
+	// a ProjectReference to this assembly -it uses the public seam and nothing else- so it cannot
+	// swap a type: it registers a factory instead, before the catalog loads. Null means "not
+	// mine": the switch below decides as before. It exists so that Gnothi.Desktop can host the
+	// hybrid form without ceasing to be multiplatform.
+	internal static Func<string, Installation, IShell?>? ShellFactory;
+
 	private static IShell ChooseShell(string name, Installation installation) =>
+		ShellFactory?.Invoke(name, installation) ??
 		installation.Shell.Type.ToLowerInvariant() switch
 		{
 			// MOVIL: el modulo es la PWA de la institucion dentro de un WebView. Es la unica
-			// forma que las tiendas permiten para codigo que llega de afuera -Play y Apple
-			// nombran JavaScript en un webview como la excepcion-, y por eso en un telefono
-			// "in-process" no se puede publicar aunque funcione.
+			// forma que pasa el TEXTO de Google Play para codigo que llega de afuera, y por eso
+			// en un telefono "in-process" probablemente no se pueda publicar aunque funcione.
+			//
+			// ESTE COMENTARIO DECIA MAS DE LO QUE SE SABIA. Decia que "Play y Apple nombran
+			// JavaScript en un webview como LA excepcion". Eso venia del viejo §3.3.2 del acuerdo
+			// de Apple, que YA NO EXISTE con esa redaccion. Leidos los tres textos el 2026-09-16
+			// (ver Documentacion/Jonathan/B-arquitectura/B11-lo-que-dicen-las-tiendas.md):
+			//
+			//   - Google Play SI es claro, y la palabra que decide es "indirect": el WebView da
+			//     acceso INDIRECTO a las APIs de Android y esta permitido; un dll cargado por
+			//     Mono en este proceso da acceso DIRECTO y no lo esta.
+			//   - Apple ya no nombra motor: dice "interpreted code", con tres condiciones. Es mas
+			//     ancho, y la tercera -no crear una tienda o escaparate para otras aplicaciones-
+			//     le pega a Gnothi entero, no a una forma.
+			//   - Y el 4.7.2 de Apple -no exponer APIs nativas al software que no viene en el
+			//     binario sin permiso previo- le pega TAMBIEN a la forma hospedada, que este
+			//     comentario daba por segura. El puente es justo eso.
+			//
+			// O sea: "webview" es la mejor posicionada, no la limpia. Nada de esto es veredicto:
+			// son textos leidos, no una revision pasada.
 			"webview"    => new WebViewShell(name, installation.Shell, installation.GrantedFolder),
+
+			// HIBRIDA: la cara en el WebView y la superficie en proceso, con el motor prestado.
+			// Es la unica de las tres en la que el WebView NO contesta: pregunta. Hereda la
+			// objecion de arriba entera, porque el dll de la institucion corre nativo.
+			"hybrid"     => new HybridShell(name, installation.Shell, installation.GrantedFolder),
+
 			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
 			_            => new StdioShell(name, installation.Shell, installation.GrantedFolder),
 		};
@@ -117,6 +149,24 @@ public sealed class Module : IAsyncDisposable
 	// For the declared-against-real verification.
 	public Task<IReadOnlyList<string>> ActualToolNames(CancellationToken ct)
 		=> shell.ActualTools(ct);
+
+	// LO QUE EL CARTERO TRAJO. Gnothi hizo la red y el modulo lo asienta -- o no puede, y la
+	// cascara lo dice. No pasa por el consentimiento de las tools a proposito: apagar una
+	// consulta decide QUE SE CONTESTA, no si el registro de la persona se sigue llenando.
+	public Task<string> Deliver(string envelopeJson, CancellationToken ct)
+		=> shell.Deliver(envelopeJson, ct);
+
+	// HASTA DONDE YA LEYO. Tampoco pasa por el consentimiento, y por la misma razon que la
+	// entrega: es el cursor del registro de la persona, no una consulta sobre ella.
+	public Task<long> Cursor(CancellationToken ct) => shell.Cursor(ct);
+
+	// LO QUE PIDE SU PROPIA PANTALLA. No pasa por Allows y no es un descuido: apagar una consulta
+	// decide que puede preguntar EL ASISTENTE sobre la persona, no le prohibe a la institucion
+	// mostrarle su expediente en la pantalla que ella acaba de abrir. Son decisiones con sujetos
+	// distintos.
+	public Task<object> View(
+		string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
+		=> shell.View(name, arguments, accepts, ct);
 
 	// ── LA ADUANA DEL LOGO ──────────────────────────────────────────────────────────────
 	//

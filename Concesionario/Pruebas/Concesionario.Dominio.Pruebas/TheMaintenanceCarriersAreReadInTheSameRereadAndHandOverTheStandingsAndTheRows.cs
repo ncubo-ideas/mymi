@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Concesionario.App;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 
@@ -569,7 +570,7 @@ namespace Concesionario.Dominio.Pruebas
 			return System.IO.File.ReadAllText(path);
 		}
 
-		// EL FUENTE DE LOS DOS PORTADORES, JUNTO. Se lee del grupo <None> de la raiz Wasm, que es el
+		// EL FUENTE DE LOS DOS PORTADORES, JUNTO. Se lee del grupo <None> de la raiz App -- se mudaron de Wasm a App\Views --, que es el
 		// mismo que alimenta el barrido de aritmetica: si no llego, esto revienta con el nombre.
 		private static string TheCarriersAsTheyAreWritten()
 		{
@@ -581,7 +582,7 @@ namespace Concesionario.Dominio.Pruebas
 			})
 			{
 				string path = System.IO.Path.Combine(
-					AppContext.BaseDirectory, "CodigoComoDato", "Wasm", file);
+					AppContext.BaseDirectory, "CodigoComoDato", "App", "Views", file);
 
 				Assert.That(System.IO.File.Exists(path), Is.True,
 					"'" + file + "' no llego al output. Un barrido que leyo cero archivos esta verde por "

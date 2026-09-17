@@ -8,7 +8,7 @@ namespace Gnothi.Host;
 //
 // WHY IT LIVES HERE, of all projects. The Host's text does not come out of one file: it comes
 // out of five projects at once. The page on the phones (Gnothi.Mobile/Assets/ui.html), the five
-// .razor of the desktop, the enrollment sentences of Gnothi.Movil, the denial reasons of
+// .razor of the desktop, the enrollment sentences of Gnothi.MobileShared, the denial reasons of
 // Dispatcher -which reach Siri through Snapshot- and two UIKit labels on iOS that never touch a
 // WebView. A catalog on the HTML side would have covered less than half of that.
 //

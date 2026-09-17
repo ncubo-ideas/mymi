@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi cuenta municipal</title>
+<!-- LA HOJA DE LA INSTITUCION, TAL CUAL. Es la mas liviana de los cinco modulos -- 830 lineas, sin
+     fuentes ni imagenes -- asi que llevarla entera no cuesta nada y saca de aca la decision de
+     como se ve la municipalidad. -->
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="cara.css">
+</head>
+<body>
+
+<!--
+  LA CARA DE LA MUNICIPALIDAD EN LA FORMA HIBRIDA, y lo importante es lo que NO tiene.
+
+  No trae motor: la aduana del Host lo rechaza incluso adentro de web/. Tampoco trae dominio ni
+  superficie: viajan al lado, en dominio/*.dll, y corren sobre el motor que presta Gnothi.
+
+  ESTE MODULO NO ES UN TABLERO, y por eso esta cara no se parece a las otras cuatro: es un MENU DE
+  SEIS PREGUNTAS, cada una su propia pantalla en la app suelta. Una cara hibrida es un solo
+  index.html, sin router, asi que las seis viven aca y el JS muestra una a la vez. Aplanarlas en
+  una pagina larga habria sido mas facil y habria perdido lo que la institucion decidio que es su
+  app: que son seis preguntas, y que se entra a UNA.
+
+  EL MARKUP ES EL DE Municipalidad.Wasm -- `marco`, `marco__banda`, `marco__sello`, `marco__nav`,
+  `hoja`, `bajada`, `bloque`, `tarjeta`, `nota` --, con sus clases reales. Ninguna renombrada.
+
+  LO QUE NO SE TRAJO: todo `ElArranque.razor`, que es el elegidor de carpeta y los permisos. En la
+  forma hibrida la carpeta la concede Gnothi, asi que esa pantalla no tiene nada que hacer.
+-->
+
+<header class="marco">
+    <div class="marco__banda">
+        <span class="marco__marca">
+            <span class="marco__sello">
+                <!-- El frontis con sus columnas. El mismo SVG de la app. -->
+                <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                    <path d="M24 4 2 17v5h44v-5L24 4Z" />
+                    <rect x="5" y="25" width="5" height="13" rx="1" />
+                    <rect x="16" y="25" width="5" height="13" rx="1" />
+                    <rect x="27" y="25" width="5" height="13" rx="1" />
+                    <rect x="38" y="25" width="5" height="13" rx="1" />
+                    <rect x="2" y="41" width="44" height="4" rx="1.5" />
+                </svg>
+            </span>
+            <span class="marco__titulos">
+                <span class="marco__nombre">Mi cuenta municipal</span>
+                <span class="marco__apunte">Tu cuenta, en tu carpeta</span>
+            </span>
+        </span>
+
+        <!-- LAS SEIS, en el mismo orden que el nav de la app. Son botones y no enlaces porque no
+             hay a donde navegar: la cara no tiene router, y un href a una ruta que no existe
+             recargaria la pagina dentro del WebView. -->
+        <nav class="marco__nav" id="nav">
+            <a href="#" data-pregunta="por-que-pago-mas" class="active">Por qué pago más</a>
+            <a href="#" data-pregunta="que-se-me-vence">Qué se me vence</a>
+            <a href="#" data-pregunta="cuanto-apartar">Cuánto apartar</a>
+            <a href="#" data-pregunta="sin-comprobante">Sin comprobante</a>
+            <a href="#" data-pregunta="cuanto-he-pagado">Cuánto he pagado</a>
+            <a href="#" data-pregunta="que-tan-al-dia">Qué tan al día</a>
+        </nav>
+    </div>
+</header>
+
+<main class="hoja">
+    <section class="pregunta" data-pregunta="por-que-pago-mas">
+        <h1>Por qué pago más</h1>
+        <p class="bajada">Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.</p>
+        <div id="por-que-pago-mas"><p class="nota">Preguntándole a Gnothi…</p></div>
+    </section>
+
+    <section class="pregunta" data-pregunta="que-se-me-vence" hidden>
+        <h1>Qué se me vence</h1>
+        <p class="bajada">Lo que está por vencerse y lo que ya venció. Tu portal no contesta esto.</p>
+        <div id="que-se-me-vence"><p class="nota">…</p></div>
+    </section>
+
+    <section class="pregunta" data-pregunta="cuanto-apartar" hidden>
+        <h1>Cuánto apartar</h1>
+        <p class="bajada">Lo que esta app propone por mes, y lo que vos adoptaste.</p>
+        <div id="cuanto-apartar"><p class="nota">…</p></div>
+    </section>
+
+    <section class="pregunta" data-pregunta="sin-comprobante" hidden>
+        <h1>Qué quedó sin comprobante</h1>
+        <p class="bajada">Lo que tu portal da por pagado y aquí no tiene recibo.</p>
+        <div id="sin-comprobante"><p class="nota">…</p></div>
+    </section>
+
+    <section class="pregunta" data-pregunta="cuanto-he-pagado" hidden>
+        <h1>Cuánto he pagado</h1>
+        <p class="bajada">El total de un año, con la mora adentro, y la serie de cada rubro.</p>
+        <div id="cuanto-he-pagado"><p class="nota">…</p></div>
+    </section>
+
+    <section class="pregunta" data-pregunta="que-tan-al-dia" hidden>
+        <h1>Qué tan al día está</h1>
+        <p class="bajada">Qué entró de lo que el portal publica, y qué falta.</p>
+        <div id="que-tan-al-dia"><p class="nota">…</p></div>
+    </section>
+
+    <div class="botones">
+        <!-- LA UNICA TECLA QUE VA A BUSCAR DATOS. Aca significa otra cosa que en la app suelta: no
+             sale a la red -- no puede -- sino que le pide a GNOTHI que traiga lo nuevo. -->
+        <button class="suave" type="button" id="releer" aria-busy="false">Actualizar</button>
+    </div>
+</main>
+
+<footer>
+    <p>El registro vive en este dispositivo. Esta pantalla no sale a la red:
+       le pregunta a Gnothi, y Gnothi responde con el motor que le presta.</p>
+    <p class="mono" id="conexion">—</p>
+</footer>
+
+<!-- EL PUENTE LO PONE EL HOST, no la institución: `armar-bundle.ps1` lo copia a web/ al armar
+     cualquier paquete híbrido. -->
+<script src="puente.js"></script>
+<script src="cara.js"></script>
+</body>
+</html>

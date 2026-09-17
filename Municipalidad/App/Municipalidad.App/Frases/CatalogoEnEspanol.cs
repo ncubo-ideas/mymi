@@ -143,6 +143,42 @@ namespace Municipalidad.App.Frases
 				["etiqueta.sin-consulta"] = "sin consulta",
 				["etiqueta.nada-sin-comprobante"] = "nada sin comprobante",
 				["etiqueta.hay-periodos-sin-comprobante"] = "hay períodos sin comprobante",
+
+				// LO QUE UNA VISTA DICE CUANDO NO HAY CON QUE CONTESTAR, y por que vive aca y no en el
+				// catalogo de pantalla de la carátula Blazor, que es de donde vino.
+				//
+				// Estas seis frases las compone una VISTA, y las Vistas se mudaron a este proyecto para
+				// que las dos caras -- la app suelta y la híbrida -- lean la misma. El catalogo de
+				// pantalla, en cambio, lo baja el navegador por HTTP y se lee con JSInterop: pedirselo a
+				// una Vista ataría este proyecto al navegador, que es justo lo que la forma híbrida
+				// existe para no hacer -- aca adentro corre en proceso, y en la caja de wasm, donde no
+				// hay ni `navigator` ni `wwwroot`.
+				//
+				// Palabra por palabra las mismas que traía el JSON: mover una frase no es reescribirla.
+				["sinComprobante.nuncaHuboConsulta"] =
+					"Tu app no tiene ninguna consulta al portal registrada, así que no hay con qué cotejar "
+					+ "lo que sí vio pagar. Esto NO dice que todo esté en orden: dice que la pregunta "
+					+ "todavía no se puede contestar, y se va a poder en cuanto entre una consulta.",
+
+				["cuantoApartar.sinUnPago"] =
+					"Tu app todavía no ha visto ningún comprobante, así que no hay de dónde proyectar lo "
+					+ "que vas a pagar este año. En cuanto entre el primer pago, esta propuesta aparece sola.",
+				["cuantoApartar.sinReservaAdoptada"] =
+					"Todavía no adoptaste una reserva, así que no hay con qué comparar la propuesta. "
+					+ "Adoptar una es tuyo y no de la municipalidad: es cuánto decidís apartar cada mes.",
+				["cuantoApartar.sinNingunaDeLasDos"] =
+					"Sin un pago del que proyectar y sin una reserva adoptada, no hay dos mitades que "
+					+ "comparar. Las dos entran solas: la propuesta con el primer comprobante, la adoptada "
+					+ "cuando la pongás.",
+
+				["porQuePagoMas.sinNingunComprobante"] =
+					"Tu app no ha visto ni un comprobante de este rubro, así que no hay nada que comparar. "
+					+ "Eso no quiere decir que no lo pagués: quiere decir que tus pagos de este rubro "
+					+ "todavía no han llegado aquí.",
+				["porQuePagoMas.conUnSoloComprobante"] =
+					"De este rubro hay un solo período con comprobante, y para ver una variación hacen "
+					+ "falta dos. No es que el cobro no haya cambiado: es que todavía no hay contra qué "
+					+ "compararlo.",
 			};
 		}
 	}

@@ -6,12 +6,16 @@
 
 ```xml
 <PropertyGroup>
-  <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10029</VersionDelMotor>
+  <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10044</VersionDelMotor>
 </PropertyGroup>
 ```
 
 MSBuild lo busca **subiendo desde cada proyecto**, así que tiene que quedar en un directorio ancestro de
 todos.
+
+El `Condition` no es decorativo: deja **sobreescribir la versión por línea de comandos** con
+`-p:VersionDelMotor=…`, que es la salida cuando el feed no responde y la caché local no tiene la versión
+declarada. Ver la advertencia al final de esta sección.
 
 ## Por qué NuGet y no ProjectReference
 
@@ -102,6 +106,22 @@ El paquete vive en un feed privado de Azure DevOps. Consecuencias prácticas:
   en el feed — y es lo primero que va a frenar a alguien nuevo.
 - **Un contenedor no puede restaurarlo** sin credenciales. De ahí que el Dockerfile compile el Host desde
   fuente y **copie el módulo ya compilado**. Ver `D2`.
+
+### Y la caché local se queda atrás del repo
+
+**Medido el 2026-09-11 en la máquina de desarrollo:** `Directory.Build.props` pide `3.0.0-beta.10044`, y
+`~/.nuget/packages/ncubo.puppeteer` tenía hasta `3.0.0-beta.10029-lector.4`. Con el feed devolviendo 403
+—síntoma `NU1301`, ver `E1 §8b`— **la versión declarada no existe en ninguna parte de la máquina**, y el
+repo no compila.
+
+La app **sí compila contra `10029-lector.4`** (solo warnings), así que el bloqueo es de acceso al paquete,
+no de API. Pero:
+
+> ⚠ **Un publish hecho con una versión del motor distinta a la declarada no es el artefacto del repo.**
+> Y por la restricción de determinismo de replay que cierra este documento, **no basta con que compile**:
+> dos versiones del sustrato pueden replayar el mismo journal a estados distintos. Sirve para levantar una
+> demo; **no sirve para medir, ni para comparar contra cifras anteriores, ni para dar por buena una
+> rehidratación.**
 
 ## Dos cosas que rompen el build y no lo parecen
 

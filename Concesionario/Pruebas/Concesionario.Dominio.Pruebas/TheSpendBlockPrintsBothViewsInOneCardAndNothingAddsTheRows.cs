@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Concesionario.App;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 
@@ -751,7 +752,7 @@ namespace Concesionario.Dominio.Pruebas
 		private static string TheCarrierAsItIsWritten()
 		{
 			return TheFileAtOutput(
-				Path.Combine("CodigoComoDato", "Wasm", "WhatThisVehicleHasCost.cs"));
+				Path.Combine("CodigoComoDato", "App", "Views", "WhatThisVehicleHasCost.cs"));
 		}
 
 		private static string TheFileAtOutput(string relative)

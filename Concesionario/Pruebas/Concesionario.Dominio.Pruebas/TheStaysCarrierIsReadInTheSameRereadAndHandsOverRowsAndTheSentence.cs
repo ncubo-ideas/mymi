@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Concesionario.App;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 

@@ -3,6 +3,7 @@ using Choreography.Theater;
 using Puppeteer;
 using Concesionario.App;
 using Concesionario.App.Events;
+using Concesionario.App.Views;
 using Puppets.Portador;
 
 namespace Concesionario.Wasm
@@ -424,32 +425,18 @@ namespace Concesionario.Wasm
 				now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, DateTimeKind.Utc);
 		}
 
-		public static readonly string[] TheNineKinds =
-		{
-			"Inspection", "FluidChange", "FilterChange", "WearPartReplacement", "TimedComponent",
-			"SoftwareUpdate", "RecallRemedy", "Diagnostic", "Repair"
-		};
-
-		public static readonly string[] TheFourProfiles =
-		{
-			"Standard", "SevereDuty", "LowDistance", "Commercial"
-		};
-
-		public static readonly string[] TheFiveDeferralReasons =
-		{
-			"Cost", "Timing", "SecondOpinion", "NotConvinced", "WillDoElsewhere"
-		};
-
-		public static readonly string[] TheSixFluidKinds =
-		{
-			"EngineOil", "BrakeFluid", "Coolant", "TransmissionFluid", "PowerSteeringFluid",
-			"WasherFluid"
-		};
-
-		public static readonly string[] TheThreeTyrePositions =
-		{
-			"Front", "Rear", "Spare"
-		};
+		// THE CLOSED SETS MOVED to Concesionario.App.Views.TheClosedSets, and these names stay so
+		// that every .razor that already said AppState.TheNineKinds keeps working.
+		//
+		// They moved because they are domain vocabulary, not screen state: a kind of service, a
+		// fluid, a tyre position. Living here they were unreachable from anything that is not this
+		// Blazor app -- and a cargo or hybrid module ships Concesionario.App.dll and never this
+		// assembly, so the projections that walk these lists could not travel with it.
+		public static readonly string[] TheNineKinds = TheClosedSets.TheNineKinds;
+		public static readonly string[] TheFourProfiles = TheClosedSets.TheFourProfiles;
+		public static readonly string[] TheFiveDeferralReasons = TheClosedSets.TheFiveDeferralReasons;
+		public static readonly string[] TheSixFluidKinds = TheClosedSets.TheSixFluidKinds;
+		public static readonly string[] TheThreeTyrePositions = TheClosedSets.TheThreeTyrePositions;
 
 		/// <summary>
 		/// Un nombre del canon escrito como lo lee una persona: se separa en cada mayuscula y solo

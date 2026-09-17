@@ -429,7 +429,7 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 	// contrario: ReportEnrollmentError recibia la FRASE y las dos la escribian identica.
 	{
 		string[] caras = ["Gnothi.Mobile/MainActivity.cs", "Gnothi.iOS/ViewController.cs"];
-		var deShell = typeof(Gnothi.Movil.Shell)
+		var deShell = typeof(Gnothi.MobileShared.Shell)
 			.GetMembers(BindingFlags.Public | BindingFlags.Instance)
 			.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
 
@@ -503,7 +503,7 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 	// quien tenga esa rama. El compilador no ve nada: es un string. Las dos aserciones de arriba
 	// cubren ui.html; esta cubre los .cs y los .razor, que son las otras dos caras.
 	{
-		string[] fuentes = [.. new[] { "Gnothi.Host", "Gnothi.Movil", "Gnothi.Assistant", "Gnothi.Desktop", "Gnothi.Mobile", "Gnothi.iOS" }
+		string[] fuentes = [.. new[] { "Gnothi.Host", "Gnothi.MobileShared", "Gnothi.Assistant", "Gnothi.Desktop", "Gnothi.Mobile", "Gnothi.iOS" }
 			.Select(d => Path.Combine(raiz, d))
 			.Where(Directory.Exists)
 			.SelectMany(d => Directory.EnumerateFiles(d, "*.cs", SearchOption.AllDirectories)

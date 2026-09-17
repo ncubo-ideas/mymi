@@ -731,16 +731,13 @@ namespace Concesionario.Dominio.Pruebas
 
 		private static string[] EveryCarrierOfTheShell()
 		{
-			var found = new List<string>();
-
-			foreach (string file in TheCodeOfTheShellsAsData.EveryFileOf(TheCodeOfTheShellsAsData.Wasm))
-				if (file.EndsWith(".cs", StringComparison.Ordinal)) found.Add(file);
+			string[] found = TheCodeOfTheShellsAsData.EveryCarrierFile();
 
 			Assert.That(found, Is.Not.Empty,
 				"No llego ningun .cs de la caratula al output, asi que el censo de columnas-dia esta "
 				+ "vacio por no haber leido.");
 
-			return found.ToArray();
+			return found;
 		}
 
 		private static string InsideTheShell(string file)

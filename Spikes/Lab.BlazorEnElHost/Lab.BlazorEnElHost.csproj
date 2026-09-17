@@ -1,0 +1,86 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- EL SPIKE DE LA CUARTA FORMA. La pregunta, en una linea:
+       ¿se puede hospedar un Renderer de Blazor desde una Activity de Android, SIN MAUI,
+       empujando los diffs por el puente que Gnothi ya tiene?
+
+       POR QUE IMPORTA. La forma hibrida ya resolvio el peso : municipalidad pesa 74 KB contra
+       12,1 MB de la hospedada : pero cobra un precio que esta MEDIDO: portar la pantalla de
+       razor a JS costo -21% de lineas en concesionario, y ese es el numero honesto, porque en
+       los otros modulos el ahorro venia mezclado con trabajo que desaparecio (el elegidor de
+       carpeta, los permisos, los avisos de migracion). Si el Host puede correr los componentes
+       de la institucion, ese costo es CERO y la institucion no reescribe nada.
+
+       LO QUE NO SE MIDE ACA, y hay que decirlo antes de que alguien lea los numeros al reves:
+       esto no ahorra bytes. La cara de compras pesa 13 KB de html+js; llevarla a cero deja el
+       bundle igual, porque el peso son las fotos y el CSS. Lo que se mide es OTRA cosa: si el
+       Host puede ser el renderizador.
+
+       Y LA OBJECION DE FONDO NO LA CONTESTA ESTE SPIKE. Hoy [View] es una puerta angosta :
+       cuatro metodos marcados, strings de ida y vuelta. Un Renderer hospedado es una puerta
+       ancha: los MANEJADORES DE EVENTOS de la institucion correrian nativos, en el proceso de
+       Gnothi, con el framework a mano. Es el trilema de B7 otra vez y peor que el hibrido. Este
+       spike contesta si se PUEDE, no si se DEBE.
+
+       NO REFERENCIA Gnothi.Host NI Puppeteer, a proposito y por la misma razon que
+       Lab.WebViewWasm: lo que se prueba es el RENDERIZADOR y el puente, no el nucleo. Si esto
+       no da, el resto de la discusion no importa. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Lab.BlazorEnElHost</RootNamespace>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.ncubo.gnothi.spike.blazorenelhost</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- Autocontenido, igual que Gnothi.Mobile y Lab.WebViewWasm: sin Fast Deployment el apk se
+         basta solo y `pm clear` no lo rompe. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+
+    <!-- EL CHOQUE ENTRE LOS DOS SDK, y es un hallazgo del spike: el de Razor arma un manifiesto
+         de "static web assets" y el de Android compila POR RID (android-arm64, android-x64), asi
+         que el manifiesto se busca en una carpeta por arquitectura donde nunca se escribio.
+         Se apaga y ya: este camino NO sirve wwwroot. Los .razor se compilan a C# y el html lo
+         pone la Activity desde Assets. Lo que se usa del SDK de Razor es el COMPILADOR, no su
+         canalizacion de archivos estaticos. -->
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EL RENDERIZADOR SOLO, sin ASP.NET Core y sin MAUI. `Microsoft.AspNetCore.Components` trae
+         la clase abstracta `Renderer`, el arbol de render y `Dispatcher`, y nada de servidor.
+         MEDIDO 2026-09-16: restaura para net9.0-android sin tocar nada, y compila con CERO
+         warnings IL : que para este repo es un dato, porque Lab.Aot existe para contarlos. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.0" />
+
+    <!-- Y EL DE WEB, QUE NO ERA OPCIONAL, y esto lo descubrio la corrida del 2026-09-16 en el
+         telefono: con solo el nucleo, el compilador de Razor NO SABE que `onclick` es un evento
+         del DOM, asi que emitio el boton entero como MARKUP LITERAL:
+             el boton entero llego como un marco de texto, con el @onclick sin compilar adentro,
+         y el clic no tenia a donde ir. No fallo nada: compilo, pinto, y el boton no hacia nada.
+         `Microsoft.AspNetCore.Components.Web` es quien define los atributos de evento de HTML. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.0" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <!-- LA SEGUNDA VUELTA: montar una pantalla REAL. `MisCompras.razor` son 1798 lineas, 7 rutas,
+         3 inyecciones. Entra por Compile Include y no por ProjectReference porque Compras.Wasm es
+         un proyecto `Microsoft.NET.Sdk.BlazorWebAssembly` sobre net9.0 y este es net9.0-android:
+         no se pueden referenciar. Es el mismo idioma que el repo ya usa con Gnothi.MobileShared. -->
+    <ProjectReference Include="..\..\Compras\App\Compras.App\Compras.App.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <!-- LA PANTALLA REAL, SIN COPIARLA. Se compila el archivo de la institucion TAL CUAL esta en
+         su repo: si manana lo cambia, este spike compila lo nuevo o se rompe, que es justo lo que
+         se quiere saber. -->
+    <Content Include="..\..\Compras\App\Compras.Wasm\Pages\MisCompras.razor" Link="Cara\MisCompras.razor" />
+  </ItemGroup>
+
+</Project>

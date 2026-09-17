@@ -64,7 +64,16 @@ namespace Concesionario.Dominio.Pruebas
 			// Y SUBIO 25 -> 28 CON LOS TRES ARCHIVOS DE Wording/, que son el renderizador y sus dos
 			// catalogos: la raiz paso de 38 a 41 y el margen sigue siendo TRECE. Se mueve POR LO QUE
 			// SE AGREGO y no hasta donde alcance, y subirlo es acto de la tarea que los ESCRIBE.
-			new object[] { TheCodeOfTheShellsAsData.App, 28 },
+			//
+			// Y SUBIO 28 -> 36 CON LAS OCHO VISTAS QUE SE MUDARON DESDE Wasm, que son proyecciones del
+			// dominio y no de la pantalla: viven en App\Views para que la superficie de carga pueda
+			// leerlas sin arrastrar la UI. Se mueve por lo que ENTRO, no hasta donde alcance, que es
+			// la misma convencion del renglon de arriba.
+			//
+			// Y SUBIO 36 -> 37 CON TheWording.cs, EL CUARTO ARCHIVO DE Wording/: entro despues del
+			// renglon que subio el piso a 28 y no lo volvio a mover, asi que lo cuenta este merge. La
+			// raiz quedo en 53 y el margen sigue siendo DIECISEIS.
+			new object[] { TheCodeOfTheShellsAsData.App, 37 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
 			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices
@@ -97,7 +106,15 @@ namespace Concesionario.Dominio.Pruebas
 			//
 			// Y SUBIO 27 -> 29 CON EL CATALOGO DE LA PANTALLA Y EL APUNTE, que son DOS archivos: la
 			// raiz paso de 30 a 32 y el margen sigue siendo TRES.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 29 },
+			//
+			// Y BAJO 29 -> 25 CON LAS OCHO VISTAS QUE SE FUERON A App\Views. Es la primera vez que este
+			// piso BAJA, y baja por la misma regla que lo hacia subir: se mueve por lo que cambio en la
+			// raiz, no hasta donde alcance. La raiz quedo en 28 y el margen sigue siendo TRES.
+			//
+			// Que un piso baje es raro y hay que decir por que: no es que la raiz se haya vaciado -- es
+			// que esos ocho archivos no eran de la pantalla. Son proyecciones del dominio, y la forma
+			// hibrida las necesita del lado que la superficie de carga puede leer.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 25 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },
@@ -613,15 +630,21 @@ namespace Concesionario.Dominio.Pruebas
 		}
 
 		// PLAN-BuildOrder.md §2.2 PREDIJO CERO ACIERTOS AQUI Y LA PREDICCION ES FALSA, medido: son
-		// diez, y los diez son una directiva de nginx seguida de un camino. No hay forma de afinar el
+		// once, y los once son una directiva de nginx seguida de un camino. No hay forma de afinar el
 		// detector que los quite sin quitar tambien una division de verdad: "root /usr/share" y
 		// "a / b" son la misma forma. Quedan enumerados uno por uno, que es lo que hace que un
 		// archivo NUEVO en esta raiz se ponga rojo y alguien lo lea.
+		//
+		// EL RENGLON ONCE LLEGO ASI, Y VALE LA PENA DECIRLO: 2b2648d abrio
+		// "location /descargas/ {" para los descargables del paso a paso con Gnothi y no escribio su
+		// renglon, asi que la lista quedo corta y esta prueba en rojo. La lista funciono exactamente
+		// como se queria -- una directiva nueva no pasa en silencio -- y lo que faltaba era cerrarla.
 		private static readonly AllowedArithmetic[] TheDownloadPagesDirectives =
 		{
 			Nginx("ssl_certificate", "ssl_certificate_key /etc/nginx/certs/localhost.key;"),
 			Nginx("location = /", "root /usr/share/nginx/descarga;"),
 			Nginx("location = /", "try_files /index.html =404;"),
+			Nginx("server", "location /descargas/ {"),
 			Nginx("server", "location = /app { return 301 /app/; }"),
 			Nginx("server", "location /app/eventos/ {"),
 			Nginx("location = /app/service-worker.js", "alias /usr/share/nginx/app/service-worker.js;"),
