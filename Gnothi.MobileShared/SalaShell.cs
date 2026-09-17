@@ -7,11 +7,38 @@ namespace Gnothi.Host;
 // Corre adentro del motor web, en UN SOLO documento que es de Gnothi y no de ninguna
 // institucion, con el runtime .NET y el motor compilados a wasm.
 //
-// POR QUE EXISTE. En un telefono, cargar el .dll de un tercero en el proceso de la app es lo
-// que las dos tiendas no permiten publicar -Google lo dice de los .dex, .jar y .so, y Apple en
-// la 3.3(b) del acuerdo-, y las dos exceptuan el codigo que interpreta un motor web. La sala es
-// esa excepcion, sin perder lo que la forma cargo daba: el modulo sigue pesando 200 KB porque
-// el sustrato se lo presta Gnothi, y se presta UNA vez para todos.
+// POR QUE EXISTE. En un telefono, cargar el .dll de un tercero en el proceso de la app deja al
+// codigo de la institucion con acceso DIRECTO a las APIs del sistema. La sala se lo quita sin
+// perder lo que la forma cargo daba: el modulo sigue pesando 200 KB porque el sustrato se lo
+// presta Gnothi, y se presta UNA vez para todos.
+//
+// ── QUE SE PUEDE AFIRMAR DE LAS TIENDAS Y QUE NO ────────────────────────────────────────────
+//
+// ESTE COMENTARIO DECIA MAS DE LO QUE SE SABIA. Decia que "las dos tiendas exceptuan el codigo
+// que interpreta un motor web" y que "la sala es esa excepcion". Eso venia del viejo §3.3.2 del
+// acuerdo de Apple, QUE YA NO EXISTE CON ESA REDACCION. Leidos los tres textos el 2026-09-16,
+// ver `Documentacion/Jonathan/B-arquitectura/B11-lo-que-dicen-las-tiendas.md`:
+//
+//   - GOOGLE PLAY es el texto claro, y la palabra que decide es "indirect". Aca el codigo de la
+//     institucion lo ejecuta el runtime .NET compilado a wasm, dentro del documento del motor
+//     web, y su acceso al sistema es indirecto: MEDIDO el 2026-09-17 con una sonda que corre
+//     como modulo -- no ve el disco del aparato, no sale del origen, y no tiene como llamar al
+//     puente. Por ese texto, la sala pasa.
+//
+//   - APPLE ES UNA PREGUNTA ABIERTA, no un si. Hoy dice "interpreted code" con tres
+//     condiciones, sin nombrar motor. Y B11 deja sin saber DOS cosas que son exactamente el
+//     caso de la sala: si wasm cuenta como codigo interpretado, y si un .dll de IL corrido por
+//     el interprete de Mono cuenta. No hay como contestarlo leyendo: se contesta enviando.
+//
+//   - EL 4.7.2 -no exponer APIs nativas a software que no viene en el binario- le pega a la
+//     forma hospedada por su puente. A la sala le pega menos, porque el dominio de adentro NO
+//     tiene puente: no puede alcanzar `DotNet.invokeMethodAsync`. Menos no es nada.
+//
+//   - Y el ESCAPARATE (3.3.1(B)(c)) le pega a Gnothi entero, no a una forma.
+//
+// O sea: la sala esta MEJOR POSICIONADA que la hibrida y, frente al texto de Google, al menos
+// tan bien como la hospedada. No es "la excepcion que las tiendas nombran". Nada de esto es un
+// veredicto: son textos leidos, no una revision pasada.
 //
 // LAS DOS COSAS QUE ESTA CLASE SOSTIENE, y no son opcionales:
 //

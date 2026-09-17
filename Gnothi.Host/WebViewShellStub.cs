@@ -1,8 +1,9 @@
 namespace Gnothi.Host;
 
 // LA CASCARA DE WEBVIEW NO EXISTE EN ESCRITORIO, y esto no es un atajo: es que ahi no hace
-// falta. En escritorio el modulo se carga en proceso o como proceso hijo, que es lo que las
-// tiendas prohiben en un telefono y ahi nadie prohibe.
+// falta. En escritorio el modulo se carga en proceso o como proceso hijo: en un telefono eso da
+// acceso DIRECTO a las APIs del sistema y no pasa el texto de Google (ver B11), y en una PC no le
+// importa a nadie.
 //
 // El tipo existe solo porque Module.ChooseShell nombra "webview" en su switch. Tirar con un
 // mensaje claro es mejor que no compilar: mantiene el codigo del Host IDENTICO en las dos

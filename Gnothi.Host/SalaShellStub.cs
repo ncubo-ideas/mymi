@@ -1,8 +1,9 @@
 namespace Gnothi.Host;
 
 // LA SALA NO EXISTE EN ESCRITORIO, por la misma razon que no existe la cascara de WebView: ahi
-// el modulo se carga en proceso, que es lo que las tiendas prohiben en un telefono y en una PC
-// no prohibe nadie.
+// el modulo se carga en proceso, que es lo que en un telefono no pasa el texto de Google -- el
+// dll ajeno tendria acceso DIRECTO a las APIs del sistema (ver B11) -- y en una PC no le importa
+// a nadie.
 //
 // El tipo existe solo porque Module.ChooseShell nombra "sala" en su switch. Tirar con un mensaje
 // claro es mejor que no compilar: mantiene el codigo del Host IDENTICO en las dos plataformas.

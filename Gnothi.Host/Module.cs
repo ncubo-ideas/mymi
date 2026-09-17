@@ -82,10 +82,17 @@ public sealed class Module : IAsyncDisposable
 
 			// LA SALA: el mismo paquete que la hibrida -- sus .dll y nada mas -- pero el dll no
 			// corre en este proceso: corre adentro del motor web, en un documento que es de
-			// Gnothi. Es la unica forma que conserva la economia de la hibrida (el modulo pesa
-			// 200 KB porque el sustrato se lo presta el Host) SIN caer en la objecion de arriba,
-			// porque lo que interpreta el codigo descargado es el motor web, que es la excepcion
-			// que las dos tiendas nombran.
+			// Gnothi. Conserva la economia de la hibrida (el modulo pesa 200 KB porque el
+			// sustrato se lo presta el Host) y NO cae en la objecion de arriba: lo que ejecuta el
+			// codigo de la institucion es el runtime .NET compilado a wasm dentro del documento,
+			// y su acceso al sistema es INDIRECTO -- que es la palabra que decide en el texto de
+			// Google. Medido el 2026-09-17 con una sonda que corre como modulo: no ve el disco
+			// del aparato, no sale del origen, y no tiene como llamar al puente.
+			//
+			// CONTRA APPLE ES UNA PREGUNTA ABIERTA, y conviene no decir de mas: B11 deja sin
+			// saber si wasm cuenta como "interpreted code" y si un .dll de IL corrido por el
+			// interprete de Mono cuenta. Las dos son el caso de la sala. Ver el comentario largo
+			// de `SalaShell` y B11.
 			"sala"       => new SalaShell(name, installation.Shell, installation.GrantedFolder),
 
 			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
