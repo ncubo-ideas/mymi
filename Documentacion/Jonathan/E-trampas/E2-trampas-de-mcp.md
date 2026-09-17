@@ -126,3 +126,55 @@ líneas de qué encontró y qué publica, arrancó bien y el problema es de otro
 
 Y el log principal de la aplicación dice qué soporta: `LocalMcpServerManager`, un puente que reporta cuántos
 servidores stdio tiene conectados, y el reparto entre remotos y locales.
+
+---
+
+## Y volvió, en la caja de wasm · 2026-09-16
+
+**`stdout` es el protocolo** no era una trampa de MCP: es una trampa de **cualquier** protocolo que
+viaje por la salida estándar. Reapareció intacta en el paso 1 de la caja de wasm (`F8`).
+
+El borde entre Gnothi y un módulo dentro de wasmtime se probó con una línea de pedido y una línea de
+respuesta por `stdin`/`stdout`. Y por esa misma salida el motor escribe **`Starting
+Puppeteer.EventSourcing.ActorHandler's Actor`** y el progreso de replay **`1%2%3%…`** — 541 bytes de
+ruido en una corrida corta. La primera versión del Host murió con:
+
+```
+System.Text.Json.JsonReaderException: 'S' is an invalid start of a value.
+```
+
+**La misma causa, el mismo síntoma, cinco meses después y en otra capa.** El parche fue el de
+siempre —saltarse lo que no empieza con `{`— y **no es la solución**: el canal del borde no puede
+ser el mismo que cualquier librería usa para escribir. En una caja de verdad eso se resuelve con
+**exportaciones de wasm** en lugar de stdio, que además es lo que evita un proceso por módulo.
+
+**La lección, generalizada:** cuando el protocolo comparte canal con la salida de diagnóstico, no es
+cuestión de disciplinar a las librerías. Es que el canal está mal elegido.
+
+### Y se cerró, el mismo día · 2026-09-16
+
+**El canal dejó de compartirse, y el arreglo son tres líneas del lado del invitado:**
+
+```csharp
+var protocolo = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+Console.SetOut(new StreamWriter(File.Create("…/ruido-del-motor.log")) { AutoFlush = true });
+```
+
+**Los dos son `stdout` y ninguno es `Console.Out`.** `Console.OpenStandardOutput()` devuelve el
+descriptor 1 **crudo**, y lo sigue devolviendo aunque después se cambie `Console.Out`; ése queda para
+el protocolo. `Console.SetOut` desvía a un archivo todo lo que escriba **quien use `Console.Write`**
+— el motor, la app, cualquier librería.
+
+De 541 bytes de ruido a **cero**, medido.
+
+**Y el orden importa literalmente:** hacerlo después de arrancar el actor dejaba **266 bytes**,
+porque el motor ya había escrito el progreso del replay. Hay que apartar el canal **antes de que
+arranque nada**.
+
+**La lección, corregida.** La entrada de arriba decía que el problema *«se resuelve cambiando de
+canal»* y apuntaba a las exportaciones de wasm. Resultó que **el canal no hay que cambiarlo: hay que
+dejar de compartirlo**, y eso lo puede hacer el invitado solo, sin tocar el transporte. La regla
+general es más chica y más útil:
+
+> **Quien habla un protocolo por `stdout` tiene que tomar el descriptor crudo y mandar
+> `Console.Out` a otro lado, antes de cargar nada que pueda escribir.**

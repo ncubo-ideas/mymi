@@ -41,39 +41,56 @@ public sealed class Module : IAsyncDisposable
 	// Practical consequence: facturas can stay on stdio while examenes runs in-process, both
 	// over the same journals. Migrating is changing one word in a json.
 	private static IShell ChooseShell(string name, Installation installation) =>
+		// ONE SEAM FOR THE PLATFORM, and only one. It is put there by whoever assembles the Host --
+		// today Gnothi.Mobile, so a module can be run inside a box without rewriting the person's
+		// installation.json -- and it returns null when it has no opinion, which is the normal case.
+		//
+		// IT DOES NOT CHANGE THE CONTRACT: the shell still comes out of the Host's file. What this
+		// allows is substituting it ON PURPOSE, in one place and by name, instead of putting a lab
+		// flag inside the switch.
+		ShellFactory?.Invoke(name, installation) ??
 		installation.Shell.Type.ToLowerInvariant() switch
 		{
-			// MOVIL: el modulo es la PWA de la institucion dentro de un WebView. Es la unica
-			// forma que pasa el TEXTO de Google Play para codigo que llega de afuera, y por eso
-			// en un telefono "in-process" probablemente no se pueda publicar aunque funcione.
+			// MOBILE: the module is the institution's PWA inside a WebView. It is the only form that
+			// passes Google Play's TEXT for code arriving from outside, which is why on a phone
+			// "in-process" probably cannot be published even though it works.
 			//
-			// ESTE COMENTARIO DECIA MAS DE LO QUE SE SABIA. Decia que "Play y Apple nombran
-			// JavaScript en un webview como LA excepcion". Eso venia del viejo §3.3.2 del acuerdo
-			// de Apple, que YA NO EXISTE con esa redaccion. Leidos los tres textos el 2026-09-16
-			// (ver Documentacion/Jonathan/B-arquitectura/B11-lo-que-dicen-las-tiendas.md):
+			// THIS COMMENT USED TO SAY MORE THAN WAS KNOWN. It said that "Play and Apple name
+			// JavaScript in a webview as THE exception". That came from Apple's old §3.3.2, which NO
+			// LONGER EXISTS with that wording. All three texts read on 2026-09-16 (see
+			// Documentacion/Jonathan/B-arquitectura/B11-lo-que-dicen-las-tiendas.md):
 			//
-			//   - Google Play SI es claro, y la palabra que decide es "indirect": el WebView da
-			//     acceso INDIRECTO a las APIs de Android y esta permitido; un dll cargado por
-			//     Mono en este proceso da acceso DIRECTO y no lo esta.
-			//   - Apple ya no nombra motor: dice "interpreted code", con tres condiciones. Es mas
-			//     ancho, y la tercera -no crear una tienda o escaparate para otras aplicaciones-
-			//     le pega a Gnothi entero, no a una forma.
-			//   - Y el 4.7.2 de Apple -no exponer APIs nativas al software que no viene en el
-			//     binario sin permiso previo- le pega TAMBIEN a la forma hospedada, que este
-			//     comentario daba por segura. El puente es justo eso.
+			//   - Google Play IS clear, and the deciding word is "indirect": the WebView gives
+			//     INDIRECT access to Android's APIs and is allowed; a dll loaded by Mono in this
+			//     process gives DIRECT access and is not.
+			//   - Apple no longer names an engine: it says "interpreted code", with three conditions.
+			//     That is wider, and the third one -- not creating a store or storefront for other
+			//     applications -- hits the whole of Gnothi, not one form.
+			//   - And Apple's 4.7.2 -- not exposing native APIs to software not shipped in the binary
+			//     without prior permission -- hits the HOSTED form TOO, which this comment took for
+			//     granted. The bridge is exactly that.
 			//
-			// O sea: "webview" es la mejor posicionada, no la limpia. Nada de esto es veredicto:
-			// son textos leidos, no una revision pasada.
+			// Which means: "webview" is the best positioned, not the clean one. None of this is a
+			// verdict: they are texts that were read, not a review that was passed.
 			"webview"    => new WebViewShell(name, installation.Shell, installation.GrantedFolder),
 
-			// HIBRIDA: la cara en el WebView y la superficie en proceso, con el motor prestado.
-			// Es la unica de las tres en la que el WebView NO contesta: pregunta. Hereda la
-			// objecion de arriba entera, porque el dll de la institucion corre nativo.
+			// HYBRID: the face in the WebView and the surface in process, with the engine lent. It is
+			// the only one of the three where the WebView does NOT answer: it asks. It inherits the
+			// objection above whole, because the institution's dll runs natively.
 			"hybrid"     => new HybridShell(name, installation.Shell, installation.GrantedFolder),
 
 			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
+
+			// THE BOX: the same hybrid package, but the surface runs inside a wasm box instead of in
+			// the Host's process. The face never finds out -- it goes on asking through `consultar` --
+			// and what changes is that the institution's dll no longer has syscalls: whatever Gnothi
+			// does not mount for it DOES NOT EXIST. See B12.
+			"caja"       => new BoxShell(name, installation.Shell, installation.GrantedFolder),
 			_            => new StdioShell(name, installation.Shell, installation.GrantedFolder),
 		};
+
+	// See ChooseShell. Null means «I have no opinion».
+	internal static Func<string, Installation, IShell?>? ShellFactory { get; set; }
 
 	public static string PublicName(string module, string tool) => $"{module}_{tool}";
 
@@ -141,59 +158,60 @@ public sealed class Module : IAsyncDisposable
 	public Task<IReadOnlyList<string>> ActualToolNames(CancellationToken ct)
 		=> shell.ActualTools(ct);
 
-	// LO QUE EL CARTERO TRAJO. Gnothi hizo la red y el modulo lo asienta -- o no puede, y la
-	// cascara lo dice. No pasa por el consentimiento de las tools a proposito: apagar una
-	// consulta decide QUE SE CONTESTA, no si el registro de la persona se sigue llenando.
+	// WHAT THE POSTMAN BROUGHT. Gnothi did the networking and the module records it -- or cannot, and
+	// the shell says so. It does not go through the tools' consent on purpose: switching off a query
+	// decides WHAT GETS ANSWERED, not whether the person's records keep filling up.
 	public Task<string> Deliver(string envelopeJson, CancellationToken ct)
 		=> shell.Deliver(envelopeJson, ct);
 
-	// HASTA DONDE YA LEYO. Tampoco pasa por el consentimiento, y por la misma razon que la
-	// entrega: es el cursor del registro de la persona, no una consulta sobre ella.
+	// HOW FAR IT HAS ALREADY READ. It does not go through consent either, for the same reason as the
+	// delivery: it is the cursor of the person's records, not a query about them.
 	public Task<long> Cursor(CancellationToken ct) => shell.Cursor(ct);
 
-	// LO QUE PIDE SU PROPIA PANTALLA. No pasa por Allows y no es un descuido: apagar una consulta
-	// decide que puede preguntar EL ASISTENTE sobre la persona, no le prohibe a la institucion
-	// mostrarle su expediente en la pantalla que ella acaba de abrir. Son decisiones con sujetos
-	// distintos.
+	// WHAT ITS OWN SCREEN ASKS FOR. It does not go through Allows and that is not an oversight:
+	// switching off a query decides what THE ASSISTANT may ask about the person, it does not forbid
+	// the institution from showing them their own file on the screen they just opened. They are
+	// decisions with different subjects.
 	public Task<object> View(
 		string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
 		=> shell.View(name, arguments, accepts, ct);
 
-	// ── LA ADUANA DEL LOGO ──────────────────────────────────────────────────────────────
+	// ── THE LOGO'S CUSTOMS HOUSE ────────────────────────────────────────────────────────
 	//
-	// EL LOGO DE LA INSTITUCION, LEIDO Y VALIDADO POR EL HOST, devuelto como un data: URI listo
-	// para una pantalla -- o vacio, y entonces la cara pone el icono de la categoria.
+	// THE INSTITUTION'S LOGO, READ AND VALIDATED BY THE HOST, returned as a data: URI ready for a
+	// screen -- or empty, and then the face puts up the category's icon.
 	//
-	// POR QUE VIVE ACA: es el mismo verbo que BytesOnDisk. El modulo no dice cuanto pesa ni
-	// entrega su logo; el Host va, lo mide y lo mira. Y esta en Gnothi.Host y no en la cascara
-	// del telefono porque las TRES caras -los dos telefonos y el escritorio- necesitan
-	// exactamente esta aduana, y una aduana implementada tres veces es una aduana con dos
-	// agujeros.
+	// WHY IT LIVES HERE: it is the same verb as BytesOnDisk. The module does not say how much it
+	// weighs nor hand over its logo; the Host goes, measures it and looks at it. And it is in
+	// Gnothi.Host and not in the phone's shell because all THREE faces -- the two phones and the
+	// desktop -- need exactly this customs house, and a customs house implemented three times is a
+	// customs house with two holes.
 	//
-	// POR QUE UN data: URI Y NO UNA RUTA: la pagina de la UI se sirve como file:// y no puede
-	// leer otros file:// -- y aunque pudiera, darle a la pantalla una ruta del modulo seria
-	// dejar que el modulo elija que archivo se abre. Asi los bytes que llegan a la pantalla son
-	// los que este metodo ya aprobo, y nada mas.
+	// WHY A data: URI AND NOT A PATH: the UI's page is served as file:// and cannot read other
+	// file:// -- and even if it could, handing the screen a path of the module's would be letting the
+	// module choose which file gets opened. This way the bytes that reach the screen are the ones
+	// this method already approved, and nothing else.
 	//
-	// FAIL CLOSED, y es la decision que hace corto este codigo: si algo no se puede determinar
-	// -el tipo, el ancho, el alto- NO PASA. Un parser que cubre todos los casos exoticos de
-	// WebP es una superficie de ataque; uno que rechaza lo que no entiende es una linea.
-	// ── LA CARA DE LA INSTITUCION, RESUELTA ─────────────────────────────────────────────
+	// FAIL CLOSED, and it is the decision that keeps this code short: if something cannot be
+	// determined -- the type, the width, the height -- IT DOES NOT PASS. A parser covering every
+	// exotic WebP case is an attack surface; one that rejects what it does not understand is a line.
+	// ── THE INSTITUTION'S FACE, RESOLVED ────────────────────────────────────────────────
 	//
-	// Lo que la pantalla necesita para pintar un modulo: su logo -- ya validado, como data URI
-	// -- y su color. En ese orden de preferencia:
+	// What the screen needs in order to paint a module: its logo -- already validated, as a data URI
+	// -- and its colour. In this order of preference:
 	//
-	//   1. `brand` del manifiesto: la declaracion explicita, y manda.
-	//   2. EL `manifest.webmanifest` QUE LA PWA YA TRAE EN SU BUNDLE: `icons` y `theme_color`.
+	//   1. `brand` from the manifest: the explicit declaration, and it wins.
+	//   2. THE `manifest.webmanifest` THE PWA ALREADY CARRIES IN ITS BUNDLE: `icons` and `theme_color`.
 	//
-	// EL SEGUNDO ES LA MEJOR PARTE Y NO ES NUESTRA IDEA: es de la rama de la marca, y hace algo
-	// que la version que exigia declarar `brand.logo` no hacia -- un bundle 1.0 se pinta con su
-	// marca SIN TOCARLO, porque toda PWA ya declara sus iconos y su color para que el navegador
-	// la instale. Declarar `brand` pasa a ser afinar eso, no habilitarlo.
+	// THE SECOND ONE IS THE BEST PART AND IT IS NOT OUR IDEA: it comes from the branding branch, and
+	// it does something the version that demanded declaring `brand.logo` did not -- a 1.0 bundle gets
+	// painted with its own branding WITHOUT BEING TOUCHED, because every PWA already declares its
+	// icons and its colour so the browser can install it. Declaring `brand` becomes a way of refining
+	// that, not of enabling it.
 	//
-	// Lo que esta version agrega del otro lado: los iconos del webmanifest pasan por la MISMA
-	// aduana que un logo declarado. El `type` que el webmanifest declara es una afirmacion de
-	// quien lo escribio, y aca el tipo sale de los bytes.
+	// What this version adds on the other side: the webmanifest's icons go through the SAME customs
+	// house as a declared logo. The `type` the webmanifest declares is an assertion by whoever wrote
+	// it, and here the type comes from the bytes.
 	public static BrandLook LookOf(Manifest manifest, string directory, out string problem)
 	{
 		string color = Brand.ValidColor(manifest.Brand?.Color) ?? "";
@@ -214,22 +232,22 @@ public sealed class Module : IAsyncDisposable
 
 		if (logo.Length > 0 && color.Length > 0) return new BrandLook(logo, color, banner, family, regular, bold);
 
-		// Lo que `brand` no dijo -o dijo mal-, lo completa el webmanifest de la PWA.
+		// Whatever `brand` did not say -- or said wrong -- is completed by the PWA's webmanifest.
 		(string? webLogo, string? webColor) = FromWebManifest(directory);
 		if (logo.Length == 0 && webLogo is not null)
 		{
 			logo = webLogo;
-			// Un logo declarado que no paso la aduana Y un webmanifest que si: el problema del
-			// primero deja de importarle a la pantalla, pero no se borra -- la institucion tiene
-			// que poder enterarse de que su archivo no entro.
+			// A declared logo that did not clear customs AND a webmanifest that did: the first one's
+			// problem stops mattering to the screen, but it is not erased -- the institution has to be
+			// able to find out that its file did not get in.
 		}
 		if (color.Length == 0 && webColor is not null) color = webColor;
 
 		return new BrandLook(logo, color, banner, family, regular, bold);
 	}
 
-	// EL WEBMANIFEST DE LA PWA, que es de la institucion y ya viaja en el bundle. Un archivo
-	// torcido no tumba nada: ese modulo se pinta con el dibujo de su rubro.
+	// THE PWA'S WEBMANIFEST, which belongs to the institution and already travels in the bundle. A
+	// crooked file brings nothing down: that module gets painted with its sector's drawing.
 	private static (string? logo, string? color) FromWebManifest(string directory)
 	{
 		string web = Path.Combine(directory, "web");
@@ -261,10 +279,10 @@ public sealed class Module : IAsyncDisposable
 		}
 	}
 
-	// EL ICONO QUE ELIGE: el de 192 sin `purpose` o con `any`, que es el que el navegador usa
-	// para la pestana y el dialogo de instalar. Los `maskable` van cuadrados y con el simbolo
-	// chico porque Android les aplica su propia mascara, y aca no hay mascara. Si no hay de 192,
-	// el primero que pase la aduana.
+	// THE ICON IT PICKS: the 192 one with no `purpose` or with `any`, which is the one the browser
+	// uses for the tab and the install dialogue. The `maskable` ones come out square and with the
+	// symbol small because Android applies its own mask to them, and here there is no mask. If there
+	// is no 192, the first one that clears customs.
 	private static string? PickIcon(System.Text.Json.JsonElement root, string web)
 	{
 		if (!root.TryGetProperty("icons", out System.Text.Json.JsonElement icons)
@@ -291,8 +309,8 @@ public sealed class Module : IAsyncDisposable
 
 		foreach ((string src, _, _) in candidates.OrderByDescending(x => x.any).ThenByDescending(x => x.is192))
 		{
-			// POR LA MISMA ADUANA. El `type` del webmanifest lo declara quien lo escribio; el
-			// tipo de verdad sale de los bytes.
+			// THROUGH THE SAME CUSTOMS HOUSE. The webmanifest's `type` is declared by whoever wrote
+			// it; the real type comes out of the bytes.
 			string uri = ReadImage(web, src, out _);
 			if (uri.Length > 0) return uri;
 		}
@@ -301,13 +319,13 @@ public sealed class Module : IAsyncDisposable
 
 	public string LogoDataUri() => LogoDataUri(Manifest, Directory, out _);
 
-	// LA FORMA ESTATICA EXISTE POR EL ALTA. Cuando Gnothi le muestra a la persona lo que una
-	// institucion le propone, el modulo TODAVIA NO ESTA INSTALADO: el bundle esta desempaquetado
-	// en una carpeta temporal y no hay ningun Module. Y esa pantalla -- la del si o no -- es
-	// justamente donde el logo mas importa.
+	// THE STATIC FORM EXISTS BECAUSE OF ENROLMENT. When Gnothi shows the person what an
+	// institution is proposing, the module is NOT INSTALLED YET: the bundle is unpacked into a
+	// temporary folder and there is no Module at all. And that screen -- the yes-or-no one -- is
+	// precisely where the logo matters most.
 	//
-	// Tambien dice POR QUE no paso, para que la razon llegue al warning y de ahi a la
-	// institucion, que es la unica que puede arreglarlo.
+	// It also says WHY it did not pass, so the reason reaches the warning and from there the
+	// institution, which is the only one that can fix it.
 	public static string LogoDataUri(Manifest manifest, string directory, out string problem)
 	{
 		problem = "";
@@ -319,9 +337,9 @@ public sealed class Module : IAsyncDisposable
 		return uri;
 	}
 
-	// LA ADUANA, sobre un archivo cualquiera de la carpeta del modulo. La usan las dos entradas
-	// -- el logo declarado y los iconos del webmanifest -- porque el riesgo es el mismo y una
-	// aduana con dos puertas es una aduana con una puerta.
+	// THE CUSTOMS HOUSE, over any file in the module's folder. Both entrances use it -- the declared
+	// logo and the webmanifest's icons -- because the risk is the same and a customs house with two
+	// doors is a customs house with one door.
 	private static string ReadImage(string baseDir, string src, out string problem)
 		=> ReadImage(baseDir, src, Brand.MaxLogoBytes, Brand.MaxLogoPixels, out problem);
 
@@ -403,17 +421,17 @@ public sealed class Module : IAsyncDisposable
 	{
 		problem = "";
 
-		// Un logo remoto no se baja: por aca no sale nada a la red.
+		// A remote logo is not downloaded: nothing goes out to the network through here.
 		if (Uri.TryCreate(src, UriKind.Absolute, out Uri? u) && !u.IsFile)
 		{
 			problem = $"apunta a la red ('{src}') y por aca no sale nada a la red";
 			return "";
 		}
 
-		// LA RUTA SE VUELVE A VALIDAR ACA, aunque Brand.Problems() ya la mira. No es
-		// redundancia: Problems solo AVISA -- un tope no tumba un modulo -- asi que un
-		// '../../otra/cosa.png' sigue llegando hasta aca. El que lee bytes es el que tiene que
-		// decir no. Y el webmanifest, que ni pasa por Problems, entra por la misma puerta.
+		// THE PATH IS VALIDATED AGAIN HERE, even though Brand.Problems() already looks at it. It is not
+		// redundancy: Problems only WARNS -- a limit does not bring a module down -- so a
+		// `../../something/else.png` still gets this far. Whoever reads the bytes is the one who has to
+		// say no. And the webmanifest, which does not even go through Problems, comes in the same door.
 		string full = Path.GetFullPath(Path.Combine(baseDir,
 			src.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
 		string root = Path.GetFullPath(baseDir) + Path.DirectorySeparatorChar;
@@ -434,8 +452,9 @@ public sealed class Module : IAsyncDisposable
 
 		byte[] bytes = File.ReadAllBytes(full);
 
-		// EL TIPO SALE DE LOS BYTES, NO DE LA EXTENSION NI DEL `type` DEL WEBMANIFEST. Los dos
-		// los declara quien escribio el archivo, y este es justo el lugar donde no se le cree.
+		// THE TYPE COMES OUT OF THE BYTES, NOT OUT OF THE EXTENSION NOR THE WEBMANIFEST'S `type`. Both
+		// are declared by whoever wrote the file, and this is precisely the place where they are not
+		// believed.
 		string? mime = SniffImage(bytes, out int width, out int height);
 		if (mime is null)
 		{
@@ -443,11 +462,11 @@ public sealed class Module : IAsyncDisposable
 			return "";
 		}
 
-		// EL TOPE DE PIXELES NO ES COSMETICO: un png de 3000x3000 de un solo color entra en 25 KB
-		// y al decodificarlo pide gigabytes. El tope de peso no lo ataja; este si.
+		// THE PIXEL LIMIT IS NOT COSMETIC: a 3000x3000 png of a single colour fits in 25 KB and asks for
+		// gigabytes when decoded. The weight limit does not catch it; this one does.
 		//
-		// Un SVG no tiene pixeles -- es vectorial y lo escala el contenedor -- asi que ahi el
-		// tope no aplica y SniffImage devuelve 0x0 a proposito.
+		// An SVG has no pixels -- it is vectorial and the container scales it -- so the limit does not
+		// apply there and SniffImage returns 0x0 on purpose.
 		if (width > maxPixels || height > maxPixels)
 		{
 			problem = $"mide {width}x{height} y el tope es {maxPixels} de lado";
@@ -457,14 +476,14 @@ public sealed class Module : IAsyncDisposable
 		return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
 	}
 
-	// QUE ES ESTO Y CUANTO MIDE, leido del encabezado. Devuelve null para todo lo que no sea uno
-	// de los formatos que se aceptan, o cuyo tamano no se pueda leer.
+	// WHAT THIS IS AND HOW BIG IT IS, read from the header. Returns null for anything that is not one
+	// of the accepted formats, or whose size cannot be read.
 	private static string? SniffImage(byte[] b, out int width, out int height)
 	{
 		width = height = 0;
 
-		// PNG: firma de 8 bytes y despues el chunk IHDR, que SIEMPRE es el primero y trae el
-		// ancho y el alto en big-endian.
+		// PNG: an 8-byte signature and then the IHDR chunk, which is ALWAYS first and carries the width
+		// and height in big-endian.
 		if (b.Length >= 24
 			&& b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47
 			&& b[12] == 'I' && b[13] == 'H' && b[14] == 'D' && b[15] == 'R')
@@ -474,19 +493,19 @@ public sealed class Module : IAsyncDisposable
 			return width > 0 && height > 0 ? "image/png" : null;
 		}
 
-		// JPEG: hay que caminar los segmentos hasta el SOF, que es el que lleva las medidas.
+		// JPEG: the segments have to be walked until the SOF, which is the one carrying the dimensions.
 		if (b.Length >= 4 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF)
 		{
 			int i = 2;
 			while (i + 9 < b.Length)
 			{
-				if (b[i] != 0xFF) return null;              // desincronizado: no se adivina
+				if (b[i] != 0xFF) return null;              // out of sync: nothing is guessed
 				byte marker = b[i + 1];
-				if (marker == 0xFF) { i++; continue; }        // relleno legitimo
+				if (marker == 0xFF) { i++; continue; }        // legitimate padding
 				int len = Be16(b, i + 2);
 				if (len < 2) return null;
 
-				// SOF0..SOF15 menos los cuatro que no son SOF (C4 DHT, C8, CC DAC).
+				// SOF0..SOF15 minus the four that are not SOF (C4 DHT, C8, CC DAC).
 				if (marker >= 0xC0 && marker <= 0xCF
 					&& marker != 0xC4 && marker != 0xC8 && marker != 0xCC)
 				{
@@ -497,27 +516,27 @@ public sealed class Module : IAsyncDisposable
 
 				i += 2 + len;
 			}
-			return null;                                     // sin SOF: no se sabe cuanto mide
+			return null;                                     // no SOF: its size cannot be known
 		}
 
-		// WebP: RIFF....WEBP y despues el chunk, que dice en cual de los tres sabores viene.
+		// WebP: RIFF....WEBP and then the chunk, which says which of the three flavours it comes in.
 		if (b.Length >= 30
 			&& b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
 			&& b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P')
 		{
 			string chunk = System.Text.Encoding.ASCII.GetString(b, 12, 4);
 
-			if (chunk == "VP8X")                              // extendido: 24 bits, menos uno
+			if (chunk == "VP8X")                              // extended: 24 bits, minus one
 			{
 				width = (b[24] | b[25] << 8 | b[26] << 16) + 1;
 				height = (b[27] | b[28] << 8 | b[29] << 16) + 1;
 			}
-			else if (chunk == "VP8 ")                         // con perdida: 14 bits utiles
+			else if (chunk == "VP8 ")                         // lossy: 14 usable bits
 			{
 				width = (b[26] | b[27] << 8) & 0x3FFF;
 				height = (b[28] | b[29] << 8) & 0x3FFF;
 			}
-			else if (chunk == "VP8L")                         // sin perdida: 14 bits, menos uno
+			else if (chunk == "VP8L")                         // lossless: 14 bits, minus one
 			{
 				int bits = b[21] | b[22] << 8 | b[23] << 16 | b[24] << 24;
 				width = (bits & 0x3FFF) + 1;
@@ -528,12 +547,12 @@ public sealed class Module : IAsyncDisposable
 			return width > 0 && height > 0 ? "image/webp" : null;
 		}
 
-		// SVG: es texto, asi que no hay magic bytes -- lo que se mira es que EMPIECE como un
-		// documento svg, saltando el BOM y el espacio. Sale con 0x0 a proposito: no tiene
-		// pixeles, y el tope de dimensiones no le aplica.
+		// SVG: it is text, so there are no magic bytes -- what is looked at is that it STARTS like an
+		// svg document, skipping the BOM and the whitespace. It comes out 0x0 on purpose: it has no
+		// pixels, and the dimension limit does not apply to it.
 		//
-		// Y viaja en un `<img>`, no inline: ahi el navegador lo aisla y no corre scripts. Ese
-		// es todo el permiso que tiene.
+		// And it travels inside an `<img>`, not inline: there the browser isolates it and runs no
+		// scripts. That is all the permission it has.
 		int at = b.Length >= 3 && b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF ? 3 : 0;
 		while (at < b.Length && (b[at] == ' ' || b[at] == '\n' || b[at] == '\r' || b[at] == '\t')) at++;
 		if (at + 5 <= b.Length)
@@ -551,9 +570,9 @@ public sealed class Module : IAsyncDisposable
 	private static int Be32(byte[] b, int at) => b[at] << 24 | b[at + 1] << 16 | b[at + 2] << 8 | b[at + 3];
 	private static int Be16(byte[] b, int at) => b[at] << 8 | b[at + 1];
 
-	// El logo y el color que la pantalla va a usar, ya resueltos. Vacio en cualquiera de los dos
-	// significa "no hay", y la cara cae a lo que tenga -- el dibujo del rubro, el acento del
-	// Host. El Host no inventa una marca que la institucion no dio.
+	// The logo and the colour the screen is going to use, already resolved. Empty in either of the two
+	// means "there is none", and the face falls back to whatever it has -- the sector's drawing, the
+	// Host's accent. The Host does not invent branding the institution did not give.
 	public sealed record BrandLook(string Logo, string Color, string Banner = "", string FontFamily = "",
 		string FontRegular = "", string FontBold = "")
 	{

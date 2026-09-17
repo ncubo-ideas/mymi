@@ -3,8 +3,8 @@ using UIKit;
 
 namespace Gnothi.iOS;
 
-// Sin storyboard y sin scenes, a proposito: una ventana, un view controller, y listo. Un
-// spike que falla tiene que fallar por la pregunta que se le hizo, no por el andamio.
+// No storyboard and no scenes, on purpose: one window, one view controller, and done. A spike that
+// fails has to fail over the question it was asked, not over the scaffolding.
 [Register("AppDelegate")]
 public sealed class AppDelegate : UIApplicationDelegate
 {

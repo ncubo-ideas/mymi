@@ -986,9 +986,9 @@ internal sealed class ModuleEnrollment
 		Publicador? p = manifest.Publicador;
 		string endpoint = keptEndpoint ?? (p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}");
 
-		// QUE CASCARA, Y SALE DE LO QUE EL PAQUETE TRAJO -- la misma regla que la aduana: lo que
-		// trae es lo que es. Hasta acá el teléfono escribía "webview" quemado, y no era un
-		// descuido: en un teléfono no había otra forma posible. El híbrido agrega una.
+		// WHICH SHELL, AND IT COMES OUT OF WHAT THE PACKAGE BROUGHT -- the same rule as the customs
+		// house: what it carries is what it is. Until now the phone wrote "webview" hardcoded, and
+		// that was not an oversight: on a phone no other form was possible. The hybrid adds one.
 		bool traeCara = Directory.Exists(Path.Combine(folder, "web"));
 		bool traeSuperficie = manifest.Load is not null && !string.IsNullOrWhiteSpace(manifest.Load.Entry);
 
@@ -999,16 +999,16 @@ internal sealed class ModuleEnrollment
 			_ => "webview",
 		};
 
-		// EL ORDEN DE LOS ARGUMENTOS, y en el híbrido no es el que uno escribiría primero.
+		// THE ORDER OF THE ARGUMENTS, and in the hybrid it is not the one you would write first.
 		//
-		// La tentación es poner el dll en [0] porque es lo que contesta. Pero [0] y [1] ya los
-		// lee TODO el lado web -- WebViewShell y, sobre todo, WebModuleHost.Open, que abre la
-		// pantalla desde el catálogo-- y ninguno de los dos sabe de formas. Poner el dll ahí
-		// haría que abrir el módulo intentara servir un .dll como si fuera la carpeta del
-		// bundle, y fallaría lejos de acá.
+		// The temptation is to put the dll at [0] because it is what answers. But [0] and [1] are
+		// already read by the WHOLE web side -- WebViewShell and, above all, WebModuleHost.Open, which
+		// opens the screen from the catalogue -- and neither of them knows about forms. Putting the
+		// dll there would make opening the module try to serve a .dll as if it were the bundle's
+		// folder, and it would fail far from here.
 		//
-		// Así que la cara conserva su lugar y la superficie va al final: es el consumidor nuevo
-		// el que se acomoda, no los que ya andaban.
+		// So the face keeps its place and the surface goes at the end: it is the new consumer that
+		// adapts, not the ones that already worked.
 		string dll = traeSuperficie
 			? Path.Combine(folder, manifest.Load!.Entry.Replace('/', Path.DirectorySeparatorChar))
 			: "";
@@ -1021,8 +1021,8 @@ internal sealed class ModuleEnrollment
 			_ => [web, endpoint],
 		};
 
-		// EL ACTA DE ESTA ALTA. Se perdio en la resolucion del merge 64bee72 -- la linea que la
-		// usa quedo, la declaracion no, y la rama no compilaba. Repuesta tal cual estaba en
+		// THIS ENROLMENT'S RECORD. It was lost resolving merge 64bee72 -- the line that uses it stayed,
+		// the declaration did not, and the branch would not compile. Restored exactly as it was in
 		// 85551e1.
 		var act = new
 		{
@@ -1043,13 +1043,14 @@ internal sealed class ModuleEnrollment
 			enabled,
 			disabledTools = disabledTools.ToArray(),
 
-			// EL ACTA DEL ALTA. De que host bajo el bundle -- que Gnothi VIO, nadie se lo
-			// declaro --, cuando la persona acepto, y que version acepto. Se escribe una vez y
-			// no se vuelve a tocar: es lo que le permite al detalle del modulo contrastar
-			// despues lo que la institucion declara contra lo que de verdad paso.
+			// THE ENROLMENT RECORD. Which host the bundle came down from -- which Gnothi SAW, nobody
+			// declared it --, when the person accepted, and which version they accepted. It is written
+			// once and never touched again: it is what lets the module's detail contrast, later, what
+			// the institution declares against what actually happened.
 			provenance = act,
 
-			// Y EL ACTA SE ACUMULA: las anteriores tal como quedaron escritas, y esta al final.
+			// AND THE RECORD ACCUMULATES: the previous ones exactly as they were written, and this one at
+			// the end.
 			acts = priorActs.Select(a => new { servedBy = a.ServedBy, at = a.At, version = a.Version }).Append(act).ToArray(),
 			signer = signer is null ? null : new { keyId = signer.KeyId, @public = signer.Public, since = signer.Since },
 		};

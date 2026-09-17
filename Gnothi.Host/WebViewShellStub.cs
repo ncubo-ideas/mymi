@@ -1,17 +1,16 @@
 namespace Gnothi.Host;
 
-// LA CASCARA DE WEBVIEW NO EXISTE EN ESCRITORIO, y esto no es un atajo: es que ahi no hace
-// falta. En escritorio el modulo se carga en proceso o como proceso hijo, que es lo que las
-// tiendas prohiben en un telefono y ahi nadie prohibe.
+// THE WEBVIEW SHELL DOES NOT EXIST ON THE DESKTOP, and this is not a shortcut: it is that it is not
+// needed there. On the desktop the module is loaded in process or as a child process, which is what
+// the stores forbid on a phone and what nobody forbids there.
 //
-// El tipo existe solo porque Module.ChooseShell nombra "webview" en su switch. Tirar con un
-// mensaje claro es mejor que no compilar: mantiene el codigo del Host IDENTICO en las dos
-// plataformas, y deja dicha la imposibilidad justo donde alguien la buscaria.
+// The type exists only because Module.ChooseShell names "webview" in its switch. Throwing with a
+// clear message beats not compiling: it keeps the Host's code IDENTICAL on both platforms, and
+// leaves the impossibility stated exactly where somebody would go looking for it.
 //
-// El archivo se llama WebViewShellStub.cs para no chocar con el WebViewShell.cs de
-// Gnothi.Mobile, que es el de verdad y compila la misma clase en su lugar. Gnothi.Mobile
-// EXCLUYE este archivo de su glob; si algun dia entraran los dos, chocarian dos definiciones
-// y esa es la senal correcta.
+// The file is called WebViewShellStub.cs so as not to clash with Gnothi.Mobile's WebViewShell.cs,
+// which is the real one and compiles the same class in its place. Gnothi.Mobile EXCLUDES this file
+// from its glob; if both ever came in, two definitions would collide and that is the right signal.
 internal sealed class WebViewShell : IShell
 {
 	private const string PorQue =

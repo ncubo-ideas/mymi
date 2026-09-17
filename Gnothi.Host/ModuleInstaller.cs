@@ -265,11 +265,11 @@ public static class ModuleInstaller
 			Enabled = enabled,
 			DisabledTools = disabledTools,
 
-			// EL ACTA DEL ALTA, y aca 'servedBy' va VACIO a proposito: un .gmod se importa de
-			// un archivo, no de la red, asi que no hay ningun host que atestiguar. Vacio no es
-			// un dato que falta -- es el hecho de que no vino de ningun servidor, y por eso la
-			// pantalla no puede ni debe contrastar nada. Distinto de contrastar y que no
-			// coincida, que es lo que pasa cuando el bundle si bajo de algun lado.
+			// THE ENROLMENT RECORD, and here 'servedBy' goes EMPTY on purpose: a .gmod is imported
+			// from a file, not off the network, so there is no host to witness. Empty is not a
+			// missing value -- it is the fact that it did not come from any server, which is why the
+			// screen cannot and should not contrast anything. Different from contrasting and not
+			// matching, which is what happens when the bundle did come down from somewhere.
 			Provenance = new ProvenanceFile
 			{
 				ServedBy = "",
@@ -279,7 +279,7 @@ public static class ModuleInstaller
 			Signer = signer,
 		};
 
-		// Legible y no Default: este archivo lo abre la persona con un editor.
+		// Legible and not Default: this file is opened by the person in an editor.
 		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, InstallerJson.Default.InstallationFile));
 
 		var line = new System.Text.StringBuilder();
@@ -325,11 +325,11 @@ public static class ModuleInstaller
 		[JsonPropertyName("signer")] public PackageSigner? Signer { get; init; }
 	}
 
-	// INTERNAL POR LO MISMO QUE InstallationFile, y esto lo dijo el compilador: al traer el fix
-	// del type-info, InstallationFile paso de private a internal y esta quedo private -- CS0053,
-	// "inconsistent accessibility". Es el aviso que el comentario de HostJson.cs promete: con el
-	// generador uno se entera AL COMPILAR, y con reflexion se enteraba en el telefono, con un
-	// campo que llegaba vacio y sin error.
+	// INTERNAL FOR THE SAME REASON AS InstallationFile, and the compiler is the one that said so:
+	// bringing in the type-info fix moved InstallationFile from private to internal and this one
+	// stayed private -- CS0053, "inconsistent accessibility". It is the warning HostJson.cs's comment
+	// promises: with the generator you find out AT COMPILE TIME, and with reflection you found out on
+	// the phone, with a field arriving empty and no error.
 	internal sealed record ProvenanceFile
 	{
 		[JsonPropertyName("servedBy")] public string ServedBy { get; init; } = "";

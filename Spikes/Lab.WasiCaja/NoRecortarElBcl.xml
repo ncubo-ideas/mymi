@@ -1,0 +1,22 @@
+<!-- LO QUE EL SUSTRATO PRESTA Y NO USA.
+
+     Un sustrato que sirve a CUALQUIER modulo no se puede recortar contra su propio codigo: el
+     recortador se lleva del BCL lo que el sustrato no llama, y el modulo (que el recortador no
+     vio) lo necesita. `System.Lazy` fue el primero en caerse.
+
+     ESTE ES EL MECANISMO QUE SI SE HONRA. `TrimmerRootAssembly` no hace nada en el pipeline de
+     WASI: medido, el .wasm sale identico al byte con y sin el. Este descriptor en cambio lo lee
+     ILLink de verdad, y se supo porque la primera version reventaba parseandolo.
+
+     LOS CUATRO HACEN FALTA Y NINGUNO SOBRA MUCHO: con solo System.Private.CoreLib el .wasm baja
+     70 KB (11 061 408) y NO corre. Los cuatro dan 11 131 552 y corre.
+
+     Y OJO CON LOS DOS GUIONES SEGUIDOS: un comentario XML no puede contenerlos. Costo cuatro
+     tropiezos en el mismo dia, dos en el csproj y dos aca. El cuarto fue escribiendo ESTA
+     advertencia, que los traia adentro. -->
+<linker>
+  <assembly fullname="System.Private.CoreLib" preserve="all" />
+  <assembly fullname="System.Runtime" preserve="all" />
+  <assembly fullname="System.Collections" preserve="all" />
+  <assembly fullname="System.Linq" preserve="all" />
+</linker>

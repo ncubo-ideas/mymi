@@ -82,19 +82,19 @@ internal sealed class BundleServer
 		this.basePath = basePath;
 	}
 
-	// A DONDE VA EL 404 QUE NO SE VE. Lo pone quien construye el servidor -hoy WebModule, hacia
-	// el log del Host-. Nulo significa el comportamiento de antes: callarse. Ver Serve.
+	// WHERE THE 404 NOBODY SEES GOES. It is set by whoever builds the server -- today WebModule,
+	// pointing at the Host's log. Null means the previous behaviour: say nothing. See Serve.
 	internal Action<string>? NotFound { get; set; }
 
-	// CUANTO ALCANZO A PEDIR EL MODULO ANTES DE CALLARSE. No es telemetria: es la mitad del
-	// diagnostico cuando la espera de `listo` se vence. Un modulo que no contesta y NO pidio ni
-	// su documento no arranco; uno que pidio doscientos archivos y despues no dijo nada arranco
-	// y se quedo en otra parte. Las dos cosas dejan la misma pantalla y hasta hoy el Host solo
-	// sabia decir «TimeoutException».
+	// HOW MUCH THE MODULE MANAGED TO ASK FOR BEFORE GOING QUIET. It is not telemetry: it is half the
+	// diagnosis when the wait for `listo` runs out. A module that does not answer and did NOT even
+	// ask for its own document never started; one that asked for two hundred files and then said
+	// nothing did start and got stuck somewhere else. Both leave the same screen and until today the
+	// Host could only say «TimeoutException».
 	//
-	// Costo medirlo a mano el 2026-09-16: hubo que parchar el interop del modulo EN EL TELEFONO
-	// para descubrir que la app cargaba entera y nunca llamaba al puente. Eso es lo que estos
-	// dos enteros contestan sin parchar nada.
+	// It cost a manual measurement on 2026-09-16: the module's interop had to be patched ON THE PHONE
+	// to discover that the app loaded whole and never called the bridge. That is what these two
+	// integers answer without patching anything.
 	internal int Served => served;
 
 	internal int Documents => documents;
@@ -108,11 +108,12 @@ internal sealed class BundleServer
 	{
 		string asked = requestedPath.Length == 0 ? "/" : requestedPath;
 
-		// LA RAIZ DEL BUNDLE, PEDIDA SIN LA BARRA FINAL. El origen es gnothi-mod://<modulo>/app/
-		// y WebKit pide "/app", no "/app/". Sin este caso el StartsWith contra basePath -que SI
-		// lleva la barra- no matchea, no se recorta nada, y se busca <bundle>/app: 404 en el
-		// documento inicial, window.gnothi nunca se define y la pantalla queda en blanco, sin un
-		// solo error. Medido en el simulador el 2026-09-07 con los cuatro modulos del paquete.
+		// THE BUNDLE'S ROOT, ASKED FOR WITHOUT THE TRAILING SLASH. The origin is
+		// gnothi-mod://<module>/app/ and WebKit asks for "/app", not "/app/". Without this case the
+		// StartsWith against basePath -- which DOES carry the slash -- does not match, nothing gets
+		// trimmed, and <bundle>/app is looked for: a 404 on the initial document, window.gnothi never
+		// gets defined and the screen stays blank, without a single error. Measured on the simulator
+		// on 2026-09-07 with all four modules in the package.
 		if (basePath.Length > 1 && asked == basePath.TrimEnd('/')) asked = "/";
 		else if (asked.StartsWith(basePath, StringComparison.Ordinal)) asked = asked[basePath.Length..];
 
@@ -121,15 +122,15 @@ internal sealed class BundleServer
 
 		string full = Resolve(path);
 
-		// UN 404 QUE SE DICE. Es silencioso a proposito -"un 404 es una respuesta"-, y eso es
-		// cierto para el protocolo y falso para diagnosticar: hace indistinguible "no encuentro
-		// el archivo" de "la CSP lo rechazo", y las dos dejan la pantalla igual de blanca.
+		// A 404 THAT GETS SAID. It is silent on purpose -- "a 404 is an answer" -- and that is true
+		// for the protocol and false for diagnosing: it makes "I cannot find the file"
+		// indistinguishable from "the CSP rejected it", and both leave the screen equally blank.
 		//
-		// ES LA MITAD QUE EL WATCHDOG NO CUBRE. El de arriba reporta lo que la CSP RECHAZO; este
-		// reporta lo que NO ESTA. Con los dos, una pantalla en blanco se parte en los dos casos
-		// que antes se confundian. El costo de no tenerlo se pago dos veces el 2026-09-07: los
-		// dos bugs de esta tanda -la ruta bin/web y el base pedido sin barra- eran invisibles, y
-		// cada uno se leyo en un renglon apenas esta linea existio.
+		// IT IS THE HALF THE WATCHDOG DOES NOT COVER. The one above reports what the CSP REJECTED;
+		// this one reports what IS NOT THERE. With both, a blank screen splits into the two cases
+		// that used to be confused. The cost of not having it was paid twice on 2026-09-07: the two
+		// bugs in that batch -- the bin/web path and the base asked for without a slash -- were
+		// invisible, and each was read off in one line as soon as this line existed.
 		if (!File.Exists(full)) { NotFound?.Invoke($"404 {requestedPath} -> {full}"); return ServedFile.NotFound(); }
 
 		// The document is read whole because its CSP depends on its content. Everything else

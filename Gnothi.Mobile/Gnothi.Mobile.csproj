@@ -61,7 +61,7 @@
        entrara por el glob, chocarian dos definiciones de StdioShell y ademas arrastraria el
        SDK de MCP -las dos cosas que el stub existe para evitar. -->
   <Compile Include="..\Gnothi.Host\*.cs"
-           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs" />
+           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs;..\Gnothi.Host\BoxShellStub.cs" />
   <Compile Include="..\Gnothi.Assistant\*.cs" />
 
   <!-- LA CASCARA DEL TELEFONO, compartida con iOS. Vivia dentro de MainActivity.cs y se saco
@@ -79,5 +79,29 @@
   <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
   <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
   <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
+</ItemGroup>
+
+<!-- LA CAJA DE WASM. Dos piezas, y las dos son de Gnothi, no de la institucion. Ver B12.
+
+     libwasmtime.so lo publica bytecodealliance ya compilado para aarch64-android; que ese binario
+     exista es lo que hace posible todo el camino. Pesa 27 MB por arquitectura, asi que va solo
+     arm64: el aparato que hay.
+
+     sustrato.wasm es EL SUSTRATO Y NADA MAS: el runtime de .NET, el BCL, el motor y el borde. UNO
+     PARA TODOS LOS MODULOS. Los dll de cada modulo entran desde su bundle, por una segunda carpeta
+     que el Host monta de solo lectura.
+
+     Se llamaba examenes-en-caja.wasm y llevaba examenes adentro. Eso tenia dos copias del codigo
+     del modulo -una en el wasm y otra en el .gmod- y la que corria era la del wasm: actualizar el
+     modulo NO cambiaba lo que corria. Ver F8.
+
+     Se arma asi (11,1 MB, piso de 17 MB):
+         dotnet publish Spikes/Lab.WasiCaja -c Release -p:ConModulo=false -p:ConDescriptor=true
+             -p:WasmSingleFileBundle=true -p:WasmInitialHeapSize=17825792
+
+     El descriptor NO es opcional: un sustrato que sirve a cualquier modulo no se puede recortar
+     contra su propio codigo, y sin el se cae con System.Lazy. Ver NoRecortarElBcl.xml. -->
+<ItemGroup>
+  <AndroidNativeLibrary Include="lib/arm64-v8a/libwasmtime.so" />
 </ItemGroup>
 </Project>
