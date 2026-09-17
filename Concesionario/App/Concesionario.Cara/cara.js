@@ -92,21 +92,42 @@
                '<path d="M10.3 3.6 2.6 17.4A2 2 0 0 0 4.3 20.4h15.4a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/>',
         clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/>',
         calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
-        check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>'
+        check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
+
+        // EL QUE FALTABA, y su ausencia costo un semaforo mal pintado: sin un glifo para «no se»,
+        // el respaldo de `glifo` y el de `dibujo` no tenian mas remedio que devolver el visto.
+        question: '<circle cx="12" cy="12" r="9"/><path d="M9.4 9.4a2.7 2.7 0 1 1 3.3 3.1v1.4"/>' +
+                  '<circle cx="12" cy="17" r="1.1" fill="currentColor" stroke="none"/>'
     };
 
+    // EL GLIFO DE UN ESTADO, y el respaldo NO es el visto.
+    //
+    // Decia `return 'check'` para todo lo que no reconocia -- incluido `undefined` --, y eso hizo
+    // que un dato que no llegaba se viera igual que «todo bien». Paso de verdad: el Host
+    // proyectaba mal el diccionario de estados, la busqueda daba `undefined`, y la tarjeta pintaba
+    // un visto verde debajo de una pildora que decia «1 te toca ahora». El bug del Host esta
+    // arreglado, pero el respaldo que lo disfrazo tambien tenia que cambiar.
+    //
+    // Un semaforo no puede tener un color por omision: el unico fallo que no se le permite es
+    // decir que todo esta bien cuando no lo sabe. `check` ahora hay que ganarselo nombrando un
+    // estado que de verdad lo sea.
+    // Los que dan visto son los SIETE del dominio que lo merecen -- `DueState.cs`: NotDue,
+    // Completed, Superseded --, escritos con su nombre y no adivinados.
     function dibujo(s) {
         if (s === 'Overdue' || s === 'Missed') return 'alert';
         if (s === 'Due' || s === 'DueSoon') return 'clock';
         if (s === 'Deferred') return 'calendar';
-        return 'check';
+        if (s === 'NotDue' || s === 'Completed' || s === 'Superseded') return 'check';
+        return 'question';
     }
 
+    // Y EL MISMO RESPALDO, UN PISO MAS ABAJO: esto tambien decia `GLIFOS.check`. Dos redes que
+    // atrapaban lo desconocido y las dos lo pintaban de verde.
     function glifo(nombre, tam, grosor) {
         return '<svg viewBox="0 0 24 24" width="' + (tam || 18) + '" height="' + (tam || 18) +
                '" fill="none" stroke="currentColor" stroke-width="' + (grosor || 2.6) +
                '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-               (GLIFOS[nombre] || GLIFOS.check) + '</svg>';
+               (GLIFOS[nombre] || GLIFOS.question) + '</svg>';
     }
 
     // ---------------------------------------------------------------- el estado

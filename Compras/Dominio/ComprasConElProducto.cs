@@ -70,7 +70,12 @@ namespace Compras.Dominio
 		// y un campo es mas barato de proyectar que contar una lista.
 		internal abstract int CuantasCompras { get; }
 
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice este hallazgo, por su nombre: `ninguna` o `hallado`. Lo buscado, las
+		/// descripciones que coincidieron y los totales ya se publican, asi que esta lectura no los
+		/// repite: la redaccion los toma de ahi.
+		/// </summary>
+		internal abstract string Clave { get; }
 
 		private sealed class SinCoincidencias : ComprasConElProducto
 		{
@@ -94,7 +99,7 @@ namespace Compras.Dominio
 
 			internal override int CuantasCompras => 0;
 
-			internal override string ParaElAsistente => $"No hay ninguna compra con «{buscado}».";
+			internal override string Clave => "ninguna";
 		}
 
 		private sealed class Hallazgos : ComprasConElProducto
@@ -149,22 +154,7 @@ namespace Compras.Dominio
 
 			internal override int CuantasCompras => compras.Count;
 
-			// SE NOMBRA EL PRODUCTO ENCONTRADO Y NO LO ESCRITO cuando son distintos: quien
-			// busco "leche" tiene que poder confirmar que la app entendio "Leche
-			// semidescremada 1L" y no otra cosa. Con varios, se dice cuantos.
-			internal override string ParaElAsistente
-			{
-				get
-				{
-					string que = productos.Count == 1
-						? $"«{productos[0]}»"
-						: $"{productos.Count} productos que coinciden con «{buscado}»";
-
-					string veces = compras.Count == 1 ? "1 compra" : $"{compras.Count} compras";
-					return $"{que}: {veces}, {TotalUnidades} en total, "
-						+ $"{Plata.Colones(TotalGastado)}. La ultima, el {compras[0].FechaExpresada}.";
-				}
-			}
+			internal override string Clave => "hallado";
 		}
 	}
 }

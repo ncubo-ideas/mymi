@@ -29,9 +29,7 @@
       "sinAvaluoNota": "Your municipality has not sent an assessment of this property yet. It arrives on its own, with the rest of your records, once they publish one."
     },
     "pie": "An increase is never pressing: it already happened. What is pressing is what falls due, and that is under",
-    "pieEnlace": "what falls due",
-    "sinNingunComprobante": "Your app has not seen a single receipt for this charge, so there is nothing to compare. That does not mean you are not paying it: it means your payments for this charge have not reached here yet.",
-    "conUnSoloComprobante": "There is only one period with a receipt for this charge, and seeing a change takes two. It is not that the charge has not moved: it is that there is nothing to compare it against yet."
+    "pieEnlace": "what falls due"
   },
 
   "queSeMeVence": {
@@ -71,10 +69,7 @@
     "falloLaApp": "The app failed while trying to save it, and that is not something you did ({tipo}: {detalle}).",
     "entro": "Done, it is yours.",
     "entroCuerpo": "Your reserve was recorded and saved in your folder.",
-    "rechazado": "It was not recorded, and this is why.",
-    "sinUnPago": "Your app has not seen a single receipt yet, so there is nothing to project this year's payments from. As soon as the first payment arrives, this suggestion appears on its own.",
-    "sinReservaAdoptada": "You have not adopted a reserve yet, so there is nothing to compare the suggestion against. Adopting one is yours and not the municipality's: it is how much you decide to set aside each month.",
-    "sinNingunaDeLasDos": "With no payment to project from and no reserve adopted, there are no two halves to compare. Both arrive on their own: the suggestion with the first receipt, the adopted one when you enter it."
+    "rechazado": "It was not recorded, and this is why."
   },
 
   "sinComprobante": {
@@ -86,8 +81,7 @@
     "cotejadoContra": "checked against {dia}",
     "noEsDeuda": "This is not a debt",
     "noEsDeudaCuerpo": "Your portal treats those periods as settled; what is missing is the evidence here, almost always because they were paid by a route that leaves no digital receipt — over the counter, for instance. Do not add them to anything falling due.",
-    "fotoConFecha": "An enquiry is a dated snapshot: the portal says what is outstanding today, and tomorrow it says something else. The check is against {dia} and not against today.",
-    "nuncaHuboConsulta": "Your app has no enquiry to the portal on record, so there is nothing to check what it did see paid against. This does NOT say everything is in order: it says the question cannot be answered yet, and it will be as soon as an enquiry arrives."
+    "fotoConFecha": "An enquiry is a dated snapshot: the portal says what is outstanding today, and tomorrow it says something else. The check is against {dia} and not against today."
   },
 
   "cuantoHePagado": {

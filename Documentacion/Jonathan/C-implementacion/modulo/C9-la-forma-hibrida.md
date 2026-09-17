@@ -257,12 +257,25 @@ destrabó el diagnóstico fue **hacer que la pantalla reportara el resultado con
 ## Lo que NO resuelve
 
 **La objeción de tienda, entera.** Un DLL de la institución ejecutándose nativo es código que llega
-de afuera, y `Module.ChooseShell` dice que las tiendas nombran *JavaScript en un webview* como **la**
-excepción. El híbrido hereda eso sin cambios.
+de afuera. El híbrido hereda eso sin cambios.
 
-Y el trilema de `B7` sigue en pie: **cargo** no la acepta la tienda, **compilado adentro** no deja
-que la institución entregue sin republicar Gnothi, y **web en WebView** cumple las tres. El híbrido
-es cargo con pantalla: mejora el peso y el dueño único, no la política.
+**Corregido el 2026-09-16** con los textos en la mano —están citados literales en
+[`B11`](../../B-arquitectura/B11-lo-que-dicen-las-tiendas.md)—, porque este párrafo decía algo que
+ya no es cierto:
+
+- **Google Play**: la palabra que decide no es «JavaScript» sino **«indirect»**. El WebView da
+  acceso *indirecto* a las APIs de Android y está permitido; un DLL cargado por Mono en el proceso
+  de Gnothi da acceso *directo* y no lo está. Contra ese texto, **el híbrido no pasa.**
+- **Apple**: ya **no** nombra WebKit ni JavaScriptCore. Dice *«interpreted code»* con tres
+  condiciones, y una de ellas —no crear un escaparate para otras aplicaciones— le pega a Gnothi
+  entero, no a esta forma.
+- **Y la hospedada tampoco está limpia**: el §4.7.2 de Apple prohíbe exponerle APIs nativas al
+  software que no viene en el binario sin permiso previo, que es exactamente lo que hace el puente.
+
+Y el trilema de `B7` sigue en pie, con el matiz de que **ninguna de las tres patas está limpia en
+iOS**: **cargo** no la acepta la tienda, **compilado adentro** no deja que la institución entregue
+sin republicar Gnothi, y **web en WebView** pasa el texto de Google pero choca con el 4.7.2 de
+Apple. El híbrido es cargo con pantalla: mejora el peso y el dueño único, no la política.
 
 ---
 

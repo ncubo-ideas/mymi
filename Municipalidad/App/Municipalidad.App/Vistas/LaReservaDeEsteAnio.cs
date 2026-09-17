@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
+// EL RENDERIZADOR DE FRASES, con alias porque la clase y su espacio de nombres se llaman igual y sin
+// esto la referencia queda ambigua. Es el mismo con que el dominio compone las suyas: las frases de
+// esta Vista y las de la puerta se escriben en un solo lugar.
+using LasFrases = Municipalidad.App.Frases.Frases;
+
 namespace Municipalidad.App.Vistas
 {
 	/// <summary>
@@ -51,21 +56,22 @@ namespace Municipalidad.App.Vistas
 
 		/// <summary>Las dos mitades leidas en un momento, cada una detras de su propio par.</summary>
 		public static LaReservaDeEsteAnio LeerPor(
-			MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho, Textos textos)
+			MunicipalidadAPI api, DateTime fechaDeCorte, string diaDicho, string idioma)
 		{
 			ArgumentNullException.ThrowIfNull(api);
-			ArgumentNullException.ThrowIfNull(textos);
+
+			LasFrases frases = LasFrases.De(idioma);
 
 			bool sePuedeProponer = api.SePuedeProyectar();
 			bool sePuedeVerElFaltante = api.SePuedeVerElFaltanteDeReserva();
 
 			decimal proyeccion = 0m;
 			decimal propuesto = 0m;
-			string diceLaPropuesta = textos["cuantoApartar.sinUnPago"];
+			string diceLaPropuesta = frases.Diga("cuantoApartar.sinUnPago");
 
 			if (sePuedeProponer)
 			{
-				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(fechaDeCorte.Year, textos.Idioma);
+				RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(fechaDeCorte.Year, idioma);
 
 				proyeccion = propuesta.Proyeccion;
 				propuesto = propuesta.PropuestoPorMes;
@@ -79,13 +85,13 @@ namespace Municipalidad.App.Vistas
 			string urgencia = "";
 			string diceElFaltante =
 				sePuedeProponer
-					? textos["cuantoApartar.sinReservaAdoptada"]
-					: textos["cuantoApartar.sinNingunaDeLasDos"];
+					? frases.Diga("cuantoApartar.sinReservaAdoptada")
+					: frases.Diga("cuantoApartar.sinNingunaDeLasDos");
 
 			if (sePuedeVerElFaltante)
 			{
 				RegistroDelFaltanteDeReserva elFaltante =
-					api.FaltanteDeReservaAl(fechaDeCorte, LosJuiciosSinFirmar.UmbralDeReserva, textos.Idioma);
+					api.FaltanteDeReservaAl(fechaDeCorte, LosJuiciosSinFirmar.UmbralDeReserva, idioma);
 
 				adoptado = elFaltante.Declarado;
 				faltante = elFaltante.Faltante;

@@ -8,7 +8,7 @@
     <AssemblyName>Municipalidad.Wasm</AssemblyName>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
 
-    <AssemblyTitle>Mi cuenta municipal</AssemblyTitle>
+    <AssemblyTitle>MONTEVERDE Municipal Services</AssemblyTitle>
     <Description>La cuenta de una persona con su municipalidad, guardada en una carpeta suya. Funciona sin conexion.</Description>
   </PropertyGroup>
 

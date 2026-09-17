@@ -2,6 +2,7 @@
 @using System.Globalization
 @using Compras.App.Vistas
 @using Compras.App
+@inject Textos textos
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 
@@ -12,28 +13,28 @@
    LECHE-1L, y el dominio lo resuelve igual que la tool del MCP. Una url con la llave
    interna adentro es el sku asomándose por la puerta de atrás. *@
 
-<PageTitle>@Nombre · La Guaria y vos</PageTitle>
+<PageTitle>@Nombre · @Textos.TituloDelModulo</PageTitle>
 
 <Volver Respaldo="infaltables" />
 
 @if (!estado.EstaArriba)
 {
     <div class="aviso">
-        La app todavía no abrió en esta computadora.
-        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+        @textos["comun.sinAbrir"]
+        <a href="">@textos["comun.sinAbrirEnlace"]</a> @textos["comun.sinAbrirCola"]
     </div>
 }
 else if (consumo is null || !consumo.Existe)
 {
     <h1>@Nombre</h1>
     <p class="text-body-secondary">
-        No hay ninguna compra tuya con <strong>«@Nombre»</strong>.
+        @((MarkupString)textos.Con("producto.sinCompras", ("nombre", Nombre)))
     </p>
-    <a class="btn btn-primary" href="infaltables">Ver los que nunca faltan</a>
+    <a class="btn btn-primary" href="infaltables">@textos["producto.verLosQueNuncaFaltan"]</a>
 }
 else
 {
-    <p class="ritmo-rotulo mb-1">Uno de tus infaltables</p>
+    <p class="ritmo-rotulo mb-1">@textos["producto.unoDeTusInfaltables"]</p>
     <h1>@Nombre</h1>
     <p class="mb-4">
         <span class="etiqueta etiqueta-verde">@consumo.Constancia</span>
@@ -44,19 +45,19 @@ else
     <div class="cifras-producto mb-4">
         <div class="ritmo-cifra">
             <span class="ritmo-numero">@consumo.TotalCompras</span>
-            <span class="ritmo-rotulo">compras en las que apareció</span>
+            <span class="ritmo-rotulo">@textos["producto.comprasEnQueAparecio"]</span>
         </div>
         <div class="ritmo-cifra">
             <span class="ritmo-numero">@consumo.TotalUnidades</span>
-            <span class="ritmo-rotulo">unidades llevadas</span>
+            <span class="ritmo-rotulo">@textos["producto.unidadesLlevadas"]</span>
         </div>
         <div class="ritmo-cifra">
             <span class="ritmo-numero ritmo-numero-largo">@Colones(consumo.TotalGastado)</span>
-            <span class="ritmo-rotulo">gastado en este producto</span>
+            <span class="ritmo-rotulo">@textos["producto.gastadoEnEsto"]</span>
         </div>
         <div class="ritmo-cifra">
             <span class="ritmo-numero ritmo-numero-largo">@Fecha(consumo.UltimaVez)</span>
-            <span class="ritmo-rotulo">última vez que lo llevaste</span>
+            <span class="ritmo-rotulo">@textos["producto.ultimaVez"]</span>
         </div>
     </div>
 
@@ -73,7 +74,7 @@ else
        Y NO SE PAGINÓ, que era la otra salida. Partir una serie de tiempo en páginas de doce
        rompe justo lo que la serie sirve para ver: enero de un año y enero del otro caen en
        páginas distintas y ya no se pueden comparar. *@
-    <h2>Cómo lo fuiste llevando</h2>
+    <h2>@textos["producto.comoLoFuisteLlevando"]</h2>
 
     @* LOS AÑOS ANTERIORES van en su PROPIO bloque, y no mezclados con los meses, por una
        razón de lectura: un año suma doce meses, así que en una sola escala la barra del año
@@ -81,7 +82,7 @@ else
        propio máximo, y estar separados es lo que hace obvio que son dos escalas. *@
     @if (AniosAnteriores().Count > 0)
     {
-        <p class="ritmo-rotulo mb-2">Unidades por año.</p>
+        <p class="ritmo-rotulo mb-2">@textos["producto.unidadesPorAnio"]</p>
         <div class="list-group mb-4">
             @foreach (var anio in AniosAnteriores())
             {
@@ -95,7 +96,7 @@ else
                        entero: 31 unidades en ocho meses no se compara con 48 en doce. *@
                     <span class="ritmo-rotulo mes-gasto">
                         @Colones(anio.Gasto)
-                        <span class="anio-meses">@anio.MesesConCompras @(anio.MesesConCompras == 1 ? "mes" : "meses")</span>
+                        <span class="anio-meses">@textos.Meses(anio.MesesConCompras)</span>
                     </span>
                 </div>
             }
@@ -103,7 +104,7 @@ else
     }
 
     <p class="ritmo-rotulo mb-2">
-        @(AniosAnteriores().Count > 0 ? $"{UltimoAnio()}, mes a mes." : "Unidades por mes.")
+        @(AniosAnteriores().Count > 0 ? textos.Con("producto.mesAMes", ("anio", UltimoAnio())) : textos["producto.unidadesPorMes"])
     </p>
     <div class="list-group mb-4">
         @foreach (var mes in MesesDelUltimoAnio())
@@ -122,7 +123,7 @@ else
     <p class="mb-0">@consumo.ParaElAsistente</p>
 
     <p class="mt-4">
-        <a class="btn btn-primary" href="infaltables">&larr; Los que nunca faltan</a>
+        <a class="btn btn-primary" href="infaltables">&larr; @textos["infaltables.titulo"]</a>
     </p>
 }
 
@@ -200,24 +201,17 @@ else
 
         return mayor == 0 ? 0 : (int)(unidades * 100L / mayor);
     }
-
-    private static string Colones(decimal monto) => Plata.Colones(monto);
+    private string Colones(decimal monto) => textos.Monto(monto);
 
     // "29 ago 2026" y no "2026-08-29". El aaaa-mm-dd es la forma en que la fecha VIAJA -y
     // asi la devuelve la tool del MCP, que es lo correcto para una maquina-; en la ficha se
     // lee, y ademas el guion la partia en dos lineas.
-    private static string Fecha(string aaaaMmDd)
+    private string Fecha(string aaaaMmDd)
     {
         if (!DateTime.TryParse(aaaaMmDd, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out DateTime cuando))
             return aaaaMmDd;
 
-        return $"{cuando.Day} {Mes(cuando.Month)} {cuando.Year}";
+        return $"{cuando.Day} {textos[$"comun.mes.{cuando.Month}"]} {cuando.Year}";
     }
-
-    private static string Mes(int mes) => mes switch
-    {
-        1 => "ene", 2 => "feb", 3 => "mar", 4 => "abr", 5 => "may", 6 => "jun",
-        7 => "jul", 8 => "ago", 9 => "sep", 10 => "oct", 11 => "nov", _ => "dic",
-    };
 }

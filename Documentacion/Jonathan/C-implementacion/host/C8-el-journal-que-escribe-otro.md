@@ -269,10 +269,14 @@ mismo problema.
 
 ## Dos cosas que hay que decir antes de llevarlo a producción
 
-**El `.gmod` en Android funciona pero no se puede publicar.** Lo dice el propio Host en
-[`Module.cs`](../../../../Gnothi.Host/Module.cs): *«en un teléfono "in-process" no se puede publicar
-aunque funcione»* — Play y Apple solo admiten JavaScript en un WebView para código que llega de
-afuera. Para un POC no bloquea; para la tienda es una decisión de arquitectura, no un ajuste.
+**El `.gmod` en Android funciona pero probablemente no se pueda publicar.** Lo dice el propio Host
+en [`Module.cs`](../../../../Gnothi.Host/Module.cs). **La razón, corregida el 2026-09-16 con los
+textos leídos** ([`B11`](../../B-arquitectura/B11-lo-que-dicen-las-tiendas.md)): la política de
+Google Play exceptúa el código que corre en una VM o intérprete que dé acceso **indirecto** a las
+APIs de Android; un DLL cargado por Mono en el proceso de Gnothi da acceso **directo**. No es que
+«sólo admitan JavaScript» —eso venía de una versión del acuerdo de Apple que ya no existe—: es la
+mediación lo que la política pide. Para un POC no bloquea; para la tienda es una decisión de
+arquitectura, no un ajuste. Y la caja de wasm de `F5` es justamente esa mediación.
 
 **El permiso de solo lectura se impone, pero no durante el alta.** La concesión guardada sí queda de
 solo lectura y escribir falla con `SecurityException` — verificado tras reiniciar el aparato. Pero

@@ -32,6 +32,13 @@ namespace Compras.App
 	{
 		private const string ActorName = "compras";
 
+		/// <summary>
+		/// EN QUE IDIOMA LE PREGUNTA ESTA SUPERFICIE A LA PUERTA, que es el del registro del
+		/// supermercado y no el de la persona: el Host le entrega a una superficie una carpeta
+		/// concedida y nada mas, y Gnothi.Contract no lleva idioma.
+		/// </summary>
+		private const string ElIdioma = ComprasAPI.IdiomaDelRegistro;
+
 		private readonly string folder;
 
 		public ComprasSurface(string grantedFolder)
@@ -86,9 +93,9 @@ namespace Compras.App
 		{
 			DateTime ahora = DateTime.Now;
 			RangoDelHistorialVista rango = api.Rango();
-			CambioDeLaCanasta cambio = api.CambioDelQuiebre();
-			var ritmos = api.RitmosDelQuiebre();
-			var precios = api.Precios();
+			CambioDeLaCanasta cambio = api.CambioDelQuiebre(ElIdioma);
+			var ritmos = api.RitmosDelQuiebre(ElIdioma);
+			var precios = api.Precios(ElIdioma);
 			int cantidad = api.CantidadDeCompras();
 			PrecioQueCambio habitual = LaPortadaDeLaCara.Oportunidad(precios);
 
@@ -99,7 +106,7 @@ namespace Compras.App
 				total = api.TotalDeCompras(),
 				desdeCuando = LaPortadaDeLaCara.DesdeCuando(rango),
 				banners = LaPortadaDeLaCara.Banners(
-					cambio, precios, api.Promociones(ahora), api.Firma(), ritmos,
+					cambio, precios, api.Promociones(ahora, ElIdioma), api.Firma(ElIdioma), ritmos,
 					hayCompras: cantidad > 0, alDia: ahora),
 				cambios = ritmos.Count,
 
@@ -142,7 +149,7 @@ namespace Compras.App
 			string[] partes = rango.UltimoMes.Split('-');
 			if (partes.Length < 2) return null;
 
-			return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]));
+			return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), ElIdioma);
 		}
 
 		// LO DE ARRIBA: cuanto lleva gastado, desde cuando, y la firma de la semana -- a que hora
@@ -154,7 +161,7 @@ namespace Compras.App
 			cantidad = api.CantidadDeCompras(),
 			total = api.TotalDeCompras(),
 			rango = api.Rango(),
-			firma = api.Firma(),
+			firma = api.Firma(ElIdioma),
 			ultimoEvento = api.UltimoEventoProcesado(),
 		});
 
@@ -175,9 +182,9 @@ namespace Compras.App
 			return (object)new
 			{
 				hayDatos = true,
-				mes = api.Canasta(int.Parse(partes[0]), int.Parse(partes[1])),
-				contraElMesAnterior = api.ComparacionConElMesAnterior(),
-				contraElAnioPasado = api.CambioDelQuiebre(),
+				mes = api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), ElIdioma),
+				contraElMesAnterior = api.ComparacionConElMesAnterior(ElIdioma),
+				contraElAnioPasado = api.CambioDelQuiebre(ElIdioma),
 			};
 		});
 
@@ -187,10 +194,10 @@ namespace Compras.App
 		[View("movimientos")]
 		public object Movimientos() => !HasJournal ? NoData() : Read(api => (object)new
 		{
-			precios = api.Precios(),
-			ritmos = api.RitmosDelQuiebre(),
-			ritmo = api.Ritmo(),
-			recorrido = api.Recorrido(),
+			precios = api.Precios(ElIdioma),
+			ritmos = api.RitmosDelQuiebre(ElIdioma),
+			ritmo = api.Ritmo(ElIdioma),
+			recorrido = api.Recorrido(ElIdioma),
 		});
 
 		// LO QUE VIENE: la lista de la proxima compra, las promociones vigentes, lo que falta
@@ -205,10 +212,10 @@ namespace Compras.App
 			DateTime ahora = DateTime.Now;
 			return (object)new
 			{
-				lista = api.Lista(ahora),
-				promociones = api.Promociones(ahora),
-				abastecimientos = api.AbastecimientosPendientes(ahora),
-				garantias = api.GarantiasVigentes(ahora),
+				lista = api.Lista(ahora, ElIdioma),
+				promociones = api.Promociones(ahora, ElIdioma),
+				abastecimientos = api.AbastecimientosPendientes(ahora, ElIdioma),
+				garantias = api.GarantiasVigentes(ahora, ElIdioma),
 			};
 		});
 

@@ -687,3 +687,76 @@ parecía una restricción de MIUI, y no lo era.
 pantalla original **sin haberlas puesto lado a lado**: se habían copiado los tokens de color, y de
 ahí se dedujo el parecido. La estructura estaba inventada. **Copiar la paleta no es portar la
 pantalla**, y el chequeo que faltaba —abrir el `.razor`— costaba dos minutos.
+
+---
+
+## P18 · Gnothi se baja de la tienda, al teléfono de la persona — y eso reordena el tablero · 2026-09-16
+
+**La decisión, que faltaba y no estaba escrita en ningún lado:**
+
+> *«el teléfono de la persona, bajado de la tienda»*
+
+No es un detalle de despliegue. Es lo que decide **cuáles de las cuatro formas son viables**, porque
+sideload, MDM y escritorio no tienen reglas de tienda y la tienda de consumidor sí.
+
+Con los textos ya leídos y citados en [`B11`](../B-arquitectura/B11-lo-que-dicen-las-tiendas.md),
+esto es lo que la decisión implica.
+
+### El golpe, dicho sin rodeos
+
+**Lo que corre hoy en el teléfono no es publicable por su forma.** Cuatro módulos en forma híbrida y
+uno hospedado; la híbrida carga el DLL de la institución en el proceso de Gnothi, y eso da acceso
+**directo** a las APIs de Android — justo lo que la excepción de Google Play no cubre, porque pide
+acceso **indirecto**.
+
+| forma | ¿pasa el texto de Play? | dónde sigue siendo legítima |
+|---|---|---|
+| 1 · cargo | no | escritorio (MSI, sin tienda) |
+| 2 · hospedada | **sí** | teléfono y escritorio |
+| 3 · híbrida | no | escritorio |
+| 4 · Blazor en el Host (`F7`) | no | escritorio |
+| caja de wasm (`F5`) | **sí, palabra por palabra** | todo |
+
+**Las formas 1, 3 y 4 no se tiran: se mudan de plataforma.** En escritorio no hay tienda y la
+objeción no existe. Lo que cambia es que **dejan de ser el futuro del teléfono**, y `F7` —que cerró
+diciendo que la cuarta forma es *«la puerta más ancha de las cuatro»*— hay que leerlo con esto al
+lado: es la más ancha **en escritorio**.
+
+### Qué sube de prioridad
+
+**`P10` (el sustrato viaja adentro del bundle) deja de ser un hueco anotado.** Con la hospedada como
+única forma publicable en el teléfono, su costo —12,4 a 14,1 MB por módulo, de los cuales ~8 MB son
+las copias `.gz`/`.br` del mismo motor— pasa a ser **el costo del producto**, no de una forma entre
+varias.
+
+Y hay una salida que el tablero no tenía anotada: **`BundleServer` es nuestro.** Hoy sirve el bundle
+de cada módulo desde su propia carpeta; nada impide que sirva **un solo `_framework` compartido** y
+que el bundle del módulo traiga únicamente sus propios DLLs. Eso:
+
+- baja el disco de ~13 MB por módulo a la fracción que es el módulo (`examenes` mide 188 KB en
+  proceso, para dar la escala);
+- **le devuelve el sentido a `substrate.range`**, que hoy el manifiesto declara y nadie valida
+  justamente porque no hay sustrato compartido que negociar;
+- **no baja la memoria.** Cada WebView carga su propio runtime igual: los ~200 MB por módulo vivo
+  siguen ahí, y con ellos la regla de un módulo vivo a la vez.
+- **Riesgo conocido:** el trimming de Blazor es por app, así que la rebanada del BCL difiere entre
+  módulos. Un `_framework` compartido tiene que ser uniforme, y eso lo hace más grande que
+  cualquiera de los individuales. Hay que medirlo antes de prometerlo.
+
+**`P8` (el módulo como `.wasm`) pasa a ser el camino crítico**, y por una razón nueva: es la única
+arquitectura que baja la memoria **y** encaja en el texto de Google —*«a virtual machine or an
+interpreter … indirect access»*— con una sola decisión. Sigue bloqueado por `P1`, que no es código
+nuestro.
+
+### Lo que ninguna arquitectura arregla
+
+Dos cosas de `B11` le pegan a Gnothi **como producto**, no a la forma del módulo, y sobreviven a
+cualquier decisión técnica:
+
+- **Apple §4.7.2** — no exponer APIs nativas al software que no viene en el binario sin permiso
+  previo. El puente (`listar`, `leer`, `escribir`, `pull`) es exactamente eso, y le pega también a
+  la hospedada y a la caja de wasm.
+- **Apple §3.3.1(B)(c)** — no crear una tienda o escaparate para otras aplicaciones. El catálogo de
+  módulos con su hoja, su firma y su actualización se le parece.
+
+Esas dos sólo se contestan **preguntando**, no diseñando. Van a la sonda.

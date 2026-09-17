@@ -120,52 +120,13 @@ namespace Compras.Dominio
 			}
 		}
 
-		/// <summary>La línea de la portada. Dice qué pasó y se calla: el juicio no es del súper.</summary>
-		internal string ParaElAsistente
-		{
-			get
-			{
-				if (!HayConQueComparar)
-					return "todavía no hay compras de los dos lados con las que ver si algo cambió";
-
-				if (!HayCambio) return "su canasta viene igual: no entró ni se cayó nada de lo habitual";
-
-				var partes = new List<string>();
-
-				if (entraron.Count > 0)
-				{
-					partes.Add($"desde {MesDelCambioExpresado} entraron {Nombres(Descripciones(entraron))}");
-				}
-
-				if (salieron.Count > 0)
-				{
-					var nombres = new List<string>();
-					foreach (ProductoHabitual quedo in salieron) nombres.Add(quedo.Descripcion);
-					partes.Add($"dejó de aparecer {Nombres(nombres)}");
-				}
-
-				return string.Join(", y ", partes);
-			}
-		}
-
-		private static List<string> Descripciones(IReadOnlyList<ProductoQueEntro> productos)
-		{
-			var nombres = new List<string>();
-			foreach (ProductoQueEntro entro in productos) nombres.Add(entro.Descripcion);
-			return nombres;
-		}
-
-		private static string Nombres(List<string> nombres)
-		{
-			int cuantos = Math.Min(4, nombres.Count);
-			var recortados = nombres.GetRange(0, cuantos);
-
-			string lista = cuantos == 1
-				? recortados[0]
-				: string.Join(", ", recortados.GetRange(0, cuantos - 1)) + " y " + recortados[cuantos - 1];
-
-			return nombres.Count > cuantos ? $"{lista} (y {nombres.Count - cuantos} más)" : lista;
-		}
+		/// <summary>
+		/// QUE FRASE dice la portada, por su nombre: `sin-comparar`, `sin-cambio` o `hay-cambio`. Los
+		/// nombres que van en sus huecos son los de Entraron y Salieron, que ya se publican; el mes del
+		/// cambio es el del primero que entro, que ya viene ordenado por fecha.
+		/// </summary>
+		internal string Clave =>
+			!HayConQueComparar ? "sin-comparar" : !HayCambio ? "sin-cambio" : "hay-cambio";
 	}
 
 	/// <summary>Un producto que se volvió habitual, con el mes en que apareció por primera vez.</summary>

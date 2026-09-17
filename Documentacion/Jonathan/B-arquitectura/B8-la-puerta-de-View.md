@@ -5,6 +5,89 @@ discutirse, y una consecuencia que no se había visto.
 
 ---
 
+## Antes de la observación: las tres puertas de una superficie híbrida
+
+*Agregado el 2026-09-15. Estaba entendido pero no escrito, y sin esto el resto del documento no se
+puede leer en frío.*
+
+La superficie de un módulo híbrido es **una sola clase**, con sus métodos etiquetados. La etiqueta
+decide **quién puede llamarlo**:
+
+| marcador | público | ¿en el manifiesto? | ¿el modelo lo ve? | ¿escribe? |
+|---|---|---|---|---|
+| `[Query]` | **el asistente** | **sí**, una por una | sí | no |
+| `[View]` | **la pantalla** | no | **nunca** | no |
+| `[Deliver]` | **el cartero** | no | nunca | **es lo único que escribe** |
+| `[Cursor]` | el cartero, antes de pedir | no | nunca | no |
+
+### Los tres caminos
+
+```
+ASISTENTE                          PANTALLA                     CARTERO
+   │                                  │                            │
+   ▼                                  ▼                            ▼
+Dispatcher.Serve                 cara.js                    WebModule.Pull
+   ├─ Allows(tool)  ← consent    gnothiPuente.consultar           │
+   ├─ meter.Count   ← contador       │                     Module.Cursor
+   │                                 ▼                            │  [Cursor]
+   ▼                            WebModule.Surface                 ▼
+Module.Invoke                        │                      red (credencial
+   │                                 ▼                       de Gnothi)
+   ▼                            Module.View                       │
+InProcessShell.Invoke                │                            ▼
+   └─ Ask(nombre, ToolMarks)         ▼                     Module.Deliver
+                              InProcessShell.View                 │
+                                 └─ Ask(nombre, ViewMarks)        ▼
+                                                        InProcessShell.Deliver
+                                                           └─ DeliverAttribute
+```
+
+### Cómo se aíslan, y es más simple de lo que parece
+
+**Cada puerta busca el método por nombre, pero sólo dentro de su propio conjunto de marcadores.**
+
+```csharp
+Invoke(tool, …)  => Ask(tool, …, ToolMarks);   // ["QueryAttribute", "McpServerToolAttribute"]
+View(name, …)    => Ask(name, …, ViewMarks);   // ["ViewAttribute"]
+```
+
+Un método `[View]` **no le es negado** al asistente: **no existe** para él. Si el modelo pidiera
+`"tendencia"` por la puerta de las tools, `Ask` recorre sólo los `[Query]`, no lo encuentra, y
+contesta `module 'examenes' does not expose 'tendencia'`.
+
+El comentario de `InProcessShell` dice por qué no se unificaron:
+
+> *«No se mezcla con Invoke a proposito: si las dos puertas buscaran en el mismo conjunto, una
+> consulta de pantalla podria llegar por la puerta del asistente —y al reves, que es peor— sin que
+> nada lo impidiera.»*
+
+**Son tres capas, no una:**
+
+1. **El conjunto de marcadores.** Lo de arriba. Nadie alcanza lo del otro.
+2. **El manifiesto.** Sólo los `[Query]` están declarados, y la comprobación del alta compara
+   declarado contra real **sólo sobre `ToolMarks`**. Por eso compras reporta `matches:true` con
+   `declared:[lista_de_compras, resumen]` aunque su superficie tenga seis `[View]`.
+3. **Lo que cruza.** `consultar` va forzado a `Accepts.JsonOnly`: la página no elige su formato de
+   salida, que es una palanca que las otras puertas sí dan.
+
+### Lo que NO se aísla, a propósito
+
+**El actor.** Los tres caminos usan el MISMO, vivo. No hay tres lectores ni un lector y un
+escritor: uno solo (ver `B9` y `C9`). **El aislamiento es de las PUERTAS, no de los datos** — es el
+mismo expediente con tres públicos, y un laboratorio no tiene «los datos del asistente» y «los
+datos de la pantalla».
+
+Y lo que cierra las escrituras no es un actor de sólo lectura: **son las puertas**. `[Deliver]` lo
+busca la cáscara por su propio marcador, no está en el manifiesto, y `consultar` sólo llega a
+`[View]`. No hay ningún camino desde el modelo ni desde la página hasta el método que escribe.
+
+### Y de ahí sale la observación de abajo
+
+Mirando el dibujo se ve solo: **`Allows` y `meter.Count` están únicamente en el camino del
+asistente.** Los otros dos no los tocan. Eso es lo que el resto de este documento discute.
+
+---
+
 ## La observación, tal como llegó
 
 > `[View]` no pasa por el Dispatcher. No es solo que salta el consentimiento, que él lo pone a

@@ -44,7 +44,7 @@ namespace Municipalidad.App.Vistas
 
 		/// <summary>La serie de cada rubro y el total del anio, leidos de una sola pasada.</summary>
 		public static LoQuePagueEnUnAnio LeerPor(MunicipalidadAPI api, int elAnio, bool loEligioLaPersona,
-			Textos textos)
+			string idioma)
 		{
 			ArgumentNullException.ThrowIfNull(api);
 
@@ -55,7 +55,7 @@ namespace Municipalidad.App.Vistas
 
 			foreach (string rubro in api.LosRubrosQueHay())
 			{
-				RegistroDelHistorial historial = api.HistorialDe(rubro, textos.Idioma);
+				RegistroDelHistorial historial = api.HistorialDe(rubro, idioma);
 
 				var lineas = new List<UnaLineaDeComprobante>();
 

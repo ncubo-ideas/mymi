@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
+// EL RENDERIZADOR DE FRASES, con alias porque la clase y su espacio de nombres se llaman igual y sin
+// esto la referencia queda ambigua. Es el mismo con que el dominio compone las suyas: las frases de
+// esta Vista y las de la puerta se escriben en un solo lugar.
+using LasFrases = Municipalidad.App.Frases.Frases;
+
 namespace Municipalidad.App.Vistas
 {
 	/// <summary>
@@ -30,10 +35,11 @@ namespace Municipalidad.App.Vistas
 		/// Lee los cinco rubros por la puerta, en un solo momento. Cada uno pregunta su par antes de la
 		/// lectura guardada, asi que ninguna fila se construye sobre una respuesta que el dominio nego.
 		/// </summary>
-		public static LaVariacionDeCadaRubro LeerPor(MunicipalidadAPI api, Textos textos)
+		public static LaVariacionDeCadaRubro LeerPor(MunicipalidadAPI api, string idioma)
 		{
 			ArgumentNullException.ThrowIfNull(api);
-			ArgumentNullException.ThrowIfNull(textos);
+
+			LasFrases frases = LasFrases.De(idioma);
 
 			var conHistoria = new List<string>(api.RubrosConHistoria());
 			var filas = new List<LaVariacionDeUnRubro>();
@@ -43,19 +49,19 @@ namespace Municipalidad.App.Vistas
 			{
 				if (!conHistoria.Contains(rubro))
 				{
-					filas.Add(LaVariacionDeUnRubro.SinNingunComprobante(rubro, textos));
+					filas.Add(LaVariacionDeUnRubro.SinNingunComprobante(rubro, frases));
 					continue;
 				}
 
 				if (!api.SePuedeVerLaVariacionDe(rubro))
 				{
-					filas.Add(LaVariacionDeUnRubro.ConUnSoloComprobante(rubro, textos));
+					filas.Add(LaVariacionDeUnRubro.ConUnSoloComprobante(rubro, frases));
 					continue;
 				}
 
 				filas.Add(LaVariacionDeUnRubro.De(
 					api.VariacionDe(rubro, LosJuiciosSinFirmar.UmbralDeSalto, LosJuiciosSinFirmar.Ruido,
-						textos.Idioma)));
+						idioma)));
 
 				alguno = true;
 			}
@@ -115,20 +121,20 @@ namespace Municipalidad.App.Vistas
 				Dice = registro.Dice,
 			};
 
-		internal static LaVariacionDeUnRubro SinNingunComprobante(string rubro, Textos textos) =>
+		internal static LaVariacionDeUnRubro SinNingunComprobante(string rubro, LasFrases frases) =>
 			new LaVariacionDeUnRubro
 			{
 				Rubro = rubro,
 				SePuedeVer = false,
-				Dice = textos["porQuePagoMas.sinNingunComprobante"],
+				Dice = frases.Diga("porQuePagoMas.sinNingunComprobante"),
 			};
 
-		internal static LaVariacionDeUnRubro ConUnSoloComprobante(string rubro, Textos textos) =>
+		internal static LaVariacionDeUnRubro ConUnSoloComprobante(string rubro, LasFrases frases) =>
 			new LaVariacionDeUnRubro
 			{
 				Rubro = rubro,
 				SePuedeVer = false,
-				Dice = textos["porQuePagoMas.conUnSoloComprobante"],
+				Dice = frases.Diga("porQuePagoMas.conUnSoloComprobante"),
 			};
 	}
 }

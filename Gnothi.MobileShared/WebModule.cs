@@ -41,6 +41,9 @@ internal abstract class WebModule : IWebModule
 	private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> pending = new();
 	private int next;
 
+	// Los verbos que entraron por el puente, como conjunto. Ver Serve y Faltó.
+	private readonly ConcurrentDictionary<string, byte> oídas = new();
+
 	// While it is on screen it is not evicted, even at its ~200 MB. It is the one concession to
 	// the evict-on-demand rule, and it lasts as long as the person is looking.
 	internal bool Visible { get; set; }
@@ -97,7 +100,38 @@ internal abstract class WebModule : IWebModule
 
 		// Wait for the actor to be hydrated. If the module never says so, the question fails
 		// saying exactly that instead of hanging forever.
-		await ready.Task.WaitAsync(TimeSpan.FromSeconds(60), ct);
+		try
+		{
+			await ready.Task.WaitAsync(TimeSpan.FromSeconds(60), ct);
+		}
+		catch (TimeoutException)
+		{
+			throw new TimeoutException($"'{Name}' nunca dijo 'listo': {Faltó(server)}");
+		}
+	}
+
+	// QUE FALTO, dicho con lo unico que el Host sabe de verdad: cuanto sirvio y que entro por el
+	// puente. No adivina la causa; parte el silencio en los tres casos que antes se veian igual.
+	//
+	// POR QUE EXISTE. El 2026-09-16 un modulo hospedado dejo de abrir y el Host solo supo decir
+	// «could not query the module: TimeoutException». Encontrar la causa costo parchar el interop
+	// del modulo EN EL TELEFONO para ver que la app cargaba entera -227 archivos- y nunca llamaba
+	// al puente: le preguntaba al navegador donde guardar en vez de preguntarle a Gnothi si estaba
+	// hospedada. Ese renglon -«cargo N archivos y no llamo al puente»- es exactamente lo que el
+	// Host tenia delante y no decia.
+	//
+	// LO QUE NO HACE: culpar. «No llamo al puente» es un hecho; por que no lo llamo es de la app.
+	private string Faltó(BundleServer server)
+	{
+		if (server.Documents == 0)
+			return "no pidió ni su propio documento: la vista no llegó a navegar al bundle";
+
+		if (oídas.IsEmpty)
+			return $"cargó {server.Served} archivo(s) y NUNCA llamó al puente: su app no preguntó "
+				+ "si estaba hospedada, así que no está hablando con Gnothi";
+
+		return $"cargó {server.Served} archivo(s) y habló por el puente ({string.Join(", ", oídas.Keys)}), "
+			+ "pero su actor nunca terminó de hidratarse";
 	}
 
 	public Task<string> Ask(string tool, string argumentsJson, CancellationToken ct) =>
@@ -201,6 +235,12 @@ internal abstract class WebModule : IWebModule
 	// module's API. Two copies would be two APIs the day one of them grows a verb.
 	internal void Serve(string op, string id, string? a, string? b)
 	{
+		// QUE VERBOS SE OYERON, y nada mas: sin cuentas, sin argumentos, sin orden. Es para que
+		// el timeout pueda decir «habló por el puente y no dijo listo» en vez de «no contestó».
+		// `violation` NO cuenta: lo manda el watchdog que Gnothi inyecta, no el bundle, y si
+		// contara, un modulo que no llamo al puente parecería que sí. Ver Faltó.
+		if (op != "violation") oídas[op] = 0;
+
 		switch (op)
 		{
 			// The module says its actor is hydrated and can take questions.

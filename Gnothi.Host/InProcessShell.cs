@@ -362,6 +362,27 @@ internal sealed class InProcessShell : IShell
 		Type t = v.GetType();
 		if (v is Enum) return v.ToString();
 		if (t.IsPrimitive || v is string || v is decimal || v is DateTime || v is DateTimeOffset) return v;
+		// UN DICCIONARIO ES UN OBJETO, NO UNA LISTA -- y va ANTES del IEnumerable de abajo, que es
+		// donde caia. Un Dictionary<K,V> implementa IEnumerable<KeyValuePair<K,V>>, asi que la
+		// linea siguiente lo proyectaba como una LISTA DE PARES: `[{key:"Inspection",
+		// value:"Due"}, ...]` en vez de `{Inspection:"Due", ...}`.
+		//
+		// Y falla en silencio, que es lo peor que tiene. Medido en el telefono el 2026-09-14: la
+		// cara del concesionario buscaba `dueStates[nextDueKind]`, encontraba `undefined`, y su
+		// respaldo pintaba el VISTO VERDE al lado de una pildora que decia «1 te toca ahora». Un
+		// dato que no llega se ve igual que un dato que dice «todo bien».
+		//
+		// Las llaves NO se camelCasean. Las de abajo son NOMBRES DE PROPIEDAD -- del programador,
+		// y la politica del serializador es suya --; estas son DATOS: «Inspection» es un miembro
+		// del conjunto cerrado del dominio, y bajarle la inicial seria reescribir un valor.
+		if (v is System.Collections.IDictionary map)
+		{
+			Dictionary<string, object?> porLlave = [];
+			foreach (System.Collections.DictionaryEntry e in map)
+				porLlave[e.Key?.ToString() ?? ""] = Project(e.Value);
+			return porLlave;
+		}
+
 		if (v is System.Collections.IEnumerable list) return list.Cast<object?>().Select(Project).ToList();
 
 		Dictionary<string, object?> d = [];
