@@ -66,7 +66,7 @@ $catalogo = [ordered]@{
     'dealership'    = @{ Mock = "$raiz\Concesionario\EndPointDeEventos"; Pub = 8092; Web = 8093
                          Titulo = 'Sotaventos Motors';           Subtitulo = 'Mi plan de mantenimiento' }
     'municipalidad' = @{ Mock = "$raiz\Municipalidad\EndPointDeEventos"; Pub = 8121; Web = 8122
-                         Titulo = 'Tu municipalidad';           Subtitulo = 'Mi cuenta municipal' }
+                         Titulo = 'Municipalidad de Monteverde'; Subtitulo = 'MONTEVERDE Municipal Services' }
 }
 
 if (-not (Test-Path $adb)) { throw "no encuentro adb en $adb. Pasa -Sdk con la ruta de tu SDK de Android." }

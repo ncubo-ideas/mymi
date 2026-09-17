@@ -93,10 +93,11 @@ $raiz = Split-Path -Parent $PSScriptRoot
 # forma. El concesionario tambien va en espanol: Kenneth paso su PWA a espanol el 2026-09-08 y la
 # tarjeta lo sigue (2026-09-09).
 #
-# LA MUNICIPALIDAD NO SE NOMBRA, y no es una casilla pendiente: es la respuesta. El concesionario
-# inventa una marca y no pasa nada; toda municipalidad plausible es una que existe, con vecinos que
-# le pagan, asi que su modulo usa el sustantivo comun y su dominio es el TLD reservado para
-# ejemplos. El nombre real llega el dia que una municipalidad de verdad adopte el modulo.
+# LA MUNICIPALIDAD SE NOMBRA, por pedido expreso: su Titulo, su Institucion, su Marca y su
+# RazonSocial. EL DOMINIO NO LA SIGUE y se queda en el TLD reservado para ejemplos, que es donde
+# estaba el riesgo: la razon por la que nada la nombraba se deja escrita, porque en esa parte no ha
+# dejado de valer. El concesionario inventa una marca y no pasa nada, pero toda municipalidad
+# plausible es una que existe, con vecinos que le pagan, y un dominio plausible seria el suyo.
 $catalogo = @{
     'examenes' = @{
         Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
@@ -215,17 +216,17 @@ $catalogo = @{
     }
     'municipalidad' = @{
         Proyecto    = "$raiz/Municipalidad/App/Municipalidad.Wasm/Municipalidad.Wasm.csproj"
-        Titulo      = 'Mi cuenta municipal'
-        Institucion = 'Tu municipalidad'
-        Marca       = 'Tu municipalidad'
+        Titulo      = 'MONTEVERDE Municipal Services'
+        Institucion = 'Municipalidad de Monteverde'
+        Marca       = 'Monteverde'
         Slogan      = 'Lo que el portal no te dice'
         Color       = '#2C306C'
         Rubro       = 'gobierno'
         Descripcion = 'Tus cobros municipales: por qué te subieron, qué se te vence y cuánto apartar.'
         NoHace      = 'No dice cuánto debés hoy: eso lo dice el portal de tu municipalidad.'
         Idioma      = 'es-CR'
-        Dominio     = 'municipalidad.example'
-        RazonSocial = 'Municipalidad del POC'
+        Dominio     = 'monteverde.example'
+        RazonSocial = 'Municipalidad de Monteverde'
         Cedula      = ''
         Version     = '1.0.0'
         Retencion   = '5 anos'

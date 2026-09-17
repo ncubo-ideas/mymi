@@ -186,14 +186,16 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(elManifiesto.GetProperty("modulo").GetString(),
 					Is.EqualTo(MunicipalidadApp.ElActor), "el modulo y el actor son un solo nombre");
 
-				Assert.That(elManifiesto.GetProperty("institucion").GetString(),
-					Does.Contain("mock"),
-					"Y la institucion sigue siendo un MARCADOR que dice que lo es. Una municipalidad es "
-					+ "una institucion publica de verdad y todo nombre plausible es el de una que "
-					+ "existe: el nombre real llega cuando una de verdad adopte el modulo.");
+				// LA INSTITUCION YA NO ES UN MARCADOR, por pedido expreso: se pidio nombrarla, y esta
+				// asercion pineaba la decision contraria. Lo que queda pineado es que se nombre, porque
+				// el catalogo de Gnothi la muestra y un renglon vacio ahi no dice de quien es el modulo.
+				// La razon por la que fue un marcador no se perdio: vive en el //institucion de
+				// manifiesto.json, y es la que deja el dominio del paquete en el TLD de ejemplos.
+				Assert.That(elManifiesto.GetProperty("institucion").GetString(), Is.Not.Empty,
+					"Y la institucion es la que entrega el modulo, nombrada.");
 
 				Assert.That(elManifiesto.GetProperty("titulo").GetString(), Is.Not.Empty,
-					"Y el titulo es el nombre que la persona lee, con sus acentos.");
+					"Y el titulo es el nombre que la persona lee.");
 			});
 		}
 

@@ -392,8 +392,8 @@ const instituciones = [
     },
   },
   {
-    carpeta: 'Municipalidad', voz: 'vos', modulo: 'municipalidad', marca: 'Mi cuenta municipal',
-    quien: 'Tu municipalidad', registro: 'tu cuenta',
+    carpeta: 'Municipalidad', voz: 'vos', modulo: 'municipalidad', marca: 'MONTEVERDE Municipal Services',
+    quien: 'La Municipalidad de Monteverde', registro: 'tu cuenta',
     pregunta: '«¿Por qué me subió bienes inmuebles?»',
     tema: { acento: 'var(--indigo)', acentoHondo: 'var(--indigo-alto)', sobreAcento: 'var(--sobre-indigo)', tinta: 'var(--tinta)', tenue: 'var(--tinta-suave)', linea: 'var(--linea)', suave: 'var(--acento-fondo)', carta: 'var(--papel)', radio: '10px', h2: '26px', pesoTitulo: 750,
             extra: 'background: var(--papel); border: 1px solid var(--linea); border-radius: 14px; padding: 24px; margin: 0 0 22px; box-shadow: var(--sombra);' },

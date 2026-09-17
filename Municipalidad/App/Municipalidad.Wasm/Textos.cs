@@ -34,7 +34,7 @@ namespace Municipalidad.Wasm
 		/// institucion, no texto de esta carátula. Vive aca y no en los catalogos justamente para que
 		/// quien traduzca no lo vea: lo que no esta en el archivo no se puede traducir por descuido.
 		/// </summary>
-		public const string TituloDelModulo = "Mi cuenta municipal";
+		public const string TituloDelModulo = "MONTEVERDE Municipal Services";
 
 		/// <summary>La etiqueta completa del catalogo que se cargo, por ejemplo es-CR.</summary>
 		public string Etiqueta { get; private set; } = LaDelRegistro;
