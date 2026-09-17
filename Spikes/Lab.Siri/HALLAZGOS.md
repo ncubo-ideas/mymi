@@ -679,11 +679,17 @@ en inglés porque el teléfono está en inglés:
 
 Tres cosas, y ninguna es el modelo siendo tonto:
 
-1. **Niega el cruce en vez de consultarlo.** Tenía `compras_resumen` y `examenes_resumen` a mano y
-   la respuesta no muestra un solo dato: afirma que no hay vínculo y se inventa el porqué. Es la
-   misma forma del §12 —contestar en vez de llamar— ahora en el camino del producto y no en la
-   sonda. *La traza «qué pasó por debajo» quedó plegada en la captura, así que **no está medido**
-   cuántas consultas hizo; lo que se ve es que la respuesta no se apoya en ninguna.*
+1. **Niega el cruce en vez de consultarlo, y ahora está medido.** Una segunda corrida a las 16:04,
+   con la traza **desplegada**, lo deja sin interpretación posible:
+
+   ```
+   catalog: 8 queries
+   ```
+
+   y **ninguna línea de vuelta**: ocho consultas disponibles —las seis de los tres módulos más las
+   dos del Host— y **cero usadas**. La respuesta vuelve a afirmar que no hay vínculo y a explicar
+   por qué, sin un solo dato debajo. Es el 0 de N del §12 en el camino del producto, con el
+   catálogo completo y no con una sola tool.
 2. **Contesta en español una pregunta escrita en inglés**, en un teléfono en inglés y con la UI en
    inglés. El encuadre corto del teléfono está escrito en español y arrastra la respuesta con él.
    Por la regla 1 de [`reglas-de-localizacion.md`](../../Metodologia/Guias/reglas-de-localizacion.md)
