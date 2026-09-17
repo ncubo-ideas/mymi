@@ -96,8 +96,8 @@ namespace Concesionario.Dominio.Pruebas
 			// LA FRASE ENTERA Y NO DOS PEDAZOS SUELTOS: dos valores sueltos que se contienen no
 			// distinguen una frase cruzada de una correcta.
 			Assert.That(
-				journal.Api.DescribeDistanceRemaining(TheKind, TheDayItIsAsked),
-				Is.EqualTo("distancia: te faltan 7345 km"));
+				journal.Api.DescribeDistanceRemaining(TheKind, TheDayItIsAsked, TheLanguage.OfTheRecord),
+				Is.EqualTo("distancia: te faltan 7.345 km"));
 		}
 
 		[Test]
@@ -116,7 +116,7 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo("StillAhead"));
 
 			Assert.That(
-				journal.Api.DescribeDaysRemaining(TheKind, TheDayItIsAsked),
+				journal.Api.DescribeDaysRemaining(TheKind, TheDayItIsAsked, TheLanguage.OfTheRecord),
 				Is.EqualTo("tiempo: te faltan 255 días"));
 		}
 
@@ -130,12 +130,100 @@ namespace Concesionario.Dominio.Pruebas
 			AnOperationWithAReadingAfterIt();
 
 			Assert.That(
-				journal.Api.DescribeDaysRemaining(TheKind, TheDayItIsAsked),
+				journal.Api.DescribeDaysRemaining(TheKind, TheDayItIsAsked, TheLanguage.OfTheRecord),
 				Does.Contain("255 días"));
 
 			Assert.That(TheDoorsMembers("ReadDaysRemainingUnit"), Is.Empty,
 				"La puerta gano una unidad de tiempo. El plazo tiene una sola unidad y el nombre del "
 				+ "miembro ya la dice; agregarla seria una columna constante.");
+		}
+
+		// LA MISMA RESPUESTA EN EL OTRO IDIOMA, Y LOS VALORES DEL REGISTRO INTACTOS. El marco cambia
+		// entero; la unidad no, porque «km» es lo que el concesionario asento y no una palabra
+		// nuestra. El separador de miles SI cambia: es formato y viaja con el renderizador.
+		[Test]
+		public void TheSameRemainderSaidToSomebodyWhoReadsEnglishKeepsTheRecordsOwnValues()
+		{
+			AnOperationWithAReadingAfterIt();
+
+			string inEnglish = journal.Api.DescribeCountdown(
+				TheKind, TheDayItIsAsked, TheLanguage.OfAnEnglishReader);
+
+			Assert.That(inEnglish, Is.EqualTo("distance: 7,345 km to go; time: 255 days to go"));
+
+			Assert.That(
+				journal.Api.ReadDistanceRemainingUnit(TheKind, TheDayItIsAsked),
+				Is.EqualTo(TheUnitAsAPersonReadsIt),
+				"Y la unidad que la puerta contesta como valor es la misma en los dos idiomas: no es "
+				+ "texto nuestro.");
+
+			Assert.That(
+				journal.Api.DescribeCountdown(TheKind, TheDayItIsAsked, TheLanguage.OfTheRecord),
+				Is.Not.EqualTo(inEnglish),
+				"Sin esto, un catalogo que contestara lo mismo en los dos idiomas pasaria igual.");
+		}
+
+		// Y UNA ETIQUETA QUE ESTE MODULO NO HABLA CAE AL IDIOMA DEL REGISTRO. Una consulta no se
+		// refuta por el nombre de un idioma: la puerta contesta, en el idioma en que lleva el
+		// registro el concesionario.
+		[Test]
+		public void ALanguageThisModuleDoesNotSpeakFallsBackToTheLanguageOfTheRecord()
+		{
+			AnOperationWithAReadingAfterIt();
+
+			Assert.That(
+				journal.Api.DescribeCountdown(TheKind, TheDayItIsAsked, "jp"),
+				Is.EqualTo(journal.Api.DescribeCountdown(
+					TheKind, TheDayItIsAsked, TheLanguage.OfTheRecord)));
+		}
+
+		// EL CABLEADO DEL AYUDANTE DE LAS AGENDAS PURAS ES EL MISMO QUE EL DE LA PUERTA, medido y no
+		// supuesto. TheSentenceTheDoorWouldCompose existe porque una agenda pura no tiene puerta, y
+		// su unico contenido es que accesor va en que parametro -- cableado que si esta escrito dos
+		// veces. Esto pone las dos salidas una contra la otra sobre EL MISMO registro, que es lo que
+		// impide que una de las dos se quede atras sin que nada avise.
+		[Test]
+		public void TheHelperOfThePureSchedulesComposesExactlyWhatTheDoorComposes()
+		{
+			AnOperationWithAReadingAfterIt();
+
+			MaintenanceSchedule pure = TheSameStoryOnAPureSchedule();
+
+			foreach (string language in new[]
+				{ TheLanguage.OfTheRecord, TheLanguage.OfAnEnglishReader })
+			{
+				Assert.That(
+					TheSentenceTheDoorWouldCompose.TheCountdown(
+						pure, OperationKindCode.FluidChange, TheDayItIsAsked, language),
+					Is.EqualTo(journal.Api.DescribeCountdown(TheKind, TheDayItIsAsked, language)),
+					"El cableado del ayudante y el de la puerta dejaron de decir lo mismo en "
+					+ language + ".");
+
+				Assert.That(
+					TheSentenceTheDoorWouldCompose.TheDueReason(
+						pure, OperationKindCode.FluidChange, language),
+					Is.EqualTo(journal.Api.ReadDueReason(TheKind, language)));
+			}
+		}
+
+		// LA MISMA HISTORIA SIN JOURNAL: los mismos literales, sembrados y observados en el mismo
+		// orden. No se evalua, porque ninguna de las dos frases que se comparan mira el estado.
+		private static MaintenanceSchedule TheSameStoryOnAPureSchedule()
+		{
+			MaintenanceSchedule pure =
+				new MaintenanceSchedule(TheVin, UsageProfileCode.Standard);
+
+			pure.SeedPlanOperation(
+				OperationKindCode.FluidChange, IntervalBasisCode.TimeOrDistance,
+				TheDayLimitNothingElseCouldAnswer, TheDistanceLimitNothingElseCouldAnswer,
+				DistanceUnitCode.UnitA, true, false,
+				TheAnchor, TheOdometerAtTheAnchor, DistanceUnitCode.UnitA);
+
+			pure.RecordReading(
+				TheOdometerObservedLater, DistanceUnitCode.UnitA, TheDayItWasObserved,
+				ReadingSourceCode.Telemetry);
+
+			return pure;
 		}
 
 		// ===== G1 AL LLEGAR A LA PUERTA: DICE LAS DOS Y NO ELIGE ==========================
@@ -145,9 +233,9 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			AnOperationWithAReadingAfterIt();
 
-			string said = journal.Api.DescribeCountdown(TheKind, TheDayItIsAsked);
+			string said = journal.Api.DescribeCountdown(TheKind, TheDayItIsAsked, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("distancia: te faltan 7345 km"));
+			Assert.That(said, Does.Contain("distancia: te faltan 7.345 km"));
 			Assert.That(said, Does.Contain("tiempo: te faltan 255 días"));
 
 			// Y LA PUERTA NO TIENE NINGUN MIEMBRO QUE ELIJA. Los dos que ordenan dimensiones existen
@@ -179,7 +267,7 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo("NoOperationScheduled"));
 
 			Assert.That(
-				journal.Api.DescribeCountdown("Inspection", TheDayItIsAsked),
+				journal.Api.DescribeCountdown("Inspection", TheDayItIsAsked, TheLanguage.OfTheRecord),
 				Is.EqualTo("no hay ninguna operación de Revisión agendada para este vehículo"),
 				"Sin operacion agendada no hay dos mitades que decir, asi que la cuenta atras lo dice "
 				+ "UNA vez y no dos.");
@@ -291,7 +379,7 @@ namespace Concesionario.Dominio.Pruebas
 				TheOdometerAtTheAnchor, TheUnitEverythingIsIn);
 
 			Assert.Throws<InvalidOperationException>(
-				() => journal.Api.DescribeCountdown("Inspection", TheDayItIsAsked),
+				() => journal.Api.DescribeCountdown("Inspection", TheDayItIsAsked, TheLanguage.OfTheRecord),
 				"La agencia puede sembrar un plan anclado adelante, y entonces el instante en que la "
 				+ "pantalla pregunta es anterior al ancla sin que nadie haya montado nada.");
 		}
@@ -335,7 +423,8 @@ namespace Concesionario.Dominio.Pruebas
 			string before = TheBytesOf(journal.Folder);
 
 			Assert.Throws<ArgumentException>(
-				() => journal.Api.DescribeCountdown("CambioDeFluido", TheDayItIsAsked));
+				() => journal.Api.DescribeCountdown("CambioDeFluido", TheDayItIsAsked,
+					TheLanguage.OfTheRecord));
 
 			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before),
 				"El journal quedo byte a byte como estaba.");
@@ -359,8 +448,9 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			if (member == "can") journal.Api.CanDistanceRemainingBeSaid(TheKind, asOf);
 			if (member == "standing") journal.Api.ReadDistanceRemainderStanding(TheKind, asOf);
-			if (member == "describe") journal.Api.DescribeDistanceRemaining(TheKind, asOf);
-			if (member == "countdown") journal.Api.DescribeCountdown(TheKind, asOf);
+			if (member == "describe") journal.Api.DescribeDistanceRemaining(TheKind, asOf,
+				TheLanguage.OfTheRecord);
+			if (member == "countdown") journal.Api.DescribeCountdown(TheKind, asOf, TheLanguage.OfTheRecord);
 		}
 
 		private static List<string> TheDoorsMembers(string named)

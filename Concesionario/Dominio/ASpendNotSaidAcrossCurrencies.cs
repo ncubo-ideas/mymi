@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace Concesionario.Dominio
 {
 	/// <summary>
 	/// La respuesta de un periodo cuyo gasto esta en mas de una moneda: cada una dicha por su lado,
-	/// con sus dos vistas, y ningun total entre ellas. Es un estado CON NOMBRE y no una ausencia: el
-	/// gasto esta dicho entero, y lo unico que no existe es un total que cruce monedas.
+	/// con sus dos vistas, y ningun total entre ellas. Es un estado CON NOMBRE y no una ausencia:
+	/// el gasto esta dicho entero, y lo unico que no existe es un total que cruce monedas.
 	/// <para>
 	/// El dinero no se convierte, se registra; agrupar por moneda es de quien consulta. Un cero, la
-	/// mayor de las dos, o una excepcion que la caratula tenga que interpretar serian las tres formas
-	/// de contestar algo que este modulo no sabe.
+	/// mayor de las dos, o una excepcion que la caratula tenga que interpretar serian las tres
+	/// formas de contestar algo que este modulo no sabe.
 	/// </para>
 	/// </summary>
 	internal sealed class ASpendNotSaidAcrossCurrencies : SpendInAPeriod
@@ -19,8 +18,8 @@ namespace Concesionario.Dominio
 		private readonly List<ASpendSummary> _eachOnItsOwn;
 
 		/// <summary>
-		/// Se arma con el periodo, las entradas que lo tocan y un resumen por moneda, en el orden en
-		/// que cada moneda aparecio.
+		/// Se arma con el periodo, las entradas que lo tocan y un resumen por moneda, en el orden
+		/// en que cada moneda aparecio.
 		/// </summary>
 		internal ASpendNotSaidAcrossCurrencies(
 			DateTime from, DateTime to, List<ACostEntry> touching, List<ASpendSummary> eachOnItsOwn)
@@ -46,32 +45,21 @@ namespace Concesionario.Dominio
 			return false;
 		}
 
-		/// <summary>
-		/// El periodo, cuantas monedas hay, la constancia de que no hay total entre ellas, y cada una
-		/// dicha por su lado con sus dos vistas.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Mas de una moneda, y ningun total entre ellas.</summary>
+		internal override string TheShapeItHas()
 		{
-			return ThePeriodClause() + " el gasto está en "
-				+ _eachOnItsOwn.Count.ToString(CultureInfo.InvariantCulture)
-				+ " monedas distintas, así que no hay un total entre ellas y cada una se dice por su "
-				+ "lado." + EachOnItsOwn();
+			return SpendShape.NotSaidAcrossCurrencies;
 		}
 
 		/// <summary>
-		/// Lo mismo. Con mas de una moneda no existe una respuesta "entera" distinta de la lista por
-		/// moneda: el total que la separaria es justo el que no hay.
+		/// Cada moneda por su lado, con sus dos vistas. Cuantas son se cuenta de esta lista: un
+		/// conteo aparte seria una segunda version del mismo hecho.
 		/// </summary>
-		internal override string DescribePerCurrency()
+		internal override List<ASummaryClause> TheClausesOfItsCurrencies()
 		{
-			return Describe();
-		}
+			List<ASummaryClause> said = new List<ASummaryClause>();
 
-		private string EachOnItsOwn()
-		{
-			string said = "";
-
-			foreach (ASpendSummary summary in _eachOnItsOwn) said = said + " " + summary.Describe();
+			foreach (ASpendSummary summary in _eachOnItsOwn) said.Add(summary.TheClauseItComposes());
 
 			return said;
 		}

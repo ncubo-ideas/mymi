@@ -57,7 +57,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(ledger.CostEntryCountBetween(TheStart, TheEnd), Is.EqualTo(2),
 				"Dos gastos del mismo monto el mismo dia en lo mismo son dos gastos. Tratarlos como "
 				+ "una correccion pediria una clave que nadie recibio.");
-			Assert.That(ledger.DescribeSpendBetween(TheStart, TheEnd), Does.Contain("₡50000.00"),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord), Does.Contain("₡50.000,00"),
 				"Y los dos cuentan en el total, que es la consecuencia y no un efecto secundario.");
 		}
 

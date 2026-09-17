@@ -76,7 +76,7 @@ namespace Concesionario.Dominio.Pruebas
 					@permitted  = specification.PermittedFuelGrades();
 					@prohibited = specification.ProhibitedFuelGrades();
 					@systems    = specification.CoveredSystems();
-					@exclusions = specification.CoverageExclusions();
+					@exclusions = specification.TheCoverageScope().TheExclusionTexts();
 				")
 				.WithParameters(rented, p => {
 					p[Parameter.Out, "permitted",  typeof(string[])] = default;
@@ -100,9 +100,15 @@ namespace Concesionario.Dominio.Pruebas
 				"Y esta trae DOS elementos donde las otras traen uno, asi que un cruce entre "
 				+ "columnas cambia hasta el largo.");
 
+			// LA CUARTA TRAE EL TEXTO PUBLICADO DE LA EXCLUSION, no la clausula compuesta: desde que
+			// el dominio dejo de redactar, el sistema y la condicion viajan en columnas propias. Eso
+			// hace la afirmacion MAS fuerte, no mas debil -- la clausula vieja decia "SUSPENSION",
+			// que es tambien lo que trae la tercera columna, asi que un cruce entre esas dos se
+			// habria leido igual de bien.
 			Assert.That(exclusions.Length, Is.EqualTo(1));
-			Assert.That(exclusions[0], Does.Contain("SUSPENSION"));
-			Assert.That(exclusions[0], Does.Contain("uso fuera de camino"));
+			Assert.That(exclusions[0], Is.EqualTo("Amortiguadores"));
+			Assert.That(exclusions[0], Does.Not.Contain("SUSPENSION"));
+			Assert.That(exclusions[0], Does.Not.Contain("RON"));
 		}
 
 		// Y LAS MISMAS CUATRO, DE A UNA, QUE ES EL PLAN B. Se comparan contra la respuesta de la
@@ -113,7 +119,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(api.PermittedFuelGrades(), Is.EqualTo(new[] { "95 RON" }));
 			Assert.That(api.ProhibitedFuelGrades(), Is.EqualTo(new[] { "E85" }));
 			Assert.That(api.CoveredSystems(), Is.EqualTo(new[] { "POWERTRAIN", "SUSPENSION" }));
-			Assert.That(api.CoverageExclusions().Length, Is.EqualTo(1));
+			Assert.That(api.CoverageExclusions(TheLanguage.OfTheRecord).Length, Is.EqualTo(1));
 		}
 
 		// LA FILA MIXTA, que es la forma de verdad de un DTO de registro: columnas string[] al lado
@@ -139,7 +145,7 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				app.Actor.Using(@"
 					@systems        = specification.CoveredSystems();
-					@exclusions     = specification.CoverageExclusions();
+					@exclusions     = specification.TheCoverageScope().TheExclusionTexts();
 					@revision       = specification.ReadCurrentRevisionCode();
 					@sealedRevision = specification.HasASealedRevision();
 					@odometer       = schedule.ReadOdometer(@asOf);

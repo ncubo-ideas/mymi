@@ -4,12 +4,17 @@ using System.Collections.Generic;
 namespace Concesionario.Dominio
 {
 	/// <summary>
-	/// El gasto de un periodo en UNA moneda, dicho con sus dos vistas juntas: lo que salio del banco
-	/// adentro del periodo y lo que el periodo consumio. Se compone en cada lectura.
+	/// El gasto de un periodo en UNA moneda, dicho con sus dos vistas juntas: lo que salio del
+	/// banco adentro del periodo y lo que el periodo consumio. Se compone en cada lectura.
 	/// <para>
-	/// Las dos vistas van siempre juntas y no hay ningun miembro que conteste una sola: cada una sola
-	/// es el numero que engana -- la caja dice "el carro se puso caro" cuando la verdad es "compro
-	/// llantas", y lo consumido calla que el dinero ya salio.
+	/// Las dos vistas van siempre juntas y no hay ningun miembro que conteste una sola: cada una
+	/// sola es el numero que engana -- la caja dice "el carro se puso caro" cuando la verdad es
+	/// "compro llantas", y lo consumido calla que el dinero ya salio.
+	/// </para>
+	/// <para>
+	/// Contesta UNA cosa, y esa cosa es la clausula entera. Que la clausula entregue despues cada
+	/// mitad por separado no abre el atajo: la clausula no cruza ninguna puerta, y lo que si cruza
+	/// es la respuesta ya redactada, que dice las dos.
 	/// </para>
 	/// </summary>
 	internal sealed class ASpendSummary
@@ -26,8 +31,8 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El resumen de esas entradas, que estan todas en la misma moneda. Sin ninguna entrada no hay
-		/// resumen: un par de ceros se leeria como un periodo que gasto cero.
+		/// El resumen de esas entradas, que estan todas en la misma moneda. Sin ninguna entrada no
+		/// hay resumen: un par de ceros se leeria como un periodo que gasto cero.
 		/// </summary>
 		internal static ASpendSummary Of(DateTime from, DateTime to, List<ACostEntry> entries)
 		{
@@ -46,21 +51,18 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Las dos vistas en una frase, con las clausulas que hacen visible como se repartio lo
-		/// duradero. La vista que no tiene cifra se dice con palabras y nunca con un cero.
+		/// LAS DOS VISTAS Y LAS CLAUSULAS DE LO DURADERO en una sola clausula, como forma y
+		/// valores. La vista que no tiene cifra se dice por su codigo y nunca con un cero.
 		/// </summary>
-		internal string Describe()
-		{
-			return TheTwoViews() + TheRulesBehindThem();
-		}
-
-		private string TheTwoViews()
+		internal ASummaryClause TheClauseItComposes()
 		{
 			bool anythingLeftTheBank = false;
 			bool anythingWasConsumed = false;
 
 			Money cashOut = null;
 			Money consumed = null;
+
+			List<AnAmortizedShare> shares = new List<AnAmortizedShare>();
 
 			foreach (ACostEntry entry in _entries)
 			{
@@ -72,40 +74,21 @@ namespace Concesionario.Dominio
 					anythingLeftTheBank = true;
 				}
 
-				if (entry.ConsumesAnythingBetween(_from, _to))
-				{
-					Money its = entry.TheMoneyItConsumedBetween(_from, _to);
+				if (!entry.ConsumesAnythingBetween(_from, _to)) continue;
 
-					consumed = anythingWasConsumed ? consumed.Plus(its) : its;
-					anythingWasConsumed = true;
-				}
+				Money its = entry.TheMoneyItConsumedBetween(_from, _to);
+
+				consumed = anythingWasConsumed ? consumed.Plus(its) : its;
+				anythingWasConsumed = true;
+
+				if (entry.SpreadsItselfOverTime()) shares.Add(entry.TheShareItGivesBetween(_from, _to));
 			}
 
-			string theCashOut = anythingLeftTheBank
-				? "Salieron " + cashOut.Expressed() + " del banco"
-				: "No salió nada del banco en este período";
+			if (!anythingWasConsumed) return ASummaryClause.OfTheCashOutAlone(cashOut, shares);
 
-			string theConsumed = anythingWasConsumed
-				? "el período consumió " + consumed.Expressed()
-				: "el período no consumió nada de eso todavía";
+			if (!anythingLeftTheBank) return ASummaryClause.OfTheConsumedAlone(consumed, shares);
 
-			return theCashOut + " y " + theConsumed + ".";
-		}
-
-		private string TheRulesBehindThem()
-		{
-			string said = "";
-
-			foreach (ACostEntry entry in _entries)
-			{
-				string clause = entry.TheClauseOfItsConsumptionBetween(_from, _to);
-
-				if (clause.Length == 0) continue;
-
-				said = said + " De eso: " + clause;
-			}
-
-			return said;
+			return ASummaryClause.OfBothViews(cashOut, consumed, shares);
 		}
 	}
 }

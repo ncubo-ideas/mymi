@@ -2,6 +2,7 @@
 @inject AppState state
 @inject DealershipSettings dealership
 @inject NavigationManager nav
+@inject Texts texts
 
 @if (error.Length > 0 || destinationProblem.Length > 0)
 {
@@ -9,15 +10,15 @@
         @if (error.Length > 0)
         {
             <Notice Tone="danger" Id="error"
-                    Title="@(state.IsUp ? "No se pudo completar la operación." : "No se pudo abrir la app.")">
-                Esto es una falla de la app, no algo que hayas hecho vos. El detalle nombra el
-                paso que falló.
+                    Title="@(state.IsUp ? texts["page.errorWhileOpen"] : texts["page.errorWhileClosed"])">
+                @texts["page.errorBody"]
                 <button class="linkbtn" type="button" id="show-error-detail"
                         @onclick="@(() => errorDetail = !errorDetail)">
-                    @(errorDetail ? "ocultar detalle" : "detalle")
+                    @(errorDetail ? texts["page.hideDetail"] : texts["page.showDetail"])
                 </button>
                 @if (errorDetail || showInstrument)
                 {
+                    <span class="detail__said">@texts["page.detailIsTheAppsOwnReport"]</span>
                     <span class="detail">@error</span>
                 }
             </Notice>
@@ -25,7 +26,7 @@
 
         @if (destinationProblem.Length > 0)
         {
-            <Notice Tone="danger" Id="destination-problem" Title="El navegador dijo que no.">
+            <Notice Tone="danger" Id="destination-problem" Title="@texts["page.destinationTitle"]">
                 @destinationProblem
             </Notice>
         }
@@ -36,18 +37,15 @@
 {
     <div class="page-head page-head--row">
         <div>
-            <h1 class="page-title">@(state.NeedsRegrant ? "Bienvenido de vuelta" : "Mi plan de mantenimiento")</h1>
+            <h1 class="page-title">@(state.NeedsRegrant ? texts["start.welcomeBack"] : Texts.TheModuleTitle)</h1>
             <p class="page-sub">
                 @if (state.NeedsRegrant)
                 {
-                    <span>
-                        Tu carpeta es <strong>&laquo;@state.FolderName&raquo;</strong>. El navegador te
-                        pide confirmar el permiso de escritura cada vez que volvés a abrir la app.
-                    </span>
+                    <span>@((MarkupString)texts.With("start.regrantSub", ("folder", state.FolderName)))</span>
                 }
                 else
                 {
-                    <span>Esta app guarda <strong>tu</strong> registro de mantenimiento. Elegí dónde.</span>
+                    <span>@((MarkupString)texts["start.chooseSub"])</span>
                 }
             </p>
         </div>
@@ -60,15 +58,15 @@
             <div class="notice__stack">
                 <button class="btn" type="button" id="regrant" @onclick="RequestPermission">
                     <Glyph Name="lock" Size="18" />
-                    Dar permiso a &laquo;@state.FolderName&raquo;
+                    @texts.With("start.regrant", ("folder", state.FolderName))
                 </button>
                 <button class="btn btn--ghost" type="button" id="choose-folder" @onclick="ConnectFolder"
                         disabled="@(pickerSupported == false)">
                     <Glyph Name="folder" Size="18" />
-                    Elegir otra carpeta
+                    @texts["start.chooseAnother"]
                 </button>
                 <button class="btn btn--quiet" type="button" id="forget-folder" @onclick="ForgetFolder">
-                    Olvidar esta carpeta
+                    @texts["start.forget"]
                 </button>
             </div>
         }
@@ -76,19 +74,14 @@
         {
             @if (noStorage == "insecure")
             {
-                <Notice Tone="warn" Id="no-storage-insecure"
-                        Title="Esta página no está en una conexión segura">
-                    El navegador no la va a dejar guardar nada &mdash; cualquier navegador haría lo
-                    mismo. Abrila por <span class="mono">https</span>, o por
-                    <span class="mono">localhost</span>.
+                <Notice Tone="warn" Id="no-storage-insecure" Title="@texts["start.insecureTitle"]">
+                    @((MarkupString)texts["start.insecureBody"])
                 </Notice>
             }
             else if (noStorage == "browser")
             {
-                <Notice Tone="warn" Id="no-storage-browser"
-                        Title="Este navegador no puede guardar nada para esta app.">
-                    No tiene ni selector de carpetas ni almacenamiento propio. La salida es abrir la
-                    app en otro navegador.
+                <Notice Tone="warn" Id="no-storage-browser" Title="@texts["start.noBrowserStorageTitle"]">
+                    @texts["start.noBrowserStorageBody"]
                 </Notice>
             }
 
@@ -97,12 +90,10 @@
                 <div class="card card--pad">
                     <button class="btn" type="button" id="choose-folder" @onclick="ConnectFolder">
                         <Glyph Name="folder" Size="18" />
-                        Elegir una carpeta
+                        @texts["start.chooseFolder"]
                     </button>
                     <p class="note note--tight">
-                        El registro vive en una carpeta tuya, y <strong>tu asistente puede
-                        leerla</strong> &mdash; eso es lo que lee el servidor MCP. Esta es la opción
-                        que hace que valga la pena tener la app.
+                        @((MarkupString)texts["start.chooseFolderNote"])
                     </p>
                 </div>
             }
@@ -113,20 +104,17 @@
                     <button class="btn btn--ghost" type="button" id="use-browser-storage"
                             @onclick="UseBrowserStorage">
                         <Glyph Name="storage" Size="18" />
-                        @(installedApp ? "Guardar dentro de esta app" : "Guardar en este navegador")
+                        @(installedApp ? texts["start.saveInApp"] : texts["start.saveInBrowser"])
                     </button>
                     <p class="note note--tight">
-                        Sobrevive al cerrar, pero <strong>no es una carpeta tuya</strong> y tu
-                        asistente <strong>no puede leerla</strong>. El selector de carpetas existe
-                        solo en Chromium de escritorio, así que esto es el recurso de reserva y no
-                        una opción equivalente.
+                        @((MarkupString)texts["start.browserStorageNote"])
                     </p>
                 </div>
             }
         }
 
         <button class="btn btn--quiet" type="button" id="open-without-saving" @onclick="Open">
-            Abrir sin guardar nada
+            @texts["start.openWithoutSaving"]
         </button>
     </div>
 }
@@ -147,11 +135,11 @@ else
                         Programadas="@scheduled"
                         Siguiente="@nextDue"
                         Modelo="@(sheet is not null ? sheet.Model : "")"
-                        Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
+                        Odometro="@(stands is not null && stands.OdometerKnown ? texts.Grouped(stands.Odometer) : "--")"
                         OdometroUnidad="@(stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "")"
                         ObservadoEl="@(stands is not null ? stands.OdometerObservedAt : "")"
                         EvaluadoHasta="@evaluatedUpTo"
-                        DondeVive="@(state.InOwnFolder ? "la carpeta «" + state.FolderName + "»" : "este navegador")"
+                        DondeVive="@(state.InOwnFolder ? texts.With("page.folderIn", ("folder", state.FolderName)) : texts["page.thisBrowser"])"
                         Agencia="@dealership.Name"
                         Contacto="@dealership.Contact"
                         Trayendo="@refreshing"
@@ -160,18 +148,16 @@ else
                         VerServicios="@(() => tab = "servicios")" />
 
                 <div class="d__pad d__gap" style="margin-top:14px">
-                    @if (state.DealershipUnreachable.Length > 0)
+                    @if (state.DealershipUnreachable.MustBeSaid)
                     {
                         <Notice Tone="warn" Id="dealership-unreachable"
-                                Title="Esto es tu registro, no las novedades de hoy.">
-                            La app no pudo llegar al concesionario al abrir, así que lo que haya enviado
-                            desde la última vez todavía no está aquí. Todo lo de arriba es lo que tu
-                            registro ya tenía.
-                            <span class="detail">@state.DealershipUnreachable</span>
+                                Title="@texts["notice.unreachableTitle"]">
+                            @texts["notice.unreachableBody"]
+                            <span class="detail">@texts.Say(state.DealershipUnreachable)</span>
                             <span class="notice__actions">
                                 <button class="btn btn--sm" type="button" id="retry-dealership" @onclick="Refresh">
                                     <Glyph Name="sync" Size="16" />
-                                    Intentar de nuevo
+                                    @texts["notice.retry"]
                                 </button>
                             </span>
                         </Notice>
@@ -179,54 +165,37 @@ else
 
                     @if (state.SavingIsFailing.Length > 0)
                     {
-                        <Notice Tone="danger" Id="saving-failing" Title="La carpeta rechazó la escritura.">
-                            Lo que ves <strong>no</strong> quedó guardado en «@state.FolderName». Suele ser
-                            el permiso, que vence cada vez que reabrís la app.
+                        <Notice Tone="danger" Id="saving-failing" Title="@texts["notice.savingFailingTitle"]">
+                            @((MarkupString)texts.With("notice.savingFailingBody", ("folder", state.FolderName)))
                             <span class="detail">@state.SavingIsFailing</span>
                             <span class="notice__actions">
                                 <button class="btn btn--sm" type="button" id="regrant" @onclick="RequestPermission">
                                     <Glyph Name="lock" Size="16" />
-                                    Dar permiso otra vez
+                                    @texts["notice.regrantAgain"]
                                 </button>
                             </span>
                         </Notice>
                     }
 
-                    @if (state.EvaluationSkipped.Length > 0)
+                    @if (state.EvaluationSkipped.MustBeSaid)
                     {
-                        <Notice Tone="warn" Id="evaluation-skipped" Title="Esta no es la lectura de hoy.">
-                            @state.EvaluationSkipped
+                        <Notice Tone="warn" Id="evaluation-skipped" Title="@texts["notice.evaluationSkippedTitle"]">
+                            @texts.Say(state.EvaluationSkipped)
                         </Notice>
                     }
 
-                    @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran
-                       por Gnothi (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en
-                       el teléfono de la persona y es de ella (§10.6). «Desaparecer» NO es
-                       desinstalar y NO es borrar: la app sigue mostrando lo que tiene, porque es
-                       de ella. Lo que deja de hacer es SINCRONIZAR, que es lo único que
-                       produciría dos historias que divergen.
-
-                       ESTABA EN MySchedule.razor CON MudBlazor, y master reescribió esta pantalla
-                       a CSS propio con pestañas: hubo que re-expresarlo con Notice, no fusionarlo.
-                       Va último de los avisos porque nada está roto — los de arriba son fallas.
-                       Y es lo que explica la tecla «Ya no se actualiza» de Inicio. *@
                     @if (state.Migrated)
                     {
                         <Notice Tone="warn" Id="migrated"
-                                Title="@($"Tus servicios nuevos ahora entran por {state.WhereItLivesNow}, en este mismo teléfono.")">
-                            Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
-                            hacer es buscar novedades.
+                                Title="@texts.With("notice.migratedTitle", ("where", state.WhereItLivesNow))">
+                            @texts["notice.migratedBody"]
                         </Notice>
                     }
                     else if (state.Hosted)
                     {
-                        @* Y HOSPEDADA lo dice en tono neutro: no pasó nada malo, es dónde vive el
-                           registro. Es la contracara del anterior y por eso van en la misma
-                           cadena: no pueden ser verdad las dos. *@
                         <Notice Tone="info" Id="hosted-in-gnothi"
-                                Title="Se está guardando en este teléfono.">
-                            Tu registro es tuyo y está acá: Gnothi le dio a este concesionario una
-                            carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
+                                Title="@texts["notice.hostedTitle"]">
+                            @texts["notice.hostedBody"]
                         </Notice>
                     }
                 </div>
@@ -235,7 +204,7 @@ else
             {
                 <div class="d__pad" style="padding-top:16px">
                     <div class="page-head page-head--row" style="margin-bottom:12px">
-                        <h1 class="page-title">Mi vehículo</h1>
+                        <h1 class="page-title">@texts["tab.vehicle"]</h1>
                         <AppearanceToggle />
                     </div>
 
@@ -245,7 +214,7 @@ else
                               Placa="@plate"
                               Modelo="@(sheet is not null ? sheet.Model : "")"
                               Vin="@vin"
-                              Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
+                              Odometro="@(stands is not null && stands.OdometerKnown ? texts.Grouped(stands.Odometer) : "--")"
                               OdometroUnidad="@(stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "")" />
                 </div>
             }
@@ -253,7 +222,7 @@ else
             {
                 <div class="d__pad" style="padding-top:16px">
                     <div class="page-head page-head--row" style="margin-bottom:4px">
-                        <h1 class="page-title">Servicios</h1>
+                        <h1 class="page-title">@texts["tab.services"]</h1>
                         <AppearanceToggle />
                     </div>
 
@@ -265,7 +234,7 @@ else
             {
                 <div class="d__pad" style="padding-top:16px">
                     <div class="page-head page-head--row" style="margin-bottom:4px">
-                        <h1 class="page-title">Cobertura</h1>
+                        <h1 class="page-title">@texts["tab.coverage"]</h1>
                         <AppearanceToggle />
                     </div>
 
@@ -276,7 +245,7 @@ else
             {
                 <div class="d__pad" style="padding-top:16px">
                     <div class="page-head page-head--row" style="margin-bottom:4px">
-                        <h1 class="page-title">Historial</h1>
+                        <h1 class="page-title">@texts["tab.history"]</h1>
                         <AppearanceToggle />
                     </div>
 
@@ -293,27 +262,27 @@ else
         <button type="button" id="go-inicio" @onclick="@(() => tab = "inicio")"
                 class="@(tab == "inicio" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
             <Glyph Name="home" Size="22" Stroke="2" />
-            <span>Inicio</span>
+            <span>@texts["tab.home"]</span>
         </button>
         <button type="button" id="go-vehiculo" @onclick="@(() => tab = "vehiculo")"
                 class="@(tab == "vehiculo" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
             <Glyph Name="car" Size="22" Stroke="2" />
-            <span>Mi vehículo</span>
+            <span>@texts["tab.vehicle"]</span>
         </button>
         <button type="button" id="go-servicios" @onclick="@(() => tab = "servicios")"
                 class="@(tab == "servicios" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
             <Glyph Name="clock" Size="22" Stroke="2" />
-            <span>Servicios</span>
+            <span>@texts["tab.services"]</span>
         </button>
         <button type="button" id="go-cobertura" @onclick="@(() => tab = "cobertura")"
                 class="@(tab == "cobertura" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
             <Glyph Name="shield" Size="22" Stroke="2" />
-            <span>Cobertura</span>
+            <span>@texts["tab.coverage"]</span>
         </button>
         <button type="button" id="go-historial" @onclick="@(() => tab = "historial")"
                 class="@(tab == "historial" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
             <Glyph Name="history" Size="22" Stroke="2" />
-            <span>Historial</span>
+            <span>@texts["tab.history"]</span>
         </button>
     </nav>
 }
@@ -392,17 +361,17 @@ else
         if (recovered.Ok) await Open();
     }
 
-    private Task ConnectFolder() => Try("elegir una carpeta", async () =>
-        await OpenOrSay(await state.ConnectFolderAsync(), "elegir esa carpeta"));
+    private Task ConnectFolder() => Try(texts["step.chooseFolder"], async () =>
+        await OpenOrSay(await state.ConnectFolderAsync(), texts["step.tryingChooseFolder"]));
 
-    private Task RequestPermission() => Try("dar permiso a la carpeta", async () =>
+    private Task RequestPermission() => Try(texts["step.requestPermission"], async () =>
         await OpenOrSay(
             await state.RequestPermissionAsync(),
-            "obtener permiso de escritura sobre esa carpeta"));
+            texts["step.tryingPermission"]));
 
-    private Task UseBrowserStorage() => Try("guardar en este navegador", async () =>
+    private Task UseBrowserStorage() => Try(texts["step.useBrowserStorage"], async () =>
         await OpenOrSay(
-            await state.UseBrowserStorageAsync(), "usar el almacenamiento de este navegador"));
+            await state.UseBrowserStorageAsync(), texts["step.tryingBrowserStorage"]));
 
     private async Task OpenOrSay(FolderResult result, string whatItWasTrying)
     {
@@ -415,30 +384,25 @@ else
         }
 
         destinationProblem = result.Permission == "denied"
-            ? $"El navegador se negó a {whatItWasTrying}, sin preguntarte. Hay dos cosas que hacen "
-              + "eso, y se arreglan en lugares distintos. O el permiso de edición de archivos de este "
-              + "sitio está bloqueado — abrí el candado al lado de la dirección, reiniciá los permisos "
-              + "de este sitio, recargá y volvé a elegir la carpeta — o este navegador no da edición "
-              + "de archivos del todo, que es lo normal en un navegador embebido o dentro de otra app. "
-              + "Si no hay candado que abrir, es lo segundo: abrí esta app en Chrome o Edge "
-              + "directamente y ahí la carpeta sí va a funcionar."
-            : $"No se pudo {whatItWasTrying}. El navegador dijo: "
-              + (result.Reason.Length > 0 ? result.Reason : result.Permission);
+            ? texts.With("step.denied", ("what", whatItWasTrying))
+            : texts.With("step.failed",
+                ("what", whatItWasTrying),
+                ("reason", result.Reason.Length > 0 ? result.Reason : result.Permission));
     }
 
-    private Task ForgetFolder() => Try("olvidar la carpeta guardada", async () =>
+    private Task ForgetFolder() => Try(texts["step.forgetFolder"], async () =>
     {
         await state.ForgetTheFolderAsync();
         destinationProblem = "";
     });
 
-    private Task Open() => Try("abrir la app", async () =>
+    private Task Open() => Try(texts["step.open"], async () =>
     {
         await state.StartAsync();
         Reread();
     });
 
-    private Task Refresh() => Try("actualizar contra el concesionario", async () =>
+    private Task Refresh() => Try(texts["step.refresh"], async () =>
     {
         refreshing = true;
         try { await state.RefreshAsync(); }
@@ -457,9 +421,10 @@ else
         catch (Exception ex)
         {
             var detail = new System.Text.StringBuilder(
-            $"Paso: {step}\n{ex.GetType().FullName}: {ex.Message}");
+                texts.With("step.was", ("step", step)) + $"\n{ex.GetType().FullName}: {ex.Message}");
             for (Exception inner = ex.InnerException; inner is not null; inner = inner.InnerException)
-                detail.Append($"\n  causa: {inner.GetType().FullName}: {inner.Message}");
+                detail.Append($"\n  ").Append(texts["step.cause"])
+                      .Append($"{inner.GetType().FullName}: {inner.Message}");
             error = detail.ToString();
         }
         finally
@@ -484,19 +449,19 @@ else
         foreach (string kind in AppState.TheNineKinds)
         {
             states[kind] = state.ReadDueState(kind);
-            why[kind] = state.ReadDueReason(kind);
+            why[kind] = state.ReadDueReason(kind, texts.Language);
         }
         board = states;
         reasons = why;
 
-        sheet = state.ReadTheSpecification();
-        stands = state.ReadWhereThisVehicleStands();
-        stays = state.ReadTheStaysOfThisVehicle();
-        operations = state.ReadWhereEachOperationStands();
-        costs = state.ReadWhatTheServicesCost();
-        use = state.ReadHowThisVehicleIsDriven();
-        spend = state.ReadWhatThisVehicleHasCost();
-        plate = state.ReadThePlateOfThisVehicle();
+        sheet = state.ReadTheSpecification(texts.Language);
+        stands = state.ReadWhereThisVehicleStands(texts.Language);
+        stays = state.ReadTheStaysOfThisVehicle(texts.Language);
+        operations = state.ReadWhereEachOperationStands(texts.Language);
+        costs = state.ReadWhatTheServicesCost(texts.Language);
+        use = state.ReadHowThisVehicleIsDriven(texts.Language);
+        spend = state.ReadWhatThisVehicleHasCost(texts.Language);
+        plate = state.ReadThePlateOfThisVehicle(texts.Language);
     }
 
     private static Dictionary<string, string> Empty() => EveryKindStartsAt("");

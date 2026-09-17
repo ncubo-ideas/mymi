@@ -111,7 +111,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheScopeClauseSaysWhoseTheDecisionIs()
 		{
-			Assert.That(specification.DescribeCoverageSummary(),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+				specification, TheLanguage.OfTheRecord),
 				Does.Contain("fabricante"));
 		}
 
@@ -120,7 +121,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheScopeSummaryDoesNotPromiseAnythingEither()
 		{
-			string summary = specification.DescribeCoverageSummary();
+			string summary = TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+				specification, TheLanguage.OfTheRecord);
 
 			foreach (string promesa in LoQueNingunaRespuestaPuedeDecir)
 				Assert.That(summary.IndexOf(promesa, StringComparison.OrdinalIgnoreCase), Is.LessThan(0),
@@ -136,21 +138,23 @@ namespace Concesionario.Dominio.Pruebas
 				TheSystemWithShortLimits, DistanceUnitCode.UnitA, AsOf, 12000);
 			yield return TheSentenceFor(
 				TheSystemInAnotherUnit, DistanceUnitCode.UnitA, AsOf, 12000);
-			yield return specification.DescribeCoverageSummary();
+			yield return TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+				specification, TheLanguage.OfTheRecord);
 
 			ModelSpecification nothingSealed = new ModelSpecification(TheModel);
-			yield return nothingSealed.DescribeCoverage(
-				TheCoveredSystem, 36, 100000, DistanceUnitCode.UnitA,
-				DeliveredAt, 10, 12000, DistanceUnitCode.UnitA, AsOf);
-			yield return nothingSealed.DescribeCoverageSummary();
+			yield return TheSentenceTheDoorWouldCompose.TheCoverage(
+				nothingSealed, TheCoveredSystem, 36, 100000, DistanceUnitCode.UnitA,
+				DeliveredAt, 10, 12000, DistanceUnitCode.UnitA, AsOf, TheLanguage.OfTheRecord);
+			yield return TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+				nothingSealed, TheLanguage.OfTheRecord);
 		}
 
 		private string TheSentenceFor(
 			string systemCode, DistanceUnitCode odometerUnit, DateTime asOf, int currentReading)
 		{
-			return specification.DescribeCoverage(
-				systemCode, 36, 100000, DistanceUnitCode.UnitA,
-				DeliveredAt, 10, currentReading, odometerUnit, asOf);
+			return TheSentenceTheDoorWouldCompose.TheCoverage(
+				specification, systemCode, 36, 100000, DistanceUnitCode.UnitA,
+				DeliveredAt, 10, currentReading, odometerUnit, asOf, TheLanguage.OfTheRecord);
 		}
 	}
 }

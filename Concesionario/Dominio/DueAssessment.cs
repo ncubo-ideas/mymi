@@ -127,44 +127,36 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El motivo compuesto: el estado, que dimension lo decidio y con que monto, o por que no
-		/// se pudo evaluar. Es del dominio, no de la vista.
+		/// El motivo: el estado, que dimension lo decidio, y las clausulas de las dos dimensiones en
+		/// el orden en que la ley las quiere. Elegirlo es del dominio; decirlo es de quien lo
+		/// muestra.
 		/// </summary>
-		internal string Describe()
+		internal ADueReason TheReason()
 		{
 			if (_waitsForAReceivedCrossing)
-				return State.HowItIsSaid + " porque esta operación no tiene límite de tiempo ni de "
-					+ "distancia: vence solo cuando llega un cruce de umbral observado.";
+				return ADueReason.WaitingForAReceivedCrossing(State);
 
 			if (!CanBeEvaluated)
-				return State.HowItIsSaid + ", pero no se pudo evaluar nada, así que esto no es "
-					+ "evidencia de que la operación no esté vencida. " + Clauses() + ".";
+				return ADueReason.NothingWasEvaluable(State, TheClausesInOrder());
 
-			return State.HowItIsSaid + ", decidido por " + WhoDecided() + ". " + Clauses() + ".";
+			return ADueReason.DecidedBy(State, WhoDecided(), TheClausesInOrder());
 		}
 
 		private string WhoDecided()
 		{
-			if (DecidedByTime && DecidedByDistance) return "tiempo y distancia";
-			if (DecidedByDistance) return "distancia";
+			if (DecidedByTime && DecidedByDistance) return ADueReason.TimeAndDistance;
+			if (DecidedByDistance) return IntervalDimension.Distance;
 
-			return "tiempo";
+			return IntervalDimension.Time;
 		}
 
-		private string Clauses()
+		/// <summary>La que decidio va primero, y la dimension que la ley no tiene no aporta ninguna.</summary>
+		private LimitStanding[] TheClausesInOrder()
 		{
-			string first = DecidedByDistance && !DecidedByTime
-				? _distance.Describe()
-				: _time.Describe();
+			if (DecidedByDistance && !DecidedByTime)
+				return new[] { _distance, _time };
 
-			string second = DecidedByDistance && !DecidedByTime
-				? _time.Describe()
-				: _distance.Describe();
-
-			if (first.Length == 0) return second;
-			if (second.Length == 0) return first;
-
-			return first + "; " + second;
+			return new[] { _time, _distance };
 		}
 	}
 }

@@ -126,7 +126,8 @@ namespace Concesionario.Dominio.Pruebas
 				foreach (string kind in AppState.TheNineKinds)
 				{
 					Assert.That(journal.Api.ReadDueState(kind), Is.Not.Empty, $"'{kind}' no dio estado.");
-					Assert.That(journal.Api.ReadDueReason(kind), Is.Not.Empty, $"'{kind}' no dio motivo.");
+					Assert.That(journal.Api.ReadDueReason(kind,
+						TheLanguage.OfTheRecord), Is.Not.Empty, $"'{kind}' no dio motivo.");
 				}
 
 				// Las cinco razones, por el comando que las lleva. Aplazar fuera de un estado vencido
@@ -159,7 +160,10 @@ namespace Concesionario.Dominio.Pruebas
 				{
 					Assert.That(journal.Api.IsFluidPublished(kind), Is.False, $"'{kind}'");
 					Assert.That(journal.Api.ReadFluidRevision(kind), Is.Empty, $"'{kind}'");
-					Assert.That(journal.Api.DescribeFluid(kind), Does.StartWith(HowACanonNameReads.AFluid(kind) + ":"),
+					Assert.That(
+						journal.Api.DescribeFluid(kind, TheLanguage.OfTheRecord),
+						Does.StartWith(HowACanonNameReads.AFluid(
+							TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, kind) + ":"),
 						$"la frase de '{kind}' no nombra a '{kind}'.");
 				}
 
@@ -168,7 +172,11 @@ namespace Concesionario.Dominio.Pruebas
 					Assert.That(journal.Api.IsTyrePublished(position), Is.False, $"'{position}'");
 					Assert.That(journal.Api.ReadTyreRevision(position), Is.Empty, $"'{position}'");
 					Assert.That(
-						journal.Api.DescribeTyre(position), Does.StartWith("Llanta " + HowACanonNameReads.ATyre(position).ToLowerInvariant() + ":"),
+						journal.Api.DescribeTyre(
+							position,
+							TheLanguage.OfTheRecord), Does.StartWith("Llanta " + HowACanonNameReads.ATyre(
+								TheCatalogueOfTheScreen.InTheLanguageOfTheRecord,
+								position).ToLowerInvariant() + ":"),
 						$"la frase de '{position}' no nombra a '{position}'.");
 				}
 			}
@@ -199,8 +207,10 @@ namespace Concesionario.Dominio.Pruebas
 
 				// Y en los dos conjuntos de T10 igual, que es donde una lista escrita a mano con la
 				// grafia de la pantalla ("Engine oil") en vez de la del canon se descubriria.
-				Assert.Throws<ArgumentException>(() => journal.Api.DescribeFluid("engineoil"));
-				Assert.Throws<ArgumentException>(() => journal.Api.DescribeTyre("front"));
+				Assert.Throws<ArgumentException>(() => journal.Api.DescribeFluid(
+					"engineoil", TheLanguage.OfTheRecord));
+				Assert.Throws<ArgumentException>(() => journal.Api.DescribeTyre(
+					"front", TheLanguage.OfTheRecord));
 			}
 		}
 	}

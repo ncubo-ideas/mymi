@@ -11,9 +11,15 @@ namespace Concesionario.Dominio
 	/// promedio de distancia por mes seria a la vez la conversion que este modulo no hace y un
 	/// pronostico. Cada una se compara contra SU limite.
 	/// </para>
+	/// <para>
+	/// Sale como FORMA mas valores ya tipados y nunca como una frase: la redaccion vive donde se
+	/// elige el idioma, y el dominio no elige uno.
+	/// </para>
 	/// </summary>
 	internal abstract class RemainingEnvelope
 	{
+		private static readonly int[] NoAmount = new int[0];
+
 		private readonly int _monthsLeft;
 		private readonly int _monthsLimit;
 
@@ -53,23 +59,42 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La mitad de tiempo medida y la de distancia no. Exige DECIR POR QUE: una mitad que no se
-		/// pudo medir y no dice el motivo no le deja a nadie arreglarla, y es el motivo lo que
-		/// separa "falta la lectura" de "no calzan las unidades".
+		/// La mitad de tiempo medida y la de distancia no, por no haber ninguna lectura usable.
 		/// </summary>
-		internal static RemainingEnvelope MeasuredOnlyInTime(
-			int monthsLeft, int monthsLimit, string whyTheDistanceHalfCouldNotBeMeasured)
+		internal static RemainingEnvelope MeasuredOnlyForWantOfAReading(
+			int monthsLeft, int monthsLimit)
 		{
 			RequireALimitInMonths(monthsLimit);
 
-			if (string.IsNullOrWhiteSpace(whyTheDistanceHalfCouldNotBeMeasured))
+			return new ARemainingEnvelopeMeasuredOnlyInTime(
+				monthsLeft, monthsLimit, EnvelopeDistanceHalf.AbsentReading, "", "");
+		}
+
+		/// <summary>
+		/// La mitad de tiempo medida y la de distancia no, por no calzar las unidades. Exige nombrar
+		/// CUAL distancia no calzo y en que unidad esta: decir que no se pudo medir sin decir cual
+		/// contra cual no le deja a nadie corregirlo.
+		/// </summary>
+		internal static RemainingEnvelope MeasuredOnlyForAUnitMismatch(
+			int monthsLeft, int monthsLimit, string whoseDistance, DistanceUnit itsUnit)
+		{
+			RequireALimitInMonths(monthsLimit);
+
+			if (string.IsNullOrWhiteSpace(whoseDistance))
 				throw new DomainException(
-					"Se compuso una mitad de distancia sin medir y sin decir por que. Decir que no se "
-					+ "pudo sin decir que falta deja a quien lea sabiendo que algo fallo y sin saber "
-					+ "que arreglar.");
+					"Se compuso una mitad de distancia suspendida por unidades sin decir cual de las "
+					+ "dos distancias del registro no calzo. Sin eso, quien lea sabe que algo fallo y "
+					+ "no sabe que arreglar.");
+
+			if (itsUnit == null)
+				throw new DomainException(
+					"Se compuso una mitad de distancia suspendida por unidades sin nombrar la unidad "
+					+ "que no coincidio con la del limite. Nombrar una sola de las dos no dice cual "
+					+ "contra cual.");
 
 			return new ARemainingEnvelopeMeasuredOnlyInTime(
-				monthsLeft, monthsLimit, whyTheDistanceHalfCouldNotBeMeasured);
+				monthsLeft, monthsLimit, EnvelopeDistanceHalf.UnitMismatch, whoseDistance,
+				itsUnit.Name);
 		}
 
 		/// <summary>
@@ -79,6 +104,12 @@ namespace Concesionario.Dominio
 		internal int MonthsLeft
 		{
 			get { return _monthsLeft; }
+		}
+
+		/// <summary>El plazo contra el que se midio, en meses. TOTAL: la mitad de tiempo siempre lo tiene.</summary>
+		internal int TheMonthsLimit()
+		{
+			return _monthsLimit;
 		}
 
 		/// <summary>
@@ -108,6 +139,58 @@ namespace Concesionario.Dominio
 		/// una mitad que nadie midio se lee como una medicion.
 		/// </summary>
 		internal abstract bool TheDistanceHalfIsReached { get; }
+
+		/// <summary>
+		/// Que forma tiene la mitad de distancia, por su codigo: medida, o cual de las dos razones
+		/// impidio medirla. TOTAL, y es lo que separa "falta la lectura" de "no calzan las unidades".
+		/// </summary>
+		internal abstract string TheDistanceHalfShape();
+
+		/// <summary>
+		/// Lo que queda de distancia, en UNA fila, o en CERO filas donde esa mitad no se midio.
+		/// TOTAL, y la ausencia nunca se dice con un cero: un cero se leeria como un odometro justo
+		/// en el limite.
+		/// </summary>
+		internal virtual int[] TheDistanceLeftCounted()
+		{
+			return NoAmount;
+		}
+
+		/// <summary>
+		/// El limite de distancia contra el que se midio, en UNA fila, o en CERO filas donde esa
+		/// mitad no se midio. TOTAL, y por la misma razon.
+		/// </summary>
+		internal virtual int[] TheDistanceLimitCounted()
+		{
+			return NoAmount;
+		}
+
+		/// <summary>
+		/// La unidad en que estan lo que queda y el limite, por su nombre, o vacia donde esa mitad no
+		/// se midio. TOTAL, y es la que hace que este resto nunca se diga sin su unidad.
+		/// </summary>
+		internal virtual string TheUnitTheDistanceIsSaidIn()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// La unidad de la distancia que no calzo con la del limite, por su nombre, o vacia donde
+		/// calzaron. TOTAL.
+		/// </summary>
+		internal virtual string TheUnitThatDidNotMatch()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// Cual de las dos distancias del registro no calzo, por su codigo, o vacio donde calzaron.
+		/// TOTAL.
+		/// </summary>
+		internal virtual string WhoseDistanceDidNotMatch()
+		{
+			return "";
+		}
 
 		/// <summary>
 		/// Si con estas dos mitades se puede decidir donde esta parado el vehiculo. TOTAL, y es la
@@ -173,17 +256,18 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Las dos mitades y cual llego primero, en palabras. TOTAL, y compuesta en UN SOLO lugar a
+		/// Cual de las dos mitades llego primero, por su codigo. TOTAL, y decidido en UN SOLO lugar a
 		/// proposito: es lo que hace que ninguna respuesta pueda decir una mitad y callar la otra.
 		/// </summary>
-		internal string Describe()
+		internal string WhichHalfArrivedFirst()
 		{
-			return TheTimeHalfInWords() + " " + TheDistanceHalfInWords() + " "
-				+ WhichArrivedFirstInWords();
-		}
+			if (!TheStandingCanBeDecided) return EnvelopeArrival.NeitherHalfCanBeSaid;
+			if (!TheEnvelopeIsReached) return EnvelopeArrival.NeitherHalfIsReached;
+			if (DecidedByTime && DecidedByDistance) return EnvelopeArrival.BothHalvesTogether;
+			if (DecidedByDistance) return EnvelopeArrival.TheDistanceHalf;
 
-		/// <summary>La clausula de la mitad de distancia: su numero, o por que no se pudo medir.</summary>
-		protected abstract string TheDistanceHalfInWords();
+			return EnvelopeArrival.TheTimeHalf;
+		}
 
 		/// <summary>Revienta si con estas dos mitades no se puede decidir donde esta parado.</summary>
 		protected void RequireADecidableStanding()
@@ -197,10 +281,10 @@ namespace Concesionario.Dominio
 				+ "podia decidir. Un si o un no devueltos aca se leerian como una medicion.");
 		}
 
-		/// <summary>Como se dice una cantidad de meses, que se pluraliza.</summary>
-		protected static string Months(int quantity)
+		/// <summary>Una fila con ese monto, que es como se dice un monto presente.</summary>
+		protected static int[] OneAmountOf(int quantity)
 		{
-			return quantity + (quantity == 1 ? " mes" : " meses");
+			return new[] { quantity };
 		}
 
 		private static void RequireALimitInMonths(int monthsLimit)
@@ -211,39 +295,6 @@ namespace Concesionario.Dominio
 				$"Se compuso lo que queda contra un plazo de {monthsLimit} meses. Sin un plazo "
 				+ "positivo no hay contra que medir, y un cero se leeria como un plazo cumplido el "
 				+ "mismo dia de la entrega.");
-		}
-
-		private string TheTimeHalfInWords()
-		{
-			if (_monthsLeft == 0)
-				return "Tiempo: justo en un límite de " + Months(_monthsLimit) + ".";
-
-			if (_monthsLeft < 0)
-				return "Tiempo: " + Months(-_monthsLeft) + " pasados de un límite de "
-					+ Months(_monthsLimit) + ".";
-
-			return "Tiempo: " + (_monthsLeft == 1 ? "queda " : "quedan ") + Months(_monthsLeft)
-				+ " de " + Months(_monthsLimit) + ".";
-		}
-
-		private string WhichArrivedFirstInWords()
-		{
-			if (!TheStandingCanBeDecided)
-				return "Cuál de las dos mitades llega primero tampoco se puede decir, porque una de "
-					+ "las dos no se midió.";
-
-			if (!TheEnvelopeIsReached)
-				return "Ninguna de las dos mitades se ha alcanzado, y cuál llega primero depende de "
-					+ "cuánto se maneje este vehículo de aquí en adelante: las dos mitades no son "
-					+ "comparables entre sí, y este registro dice lo que tiene en vez de pronosticar "
-					+ "un ritmo.";
-
-			if (DecidedByTime && DecidedByDistance)
-				return "Alcanzado por tiempo y distancia, que llegaron juntos.";
-
-			if (DecidedByDistance) return "Alcanzado por distancia, que llegó primero.";
-
-			return "Alcanzado por tiempo, que llegó primero.";
 		}
 	}
 }

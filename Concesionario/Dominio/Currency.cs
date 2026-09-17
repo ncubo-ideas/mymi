@@ -98,6 +98,24 @@ namespace Concesionario.Dominio
 		internal abstract bool IsTheSameCurrencyAs(Currency other);
 
 		/// <summary>
+		/// Cual de los dos marcos le toca a un monto dicho en esta moneda, por su codigo. TOTAL, y
+		/// sale de la misma pregunta que ya separa las dos variantes, para que no haya dos
+		/// respuestas.
+		/// </summary>
+		internal string TheShapeItHas()
+		{
+			return ReceivedButNotNamed() ? CurrencyShape.NotNamed : CurrencyShape.Named;
+		}
+
+		/// <summary>
+		/// SOLO LOS DIGITOS del monto dicho en esta moneda, en cultura invariante y sin signo ni
+		/// codigo al lado. Es el unico numero que este dominio inventa -- la precision, nunca la
+		/// magnitud --, y viaja asi porque donde va la coma de los miles y la de los decimales es
+		/// del idioma.
+		/// </summary>
+		internal abstract string TheAmountAsSaid(decimal amount);
+
+		/// <summary>
 		/// El monto dicho en esta moneda, en cultura invariante: la frase la leen tres caratulas con
 		/// tres culturas y tiene que decir el mismo numero.
 		/// </summary>
@@ -167,15 +185,23 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El monto con su signo delante y los decimales de esta moneda, redondeado al ultimo de ellos
-		/// alejandose del cero. Es el unico numero que este dominio inventa: la precision, nunca la
-		/// magnitud.
+		/// Los digitos del monto con los decimales de esta moneda, redondeado al ultimo de ellos
+		/// alejandose del cero.
 		/// </summary>
-		internal override string Says(decimal amount)
+		internal override string TheAmountAsSaid(decimal amount)
 		{
 			decimal said = Math.Round(amount, _minorUnits, MidpointRounding.AwayFromZero);
 
-			return _symbol + said.ToString(TheShapeOfItsMinorUnits(), CultureInfo.InvariantCulture);
+			return said.ToString(TheShapeOfItsMinorUnits(), CultureInfo.InvariantCulture);
+		}
+
+		/// <summary>
+		/// El monto con su signo delante y los decimales de esta moneda. Es lo que dice un rechazo
+		/// del dominio, que nombra el dinero del que habla y no pasa por ningun renderizador.
+		/// </summary>
+		internal override string Says(decimal amount)
+		{
+			return _symbol + TheAmountAsSaid(amount);
 		}
 
 		private string TheShapeOfItsMinorUnits()
@@ -226,12 +252,21 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El monto tal como se recibio, con el codigo detras. Redondearlo inventaria una precision
-		/// que nadie publico.
+		/// Los digitos del monto tal como se recibio. Redondearlos inventaria una precision que
+		/// nadie publico.
+		/// </summary>
+		internal override string TheAmountAsSaid(decimal amount)
+		{
+			return amount.ToString(CultureInfo.InvariantCulture);
+		}
+
+		/// <summary>
+		/// El monto tal como se recibio, con el codigo detras. Es lo que dice un rechazo del
+		/// dominio, que nombra el dinero del que habla y no pasa por ningun renderizador.
 		/// </summary>
 		internal override string Says(decimal amount)
 		{
-			return amount.ToString(CultureInfo.InvariantCulture) + " " + _code;
+			return TheAmountAsSaid(amount) + " " + _code;
 		}
 	}
 }

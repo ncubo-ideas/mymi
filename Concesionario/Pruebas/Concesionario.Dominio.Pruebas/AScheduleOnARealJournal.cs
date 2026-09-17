@@ -103,7 +103,7 @@ namespace Concesionario.Dominio.Pruebas
 				everything += "\n" + kind
 					+ " : " + Api.ReadDueState(kind)
 					+ " | deferrals=" + Api.DeferralsUsed(kind)
-					+ " | " + Api.ReadDueReason(kind);
+					+ " | " + Api.ReadDueReason(kind, TheLanguage.OfTheRecord);
 
 			everything += "\ndue=" + Api.CountDue()
 				+ " overdue=" + Api.CountOverdue()
@@ -142,20 +142,20 @@ namespace Concesionario.Dominio.Pruebas
 				sheet.Append("\nfluid ").Append(kind)
 					.Append(" : ").Append(Api.IsFluidPublished(kind))
 					.Append(" | ").Append(Api.ReadFluidRevision(kind))
-					.Append(" | ").Append(Api.DescribeFluid(kind));
+					.Append(" | ").Append(Api.DescribeFluid(kind, TheLanguage.OfTheRecord));
 
 			foreach (string position in Enum.GetNames(typeof(TyrePositionCode)))
 				sheet.Append("\ntyre ").Append(position)
 					.Append(" : ").Append(Api.IsTyrePublished(position))
 					.Append(" | ").Append(Api.ReadTyreRevision(position))
-					.Append(" | ").Append(Api.DescribeTyre(position));
+					.Append(" | ").Append(Api.DescribeTyre(position, TheLanguage.OfTheRecord));
 
 			sheet.Append("\nfuel : ").Append(Api.IsFuelPublished())
 				.Append(" | ").Append(Api.ReadFuelRevision())
 				.Append(" | minimum=").Append(Api.ReadMinimumFuelGrade())
 				.Append(" | permitted=").Append(string.Join(",", Api.PermittedFuelGrades()))
 				.Append(" | prohibited=").Append(string.Join(",", Api.ProhibitedFuelGrades()))
-				.Append(" | ").Append(Api.DescribeFuel());
+				.Append(" | ").Append(Api.DescribeFuel(TheLanguage.OfTheRecord));
 
 			foreach (string kind in Enum.GetNames(typeof(OperationKindCode)))
 			{
@@ -163,7 +163,8 @@ namespace Concesionario.Dominio.Pruebas
 					.Append(" : ").Append(Api.IsServiceIntervalPublished(kind))
 					.Append(" | ").Append(Api.ReadServiceIntervalRevision(kind))
 					.Append(" | ").Append(
-						Api.DescribeServiceInterval(kind, TheDistanceRemaining, TheUnitItAsksIn));
+						Api.DescribeServiceInterval(
+							kind, TheDistanceRemaining, TheUnitItAsksIn, TheLanguage.OfTheRecord));
 
 				sheet.Append("\nprice ").Append(kind)
 					.Append(" : ").Append(
@@ -171,14 +172,15 @@ namespace Concesionario.Dominio.Pruebas
 					.Append(" | ").Append(
 						Api.ReadServicePriceRevision(kind, TheMilestone, TheUnitItAsksIn))
 					.Append(" | ").Append(Api.DescribeServicePrice(
-						kind, TheMilestone, TheUnitItAsksIn, TheDayItAsks));
+						kind, TheMilestone, TheUnitItAsksIn, TheDayItAsks, TheLanguage.OfTheRecord));
 			}
 
 			sheet.Append("\ncoverage : ").Append(Api.IsCoveragePublished())
 				.Append(" | ").Append(Api.ReadCoverageRevision())
 				.Append(" | systems=").Append(string.Join(",", Api.CoveredSystems()))
-				.Append(" | exclusions=").Append(string.Join(" / ", Api.CoverageExclusions()))
-				.Append(" | ").Append(Api.DescribeCoverageSummary());
+				.Append(" | exclusions=").Append(string.Join(
+					" / ", Api.CoverageExclusions(TheLanguage.OfTheRecord)))
+				.Append(" | ").Append(Api.DescribeCoverageSummary(TheLanguage.OfTheRecord));
 
 			foreach (string systemCode in new[] { "POWERTRAIN", "SUSPENSION" })
 				sheet.Append("\nvocabulary ").Append(systemCode)
@@ -186,7 +188,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			sheet.Append("\nservicingPolicy : ").Append(Api.IsServicingPolicyPublished())
 				.Append(" | ").Append(Api.ReadServicingPolicyRevision())
-				.Append(" | ").Append(Api.DescribeServicingElsewhereRule(2, 1, 0));
+				.Append(" | ").Append(Api.DescribeServicingElsewhereRule(
+					2, 1, 0, TheLanguage.OfTheRecord));
 
 			return sheet.ToString();
 		}

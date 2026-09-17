@@ -6,19 +6,18 @@ namespace Concesionario.Dominio
 	/// La ley evaluada no mide esa dimension, asi que no hay nada que le quede. Ausente no es
 	/// suspendida: lo que no existe no lo cura ningun hecho que llegue despues.
 	/// <para>
-	/// Compone su propia frase en vez de reusar la de la dimension: la de
-	/// <see cref="ADimensionOutsideTheLaw"/> es la cadena VACIA a proposito -- una dimension que la
-	/// ley no tiene no se nombra en el motivo -- y una cuenta atras no puede callar una mitad.
+	/// Nombra su dimension aunque <see cref="ADimensionOutsideTheLaw"/> no aporte clausula al
+	/// motivo: una cuenta atras no puede callar una de sus dos mitades.
 	/// </para>
 	/// </summary>
 	internal sealed class ARemainderOutsideTheLaw : ARemainder
 	{
-		private readonly string _dimensionName;
+		private readonly string _dimension;
 
 		/// <summary>Se llega por <see cref="ARemainder.NotMeasuredByThisLaw"/>.</summary>
-		internal ARemainderOutsideTheLaw(string dimensionName)
+		internal ARemainderOutsideTheLaw(string dimension)
 		{
-			_dimensionName = dimensionName;
+			_dimension = dimension;
 		}
 
 		/// <summary>No.</summary>
@@ -33,10 +32,10 @@ namespace Concesionario.Dominio
 			return RemainderStanding.OutsideTheLaw;
 		}
 
-		/// <summary>Dice que la ley no tiene ese limite, con las palabras del dominio.</summary>
-		internal override string Describe()
+		/// <summary>La dimension que la ley no mide, por su codigo.</summary>
+		internal override string TheDimensionItMeasures()
 		{
-			return _dimensionName + ": esta operación no tiene límite de " + _dimensionName;
+			return _dimension;
 		}
 	}
 }

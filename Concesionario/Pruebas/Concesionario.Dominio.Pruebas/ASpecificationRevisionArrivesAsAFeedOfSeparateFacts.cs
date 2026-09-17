@@ -180,7 +180,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.ReadRevisionState(ADealershipNarrative.TheSecondRevision),
 				Is.EqualTo("Sealed"));
 
-			Assert.That(journal.Api.DescribeFluid("EngineOil"),
+			Assert.That(journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
 				Does.Contain(ADealershipNarrative.TheSecondOilGrade),
 				"El aceite sale de la segunda revision: una revision aplica desde su instante hacia "
 				+ "adelante.");
@@ -190,7 +190,9 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.IsTyrePublished("Front"), Is.False,
 				"Y la llanta se retiro con la primera: lo que la sucesora no volvio a publicar no "
 				+ "queda contestando.");
-			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 		}
 
 		// EL BARRIDO DE LOS ONCE, y la asercion NOMBRA EL TIPO en vez de decir que llego algo. Una
@@ -383,7 +385,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(rejection, Does.Contain("deja de aceptar contenido cuando se sella"));
 
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("5W-30"),
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain("5W-30"),
 				"La revision sigue diciendo lo que dijo. Corregir un item publicado necesita una "
 				+ "revision nueva, que es de lo que se trata la procedencia.");
 		}
@@ -587,11 +591,12 @@ namespace Concesionario.Dominio.Pruebas
 					"205/55R16", "225/50R17",
 					"tyre Spare : False |  | Llanta de repuesto: no se ha publicado nada"),
 				("intervalos", "interval FluidChange : True | R1", "interval FilterChange : True | R2",
-					"Cambio de fluido: se hace cada 10000", "Cambio de filtro: se hace cada 10000",
+					"Cambio de fluido: se hace cada 10.000",
+					"Cambio de filtro: se hace cada 10.000",
 					"interval Inspection : False |  | Intervalo de servicio de revisión: no se ha "
 					+ "publicado nada"),
 				("precios",    "price FluidChange : True | R1",   "price FilterChange : True | R2",
-					"$89.90", "$45.50",
+					"$89,90", "$45,50",
 					"price Inspection : False |  | Precio del servicio de revisión"),
 			};
 

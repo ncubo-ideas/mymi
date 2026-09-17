@@ -92,7 +92,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ARecordedStay();
 
-			string said = stays.DescribeTheStayAt(TheMiddleOfTheStay);
+			string said = TheSentenceTheDoorWouldCompose.TheStay(stays, TheMiddleOfTheStay,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("2026-06-10 08:30:00"), "la entrada, con su hora");
 			Assert.That(said, Does.Contain("2026-06-12 16:45:00"), "la salida, con su hora");
@@ -119,7 +120,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ARecordedStay();
 
-			string said = stays.DescribeTheStayAt(TheMiddleOfTheStay);
+			string said = TheSentenceTheDoorWouldCompose.TheStay(stays, TheMiddleOfTheStay,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain(TheSubject),
 				"lo unico que dice por que entro es la linea que llego de la sucursal");

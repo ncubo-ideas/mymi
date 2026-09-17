@@ -50,11 +50,12 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void BothPeriodsAreNamedAndBothCarryTheirOwnFigures()
 		{
-			string said = ledger.DescribeTwoPeriodsOfSpendCompared(
-				ThisYearFrom, ThisYearTo, LastYearFrom, LastYearTo);
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfSpendCompared(
+				ledger, 
+				ThisYearFrom, ThisYearTo, LastYearFrom, LastYearTo, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡285000.00"));
-			Assert.That(said, Does.Contain("₡152000.00"));
+			Assert.That(said, Does.Contain("₡285.000,00"));
+			Assert.That(said, Does.Contain("₡152.000,00"));
 			Assert.That(said, Does.Contain("2026-01-01").And.Contain("2026-12-31"),
 				"Cada periodo nombra sus propios limites: sin ellos la frase dice dos cifras de dos "
 				+ "periodos que no se sabe cuales son.");
@@ -68,22 +69,24 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndEachOfTheTwoCarriesBothOfItsViews()
 		{
-			string said = ledger.DescribeTwoPeriodsOfSpendCompared(
-				ThisYearFrom, ThisYearTo, LastYearFrom, LastYearTo);
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfSpendCompared(
+				ledger, 
+				ThisYearFrom, ThisYearTo, LastYearFrom, LastYearTo, TheLanguage.OfTheRecord);
 
-			Assert.That(TimesItSays(said, "₡285000.00"), Is.EqualTo(2),
+			Assert.That(TimesItSays(said, "₡285.000,00"), Is.EqualTo(2),
 				"Con solo gastos recurrentes la caja y lo consumido son la misma cifra, asi que "
 				+ "cada periodo la dice DOS veces: una por vista. Una sola vez seria una vista "
 				+ "sola.");
-			Assert.That(TimesItSays(said, "₡152000.00"), Is.EqualTo(2));
+			Assert.That(TimesItSays(said, "₡152.000,00"), Is.EqualTo(2));
 		}
 
 		// NINGUNA RESTA Y NINGUN PORCENTAJE, dicho por valor sobre las tres formas que tomaria.
 		[Test]
 		public void AndTheAnswerCarriesNoDeltaAndNoPercentage()
 		{
-			string said = ledger.DescribeTwoPeriodsOfSpendCompared(
-				ThisYearFrom, ThisYearTo, LastYearFrom, LastYearTo);
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfSpendCompared(
+				ledger, 
+				ThisYearFrom, ThisYearTo, LastYearFrom, LastYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Not.Contain("133000"),
 				"285000 menos 152000. Una diferencia suelta es la mitad de una respuesta compuesta.");
@@ -124,11 +127,12 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndAPeriodWithNothingIsStillComparedAndSaidAsSuch()
 		{
-			string said = ledger.DescribeTwoPeriodsOfSpendCompared(
+			string said = TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfSpendCompared(
+				ledger, 
 				ThisYearFrom, ThisYearTo,
-				new DateTime(2024, 1, 1, 0, 0, 0), new DateTime(2024, 12, 31, 0, 0, 0));
+				new DateTime(2024, 1, 1, 0, 0, 0), new DateTime(2024, 12, 31, 0, 0, 0), TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡285000.00"));
+			Assert.That(said, Does.Contain("₡285.000,00"));
 			Assert.That(said, Does.Contain("no hay ningún gasto registrado"));
 			Assert.That(said, Does.Contain("2024-01-01"),
 				"El periodo vacio tambien se nombra: es lo que lo distingue de otro periodo vacio.");

@@ -153,22 +153,6 @@ namespace Concesionario.Dominio
 				- TheWholeSecondOf(earlier._reading.ObservedAt).Ticks) / TimeSpan.TicksPerSecond;
 		}
 
-		/// <summary>
-		/// La lectura en una frase, que es lo que hace la fila autodescriptiva: el valor con su
-		/// unidad, cuando se observo, y de donde vino dicho en palabras.
-		/// </summary>
-		internal string Describe()
-		{
-			return TheValueItRead() + " " + TheNameOfItsUnit() + " el " + TheInstantItWasObserved()
-				+ ", " + _reading.Source.HowItIsSaid;
-		}
-
-		/// <summary>El valor con su unidad, que es la mitad que una frase de ritmo reusa.</summary>
-		internal string TheReadingItSays()
-		{
-			return TheValueItRead() + " " + TheNameOfItsUnit();
-		}
-
 		private static DateTime TheWholeSecondOf(DateTime instant)
 		{
 			return new DateTime(instant.Ticks - (instant.Ticks % TimeSpan.TicksPerSecond));

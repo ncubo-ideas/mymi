@@ -77,8 +77,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				schedule.ReadDueState(OperationKindCode.WearPartReplacement), Is.EqualTo("NotDue"));
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.WearPartReplacement),
-				Does.Contain("ninguna lectura usable"),
+				schedule.TheDueReasonFor(OperationKindCode.WearPartReplacement).ClauseCodes,
+				Does.Contain(LimitClause.AbsentReading),
 				"Y lo dice: ese NotDue NO es evidencia de que la operacion no venza (GAP G2). Es "
 				+ "que todavia no se observo nada con que medirla.");
 

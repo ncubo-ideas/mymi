@@ -14,25 +14,19 @@ namespace Concesionario.Dominio
 		{
 		}
 
-		/// <summary><c>tiempo</c>.</summary>
-		protected override string Name
+		/// <summary>El tiempo.</summary>
+		internal override string TheDimensionItMeasures()
 		{
-			get { return "tiempo"; }
+			return IntervalDimension.Time;
 		}
 
 		/// <summary>
-		/// Los dias son su unidad. Se dice en plural porque es como se nombra la unidad; una
-		/// cantidad de uno la pluraliza <see cref="Amount"/>, que es quien la dice.
+		/// El dia es la unidad de esta dimension y no tiene nombre propio que proyectar: su
+		/// dimension ya dice cual es, y como se dice una cantidad de dias es de quien la muestra.
 		/// </summary>
 		protected override string UnitName
 		{
-			get { return "días"; }
-		}
-
-		/// <summary>Los dias se pluralizan.</summary>
-		protected override string Amount(int quantity)
-		{
-			return quantity + (quantity == 1 ? " día" : " días");
+			get { return ""; }
 		}
 	}
 }

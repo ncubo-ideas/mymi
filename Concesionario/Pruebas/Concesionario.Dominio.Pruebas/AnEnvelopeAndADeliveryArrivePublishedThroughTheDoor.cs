@@ -82,10 +82,10 @@ namespace Concesionario.Dominio.Pruebas
 
 			// LOS DOS LIMITES SE AFIRMAN DENTRO DE LA FRASE y no como escalares, porque es la unica
 			// forma en que llegan a un llamador: la puerta no los da sueltos a proposito.
-			string published = door.DescribePublishedWarrantyEnvelope();
+			string published = door.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord);
 
 			Assert.That(published, Does.Contain("36 meses"));
-			Assert.That(published, Does.Contain("60000"));
+			Assert.That(published, Does.Contain("60.000"));
 			Assert.That(published, Does.Contain("mi"),
 				"Y la unidad es la que se publico, dicha como la lee una persona. 'mi' es UnitB: si "
 				+ "el codigo hubiera cruzado como un nombre que el dominio resuelve al primer "
@@ -119,22 +119,24 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheComposedAnswerMovesWithEachOfTheTwoCommands()
 		{
-			string toldNothing = door.DescribeWarrantyEnvelope(TwoYearsLater);
+			string toldNothing = door.DescribeWarrantyEnvelope(
+				TwoYearsLater, TheLanguage.OfTheRecord);
 
 			door.PublishWarrantyEnvelope(
 				ThirtySixMonths, SixtyThousand, TheUnitTheLimitIsIn, TheDayItWasPublished);
 
-			string withTheEnvelope = door.DescribeWarrantyEnvelope(TwoYearsLater);
+			string withTheEnvelope = door.DescribeWarrantyEnvelope(
+				TwoYearsLater, TheLanguage.OfTheRecord);
 
 			door.RecordDelivery(TheDayItWasHandedOver, TheOdometerAtDelivery, TheUnitTheLimitIsIn);
 
-			string withBoth = door.DescribeWarrantyEnvelope(TwoYearsLater);
+			string withBoth = door.DescribeWarrantyEnvelope(TwoYearsLater, TheLanguage.OfTheRecord);
 
 			Assert.That(toldNothing, Does.Contain("no ha publicado"));
 
 			Assert.That(withTheEnvelope, Does.Contain("36"),
 				"Con el sobre puesto, la frase cita los dos limites.");
-			Assert.That(withTheEnvelope, Does.Contain("60000"));
+			Assert.That(withTheEnvelope, Does.Contain("60.000"));
 			Assert.That(withTheEnvelope, Is.Not.EqualTo(toldNothing));
 
 			Assert.That(withBoth, Is.Not.EqualTo(withTheEnvelope),
@@ -175,8 +177,11 @@ namespace Concesionario.Dominio.Pruebas
 			door.PublishWarrantyEnvelope(
 				ThirtySixMonths, SixtyThousand, "UnitA", TheDayItWasPublished);
 
-			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Contain("km"));
-			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Not.Contain("mi"));
+			Assert.That(
+				door.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord), Does.Contain("km"));
+			Assert.That(
+				door.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Not.Contain("mi"));
 		}
 
 		// ===== D6 Y L10 POR LA PUERTA ======================================================
@@ -212,12 +217,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.DoesNotThrow(
 				() => door.PublishWarrantyEnvelope(12, 20000, TheUnitTheLimitIsIn, earlier));
 
-			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Contain("36 meses"),
+			Assert.That(door.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord), Does.Contain("36 meses"),
 				"Sigue rigiendo el que se publico despues.");
 			Assert.That(
-				door.DescribePublishedWarrantyEnvelope(), Does.Contain("60000 mi"));
+				door.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord), Does.Contain("60.000 mi"));
 			Assert.That(
-				door.DescribePublishedWarrantyEnvelope(), Does.Not.Contain("20000"),
+				door.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord), Does.Not.Contain("20000"),
 				"Y el que llego fechado antes no dejo ni un numero en la frase.");
 			Assert.That(door.ReadEnvelopePublishedAt(), Is.EqualTo(TheDayItWasPublished));
 		}
@@ -311,12 +316,13 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			return "envelope=" + door.IsWarrantyEnvelopePublished()
 				+ " publishedAt=" + door.ReadEnvelopePublishedAt().ToString("O")
-				+ "\npublished=" + door.DescribePublishedWarrantyEnvelope()
+				+ "\npublished=" + door.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord)
 				+ "\ndelivery=" + door.HasDeliveryBeenRecorded()
 				+ " deliveredAt=" + door.ReadDeliveredAt().ToString("O")
 				+ " reading=" + door.ReadDeliveryReading()
 				+ " unit=" + door.ReadDeliveryUnit()
-				+ "\nstanding=" + door.DescribeWarrantyEnvelope(TwoYearsLater);
+				+ "\nstanding=" + door.DescribeWarrantyEnvelope(
+					TwoYearsLater, TheLanguage.OfTheRecord);
 		}
 
 		// El journal como bytes, para las pruebas que afirman que un rechazo no escribio nada. Es la

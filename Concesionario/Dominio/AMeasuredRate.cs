@@ -50,11 +50,41 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Como se dice el cambio de este ritmo respecto a ese otro. El porcentaje se calcula sobre
-		/// las distancias por dia YA REDONDEADAS, que son las que la frase dice: sacarlo de los
-		/// ritmos exactos lo dejaria en desacuerdo con los dos numeros impresos al lado.
+		/// En cual de las cuatro situaciones cae el cambio de este ritmo respecto a ese otro.
+		/// Contra un periodo quieto no hay porcentaje, y eso es una situacion con nombre, no un
+		/// cero.
 		/// </summary>
-		internal override string HowItComparesTo(RateAnswer other)
+		internal override string TheShapeOfItsChangeAgainst(RateAnswer other)
+		{
+			long theirs = TheirDistancePerDay(other);
+
+			if (theirs == 0) return RateChange.NotAPercentage;
+
+			long mine = TheWholeDistancePerDay();
+
+			if (mine == theirs) return RateChange.TheSameRate;
+
+			return mine > theirs ? RateChange.Higher : RateChange.Lower;
+		}
+
+		/// <summary>
+		/// Los digitos de ese cambio. El porcentaje se calcula sobre las distancias por dia YA
+		/// REDONDEADAS, que son las que la frase dice: sacarlo de los ritmos exactos lo dejaria en
+		/// desacuerdo con los dos numeros impresos al lado.
+		/// </summary>
+		internal override string TheChangeAgainstAsSaid(RateAnswer other)
+		{
+			long theirs = TheirDistancePerDay(other);
+
+			if (theirs == 0) return "";
+
+			decimal proportion = ((decimal)TheWholeDistancePerDay() - theirs) / theirs * 100m;
+			long said = (long)Math.Round(Math.Abs(proportion), MidpointRounding.AwayFromZero);
+
+			return said.ToString(CultureInfo.InvariantCulture);
+		}
+
+		private static long TheirDistancePerDay(RateAnswer other)
 		{
 			if (other == null)
 				throw new DomainException(
@@ -65,20 +95,7 @@ namespace Concesionario.Dominio
 					"El otro periodo no tiene ritmo que decir, asi que no se puede comparar: "
 					+ "pregunte CanBeSaid en los dos antes.");
 
-			long theirs = other.DistancePerDay();
-
-			if (theirs == 0)
-				return "no se puede decir como porcentaje, porque en el otro periodo el vehículo "
-					+ "no se movió";
-
-			long mine = DistancePerDay();
-
-			if (mine == theirs) return "el mismo ritmo";
-
-			decimal proportion = ((decimal)mine - theirs) / theirs * 100m;
-			long said = (long)Math.Round(Math.Abs(proportion), MidpointRounding.AwayFromZero);
-
-			return mine > theirs ? "un " + said + "% más" : "un " + said + "% menos";
+			return other.DistancePerDay();
 		}
 
 		/// <summary>Cuando se observo la primera de las dos lecturas del tramo.</summary>
@@ -100,19 +117,18 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El ritmo entero en una frase: de donde a donde, cuanto y en cuanto tiempo, y la
-		/// distancia por dia introducida por "unos", que es lo que dice que ese ultimo numero esta
-		/// redondeado.
+		/// El ritmo entero: los dos extremos con sus instantes, la distancia entre ellos con su
+		/// unidad, el tramo de tiempo y la distancia por dia. Los operandos exactos van con el
+		/// ritmo, que es lo que deja revisar la division a quien lo lea.
 		/// </summary>
-		internal override string Describe()
+		internal override ARateInAPeriod TheClauseOfItsPeriod()
 		{
-			string unit = _to.TheNameOfItsUnit();
-
-			return "de " + _from.TheReadingItSays() + " el " + _from.TheInstantItWasObserved()
-				+ " a " + _to.TheReadingItSays() + " el " + _to.TheInstantItWasObserved()
-				+ ": " + _to.DistanceFrom(_from) + " " + unit
-				+ " en " + TheSpanInWords()
-				+ ", unos " + TheWholeDistancePerDay() + " " + unit + " por día";
+			return ARateInAPeriod.Measured(
+				_from.TheValueItRead(), _from.TheNameOfItsUnit(), _from.TheInstantItWasObserved(),
+				_to.TheValueItRead(), _to.TheNameOfItsUnit(), _to.TheInstantItWasObserved(),
+				_to.DistanceFrom(_from), _to.TheNameOfItsUnit(),
+				TheWholeDistancePerDay().ToString(CultureInfo.InvariantCulture),
+				TheShapeOfItsSpan(), TheSpanAsSaid());
 		}
 
 		private long TheWholeDistancePerDay()
@@ -122,24 +138,33 @@ namespace Concesionario.Dominio
 			return (long)Math.Round(perDay, MidpointRounding.AwayFromZero);
 		}
 
-		// EL TRAMO SE DICE EN DIAS, Y EN SEGUNDOS CUANDO ES MAS CORTO QUE UN DIA. El corte no es un
-		// umbral elegido: el dia es la unidad por la que el ritmo se dice (G1), asi que "mas corto
-		// que la unidad" es el unico corte estructural que hay. Decir "en 0 dias" seria falso, y
-		// esconder el tramo corto es justo la constante que §6 prohibe.
-		private string TheSpanInWords()
+		/// <summary>
+		/// En que unidad se dice el tramo: en dias, y en segundos cuando es mas corto que un dia.
+		/// El corte no es un umbral elegido -- el dia es la unidad por la que el ritmo se dice, asi
+		/// que "mas corto que la unidad" es el unico corte que hay --, y decir "en 0 dias"
+		/// seria falso. El entero exacto tiene su propio codigo en cada una de las dos unidades,
+		/// porque el singular no se puede elegir mirando unos digitos.
+		/// </summary>
+		private string TheShapeOfItsSpan()
 		{
 			decimal days = _to.DaysFrom(_from);
 
-			if (days < 1m)
-			{
-				long seconds = _to.SecondsFrom(_from);
+			if (days >= 1m) return days == 1m ? SpanShape.AWholeDay : SpanShape.InDays;
 
-				return seconds == 1 ? "1 segundo" : seconds + " segundos";
-			}
+			return _to.SecondsFrom(_from) == 1 ? SpanShape.AWholeSecond : SpanShape.InSeconds;
+		}
 
-			if (days == 1m) return "1 día";
+		private string TheSpanAsSaid()
+		{
+			decimal days = _to.DaysFrom(_from);
 
-			return AsSaid(days) + " días";
+			if (days == 1m) return "";
+
+			if (days > 1m) return AsSaid(days);
+
+			long seconds = _to.SecondsFrom(_from);
+
+			return seconds == 1 ? "" : seconds.ToString(CultureInfo.InvariantCulture);
 		}
 
 		private static string AsSaid(decimal days)

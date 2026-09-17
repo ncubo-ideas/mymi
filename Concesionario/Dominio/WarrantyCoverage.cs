@@ -23,27 +23,6 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Como se nombra la pregunta de cobertura sobre un sistema. Sale de aca para que la
-		/// respuesta decidida y la ausencia hablen del mismo sujeto con las mismas palabras.
-		/// </summary>
-		internal static string TheCoverageQuestionAbout(string systemCode)
-		{
-			return "La cobertura de garantía del sistema '" + systemCode + "'";
-		}
-
-		/// <summary>
-		/// La clausula que toda respuesta de cobertura lleva: esto es alcance publicado, y como se
-		/// resuelva un reclamo concreto lo dice el fabricante. Va en la frase para que la ley se
-		/// diga a si misma y no se pierda en la primera capa que reformule la respuesta.
-		/// </summary>
-		internal static string ScopeIsNotAdjudication()
-		{
-			return "Solo alcance: esto dice lo que el fabricante publicó sobre el alcance de la "
-				+ "garantía, y nada sobre cómo se resolvería un reclamo -- eso lo decide el "
-				+ "fabricante, no este registro.";
-		}
-
-		/// <summary>
 		/// Entra un sistema al alcance. Dentro de una misma revision sin sellar, republicar un
 		/// codigo lo CORRIGE en su lugar en vez de duplicarlo: es la unica ventana de correccion
 		/// que hay, porque despues de sellar no hay ninguna.
@@ -130,24 +109,18 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Nombra TODAS las exclusiones publicadas sobre ese sistema, con su texto y su condicion.
-		/// Quedarse con la primera elegiria por la persona cual le importa. Accesor GUARDADO:
-		/// pedirlo de un sistema sin exclusiones es un defecto de secuencia.
+		/// TODAS las exclusiones publicadas sobre ese sistema, en el orden en que entraron. Quedarse
+		/// con la primera elegiria por la persona cual le importa. TOTAL: un sistema sin ninguna da
+		/// una lista vacia, que es lo que toda respuesta suya lleva.
 		/// </summary>
-		internal string AKnownExclusionIsNamed(string systemCode)
+		internal List<CoverageExclusion> TheExclusionsApplicableTo(string systemCode)
 		{
-			if (!HasAnApplicableExclusion(systemCode))
-				throw new DomainException(
-					$"No hay ninguna exclusion publicada sobre '{systemCode}': hay que preguntar "
-					+ "primero si la hay. Una frase vacia aca se leeria como que se reviso y no habia "
-					+ "nada, que es lo mismo que decirlo sin haber mirado.");
-
-			List<string> named = new List<string>();
+			List<CoverageExclusion> applicable = new List<CoverageExclusion>();
 
 			foreach (CoverageExclusion exclusion in _exclusions)
-				if (exclusion.NamesTheSystem(systemCode)) named.Add(exclusion.Describe());
+				if (exclusion.NamesTheSystem(systemCode)) applicable.Add(exclusion);
 
-			return string.Join(" ", named);
+			return applicable;
 		}
 
 		/// <summary>Los codigos de los sistemas que el alcance declara adentro, tal como se publicaron.</summary>
@@ -161,26 +134,13 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Las exclusiones publicadas, cada una con su texto y su condicion. Salen con texto y no
+		/// El alcance entero como forma y valores: los sistemas que declara adentro con sus limites
+		/// propios, y las exclusiones con su texto y su condicion. Las exclusiones salen con texto y no
 		/// como codigos: una lista de codigos no diria que esta excluido ni cuando.
 		/// </summary>
-		internal string[] TheExclusionsPublished()
+		internal ACoverageScope TheScopePublished(string revisionCode)
 		{
-			List<string> clauses = new List<string>();
-
-			foreach (CoverageExclusion exclusion in _exclusions) clauses.Add(exclusion.Describe());
-
-			return clauses.ToArray();
-		}
-
-		/// <summary>
-		/// El alcance entero en una frase: los sistemas que declara adentro, las exclusiones, y la
-		/// clausula que dice que esto es alcance y no la resolucion de un reclamo.
-		/// </summary>
-		internal string DescribeTheScope()
-		{
-			return "Sistemas dentro del alcance publicado: " + TheSystemsInWords()
-				+ " Exclusiones: " + TheExclusionsInWords() + " " + ScopeIsNotAdjudication();
+			return ACoverageScope.Of(revisionCode, _systems, _exclusions);
 		}
 
 		/// <summary>
@@ -190,67 +150,55 @@ namespace Concesionario.Dominio
 		/// que no se puede medir degrada la respuesta solo cuando todavia podia cambiarla.
 		/// </summary>
 		internal CoverageAnswer TheStandingFor(
-			string systemCode, SystemLimits vehicleEnvelope,
+			string revisionCode, string systemCode, SystemLimits vehicleEnvelope,
 			DateTime deliveredAt, int deliveryReading, int currentReading,
 			DistanceUnit odometerUnit, DateTime asOf)
 		{
-			string subject = TheCoverageQuestionAbout(systemCode);
+			List<CoverageExclusion> applicable = TheExclusionsApplicableTo(systemCode);
 
 			if (!TheVocabularyIsTheManufacturers(systemCode))
 				return new ASettledCoverageAnswer(
-					subject, CoverageStanding.NotPublished,
-					TheClauseFor(systemCode,
-						"El alcance publicado no nombra este sistema en ninguna parte, así que aquí "
-						+ "no hay nada sobre él -- que no es lo mismo que el alcance lo deje "
-						+ "afuera. "));
+					systemCode, CoverageStanding.NotPublished,
+					ACoverageClause.MeasuringNothing(
+						revisionCode, CoverageReason.NotInTheVocabulary, applicable));
 
 			if (!TheScopeDeclaresItInside(systemCode))
 				return new ASettledCoverageAnswer(
-					subject, CoverageStanding.NotCovered,
-					TheClauseFor(systemCode,
-						"El alcance publicado nombra este sistema solo entre sus exclusiones, y "
-						+ "nunca entre los sistemas que declara adentro. "));
+					systemCode, CoverageStanding.NotCovered,
+					ACoverageClause.MeasuringNothing(
+						revisionCode, CoverageReason.OnlyAmongTheExclusions, applicable));
 
 			SystemLimits governing = TheSystemInsideTheScopeNamed(systemCode)
 				.TheMoreSpecificLimitGoverns(vehicleEnvelope);
 
 			if (governing.TheTimeHalfIsPast(deliveredAt, asOf))
 				return new ASettledCoverageAnswer(
-					subject, CoverageStanding.OutsideEnvelope,
-					TheClauseFor(systemCode, ThisVehicleIs("fuera de ellos", governing)));
+					systemCode, CoverageStanding.OutsideEnvelope,
+					ACoverageClause.Measuring(
+						revisionCode, CoverageReason.OutsideTheLimits, governing, applicable));
 
 			if (governing.HasADistanceHalf() && !governing.MeasuresDistanceIn(odometerUnit))
 				return new ACoverageSuspendedByAUnitMismatch(
-					subject, governing.TheUnitItsDistanceIsMeasuredIn(), odometerUnit,
-					TheClauseFor(systemCode, string.Empty));
+					systemCode, governing.TheUnitItsDistanceIsMeasuredIn(), odometerUnit,
+					ACoverageClause.MeasuringNothing(
+						revisionCode, CoverageReason.UnitMismatch, applicable));
 
 			if (governing.TheDistanceHalfIsPast(deliveryReading, currentReading))
 				return new ASettledCoverageAnswer(
-					subject, CoverageStanding.OutsideEnvelope,
-					TheClauseFor(systemCode, ThisVehicleIs("fuera de ellos", governing)));
+					systemCode, CoverageStanding.OutsideEnvelope,
+					ACoverageClause.Measuring(
+						revisionCode, CoverageReason.OutsideTheLimits, governing, applicable));
 
-			if (HasAnApplicableExclusion(systemCode))
+			if (applicable.Count > 0)
 				return new ASettledCoverageAnswer(
-					subject, CoverageStanding.CoveredWithExclusion,
-					TheClauseFor(systemCode, ThisVehicleIs("dentro de ellos", governing)));
+					systemCode, CoverageStanding.CoveredWithExclusion,
+					ACoverageClause.Measuring(
+						revisionCode, CoverageReason.InsideTheLimits, governing, applicable));
 
 			return new ASettledCoverageAnswer(
-				subject, CoverageStanding.Covered,
-				TheClauseFor(systemCode, ThisVehicleIs("dentro de ellos", governing)));
-		}
-
-		private static string ThisVehicleIs(string whereItStands, SystemLimits governing)
-		{
-			return "Límites que rigen: " + governing.Describe() + ". Este vehículo está "
-				+ whereItStands + ". ";
-		}
-
-		private string TheClauseFor(string systemCode, string reason)
-		{
-			if (!HasAnApplicableExclusion(systemCode))
-				return reason + ScopeIsNotAdjudication();
-
-			return reason + AKnownExclusionIsNamed(systemCode) + " " + ScopeIsNotAdjudication();
+				systemCode, CoverageStanding.Covered,
+				ACoverageClause.Measuring(
+					revisionCode, CoverageReason.InsideTheLimits, governing, applicable));
 		}
 
 		private bool TheScopeDeclaresItInside(string systemCode)
@@ -270,24 +218,6 @@ namespace Concesionario.Dominio
 				$"El alcance publicado no declara adentro a '{systemCode}': hay que preguntar "
 				+ "primero si lo declara. Fabricar uno aca inventaria un sistema cubierto que el "
 				+ "fabricante nunca publico.");
-		}
-
-		private string TheSystemsInWords()
-		{
-			if (_systems.Count == 0) return "ninguno publicado.";
-
-			List<string> clauses = new List<string>();
-
-			foreach (CoveredSystem system in _systems) clauses.Add(system.Describe());
-
-			return string.Join(". ", clauses) + ".";
-		}
-
-		private string TheExclusionsInWords()
-		{
-			if (_exclusions.Count == 0) return "ninguna publicada.";
-
-			return string.Join(" ", TheExclusionsPublished());
 		}
 	}
 }

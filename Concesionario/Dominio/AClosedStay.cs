@@ -80,24 +80,35 @@ namespace Concesionario.Dominio
 			return _days.Count;
 		}
 
-		/// <summary>
-		/// La estadia cerrada en palabras: los dos extremos como instantes, cuantos dias cubrio y
-		/// cuales.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Ya la entregaron, por su codigo.</summary>
+		internal override string TheShapeItHas()
 		{
-			return "Estuvo " + TheEntryClause() + " hasta el " + TheInstant(_collectedAt) + ": "
-				+ HowManyDays() + (HowManyDays() == 1 ? " día" : " días") + " en el taller -- "
-				+ TheDaysSaid() + ". " + TheSubjectClause();
+			return StayShape.Collected;
 		}
 
-		private string TheDaysSaid()
+		/// <summary>
+		/// La estadia cerrada como forma y valores: los dos extremos como instantes, cuantos dias
+		/// cubrio y cuales, dichos como dias de calendario.
+		/// </summary>
+		internal override AStayClause TheClause()
 		{
-			List<string> said = new List<string>();
+			return AStayClause.Collected(
+				Branch, Subject.Value, TheInstant(EnteredAt), TheInstant(_collectedAt), HowManyDays(),
+				TheDaysAsSaid());
+		}
 
-			foreach (StayDay day in _days) said.Add(day.HowItIsSaid());
+		/// <summary>
+		/// Los dias que cubrio, cada uno en yyyy-MM-dd y en el orden en que llegaron. Es lo que la
+		/// clausula lleva: quien redacta decide en que orden se lee un dia, y para decidirlo necesita
+		/// el dia y no un texto ya armado.
+		/// </summary>
+		internal string[] TheDaysAsSaid()
+		{
+			string[] said = new string[_days.Count];
 
-			return string.Join(", ", said);
+			for (int day = 0; day < _days.Count; day++) said[day] = _days[day].HowItIsSaid();
+
+			return said;
 		}
 
 		private static List<StayDay> TheContiguousDays(StayDay[] days)

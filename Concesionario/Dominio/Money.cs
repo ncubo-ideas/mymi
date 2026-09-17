@@ -97,8 +97,36 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El monto dicho POR EL DOMINIO, con el signo de su moneda y su precision. La caratula lo
-		/// imprime y no compone nada.
+		/// Cual de los dos marcos le toca a este dinero, por su codigo. TOTAL.
+		/// </summary>
+		internal string TheShapeOfItsCurrency()
+		{
+			return _currency.TheShapeItHas();
+		}
+
+		/// <summary>
+		/// LOS DIGITOS del monto, en cultura invariante y sin signo ni codigo al lado: redondeados
+		/// a la precision de su moneda cuando este modulo la nombra, y tal como se recibieron
+		/// cuando no. TOTAL, y no es media respuesta: va siempre con la forma y el codigo de su
+		/// moneda, que son las otras dos cosas que hacen falta para decirlo.
+		/// </summary>
+		internal string TheAmountAsSaid()
+		{
+			return _currency.TheAmountAsSaid(_amount);
+		}
+
+		/// <summary>
+		/// El codigo de su moneda, que es identidad y cruza intacto. TOTAL.
+		/// </summary>
+		internal string TheCodeOfItsCurrency()
+		{
+			return _currency.Code;
+		}
+
+		/// <summary>
+		/// El monto dicho POR EL DOMINIO, con el signo de su moneda y su precision. Es lo que
+		/// nombra un rechazo del dominio, que no pasa por ningun renderizador y no elige ningun
+		/// idioma.
 		/// </summary>
 		internal string Expressed()
 		{

@@ -42,11 +42,11 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			string page = ThePageAsItIsWritten();
 
-			Assert.That(page, Does.Contain("state.ReadTheSpecification()"),
+			Assert.That(page, Does.Contain("state.ReadTheSpecification(texts.Language)"),
 				"La pagina dejo de leer la ficha, asi que las dos secciones reciben null y no pintan "
 				+ "nada -- sin ningun error y sin ningun aviso.");
 
-			Assert.That(page, Does.Contain("state.ReadWhereThisVehicleStands()"),
+			Assert.That(page, Does.Contain("state.ReadWhereThisVehicleStands(texts.Language)"),
 				"La pagina dejo de leer la mitad del vehiculo. Es la lectura que toma el instante en "
 				+ "que la pantalla pregunta, y sin ella la seccion Garantia vuelve a ser el alcance "
 				+ "publicado y nada mas.");
