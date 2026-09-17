@@ -23,6 +23,14 @@ internal sealed class CargasTools
 {
 	private readonly LectorDelJournal lector;
 
+	/// <summary>
+	/// EN QUE IDIOMA LE PREGUNTA ESTE SERVIDOR A LA PUERTA, y es el del registro de la estacion,
+	/// NO el de quien pregunta. Esta carátula es voz de la institucion hablandole al modelo: sigue
+	/// el idioma del modulo igual que lo siguen el titulo, la descripcion y el texto de cada tool.
+	/// El modelo, que si habla los dos, traduce si hace falta.
+	/// </summary>
+	private const string ElIdioma = Cargas.App.Frases.Frases.IdiomaDelRegistro;
+
 	public CargasTools(LectorDelJournal lector)
 	{
 		ArgumentNullException.ThrowIfNull(lector);
@@ -42,7 +50,7 @@ internal sealed class CargasTools
 			var vehiculos = new List<VehiculoDelResumen>();
 			foreach (VehiculoEnLista vehiculo in api.Vehiculos())
 			{
-				CompletitudDelVehiculo completitud = api.Completitud(vehiculo.Placa);
+				CompletitudDelVehiculo completitud = api.Completitud(vehiculo.Placa, ElIdioma);
 				vehiculos.Add(new VehiculoDelResumen
 				{
 					Placa = vehiculo.Placa,
@@ -108,7 +116,7 @@ internal sealed class CargasTools
 			if (!ConocePlaca(api, placa))
 				return new RendimientoDeVehiculo { HayDatos = true, HayVehiculo = false };
 
-			RendimientoDelVehiculo lectura = api.Rendimiento(placa);
+			RendimientoDelVehiculo lectura = api.Rendimiento(placa, ElIdioma);
 			return new RendimientoDeVehiculo
 			{
 				HayDatos = true,
@@ -164,14 +172,14 @@ internal sealed class CargasTools
 			if (!ConocePlaca(api, placa))
 				return new RitmoDeManejo { HayDatos = true, HayVehiculo = false };
 
-			RitmoDelVehiculo ritmo = api.Ritmo(placa);
+			RitmoDelVehiculo ritmo = api.Ritmo(placa, ElIdioma);
 
 			// LAS FILAS SALEN DE LA MISMA CONSULTA QUE MIRA LA PERSONA. No hay una lectura
 			// aparte para la IA: si la Ruta muestra "42 380 km (observado)", eso es lo que
 			// viaja. Van las estimadas tambien, marcadas: ocultarlas haria parecer que el
 			// kilometraje de esa carga no existe, y existe -lo que no hace es contar-.
 			var lecturas = new List<LecturaDelOdometro>();
-			foreach (CargaEnLista carga in api.Cargas(placa))
+			foreach (CargaEnLista carga in api.Cargas(placa, ElIdioma))
 			{
 				if (!carga.TieneKilometraje) continue;
 				lecturas.Add(new LecturaDelOdometro
@@ -219,7 +227,7 @@ internal sealed class CargasTools
 				return new FaltantesDeVehiculo { HayDatos = true, HayVehiculo = false };
 
 			var faltantes = new List<FaltanteDelVehiculo>();
-			foreach (FaltanteEnLista faltante in api.Faltantes(placa))
+			foreach (FaltanteEnLista faltante in api.Faltantes(placa, ElIdioma))
 				faltantes.Add(new FaltanteDelVehiculo
 				{
 					FechaDeLaCarga = faltante.Fecha,
@@ -233,7 +241,7 @@ internal sealed class CargasTools
 				HayDatos = true,
 				HayVehiculo = true,
 				Faltantes = faltantes,
-				Completitud = api.Completitud(placa).Expresada,
+				Completitud = api.Completitud(placa, ElIdioma).Expresada,
 			};
 		});
 	}
@@ -296,7 +304,7 @@ internal sealed class CargasTools
 				return new BoletosDeTombola { HayDatos = true, HayVehiculo = false };
 
 			var sorteos = new List<SorteoDeTombola>();
-			foreach (SorteoEnLista sorteo in api.Sorteos(hoy))
+			foreach (SorteoEnLista sorteo in api.Sorteos(hoy, ElIdioma))
 				sorteos.Add(new SorteoDeTombola
 				{
 					Codigo = sorteo.Codigo,
@@ -310,7 +318,7 @@ internal sealed class CargasTools
 				});
 
 			var porCarga = new List<BoletosDeUnaCarga>();
-			foreach (BoletosDeLaCargaEnLista fila in api.BoletosDeLasCargas(placa))
+			foreach (BoletosDeLaCargaEnLista fila in api.BoletosDeLasCargas(placa, ElIdioma))
 				porCarga.Add(new BoletosDeUnaCarga
 				{
 					Fecha = fila.Fecha,
@@ -429,9 +437,10 @@ public sealed class RendimientoDeVehiculo
 	public bool HayVehiculo { get; init; }
 
 	[JsonPropertyName("veredicto")]
-	[Description("Semantico: mejoro/empeoro/estable/indeterminado, o sin tramo / no "
-		+ "comparable / dato sospechoso / total no cuadra. No lo reinterpretes por el "
-		+ "signo: cambiar la unidad invierte flechas, no juicios.")]
+	[Description("Semantico, y es un CODIGO estable: mejoro, empeoro, estable, "
+		+ "indeterminado, sin-tramo, no-comparable, dato-sospechoso o total-no-cuadra. La "
+		+ "frase para la persona viene en paraLaPersona; esto es la llave. No lo "
+		+ "reinterpretes por el signo: cambiar la unidad invierte flechas, no juicios.")]
 	public string Veredicto { get; init; } = "";
 
 	[JsonPropertyName("paraLaPersona")]
@@ -611,8 +620,9 @@ public sealed class RitmoDeManejo
 	public bool HayVehiculo { get; init; }
 
 	[JsonPropertyName("situacion")]
-	[Description("Una de cuatro: 'medido', 'sin lecturas', 'una sola lectura', 'lecturas "
-		+ "del mismo dia'. Las tres ultimas son ausencias con nombre, no un ritmo de cero.")]
+	[Description("Un CODIGO de cuatro: 'medido', 'sin-lecturas', 'una-sola-lectura', "
+		+ "'lecturas-del-mismo-dia'. Las tres ultimas son ausencias con nombre, no un ritmo "
+		+ "de cero, y la frase que las dice viene en dice.")]
 	public string Situacion { get; init; } = "";
 
 	[JsonPropertyName("sePudoMedir")]

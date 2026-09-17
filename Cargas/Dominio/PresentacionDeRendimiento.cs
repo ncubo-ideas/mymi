@@ -57,9 +57,6 @@ namespace Cargas.Dominio
 			return 100m / kmPorLitro;
 		}
 
-		internal string Formatear(Rendimiento rendimiento) =>
-			$"{Convertir(rendimiento):0.#} {Simbolo}";
-
 		/// <summary>EL CAMBIO TAL COMO SE VE EN ESTA PRESENTACION, y no es el canonico.
 		///
 		/// La inversa no es lineal: 12.6 -> 9.4 km/L es un 25% MENOS, y esos mismos dos

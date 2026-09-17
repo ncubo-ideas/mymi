@@ -40,6 +40,24 @@ namespace Cargas.App
 	{
 		private const string ActorName = "cargas";
 
+		/// <summary>
+		/// EN QUE IDIOMA CONTESTA ESTA SUPERFICIE, y hoy es el del registro de la estacion.
+		/// <para>
+		/// La app suelta se lo pregunta al dispositivo -- <c>navigator.languages</c>, por JSInterop --
+		/// porque ahi la carátula ES el navegador. Aca no hay navegador: esta clase corre en proceso
+		/// adentro de Gnothi, y en la caja de wasm, donde no hay ni <c>navigator</c> ni una carpeta
+		/// que servir. Preguntarselo al dispositivo desde aca ataria el paquete al navegador, que es
+		/// exactamente lo que la forma hibrida existe para no hacer.
+		/// </para>
+		/// <para>
+		/// ASI QUE CAE AL IDIOMA DEL REGISTRO, que es la misma caida que la app suelta ya hace cuando
+		/// no puede leer la eleccion. NO es la respuesta final: el dia que Gnothi le pase al modulo el
+		/// idioma de la persona, este miembro deja de ser una constante y pasa a ser lo que el Host
+		/// dijo. Esa es la unica linea que cambia, y vive aca justamente para que sea una.
+		/// </para>
+		/// </summary>
+		private static string ElIdioma => Frases.Frases.IdiomaDelRegistro;
+
 		private readonly string folder;
 
 		public CargasSurface(string grantedFolder)
@@ -101,11 +119,11 @@ namespace Cargas.App
 				return (object)new
 				{
 					placa,
-					rendimiento = api.Rendimiento(placa),
+					rendimiento = api.Rendimiento(placa, ElIdioma),
 					autonomia = api.Autonomia(placa),
 					proxima = api.ProximaCarga(placa, hoy),
-					tramos = api.Tramos(placa),
-					costos = api.Costos(placa),
+					tramos = api.Tramos(placa, ElIdioma),
+					costos = api.Costos(placa, ElIdioma),
 					odometro = api.Odometro(placa, hoy),
 				};
 			});
@@ -123,8 +141,8 @@ namespace Cargas.App
 			return Read(api => (object)new
 			{
 				placa,
-				faltantes = api.Faltantes(placa),
-				completitud = api.Completitud(placa),
+				faltantes = api.Faltantes(placa, ElIdioma),
+				completitud = api.Completitud(placa, ElIdioma),
 			});
 		}
 
@@ -135,7 +153,7 @@ namespace Cargas.App
 			if (string.IsNullOrWhiteSpace(placa)) throw new ArgumentException("falta la placa", nameof(placa));
 			if (!HasJournal) return NoData();
 
-			return Read(api => (object)new { placa, cargas = api.Cargas(placa) });
+			return Read(api => (object)new { placa, cargas = api.Cargas(placa, ElIdioma) });
 		}
 
 		// ------------------------------------------------------------ lo que el cartero deja

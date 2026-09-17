@@ -3,9 +3,9 @@
 @using System.Globalization
 @using Cargas.App.Vistas
 
-<PageTitle>Cargas · Estaciones Faro</PageTitle>
+<PageTitle>@Texto["ruta.titulo"] · @Textos.NombreDeLaMarca</PageTitle>
 
-<h1 class="solo-para-lectores">Cargas</h1>
+<h1 class="solo-para-lectores">@Texto["ruta.titulo"]</h1>
 
 @* EL ERROR VA DONDE ESTABA LA MANO. Con veintiocho cargas, anotar en la de abajo y que el
    dominio rechace el número mostraba el parte arriba de todo, fuera de pantalla: el mismo
@@ -26,7 +26,7 @@
    baches— y sigue en los nombres del CSS, pero como título le sonaba a GPS y a puntos
    visitados. Lo que hay acá son las cargas, una por parada. *@
 <div class="ruta-cabeza">
-    <span class="rotulo">Tus cargas</span>
+    <span class="rotulo">@Texto["ruta.tusCargas"]</span>
     @if (completitud.TotalDeCargas > 0)
     {
         <span class="apunte">@completitud.Expresada</span>
@@ -53,13 +53,13 @@
 {
     <div class="ruta-acciones">
         <span class="crece">
-            <b>@tanquesEstimados.Count cargas</b> tienen el tanque estimado por cómo cortó el surtidor.
-            Si en todas quedó como dice, confirmalas juntas; si alguna no, entrá a esa carga.
+            @((MarkupString)Texto.Con("ruta.loteExplicacion",
+                ("cuantas", "<b>" + Texto.Con("ruta.nCargas", ("cuantas", Entero(tanquesEstimados.Count))) + "</b>")))
         </span>
         <button class="tecla tecla--contorno" @onclick="ConfirmarTodosLosTanques" disabled="@(confirmando > 0)">
             @(confirmando > 0
-                ? $"Confirmando {confirmando} de {tanquesEstimados.Count}…"
-                : $"Confirmar los {tanquesEstimados.Count} tanques estimados")
+                ? Texto.Con("ruta.confirmandoLote", ("cual", Entero(confirmando)), ("cuantas", Entero(tanquesEstimados.Count)))
+                : Texto.Con("ruta.confirmarLote", ("cuantas", Entero(tanquesEstimados.Count))))
         </button>
     </div>
 }
@@ -70,11 +70,11 @@
        se le pide a la persona que apriete una tecla que ya está en «Actualizando…». *@
     @if (Estado.Refrescando)
     {
-        <p class="apunte">Buscando tus cargas en la estación…</p>
+        <p class="apunte">@Texto["tablero.buscando"]</p>
     }
     else
     {
-        <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+        <p class="apunte">@((MarkupString)Texto.Con("tablero.sinCargas", ("actualizar", "<em>" + Texto["comun.actualizar"] + "</em>")))</p>
     }
 }
 else
@@ -96,10 +96,10 @@ else
                 <div class="eslabon-riel"><span class="parada-punto"></span></div>
                 <div class="eslabon-cuerpo">
                     <div class="parada-cabeza">
-                        <span class="parada-fecha">@parada.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                        <span class="parada-fecha">@parada.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</span>
                         @if (parada.Tanque.Length > 0)
                         {
-                            <span class="parada-tanque">tanque @parada.Tanque</span>
+                            <span class="parada-tanque">@Texto["ruta.tanque"] @parada.Tanque</span>
                         }
                         @* CAMBIAR UN TANQUE YA DICHO. «Confirmar los 28 tanques» confirma
                            veintiocho suposiciones de un golpe, y una que estaba mal no tenía
@@ -111,14 +111,17 @@ else
                         @if (parada.Tanque.Length > 0 && !EsperaConfirmacion(pendientes))
                         {
                             <button type="button" class="parada-cambiar"
-                                    aria-label="@($"Cambiar el tanque de la carga del {parada.Fecha.ToString("dd MMM", Cultura)}: quedó {(parada.Tanque.StartsWith("lleno") ? "lleno" : "parcial")}, pasa a {(parada.Tanque.StartsWith("lleno") ? "parcial" : "lleno")}")"
-                                    @onclick="() => CorregirTanque(parada.Transaccion)">cambiar</button>
+                                    aria-label="@Texto.Con("ruta.cambiarTanqueAria",
+                                        ("fecha", parada.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)),
+                                        ("quedo", Texto.ComoSeDice(parada.ClaveDelTanque)),
+                                        ("pasaA", Texto.ComoSeDice(Contrario(parada.ClaveDelTanque))))"
+                                    @onclick="() => CorregirTanque(parada.Transaccion)">@Texto["ruta.cambiar"]</button>
                         }
                     </div>
 
                     <div class="parada-datos">
-                        <span><span class="n">@parada.Volumen</span> de @parada.Tipo</span>
-                        <span>surtidor @parada.Surtidor</span>
+                        <span><span class="n">@parada.Volumen</span> @Texto["ruta.de"] @parada.Tipo</span>
+                        <span>@Texto["ruta.surtidor"] @parada.Surtidor</span>
                         <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Total)</span>
                         <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Precio)/L</span>
                         @if (parada.TieneKilometraje)
@@ -131,7 +134,7 @@ else
                                con el kilometraje del mismo color que los litros y el precio la
                                pantalla no lo mostraba. El cobre ya significa «lo tuyo» en esta app:
                                es el color de las agujas, los trazos y las teclas. *@
-                            <span class="n aporte" title="@($"Lo anotaste vos ({parada.OrigenDelKilometraje})")">@parada.KilometrajeAnotado</span>
+                            <span class="n aporte" title="@Texto.Con("ruta.loAnotasteVos", ("origen", Texto.ComoSeDice(parada.OrigenDelKilometraje)))">@parada.KilometrajeAnotado</span>
                         }
                     </div>
 
@@ -161,7 +164,7 @@ else
                             <button class="tecla tecla--texto tecla--icono"
                                     @onclick="() => VerLaFoto(parada.Transaccion, parada.Foto)">
                                 <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
-                                ver la foto del odómetro
+                                @Texto["ruta.verLaFoto"]
                             </button>
                         </div>
                     }
@@ -174,7 +177,7 @@ else
                     @if (desbloqueado.Length > 0 && desbloqueadoEn == parada.Transaccion)
                     {
                         @* VERDE Y SIN APAGARSE: es información sobre el carro, no un «ok». *@
-                        <div class="parte parte--listo parada-logro" role="status"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+                        <div class="parte parte--listo parada-logro" role="status"><strong>@Texto["ruta.seDesbloqueo"]</strong> @desbloqueado</div>
                     }
 
                     @* EL ÉXITO DE UN TANQUE, en la parada que lo recibió. Antes confirmar solo
@@ -193,10 +196,10 @@ else
                     @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
                     {
                         <figure class="foto">
-                            <img src="@laFoto" alt="El tablero de tu carro en la carga del @parada.Fecha.ToString("dd MMM yyyy", Cultura)" />
+                            <img src="@laFoto" alt="@Texto.Con("ruta.fotoAria", ("fecha", parada.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)))" />
                             @if (!parada.TieneKilometraje)
                             {
-                                <figcaption>Leé el odómetro acá y anotalo abajo.</figcaption>
+                                <figcaption>@Texto["ruta.leeElOdometro"]</figcaption>
                             }
                         </figure>
                     }
@@ -222,15 +225,15 @@ else
                         @foreach (FaltanteEnLista pendiente in pendientes)
                         {
                             <button type="button" class="falta-plegada" aria-expanded="false"
-                                    @key="@($"plegada-{pendiente.Transaccion}-{pendiente.QueFalta}")"
+                                    @key="@($"plegada-{pendiente.Transaccion}-{pendiente.ClaveDeLoQueFalta}")"
                                     @onclick="() => Desplegar(parada.Transaccion)">
-                                @if (pendiente.QueFalta == "el kilometraje")
+                                @if (pendiente.ClaveDeLoQueFalta == ElKilometraje)
                                 {
-                                    <span>falta el kilometraje</span><span class="accion">anotar</span>
+                                    <span>@Texto["ruta.faltaElKilometraje"]</span><span class="accion">@Texto["ruta.anotar"]</span>
                                 }
                                 else
                                 {
-                                    <span>tanque estimado: @pendiente.LoQueSeSupone</span><span class="accion">confirmar</span>
+                                    <span>@Texto["ruta.tanqueEstimado"] @Texto.ComoSeDice(pendiente.LoQueSeSupone)</span><span class="accion">@Texto["ruta.confirmar"]</span>
                                 }
                             </button>
                         }
@@ -239,8 +242,8 @@ else
                     {
                     foreach (FaltanteEnLista pendiente in pendientes)
                     {
-                        <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}")">
-                            @if (pendiente.QueFalta == "el kilometraje")
+                        <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.ClaveDeLoQueFalta}")">
+                            @if (pendiente.ClaveDeLoQueFalta == ElKilometraje)
                             {
                                 @* VACÍO ES VACÍO, no «0». El campo sin valor mostraba un cero,
                                    y «Agregar» con cero no hacía nada y no decía nada. Ahora el
@@ -250,14 +253,14 @@ else
                                    al salir del campo. *@
                                 <div class="fila">
                                     <input class="campo" type="number" inputmode="numeric" min="1"
-                                           aria-label="@($"Kilometraje de esta carga, en {unidades.Distancia}")"
-                                           placeholder="@($"odómetro en {unidades.Distancia}")"
+                                           aria-label="@Texto.Con("ruta.campoAria", ("unidad", unidades.Distancia))"
+                                           placeholder="@Texto.Con("ruta.campoPlaceholder", ("unidad", unidades.Distancia))"
                                            value="@KilometrajeOVacio(pendiente.Transaccion)"
                                            @oninput="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
                                     <button class="tecla tecla--alerta"
                                             disabled="@(Kilometraje(pendiente.Transaccion) <= 0)"
                                             @onclick="() => AgregarKilometraje(pendiente.Transaccion)">
-                                        Agregar kilometraje
+                                        @Texto["ruta.agregarKilometraje"]
                                     </button>
                                     @* LA FOTO, al lado del campo que llena. Es la otra forma de
                                        traer el número: sacás la foto en la bomba y lo tecleás
@@ -277,7 +280,7 @@ else
                                         <label class="tecla tecla--contorno tecla--icono" tabindex="0" role="button"
                                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.querySelector('input').click(); }">
                                             <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
-                                            Foto del odómetro
+                                            @Texto["ruta.fotoDelOdometro"]
                                             <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
                                                        accept="image/*" style="display:none" />
                                         </label>
@@ -289,8 +292,9 @@ else
                                        meses. *@
                                     @if (propuesta.Hay && pendiente.Transaccion == transaccionConPropuesta)
                                     {
-                                        <span class="apunte crece">¿unos @Entero(propuesta.KilometrosComoSeVen) @propuesta.SimboloDeLaDistancia?
-                                            Es lo que da tu promedio de @Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia por día.</span>
+                                        <span class="apunte crece">@Texto.Con("ruta.sugerencia",
+                                            ("odometro", Entero(propuesta.KilometrosComoSeVen) + " " + propuesta.SimboloDeLaDistancia),
+                                            ("promedio", Cifra(propuesta.PorDiaComoSeVe) + " " + propuesta.SimboloDeLaDistancia))</span>
                                     }
                                 </div>
                                 @* LO QUE DESTRABA, dicho en la carga que lo debe y no en los
@@ -301,11 +305,12 @@ else
                                 @if (tramosQueDestraba.TryGetValue(pendiente.Transaccion, out int destraba) && destraba > 0)
                                 {
                                     <p class="bache-desbloquea">
-                                        Con este kilometraje @(destraba == 1 ? "se calcula 1 tramo" : $"se calculan {destraba} tramos").
+                                        @Texto.Con(destraba == 1 ? "ruta.destrabaUnTramo" : "ruta.destrabaTramos",
+                                            ("cuantos", Entero(destraba)))
                                     </p>
                                 }
                             }
-                            else if (pendiente.QueFalta == "la confirmación del tanque")
+                            else if (pendiente.ClaveDeLoQueFalta == LaConfirmacionDelTanque)
                             {
                                 @* ENUNCIAR, Y DESPUÉS PREGUNTAR. Acá se pedía confirmar una
                                    afirmación que nunca se decía —«necesito la confirmación
@@ -322,17 +327,17 @@ else
                                 @if (pendiente.QueDesbloquea.Length > 0)
                                 {
                                     <p class="bache-desbloquea">
-                                        Si es así, podemos calcular @pendiente.QueDesbloquea.
+                                        @Texto.Con("ruta.siEsAsi", ("desbloqueo", pendiente.QueDesbloquea))
                                     </p>
                                 }
                                 <div class="fila">
                                     <button class="tecla tecla--alerta"
                                             @onclick="() => ConfirmarTanque(pendiente.Transaccion)">
-                                        @(SuponeLleno(pendiente) ? "Sí, quedó lleno" : "Así fue, cargué un monto")
+                                        @Texto[SuponeLleno(pendiente) ? "ruta.siQuedoLleno" : "ruta.asiFueUnMonto"]
                                     </button>
                                     <button class="tecla tecla--contorno"
                                             @onclick="() => CorregirTanque(pendiente.Transaccion)">
-                                        @(SuponeLleno(pendiente) ? "No, cargué solo un poco" : "No, lo llené")
+                                        @Texto[SuponeLleno(pendiente) ? "ruta.noSoloUnPoco" : "ruta.noLoLlene"]
                                     </button>
                                 </div>
                             }
@@ -365,10 +370,10 @@ else
                                 <span class="trecho-rinde">@Cifra(tramo.RendimientoComoSeVe)<span class="unidad">@tramo.SimboloDelRendimiento</span></span>
                                 <span class="trecho-dato">@Entero(tramo.KilometrosComoSeVen) @tramo.SimboloDeLaDistancia</span>
                                 <span class="trecho-dato">@Cifra(tramo.Litros) L</span>
-                                <span>desde el @tramo.Desde.ToString("dd MMM", Cultura)</span>
+                                <span>@Texto.Con("ruta.desdeEl", ("fecha", tramo.Desde.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)))</span>
                                 @if (tramo.EsSospechoso)
                                 {
-                                    <span class="sello sello--dudoso">dato sospechoso</span>
+                                    <span class="sello sello--dudoso">@Texto.ComoSeDice("dato-sospechoso")</span>
                                 }
                             </div>
 
@@ -378,7 +383,9 @@ else
                                    un promedio nacional: un trecho solo no significa
                                    nada, significa contra su propia línea base. *@
                                 <div class="trecho-barra" role="img"
-                                     aria-label="@Cifra(tramo.RendimientoComoSeVe) @tramo.SimboloDelRendimiento contra tu nivel de siempre de @Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo">
+                                     aria-label="@Texto.Con("ruta.barraAria",
+                                         ("rinde", Cifra(tramo.RendimientoComoSeVe) + " " + tramo.SimboloDelRendimiento),
+                                         ("habitual", Cifra(rendimiento.HabitualComoSeVe) + " " + rendimiento.Simbolo))">
                                     <span class="relleno" style="width:@Ancho(tramo.Rendimiento)%"></span>
                                     <span class="muesca" style="left:60%"></span>
                                 </div>
@@ -389,7 +396,7 @@ else
                                 @* El motivo viene del dominio como frase nominal —«otro
                                    surtidor»— y pelado no se entiende qué hace ahí. El marco
                                    lo pone la carátula; el literal no se toca. *@
-                                <p class="cifra-pie">No se compara con tu nivel de siempre: @tramo.MotivoDeReserva.</p>
+                                <p class="cifra-pie">@Texto.Con("ruta.noSeCompara", ("motivo", tramo.MotivoDeReserva))</p>
                             }
                         </div>
                     </li>
@@ -405,7 +412,7 @@ else
                     <li class="eslabon bache" @key="@($"bache-{tramo.Desde:O}")">
                         <div class="eslabon-riel"></div>
                         <div class="eslabon-cuerpo">
-                            <p class="bache-linea">sin calcular &middot; @EsperaDelBache(tramo)</p>
+                            <p class="bache-linea">@Texto["ruta.sinCalcular"] &middot; @EsperaDelBache(tramo)</p>
                         </div>
                     </li>
                 }
@@ -415,6 +422,11 @@ else
 }
 
 @code {
+    // LOS DOS CODIGOS CON QUE ESTA PANTALLA DECIDE que formulario dibujar. Son identidad y no
+    // prosa: decidir sobre la frase dejaria de decidir en cuanto la frase cambie de idioma.
+    private const string ElKilometraje = "kilometraje";
+    private const string LaConfirmacionDelTanque = "confirmacion-del-tanque";
+
     private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
     private IReadOnlyList<CargaEnLista> cargas = new List<CargaEnLista>();
     private IReadOnlyList<TramoEnLista> tramos = new List<TramoEnLista>();
@@ -502,7 +514,7 @@ else
             string base64 = await Estado.LeerFoto(nombreDeArchivo);
             if (base64.Length == 0)
                 throw new InvalidOperationException(
-                    $"No se pudo leer «{nombreDeArchivo}» de tu carpeta. ¿Sigue ahí?");
+                    Texto.Con("ruta.fotoIlegible", ("archivo", nombreDeArchivo)));
 
             fotoPorCarga[transaccion] = $"data:{TipoDeImagen(nombreDeArchivo)};base64,{base64}";
         });
@@ -557,11 +569,18 @@ else
     private string EsperaDelBache(TramoEnLista tramo)
     {
         if (!fechasQueEsperaElBache.TryGetValue(tramo.Desde, out List<DateTime>? fechas) || fechas.Count == 0)
-            return "espera un kilometraje";
+            return Texto["ruta.esperaUnKilometraje"];
         if (fechas.Count == 1)
-            return $"espera el kilometraje del {fechas[0].ToString("dd MMM", Cultura)}";
-        return $"espera los kilometrajes del {fechas[0].ToString("dd MMM", Cultura)} y del {fechas[1].ToString("dd MMM", Cultura)}";
+            return Texto.Con("ruta.esperaElKilometrajeDel",
+                ("fecha", fechas[0].ToString(Texto["comun.formatoDeDiaYMes"], Cultura)));
+        return Texto.Con("ruta.esperaLosKilometrajesDel",
+            ("una", fechas[0].ToString(Texto["comun.formatoDeDiaYMes"], Cultura)),
+            ("otra", fechas[1].ToString(Texto["comun.formatoDeDiaYMes"], Cultura)));
     }
+
+    /// <summary>El otro estado del tanque, para la tecla que corrige lo que se supuso.</summary>
+    private static string Contrario(string claveDelTanque) =>
+        claveDelTanque == "lleno" ? "parcial" : "lleno";
 
     private static readonly List<FaltanteEnLista> SinPendientes = new();
 
@@ -575,7 +594,7 @@ else
     private static bool EsperaConfirmacion(List<FaltanteEnLista> pendientes)
     {
         foreach (FaltanteEnLista pendiente in pendientes)
-            if (pendiente.QueFalta == "la confirmación del tanque") return true;
+            if (pendiente.ClaveDeLoQueFalta == LaConfirmacionDelTanque) return true;
         return false;
     }
 
@@ -626,10 +645,7 @@ else
         // normalizar. Mandar km sobre una lectura en millas la mete 1.6 veces mas grande.
         string rechazo = await Estado.AnotarOdometro(transaccion, kilometraje,
             unidades.Distancia, origen);
-        if (rechazo.Length > 0)
-            throw new InvalidOperationException(
-                "La app no anotó ese kilometraje: no es coherente con la serie (el "
-                + "odómetro solo crece). Revisá el número.");
+        if (rechazo.Length > 0) throw new InvalidOperationException(Texto["ruta.kilometrajeRechazado"]);
 
         Enfocar(transaccion);
 
@@ -641,17 +657,20 @@ else
             if (tramo.EstaCalculado && !calculadosAntes.Contains(tramo.Desde)) nuevos.Add(tramo);
 
         if (nuevos.Count == 1)
-            desbloqueado = $"el rendimiento de ese tramo: {Cifra(nuevos[0].RendimientoComoSeVe)} {nuevos[0].SimboloDelRendimiento}.";
+            desbloqueado = Texto.Con("ruta.desbloqueoUnTramo",
+                ("rinde", Cifra(nuevos[0].RendimientoComoSeVe) + " " + nuevos[0].SimboloDelRendimiento));
         else if (nuevos.Count > 1)
         {
             var cifras = new List<string>();
             foreach (TramoEnLista tramo in nuevos)
                 cifras.Add($"{Cifra(tramo.RendimientoComoSeVe)} {tramo.SimboloDelRendimiento}");
-            desbloqueado = $"el rendimiento de los {nuevos.Count} tramos que tocan esta carga: "
-                + string.Join(" y ", cifras) + ".";
+            desbloqueado = Texto.Con("ruta.desbloqueoVariosTramos",
+                ("cuantos", Entero(nuevos.Count)),
+                ("rinden", string.Join(Texto["comun.y"], cifras)));
         }
         if (desbloqueado.Length > 0 && autonomia.Hay)
-            desbloqueado += $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km.";
+            desbloqueado += " " + Texto.Con("ruta.desbloqueoAutonomia",
+                ("autonomia", Entero(autonomia.Kilometros) + " km"));
     });
 
     // Las cargas que esperan el visto bueno del tanque, en el orden de los faltantes.
@@ -685,14 +704,15 @@ else
         }
 
         if (rechazos.Count > 0)
-            throw new InvalidOperationException(
-                $"Se confirmaron {porConfirmar.Count - rechazos.Count} de {porConfirmar.Count}. "
-                + "No entraron: " + string.Join("; ", rechazos));
+            throw new InvalidOperationException(Texto.Con("ruta.loteConRechazos",
+                ("entraron", Entero(porConfirmar.Count - rechazos.Count)),
+                ("total", Entero(porConfirmar.Count)),
+                ("rechazos", string.Join("; ", rechazos))));
 
         listoEn = "";
         MostrarListo(porConfirmar.Count == 1
-            ? "Listo: el tanque quedó confirmado."
-            : $"Listo: {porConfirmar.Count} tanques confirmados.");
+            ? Texto["ruta.listoUnTanque"]
+            : Texto.Con("ruta.listoVariosTanques", ("cuantos", Entero(porConfirmar.Count))));
     });
 
     // EN QUÉ PARADA se dibuja el éxito: la transacción, o "" para el de arriba (el lote).
@@ -703,8 +723,7 @@ else
     private string QueQuedo(string transaccion)
     {
         foreach (CargaEnLista carga in cargas)
-            if (carga.Transaccion == transaccion)
-                return carga.Tanque.StartsWith("lleno") ? "lleno" : "parcial";
+            if (carga.Transaccion == transaccion) return carga.ClaveDelTanque;
         return "";
     }
 
@@ -717,7 +736,9 @@ else
         listoEn = transaccion;
         Enfocar(transaccion);
         string quedo = QueQuedo(transaccion);
-        MostrarListo(quedo.Length > 0 ? $"Confirmado: tanque {quedo}." : "Confirmado.");
+        MostrarListo(quedo.Length > 0
+            ? Texto.Con("ruta.confirmadoTanque", ("tanque", Texto.ComoSeDice(quedo)))
+            : Texto["ruta.confirmado"]);
     });
 
     // "Era al reves": lo que la inferencia propuso no era. Se declara lo contrario, con la
@@ -730,13 +751,13 @@ else
             if (candidata.Transaccion == transaccion) { carga = candidata; break; }
         if (carga is null) return;
 
-        string contrario = carga.Tanque.StartsWith("lleno") ? "parcial" : "lleno";
+        string contrario = Contrario(carga.ClaveDelTanque);
         string rechazo = await Estado.DeclararTanque(transaccion, contrario);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
         listoEn = transaccion;
         Enfocar(transaccion);
-        MostrarListo($"Anotado: tanque {contrario}.");
+        MostrarListo(Texto.Con("ruta.anotadoTanque", ("tanque", Texto.ComoSeDice(contrario))));
     });
 
     // La foto entra entera a memoria antes de ir a la carpeta: una foto de tablero ronda
@@ -748,7 +769,7 @@ else
             const long topeDeBytes = 15 * 1024 * 1024;
             IBrowserFile archivo = e.File;
             if (archivo.Size > topeDeBytes)
-                throw new InvalidOperationException("La foto pesa más de 15 MB: elegí otra.");
+                throw new InvalidOperationException(Texto["ruta.fotoMuyGrande"]);
 
             using var memoria = new MemoryStream();
             await archivo.OpenReadStream(topeDeBytes).CopyToAsync(memoria);
@@ -835,7 +856,7 @@ else
 
         tanquesEstimados = new List<string>();
         foreach (FaltanteEnLista faltante in faltantes)
-            if (faltante.QueFalta == "la confirmación del tanque")
+            if (faltante.ClaveDeLoQueFalta == LaConfirmacionDelTanque)
                 tanquesEstimados.Add(faltante.Transaccion);
 
         // El "hoy" del prellenado lo pone ESTA caratula: el dominio no lee el reloj.
@@ -855,7 +876,7 @@ else
                 if (carga.Fecha > ultimaFecha) ultimaFecha = carga.Fecha;
 
             foreach (FaltanteEnLista faltante in faltantes)
-                if (faltante.QueFalta == "el kilometraje" && faltante.Fecha == ultimaFecha)
+                if (faltante.ClaveDeLoQueFalta == ElKilometraje && faltante.Fecha == ultimaFecha)
                 {
                     transaccionConPropuesta = faltante.Transaccion;
                     if (!kilometrajePorAnotar.ContainsKey(faltante.Transaccion))
@@ -870,7 +891,7 @@ else
         desplegadaPorDefecto = "";
         DateTime masReciente = DateTime.MinValue;
         foreach (FaltanteEnLista faltante in faltantes)
-            if (faltante.QueFalta == "el kilometraje" && faltante.Fecha > masReciente)
+            if (faltante.ClaveDeLoQueFalta == ElKilometraje && faltante.Fecha > masReciente)
             {
                 masReciente = faltante.Fecha;
                 desplegadaPorDefecto = faltante.Transaccion;

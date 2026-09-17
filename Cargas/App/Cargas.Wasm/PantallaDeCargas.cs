@@ -21,6 +21,10 @@ public abstract class PantallaDeCargas : ComponentBase, IDisposable
 {
 	[Inject] protected EstadoDeLaApp Estado { get; set; } = default!;
 
+	/// <summary>LO QUE LA PANTALLA DICE CON SUS PROPIAS PALABRAS, en el idioma de la persona. Las
+	/// frases que compone el dominio NO pasan por aqui: esas las trae la puerta ya dichas.</summary>
+	[Inject] protected Textos Texto { get; set; } = default!;
+
 	/// <summary>EL FALLO DE LA ULTIMA ACCION, con su cara humana y su detalle (ver Fallo).
 	/// Cada pantalla lo dibuja con Problema.razor, y decide DONDE: arriba de todo por
 	/// defecto, o al lado de lo que se tocó cuando la pantalla es larga (ver Ruta).</summary>

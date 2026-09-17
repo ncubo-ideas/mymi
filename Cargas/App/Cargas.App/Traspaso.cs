@@ -43,6 +43,14 @@ namespace Cargas.App
 		public const int Version = 1;
 		public const string Modulo = "cargas";
 
+		/// <summary>
+		/// EN QUE IDIOMA LE PIDE ESTE TRASPASO LA LISTA DE CARGAS, y da igual cual sea: el sobre
+		/// lleva PIEZAS -- el numero, su unidad, su procedencia -- y ninguna frase redactada. Al
+		/// journal no le entra texto renderizado: si una frase ya dicha se persistiera, cambiar el
+		/// idioma reescribiria la historia. Se nombra el del registro para no fingir una eleccion.
+		/// </summary>
+		private const string ElIdiomaDeLasPiezas = Frases.Frases.IdiomaDelRegistro;
+
 		// ------------------------------------------------------------------ resumir
 
 		/// <summary>Cuanto hay para pasar, dicho en piezas para que la pantalla lo enuncie
@@ -55,7 +63,7 @@ namespace Cargas.App
 			foreach (VehiculoEnLista vehiculo in api.Vehiculos())
 			{
 				if (vehiculo.TieneFicha) resumen.Fichas++;
-				foreach (CargaEnLista carga in api.Cargas(vehiculo.Placa))
+				foreach (CargaEnLista carga in api.Cargas(vehiculo.Placa, ElIdiomaDeLasPiezas))
 				{
 					if (carga.TieneKilometraje) resumen.Kilometrajes++;
 					if (carga.TanqueDeclarado) resumen.Tanques++;
@@ -94,7 +102,7 @@ namespace Cargas.App
 						},
 					});
 
-				foreach (CargaEnLista carga in api.Cargas(vehiculo.Placa))
+				foreach (CargaEnLista carga in api.Cargas(vehiculo.Placa, ElIdiomaDeLasPiezas))
 				{
 					if (!carga.TieneKilometraje && !carga.TanqueDeclarado) continue;
 
@@ -275,7 +283,7 @@ namespace Cargas.App
 					if (!porPlaca.TryGetValue(placa, out Dictionary<string, CargaEnLista> deLaPlaca))
 					{
 						deLaPlaca = new Dictionary<string, CargaEnLista>(StringComparer.Ordinal);
-						foreach (CargaEnLista c in api.Cargas(placa)) deLaPlaca[c.Transaccion] = c;
+						foreach (CargaEnLista c in api.Cargas(placa, ElIdiomaDeLasPiezas)) deLaPlaca[c.Transaccion] = c;
 						porPlaca[placa] = deLaPlaca;
 					}
 					deLaPlaca.TryGetValue(transaccion, out actual);

@@ -28,9 +28,6 @@ namespace Cargas.Dominio
 		/// cuenta. Total: la ausencia y el estimado dan false sin reventar.</summary>
 		internal abstract bool CierraTramo { get; }
 
-		/// <summary>"42 380 km (observado)", o vacio si no hay lectura.</summary>
-		internal abstract string Expresada { get; }
-
 		private sealed class SinLectura : LecturaDeOdometro
 		{
 			internal override bool Existe => false;
@@ -45,8 +42,6 @@ namespace Cargas.Dominio
 					"Una lectura que no existe no tiene origen: consultar antes Existe.");
 
 			internal override bool CierraTramo => false;
-
-			internal override string Expresada => "";
 		}
 
 		private sealed class LecturaTomada : LecturaDeOdometro
@@ -67,7 +62,6 @@ namespace Cargas.Dominio
 			internal override Distancia Kilometraje => kilometraje;
 			internal override OrigenDeLectura Origen => origen;
 			internal override bool CierraTramo => origen.CuentaParaCalcular;
-			internal override string Expresada => $"{kilometraje.Expresada} ({origen.Nombre})";
 		}
 	}
 }

@@ -92,27 +92,17 @@ namespace Cargas.Dominio
 		internal decimal KilometrosComoSeVen => mirada.DistanciaComoSeVe(Kilometros);
 		internal string SimboloDeLaDistancia => mirada.SimboloDeLaDistancia;
 
-		/// <summary>LA RESPUESTA, compuesta por el dominio. Es lo que hay que decir; no se
-		/// rearma dividiendo Kilometros entre Dias, que daria un ritmo que nadie midio
-		/// -y con otro redondeo-.</summary>
-		internal string Expresada
-		{
-			get
-			{
-				if (!SePudoMedir)
-					return Situacion.Porque;
-
-				// NO HAY RAMA PARA "EL CARRO NO SE MOVIO", y no es un olvido: el odometro
-				// del vehiculo es ESTRICTAMENTE creciente -EsKilometrajeCoherente rechaza
-				// con >= y <=-, asi que dos lecturas distintas no pueden marcar lo mismo y
-				// un ritmo medido siempre es mayor que cero. Escribir esa rama seria
-				// inventar un caso que el dominio no deja construir.
-				string unidad = SimboloDeLaDistancia;
-				return $"{Cifras.Aproximada(PorDiaComoSeVe)} {unidad} por dia: "
-				     + $"{Cifras.Entera(KilometrosComoSeVen)} {unidad} entre el "
-				     + $"{Desde:dd/MM/yyyy} y el {Hasta:dd/MM/yyyy}, sobre {Lecturas} "
-				     + $"kilometrajes que anotaste vos";
-			}
-		}
+		/// <summary>
+		/// LA CLAVE DE LA RESPUESTA. Cuando se midio es una sola frase y la arman estos mismos
+		/// valores; cuando no, la clave es la de la situacion, que ya dice cual de las tres
+		/// causas es. Quien redacta no divide Kilometros entre Dias: eso daria un ritmo que
+		/// nadie midio, y con otro redondeo.
+		/// <para>
+		/// NO HAY CLAVE PARA "EL CARRO NO SE MOVIO", y no es un olvido: el odometro del
+		/// vehiculo es ESTRICTAMENTE creciente, asi que dos lecturas distintas no pueden marcar
+		/// lo mismo y un ritmo medido siempre es mayor que cero.
+		/// </para>
+		/// </summary>
+		internal string ClaveDeLaRespuesta => Situacion.Nombre;
 	}
 }

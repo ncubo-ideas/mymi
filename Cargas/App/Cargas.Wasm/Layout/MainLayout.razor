@@ -2,6 +2,7 @@
 @using Cargas.App.Vistas
 @using Puppets.Portador
 @inject EstadoDeLaApp estado
+@inject Textos texto
 @implements IDisposable
 
 @* LA CASCARA DE LA APP: el capo, las pestañas y todo lo que habla de la APP y no del carro.
@@ -35,8 +36,8 @@
                 <path d="M26 8 l6 -2.5 M26 11 l7 0" />
             </svg>
             <div>
-                <div class="marca-nombre">Estaciones Faro</div>
-                <div class="marca-claim">Tu camino, claro</div>
+                <div class="marca-nombre">@Textos.NombreDeLaMarca</div>
+                <div class="marca-claim">@Textos.ClaimDeLaMarca</div>
             </div>
         </div>
 
@@ -60,7 +61,7 @@
         else if (estado.EstaArriba && vehiculos.Count > 1)
         {
             <select class="placa placa--selector" value="@enFoco"
-                    aria-label="Elegí de qué carro es el tablero"
+                    aria-label="@texto["comun.elegiCarro"]"
                     @onchange="CambiarDeCarro">
                 @foreach (VehiculoEnLista vehiculo in vehiculos)
                 {
@@ -94,7 +95,7 @@
                         <path d="M3.6 14.4a6.4 6.4 0 0 1 12.8 0" />
                         <path d="M10 14.4 13.4 10.8" />
                     </svg>
-                    Tablero
+                    @texto["tablero.titulo"]
                 </NavLink>
 
                 <NavLink class="pestana" href="cargas">
@@ -105,11 +106,11 @@
                         <path d="M5.8 6h3.8v3.2H5.8z" />
                         <path d="M11.8 8.2h1.6a1.4 1.4 0 0 1 1.4 1.4v4.2a1.1 1.1 0 0 0 2.2 0V8.6l-1.8-1.8" />
                     </svg>
-                    Cargas
+                    @texto["ruta.titulo"]
                     @if (pendientes > 0)
                     {
                         <span class="pestana-badge"
-                              aria-label="@pendientes datos esperando que los completes">@pendientes</span>
+                              aria-label="@texto.Con("comun.pendientesAria", ("cuantos", pendientes.ToString()))">@pendientes</span>
                     }
                 </NavLink>
 
@@ -120,7 +121,7 @@
                         <rect x="2.8" y="5.6" width="14.4" height="8.8" rx="1.6" />
                         <path d="M12.4 5.6v8.8" stroke-dasharray="1.6 1.5" />
                     </svg>
-                    Lealtad
+                    @texto["lealtad.titulo"]
                 </NavLink>
 
                 <NavLink class="pestana" href="mi-carro">
@@ -132,7 +133,7 @@
                         <circle cx="6.6" cy="13.4" r="1.4" />
                         <circle cx="13.4" cy="13.4" r="1.4" />
                     </svg>
-                    Mi carro
+                    @texto["miCarro.titulo"]
                 </NavLink>
             </div>
         </nav>
@@ -144,7 +145,8 @@
            explicación se lee como que la app se rompió. El aviso de más abajo dice por qué. *@
         <button class="tecla tecla--releer" @onclick="Refrescar"
                 disabled="@(estado.Refrescando || estado.Migrada)">
-            @(estado.Migrada ? "Ya no se actualiza" : estado.Refrescando ? "Actualizando…" : "Actualizar")
+            @(estado.Migrada ? texto["comun.yaNoSeActualiza"]
+                : estado.Refrescando ? texto["comun.actualizando"] : texto["comun.actualizar"])
         </button>
         }
     </div>
@@ -173,16 +175,16 @@
         {
             <div class="parte parte--neutro">
                 <p>
-                    Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El browser pide
-                    confirmar el permiso de escritura cada vez que volvés a abrir la app.
+                    @((MarkupString)texto.Con("arranque.permisoCaduco",
+                        ("carpeta", "<strong>&laquo;" + estado.NombreDeLaCarpeta + "&raquo;</strong>")))
                 </p>
                 <div class="fila">
                     <button class="tecla tecla--alerta" @onclick="PedirPermiso">
-                        Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
+                        @texto.Con("arranque.darPermiso", ("carpeta", "«" + estado.NombreDeLaCarpeta + "»"))
                     </button>
                     <button class="tecla tecla--contorno" @onclick="ConectarCarpeta"
                             disabled="@(soportado == false)">
-                        Elegir otra carpeta
+                        @texto["arranque.elegirOtraCarpeta"]
                     </button>
                 </div>
             </div>
@@ -202,24 +204,16 @@
 
                LO QUE NO CAMBIA: cada modo sigue diciendo lo que NO da. Eso no es adorno. *@
             <div class="arranque">
-                <p class="arranque-promesa">Esta app guarda <strong>tus</strong> cargas. Elegí dónde.</p>
+                <p class="arranque-promesa">@((MarkupString)texto["arranque.promesa"])</p>
 
                 @if (sinAlmacenamiento == "inseguro")
                 {
-                    <p class="parte parte--atencion">
-                        <strong>Esta página no está en una conexión segura</strong>, y por eso el
-                        navegador no le deja guardar nada — en cualquier navegador pasaría lo mismo.
-                        Entrá por <strong>https</strong> y las opciones de guardado aparecen.
-                    </p>
+                    <p class="parte parte--atencion">@((MarkupString)texto["arranque.sinHttps"])</p>
                 }
                 else if (sinAlmacenamiento == "navegador")
                 {
-                    <p class="parte parte--atencion">
-                        <strong>@(instalada ? "Acá no se puede guardar la bitácora." : "Este navegador no puede guardar la bitácora.")</strong>
-                        Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que
-                        quede guardado, @(instalada ? "instalala" : "abrila") desde
-                        <strong>Chrome</strong> o <strong>Edge</strong>.
-                    </p>
+                    <p class="parte parte--atencion">@((MarkupString)texto[instalada
+                        ? "arranque.sinAlmacenamientoInstalada" : "arranque.sinAlmacenamiento"])</p>
                 }
 
                 @* LA ÚNICA ACCIÓN PRIMARIA, y cuál es depende de qué se puede: si la carpeta
@@ -227,45 +221,40 @@
                    puede empujar hacia una puerta cerrada. *@
                 @if (soportado == true)
                 {
-                    <button class="tecla tecla--grande" @onclick="ConectarCarpeta">Elegir una carpeta tuya</button>
-                    <p class="arranque-porque">
-                        La bitácora queda en tu disco, donde vos la pusiste.
-                        <b>Es el único modo en el que tu asistente la puede leer.</b>
-                    </p>
+                    <button class="tecla tecla--grande" @onclick="ConectarCarpeta">@texto["arranque.elegirCarpeta"]</button>
+                    <p class="arranque-porque">@((MarkupString)texto["arranque.porqueCarpeta"])</p>
                 }
                 else if (opfs == true)
                 {
                     <button class="tecla tecla--grande" @onclick="UsarNavegador">
-                        Guardar @(instalada ? "dentro de la app" : "en este navegador")
+                        @texto[instalada ? "arranque.guardarEnLaApp" : "arranque.guardarEnElNavegador"]
                     </button>
-                    <p class="arranque-porque">
-                        Sobrevive al cerrar, pero <b>tu asistente no la va a poder leer</b>: para eso
-                        hace falta una carpeta tuya, y @(instalada ? "acá" : "este navegador") no las permite.
-                    </p>
+                    <p class="arranque-porque">@((MarkupString)texto[instalada
+                        ? "arranque.porqueLaApp" : "arranque.porqueElNavegador"])</p>
                 }
 
                 @* LA COMPARACIÓN. Tres filas, y la de abajo es la que decide. *@
                 <table class="comparacion">
                     <thead>
                         <tr>
-                            <th scope="col"><span class="solo-para-lectores">Qué da cada modo</span></th>
-                            <th scope="col">Una carpeta tuya</th>
-                            <th scope="col">@(instalada ? "Dentro de la app" : "Este navegador")</th>
-                            <th scope="col">Sin guardar</th>
+                            <th scope="col"><span class="solo-para-lectores">@texto["arranque.queDaCadaModo"]</span></th>
+                            <th scope="col">@texto["arranque.unaCarpetaTuya"]</th>
+                            <th scope="col">@texto[instalada ? "arranque.dentroDeLaApp" : "arranque.esteNavegador"]</th>
+                            <th scope="col">@texto["arranque.sinGuardar"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th scope="row">Sobrevive al cerrar</th>
-                            <td class="si">sí</td><td class="si">sí</td><td class="no">no</td>
+                            <th scope="row">@texto["arranque.sobreviveAlCerrar"]</th>
+                            <td class="si">@texto["comun.si"]</td><td class="si">@texto["comun.si"]</td><td class="no">@texto["comun.no"]</td>
                         </tr>
                         <tr>
-                            <th scope="row">Es una carpeta tuya</th>
-                            <td class="si">sí</td><td class="no">no</td><td class="no">no</td>
+                            <th scope="row">@texto["arranque.esUnaCarpetaTuya"]</th>
+                            <td class="si">@texto["comun.si"]</td><td class="no">@texto["comun.no"]</td><td class="no">@texto["comun.no"]</td>
                         </tr>
                         <tr>
-                            <th scope="row">Tu asistente la puede leer</th>
-                            <td class="si">sí</td><td class="no">no</td><td class="no">no</td>
+                            <th scope="row">@texto["arranque.tuAsistenteLaPuedeLeer"]</th>
+                            <td class="si">@texto["comun.si"]</td><td class="no">@texto["comun.no"]</td><td class="no">@texto["comun.no"]</td>
                         </tr>
                     </tbody>
                 </table>
@@ -273,11 +262,9 @@
                 @if (soportado != true)
                 {
                     <p class="arranque-nota">
-                        @(sinAlmacenamiento == "inseguro"
-                            ? "La carpeta necesita una conexión segura (https), así que acá no está disponible."
-                            : instalada
-                                ? "La carpeta acá no está disponible. Para usarla, instalá la app desde Chrome o Edge."
-                                : "Este navegador no permite elegir una carpeta. Para usarla, abrí la app en Chrome o Edge.")
+                        @texto[sinAlmacenamiento == "inseguro"
+                            ? "arranque.notaSinHttps"
+                            : instalada ? "arranque.notaInstalada" : "arranque.notaNavegador"]
                     </p>
                 }
 
@@ -289,31 +276,28 @@
                    tecla a la vista: todo lo que se podía hacer estaba plegado acá. Cuando
                    estas son las únicas puertas, van abiertas y con su nombre. *@
                 <details class="otras" open="@sinRecomendada">
-                    <summary>@(sinRecomendada ? "Cómo empezar acá" : "Otras formas de empezar")</summary>
+                    <summary>@texto[sinRecomendada ? "arranque.comoEmpezarAca" : "arranque.otrasFormas"]</summary>
 
                     @if (soportado == true && opfs == true)
                     {
                         <div class="otra">
                             <button class="tecla tecla--contorno" @onclick="UsarNavegador">
-                                Guardar @(instalada ? "dentro de la app" : "en este navegador")
+                                @texto[instalada ? "arranque.guardarEnLaApp" : "arranque.guardarEnElNavegador"]
                             </button>
-                            <p>Se guarda igual y sobrevive al cerrar, pero
-                               @(instalada ? "queda dentro de la app" : "lo administra el navegador"):
-                               <b>no es una carpeta tuya y tu asistente no lo puede leer.</b></p>
+                            <p>@((MarkupString)texto[instalada
+                               ? "arranque.otraLaApp" : "arranque.otraElNavegador"])</p>
                         </div>
                     }
 
                     <div class="otra">
-                        <button class="tecla tecla--contorno" @onclick="Importar">Importar una bitácora</button>
-                        <p>Traé una que exportaste antes, desde esta u otra computadora.
-                           Funciona en cualquier navegador.</p>
+                        <button class="tecla tecla--contorno" @onclick="Importar">@texto["arranque.importar"]</button>
+                        <p>@texto["arranque.porqueImportar"]</p>
                     </div>
 
                     <div class="otra">
                         <button class="@(sinRecomendada ? "tecla tecla--contorno" : "tecla tecla--texto")"
-                                @onclick="Arrancar">Abrir sin guardar nada</button>
-                        <p>Para mirar nomás. Lo que la estación publicó se vuelve a pedir al abrir,
-                           pero <b>tus kilometrajes y confirmaciones se pierden</b>.</p>
+                                @onclick="Arrancar">@texto["arranque.sinGuardarNada"]</button>
+                        <p>@((MarkupString)texto["arranque.porqueSinGuardar"])</p>
                     </div>
                 </details>
             </div>
@@ -333,19 +317,14 @@
         @if (!estado.Hospedada && !estado.HayCarpeta)
         {
             <div class="parte parte--atencion fila">
-                <div class="crece">
-                    <strong>No se está guardando nada.</strong>
-                    Esta app está funcionando sin destino: lo que la estación publicó se vuelve a
-                    pedir al abrir, pero <strong>tus kilometrajes y confirmaciones se pierden</strong>
-                    — esos no los sabe nadie más que vos.
-                </div>
+                <div class="crece">@((MarkupString)texto["aviso.sinGuardar"])</div>
                 @if (soportado == true)
                 {
-                    <button class="tecla tecla--alerta" @onclick="ConectarCarpeta">Elegir carpeta</button>
+                    <button class="tecla tecla--alerta" @onclick="ConectarCarpeta">@texto["arranque.elegirCarpetaCorto"]</button>
                 }
                 else if (opfs == true)
                 {
-                    <button class="tecla tecla--alerta" @onclick="UsarNavegador">Guardar en este navegador</button>
+                    <button class="tecla tecla--alerta" @onclick="UsarNavegador">@texto["arranque.guardarEnElNavegador"]</button>
                 }
             </div>
         }
@@ -353,12 +332,11 @@
         {
             <div class="parte parte--problema fila">
                 <div class="crece">
-                    <strong>La carpeta rechazó la escritura.</strong>
-                    Lo que ves en pantalla no está guardado en &laquo;@estado.NombreDeLaCarpeta&raquo;.
-                    Suele ser el permiso, que caduca al reabrir.
+                    @((MarkupString)texto.Con("aviso.carpetaRechazo",
+                        ("carpeta", "&laquo;" + estado.NombreDeLaCarpeta + "&raquo;")))
                     <div class="apunte mono">@estado.GuardadoFallando</div>
                 </div>
-                <button class="tecla tecla--problema" @onclick="PedirPermiso">Volver a dar permiso</button>
+                <button class="tecla tecla--problema" @onclick="PedirPermiso">@texto["arranque.volverADarPermiso"]</button>
             </div>
         }
         else if (estado.ProblemaAlPonerseAlDia.Length > 0)
@@ -368,15 +346,14 @@
                en ninguna parte, y una estación caída se leía igual que una sin novedades. *@
             <div class="parte parte--atencion fila">
                 <div class="crece">
-                    <strong>No se pudo poner al día con la estación.</strong>
-                    Lo que ya estaba registrado se muestra igual.
+                    @((MarkupString)texto["aviso.noSePudoPonerAlDia"])
                     <div class="apunte mono">@estado.ProblemaAlPonerseAlDia</div>
                 </div>
                 @* También la apaga migrada: este cartel puede quedar de un refresh fallido de
                    ANTES de la migración, y ofrecer un reintento que no va a hacer nada. *@
                 <button class="tecla tecla--contorno" @onclick="Refrescar"
                         disabled="@(estado.Refrescando || estado.Migrada)">
-                    Volver a intentar
+                    @texto["comun.volverAIntentar"]
                 </button>
             </div>
         }
@@ -398,12 +375,8 @@
         @if (estado.Migrada)
         {
             <div class="parte parte--atencion fila">
-                <div class="crece">
-                    <strong>Tus cargas nuevas ahora entran por @estado.DondeVive, en este
-                    mismo teléfono.</strong>
-                    Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
-                    hacer es buscar novedades.
-                </div>
+                <div class="crece">@((MarkupString)texto.Con("aviso.migrada",
+                    ("host", estado.DondeVive)))</div>
             </div>
         }
 
@@ -542,11 +515,12 @@
     // instante antes de saber si habia algo recordado.
     private string TextoDeAbriendo() => abriendo switch
     {
-        "opfs"    => "Abriendo tu bitácora guardada en este navegador…",
+        "opfs"    => texto["arranque.abriendoNavegador"],
         "carpeta" => estado.NombreDeLaCarpeta.Length > 0
-                         ? $"Abriendo tu carpeta «{estado.NombreDeLaCarpeta}»…"
-                         : "Abriendo tu carpeta…",
-        _         => "Abriendo…",
+                         ? texto.Con("arranque.abriendoCarpetaConNombre",
+                             ("carpeta", estado.NombreDeLaCarpeta))
+                         : texto["arranque.abriendoCarpeta"],
+        _         => texto["arranque.abriendo"],
     };
 
     private void CuandoElEstadoCambia()
@@ -603,9 +577,9 @@
     {
         ResultadoDeRefresh resultado = await estado.Refrescar();
         listo.Mostrar(resultado.Aplicados == 0
-            ? "Al día: la estación no tiene novedades."
-            : $"Al día: entraron {resultado.Aplicados} "
-              + (resultado.Aplicados == 1 ? "novedad" : "novedades") + " de la estación.",
+            ? texto["aviso.sinNovedades"]
+            : texto.Con(resultado.Aplicados == 1 ? "aviso.unaNovedad" : "aviso.novedades",
+                ("cuantas", resultado.Aplicados.ToString())),
             () => InvokeAsync(StateHasChanged));
     });
 

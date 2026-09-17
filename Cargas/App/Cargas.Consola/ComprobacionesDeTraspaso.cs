@@ -16,6 +16,13 @@ namespace Cargas.Consola
 	// Corre sobre carpetas temporales propias, que se borran al final.
 	internal static class ComprobacionesDeTraspaso
 	{
+		/// <summary>
+		/// EN QUE IDIOMA LE PREGUNTA ESTE ARNES A LA PUERTA, y es el del registro de la estacion.
+		/// La consola mide el dominio, no atiende a nadie: no hay una persona con una eleccion que
+		/// respetar, asi que se nombra el del registro en vez de fingir una.
+		/// </summary>
+		private const string ElIdioma = Cargas.App.Frases.Frases.IdiomaDelRegistro;
+
 		private static int fallas;
 		private static int corridas;
 
@@ -151,10 +158,10 @@ namespace Cargas.Consola
 			// traspaso solo tendria facturas; con el, tiene tramos y veredicto.
 			string placa = Muestras.PlacaDelDemo;
 			Igual("el carro tiene el mismo nombre", suelta.Vehiculos()[0].Nombre, api.Vehiculos()[0].Nombre);
-			Igual("la misma cantidad de tramos", suelta.Tramos(placa).Count.ToString(), api.Tramos(placa).Count.ToString());
+			Igual("la misma cantidad de tramos", suelta.Tramos(placa, ElIdioma).Count.ToString(), api.Tramos(placa, ElIdioma).Count.ToString());
 			Igual("y la misma lectura del rendimiento", suelta.EvaluacionDeRendimiento(placa),
 				api.EvaluacionDeRendimiento(placa));
-			Igual("con el veredicto del guion", Muestras.VeredictoEsperado, api.Rendimiento(placa).Veredicto);
+			Igual("con el veredicto del guion", Muestras.VeredictoEsperado, api.Rendimiento(placa, ElIdioma).Veredicto);
 		}
 
 		private static void RepetirElTraspasoNoDejaEntrada(CargasApp hospedada, CargasAPI api, string sobre)

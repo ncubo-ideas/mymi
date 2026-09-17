@@ -28,23 +28,27 @@ namespace Cargas.Dominio
 		/// <summary>Falta un segundo tanque lleno, o falta un kilometraje. El veredicto
 		/// que motiva el ingreso: nombra lo que falta y lo que se desbloquea.</summary>
 		internal static readonly VeredictoDeRendimiento SinTramo =
-			new VeredictoDeRendimiento("sin tramo");
+			new VeredictoDeRendimiento("sin-tramo");
 
 		/// <summary>El tramo mas reciente se midio con otro instrumento (u otro
 		/// combustible): no se puede comparar contra la linea base sin reservas.</summary>
 		internal static readonly VeredictoDeRendimiento NoComparable =
-			new VeredictoDeRendimiento("no comparable");
+			new VeredictoDeRendimiento("no-comparable");
 
 		/// <summary>Rendimiento implausible: casi seguro una carga sin registrar. Un
 		/// problema de datos, no de la realidad, y lo que corresponde es sugerir
 		/// registrar la carga que falto, no alarmar.</summary>
 		internal static readonly VeredictoDeRendimiento DatoSospechoso =
-			new VeredictoDeRendimiento("dato sospechoso");
+			new VeredictoDeRendimiento("dato-sospechoso");
 
 		/// <summary>Precio por volumen no da el total, mas alla del redondeo.</summary>
 		internal static readonly VeredictoDeRendimiento TotalNoCuadra =
-			new VeredictoDeRendimiento("total no cuadra");
+			new VeredictoDeRendimiento("total-no-cuadra");
 
+		/// <summary>
+		/// EL CODIGO de este veredicto: identidad, y lo unico que cruza el wire. Como se le dice
+		/// a la persona lo busca con este codigo la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
 
 		private VeredictoDeRendimiento(string nombre)
