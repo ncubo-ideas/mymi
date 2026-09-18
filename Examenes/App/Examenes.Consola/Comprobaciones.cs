@@ -88,6 +88,7 @@ namespace Examenes.Consola
 			ElRojoEstaReservado();
 			ElSexoEsUnaVariableDelDominio();
 			LosNombresDeLaFronteraSonLosDelDominio();
+			LosDosCatalogosDicenLasMismasClaves();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -103,12 +104,12 @@ namespace Examenes.Consola
 
 			EvaluacionDeTendencia unDia = SerieDeColesterol(
 				(Hoy.AddDays(-1), 200m), (Hoy, 280m));
-			Igual("colesterol 200->280 en 1 dia", "salto inverosimil", unDia.NombreDeLaTendencia);
+			Igual("colesterol 200->280 en 1 dia", "salto-inverosimil", unDia.NombreDeLaTendencia);
 			Igual("  sugiere repetir el examen", "True", unDia.SugiereRepetirElExamen.ToString());
 
 			EvaluacionDeTendencia unAno = SerieDeColesterol(
 				(Hoy.AddDays(-365), 200m), (Hoy, 280m));
-			Igual("colesterol 200->280 en 1 ano", "en ascenso", unAno.NombreDeLaTendencia);
+			Igual("colesterol 200->280 en 1 ano", "en-ascenso", unAno.NombreDeLaTendencia);
 			Igual("  cambio con signo", "80", unAno.Cambio.ToString());
 			Igual("  dias transcurridos", "365", unAno.DiasTranscurridos.ToString());
 
@@ -121,15 +122,15 @@ namespace Examenes.Consola
 
 			EvaluacionDeTendencia salto = SerieDeAntigeno(
 				(Hoy.AddDays(-365), 3.0m), (Hoy, 5.2m));
-			Igual("antigeno 3.0->5.2 en 1 ano", "en ascenso", salto.NombreDeLaTendencia);
-			Igual("  y el analito manda a consulta", "consulte pronto",
+			Igual("antigeno 3.0->5.2 en 1 ano", "en-ascenso", salto.NombreDeLaTendencia);
+			Igual("  y el analito manda a consulta", "consulte-pronto",
 				LeeElAntigeno((Hoy.AddDays(-365), 3.0m), (Hoy, 5.2m)).NombreDeLaSeveridad);
 
 			// Un valor raro EN EL MEDIO de la serie tambien se detecta: si solo se
 			// compararan los extremos, el tiempo total lo diluiria y quedaria invisible.
 			EvaluacionDeTendencia enElMedio = SerieDeColesterol(
 				(Hoy.AddDays(-365), 200m), (Hoy.AddDays(-364), 280m), (Hoy, 210m));
-			Igual("un salto de un dia EN EL MEDIO", "salto inverosimil", enElMedio.NombreDeLaTendencia);
+			Igual("un salto de un dia EN EL MEDIO", "salto-inverosimil", enElMedio.NombreDeLaTendencia);
 			Igual("  reporta el paso sospechoso, no los extremos", "200 -> 280",
 				$"{enElMedio.ValorInicial} -> {enElMedio.ValorFinal}");
 		}
@@ -173,7 +174,7 @@ namespace Examenes.Consola
 			Titulo("la direccion que preocupa es por analito");
 
 			Interpretacion baja = LeeLaHemoglobina((Hoy.AddDays(-365), 15.0m), (Hoy, 11.0m));
-			Igual("hemoglobina 15->11 en 1 ano", "en descenso", baja.NombreDeLaLectura);
+			Igual("hemoglobina 15->11 en 1 ano", "en-descenso", baja.NombreDeLaLectura);
 			Igual("  el analito la lee como empeorando", "empeorando", baja.NombreDelVeredicto);
 			Igual("  y dice cuanta anemia hay", "vigilar", baja.NombreDeLaSeveridad);
 
@@ -198,7 +199,7 @@ namespace Examenes.Consola
 			var orina = new ExamenDeOrina(Hoy, "ambar");
 			Igual("la orina no es punto de una serie continua", "False",
 				orina.AportaSerieContinua.ToString());
-			Igual("la orina informa un color", "ámbar", orina.ResultadoExpresado);
+			Igual("la orina informa un color", "ámbar", orina.ResultadoExpresado());
 			Igual("el colesterol si es punto de una continua", "True",
 				new Colesterol(Hoy, 200m, "mg/dL").AportaSerieContinua.ToString());
 			Revienta<ArgumentException>("color que el laboratorio no reporta",
@@ -239,7 +240,7 @@ namespace Examenes.Consola
 			expediente.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
 			expediente.Agregar(new Colesterol(Hoy.AddDays(-365), 200m, "mg/dL"));
 			EvaluacionDeTendencia t = expediente.EvaluarTendenciaDe(Analito.ColesterolTotal.Nombre);
-			Igual("insertado al reves: sigue siendo ascenso", "en ascenso", t.NombreDeLaTendencia);
+			Igual("insertado al reves: sigue siendo ascenso", "en-ascenso", t.NombreDeLaTendencia);
 			Igual("  cambio +80, no -80", "80", t.Cambio.ToString());
 		}
 
@@ -261,7 +262,7 @@ namespace Examenes.Consola
 			Igual("PSA: el tramo son los ultimos 365 dias", "365", psa.DiasDelTramo.ToString());
 			Igual("  2.2 ng/mL en un ano = 2.20 por ano", "2.20", psa.PorAno.ToString("0.00"));
 			Igual("  supera el umbral de 0.75", "True", psa.ExigeAtencion.ToString());
-			Igual("  y se dice completa", "2.20 ng/mL por año", psa.Expresada);
+			Igual("  y se dice completa", "2,2 ng/mL por año", psa.Expresada());
 
 			// EL PUNTO DE TODA LA REGLA. Promediando sobre la serie entera los mismos datos
 			// dan 2.2 ng/mL en 1096 dias = 0.73 por ano, que NO llega al umbral: los tres
@@ -305,7 +306,7 @@ namespace Examenes.Consola
 			Titulo("el urianalisis informa dos formas de magnitud distintas");
 
 			var completo = new ExamenDeOrina(Hoy, "ambar", "negativo");
-			Igual("dice las dos cosas", "ámbar, nitritos negativo", completo.ResultadoExpresado);
+			Igual("dice las dos cosas", "ámbar, nitritos negativo", completo.ResultadoExpresado());
 			Igual("  el color es nominal", "True", (completo.Color is MagnitudNominal).ToString());
 			Igual("  los nitritos son binarios", "True", (completo.Nitritos is MagnitudBinaria).ToString());
 			Igual("  sin hallazgo", "False", completo.TieneHallazgo.ToString());
@@ -315,12 +316,12 @@ namespace Examenes.Consola
 
 			// El tercer estado, que es la razon de que esto no sea un bool.
 			var sinTira = new ExamenDeOrina(Hoy, "ambar");
-			Igual("un examen viejo no midio nitritos", "no realizado", sinTira.Nitritos.Expresado);
+			Igual("un examen viejo no midio nitritos", "no realizado", sinTira.Nitritos.Expresado());
 			Igual("  y eso NO es un negativo", "False", sinTira.Nitritos.FueRealizada.ToString());
 			Igual("  no lo reporta como hallazgo", "False", sinTira.Nitritos.EsHallazgo.ToString());
 			Revienta<InvalidOperationException>("  preguntar el resultado de lo que no se midio",
 				() => { bool _ = sinTira.Nitritos.EsPositivo; });
-			Igual("  y la lista no menciona nitritos", "ámbar", sinTira.ResultadoExpresado);
+			Igual("  y la lista no menciona nitritos", "ámbar", sinTira.ResultadoExpresado());
 
 			Revienta<ArgumentException>("un resultado de nitritos que no existe",
 				() => new ExamenDeOrina(Hoy, "ambar", "mas o menos"));
@@ -427,7 +428,7 @@ namespace Examenes.Consola
 				expediente.EvaluarTendenciaDe("PSA").NombreDeLaTendencia);
 
 			Igual("el nombre para mostrar lleva el acento", "Antígeno prostático",
-				Analito.AntigenoProstatico.ParaMostrar);
+				Analito.AntigenoProstatico.ParaMostrar());
 			Igual("  y el canonico es el que sigue siendo la llave", "Antigeno prostatico",
 				Analito.AntigenoProstatico.Nombre);
 
@@ -441,7 +442,7 @@ namespace Examenes.Consola
 			foreach (Analito analito in Analito.Todos)
 			{
 				bool todosVuelven = analito.RespondeA(analito.Nombre)
-					&& analito.RespondeA(analito.ParaMostrar);
+					&& analito.RespondeA(analito.ParaMostrar());
 				foreach (string sinonimo in analito.Sinonimos)
 					todosVuelven = todosVuelven && analito.RespondeA(sinonimo);
 
@@ -588,7 +589,7 @@ namespace Examenes.Consola
 			Interpretacion subiendo = LeeElColesterol(
 				(Hoy.AddDays(-730), 180m), (Hoy.AddDays(-365), 190m), (Hoy, 280m));
 			Igual("el MISMO 280 subiendo desde 190", "empeorando", subiendo.NombreDelVeredicto);
-			Igual("  ese si va al medico", "consulte pronto", subiendo.NombreDeLaSeveridad);
+			Igual("  ese si va al medico", "consulte-pronto", subiendo.NombreDeLaSeveridad);
 
 			// El colesterol sabe A DONDE tiene que llegar. Antes esto comprobaba un
 			// NivelHabitual() que era el metodo del antigeno puesto en este analito; la
@@ -605,16 +606,16 @@ namespace Examenes.Consola
 			// Criterio 4: la accion NO se escribe en la pantalla. Sale del conjunto
 			// cerrado, viene CON PLAZO, y dos severidades distintas dan acciones distintas.
 			Igual("la accion viene del dominio, con plazo", "mostrále esto a tu médico este mes",
-				subiendo.AccionLegible);
+				subiendo.AccionLegible());
 			Igual("  y cuando no hay nada que hacer, no se inventa", "",
-				bajandoDelPico.AccionLegible);
+				bajandoDelPico.AccionLegible());
 
 			// Criterio 5 en su version disponible: dos analitos, dos severidades para el
 			// mismo hecho de estar fuera de rango.
 			Interpretacion anemia = LeeLaHemoglobina((Hoy.AddDays(-365), 13.5m), (Hoy, 9.5m));
 			Igual("una hemoglobina en 9.5 es anemia moderada", "moderada",
 				new Hemoglobina(Hoy, 9.5m, "g/dL").GradoDeAnemia(Hombre60).Nombre);
-			Igual("  y por eso su severidad NO es la del colesterol", "consulte pronto",
+			Igual("  y por eso su severidad NO es la del colesterol", "consulte-pronto",
 				anemia.NombreDeLaSeveridad);
 			Igual("  una de 12.0 baja de grado y de severidad", "vigilar",
 				new Hemoglobina(Hoy, 12.0m, "g/dL").GradoDeAnemia(Hombre60).Severidad.Nombre);
@@ -647,7 +648,7 @@ namespace Examenes.Consola
 			// hemoglobina: una de 9.0 sola no es "no se sabe nada".
 			var unaSolaBaja = DeHombre(60);
 			unaSolaBaja.Agregar(new Hemoglobina(Hoy, 9.0m, "g/dL"));
-			Igual("  pero una sola de 9.0 ya dice algo", "consulte pronto",
+			Igual("  pero una sola de 9.0 ya dice algo", "consulte-pronto",
 				unaSolaBaja.InterpretarSerieDe(Analito.Hemoglobina.Nombre).NombreDeLaSeveridad);
 
 			// Lo mas urgente de todo el expediente, que ninguna pantalla contesta.
@@ -656,10 +657,10 @@ namespace Examenes.Consola
 			variosAnalitos.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
 			variosAnalitos.Agregar(new Hemoglobina(Hoy.AddDays(-365), 14.0m, "g/dL"));
 			variosAnalitos.Agregar(new Hemoglobina(Hoy, 14.2m, "g/dL"));
-			Igual("lo mas urgente del expediente entero", "consulte pronto",
+			Igual("lo mas urgente del expediente entero", "consulte-pronto",
 				variosAnalitos.SeveridadMayor.Nombre);
 			Igual("  y viene con SU accion y SU plazo", "mostrále esto a tu médico este mes",
-				variosAnalitos.LoMasUrgente.AccionLegible);
+				variosAnalitos.LoMasUrgente.AccionLegible());
 		}
 
 
@@ -707,9 +708,9 @@ namespace Examenes.Consola
 			Igual("la fila se identifica con la llave del analito", "True",
 				(expediente.InterpretarSerieDe(Celda(celdas, 0, 0).Analito) != null).ToString());
 			Igual("  y muestra el nombre con acento", "Antígeno prostático",
-				Celda(celdas, 0, 0).ParaMostrar);
-			Igual("  con el resultado ya dicho, con unidad", "3.0 ng/mL",
-				Celda(celdas, 0, 0).Expresado);
+				Celda(celdas, 0, 0).ParaMostrar());
+			Igual("  con el resultado ya dicho, con unidad", "3 ng/mL",
+				Celda(celdas, 0, 0).Expresado());
 
 			// La orina entra al cuadro con su resultado por fecha, y va DESPUES de las de
 			// sangre: el orden lo decide AportaSerieContinua -si el examen entero es un
@@ -719,7 +720,7 @@ namespace Examenes.Consola
 			IReadOnlyList<CeldaDelCuadro> conOrina = expediente.CeldasDelCuadro;
 			Igual("la orina entra al cuadro", "4",
 				(Maximo(conOrina, c => c.Fila) + 1).ToString());
-			Igual("  y su resultado no es un numero", "ámbar", Celda(conOrina, 3, 3).Expresado);
+			Igual("  y su resultado no es un numero", "ámbar", Celda(conOrina, 3, 3).Expresado());
 			Igual("  la celda es el resultado y nada mas: la lectura se pide al analito",
 				"True",
 				(expediente.InterpretarSerieDe(Celda(conOrina, 3, 3).Analito) != null).ToString());
@@ -730,7 +731,7 @@ namespace Examenes.Consola
 			mismoDia.Agregar(new Colesterol(Fecha(2026, 8, 21, 15, 0), 265m, "mg/dL"));
 			IReadOnlyList<CeldaDelCuadro> repetido = mismoDia.CeldasDelCuadro;
 			Igual("dos mediciones el mismo dia son una columna", "1", repetido.Count.ToString());
-			Igual("  y gana la ultima por hora", "265 mg/dL", repetido[0].Expresado);
+			Igual("  y gana la ultima por hora", "265 mg/dL", repetido[0].Expresado());
 		}
 
 		private static DateTime Fecha(int ano, int mes, int dia, int hora, int minuto) =>
@@ -793,13 +794,13 @@ namespace Examenes.Consola
 			// Y las acciones tampoco, porque las elige el analito CON su plazo, no la
 			// pantalla ni la severidad sola.
 			Igual("la accion de la orina", "buscá atención médica pronto",
-				SangreEnOrina.Positivo.AccionDelHallazgo.Legible);
+				SangreEnOrina.Positivo.AccionDelHallazgo.Legible());
 			Igual("  la de heces", "repetí el examen este mes",
-				SangreEnHeces.Positivo.AccionDelHallazgo.Legible);
+				SangreEnHeces.Positivo.AccionDelHallazgo.Legible());
 
 			// TRES magnitudes en el urianalisis, y DOS de ellas son la misma forma sin
 			// leerse igual: los nitritos van a consulta, la sangre no espera.
-			Igual("en la MISMA tira, los nitritos piden otra cosa", "consulte pronto",
+			Igual("en la MISMA tira, los nitritos piden otra cosa", "consulte-pronto",
 				Nitritos.Positivo.SeveridadDelHallazgo.Nombre);
 			Igual("  que la sangre de al lado", "urgente",
 				SangreEnOrina.Positivo.SeveridadDelHallazgo.Nombre);
@@ -836,23 +837,23 @@ namespace Examenes.Consola
 				(ColorDeHeces.PorNombre("marron") == ColorDeHeces.PorNombre("MARRÓN")
 					&& ColorDeHeces.PorNombre("Marrón") == ColorDeHeces.PorNombre("marron")).ToString());
 			Igual("  y se muestra con acento", "marrón",
-				ColorDeHeces.PorNombre("marron").Expresado);
+				ColorDeHeces.PorNombre("marron").Expresado());
 			Igual("  el de la orina tambien", "ámbar",
-				ColorDeOrina.PorNombre("ambar").Expresado);
+				ColorDeOrina.PorNombre("ambar").Expresado());
 
 			Igual("el examen de heces dice lo suyo", "True",
-				new ExamenDeHeces(Hoy, "chocolate", "positivo").ParaSonia
+				new ExamenDeHeces(Hoy, "chocolate", "positivo").ParaSonia()
 					.Contains("conviene revisarlo").ToString());
 			Igual("  y el de orina dice otra cosa", "True",
-				new ExamenDeOrina(Hoy, "ambar", "negativo", "positivo").ParaSonia
+				new ExamenDeOrina(Hoy, "ambar", "negativo", "positivo").ParaSonia()
 					.Contains("pronto").ToString());
 
 			// Los journals viejos siguen entrando: un examen de orina escrito antes de que
 			// existiera la sangre no midio sangre, que es lo que NoRealizado significa.
 			Igual("un journal viejo de dos argumentos sigue reproduciendo", "no realizado",
-				new ExamenDeOrina(Hoy, "ambar").Sangre.Expresado);
+				new ExamenDeOrina(Hoy, "ambar").Sangre.Expresado());
 			Igual("  y uno de tres tambien", "no realizado",
-				new ExamenDeOrina(Hoy, "ambar", "negativo").Sangre.Expresado);
+				new ExamenDeOrina(Hoy, "ambar", "negativo").Sangre.Expresado());
 		}
 
 
@@ -894,26 +895,26 @@ namespace Examenes.Consola
 
 			// Al DOBLE del intervalo escala: ahi ya no es "se me paso", es que el analito
 			// dejo de tener serie util.
-			Igual("pasado el doble del intervalo, escala", "consulte pronto",
+			Igual("pasado el doble del intervalo, escala", "consulte-pronto",
 				pendientes[0].NombreDeLaSeveridad);
 			Igual("  y su accion trae el plazo", "repetí el examen esta semana",
-				pendientes[0].AccionLegible);
+				pendientes[0].AccionLegible());
 
 			var apenasVencido = DeHombre(60);
 			apenasVencido.Agregar(new Colesterol(Hoy.AddDays(-400), 280m, "mg/dL"));
 			Igual("  apenas vencido, solo vigilar", "vigilar",
 				apenasVencido.ControlesPendientes(Hoy)[0].NombreDeLaSeveridad);
 			Igual("  con un plazo mas holgado", "repetí el examen este mes",
-				apenasVencido.ControlesPendientes(Hoy)[0].AccionLegible);
+				apenasVencido.ControlesPendientes(Hoy)[0].AccionLegible());
 
 			// Al dia no pide nada, y lo dice.
 			var alDia = DeHombre(60);
 			alDia.Agregar(new Colesterol(Hoy.AddDays(-100), 180m, "mg/dL"));
 			ControlPendiente sano = alDia.ControlesPendientes(Hoy)[0];
 			Igual("al dia no pide nada", "informativo", sano.NombreDeLaSeveridad);
-			Igual("  y lo dice sin inventar una accion", "", sano.AccionLegible);
+			Igual("  y lo dice sin inventar una accion", "", sano.AccionLegible());
 			Igual("  la lectura la escribe el dominio", "True",
-				sano.ParaSonia.Contains("al día").ToString());
+				sano.ParaSonia().Contains("al día").ToString());
 
 			// De un analito que NUNCA se midio no se dice nada. No hay nada que repetir, y
 			// el dominio no inventa una recomendacion sobre algo que nadie pidio.
@@ -952,11 +953,11 @@ namespace Examenes.Consola
 			Interpretacion pico = LeeElAntigeno(
 				(Hoy.AddDays(-730), 3.0m), (Hoy.AddDays(-365), 3.1m),
 				(Hoy.AddDays(-7), 3.9m), (Hoy, 3.0m));
-			Igual("el pico se repitio y no se confirmo", "pico no confirmado",
+			Igual("el pico se repitio y no se confirmo", "pico-no-confirmado",
 				pico.NombreDelVeredicto);
 			Igual("  y por lo tanto no pide nada", "informativo", pico.NombreDeLaSeveridad);
 			Igual("  se lo dice como buena noticia", "True",
-				pico.ParaSonia.Contains("no se confirmó").ToString());
+				pico.ParaSonia().Contains("no se confirmó").ToString());
 
 			// La MISMA forma pero con un ano de por medio NO es una confirmacion: es el
 			// control siguiente, y ahi los dos valores cuentan.
@@ -964,7 +965,7 @@ namespace Examenes.Consola
 				(Hoy.AddDays(-1095), 3.0m), (Hoy.AddDays(-730), 3.1m),
 				(Hoy.AddDays(-365), 3.9m), (Hoy, 3.0m));
 			Igual("a un ano ya no es repeticion del examen", "False",
-				controlSiguiente.NombreDelVeredicto.Equals("pico no confirmado").ToString());
+				controlSiguiente.NombreDelVeredicto.Equals("pico-no-confirmado").ToString());
 
 			// SALIRSE DE LO SUYO. Los dos terminan en 3.0 y estan bajo el techo de su edad
 			// (4.5 a los 60): el rango de referencia no los distingue, la linea base si.
@@ -982,7 +983,7 @@ namespace Examenes.Consola
 			Igual("  mismo valor final, misma edad, mismo techo", "True",
 				(new AntigenoProstatico(Hoy, 3.0m, "ng/mL").EsNormalPara(Hombre(60))).ToString());
 			Igual("  y la frase habla de SU nivel, no del rango", "True",
-				vivioEnDos.ParaSonia.Contains("se salió de lo tuyo").ToString());
+				vivioEnDos.ParaSonia().Contains("se salió de lo tuyo").ToString());
 
 			// La linea base es la MEDIANA de lo previo, no el promedio: un pico no la
 			// arrastra, que es justo lo que se quiere medir contra ella.
@@ -1051,7 +1052,7 @@ namespace Examenes.Consola
 			Interpretacion mejora = bajando.InterpretarSerieDe(Analito.ColesterolTotal.Nombre);
 			Igual("bajando desde el pico", "mejorando", mejora.NombreDelVeredicto);
 			Igual("  y le dice a donde va", "True",
-				mejora.ParaSonia.Contains("te faltan 40 mg/dL").ToString());
+				mejora.ParaSonia().Contains("te faltan 40 mg/dL").ToString());
 
 			// LA EDAD MODULA. Mismo valor, misma serie, dos lecturas: "a tu edad esto se
 			// corrige" contra "que lo vea tu medico".
@@ -1064,7 +1065,7 @@ namespace Examenes.Consola
 
 			Igual("a los 35, fuera de rango se corrige", "vigilar",
 				joven.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).NombreDeLaSeveridad);
-			Igual("  a los 60, el mismo valor va al medico", "consulte pronto",
+			Igual("  a los 60, el mismo valor va al medico", "consulte-pronto",
 				mayor.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).NombreDeLaSeveridad);
 
 			// Y donde vive ahora el metodo prestado: la linea base es del ANTIGENO, que es
@@ -1194,7 +1195,7 @@ namespace Examenes.Consola
 			// decir, porque con suficientes dias cualquier salto pasa.
 			Interpretacion deUnoADiez = LeeElAntigeno(
 				(Hoy.AddDays(-3650), 1.0m), (Hoy, 10.0m));
-			Igual("de 1 a 10, aunque pasen diez años", "probable error de medicion",
+			Igual("de 1 a 10, aunque pasen diez años", "probable-error-de-medicion",
 				deUnoADiez.NombreDelVeredicto);
 
 			// La tasa sola lo dejaba pasar: 9 ng/mL en 3650 dias son 0.0025 por dia, muy
@@ -1329,7 +1330,7 @@ namespace Examenes.Consola
 			Igual("un urianalisis da TRES filas, no una", "3", celdas.Count.ToString());
 
 			var nombres = new List<string>();
-			foreach (CeldaDelCuadro celda in celdas) nombres.Add(celda.ParaMostrar);
+			foreach (CeldaDelCuadro celda in celdas) nombres.Add(celda.ParaMostrar());
 			nombres.Sort(StringComparer.Ordinal);
 			Igual("  y cada cosa medida tiene la suya", "Color de la orina|Nitritos|Sangre en orina",
 				string.Join("|", nombres));
@@ -1379,20 +1380,20 @@ namespace Examenes.Consola
 			var unContinuo = DeHombre(60);
 			unContinuo.Agregar(new Hemoglobina(Hoy, 14m, "g/dL"));
 
-			Igual("un binario se lee por su presencia en el tiempo", "presencia en el tiempo",
+			Igual("un binario se lee por su presencia en el tiempo", "presencia-en-el-tiempo",
 				unaTira.FormaDeLecturaDe(Analito.NitritosEnOrina.Nombre));
-			Igual("  un continuo, por su posicion en la banda", "posicion en banda",
+			Igual("  un continuo, por su posicion en la banda", "posicion-en-banda",
 				unContinuo.FormaDeLecturaDe(Analito.Hemoglobina.Nombre));
-			Igual("  y un color, por su categoria en el tiempo", "categoria en el tiempo",
+			Igual("  y un color, por su categoria en el tiempo", "categoria-en-el-tiempo",
 				unaTira.FormaDeLecturaDe(Analito.ColorDeLaOrina.Nombre));
 
 			// EL CASO DEL BRIEF, textual: "negativo -> negativo -> 2+ es un empeoramiento
 			// perfectamente interpretable, y exige la serie completa igual que el PSA".
 			Expediente nitritos = ConOrinas(("negativo", -730), ("negativo", -365), ("positivo", 0));
 			Interpretacion lectura = nitritos.InterpretarSerieDe(Analito.NitritosEnOrina.Nombre);
-			Igual("negativo, negativo, positivo es una serie", "apareció", lectura.NombreDeLaLectura);
+			Igual("negativo, negativo, positivo es una serie", "aparecio", lectura.NombreDeLaLectura);
 			Igual("  y el analito la lee como empeorando", "empeorando", lectura.NombreDelVeredicto);
-			Igual("  con la severidad de SU hallazgo", "consulte pronto", lectura.NombreDeLaSeveridad);
+			Igual("  con la severidad de SU hallazgo", "consulte-pronto", lectura.NombreDeLaSeveridad);
 
 			// EL CORAZON DE TODO ESTO. El mismo positivo, leido con y sin historia.
 			//
@@ -1404,7 +1405,7 @@ namespace Examenes.Consola
 
 			Igual("una sangre en heces positiva: repetir", "vigilar",
 				unaVez.InterpretarSerieDe(Analito.SangreEnLasHeces.Nombre).NombreDeLaSeveridad);
-			Igual("  DOS SEGUIDAS: ya no alcanza con repetir", "consulte pronto",
+			Igual("  DOS SEGUIDAS: ya no alcanza con repetir", "consulte-pronto",
 				dosVeces.InterpretarSerieDe(Analito.SangreEnLasHeces.Nombre).NombreDeLaSeveridad);
 			Igual("  y la magnitud sola sigue diciendo lo mismo en los dos casos", "vigilar",
 				SangreEnHeces.Positivo.SeveridadDelHallazgo.Nombre);
@@ -1414,7 +1415,7 @@ namespace Examenes.Consola
 			// como "buscá atención médica pronto".
 			Expediente pasajera = ConOrinasConSangre(("positivo", -365), ("negativo", 0));
 			Interpretacion descargo = pasajera.InterpretarSerieDe(Analito.SangreEnLaOrina.Nombre);
-			Igual("un positivo que no se repite no queda confirmado", "hallazgo no confirmado",
+			Igual("un positivo que no se repite no queda confirmado", "hallazgo-no-confirmado",
 				descargo.NombreDelVeredicto);
 			Igual("  y deja de pedir algo", "False", descargo.PideAlgo.ToString());
 			Igual("  cuando el mismo positivo solo pedia lo maximo", "urgente",
@@ -1459,14 +1460,14 @@ namespace Examenes.Consola
 			// examenes- sino que la pregunta no le corresponde.
 			EvaluacionDeTendencia sinTendencia =
 				dosVeces.EvaluarTendenciaDe(Analito.SangreEnLasHeces.Nombre);
-			Igual("un binario no tiene tendencia", "no aplica", sinTendencia.NombreDeLaTendencia);
+			Igual("un binario no tiene tendencia", "no-aplica", sinTendencia.NombreDeLaTendencia);
 			Igual("  y no es que le falten mediciones", "3",
 				sinTendencia.CantidadDeMediciones.ToString());
 			Igual("  tampoco tiene velocidad", "False",
 				dosVeces.VelocidadDe(Analito.SangreEnLasHeces.Nombre).EsAplicable.ToString());
 			Igual("  ni lineas de referencia que dibujar", "0",
 				dosVeces.ReferenciasDe(Analito.SangreEnLasHeces.Nombre).Count.ToString());
-			Igual("  y su forma es la suya", "presencia en el tiempo",
+			Igual("  y su forma es la suya", "presencia-en-el-tiempo",
 				dosVeces.FormaDeLecturaDe(Analito.SangreEnLasHeces.Nombre));
 
 			// QUE FALTA MEDIR ahora los cubre. Era el limite anotado en §7 bis: la
@@ -1544,7 +1545,7 @@ namespace Examenes.Consola
 			// Y el "no aplica" de la tendencia viene CON las mediciones puestas, que es la
 			// diferencia con "todavia no hay serie": no le faltan examenes, le falta el eje.
 			Expediente tresColores = ConOrinasDeColor(("ambar", -730), ("ambar", -365), ("ambar", 0));
-			Igual("un color no tiene tendencia", "no aplica",
+			Igual("un color no tiene tendencia", "no-aplica",
 				tresColores.EvaluarTendenciaDe(Analito.ColorDeLaOrina.Nombre).NombreDeLaLectura);
 			Igual("  y no es que le falten mediciones", "3",
 				tresColores.EvaluarTendenciaDe(Analito.ColorDeLaOrina.Nombre)
@@ -1573,27 +1574,27 @@ namespace Examenes.Consola
 			Igual("  y no pide repetir el examen: un color se mira", "False",
 				una.SugiereRepetirElExamen.ToString());
 			Igual("  la frase nombra la categoria", "True",
-				una.ParaSonia.Contains("ámbar").ToString());
+				una.ParaSonia().Contains("ámbar").ToString());
 
 			// LA ESCALERA, que es la pieza entera. El mismo oscuro, leido con historia,
 			// deja de esperar a la proxima cita.
 			Interpretacion suelto = ConOrinasDeColor(("ambar", -365), ("oscuro", 0))
 				.InterpretarSerieDe(Analito.ColorDeLaOrina.Nombre);
-			Igual("un oscuro suelto aparecio", "apareció", suelto.NombreDeLaLectura);
+			Igual("un oscuro suelto aparecio", "aparecio", suelto.NombreDeLaLectura);
 			Igual("  y pide conversarlo en la proxima cita", "vigilar",
 				suelto.NombreDeLaSeveridad);
 			Igual("  con su plazo", "conversalo con tu médico en la próxima cita",
-				suelto.Accion.Legible);
+				suelto.Accion.Legible());
 
 			Interpretacion dosVeces = ConOrinasDeColor(("oscuro", -365), ("oscuro", 0))
 				.InterpretarSerieDe(Analito.ColorDeLaOrina.Nombre);
 			Igual("DOS oscuros seguidos persisten", "persiste", dosVeces.NombreDeLaLectura);
-			Igual("  y ya no esperan la proxima cita", "consulte pronto",
+			Igual("  y ya no esperan la proxima cita", "consulte-pronto",
 				dosVeces.NombreDeLaSeveridad);
 			Igual("  con otro plazo", "mostrále esto a tu médico este mes",
-				dosVeces.Accion.Legible);
+				dosVeces.Accion.Legible());
 			Igual("  y la frase dice que se repitio", "True",
-				dosVeces.ParaSonia.Contains("2 veces seguidas").ToString());
+				dosVeces.ParaSonia().Contains("2 veces seguidas").ToString());
 
 			// LA MAGNITUD SOLA NO PUEDE DISTINGUIRLOS. Es el argumento con el que existe
 			// esta serie: contesta lo mismo en los dos casos, porque solo se ve a si misma.
@@ -1604,7 +1605,7 @@ namespace Examenes.Consola
 			// oscuro, ámbar" no son tres observaciones sueltas.
 			Expediente noEra = ConOrinasDeColor(("ambar", -730), ("oscuro", -365), ("ambar", 0));
 			Interpretacion descargo = noEra.InterpretarSerieDe(Analito.ColorDeLaOrina.Nombre);
-			Igual("un oscuro que no se repite no queda confirmado", "hallazgo no confirmado",
+			Igual("un oscuro que no se repite no queda confirmado", "hallazgo-no-confirmado",
 				descargo.NombreDelVeredicto);
 			Igual("  y deja de pedir algo", "False", descargo.PideAlgo.ToString());
 
@@ -1616,7 +1617,7 @@ namespace Examenes.Consola
 
 			// VOLVIO NO ES LO MISMO QUE NO CONFIRMADO. Ahi nunca se confirmo nada; aca
 			// estuvo de verdad -dos veces- y despues volvio.
-			Igual("dos oscuros que despues vuelven son otra cosa", "volvió a lo esperable",
+			Igual("dos oscuros que despues vuelven son otra cosa", "volvio",
 				ConOrinasDeColor(("oscuro", -730), ("oscuro", -365), ("ambar", 0))
 					.EvaluarConstanciaDe(Analito.ColorDeLaOrina.Nombre).NombreDeLaLectura);
 
@@ -1626,7 +1627,7 @@ namespace Examenes.Consola
 			Interpretacion siempreBien = ConOrinasDeColor(("amarillo palido", -365), ("ambar", 0))
 				.InterpretarSerieDe(Analito.ColorDeLaOrina.Nombre);
 			Igual("cambiar de un esperable a otro sigue siendo estar bien",
-				"siempre lo esperable", siempreBien.NombreDeLaLectura);
+				"siempre-esperable", siempreBien.NombreDeLaLectura);
 			Igual("  y el veredicto es estable", "estable", siempreBien.NombreDelVeredicto);
 
 			// DOS INESPERADAS SEGUIDAS PUEDEN NO SER LA MISMA. Es lo que un binario no
@@ -1641,7 +1642,7 @@ namespace Examenes.Consola
 			Igual("  y la frase no dice que salio la misma", "False",
 				ConHecesDeColor(("negro", -365), ("palido", 0))
 					.InterpretarSerieDe(Analito.ColorDeLasHeces.Nombre)
-					.ParaSonia.Contains("veces seguidas").ToString());
+					.ParaSonia().Contains("veces seguidas").ToString());
 
 			// DOS VOCABULARIOS, DOS SERIES. La referencia de un nominal no es un intervalo:
 			// es el conjunto de lo esperable, y el de la orina no es el de las heces. Es la
@@ -1649,11 +1650,11 @@ namespace Examenes.Consola
 			Igual("la referencia de la orina nombra sus esperables", "True",
 				ConOrinasDeColor(("ambar", 0))
 					.InterpretarSerieDe(Analito.ColorDeLaOrina.Nombre)
-					.ReferenciaLegible.Contains("ámbar").ToString());
+					.ReferenciaLegible().Contains("ámbar").ToString());
 			Igual("  y la de las heces, los suyos", "True",
 				ConHecesDeColor(("marrón", 0))
 					.InterpretarSerieDe(Analito.ColorDeLasHeces.Nombre)
-					.ReferenciaLegible.Contains("chocolate").ToString());
+					.ReferenciaLegible().Contains("chocolate").ToString());
 
 			// LA SERIE ORDENA POR FECHA Y NO POR LLEGADA. Desordenada, un "volvió" se lee
 			// como un "apareció", que es la misma razon por la que ordenan las otras dos.
@@ -1662,7 +1663,7 @@ namespace Examenes.Consola
 			alReves.Agregar(new ExamenDeOrina(Hoy.AddDays(-365), "ambar"));
 			Igual("llegar al reves no cambia cual es la ultima", "oscuro",
 				alReves.EvaluarConstanciaDe(Analito.ColorDeLaOrina.Nombre).UltimaCategoria);
-			Igual("  y la lectura es la de un oscuro que aparecio", "apareció",
+			Igual("  y la lectura es la de un oscuro que aparecio", "aparecio",
 				alReves.EvaluarConstanciaDe(Analito.ColorDeLaOrina.Nombre).NombreDeLaLectura);
 
 			// QUE FALTA MEDIR tambien lo cubre, con la periodicidad del propio analito.
@@ -1764,7 +1765,7 @@ namespace Examenes.Consola
 			// CADA UNO TRAE SU RANGO, y se dice al lado del numero.
 			Igual("la banda del sodio", "entre 135 mEq/L y 145 mEq/L",
 				Referencia(sinSexo, Analito.Sodio.Nombre));
-			Igual("  la del potasio, mas angosta todavia", "entre 3.5 mEq/L y 5.1 mEq/L",
+			Igual("  la del potasio, mas angosta todavia", "entre 3,5 mEq/L y 5,1 mEq/L",
 				Referencia(sinSexo, Analito.Potasio.Nombre));
 			Igual("  la del cloro", "entre 98 mEq/L y 107 mEq/L",
 				Referencia(sinSexo, Analito.Cloro.Nombre));
@@ -1772,16 +1773,16 @@ namespace Examenes.Consola
 				Referencia(sinSexo, Analito.GlucosaEnAyunas.Nombre));
 			Igual("  la del nitrogeno ureico", "entre 7 mg/dL y 20 mg/dL",
 				Referencia(sinSexo, Analito.NitrogenoUreico.Nombre));
-			Igual("  la de las proteinas totales", "entre 6.0 g/dL y 8.3 g/dL",
+			Igual("  la de las proteinas totales", "entre 6 g/dL y 8,3 g/dL",
 				Referencia(sinSexo, Analito.ProteinasTotales.Nombre));
 
 			// Y LOS TRIGLICERIDOS SON UN TECHO, no una banda: son el unico de los siete donde
 			// bajar siempre es mejor, y por eso su forma es la del LDL y no la del sodio.
 			Igual("los trigliceridos se leen contra una meta", "hasta 150 mg/dL",
 				Referencia(sinSexo, Analito.Trigliceridos.Nombre));
-			Igual("  y su forma es la del progreso, no la de la banda", "progreso hacia meta",
+			Igual("  y su forma es la del progreso, no la de la banda", "progreso-hacia-meta",
 				sinSexo.FormaDeLecturaDe(Analito.Trigliceridos.Nombre));
-			Igual("  la del sodio es la de la banda", "posicion en banda",
+			Igual("  la del sodio es la de la banda", "posicion-en-banda",
 				sinSexo.FormaDeLecturaDe(Analito.Sodio.Nombre));
 
 			// LA BUENA NOTICIA DE UN TECHO: bajar es bajar, aunque el valor siga afuera. Es el
@@ -1824,7 +1825,7 @@ namespace Examenes.Consola
 			saltoDelSodio.Agregar(new Sodio(Hoy.AddDays(-365), 140m, "mEq/L"));
 			saltoDelSodio.Agregar(new Sodio(Hoy, 199m, "mEq/L"));
 			Igual("un sodio que casi se duplica en un ano es inverosimil",
-				"probable error de medicion",
+				"probable-error-de-medicion",
 				saltoDelSodio.InterpretarSerieDe(Analito.Sodio.Nombre).NombreDelVeredicto);
 			Igual("  y lo que pide es repetir el examen, no una consulta", "True",
 				saltoDelSodio.InterpretarSerieDe(Analito.Sodio.Nombre)
@@ -1875,7 +1876,7 @@ namespace Examenes.Consola
 			!examen.EsNormalPara(Hombre(60));
 
 		private static string Referencia(Expediente expediente, string analito) =>
-			expediente.InterpretarSerieDe(analito).ReferenciaLegible;
+			expediente.InterpretarSerieDe(analito).ReferenciaLegible();
 
 		private static int MesesDeAnalito(Expediente expediente, string analito)
 		{
@@ -1900,20 +1901,20 @@ namespace Examenes.Consola
 				"negativo", "negativo", "negativo");
 			Igual("la tira entera dice las seis cosas",
 				"ámbar, nitritos negativo, sangre negativo, proteína negativo, "
-				+ "cetonas negativo, glucosa negativo", completa.ResultadoExpresado);
+				+ "cetonas negativo, glucosa negativo", completa.ResultadoExpresado());
 			Igual("  y aporta seis series", "6", ConLaTira(completa).ToString());
 			Igual("  sin hallazgos", "False", completa.TieneHallazgo.ToString());
 
 			// LOS JOURNALS VIEJOS SIGUEN REPRODUCIENDO. Son tres firmas historicas y cada una
 			// existe porque se escribio en el registro de alguien.
 			Igual("un journal de dos argumentos sigue reproduciendo", "no realizado",
-				new ExamenDeOrina(Hoy, "ambar").Cetonas.Expresado);
+				new ExamenDeOrina(Hoy, "ambar").Cetonas.Expresado());
 			Igual("  uno de tres tambien", "no realizado",
-				new ExamenDeOrina(Hoy, "ambar", "negativo").Proteina.Expresado);
+				new ExamenDeOrina(Hoy, "ambar", "negativo").Proteina.Expresado());
 			Igual("  y uno de cuatro tambien", "no realizado",
-				new ExamenDeOrina(Hoy, "ambar", "negativo", "negativo").Glucosa.Expresado);
+				new ExamenDeOrina(Hoy, "ambar", "negativo", "negativo").Glucosa.Expresado());
 			Igual("  y en ninguno de los tres la tira vieja inventa un negativo", "ámbar",
-				new ExamenDeOrina(Hoy, "ambar").ResultadoExpresado);
+				new ExamenDeOrina(Hoy, "ambar").ResultadoExpresado());
 			Igual("  ni crea las series de lo que no se corrio", "1",
 				ConLaTira(new ExamenDeOrina(Hoy, "ambar")).ToString());
 
@@ -1938,22 +1939,22 @@ namespace Examenes.Consola
 			Igual("una proteina aislada pide REPETIR el examen", "vigilar",
 				LecturaDeLaTira(Analito.ProteinaEnLaOrina, ("negativo", -365), ("positivo", 0))
 					.NombreDeLaSeveridad);
-			Igual("  y dos seguidas ya no son pasajeras", "consulte pronto",
+			Igual("  y dos seguidas ya no son pasajeras", "consulte-pronto",
 				LecturaDeLaTira(Analito.ProteinaEnLaOrina, ("positivo", -365), ("positivo", 0))
 					.NombreDeLaSeveridad);
 			Igual("unas cetonas aisladas se explican por el ayuno", "vigilar",
 				LecturaDeLaTira(Analito.CetonasEnOrina, ("negativo", -365), ("positivo", 0))
 					.NombreDeLaSeveridad);
-			Igual("  y dos seguidas ya no", "consulte pronto",
+			Igual("  y dos seguidas ya no", "consulte-pronto",
 				LecturaDeLaTira(Analito.CetonasEnOrina, ("positivo", -365), ("positivo", 0))
 					.NombreDeLaSeveridad);
 
 			// Y LA GLUCOSA EN ORINA NO ESCALA: una sola vez ya significa lo que significa,
 			// porque el rinon no la deja pasar hasta que la de la sangre estuvo alta.
-			Igual("una glucosa en la orina ya amerita la primera vez", "consulte pronto",
+			Igual("una glucosa en la orina ya amerita la primera vez", "consulte-pronto",
 				LecturaDeLaTira(Analito.GlucosaEnLaOrina, ("negativo", -365), ("positivo", 0))
 					.NombreDeLaSeveridad);
-			Igual("  y dos seguidas piden lo mismo", "consulte pronto",
+			Igual("  y dos seguidas piden lo mismo", "consulte-pronto",
 				LecturaDeLaTira(Analito.GlucosaEnLaOrina, ("positivo", -365), ("positivo", 0))
 					.NombreDeLaSeveridad);
 			Igual("  que NO es lo que pide una proteina aislada", "True",
@@ -1963,7 +1964,7 @@ namespace Examenes.Consola
 					.NombreDeLaSeveridad).ToString());
 
 			// LA BUENA NOTICIA, en las tres: un positivo que no se repite no queda confirmado.
-			Igual("una proteina que no se repite no queda confirmada", "hallazgo no confirmado",
+			Igual("una proteina que no se repite no queda confirmada", "hallazgo-no-confirmado",
 				LecturaDeLaTira(Analito.ProteinaEnLaOrina, ("positivo", -365), ("negativo", 0))
 					.NombreDelVeredicto);
 			Igual("  y deja de pedir algo", "False",
@@ -1988,7 +1989,7 @@ namespace Examenes.Consola
 				Analito.PorNombre("glucosuria").Nombre);
 			Igual("  y son dos analitos distintos", "False",
 				Analito.GlucosaEnAyunas.EsElMismo(Analito.GlucosaEnLaOrina).ToString());
-			Igual("  y con formas de lectura distintas", "presencia en el tiempo",
+			Igual("  y con formas de lectura distintas", "presencia-en-el-tiempo",
 				FormaDeLaTira(Analito.GlucosaEnLaOrina));
 
 			// EL EVENTO LAS TRANSPORTA Y NO DECIDE NADA: vacio es "no se corrio", igual que
@@ -2059,7 +2060,7 @@ namespace Examenes.Consola
 			Igual("el conteo de la portada", ConteoEsperadoDeLaPortada,
 				$"{tranquilidad.EnSuRango} de {tranquilidad.Analitos}");
 			Igual("  y la frase que lo dice, entera", "17 de tus 18 valores están en su rango.",
-				tranquilidad.ParaSonia);
+				tranquilidad.ParaSonia());
 
 			// EL DENOMINADOR SON LOS ANALITOS CON SERIE, y con las tres formas adentro. La
 			// suma se dice explicita porque es lo que cambio: diez continuos, seis binarios y
@@ -2075,7 +2076,7 @@ namespace Examenes.Consola
 			// eso el 17 de la landing exige que haya UN solo analito retenido.
 			Igual("solo un analito queda sin leer", "1",
 				sonia.AnalitosNoInterpretables.ToString());
-			Igual("  y es la hemoglobina", "requiere sexo",
+			Igual("  y es la hemoglobina", "requiere-sexo",
 				sonia.InterpretarSerieDe(Analito.Hemoglobina.Nombre).NombreDelVeredicto);
 			Igual("  declararlo mueve el titular", "18 de 18",
 				ConteoDeclarando("mujer"));
@@ -2084,7 +2085,7 @@ namespace Examenes.Consola
 			// un hallazgo: 212 esta bajo el techo de 220 que le corresponde a los 34, asi que
 			// el colesterol CUENTA dentro de los 17 y aun asi es lo mas urgente del expediente.
 			Igual("lo mas urgente sigue siendo ambar", "vigilar", sonia.SeveridadMayor.Nombre);
-			Igual("  y lo pone el colesterol, por su tendencia", "en ascenso",
+			Igual("  y lo pone el colesterol, por su tendencia", "en-ascenso",
 				sonia.EvaluarTendenciaDe(Analito.ColesterolTotal.Nombre).NombreDeLaLectura);
 			Igual("  que no es un hallazgo: 212 esta bajo su techo", "False",
 				sonia.SerieDe(Analito.ColesterolTotal.Nombre)
@@ -2209,32 +2210,32 @@ namespace Examenes.Consola
 			Titulo("ningun numero sin su referencia");
 
 			Interpretacion psa = LeeElAntigeno((Hoy.AddDays(-365), 3.0m), (Hoy, 5.2m));
-			Igual("el antigeno dice su techo por edad", "hasta 4.5 ng/mL", psa.ReferenciaLegible);
+			Igual("el antigeno dice su techo por edad", "hasta 4,5 ng/mL", psa.ReferenciaLegible());
 
 			Interpretacion hemoglobina = LeeLaHemoglobina((Hoy.AddDays(-365), 15.0m), (Hoy, 14.2m));
-			Igual("  la hemoglobina es una banda, no un techo", "entre 12.5 g/dL y 16.5 g/dL",
-				hemoglobina.ReferenciaLegible);
+			Igual("  la hemoglobina es una banda, no un techo", "entre 12,5 g/dL y 16,5 g/dL",
+				hemoglobina.ReferenciaLegible());
 
 			Interpretacion colesterol = LeeElColesterol((Hoy.AddDays(-365), 190m), (Hoy, 280m));
 			Igual("  el colesterol dice lo deseable a esa edad", "hasta 200 mg/dL",
-				colesterol.ReferenciaLegible);
+				colesterol.ReferenciaLegible());
 
 			// La referencia depende de la EDAD: el mismo antigeno con otro expediente.
 			var joven = DeHombre(45);
 			joven.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 3.0m, "ng/mL"));
 			joven.Agregar(new AntigenoProstatico(Hoy, 3.1m, "ng/mL"));
-			Igual("la referencia depende de la edad", "hasta 2.5 ng/mL",
-				joven.InterpretarSerieDe(Analito.AntigenoProstatico.Nombre).ReferenciaLegible);
+			Igual("la referencia depende de la edad", "hasta 2,5 ng/mL",
+				joven.InterpretarSerieDe(Analito.AntigenoProstatico.Nombre).ReferenciaLegible());
 
 			// Un binario no tiene rango: su referencia es la polaridad.
 			Expediente conNitritos = ConOrinas(("negativo", -365), ("positivo", 0));
 			Igual("un binario dice su polaridad", "lo esperable es negativo",
-				conNitritos.InterpretarSerieDe(Analito.NitritosEnOrina.Nombre).ReferenciaLegible);
+				conNitritos.InterpretarSerieDe(Analito.NitritosEnOrina.Nombre).ReferenciaLegible());
 
 			// Sin mediciones no hay valor que acompanar, y no se inventa una referencia.
 			var vacio = DeHombre(60);
 			Igual("sin mediciones no hay referencia", "",
-				vacio.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible);
+				vacio.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible());
 		}
 
 		// ---- todo consejo con plazo ----
@@ -2252,34 +2253,34 @@ namespace Examenes.Consola
 				(Hoy.AddDays(-1096), 3.0m), (Hoy.AddDays(-731), 3.1m),
 				(Hoy.AddDays(-365), 3.0m), (Hoy, 5.2m));
 			Igual("PSA 3 -> 5.2 en 3 anos: al medico este mes",
-				"mostrále esto a tu médico este mes", psa.AccionLegible);
+				"mostrále esto a tu médico este mes", psa.AccionLegible());
 
 			Interpretacion colesterolJoven = LeeElColesterolA(35,
 				(Hoy.AddDays(-365), 190m), (Hoy, 280m));
 			Igual("colesterol 280 subiendo, joven: en la proxima cita",
-				"conversalo con tu médico en la próxima cita", colesterolJoven.AccionLegible);
+				"conversalo con tu médico en la próxima cita", colesterolJoven.AccionLegible());
 
 			Interpretacion bajando = LeeElColesterol(
 				(Hoy.AddDays(-730), 180m), (Hoy.AddDays(-365), 320m), (Hoy, 280m));
-			Igual("colesterol 280 bajando: ninguna accion", "", bajando.AccionLegible);
+			Igual("colesterol 280 bajando: ninguna accion", "", bajando.AccionLegible());
 
 			Interpretacion unaSola = LeeLaHemoglobina((Hoy, 14.2m));
 			Igual("hemoglobina de una medicion: repetir cuando el medico lo indique",
-				"repetí el examen cuando el médico lo indique", unaSola.AccionLegible);
+				"repetí el examen cuando el médico lo indique", unaSola.AccionLegible());
 
 			Expediente conSangre = ConOrinasConSangre(("negativo", -365), ("positivo", 0));
 			Igual("sangre en orina: atencion pronto", "buscá atención médica pronto",
-				conSangre.InterpretarSerieDe(Analito.SangreEnLaOrina.Nombre).AccionLegible);
+				conSangre.InterpretarSerieDe(Analito.SangreEnLaOrina.Nombre).AccionLegible());
 
 			// DOS ANALITOS CON LA MISMA SEVERIDAD Y DISTINTO PLAZO: es lo que demuestra
 			// que el plazo es del analito y no de la severidad. Los dos ameritan cita;
 			// la infeccion urinaria no espera un mes.
 			Expediente conNitritos = ConOrinas(("negativo", -365), ("positivo", 0));
 			Interpretacion nitritos = conNitritos.InterpretarSerieDe(Analito.NitritosEnOrina.Nombre);
-			Igual("nitritos y PSA piden lo mismo", "consulte pronto", nitritos.NombreDeLaSeveridad);
-			Igual("  con el mismo pedido que el PSA", "consulte pronto", psa.NombreDeLaSeveridad);
+			Igual("nitritos y PSA piden lo mismo", "consulte-pronto", nitritos.NombreDeLaSeveridad);
+			Igual("  con el mismo pedido que el PSA", "consulte-pronto", psa.NombreDeLaSeveridad);
 			Igual("  y NO con el mismo plazo", "mostrále esto a tu médico esta semana",
-				nitritos.AccionLegible);
+				nitritos.AccionLegible());
 
 			// La guarda: una severidad que pide algo no puede viajar sin accion.
 			Revienta<ArgumentNullException>("un consejo sin plazo no se puede construir",
@@ -2297,6 +2298,33 @@ namespace Examenes.Consola
 		// Este fixture es el UNICO lugar del repo que ve los dos lados -- el dominio por
 		// InternalsVisibleTo y la App por referencia normal-- asi que es el unico que puede
 		// obligarlos a coincidir.
+		// LOS DOS CATALOGOS, CLAVE POR CLAVE. Una clave que esta en uno y no en el otro es
+		// una frase que llega a medias -con un {hueco} crudo a la vista- y ninguna otra
+		// comprobacion la ve: el dominio elige la clave y no sabe en que idioma la van a
+		// escribir, asi que el idioma que le falta no revienta, se ve raro.
+		//
+		// Se compara en los DOS sentidos: una clave de mas en el otro idioma es texto muerto
+		// que nadie va a mantener, y una de menos es el hueco.
+		private static void LosDosCatalogosDicenLasMismasClaves()
+		{
+			Titulo("los dos catalogos dicen las mismas claves");
+
+			var enElRegistro = new HashSet<string>(
+				Examenes.App.Frases.Frases.De(Examenes.App.Frases.Frases.IdiomaDelRegistro).Claves);
+			var enElOtro = new HashSet<string>(
+				Examenes.App.Frases.Frases.De(Examenes.App.Frases.Frases.ElOtroIdioma).Claves);
+
+			Igual("el catalogo del registro tiene claves", "True", (enElRegistro.Count > 0).ToString());
+
+			List<string> faltanEnElOtro = enElRegistro.Except(enElOtro).OrderBy(c => c).ToList();
+			List<string> sobranEnElOtro = enElOtro.Except(enElRegistro).OrderBy(c => c).ToList();
+
+			Igual("  ninguna clave del registro falta en el otro idioma", "",
+				string.Join(", ", faltanEnElOtro));
+			Igual("  ninguna clave sobra en el otro idioma", "",
+				string.Join(", ", sobranEnElOtro));
+		}
+
 		private static void LosNombresDeLaFronteraSonLosDelDominio()
 		{
 			Titulo("los nombres que publica la App son los del dominio, uno por uno");
@@ -2383,8 +2411,9 @@ namespace Examenes.Consola
 		private sealed class HechosDePrueba : HechosDeLaSerie
 		{
 			internal HechosDePrueba() : base(Examenes.Dominio.Analito.ColesterolTotal, 2) { }
-			internal override string NombreDeLaLectura => "en ascenso";
+			internal override string NombreDeLaLectura => "en-ascenso";
 			internal override bool SugiereRepetirElExamen => false;
+			internal override void PonerSusValoresEn(Interpretacion lectura) { }
 		}
 
 		// ---- el rojo esta reservado ----
@@ -2403,7 +2432,7 @@ namespace Examenes.Consola
 				(Hoy.AddDays(-365), 3.0m), (Hoy, 5.2m));
 			Interpretacion colesterolSubiendo = LeeElColesterolA(35,
 				(Hoy.AddDays(-365), 190m), (Hoy, 280m));
-			Igual("PSA subiendo pide consulta", "consulte pronto", psaSubiendo.NombreDeLaSeveridad);
+			Igual("PSA subiendo pide consulta", "consulte-pronto", psaSubiendo.NombreDeLaSeveridad);
 			Igual("  el colesterol subiendo, solo vigilar", "vigilar",
 				colesterolSubiendo.NombreDeLaSeveridad);
 
@@ -2462,7 +2491,7 @@ namespace Examenes.Consola
 
 			// EL PREDICADO NO ES EL SEXO, ES LA ANATOMIA (§3.3).
 			Igual("un hombre tiene prostata", "aplica", Hombre60.TieneProstata.Nombre);
-			Igual("  una mujer no", "no aplica", Mujer60.TieneProstata.Nombre);
+			Igual("  una mujer no", "no-aplica", Mujer60.TieneProstata.Nombre);
 			Igual("  y sin el dato no es 'no', es indeterminado", "indeterminada",
 				SinSexo60.TieneProstata.Nombre);
 
@@ -2481,20 +2510,20 @@ namespace Examenes.Consola
 			// LA QUE DISTINGUE ESTO DE UN FILTRO DE UI (criterio 7): se le pregunta
 			// DIRECTO al dominio, como hace la tool MCP, y NO devuelve un valor.
 			Interpretacion suyo = deElla.InterpretarSerieDe(Analito.AntigenoProstatico.Nombre);
-			Igual("preguntado directo, contesta que no aplica", "no aplica",
+			Igual("preguntado directo, contesta que no aplica", "no-aplica",
 				suyo.NombreDelVeredicto);
 			Igual("  y no devuelve ningun valor", "0",
 				deElla.PuntosDe(Analito.AntigenoProstatico.Nombre).Count.ToString());
 			Igual("  ni su velocidad", "False",
 				deElla.VelocidadDe(Analito.AntigenoProstatico.Nombre).EsAplicable.ToString());
-			Igual("  ni una tendencia que parezca 'todavia no hay datos'", "no aplica",
+			Igual("  ni una tendencia que parezca 'todavia no hay datos'", "no-aplica",
 				deElla.EvaluarTendenciaDe(Analito.AntigenoProstatico.Nombre).NombreDeLaTendencia);
 			Igual("  y no es un hallazgo: es una pregunta sin sentido", "informativo",
 				suyo.NombreDeLaSeveridad);
 
 			// Y NO SE COLA EN EL TITULAR. Con hombre ese mismo antigeno pide consulta.
 			Expediente deEl = ConLaHistoria(Sexo.Hombre);
-			Igual("con hombre el antigeno pide consulta", "consulte pronto",
+			Igual("con hombre el antigeno pide consulta", "consulte-pronto",
 				deEl.InterpretarSerieDe(Analito.AntigenoProstatico.Nombre).NombreDeLaSeveridad);
 			// Y NO SE COLA EN EL TITULAR. Con un expediente que SOLO tiene el antigeno, la
 			// diferencia se ve limpia: el mismo journal, dos titulares distintos.
@@ -2509,23 +2538,23 @@ namespace Examenes.Consola
 			soloAntigenoDeElla.Agregar(new AntigenoProstatico(Hoy, 5.2m, "ng/mL"));
 
 			Igual("  y el titular lo nombra", "mostrále esto a tu médico este mes",
-				soloAntigenoDeEl.LoMasUrgente.AccionLegible);
+				soloAntigenoDeEl.LoMasUrgente.AccionLegible());
 			Igual("  con mujer, el mismo journal no pide nada", "",
-				soloAntigenoDeElla.LoMasUrgente.AccionLegible);
+				soloAntigenoDeElla.LoMasUrgente.AccionLegible());
 
 			// ---- criterio 2: con DESCONOCIDO hay valor y NO hay veredicto ----
 			Expediente sinSaber = ConLaHistoria(Sexo.Desconocido);
 
 			Igual("sin sexo el antigeno sigue estando", "True",
 				Nombra(sinSaber.Analitos, Analito.AntigenoProstatico.Nombre).ToString());
-			Igual("  pero sin veredicto", "requiere sexo",
+			Igual("  pero sin veredicto", "requiere-sexo",
 				sinSaber.InterpretarSerieDe(Analito.AntigenoProstatico.Nombre).NombreDelVeredicto);
 			Igual("  y su valor SI se muestra", "4",
 				sinSaber.PuntosDe(Analito.AntigenoProstatico.Nombre).Count.ToString());
-			Igual("la hemoglobina tampoco se puede leer", "requiere sexo",
+			Igual("la hemoglobina tampoco se puede leer", "requiere-sexo",
 				sinSaber.InterpretarSerieDe(Analito.Hemoglobina.Nombre).NombreDelVeredicto);
 			Igual("  y su referencia lo dice en vez de inventar un rango", "depende de tu sexo",
-				sinSaber.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible);
+				sinSaber.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible());
 			Igual("  sin banda que dibujar", "0",
 				sinSaber.ReferenciasDe(Analito.Hemoglobina.Nombre).Count.ToString());
 
@@ -2567,10 +2596,10 @@ namespace Examenes.Consola
 			var todoBien = new Expediente(60);
 			todoBien.Agregar(new Colesterol(Hoy, 180m, "mg/dL"));
 			Igual("con todo en rango no se dice la fraccion", "Tus 1 valor está en su rango.",
-				todoBien.LoQueEstaEnRango.ParaSonia);
+				todoBien.LoQueEstaEnRango.ParaSonia());
 			todoBien.Agregar(new Colesterol(Hoy.AddDays(1), 280m, "mg/dL"));
 			Igual("  y sin nada en rango la frase es vacia, no un cero", "",
-				todoBien.LoQueEstaEnRango.ParaSonia);
+				todoBien.LoQueEstaEnRango.ParaSonia());
 			Igual("  que es lo que la portada lee para no dibujar el bloque", "False",
 				todoBien.LoQueEstaEnRango.HayAlgoEnRango.ToString());
 
@@ -2594,7 +2623,7 @@ namespace Examenes.Consola
 			Igual("  sin sexo no se puede decir ninguna de las dos", "False",
 				conHdl.SeSabeSiElHdlAcompana(SinSexo60).ToString());
 			Igual("  y por eso la lectura del LDL no lo nombra", "False",
-				sinSaber.InterpretarSerieDe(Analito.ColesterolLdl.Nombre).ParaSonia
+				sinSaber.InterpretarSerieDe(Analito.ColesterolLdl.Nombre).ParaSonia()
 					.Contains("HDL").ToString());
 
 			// ---- criterio 3: el bloque que insiste cuantifica, y lo dice el dominio ----
@@ -2605,10 +2634,10 @@ namespace Examenes.Consola
 			Igual("  con severidad informativo: el semaforo no se toca", "informativo",
 				pedido.NombreDeLaSeveridad);
 			Igual("  la frase la escribe el dominio, no la pantalla", "True",
-				pedido.ParaSonia.Contains("no puedo interpretar 2 de tus 9").ToString());
+				pedido.ParaSonia().Contains("no puedo interpretar 2 de tus 9").ToString());
 			Igual("  y distingue los dos motivos", "True",
-				(pedido.ParaSonia.Contains("el rango de hemoglobina es distinto según el sexo")
-					&& pedido.ParaSonia.Contains("quizás no te")).ToString());
+				(pedido.ParaSonia().Contains("el rango de la hemoglobina es distinto según el sexo")
+					&& pedido.ParaSonia().Contains("quizás no te")).ToString());
 			Igual("con el sexo sabido no hace falta", "False",
 				deEl.FaltaElSexo.HaceFalta.ToString());
 
@@ -2617,7 +2646,7 @@ namespace Examenes.Consola
 			// Ninguna medicion se vuelve a cargar y ningun evento se migra: el rango nunca
 			// se guardo con el valor, se calcula al consultar. Es la consecuencia elegante
 			// del event sourcing, y se ve en que el MISMO expediente cambia de respuesta.
-			Igual("antes de declarar, sin veredicto", "requiere sexo",
+			Igual("antes de declarar, sin veredicto", "requiere-sexo",
 				sinSaber.InterpretarSerieDe(Analito.Hemoglobina.Nombre).NombreDelVeredicto);
 			sinSaber.DeclararSexo("hombre");
 			Igual("  y despues del comando, con veredicto real", "True",
@@ -2639,8 +2668,8 @@ namespace Examenes.Consola
 			primeroLosExamenes.DeclararSexo("mujer");
 
 			Igual("el evento de sexo en cualquier posicion da lo mismo", "True",
-				(primeroElSexo.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ParaSonia
-					== primeroLosExamenes.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ParaSonia)
+				(primeroElSexo.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ParaSonia()
+					== primeroLosExamenes.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ParaSonia())
 					.ToString());
 			Igual("  y el antigeno no existe en ninguno de los dos", "False",
 				(Nombra(primeroElSexo.Analitos, Analito.AntigenoProstatico.Nombre)
@@ -2652,12 +2681,12 @@ namespace Examenes.Consola
 			Expediente mujer = ConLaHistoria(Sexo.Mujer);
 
 			Igual("la referencia de la hemoglobina cambia con el sexo", "True",
-				(hombre.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible
-					!= mujer.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible)
+				(hombre.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible()
+					!= mujer.InterpretarSerieDe(Analito.Hemoglobina.Nombre).ReferenciaLegible())
 					.ToString());
 			Igual("  la del colesterol NO", "True",
-				(hombre.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).ReferenciaLegible
-					== mujer.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).ReferenciaLegible)
+				(hombre.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).ReferenciaLegible()
+					== mujer.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).ReferenciaLegible())
 					.ToString());
 
 			// EL MISMO NUMERO, DOS LECTURAS. Es el caso que justifica el rango por sexo.

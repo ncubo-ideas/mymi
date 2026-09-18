@@ -40,6 +40,19 @@ namespace Examenes.App
 	{
 		private const string ActorName = "examenes";
 
+		/// <summary>
+		/// EN QUE IDIOMA SE DICE UNA VISTA, y lo dice QUIEN LA PIDE. Esta clase no tiene navegador
+		/// -- corre en proceso adentro de Gnothi, en la caja de wasm -- pero la carátula que la
+		/// consulta SI lo es, y ya leyo la eleccion del aparato. Preguntarsela al dispositivo desde
+		/// aca ataria el paquete al navegador, que es lo que la forma hibrida existe para no hacer.
+		/// <para>
+		/// Una etiqueta vacia o que este modulo no habla cae al idioma del registro del laboratorio,
+		/// que es la misma caida que hace la app suelta cuando no puede leer la eleccion.
+		/// </para>
+		/// </summary>
+		private static string Elegido(string idioma) =>
+			Frases.Frases.EsUnaEtiquetaConocida(idioma) ? idioma : ExamenesAPI.IdiomaDelRegistro;
+
 		private readonly string folder;
 
 		public ExamenesSurface(string grantedFolder)
@@ -81,13 +94,14 @@ namespace Examenes.App
 
 		// El bloque de arriba de la pantalla, y de paso lo que el modulo sabe de la persona.
 		[View("cabecera")]
-		public object Cabecera() => !HasJournal ? NoData() : Read(api => (object)new
+		public object Cabecera(string idioma = "") => !HasJournal ? NoData() : Read(api => (object)new
 		{
 			hayDatos = true,
 			cantidad = api.CantidadDeExamenes(),
 			fueraDeRango = api.AnalitosFueraDeRango(),
 			edad = api.EdadDelPaciente(),
 			sexo = api.SexoDelPaciente(),
+			sexoDicho = api.SexoDelPaciente(Elegido(idioma)),
 			sexoDeclarado = api.SexoDeclaradoPorLaPersona(),
 			sexoPublicado = api.SexoPublicadoPorLaInstitucion(),
 			ultimoEvento = api.UltimoEventoProcesado(),
@@ -95,12 +109,12 @@ namespace Examenes.App
 
 		// La tabla: la misma que ya contesta la tool, pero por la puerta de la cara.
 		[View("examenes")]
-		public object Examenes() => !HasJournal ? NoData() : Read(ConsultasDelModulo.HacerListaDeExamenes);
+		public object Examenes(string idioma = "") => !HasJournal ? NoData() : Read(ConsultasDelModulo.HacerListaDeExamenes);
 
 		// LO QUE UN GRAFICO NECESITA Y EL CUADRO NO DA: los puntos de una serie con su numero, y
 		// las lineas que los acompanan. Es exactamente lo que la tool no puede contestar.
 		[View("serie")]
-		public object Serie(string analito)
+		public object Serie(string analito, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(analito)) throw new ArgumentException("falta el analito", nameof(analito));
 			if (!HasJournal) return NoData();
@@ -109,7 +123,7 @@ namespace Examenes.App
 			{
 				analito,
 				puntos = api.Puntos(analito),
-				referencias = api.Referencias(analito),
+				referencias = api.Referencias(analito, Elegido(idioma)),
 			});
 		}
 
@@ -117,7 +131,7 @@ namespace Examenes.App
 		// lectura por serie sin conocer las clases del dominio -- exactamente lo mismo que hace
 		// la app suelta antes de dibujar sus graficos.
 		[View("analitos")]
-		public object Analitos() => !HasJournal ? NoData() : Read(api => (object)new
+		public object Analitos(string idioma = "") => !HasJournal ? NoData() : Read(api => (object)new
 		{
 			hayDatos = true,
 			analitos = api.Analitos(),
@@ -131,14 +145,14 @@ namespace Examenes.App
 		// con numero: pedirselos devuelve ceros, y la pantalla los dibujaba como una serie plana
 		// en cero. Cual puerta usar lo decide el dominio; la cara lee la forma, no la inventa.
 		[View("tendencia")]
-		public object Tendencia(string analito)
+		public object Tendencia(string analito, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(analito)) throw new ArgumentException("falta el analito", nameof(analito));
 			if (!HasJournal) return NoData();
 
 			return Read(api =>
 			{
-				InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+				InterpretacionDeAnalito lectura = api.Interpretacion(analito, Elegido(idioma));
 
 				// UNA SOLA VUELTA POR ANALITO. La pantalla dibuja la tarjeta entera de un saque
 				// -- cabecera, chip, relato, valor, referencia, forma y lectura -- y partirlo en
@@ -148,8 +162,8 @@ namespace Examenes.App
 					{
 						analito,
 						lectura,
-						presencia = api.Presencia(analito),
-						pruebas = api.Pruebas(analito),
+						presencia = api.Presencia(analito, Elegido(idioma)),
+						pruebas = api.Pruebas(analito, Elegido(idioma)),
 					};
 
 				if (lectura.Forma == FormaDeCategoria)
@@ -157,34 +171,34 @@ namespace Examenes.App
 					{
 						analito,
 						lectura,
-						constancia = api.Constancia(analito),
-						observaciones = api.Observaciones(analito),
+						constancia = api.Constancia(analito, Elegido(idioma)),
+						observaciones = api.Observaciones(analito, Elegido(idioma)),
 					};
 
 				return (object)new
 				{
 					analito,
 					lectura,
-					hechos = api.Tendencia(analito),
+					hechos = api.Tendencia(analito, Elegido(idioma)),
 					puntos = api.Puntos(analito),
-					referencias = api.Referencias(analito),
+					referencias = api.Referencias(analito, Elegido(idioma)),
 				};
 			});
 		}
 
 		// Los nombres de las dos formas que NO son una serie continua. Son del dominio, y estan
 		// escritos igual en la app suelta: quien los cambie tiene que cambiar los dos lados.
-		private const string FormaDePresencia = "presencia en el tiempo";
-		private const string FormaDeCategoria = "categoria en el tiempo";
+		private const string FormaDePresencia = "presencia-en-el-tiempo";
+		private const string FormaDeCategoria = "categoria-en-el-tiempo";
 
 		// EL HISTORIAL COMO CRONOLOGIA DE VISITAS, que es como se recuerda una ida al
 		// laboratorio: varios analitos el mismo dia, no una grilla. El dominio manda las celdas
 		// ya colapsadas por dia; agruparlas es desarmado, no decision, y lo hace la cara.
 		[View("historial")]
-		public object Historial() => !HasJournal ? NoData() : Read(api => (object)new
+		public object Historial(string idioma = "") => !HasJournal ? NoData() : Read(api => (object)new
 		{
 			hayDatos = true,
-			celdas = api.Cuadro(),
+			celdas = api.Cuadro(Elegido(idioma)),
 		});
 
 		// Lo que exige atencion, lo que esta bien, y el dato que el modulo le pide a la persona.
@@ -193,15 +207,15 @@ namespace Examenes.App
 		// no un orden: ordenar severidades es del dominio, y la mayor ya vino resuelta en
 		// `urgente`. La portada las nombra para que «consultalo con tu medico» diga CUALES.
 		[View("alertas")]
-		public object Alertas() => !HasJournal ? NoData() : Read(api =>
+		public object Alertas(string idioma = "") => !HasJournal ? NoData() : Read(api =>
 		{
-			LoMasUrgente urgente = api.Urgente();
+			LoMasUrgente urgente = api.Urgente(Elegido(idioma));
 
 			var piden = new List<InterpretacionDeAnalito>();
 			if (urgente.PideAlgo)
 				foreach (string analito in api.Analitos())
 				{
-					InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+					InterpretacionDeAnalito lectura = api.Interpretacion(analito, Elegido(idioma));
 					if (lectura.Severidad == urgente.Severidad) piden.Add(lectura);
 				}
 
@@ -209,8 +223,8 @@ namespace Examenes.App
 			{
 				urgente,
 				piden,
-				enRango = api.LoQueEstaEnRango(),
-				faltaElSexo = api.PedidoDeSexo(),
+				enRango = api.LoQueEstaEnRango(Elegido(idioma)),
+				faltaElSexo = api.PedidoDeSexo(Elegido(idioma)),
 			};
 		});
 

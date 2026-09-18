@@ -87,7 +87,7 @@ namespace Examenes.Dominio
 			Glucosa = GlucosaEnOrina.PorNombre(glucosa);
 		}
 
-		internal override string Nombre => "Examen general de orina";
+		internal override string Clave => "examen-de-orina";
 
 		// El examen entero no es un punto de ninguna serie continua: ni un color ni un
 		// binario se evaluan con las reglas de velocidad de cambio de los cuantitativos, y
@@ -96,19 +96,7 @@ namespace Examenes.Dominio
 		// Lo que si aporta son TRES series, una por lectura. Ver Expediente.Agregar.
 		internal override bool AportaSerieContinua => false;
 
-		internal override string ResultadoExpresado
-		{
-			get
-			{
-				string texto = Color.Expresado;
-				if (Nitritos.FueRealizada) texto += $", nitritos {Nitritos.Expresado}";
-				if (Sangre.FueRealizada) texto += $", sangre {Sangre.Expresado}";
-				if (Proteina.FueRealizada) texto += $", proteína {Proteina.Expresado}";
-				if (Cetonas.FueRealizada) texto += $", cetonas {Cetonas.Expresado}";
-				if (Glucosa.FueRealizada) texto += $", glucosa {Glucosa.Expresado}";
-				return texto;
-			}
-		}
+
 
 		// TRES COSAS MEDIDAS, y cada una es un analito. Las que el laboratorio no corrio no
 		// aparecen: una prueba no realizada no es una lectura vacia, es una lectura que no
@@ -175,19 +163,20 @@ namespace Examenes.Dominio
 			}
 		}
 
-		// La lectura, armada con lo que dice cada magnitud de si misma. La pantalla no
+		// La lectura, elegida con lo que dice cada magnitud de si misma. La pantalla no
 		// compone nada: pide esto.
-		internal string ParaSonia
+		/// <summary>La frase que este examen elige, por su nombre.</summary>
+		internal string ClaveDeLaFrase
 		{
 			get
 			{
-				if (Sangre.EsHallazgo) return Sangre.ParaSonia;
-				if (Nitritos.EsHallazgo) return Nitritos.ParaSonia;
-				if (Glucosa.EsHallazgo) return Glucosa.ParaSonia;
-				if (Proteina.EsHallazgo) return Proteina.ParaSonia;
-				if (Cetonas.EsHallazgo) return Cetonas.ParaSonia;
-				if (!Color.EsEsperable) return $"el color de la orina salió {Color.Expresado}";
-				return "sin hallazgos";
+				if (Sangre.EsHallazgo) return Sangre.ClaveDeLaFrase;
+				if (Nitritos.EsHallazgo) return Nitritos.ClaveDeLaFrase;
+				if (Glucosa.EsHallazgo) return Glucosa.ClaveDeLaFrase;
+				if (Proteina.EsHallazgo) return Proteina.ClaveDeLaFrase;
+				if (Cetonas.EsHallazgo) return Cetonas.ClaveDeLaFrase;
+				if (!Color.EsEsperable) return Color.ClaveDeLaFrase;
+				return "resultado.sin-hallazgos";
 			}
 		}
 	}

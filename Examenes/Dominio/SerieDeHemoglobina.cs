@@ -58,9 +58,9 @@ namespace Examenes.Dominio
 			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			if (rango == null) return lineas;
 			lineas.Add(new ReferenciaDeLectura("piso", rango.Minimo,
-				$"por debajo de {rango.Minimo.Expresado} ya es anemia"));
+				"linea.hemoglobina.piso"));
 			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
-				$"lo normal llega hasta {rango.Maximo.Expresado}"));
+				"linea.hemoglobina.techo"));
 
 			return lineas;
 		}
@@ -79,15 +79,13 @@ namespace Examenes.Dominio
 				if (!unico.HayAnemia) return Interpretacion.SinSerie(hechos);
 
 				return new Interpretacion(Veredicto.Indeterminado, unico.Severidad,
-					$"una sola medición ({Ultima.Valor.Expresado}): todavía no hay serie, pero ese "
-					+ $"valor ya indica anemia {unico.Nombre}", hechos, unico.Accion);
+						"lectura.hemoglobina.una-sola-con-anemia", hechos, unico.Accion)
+					.ConColetilla("anemia." + unico.Nombre);
 			}
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"cambió {Math.Abs(hechos.Cambio)} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que es demasiado para el tiempo transcurrido", hechos,
+					"lectura.hemoglobina.salto-inverosimil", hechos,
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			GradoDeAnemia grado = Ultima.GradoDeAnemia(paciente);
@@ -101,21 +99,23 @@ namespace Examenes.Dominio
 			if (!seMovio)
 				return ahoraEnRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"se mantiene en {Ultima.Valor.Expresado}, dentro de lo normal", hechos)
+						"lectura.hemoglobina.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, grado.Severidad,
-						$"lleva tiempo en {Ultima.Valor.Expresado}" + Coletilla(grado), hechos,
-						grado.Accion);
+							"lectura.hemoglobina.estable-fuera", hechos, grado.Accion)
+						.ConColetilla(Coletilla(grado));
 
 			if (ahoraEnRango)
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"volvió a {Ultima.Valor.Expresado}, dentro de lo normal", hechos);
+					"lectura.hemoglobina.volvio", hechos);
 
 			return new Interpretacion(Veredicto.Empeorando, grado.Severidad,
-				$"pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
-				+ Coletilla(grado), hechos, grado.Accion);
+					"lectura.hemoglobina.paso-fuera", hechos, grado.Accion)
+				.ConColetilla(Coletilla(grado));
 		}
 
+		// LA CLAUSULA QUE LE CUELGA A LA FRASE, por su nombre: con anemia la nombra por su
+		// grado, y sin anemia dice que el valor quedo fuera de lo normal.
 		private static string Coletilla(GradoDeAnemia grado) =>
-			grado.HayAnemia ? $", que es anemia {grado.Nombre}" : ", fuera de lo normal";
+			grado.HayAnemia ? "anemia." + grado.Nombre : "anemia.ninguna";
 	}
 }

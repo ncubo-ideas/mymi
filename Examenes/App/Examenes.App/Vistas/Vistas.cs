@@ -38,6 +38,11 @@ namespace Examenes.App.Vistas
 		public string Analito { get; init; } = "";
 		public string ParaMostrar { get; init; } = "";
 		public string Tendencia { get; init; } = "";
+
+		// EL MISMO CONJUNTO CERRADO, DICHO. El codigo es identidad -con el una pantalla
+		// decide que dibujar- y el dicho es lo que una persona lee, en el idioma que
+		// pidio. Viajan los dos porque una carátula no puede pedir la etiqueta.
+		public string TendenciaDicha { get; init; } = "";
 		public int Mediciones { get; init; }
 		public decimal ValorInicial { get; init; }
 		public decimal ValorFinal { get; init; }
@@ -59,8 +64,11 @@ namespace Examenes.App.Vistas
 		public string Analito { get; init; } = "";
 		public string ParaMostrar { get; init; } = "";
 
-		// "apareció", "persiste", "nunca apareció", "no confirmado", "cedió".
+		// El codigo del conjunto cerrado: `aparecio`, `persiste`, `nunca-aparecio`,
+		// `no-confirmado`, `cedio`.
 		public string Presencia { get; init; } = "";
+
+		public string PresenciaDicha { get; init; } = "";
 
 		public int Mediciones { get; init; }
 		public int Positivas { get; init; }
@@ -97,9 +105,11 @@ namespace Examenes.App.Vistas
 		public string Analito { get; init; } = "";
 		public string ParaMostrar { get; init; } = "";
 
-		// "siempre lo esperable", "apareció", "persiste", "no confirmado",
-		// "volvió a lo esperable".
+		// El codigo del conjunto cerrado: `siempre-esperable`, `aparecio`, `persiste`,
+		// `no-confirmado`, `volvio`.
 		public string Constancia { get; init; } = "";
+
+		public string ConstanciaDicha { get; init; } = "";
 
 		public int Mediciones { get; init; }
 
@@ -140,9 +150,11 @@ namespace Examenes.App.Vistas
 	// dominio, no de una pantalla.
 	public sealed class LoMasUrgente
 	{
-		// "informativo", "vigilar", "consulte pronto", "urgente". Es el vocabulario del
-		// semáforo de la marca, unificado en el dominio.
+		// El codigo del semaforo de la marca, unificado en el dominio: `informativo`,
+		// `vigilar`, `consulte-pronto`, `urgente`.
 		public string Severidad { get; init; } = "";
+
+		public string SeveridadDicha { get; init; } = "";
 
 		// Qué hacer y cuándo, ya dicho entero: "mostrále esto a tu médico este mes".
 		// Del conjunto cerrado, con plazo. Vacío cuando no hay nada que hacer.
@@ -194,6 +206,7 @@ namespace Examenes.App.Vistas
 		public int DiasQueFaltan { get; init; }
 		public bool EstaVencido { get; init; }
 		public string Severidad { get; init; } = "";
+		public string SeveridadDicha { get; init; } = "";
 		public string Accion { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
 	}
@@ -209,7 +222,9 @@ namespace Examenes.App.Vistas
 		public string Analito { get; init; } = "";
 		public string ParaMostrar { get; init; } = "";
 		public string Veredicto { get; init; } = "";
+		public string VeredictoDicho { get; init; } = "";
 		public string Severidad { get; init; } = "";
+		public string SeveridadDicha { get; init; } = "";
 
 		// COMO se dibuja esta lectura. La pantalla hace un switch sobre esto, y ese switch
 		// SI es presentación legítima: traduce una forma del dominio a píxeles.
@@ -225,6 +240,16 @@ namespace Examenes.App.Vistas
 		// Contra que se lee el valor: "hasta 4.5 ng/mL". Ningun numero va solo en
 		// pantalla, y la referencia la dice el analito, no la UI.
 		public string ReferenciaLegible { get; init; } = "";
+
+		// LOS DOS EXTREMOS DE ESA REFERENCIA, como numeros. Van al lado de la frase porque
+		// una pantalla que dibuja una barra necesita el numero y no el texto: leerlo de
+		// vuelta de la frase era re-derivar lo que el dominio ya habia calculado, y ademas
+		// se rompia en cuanto la frase cambiaba de idioma.
+		//
+		// Cero cuando la referencia no nombra ese extremo, que es lo que dice su clave.
+		public decimal MinimoDeLaReferencia { get; init; }
+		public decimal MaximoDeLaReferencia { get; init; }
+		public string UnidadDeLaReferencia { get; init; } = "";
 
 		public bool PideAlgo { get; init; }
 		public bool SugiereRepetirElExamen { get; init; }
@@ -278,7 +303,9 @@ namespace Examenes.App.Vistas
 
 		public string Severidad { get; init; } = "";
 
-		// La frase entera, escrita por el dominio.
+		public string SeveridadDicha { get; init; } = "";
+
+		// La frase entera, elegida por el dominio y escrita por la capa que redacta.
 		public string ParaSonia { get; init; } = "";
 
 		// El porqué, en clave clínica. También viene del dominio: el encuadre del dato

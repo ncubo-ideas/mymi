@@ -31,9 +31,9 @@ namespace Examenes.Dominio
 	//   Nombre       la llave canonica. Es la que ya viaja en las proyecciones y la que
 	//                usa el enum del MCP. NO se toca: cambiarla obliga a mover cuatro
 	//                capas a la vez y no compra nada.
-	//   ParaMostrar  el nombre con acentos, que es el que ve la persona. Vive aca y no en
-	//                la pantalla porque es dominio: "Antigeno prostatico" sin tilde no es
-	//                una decision de presentacion, es un nombre mal escrito.
+	//   Clave        el codigo con el que una frase lo nombra, derivado del canonico. Es
+	//                lo que deja que cada analito tenga su propia frase entera en cada
+	//                idioma, en vez de un hueco al que se le mete un nombre.
 	//
 	// La UNIDAD tambien vive aca. Antes cada subclase de ExamenDeSangre repetia su
 	// constante al llamar a Medida(); ahora la dice el analito, que es de quien es. Es
@@ -62,7 +62,6 @@ namespace Examenes.Dominio
 		// el predicado correcto no es el sexo.
 		internal static readonly AnalitoContinuo AntigenoProstatico = new AnalitoContinuo(
 			"Antigeno prostatico",
-			"Antígeno prostático",
 			UnidadDeMedida.NanogramosPorMililitro,
 			0m, 5000m,
 			RequisitoAnatomico.Prostata,
@@ -70,13 +69,11 @@ namespace Examenes.Dominio
 
 		internal static readonly AnalitoContinuo ColesterolTotal = new AnalitoContinuo(
 			"Colesterol total",
-			"Colesterol total",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			20m, 1200m,
 			"colesterol", "CHOL", "colesterol serico");
 
 		internal static readonly AnalitoContinuo ColesterolLdl = new AnalitoContinuo(
-			"Colesterol LDL",
 			"Colesterol LDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			10m, 900m,
@@ -84,13 +81,11 @@ namespace Examenes.Dominio
 
 		internal static readonly AnalitoContinuo ColesterolHdl = new AnalitoContinuo(
 			"Colesterol HDL",
-			"Colesterol HDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			5m, 200m,
 			"HDL", "HDL-C", "lipoproteina de alta densidad");
 
 		internal static readonly AnalitoContinuo Hemoglobina = new AnalitoContinuo(
-			"Hemoglobina",
 			"Hemoglobina",
 			UnidadDeMedida.GramosPorDecilitro,
 			2m, 25m,
@@ -110,13 +105,11 @@ namespace Examenes.Dominio
 
 		internal static readonly AnalitoContinuo Trigliceridos = new AnalitoContinuo(
 			"Trigliceridos",
-			"Triglicéridos",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			10m, 5000m,
 			"TG", "trigliceridos sericos");
 
 		internal static readonly AnalitoContinuo GlucosaEnAyunas = new AnalitoContinuo(
-			"Glucosa en ayunas",
 			"Glucosa en ayunas",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			10m, 1500m,
@@ -124,13 +117,11 @@ namespace Examenes.Dominio
 
 		internal static readonly AnalitoContinuo NitrogenoUreico = new AnalitoContinuo(
 			"Nitrogeno ureico",
-			"Nitrógeno ureico",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			1m, 300m,
 			"BUN", "urea", "nitrogeno ureico en sangre");
 
 		internal static readonly AnalitoContinuo Sodio = new AnalitoContinuo(
-			"Sodio",
 			"Sodio",
 			UnidadDeMedida.MiliequivalentesPorLitro,
 			90m, 200m,
@@ -138,13 +129,11 @@ namespace Examenes.Dominio
 
 		internal static readonly AnalitoContinuo Potasio = new AnalitoContinuo(
 			"Potasio",
-			"Potasio",
 			UnidadDeMedida.MiliequivalentesPorLitro,
 			1m, 12m,
 			"K", "kalemia");
 
 		internal static readonly AnalitoContinuo Cloro = new AnalitoContinuo(
-			"Cloro",
 			"Cloro",
 			UnidadDeMedida.MiliequivalentesPorLitro,
 			60m, 160m,
@@ -152,7 +141,6 @@ namespace Examenes.Dominio
 
 		internal static readonly AnalitoContinuo ProteinasTotales = new AnalitoContinuo(
 			"Proteinas totales",
-			"Proteínas totales",
 			UnidadDeMedida.GramosPorDecilitro,
 			1m, 15m,
 			"PROT. TOT.", "proteinas sericas totales");
@@ -168,13 +156,13 @@ namespace Examenes.Dominio
 		// SangreEnOrina- a proposito: aquellas son el RESULTADO, estas son QUE se midio.
 
 		internal static readonly AnalitoNominal ColorDeLaOrina = new AnalitoNominal(
-			"Color de la orina", "Color de la orina", "color de orina", "aspecto de la orina");
+			"Color de la orina", "color de orina", "aspecto de la orina");
 
 		internal static readonly AnalitoBinario NitritosEnOrina = new AnalitoBinario(
-			"Nitritos", "Nitritos", "nitrito", "nitritos en orina");
+			"Nitritos", "nitrito", "nitritos en orina");
 
 		internal static readonly AnalitoBinario SangreEnLaOrina = new AnalitoBinario(
-			"Sangre en orina", "Sangre en orina", "hematuria", "sangre oculta en orina");
+			"Sangre en orina", "hematuria", "sangre oculta en orina");
 
 		// LAS TRES CASILLAS QUE LA TIRA YA TRAIA Y NADIE LEIA. Un urianalisis real informa
 		// siete cosas y esta app leia tres; estas son las que se pueden modelar sin abrir la
@@ -190,22 +178,22 @@ namespace Examenes.Dominio
 		// analitos que responden al mismo nombre es un defecto, no una ambiguedad tolerable.
 
 		internal static readonly AnalitoBinario ProteinaEnLaOrina = new AnalitoBinario(
-			"Proteina en orina", "Proteína en orina",
+			"Proteina en orina",
 			"proteina", "proteinuria", "albumina", "albumina en orina");
 
 		internal static readonly AnalitoBinario CetonasEnOrina = new AnalitoBinario(
-			"Cetonas", "Cetonas",
+			"Cetonas",
 			"acetona", "cuerpos cetonicos", "cetonas en orina");
 
 		internal static readonly AnalitoBinario GlucosaEnLaOrina = new AnalitoBinario(
-			"Glucosa en orina", "Glucosa en orina",
+			"Glucosa en orina",
 			"glucosuria", "glicosuria");
 
 		internal static readonly AnalitoNominal ColorDeLasHeces = new AnalitoNominal(
-			"Color de las heces", "Color de las heces", "color de heces", "consistencia");
+			"Color de las heces", "color de heces", "consistencia");
 
 		internal static readonly AnalitoBinario SangreEnLasHeces = new AnalitoBinario(
-			"Sangre en heces", "Sangre en heces", "sangre oculta en heces");
+			"Sangre en heces", "sangre oculta en heces");
 
 		// NO HAY UN "SI FORMA SERIE" ACA, y su retiro es parte del cambio de los nominales.
 		// Era la fila `EvaluarTendencia` de la tabla del brief §6.5 —todas las formas menos
@@ -257,17 +245,20 @@ namespace Examenes.Dominio
 
 		internal string Nombre { get; }
 
-		internal string ParaMostrar { get; }
+		/// <summary>
+		/// EL CODIGO DE ESTE ANALITO DENTRO DE UNA CLAVE DE FRASE. Se deriva del nombre y no se
+		/// escribe aparte: dos escrituras del mismo codigo dejarian de decir lo mismo sin que nada
+		/// avise. Como se le dice a la persona lo busca con el la capa que redacta.
+		/// </summary>
+		internal string Clave => NombreNormalizado.EnClave(Nombre);
 
 		private readonly string[] sinonimos;
 
-		protected Analito(string nombre, string paraMostrar, RequisitoAnatomico requisito,
-			string[] sinonimos)
+		protected Analito(string nombre, RequisitoAnatomico requisito, string[] sinonimos)
 		{
 			ArgumentNullException.ThrowIfNull(requisito);
 
 			Nombre = nombre;
-			ParaMostrar = paraMostrar;
 			Requisito = requisito;
 			this.sinonimos = sinonimos ?? new string[0];
 		}
@@ -292,7 +283,6 @@ namespace Examenes.Dominio
 			foreach (Analito analito in todos)
 			{
 				Registrar(indice, analito.Nombre, analito);
-				Registrar(indice, analito.ParaMostrar, analito);
 				foreach (string sinonimo in analito.sinonimos)
 					Registrar(indice, sinonimo, analito);
 			}
@@ -305,9 +295,9 @@ namespace Examenes.Dominio
 		{
 			string llave = Normalizar(nombre);
 
-			// El canonico y el ParaMostrar de un analito sin acentos son el mismo texto
-			// normalizado. Que un analito se registre dos veces con la misma llave no es
-			// un choque; que se registren DOS analitos distintos, si.
+			// El canonico y un sinonimo sin acentos pueden ser el mismo texto normalizado.
+			// Que un analito se registre dos veces con la misma llave no es un choque; que
+			// se registren DOS analitos distintos, si.
 			if (indice.TryGetValue(llave, out Analito ya))
 			{
 				if (ReferenceEquals(ya, analito)) return;

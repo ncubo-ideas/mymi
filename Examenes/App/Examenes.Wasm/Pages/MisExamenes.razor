@@ -4,8 +4,9 @@
 @using Puppets.Portador
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
+@inject Textos textos
 
-<PageTitle>Mis exámenes</PageTitle>
+<PageTitle>@textos["app.titulo"]</PageTitle>
 
 @* EL BLOQUE DE MARCA, SOLO PARA EL ARRANQUE. La gota por la muestra, el círculo por el
    oráculo; solo trazo, nunca relleno. Una vez que el expediente está arriba (`else` de
@@ -23,8 +24,8 @@
                      0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
         </svg>
         <div>
-            <div class="marca-nombre">Laboratorio Clínico Delfos</div>
-            <div class="marca-claim">Al servicio de su salud desde 1987</div>
+            <div class="marca-nombre">@Textos.NombreDeLaInstitucion</div>
+            <div class="marca-claim">@Textos.LemaDeLaInstitucion</div>
         </div>
     </div>
 }
@@ -35,8 +36,8 @@
    hace falta decirlo dos veces. *@
 @if (!estado.EstaArriba)
 {
-    <h1 class="titular">Mis exámenes</h1>
-    <p class="membrete">Tu expediente, en tu computadora.</p>
+    <h1 class="titular">@textos["app.titulo"]</h1>
+    <p class="membrete">@textos["app.membrete"]</p>
 }
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
@@ -48,7 +49,7 @@
 @if (error.Length > 0)
 {
     <div class="aviso aviso--problema" role="alert">
-        <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
+        <strong>@(estado.EstaArriba ? textos["error.arriba"] : textos["error.arranque"])</strong>
         <pre>@error</pre>
     </div>
 }
@@ -72,45 +73,33 @@ else if (!estado.EstaArriba)
            misma carpeta cada vez. *@
         @if (estado.FaltaReotorgarPermiso)
         {
-            <p>
-                Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El browser pide
-                confirmar el permiso de escritura cada vez que volvés a abrir la app.
-            </p>
+            <p>@((MarkupString)textos.Con("arranque.reotorgar", ("carpeta", estado.NombreDeLaCarpeta)))</p>
             <div class="fila" style="margin-top:12px">
                 <button class="boton boton--atencion" @onclick="PedirPermiso">
-                    Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
+                    @textos.Con("arranque.darPermiso", ("carpeta", estado.NombreDeLaCarpeta))
                 </button>
                 @* Elegir carpeta es una accion de primera clase, siempre. Estaba como
                    outline-secondary y se leia deshabilitada, asi que la opcion de elegir
                    OTRA carpeta parecia no estar disponible. *@
                 <button class="boton" @onclick="ConectarCarpeta"
                         disabled="@(soportado == false)">
-                    Elegir carpeta
+                    @textos["arranque.elegirCarpeta"]
                 </button>
             </div>
         }
         else
         {
-            <p>Esta app guarda <strong>tus</strong> exámenes. Elegí dónde.</p>
+            <p>@((MarkupString)textos["arranque.elegiDonde"])</p>
 
             @* Cuando NINGUN modo de guardado esta disponible, la causa importa: se
                arreglan distinto y una de las dos no es culpa del navegador. *@
             @if (sinAlmacenamiento == "inseguro")
             {
-                <p class="aviso aviso--atencion">
-                    <strong>Esta página no está en una conexión segura</strong>, y por eso el
-                    navegador no le deja guardar nada — en cualquier navegador pasaría lo mismo.
-                    Entrá por <strong>https</strong> y las opciones de guardado aparecen.
-                </p>
+                <p class="aviso aviso--atencion">@((MarkupString)textos["arranque.sinConexionSegura"])</p>
             }
             else if (sinAlmacenamiento == "navegador")
             {
-                <p class="aviso aviso--atencion">
-                    <strong>@(instalada ? "Acá no se puede guardar el expediente." : "Este navegador no puede guardar el expediente.")</strong>
-                    Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que
-                    quede guardado, @(instalada ? "instalala" : "abrila") desde
-                    <strong>Chrome</strong> o <strong>Edge</strong>.
-                </p>
+                <p class="aviso aviso--atencion">@((MarkupString)textos[instalada ? "arranque.sinNavegadorInstalada" : "arranque.sinNavegador"])</p>
             }
 
             @* TRES MODOS, y los tres se dicen con lo que dan y lo que no. Ofrecer solo la
@@ -119,21 +108,20 @@ else if (!estado.EstaArriba)
                enterarse era cerrarla y perder todo. *@
             <div class="modos">
                 <div class="modo @(soportado == true ? "" : "modo--nodisponible")">
-                    <div class="modo-titulo">Una carpeta tuya</div>
-                    <p>El expediente queda en la carpeta que elijas, en tu disco.
-                       <strong>Es el único modo en el que tu asistente lo puede leer.</strong></p>
+                    <div class="modo-titulo">@textos["arranque.modoCarpeta"]</div>
+                    <p>@((MarkupString)textos["arranque.modoCarpetaTexto"])</p>
                     @if (soportado == true)
                     {
-                        <button class="boton" @onclick="ConectarCarpeta">Elegir carpeta</button>
+                        <button class="boton" @onclick="ConectarCarpeta">@textos["arranque.elegirCarpeta"]</button>
                     }
                     else
                     {
                         <p class="modo-nota">
-                            @(sinAlmacenamiento == "inseguro"
-                                ? "Hace falta una conexión segura (https)."
+                            @textos[sinAlmacenamiento == "inseguro"
+                                ? "arranque.modoCarpetaSinHttps"
                                 : instalada
-                                    ? "Acá no está disponible. Para usarlo, instalá la app desde Chrome o Edge."
-                                    : "Este navegador no lo permite. Para usarlo, abrí la app en Chrome o Edge.")
+                                    ? "arranque.modoCarpetaSinAppInstalada"
+                                    : "arranque.modoCarpetaSinApp"]
                         </p>
                     }
                 </div>
@@ -143,29 +131,26 @@ else if (!estado.EstaArriba)
                    refiere a otra cosa. El almacenamiento es el mismo; cambia como se
                    llama delante de la persona. *@
                 <div class="modo @(opfs == true ? "" : "modo--nodisponible")">
-                    <div class="modo-titulo">@(instalada ? "Dentro de la app" : "En este navegador")</div>
-                    <p>Se guarda igual y sobrevive al cerrar, pero
-                       @(instalada ? "queda dentro de la app" : "lo administra el navegador"):
-                       <strong>no es una carpeta tuya y tu asistente no lo puede leer.</strong></p>
+                    <div class="modo-titulo">@textos[instalada ? "arranque.modoAppInstalada" : "arranque.modoNavegador"]</div>
+                    <p>@((MarkupString)textos[instalada ? "arranque.modoAppInstaladaTexto" : "arranque.modoNavegadorTexto"])</p>
                     @if (opfs == true)
                     {
-                        <button class="boton boton--contorno" @onclick="UsarNavegador">Guardar acá</button>
+                        <button class="boton boton--contorno" @onclick="UsarNavegador">@textos["arranque.guardarAca"]</button>
                     }
                     else
                     {
                         <p class="modo-nota">
-                            @(sinAlmacenamiento == "inseguro"
-                                ? "También hace falta una conexión segura (https)."
-                                : "Acá tampoco está disponible.")
+                            @textos[sinAlmacenamiento == "inseguro"
+                                ? "arranque.modoNavegadorSinHttps"
+                                : "arranque.modoNavegadorNoDisponible"]
                         </p>
                     }
                 </div>
 
                 <div class="modo">
-                    <div class="modo-titulo">Un archivo</div>
-                    <p>Traé un expediente que exportaste antes, desde esta u otra computadora.
-                       Funciona en cualquier navegador.</p>
-                    <button class="boton boton--contorno" @onclick="Importar">Importar</button>
+                    <div class="modo-titulo">@textos["arranque.modoArchivo"]</div>
+                    <p>@textos["arranque.modoArchivoTexto"]</p>
+                    <button class="boton boton--contorno" @onclick="Importar">@textos["arranque.importar"]</button>
                 </div>
             </div>
         }
@@ -174,7 +159,7 @@ else if (!estado.EstaArriba)
            anda pero no deja registro tuyo. Va aparte y como enlace, para que se note que
            es otra cosa. *@
         <div style="margin-top:16px">
-            <button class="boton boton--enlace" @onclick="Arrancar">Abrir sin guardar nada</button>
+            <button class="boton boton--enlace" @onclick="Arrancar">@textos["arranque.sinGuardarNada"]</button>
         </div>
     </div>
 }
@@ -286,8 +271,8 @@ else
                          0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
             </svg>
             <div>
-                <div class="marca-nombre">Laboratorio Clínico Delfos</div>
-                <div class="marca-claim">Al servicio de su salud desde 1987</div>
+                <div class="marca-nombre">@Textos.NombreDeLaInstitucion</div>
+                <div class="marca-claim">@Textos.LemaDeLaInstitucion</div>
             </div>
 
             @* ACTUALIZAR NO ESTÁ EN EL CONTENIDO DE LA REFERENCIA -ahí, arriba a la
@@ -303,8 +288,8 @@ else
                al proveedor desde acá no trae nada; el botón se apaga y lo dice en su
                título, igual que lo decía el botón de texto que este reemplazó. *@
             <button class="inicio-hero-actualizar" @onclick="Refrescar" disabled="@(refrescando || estado.Migrada)"
-                    title="@(estado.Migrada ? "Ya no se actualiza" : refrescando ? "Actualizando…" : "Actualizar")"
-                    aria-label="@(estado.Migrada ? "Ya no se actualiza" : "Actualizar")"
+                    title="@(estado.Migrada ? textos["portada.yaNoSeActualiza"] : refrescando ? textos["portada.actualizando"] : textos["portada.actualizar"])"
+                    aria-label="@(estado.Migrada ? textos["portada.yaNoSeActualiza"] : textos["portada.actualizar"])"
                     aria-busy="@(refrescando ? "true" : "false")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
@@ -315,7 +300,7 @@ else
             </button>
         </div>
 
-        <p class="inicio-hero-kicker"><strong>Hola, Sonia.</strong>Entendé cómo venís, no solo cómo saliste hoy.</p>
+        <p class="inicio-hero-kicker"><strong>@textos["portada.saludo"]</strong>@textos["portada.kicker"]</p>
 
         @* LA LÍNEA/DIVISOR "EXTREMADAMENTE SUTIL" ENTRE RÓTULO Y FECHA es la misma técnica
            de la referencia: un `<span>` vacío que ocupa el espacio sobrante (`flex:1`) con
@@ -323,9 +308,9 @@ else
         @if (UltimoChequeo() is DateTime ultimo)
         {
             <div class="inicio-hero-chequeo">
-                <span class="inicio-hero-chequeo-label">Tu último chequeo</span>
+                <span class="inicio-hero-chequeo-label">@textos["portada.ultimoChequeo"]</span>
                 <span class="inicio-hero-chequeo-linea" aria-hidden="true"></span>
-                <span class="inicio-hero-chequeo-fecha">@ultimo.ToString("dd MMM yyyy", Cultura)</span>
+                <span class="inicio-hero-chequeo-fecha">@ultimo.ToString("dd MMM yyyy", textos.Cultura)</span>
             </div>
         }
 
@@ -345,7 +330,7 @@ else
            existe el ancla real -`id="valores"` en la propia <section>, más abajo en
            este mismo archivo-, así que sólo cambia el href, sin crear navegación
            nueva. *@
-        <a class="inicio-hero-cta" href="#valores">Ver mi chequeo &rarr;</a>
+        <a class="inicio-hero-cta" href="#valores">@textos["portada.verMiChequeo"]</a>
     </section>
 
     @* §2 LO QUE MERECE ATENCIÓN — la pieza de mayor jerarquía. Un analito entra acá
@@ -364,10 +349,10 @@ else
                y esa frase mentiría. Si no hay un texto que se derive de los datos reales,
                se omite -acá directamente no hay ninguno-. *@
             <div class="inicio-atencion-encabezado">
-                <p class="inicio-atencion-rotulo">merece atención</p>
+                <p class="inicio-atencion-rotulo">@textos["atencion.rotulo"]</p>
                 <span class="inicio-atencion-conteo">
                     <span class="inicio-atencion-conteo-punto" aria-hidden="true"></span>
-                    <span>@cuantosMerecenAtencion resultado@(cuantosMerecenAtencion == 1 ? "" : "s")</span>
+                    <span>@Resultados(cuantosMerecenAtencion)</span>
                 </span>
             </div>
 
@@ -376,7 +361,7 @@ else
                 <div class="inicio-atencion-tarjeta">
                     @{
                         InterpretacionDeAnalito lectura = Lectura(t.Analito);
-                        decimal? limiteSuperior = LimiteSuperior(lectura.ReferenciaLegible);
+                        decimal limiteSuperior = lectura.MaximoDeLaReferencia;
                     }
                     <div class="inicio-atencion-cabeza">
                         <div class="inicio-atencion-titulo">
@@ -409,19 +394,19 @@ else
                     }
                     @if (lectura.ReferenciaLegible.Length > 0)
                     {
-                        <p class="inicio-atencion-referencia">referencia: @lectura.ReferenciaLegible</p>
+                        <p class="inicio-atencion-referencia">@textos.Con("atencion.referenciaMinuscula", ("referencia", lectura.ReferenciaLegible))</p>
                     }
                     @if (!lectura.RequiereElSexo && lectura.Forma.Length > 0)
                     {
                         @switch (lectura.Forma)
                         {
-                            case "trayectoria con linea base":
+                            case "trayectoria-con-linea-base":
                                 <TrayectoriaConLineaBase Puntos="Serie(t.Analito)"
                                                          Referencias="Lineas(t.Analito)"
                                                          PideAlgo="lectura.PideAlgo"
                                                          Descripcion="@lectura.ParaSonia" />
                                 break;
-                            case "progreso hacia meta":
+                            case "progreso-hacia-meta":
                                 @* RONDA 7: ya NO usa <ProgresoHaciaMeta/> acá adentro -ese
                                    componente es compartido con Tendencia.razor y sigue
                                    dibujando la partida→meta orientativa, sin tocar-. Esta
@@ -429,8 +414,9 @@ else
                                    límite que el modelo conoce (el de ReferenciaLegible, el
                                    mismo "hasta 220 mg/dL" que ya se ve arriba), sin zonas
                                    normal/límite/alto que el dominio no define. *@
-                                @if (limiteSuperior is decimal limite && limite > 0)
+                                @if (limiteSuperior > 0)
                                 {
+                                    decimal limite = limiteSuperior;
                                     decimal proporcion = Math.Max(0m, Math.Min(1m, t.ValorFinal / limite));
                                     <div class="inicio-atencion-rango">
                                         <div class="inicio-atencion-rango-pista">
@@ -438,13 +424,13 @@ else
                                             <div class="inicio-atencion-rango-marca" style="left:@((proporcion * 100).ToString("0.#", CultureInfo.InvariantCulture))%"></div>
                                         </div>
                                         <div class="inicio-atencion-rango-etiquetas">
-                                            <span>Tu resultado · <b>@Valor(t.ValorFinal) @t.Unidad</b></span>
-                                            <span>Referencia · @lectura.ReferenciaLegible</span>
+                                            <span>@((MarkupString)textos.Con("atencion.tuResultado", ("valor", "<b>" + System.Net.WebUtility.HtmlEncode(textos.Medida(t.ValorFinal, t.Unidad)) + "</b>")))</span>
+                                            <span>@textos.Con("atencion.referencia", ("referencia", lectura.ReferenciaLegible))</span>
                                         </div>
                                     </div>
                                 }
                                 break;
-                            case "posicion en banda":
+                            case "posicion-en-banda":
                                 <PosicionEnBanda Puntos="Serie(t.Analito)"
                                                  Referencias="Lineas(t.Analito)"
                                                  Descripcion="@lectura.ParaSonia" />
@@ -468,8 +454,8 @@ else
                         </div>
                     }
                     <div class="inicio-atencion-acciones">
-                        <button class="boton" @onclick="() => VerSerie(t.Analito)">Entender este resultado &rarr;</button>
-                        <button class="boton boton--contorno" @onclick="() => VerSerie(t.Analito)">Ver evolución</button>
+                        <button class="boton" @onclick="() => VerSerie(t.Analito)">@textos["atencion.entenderEsteResultado"]</button>
+                        <button class="boton boton--contorno" @onclick="() => VerSerie(t.Analito)">@textos["atencion.verEvolucion"]</button>
                     </div>
                 </div>
             }
@@ -500,7 +486,7 @@ else
                         </div>
                     }
                     <div class="inicio-atencion-acciones">
-                        <button class="boton" @onclick="() => VerSerie(p.Analito)">Entender este resultado &rarr;</button>
+                        <button class="boton" @onclick="() => VerSerie(p.Analito)">@textos["atencion.entenderEsteResultado"]</button>
                     </div>
                 </div>
             }
@@ -533,7 +519,7 @@ else
                         </div>
                     }
                     <div class="inicio-atencion-acciones">
-                        <button class="boton" @onclick="() => VerSerie(c.Analito)">Entender este resultado &rarr;</button>
+                        <button class="boton" @onclick="() => VerSerie(c.Analito)">@textos["atencion.entenderEsteResultado"]</button>
                     </div>
                 </div>
             }
@@ -558,43 +544,30 @@ else
     @if (estado.Migrada)
     {
         <div class="aviso aviso--atencion fila">
-            <div class="crece">
-                <strong>Tus exámenes nuevos ahora entran por @estado.DondeVive, en este
-                mismo teléfono.</strong>
-                Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
-                hacer es buscar novedades.
-            </div>
+            <div class="crece">@((MarkupString)textos.Con("guardado.migrada", ("donde", estado.DondeVive)))</div>
             @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha
                por script se trata como pegar la URL en la barra y nunca abre la app; en
                Android, sin gesto Chrome se va derecho al fallback. *@
-            <a class="boton boton--atencion" href="@enlaceAGnothi">Abrir @estado.DondeVive</a>
+            <a class="boton boton--atencion" href="@enlaceAGnothi">@textos.Con("guardado.abrir", ("donde", estado.DondeVive))</a>
         </div>
     }
     else if (estado.Hospedada)
     {
         <div class="aviso fila">
-            <div class="crece">
-                <strong>Se está guardando en este teléfono.</strong>
-                Tu expediente es tuyo y está acá: Mymi le dio a este laboratorio una
-                carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
-            </div>
+            <div class="crece">@((MarkupString)textos["guardado.hospedada"])</div>
         </div>
     }
     else if (!estado.HayCarpeta)
     {
         <div class="aviso aviso--atencion fila">
-            <div class="crece">
-                <strong>No se está guardando nada.</strong>
-                Esta app está funcionando sin destino: lo que ves lo vuelve a pedir al proveedor
-                cada vez que abrís, y no queda registro tuyo.
-            </div>
+            <div class="crece">@((MarkupString)textos["guardado.sinDestino"])</div>
             @if (soportado == true)
             {
-                <button class="boton boton--atencion" @onclick="ConectarCarpeta">Elegir carpeta</button>
+                <button class="boton boton--atencion" @onclick="ConectarCarpeta">@textos["arranque.elegirCarpeta"]</button>
             }
             else if (opfs == true)
             {
-                <button class="boton boton--atencion" @onclick="UsarNavegador">Guardar en este navegador</button>
+                <button class="boton boton--atencion" @onclick="UsarNavegador">@textos["guardado.guardarEnEsteNavegador"]</button>
             }
         </div>
     }
@@ -602,12 +575,10 @@ else
     {
         <div class="aviso aviso--problema fila">
             <div class="crece">
-                <strong>La carpeta rechazó la escritura.</strong>
-                Lo que ves en pantalla no está guardado en &laquo;@estado.NombreDeLaCarpeta&raquo;.
-                Suele ser el permiso, que caduca al reabrir.
+                @((MarkupString)textos.Con("guardado.rechazo", ("carpeta", estado.NombreDeLaCarpeta)))
                 <div class="apunte mono" style="margin-top:6px">@estado.GuardadoFallando</div>
             </div>
-            <button class="boton boton--problema" @onclick="PedirPermiso">Volver a dar permiso</button>
+            <button class="boton boton--problema" @onclick="PedirPermiso">@textos["guardado.volverADarPermiso"]</button>
         </div>
     }
     else
@@ -623,18 +594,15 @@ else
                este aviso no es ese. Sigue siendo imposible de no ver: es el primer
                bloque después de la portada y lo que importa va en negrita. *@
             <p class="aviso aviso--neutro">
-                <strong>@(instalada ? "Se está guardando dentro de la app" : "Se está guardando en este navegador")</strong>,
-                así que tu expediente sobrevive al cerrar. Pero tu asistente
-                <strong>no lo puede leer</strong>: para eso hace falta una carpeta tuya, y
-                @(instalada ? "acá" : "este navegador") no las permite.
-                <button class="boton boton--enlace" @onclick="Exportar">Exportar a un archivo</button>
+                @((MarkupString)textos[instalada ? "guardado.enLaAppInstalada" : "guardado.enElNavegador"])
+                <button class="boton boton--enlace" @onclick="Exportar">@textos["guardado.exportarAUnArchivo"]</button>
             </p>
         }
         else
         {
             <p class="apunte">
-                Se guarda en &laquo;@estado.NombreDeLaCarpeta&raquo; después de cada cambio.
-                &middot; <button class="boton boton--enlace" @onclick="Exportar">Exportar</button>
+                @textos.Con("guardado.enLaCarpeta", ("carpeta", estado.NombreDeLaCarpeta))
+                &middot; <button class="boton boton--enlace" @onclick="Exportar">@textos["guardado.exportar"]</button>
             </p>
         }
     }
@@ -712,16 +680,17 @@ else
     @if (tranquiloAnalitos.Count > 0 || tranquiloPresencias.Count > 0 || tranquiloConstancias.Count > 0)
     {
         <section class="inicio-tranquilo" id="valores" @key="@($"tranquilo-{estado.Refrescos}")">
-            <p class="inicio-tranquilo-rotulo">lo demás está bien</p>
+            <p class="inicio-tranquilo-rotulo">@textos["tranquilo.rotulo"]</p>
             <div class="inicio-tranquilo-tarjeta">
-                <p class="inicio-tranquilo-titulo">Estos resultados están dentro de lo esperado.</p>
+                <p class="inicio-tranquilo-titulo">@textos["tranquilo.titulo"]</p>
                 <ul class="inicio-tranquilo-lista">
                     @foreach (TendenciaDeAnalito t in tranquiloAnalitos)
                     {
                         <li>
                             @{
                                 InterpretacionDeAnalito lectura = Lectura(t.Analito);
-                                (decimal? piso, decimal? techo) = LimitesDeRango(lectura.ReferenciaLegible);
+                                decimal piso = lectura.MinimoDeLaReferencia;
+                                decimal techo = lectura.MaximoDeLaReferencia;
                             }
                             <button class="inicio-tranquilo-item" @onclick="() => VerSerie(t.Analito)">
                                 <div class="inicio-tranquilo-cabeza">
@@ -731,9 +700,10 @@ else
                                         <span class="inicio-tranquilo-chevron" aria-hidden="true">&rsaquo;</span>
                                     </span>
                                 </div>
-                                @if (techo is decimal limite && limite > 0)
+                                @if (techo > 0)
                                 {
-                                    decimal piso2 = piso ?? 0m;
+                                    decimal limite = techo;
+                                    decimal piso2 = piso;
                                     decimal proporcion = limite > piso2
                                         ? Math.Max(0m, Math.Min(1m, (t.ValorFinal - piso2) / (limite - piso2)))
                                         : 0m;
@@ -745,12 +715,12 @@ else
                                         {
                                             <div class="inicio-tranquilo-rango-etiquetas">
                                                 <span>@lectura.ReferenciaLegible</span>
-                                                <span class="chip @Insignia(t)">en rango</span>
+                                                <span class="chip @Insignia(t)">@textos["tranquilo.enRango"]</span>
                                             </div>
                                         }
                                         @if (t.HaySerie)
                                         {
-                                            <p class="inicio-tranquilo-nota">@t.Mediciones @(t.Mediciones == 1 ? "medición" : "mediciones") · @t.Tendencia</p>
+                                            <p class="inicio-tranquilo-nota">@textos.Con("tranquilo.nota", ("mediciones", Mediciones(t.Mediciones)), ("tendencia", t.TendenciaDicha))</p>
                                         }
                                     </div>
                                 }
@@ -815,7 +785,7 @@ else
                                 </div>
                                 <div class="inicio-tranquilo-rango-etiquetas" style="margin-top:6px">
                                     <span>@Relato(c)</span>
-                                    <span class="chip @Insignia(c)">@c.Constancia</span>
+                                    <span class="chip @Insignia(c)">@c.ConstanciaDicha</span>
                                 </div>
                             </button>
                             @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
@@ -827,7 +797,7 @@ else
                 </ul>
             </div>
             <button class="boton--enlace inicio-tranquilo-cta" @onclick="() => tranquiloExpandido = !tranquiloExpandido">
-                @(tranquiloExpandido ? "Ocultar detalle" : "Ver todos mis resultados") &rarr;
+                @textos[tranquiloExpandido ? "tranquilo.ocultarDetalle" : "tranquilo.verTodos"]
             </button>
         </section>
     }
@@ -847,14 +817,14 @@ else
     {
         <div class="pedido">
             <div class="pedido-cabeza">
-                <span class="pedido-rotulo">ayudanos a interpretar mejor un resultado</span>
+                <span class="pedido-rotulo">@textos["pedido.rotulo"]</span>
                 @* «Ver» y «Ocultar» solos no dicen de qué, y fuera de contexto es lo único
                    que se oye. El aria-expanded además dice si está abierto, que el texto
                    deja implícito. Recuperado de origin/master. *@
                 <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado"
                         aria-expanded="@(pedidoPlegado ? "false" : "true")"
-                        aria-label="@(pedidoPlegado ? "Ver el dato que falta" : "Ocultar el dato que falta")">
-                    @(pedidoPlegado ? "Ver" : "Ocultar")
+                        aria-label="@textos[pedidoPlegado ? "pedido.verElDatoQueFalta" : "pedido.ocultarElDatoQueFalta"]">
+                    @textos[pedidoPlegado ? "pedido.ver" : "pedido.ocultar"]
                 </button>
             </div>
 
@@ -865,8 +835,8 @@ else
                 <p class="pedido-texto">@pedido.ParaSonia</p>
                 <p class="pedido-porque">@pedido.PorQue</p>
                 <div class="pedido-botones">
-                    <button class="boton" @onclick="@(() => Declarar("hombre"))">Soy hombre</button>
-                    <button class="boton" @onclick="@(() => Declarar("mujer"))">Soy mujer</button>
+                    <button class="boton" @onclick="@(() => Declarar("hombre"))">@textos["pedido.soyHombre"]</button>
+                    <button class="boton" @onclick="@(() => Declarar("mujer"))">@textos["pedido.soyMujer"]</button>
                 </div>
             }
         </div>
@@ -885,13 +855,13 @@ else
     @if (Cambios().Count > 0)
     {
         <section class="inicio-cambios">
-            <h2 class="seccion">Qué cambió desde tu último chequeo</h2>
-            <p class="inicio-cambios-intro">Así han cambiado tus resultados recientes.</p>
+            <h2 class="seccion">@textos["cambios.titulo"]</h2>
+            <p class="inicio-cambios-intro">@textos["cambios.intro"]</p>
             @foreach (CambioReciente c in Cambios())
             {
                 InterpretacionDeAnalito lectura = Lectura(c.Analito.Analito);
                 string tono = Insignia(c.Analito).Substring(6);
-                string estadoTexto = c.Analito.Tendencia == "estable" ? "se mantiene estable" : EstadoBreve(c.Analito, lectura);
+                string estadoTexto = c.Analito.Tendencia == "estable" ? textos["atencion.seMantieneEstable"] : EstadoBreve(c.Analito, lectura);
                 List<PuntoDelMicroChart> puntosChart = MicroChart(Serie(c.Analito.Analito), AnchoDelMicroChart, AltoDelMicroChart);
                 <button class="inicio-cambio-tarjeta inicio-cambio-tarjeta--@tono" @onclick="() => VerSerie(c.Analito.Analito)">
                     <div class="inicio-cambio-cabeza">
@@ -928,7 +898,7 @@ else
                     }
                 </button>
             }
-            <a class="boton--enlace" href="#valores">Ver comparación completa &rarr;</a>
+            <a class="boton--enlace" href="#valores">@textos["cambios.verComparacion"]</a>
         </section>
     }
 
@@ -945,7 +915,7 @@ else
     @if (sinTendenciaAnalitos.Count > 0 || sinTendenciaPresencias.Count > 0 || sinTendenciaConstancias.Count > 0)
     {
         <section class="inicio-sintendencia">
-            <p class="inicio-sintendencia-rotulo">todavía no podemos ver la tendencia</p>
+            <p class="inicio-sintendencia-rotulo">@textos["sinTendencia.rotulo"]</p>
             @foreach (TendenciaDeAnalito t in sinTendenciaAnalitos)
             {
                 <div class="inicio-sintendencia-tarjeta">
@@ -953,7 +923,7 @@ else
                         <p class="inicio-sintendencia-nombre">@t.ParaMostrar</p>
                         <div class="inicio-sintendencia-fila">
                             <span class="inicio-sintendencia-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></span>
-                            <span class="chip chip--repetir">@t.Mediciones medición@(t.Mediciones == 1 ? "" : "es")</span>
+                            <span class="chip chip--repetir">@Mediciones(t.Mediciones)</span>
                         </div>
                         <p class="inicio-sintendencia-texto">@TextoSinTendencia(t.Mediciones)</p>
                     </div>
@@ -971,7 +941,7 @@ else
                         <p class="inicio-sintendencia-nombre">@p.ParaMostrar</p>
                         <div class="inicio-sintendencia-fila">
                             <span class="inicio-sintendencia-valor">@p.UltimoResultado</span>
-                            <span class="chip chip--repetir">@p.Mediciones medición@(p.Mediciones == 1 ? "" : "es")</span>
+                            <span class="chip chip--repetir">@Mediciones(p.Mediciones)</span>
                         </div>
                         <p class="inicio-sintendencia-texto">@TextoSinTendencia(p.Mediciones)</p>
                     </div>
@@ -989,7 +959,7 @@ else
                         <p class="inicio-sintendencia-nombre">@c.ParaMostrar</p>
                         <div class="inicio-sintendencia-fila">
                             <span class="inicio-sintendencia-valor">@c.UltimaCategoria</span>
-                            <span class="chip chip--repetir">@c.Mediciones medición@(c.Mediciones == 1 ? "" : "es")</span>
+                            <span class="chip chip--repetir">@Mediciones(c.Mediciones)</span>
                         </div>
                         <p class="inicio-sintendencia-texto">@TextoSinTendencia(c.Mediciones)</p>
                     </div>
@@ -1028,21 +998,21 @@ else
        (pedido.HaceFalta/sexo/cambiandoSexo/Declarar). *@
     <div class="inicio-historial-tarjeta">
         <div class="inicio-historial-encabezado">
-            <h2 class="seccion inicio-historial-titulo" id="historial">Tu historial</h2>
+            <h2 class="seccion inicio-historial-titulo" id="historial">@textos["historial.titulo"]</h2>
             @if (examenes.Count > 0 && (Visitas().Count > VisitasRecientes().Count || historialExpandido))
             {
                 <button class="boton boton--enlace inicio-historial-ver" @onclick="() => historialExpandido = !historialExpandido">
-                    @(historialExpandido ? "Ver menos" : "Ver historial completo →")
+                    @textos[historialExpandido ? "historial.verMenos" : "historial.verCompleto"]
                 </button>
             }
         </div>
         @if (examenes.Count == 0)
         {
-            <p class="apunte">Todavía no hay exámenes. Apretá <em>Actualizar</em>.</p>
+            <p class="apunte">@((MarkupString)textos["historial.sinExamenes"])</p>
         }
         else
         {
-            <p class="inicio-historial-intro">Aquí podés ver tus resultados anteriores.</p>
+            <p class="inicio-historial-intro">@textos["historial.intro"]</p>
             <ul class="inicio-historial-timeline">
                 @{ int indiceVisita = 0; }
                 @foreach (Visita visita in VisitasRecientes())
@@ -1052,8 +1022,8 @@ else
                     <li class="inicio-historial-evento @(esReciente ? "inicio-historial-evento--reciente" : "")">
                         <span class="inicio-historial-nodo" aria-hidden="true"></span>
                         <div class="inicio-historial-fila">
-                            <span class="inicio-historial-fecha">@visita.Fecha.ToString("dd MMM yyyy", Cultura)</span>
-                            <span class="inicio-historial-cantidad">@visita.Celdas.Count resultado@(visita.Celdas.Count == 1 ? "" : "s")</span>
+                            <span class="inicio-historial-fecha">@visita.Fecha.ToString("dd MMM yyyy", textos.Cultura)</span>
+                            <span class="inicio-historial-cantidad">@Resultados(visita.Celdas.Count)</span>
                         </div>
                     </li>
                 }
@@ -1069,7 +1039,7 @@ else
                     </svg>
                 </span>
                 <p class="inicio-config-texto">
-                    Tus resultados se comparan contra los rangos de <strong>@sexo</strong>.
+                    @((MarkupString)textos.Con("historial.rangosDe", ("sexo", System.Net.WebUtility.HtmlEncode(textos["historial." + sexo]))))
                     @if (cambiandoSexo)
                     {
                         @* Un lector de pantalla lista los botones fuera de su frase, y ahí «hombre»
@@ -1077,15 +1047,15 @@ else
                            frase que lo rodea lo explica para quien ve—; el nombre accesible lo dice
                            entero. *@
                         <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))"
-                                aria-label="Comparar contra los rangos de hombre">hombre</button>
+                                aria-label="@textos["historial.compararContraHombre"]">@textos["historial.hombre"]</button>
                         <text>·</text>
                         <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))"
-                                aria-label="Comparar contra los rangos de mujer">mujer</button>
+                                aria-label="@textos["historial.compararContraMujer"]">@textos["historial.mujer"]</button>
                     }
                     else
                     {
                         <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true"
-                                aria-label="Cambiar el sexo contra el que se comparan tus resultados">Cambiar</button>
+                                aria-label="@textos["historial.cambiarElSexo"]">@textos["historial.cambiar"]</button>
                     }
                 </p>
             </div>
@@ -1108,9 +1078,7 @@ else
        guardando. Solo este. *@
     @if (!estado.Hospedada && !estado.HayCarpeta)
     {
-        <p class="apunte" style="margin-top:28px">
-            <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
-        </p>
+        <p class="apunte" style="margin-top:28px">@((MarkupString)textos["guardado.sinCarpeta"])</p>
     }
 
     @*  LA LINEA DE PRIVACIDAD — RONDA 11: mismo mensaje y mismo ícono de candado de
@@ -1123,7 +1091,7 @@ else
                 <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
             </svg>
         </span>
-        <p class="inicio-privacidad-texto">Tus datos se quedan en tu dispositivo. Vos decidís qué compartir.</p>
+        <p class="inicio-privacidad-texto">@textos["app.privacidad"]</p>
     </div>
 }
 
@@ -1245,12 +1213,25 @@ else
     // LA CONCLUSION DEL SALUDO. Depende de la MISMA severidad que ya calcula
     // LoMasUrgente -el semaforo del dominio-, y no es un texto fijo: el dia que exista
     // algo mas serio que "vigilar" esta frase tiene que poder decirlo.
-    private string Saludo() => urgente.Severidad switch
+    private string Saludo() => textos[urgente.Severidad switch
     {
-        "urgente"         => "Hay algo que conviene revisar pronto.",
-        "consulte pronto" => "Conviene comentar un resultado con tu médico.",
-        _                 => "En general, tus resultados vienen bien.",
-    };
+        "urgente"         => "portada.urgente",
+        "consulte-pronto" => "portada.consultePronto",
+        _                 => "portada.enGeneralBien",
+    }];
+
+    // EL PLURAL DE LAS DOS CUENTAS QUE ESTA PANTALLA DICE. Las dos lenguas del alcance
+    // tienen dos formas, asi que el catalogo lleva una clave por forma y no hace falta
+    // maquinaria de pluralizacion.
+    private string Resultados(int cuantos) =>
+        cuantos == 1
+            ? textos["historial.resultado"]
+            : textos.Con("historial.resultados", ("cuantos", cuantos.ToString(CultureInfo.InvariantCulture)));
+
+    private string Mediciones(int cuantas) =>
+        cuantas == 1
+            ? textos["detalle.unaMedicion"]
+            : textos.Con("tranquilo.mediciones", ("cuantas", cuantas.ToString(CultureInfo.InvariantCulture)));
 
     // LA FECHA DEL ULTIMO CHEQUEO es la fecha de la visita mas reciente -Visitas() ya
     // las trae ordenadas de la mas nueva a la mas vieja-, no un dato aparte.
@@ -1282,10 +1263,8 @@ else
     // comparacion; con mas de una (y sin embargo !HaySerie, por ejemplo por dias
     // insuficientes entre mediciones) esa frase mentiria, asi que se usa una version
     // honesta que no promete una fecha concreta.
-    private static string TextoSinTendencia(int mediciones) =>
-        mediciones <= 1
-            ? "Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando."
-            : "Todavía no hay datos suficientes para mostrar cómo viene cambiando.";
+    private string TextoSinTendencia(int mediciones) =>
+        textos[mediciones <= 1 ? "sinTendencia.conUna" : "sinTendencia.conVarias"];
 
     // "QUE CAMBIO DESDE TU ULTIMO CHEQUEO": el ultimo salto de CADA serie -no la serie
     // entera, que ya se ve en "lo que merece atencion" y en el detalle-. Mira los MISMOS
@@ -1336,7 +1315,7 @@ else
         public string Fecha { get; init; } = "";
     }
 
-    private static List<PuntoDelMicroChart> MicroChart(IReadOnlyList<PuntoDeSerie> serie, double ancho, double alto)
+    private List<PuntoDelMicroChart> MicroChart(IReadOnlyList<PuntoDeSerie> serie, double ancho, double alto)
     {
         var puntos = new List<PuntoDelMicroChart>();
         if (serie.Count == 0) return puntos;
@@ -1368,7 +1347,7 @@ else
                 X = x,
                 Y = y,
                 Valor = Valor(serie[i].Valor),
-                Fecha = serie[i].Fecha.ToString("MMM yyyy", Cultura),
+                Fecha = serie[i].Fecha.ToString("MMM yyyy", textos.Cultura),
             });
         }
         return puntos;
@@ -1393,8 +1372,8 @@ else
     // "→" y no "↑".
     private static string Flecha(string tendencia) => tendencia switch
     {
-        "en ascenso"  => "↑",
-        "en descenso" => "↓",
+        "en-ascenso"  => "↑",
+        "en-descenso" => "↓",
         _             => "→",
     };
 
@@ -1405,14 +1384,14 @@ else
     // lee Flecha() arriba, más SugiereRepetirElExamen, dichos con el vocabulario que ya
     // usa esta pantalla en otros lados (Insignia, Marca). Ningún nombre de analito entra
     // en este switch.
-    private static string EstadoBreve(TendenciaDeAnalito t, InterpretacionDeAnalito lectura)
+    private string EstadoBreve(TendenciaDeAnalito t, InterpretacionDeAnalito lectura)
     {
-        if (lectura.SugiereRepetirElExamen) return "posible error de medición";
+        if (lectura.SugiereRepetirElExamen) return textos["atencion.posibleErrorDeMedicion"];
         return t.Tendencia switch
         {
-            "en ascenso"  => "viene aumentando",
-            "en descenso" => "viene bajando",
-            "estable"     => "en seguimiento",
+            "en-ascenso"  => textos["atencion.vieneAumentando"],
+            "en-descenso" => textos["atencion.vieneBajando"],
+            "estable"     => textos["atencion.enSeguimiento"],
             _             => "",
         };
     }
@@ -1423,21 +1402,6 @@ else
     // una meta orientativa, 200, para otra pregunta): es el único límite que el rango de
     // referencia expone, tomando el ÚLTIMO número de la frase -el techo, sea un rango con
     // piso ("entre X y Y") o solo un techo ("hasta Y")-.
-    private static decimal? LimiteSuperior(string referenciaLegible)
-    {
-        if (string.IsNullOrWhiteSpace(referenciaLegible)) return null;
-
-        decimal? ultimo = null;
-        foreach (string palabra in referenciaLegible.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            string candidato = palabra.Trim(',', '.', ';');
-            if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal valor))
-                ultimo = valor;
-            else if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.CurrentCulture, out valor))
-                ultimo = valor;
-        }
-        return ultimo;
-    }
 
     // EL PISO Y EL TECHO PARA "LO DEMÁS ESTÁ BIEN" — RONDA 9: la MISMA frase que
     // LimiteSuperior ya lee arriba, pero acá hace falta el piso también. Un "hasta 220
@@ -1446,24 +1410,6 @@ else
     // él el marcador mentiría sobre dónde cae el valor real. Un solo número en la frase
     // = sigue siendo "hasta X" (piso null); dos o más = el primero es el piso y el
     // último el techo, igual que LimiteSuperior ya elige "el último".
-    private static (decimal? piso, decimal? techo) LimitesDeRango(string referenciaLegible)
-    {
-        if (string.IsNullOrWhiteSpace(referenciaLegible)) return (null, null);
-
-        var numeros = new List<decimal>();
-        foreach (string palabra in referenciaLegible.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            string candidato = palabra.Trim(',', '.', ';');
-            if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal valor))
-                numeros.Add(valor);
-            else if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.CurrentCulture, out valor))
-                numeros.Add(valor);
-        }
-
-        if (numeros.Count == 0) return (null, null);
-        if (numeros.Count == 1) return (null, numeros[0]);
-        return (numeros[0], numeros[^1]);
-    }
 
     // "TODAVIA ES PRONTO PARA HABLAR DE TENDENCIA": las visitas recientes, recortadas a
     // 3 salvo que la persona pida ver mas. Reusa Visitas(), que ya esta ordenada de la
@@ -1537,9 +1483,12 @@ else
         {
             // Recuperar lo recordado falló —carpeta movida, MEMFS ilegible—. Se dice arriba
             // y se cae al elegidor: es el caso «no se pudo», no un cartel de espera eterno.
-            var detalle = new System.Text.StringBuilder($"Paso: abrir la app\n{ex.GetType().FullName}: {ex.Message}");
+            var detalle = new System.Text.StringBuilder(
+                textos.Con("fallo.paso", ("paso", textos["fallo.arrancar"]))
+                + $"\n{ex.GetType().FullName}: {ex.Message}");
             for (Exception? interna = ex.InnerException; interna is not null; interna = interna.InnerException)
-                detalle.Append($"\n  causa: {interna.GetType().FullName}: {interna.Message}");
+                detalle.Append(textos.Con("fallo.causa",
+                    ("causa", $"{interna.GetType().FullName}: {interna.Message}")));
             error = detalle.ToString();
         }
         finally
@@ -1553,14 +1502,14 @@ else
     // instante antes de saber si había algo recordado.
     private string TextoDeAbriendo() => abriendo switch
     {
-        "opfs"    => "Abriendo tu expediente guardado en este navegador…",
+        "opfs"    => textos["arranque.abriendoNavegador"],
         "carpeta" => estado.NombreDeLaCarpeta.Length > 0
-                         ? $"Abriendo tu carpeta «{estado.NombreDeLaCarpeta}»…"
-                         : "Abriendo tu carpeta…",
-        _         => "Abriendo…",
+                         ? textos.Con("arranque.abriendoCarpeta", ("carpeta", estado.NombreDeLaCarpeta))
+                         : textos["arranque.abriendoCarpetaSinNombre"],
+        _         => textos["arranque.abriendo"],
     };
 
-    private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
+    private Task ConectarCarpeta() => Intentar("elegirCarpeta", async () =>
     {
         if ((await estado.ConectarCarpeta()).Ok)
         {
@@ -1570,7 +1519,7 @@ else
         }
     });
 
-    private Task PedirPermiso() => Intentar("dar permiso a la carpeta", async () =>
+    private Task PedirPermiso() => Intentar("darPermiso", async () =>
     {
         if ((await estado.PedirPermiso()).Ok)
         {
@@ -1580,7 +1529,7 @@ else
         }
     });
 
-    private Task UsarNavegador() => Intentar("guardar en este navegador", async () =>
+    private Task UsarNavegador() => Intentar("usarNavegador", async () =>
     {
         if ((await estado.UsarAlmacenamientoDelNavegador()).Ok)
         {
@@ -1590,7 +1539,7 @@ else
         }
     });
 
-    private Task Exportar() => Intentar("exportar el expediente", async () =>
+    private Task Exportar() => Intentar("exportar", async () =>
     {
         ResultadoDeExportacion resultado = await estado.Exportar();
         if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
@@ -1598,7 +1547,7 @@ else
 
     // Importar reemplaza el expediente y rearranca el actor, asi que despues hay que
     // releer TODO de la app: los campos del componente quedaron del expediente viejo.
-    private Task Importar() => Intentar("importar un expediente", async () =>
+    private Task Importar() => Intentar("importar", async () =>
     {
         string motivo = await estado.Importar();
         if (motivo.Length > 0) throw new InvalidOperationException(motivo);
@@ -1616,7 +1565,7 @@ else
         enlaceAGnothi = estado.EnlaceParaAbrirGnothi(await estado.EsAndroid());
     }
 
-    private Task Arrancar() => Intentar("abrir la app", async () =>
+    private Task Arrancar() => Intentar("arrancar", async () =>
     {
         await estado.Arrancar();
         await ArmarEnlace();
@@ -1631,14 +1580,14 @@ else
     // se vuelve interpretable de una vez —los rangos se computan al consultar, nunca se
     // guardaron con la medición— así que cambian las tarjetas, el titular, el conteo y el
     // historial. Releer parcialmente dejaría media pantalla del expediente viejo.
-    private Task Declarar(string cual) => Intentar("declarar tu sexo", async () =>
+    private Task Declarar(string cual) => Intentar("declararSexo", async () =>
     {
         await estado.DeclararSexo(cual);
         cambiandoSexo = false;
         Releer();
     });
 
-    private Task Refrescar() => Intentar("refrescar contra el proveedor", async () =>
+    private Task Refrescar() => Intentar("refrescar", async () =>
     {
         refrescando = true;
         try { await estado.Refrescar(); await ArmarEnlace(); }
@@ -1660,9 +1609,12 @@ else
         }
         catch (Exception ex)
         {
-            var detalle = new System.Text.StringBuilder($"Paso: {paso}\n{ex.GetType().FullName}: {ex.Message}");
+            var detalle = new System.Text.StringBuilder(
+                textos.Con("fallo.paso", ("paso", textos["fallo." + paso]))
+                + $"\n{ex.GetType().FullName}: {ex.Message}");
             for (Exception? interna = ex.InnerException; interna is not null; interna = interna.InnerException)
-                detalle.Append($"\n  causa: {interna.GetType().FullName}: {interna.Message}");
+                detalle.Append(textos.Con("fallo.causa",
+                    ("causa", $"{interna.GetType().FullName}: {interna.Message}")));
             error = detalle.ToString();
         }
         finally
@@ -1785,21 +1737,29 @@ else
     // Los HECHOS de una serie binaria, contados por la pantalla con lo que da el dominio.
     // No hay de dónde sacar un consejo acá tampoco: son cuántas pruebas y cuántas dieron
     // presente.
-    private static string Relato(PresenciaDeAnalito p) =>
+    private string Relato(PresenciaDeAnalito p) =>
         p.HaySerie
-            ? $"{p.Positivas} de {p.Mediciones} pruebas en {p.Dias} {(p.Dias == 1 ? "día" : "días")}"
+            ? textos.Con("tranquilo.relatoPresencia",
+                ("positivas", p.Positivas.ToString(CultureInfo.InvariantCulture)),
+                ("pruebas", p.Mediciones.ToString(CultureInfo.InvariantCulture)),
+                ("dias", textos.Dias(p.Dias)))
             : "";
 
-    private static string Relato(ConstanciaDeAnalito c) =>
+    private string Relato(ConstanciaDeAnalito c) =>
         c.HaySerie
-            ? $"{c.Mediciones - c.NoEsperables} de {c.Mediciones} veces dentro de lo esperable, "
-              + $"en {c.Dias} {(c.Dias == 1 ? "día" : "días")}"
+            ? textos.Con("tranquilo.relatoConstancia",
+                ("esperables", (c.Mediciones - c.NoEsperables).ToString(CultureInfo.InvariantCulture)),
+                ("veces", c.Mediciones.ToString(CultureInfo.InvariantCulture)),
+                ("dias", textos.Dias(c.Dias)))
             : "";
 
-    private static string Relato(TendenciaDeAnalito t) =>
+    private string Relato(TendenciaDeAnalito t) =>
         t.HaySerie
-            ? $"pasó de {Valor(t.ValorInicial)} a {Valor(t.ValorFinal)} {t.Unidad} "
-              + $"en {t.Dias} {(t.Dias == 1 ? "día" : "días")}, sobre {t.Mediciones} mediciones"
+            ? textos.Con("tranquilo.relatoTendencia",
+                ("antes", textos.Numero(t.ValorInicial)),
+                ("ahora", textos.Medida(t.ValorFinal, t.Unidad)),
+                ("dias", textos.Dias(t.Dias)),
+                ("mediciones", Mediciones(t.Mediciones)))
             : "";
 
     private IReadOnlyList<CeldaEnCuadro> celdas = new List<CeldaEnCuadro>();
@@ -1891,8 +1851,6 @@ else
 
     private IReadOnlyList<LineaDeReferencia> Lineas(string analito) =>
         lineas.TryGetValue(analito, out var l) ? l : new List<LineaDeReferencia>();
-
-    private static readonly CultureInfo Cultura = new CultureInfo("es-ES");
 
     // Una visita: todo lo que se midió el mismo día. Las celdas ya vienen del dominio
     // agrupadas por columna, así que acá solo se dan vuelta las filas por las fechas.

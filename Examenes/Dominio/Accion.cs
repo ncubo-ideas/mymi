@@ -19,40 +19,43 @@ namespace Examenes.Dominio
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
 	internal sealed class Accion
 	{
-		// Que hacer, ya escrito como se le muestra a la persona, con acentos.
-		internal string Que { get; private set; }
+		/// <summary>
+		/// EL CODIGO de que hay que hacer: identidad, y lo unico que cruza el wire. Como se le dice a
+		/// una persona es texto de presentacion, y lo busca con este codigo la capa que redacta, en el
+		/// idioma que le pidieron.
+		/// </summary>
+		internal string Clave { get; private set; }
 
 		internal Plazo Plazo { get; private set; }
 
-		private Accion(string que, Plazo plazo)
+		private Accion(string clave, Plazo plazo)
 		{
 			ArgumentNullException.ThrowIfNull(plazo);
 
-			Que = que;
+			Clave = clave;
 			Plazo = plazo;
 		}
 
-		// La accion dicha entera: "mostráselo a tu médico este mes". Es lo unico que una
-		// pantalla necesita imprimir, y viene armada para que no la componga ella.
-		internal string Legible => $"{Que} {Plazo.ParaMostrar}";
+		/// <summary>El codigo del plazo, para que quien redacte arme la accion entera sin abrir el plazo.</summary>
+		internal string ClaveDelPlazo => Plazo.Clave;
 
 		// -------------------------------------------------------- el conjunto cerrado
 
 		// Hay algo que un medico tiene que VER: un valor, una serie, un salto.
 		internal static Accion MostrarleEstoATuMedico(Plazo plazo) =>
-			new Accion("mostrále esto a tu médico", plazo);
+			new Accion("mostrarle-esto-a-tu-medico", plazo);
 
 		// Hay algo para CONVERSAR, sin que corra: la direccion, los habitos, la meta.
 		internal static Accion ConversarloConTuMedico(Plazo plazo) =>
-			new Accion("conversalo con tu médico", plazo);
+			new Accion("conversarlo-con-tu-medico", plazo);
 
 		// El hallazgo puede ser real o puede ser la medicion: lo que corresponde es
 		// volver a medir, no alarmarse.
 		internal static Accion RepetirElExamen(Plazo plazo) =>
-			new Accion("repetí el examen", plazo);
+			new Accion("repetir-el-examen", plazo);
 
 		// No espera. Es la accion del rojo reservado.
 		internal static Accion BuscarAtencionMedica(Plazo plazo) =>
-			new Accion("buscá atención médica", plazo);
+			new Accion("buscar-atencion-medica", plazo);
 	}
 }

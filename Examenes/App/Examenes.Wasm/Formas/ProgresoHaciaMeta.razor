@@ -1,6 +1,7 @@
 @using System.Globalization
 @using System.Linq
 @using Examenes.App.Vistas
+@inject Textos textos
 
 @*  LA FORMA DEL COLESTEROL: un progreso, no una serie.
 
@@ -32,9 +33,11 @@
     </svg>
 
     <div class="forma-pie forma-pie--extremos">
-        <span class="forma-nota">@(HayEpisodio ? $"venías de {Numero(Partida!.Valor)}" : "hoy")
+        <span class="forma-nota">@(HayEpisodio
+                ? textos.Con("forma.veniasDe", ("valor", Numero(Partida!.Valor)))
+                : textos["forma.hoy"])
             <b>@Numero(Actual) @Unidad</b></span>
-        <span class="forma-nota forma-nota--der">meta <b>@Numero(Meta?.Valor ?? Actual) @Unidad</b></span>
+        <span class="forma-nota forma-nota--der">@textos["forma.meta"] <b>@Numero(Meta?.Valor ?? Actual) @Unidad</b></span>
     </div>
 </div>
 

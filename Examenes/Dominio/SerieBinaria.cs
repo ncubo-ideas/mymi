@@ -86,8 +86,8 @@ namespace Examenes.Dominio
 		// Un binario no tiene rango: su referencia es la polaridad. En los tres del demo
 		// lo esperable es negativo, y decirlo al lado del resultado es lo que le da a un
 		// "positivo" el mismo acompanamiento que la referencia le da a un 5.2.
-		internal override string ReferenciaLegible(Paciente paciente) =>
-			Ultima == null ? "" : "lo esperable es negativo";
+		internal override Interpretacion ConSuReferencia(Interpretacion lectura, Paciente paciente) =>
+			Ultima == null ? lectura : lectura.ConReferencia("referencia.esperable-negativo");
 
 		// LOS HECHOS DE LA SERIE. Cuantas pruebas, cuantas dieron positivas, y —la que
 		// importa— cuantas positivas hay SEGUIDAS al final.
@@ -98,7 +98,7 @@ namespace Examenes.Dominio
 		// alguna vez.
 		internal EvaluacionDePresencia Evaluar()
 		{
-			string ultimoResultado = Ultima == null ? "" : Ultima.Expresado;
+			string ultimoResultado = Ultima == null ? "" : Ultima.ClaveDelResultado;
 
 			if (pruebas.Count < 2)
 				return EvaluacionDePresencia.SinSerie(Analito, pruebas.Count, ultimoResultado);

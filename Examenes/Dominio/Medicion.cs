@@ -35,7 +35,12 @@ namespace Examenes.Dominio
 		// El texto que se muestra. No es un ToString de volcado de estado: es la forma
 		// en que el dominio dice un valor medido, con unidad, que es la unica forma
 		// completa de decirlo.
-		internal override string Expresado => $"{Valor} {Unidad.Simbolo}";
+		/// <summary>
+		/// El numero y su unidad, para un mensaje de diagnostico. NO es texto de pantalla: lo que
+		/// una pantalla muestra lo arma quien redacta, con el numero y el simbolo por separado,
+		/// porque el separador decimal es del idioma.
+		/// </summary>
+		internal string Expresado => $"{Valor} {Unidad.Simbolo}";
 
 		internal bool MismaUnidadQue(Medicion otra)
 		{

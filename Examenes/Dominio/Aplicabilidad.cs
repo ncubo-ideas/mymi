@@ -22,7 +22,7 @@ namespace Examenes.Dominio
 	{
 		internal static readonly Aplicabilidad Aplica = new Aplicabilidad("aplica");
 
-		internal static readonly Aplicabilidad NoAplica = new Aplicabilidad("no aplica");
+		internal static readonly Aplicabilidad NoAplica = new Aplicabilidad("no-aplica");
 
 		// No se puede decidir con lo que se sabe hoy de la persona. Se resuelve en dos
 		// toques, y por eso la superficie insiste.

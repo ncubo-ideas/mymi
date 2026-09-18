@@ -99,28 +99,42 @@ namespace Examenes.Dominio
 
 		// Proyecciones planas, para que el print del DSL no tenga que navegar dos niveles.
 		internal string Nombre => Analito.Nombre;
-		internal string ParaMostrar => Analito.ParaMostrar;
+		/// <summary>El codigo del analito dentro de una clave de frase.</summary>
+		internal string ClaveDelAnalito => Analito.Clave;
 		internal string NombreDeLaSeveridad => Severidad.Nombre;
-		internal string AccionLegible => Accion == null ? "" : Accion.Legible;
+		/// <summary>El codigo de que hacer, vacio cuando no hay nada que hacer.</summary>
+		internal string ClaveDeLaAccion => Accion == null ? "" : Accion.Clave;
 
-		internal string ParaSonia
-		{
-			get
-			{
-				int anos = DiasDesdeLaUltima / 365;
-				string hace = anos >= 1
-					? $"hace {anos} año{(anos == 1 ? "" : "s")}"
-					: $"hace {DiasDesdeLaUltima} días";
+		/// <summary>El codigo de cuando, vacio cuando no hay nada que hacer.</summary>
+		internal string ClaveDelPlazo => Accion == null ? "" : Accion.ClaveDelPlazo;
 
-				return EstaVencido
-					? $"tu último {Analito.ParaMostrar.ToLowerInvariant()} es de {hace}, y conviene "
-						+ $"repetirlo cada {Meses()}"
-					: $"tu último {Analito.ParaMostrar.ToLowerInvariant()} es de {hace}: al día";
-			}
-		}
+		/// <summary>LA FRASE QUE ESTE CONTROL ELIGE, por su nombre.</summary>
+		internal string ClaveDeLaFrase => EstaVencido ? "control.vencido" : "control.al-dia";
 
-		private string Meses() => MesesRecomendados % 12 == 0
-			? $"{MesesRecomendados / 12} año{(MesesRecomendados / 12 == 1 ? "" : "s")}"
-			: $"{MesesRecomendados} meses";
+		/// <summary>
+		/// CUANTO HACE, por el nombre de su clausula: en anos cuando paso mas de uno, y en dias
+		/// mientras no. Cual de las dos es lo decide el dominio; escribirla es de quien redacta.
+		/// </summary>
+		internal string ClaveDeLoQueHace =>
+			AnosDesdeLaUltima >= 1 ? "control.hace.anos" : "control.hace.dias";
+
+		/// <summary>Cuantos anos enteros hace, cero mientras no llegue a uno.</summary>
+		internal int AnosDesdeLaUltima => DiasDesdeLaUltima / DiasDelAno;
+
+		/// <summary>
+		/// CADA CUANTO CONVIENE REPETIRLO, por el nombre de su clausula: en anos cuando la
+		/// periodicidad es de anos enteros —"cada 5 anos" se lee mejor que "cada 60 meses"— y en
+		/// meses mientras no. El dominio sabe cual de las dos es; escribirla es de quien redacta.
+		/// </summary>
+		internal string ClaveDeCadaCuanto =>
+			MesesRecomendados % MesesDelAno == 0 ? "control.cada.anos" : "control.cada.meses";
+
+		/// <summary>Cada cuantos anos enteros, cero cuando la periodicidad no son anos enteros.</summary>
+		internal int AnosRecomendados =>
+			MesesRecomendados % MesesDelAno == 0 ? MesesRecomendados / MesesDelAno : 0;
+
+		private const int DiasDelAno = 365;
+
+		private const int MesesDelAno = 12;
 	}
 }

@@ -41,7 +41,7 @@ namespace Examenes.App
 		public static object HacerListaDeExamenes(ExamenesAPI api)
 		{
 			ArgumentNullException.ThrowIfNull(api);
-			return new { hayDatos = true, examenes = api.Examenes() };
+			return new { hayDatos = true, examenes = api.Examenes(ExamenesAPI.IdiomaDelRegistro) };
 		}
 
 		// Todavia no hay nada registrado. Se dice DONDE se busco, porque "no hay datos" sin

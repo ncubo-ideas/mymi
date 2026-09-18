@@ -91,7 +91,7 @@ namespace Examenes.Dominio
 		// alguna vez.
 		internal EvaluacionDeNominal Evaluar()
 		{
-			string ultimaCategoria = Ultima == null ? "" : Ultima.Expresado;
+			string ultimaCategoria = Ultima == null ? "" : Ultima.ClaveDelResultado;
 			bool ultimaEsEsperable = Ultima == null || Ultima.EsEsperable;
 
 			if (observaciones.Count < 2)

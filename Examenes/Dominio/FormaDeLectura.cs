@@ -21,15 +21,15 @@ namespace Examenes.Dominio
 	{
 		// Una trayectoria en el tiempo contra la linea base de la persona. El antigeno.
 		internal static readonly FormaDeLectura TrayectoriaConLineaBase =
-			new FormaDeLectura("trayectoria con linea base");
+			new FormaDeLectura("trayectoria-con-linea-base");
 
 		// Un progreso desde donde arranco el episodio hasta una meta. El colesterol.
 		internal static readonly FormaDeLectura ProgresoHaciaMeta =
-			new FormaDeLectura("progreso hacia meta");
+			new FormaDeLectura("progreso-hacia-meta");
 
 		// Una posicion dentro de una banda con piso Y techo. La hemoglobina.
 		internal static readonly FormaDeLectura PosicionEnBanda =
-			new FormaDeLectura("posicion en banda");
+			new FormaDeLectura("posicion-en-banda");
 
 		// UNA TIRA DE PRUEBAS EN EL TIEMPO: estuvo, no estuvo, volvio a estar. Los
 		// binarios — los nitritos, las dos sangres ocultas.
@@ -39,7 +39,7 @@ namespace Examenes.Dominio
 		// eso ES un dibujo, no una frase: ver tres pruebas seguidas marcadas dice algo que
 		// la ultima sola no dice.
 		internal static readonly FormaDeLectura PresenciaEnElTiempo =
-			new FormaDeLectura("presencia en el tiempo");
+			new FormaDeLectura("presencia-en-el-tiempo");
 
 		// UNA TIRA DE CATEGORIAS EN EL TIEMPO: ambar, ambar, oscuro. Los nominales: el
 		// color de la orina, el de las heces.
@@ -51,7 +51,7 @@ namespace Examenes.Dominio
 		// volvio a lo esperable. Sigue siendo cierto que preguntarle a un color si viene
 		// subiendo no es una pregunta; lo que hay es si salio y si volvio.
 		internal static readonly FormaDeLectura CategoriaEnElTiempo =
-			new FormaDeLectura("categoria en el tiempo");
+			new FormaDeLectura("categoria-en-el-tiempo");
 
 		// Un hecho, sin escala ni SERIE DETRAS. Es lo que contesta InterpretarSerieDe cuando
 		// no hay serie de ese analito o cuando no le corresponde a la persona: no queda

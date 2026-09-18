@@ -13,19 +13,13 @@ namespace Examenes.Dominio
 	// que es donde vive lo que tres colores en fila dicen y uno solo no.
 	internal sealed class ColorDeOrina : MagnitudNominal
 	{
-		internal static readonly ColorDeOrina Transparente = new ColorDeOrina("transparente", "transparente", true);
-		internal static readonly ColorDeOrina AmarilloPalido = new ColorDeOrina("amarillo palido", "amarillo pálido", true);
-		internal static readonly ColorDeOrina Ambar = new ColorDeOrina("ambar", "ámbar", true);
-		internal static readonly ColorDeOrina Oscuro = new ColorDeOrina("oscuro", "oscuro", false);
-		internal static readonly ColorDeOrina Rojizo = new ColorDeOrina("rojizo", "rojizo", false);
+		internal static readonly ColorDeOrina Transparente = new ColorDeOrina("transparente", true);
+		internal static readonly ColorDeOrina AmarilloPalido = new ColorDeOrina("amarillo palido", true);
+		internal static readonly ColorDeOrina Ambar = new ColorDeOrina("ambar", true);
+		internal static readonly ColorDeOrina Oscuro = new ColorDeOrina("oscuro", false);
+		internal static readonly ColorDeOrina Rojizo = new ColorDeOrina("rojizo", false);
 
 		internal override string Nombre { get; }
-
-		// El nombre CON ACENTO, que es el que ve la persona. El canonico -sin acento- es
-		// la llave con la que llega del laboratorio y con la que se compara.
-		internal string ParaMostrar { get; private set; }
-
-		internal override string Expresado => ParaMostrar;
 
 		// El color es lo que un examen de orina informa, y algunos colores son un
 		// hallazgo. Que el propio color sepa si es esperable evita un switch afuera.
@@ -42,18 +36,17 @@ namespace Examenes.Dominio
 		internal override Accion AccionDelHallazgo =>
 			EsEsperable ? null : Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita);
 
-		internal override string ParaSonia => EsEsperable
-			? $"el color de la orina salió {ParaMostrar}, que es de lo esperable"
-			: $"el color de la orina salió {ParaMostrar}";
+		internal override string ClaveDeLaFrase => EsEsperable
+			? "resultado.color-de-la-orina.esperable"
+			: "resultado.color-de-la-orina.hallazgo";
 
 		// La serie que lo lee. Es la fabrica de MagnitudNominal: el Expediente arma la
 		// serie correcta sin un switch, preguntandole al resultado cual es la suya.
 		internal override SerieNominal NuevaSerie() => new SerieDeColorDeOrina();
 
-		private ColorDeOrina(string nombre, string paraMostrar, bool esEsperable)
+		private ColorDeOrina(string nombre, bool esEsperable)
 		{
 			Nombre = nombre;
-			ParaMostrar = paraMostrar;
 			EsEsperable = esEsperable;
 		}
 

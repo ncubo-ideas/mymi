@@ -1,6 +1,7 @@
 @using System.Globalization
 @using System.Linq
 @using Examenes.App.Vistas
+@inject Textos textos
 
 @*  LA FORMA DE LOS BINARIOS: estuvo, no estuvo, volvió a estar.
 
@@ -45,8 +46,6 @@
     [Parameter] public int Seguidas { get; set; }
     [Parameter] public string Descripcion { get; set; } = "";
 
-    private static readonly System.Globalization.CultureInfo Cultura = new("es-CR");
-
     private DateTime Primera => Pruebas.Count == 0 ? default : Pruebas[0].Fecha;
     private string Ultimo => Pruebas.Count == 0 ? "" : Pruebas[^1].Expresado;
 
@@ -57,8 +56,12 @@
         get
         {
             int presentes = Pruebas.Count(p => p.EsPositivo);
-            if (presentes == 0) return $"{Pruebas.Count} pruebas, ninguna";
-            return $"{presentes} de {Pruebas.Count}";
+            string pruebas = Pruebas.Count.ToString(CultureInfo.InvariantCulture);
+
+            return presentes == 0
+                ? textos.Con("forma.presenciaNinguna", ("pruebas", pruebas))
+                : textos.Con("forma.presenciaAlgunas",
+                    ("presentes", presentes.ToString(CultureInfo.InvariantCulture)), ("pruebas", pruebas));
         }
     }
 
@@ -80,6 +83,6 @@
         return (12 + p * 296).ToString("0.#", CultureInfo.InvariantCulture);
     }
 
-    private static string Fecha(DateTime fecha) =>
-        fecha == default ? "" : fecha.ToString("MMM yyyy", Cultura);
+    private string Fecha(DateTime fecha) =>
+        fecha == default ? "" : fecha.ToString("MMM yyyy", textos.Cultura);
 }

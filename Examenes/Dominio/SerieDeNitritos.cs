@@ -28,37 +28,33 @@ namespace Examenes.Dominio
 			if (!HayMediciones) return Interpretacion.SinSerie(hechos);
 			if (!hechos.HaySerie)
 				return new Interpretacion(Veredicto.Indeterminado,
-					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos,
+					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ClaveDeLaFrase, hechos,
 					Ultima.Resultado.AccionDelHallazgo);
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NuncaAparecio))
 				return new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-					$"los nitritos salieron negativos las {hechos.CantidadDeMediciones} veces",
+					"lectura.nitritos.nunca-aparecio",
 					hechos);
 
 			// El plazo es de ESTE analito: una infeccion urinaria amerita cita y no
 			// espera un mes.
 			if (ReferenceEquals(hechos.Presencia, Presencia.Persiste))
 				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					$"los nitritos siguen positivos en las {hechos.PositivasSeguidas} pruebas "
-					+ "seguidas: la infección no cedió", hechos,
+					"lectura.nitritos.persiste", hechos,
 					Accion.MostrarleEstoATuMedico(Plazo.EstaSemana));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.Aparecio))
 				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					"los nitritos salieron positivos, que suele indicar una infección "
-					+ "urinaria", hechos, Accion.MostrarleEstoATuMedico(Plazo.EstaSemana));
+					"lectura.nitritos.aparecio", hechos, Accion.MostrarleEstoATuMedico(Plazo.EstaSemana));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NoConfirmado))
 				return new Interpretacion(Veredicto.HallazgoNoConfirmado, Severidad.Informativo,
-					"los nitritos salieron positivos una vez y en la prueba siguiente "
-					+ "volvieron a negativo", hechos);
+					"lectura.nitritos.no-confirmado", hechos);
 
 			// LA BUENA NOTICIA DE ESTE ANALITO, y la unica que se puede dar mirando la
 			// serie: estuvo, se trato, y se fue.
 			return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-				$"los nitritos estuvieron positivos {hechos.Positivas} veces y en la última "
-				+ "ya salieron negativos", hechos);
+					"lectura.nitritos.cedio", hechos);
 		}
 	}
 }

@@ -32,7 +32,11 @@ namespace Examenes.Dominio
 
 		// Proyecciones planas para el print del DSL.
 		internal string NombreDeLaSeveridad => Severidad.Nombre;
-		internal string AccionLegible => Accion == null ? "" : Accion.Legible;
+		/// <summary>El codigo de que hacer, vacio cuando no hay nada que hacer.</summary>
+		internal string ClaveDeLaAccion => Accion == null ? "" : Accion.Clave;
+
+		/// <summary>El codigo de cuando, vacio cuando no hay nada que hacer.</summary>
+		internal string ClaveDelPlazo => Accion == null ? "" : Accion.ClaveDelPlazo;
 		internal bool PideAlgo => Severidad.PideAlgo;
 	}
 }

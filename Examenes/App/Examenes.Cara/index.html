@@ -1,14 +1,24 @@
 <!DOCTYPE html>
-<html lang="es-CR">
+<!-- SIN lang ESCRITO A MANO: el documento se sirve igual para los dos idiomas, asi que una
+     etiqueta fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de
+     negociar con el aparato, que es lo que leen el lector de pantalla y el guionado. -->
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mis exámenes · Laboratorio Clínico Delfos</title>
+<!-- EL TITULO LO PONE idioma.js: la mitad es texto de esta caratula y la otra mitad es el
+     nombre de la institucion, que no se traduce. -->
+<title>Laboratorio Clínico Delfos</title>
 <!-- LA HOJA DE LA INSTITUCION, TAL CUAL, y la estructura de carpetas tambien: `app.css` pide sus
      cuatro pesos por `../fuentes/PlusJakartaSans-*.woff2`, asi que aplanarla dejaria la pantalla
      en la tipografia de sistema sin que nada lo dijera. -->
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="cara.css">
+<!-- EL IDIOMA SE NEGOCIA ANTES QUE NADA: el catalogo tiene que estar antes de que cara.js
+     pinte la primera letra. Los dos viajan en el bundle porque el modulo no tiene red. -->
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
 </head>
 <body>
 
@@ -54,24 +64,25 @@
         </svg>
         <div>
             <div class="marca-nombre">Laboratorio Clínico Delfos</div>
-            <div class="marca-claim">Al servicio de su salud desde 1987</div>
+            <div class="marca-claim" data-texto="app.lema">Al servicio de su salud desde 1987</div>
         </div>
 
         <!-- LA TECLA QUE VA A BUSCAR DATOS. Aca significa otra cosa que en la app suelta: no sale
              a la red -- no puede -- sino que le pide a GNOTHI que traiga lo nuevo. -->
         <button class="inicio-hero-actualizar" id="releer" aria-busy="false"
-                title="Actualizar" aria-label="Actualizar">↻</button>
+                data-texto-aria="app.actualizar">↻</button>
     </div>
 
-    <p class="inicio-hero-kicker"><strong>Hola.</strong> Entendé cómo venís, no solo cómo saliste hoy.</p>
+    <p class="inicio-hero-kicker"><strong data-texto="app.saludo">Hola.</strong>
+       <span data-texto="app.kicker">Entendé cómo venís, no solo cómo saliste hoy.</span></p>
 
     <div class="inicio-hero-chequeo" id="chequeo" hidden>
-        <span class="inicio-hero-chequeo-label">Tu último chequeo</span>
+        <span class="inicio-hero-chequeo-label" data-texto="app.ultimoChequeo">Tu último chequeo</span>
         <span class="inicio-hero-chequeo-linea" aria-hidden="true"></span>
         <span class="inicio-hero-chequeo-fecha" id="chequeo-fecha"></span>
     </div>
 
-    <h1 class="inicio-hero-titular" id="saludo">Preguntándole a Mymi…</h1>
+    <h1 class="inicio-hero-titular" id="saludo" data-texto="app.preguntando">Preguntándole a Mymi…</h1>
     <p class="inicio-hero-secundario" id="secundario"></p>
 </section>
 
@@ -91,7 +102,7 @@
 <section class="inicio-sintendencia" id="sintendencia" hidden></section>
 
 <section class="inicio-historial">
-    <h2 class="seccion inicio-historial-titulo" id="historial">Tu historial</h2>
+    <h2 class="seccion inicio-historial-titulo" id="historial" data-texto="historial.titulo">Tu historial</h2>
     <div id="historial-cuerpo"><p class="apunte">…</p></div>
 </section>
 
@@ -102,7 +113,7 @@
 </main>
 
 <footer>
-    <p>El registro vive en este dispositivo. Esta pantalla no sale a la red:
+    <p data-texto="app.pie">El registro vive en este dispositivo. Esta pantalla no sale a la red:
        le pregunta a Mymi, y Mymi responde con el motor que le presta.</p>
     <p class="apunte mono" id="conexion">—</p>
 </footer>

@@ -13,6 +13,7 @@
     'use strict';
 
     var P = window.Puente;
+    var I = window.Idioma;
     var $ = P.$;
 
     // ---------------------------------------------------------------- formato
@@ -32,15 +33,24 @@
         return String(Math.round(x * 100) / 100);
     }
 
-    var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    // LOS NOMBRES DE LOS MESES SON DEL IDIOMA, igual que todo lo demas que esta cara dice con
+    // sus propias palabras. Se leen del catalogo ya negociado, no de una lista fija.
     function cuando(iso) { var d = new Date(iso); return isNaN(d.getTime()) ? null : d; }
     function fecha(iso) {
         var d = cuando(iso);
         if (!d) return '';
-        return (d.getDate() < 10 ? '0' : '') + d.getDate() + ' ' + MESES[d.getMonth()] + ' ' + d.getFullYear();
+        var nombres = (window.TextoDeLaCara[I.etiqueta] || {}).meses || [];
+        return (d.getDate() < 10 ? '0' : '') + d.getDate() + ' ' + nombres[d.getMonth()] + ' ' + d.getFullYear();
     }
     function dia(iso) { var d = cuando(iso); return d ? d.toISOString().slice(0, 10) : String(iso); }
-    function plural(n, una, varias) { return n === 1 ? una : varias; }
+    // EL PLURAL, por clave y no pegando una 's': las dos lenguas del alcance tienen dos formas
+    // y el catalogo lleva una clave por forma.
+    function mediciones(n) {
+        return n === 1 ? I.texto('tranquilo.medicion') : I.con('tranquilo.mediciones', { cuantas: n });
+    }
+    function resultados(n) {
+        return n === 1 ? I.texto('historial.resultado') : I.con('historial.resultados', { cuantos: n });
+    }
 
     // Un numero listo para un atributo de SVG, con punto decimal siempre: el atributo se lee en
     // cultura invariante y una coma lo rompe.
@@ -55,7 +65,7 @@
     // LA FLECHA SIGUE A LA TENDENCIA, que es semantica del dominio -«en ascenso», «en descenso»- y
     // no al signo de un numero. En una unidad invertida el numero sube cuando la cosa mejora.
     function flecha(t) {
-        return t === 'en ascenso' ? '↑' : t === 'en descenso' ? '↓' : '→';
+        return t === 'en-ascenso' ? '↑' : t === 'en-descenso' ? '↓' : '→';
     }
 
     // EL CHIP, con las mismas precedencias que `Insignia()`: repetir gana sobre todo, despues el
@@ -212,9 +222,9 @@
 
     // EL SALUDO LO DECIDE LA SEVERIDAD, y es del dominio: no es una frase amable por omision.
     function saludo(sev) {
-        if (sev === 'urgente') return 'Hay algo que conviene revisar pronto.';
-        if (sev === 'consulte pronto') return 'Conviene comentar un resultado con tu médico.';
-        return 'En general, tus resultados vienen bien.';
+        if (sev === 'urgente') return I.texto('portada.urgente');
+        if (sev === 'consulte-pronto') return I.texto('portada.consultePronto');
+        return I.texto('portada.enGeneralBien');
     }
 
     function pintarHero(a, masReciente) {
@@ -263,7 +273,9 @@
                 });
                 var pos = pr.filter(function (x) { return x.marcada; }).length;
                 if (pr.length) dibujo = tira(pr, (r.presencia || {}).positivasSeguidas,
-                    pos === 0 ? pr.length + ' pruebas, ninguna' : pos + ' de ' + pr.length,
+                    pos === 0
+                        ? I.con('atencion.pruebasNinguna', { pruebas: pr.length })
+                        : I.con('atencion.pruebasAlgunas', { presentes: pos, pruebas: pr.length }),
                     pr.length ? pr[pr.length - 1].texto : '', l.paraSonia);
 
             // LA TERCERA FORMA, que faltaba. Un color no tiene valor continuo NI presencia: tiene
@@ -288,12 +300,13 @@
                 var c = r.constancia || {};
                 var dentro = (c.mediciones || ob.length) - (c.noEsperables || 0);
                 if (ob.length) dibujo = tira(ob, c.noEsperablesSeguidas,
-                    dentro + ' de ' + (c.mediciones || ob.length) + ' dentro de lo esperable',
+                    I.con('atencion.dentroDeLoEsperable',
+                        { dentro: dentro, veces: (c.mediciones || ob.length) }),
                     c.ultimaCategoria || (ob[ob.length - 1] || {}).texto, l.paraSonia);
 
-            } else if (l.forma === 'trayectoria con linea base' && t.haySerie) {
+            } else if (l.forma === 'trayectoria-con-linea-base' && t.haySerie) {
                 dibujo = trayectoria(puntos, r.referencias, l.pideAlgo, l.paraSonia);
-            } else if (l.forma === 'posicion en banda') {
+            } else if (l.forma === 'posicion-en-banda') {
                 dibujo = pista(puntos, r.referencias, false);
             }
         }
@@ -314,14 +327,14 @@
                     '<div class="inicio-atencion-nombre-grupo">' +
                         '<span class="inicio-atencion-nombre">' + texto(nombre) + '</span>' +
                         (t.tendencia ? '<span class="inicio-atencion-estado">' + flecha(t.tendencia) + ' ' +
-                            texto(t.tendencia) + '</span>' : '') +
+                            texto(t.tendenciaDicha) + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<span class="inicio-atencion-valor">' + v + '</span>' +
             '</div>' +
             (cadena(t, puntos) ? '<p class="inicio-atencion-serie">' + cadena(t, puntos) + '</p>' : '') +
-            (l.referenciaLegible ? '<p class="inicio-atencion-referencia">referencia: ' +
-                texto(l.referenciaLegible) + '</p>' : '') +
+            (l.referenciaLegible ? '<p class="inicio-atencion-referencia">' +
+                texto(I.con('atencion.referencia', { referencia: l.referenciaLegible })) + '</p>' : '') +
             dibujo +
             (l.paraSonia ? '<p class="inicio-atencion-detalle">' + texto(l.paraSonia) +
                 (l.pideAlgo && l.accion ? ': <b>' + texto(l.accion) + '</b>' : '.') + '</p>' : '') +
@@ -340,10 +353,10 @@
             '</div>' +
             pista(puntos, r.referencias, true) +
             '<div class="inicio-tranquilo-rango-etiquetas">' +
-                '<span class="chip ' + insignia(l, t.haySerie) + '">en rango</span>' +
-                '<p class="inicio-tranquilo-nota">' + (t.mediciones || 0) + ' ' +
-                plural(t.mediciones, 'medición', 'mediciones') +
-                (t.tendencia ? ' · ' + texto(t.tendencia) : '') + '</p>' +
+                '<span class="chip ' + insignia(l, t.haySerie) + '">' +
+                texto(I.texto('tranquilo.enRango')) + '</span>' +
+                '<p class="inicio-tranquilo-nota">' + texto(mediciones(t.mediciones || 0)) +
+                (t.tendencia ? ' · ' + texto(t.tendenciaDicha) : '') + '</p>' +
             '</div>' +
             (l.paraSonia ? '<p class="inicio-tranquilo-detalle">' + texto(l.paraSonia) + '.</p>' : '') +
         '</div></li>';
@@ -355,7 +368,7 @@
             '<div class="inicio-cambio-cabeza">' +
                 '<span class="inicio-cambio-nombre">' + texto(l.paraMostrar || r.analito) + '</span>' +
                 (t.tendencia ? '<span class="inicio-cambio-estado inicio-cambio-estado--' + tono(l) + '">' +
-                    flecha(t.tendencia) + ' ' + texto(t.tendencia) + '</span>' : '') +
+                    flecha(t.tendencia) + ' ' + texto(t.tendenciaDicha) + '</span>' : '') +
             '</div>' +
             // LAS CIFRAS SON LAS DE LA TENDENCIA, no los dos ultimos puntos de la serie.
             //
@@ -385,10 +398,10 @@
                 '<div class="inicio-sintendencia-fila">' +
                     '<span class="inicio-sintendencia-valor">' + valor(t.valorFinal) +
                     ' <span>' + texto(t.unidad) + '</span></span>' +
-                    '<span class="chip chip--repetir">' + n + ' ' + plural(n, 'medición', 'mediciones') + '</span>' +
+                    '<span class="chip chip--repetir">' + texto(mediciones(n)) + '</span>' +
                 '</div>' +
                 '<p class="inicio-sintendencia-texto">' +
-                texto(l.paraSonia || 'Con una sola medición todavía no se puede decir para dónde viene.') +
+                texto(l.paraSonia || I.texto('sinTendencia.conUna')) +
                 '</p>' +
             '</div>' +
         '</div>';
@@ -434,26 +447,26 @@
     function pintarSecciones(g) {
         mostrar('atencion', g.atencion.length,
             '<div class="inicio-atencion-encabezado">' +
-                '<p class="inicio-atencion-rotulo">merece atención</p>' +
+                '<p class="inicio-atencion-rotulo">' + texto(I.texto('atencion.rotulo')) + '</p>' +
                 '<span class="inicio-atencion-conteo">' +
                     '<span class="inicio-atencion-conteo-punto" aria-hidden="true"></span>' +
                     g.atencion.length + '</span>' +
             '</div>' + g.atencion.map(tarjetaAtencion).join(''));
 
         mostrar('tranquilo', g.tranquilo.length,
-            '<p class="inicio-tranquilo-rotulo">lo demás está bien</p>' +
+            '<p class="inicio-tranquilo-rotulo">' + texto(I.texto('tranquilo.rotulo')) + '</p>' +
             '<div class="inicio-tranquilo-tarjeta">' +
-                '<p class="inicio-tranquilo-titulo">Estos resultados están dentro de lo esperado.</p>' +
+                '<p class="inicio-tranquilo-titulo">' + texto(I.texto('tranquilo.titulo')) + '</p>' +
                 '<ul class="inicio-tranquilo-lista">' + g.tranquilo.map(itemTranquilo).join('') + '</ul>' +
             '</div>');
 
         mostrar('cambios', g.cambios.length,
-            '<h2 class="seccion">Qué cambió desde tu último chequeo</h2>' +
-            '<p class="inicio-cambios-intro">Así han cambiado tus resultados recientes.</p>' +
+            '<h2 class="seccion">' + texto(I.texto('cambios.titulo')) + '</h2>' +
+            '<p class="inicio-cambios-intro">' + texto(I.texto('cambios.intro')) + '</p>' +
             g.cambios.map(tarjetaCambio).join(''));
 
         mostrar('sintendencia', g.sintendencia.length,
-            '<p class="inicio-sintendencia-rotulo">todavía no podemos ver la tendencia</p>' +
+            '<p class="inicio-sintendencia-rotulo">' + texto(I.texto('sinTendencia.rotulo')) + '</p>' +
             g.sintendencia.map(tarjetaSinTendencia).join(''));
     }
 
@@ -477,20 +490,19 @@
         var caja = $('historial-cuerpo');
         var v = visitas(r && r.celdas);
         if (!v.length) {
-            P.apunte(caja, 'Todavía no hay exámenes. Apretá Actualizar.');
+            P.apunte(caja, I.texto('historial.sinExamenes'));
             return null;
         }
 
         caja.innerHTML =
-            '<p class="inicio-historial-intro">Aquí podés ver tus resultados anteriores.</p>' +
+            '<p class="inicio-historial-intro">' + texto(I.texto('historial.intro')) + '</p>' +
             '<ul class="inicio-historial-timeline">' + v.map(function (x, i) {
                 return '<li class="inicio-historial-evento' +
                     (i === 0 ? ' inicio-historial-evento--reciente' : '') + '">' +
                     '<span class="inicio-historial-nodo" aria-hidden="true"></span>' +
                     '<div class="inicio-historial-fila">' +
                         '<span class="inicio-historial-fecha">' + fecha(x.fecha) + '</span>' +
-                        '<span class="inicio-historial-cantidad">' + x.cosas.length + ' ' +
-                        plural(x.cosas.length, 'resultado', 'resultados') + '</span>' +
+                        '<span class="inicio-historial-cantidad">' + texto(resultados(x.cosas.length)) + '</span>' +
                     '</div></li>';
             }).join('') + '</ul>';
 
@@ -508,7 +520,7 @@
         if (!p || !p.haceFalta) return;
 
         caja.innerHTML = '<div class="inicio-config-fila">' +
-            '<p class="inicio-config-texto"><b>' + texto(p.paraSonia || 'Falta un dato tuyo') + '</b>' +
+            '<p class="inicio-config-texto"><b>' + texto(p.paraSonia || I.texto('pedido.faltaUnDato')) + '</b>' +
             (p.porQue ? '<br>' + texto(p.porQue) : '') + '</p></div>';
     }
 
@@ -526,11 +538,11 @@
         // EL HERO NECESITA LAS DOS: la severidad sale de `alertas` y la fecha del ultimo chequeo
         // del historial. Se encadenan porque pintar medio hero y completarlo despues haria saltar
         // el titular delante de quien lo esta leyendo.
-        P.pedir('historial')
+        P.pedir('historial', { idioma: I.etiqueta })
             .then(function (r) { return pintarHistorial(r); })
             .catch(function (e) { P.apunte($('historial-cuerpo'), e.message, true); return null; })
             .then(function (masReciente) {
-                return P.pedir('alertas').then(function (a) {
+                return P.pedir('alertas', { idioma: I.etiqueta }).then(function (a) {
                     if (pasada !== ultimaPasada) return;
                     pintarHero(a, masReciente);
                     pintarPedido(a);
@@ -544,7 +556,7 @@
         // Y CADA PASADA TIENE SU NUMERO: la pantalla se pinta dos veces -lo que ya hay, y otra vez
         // cuando vuelve el cartero-, y sin la guarda las dos cadenas repartirian sobre las mismas
         // secciones.
-        P.pedir('analitos')
+        P.pedir('analitos', { idioma: I.etiqueta })
             .then(function (r) {
                 var nombres = (r && r.analitos) || [];
                 if (!nombres.length) return null;
@@ -552,7 +564,7 @@
                 var juntadas = [];
                 return nombres.reduce(function (antes, a) {
                     return antes
-                        .then(function () { return P.pedir('tendencia', { analito: a }); })
+                        .then(function () { return P.pedir('tendencia', { analito: a, idioma: I.etiqueta }); })
                         .then(function (x) { juntadas.push(x); })
                         .catch(function () { /* un analito sin serie no rompe los demas */ });
                 }, Promise.resolve()).then(function () { return juntadas; });
@@ -580,6 +592,7 @@
 
     function arrancar() {
         P.listo();
+        I.pintarLoEstatico();
         $('releer').addEventListener('click', releer);
 
         // PRIMERO SE PINTA LO QUE YA HAY, y despues se refresca. Al reves, abrir con el publicador

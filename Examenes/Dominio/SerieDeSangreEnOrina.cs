@@ -35,40 +35,35 @@ namespace Examenes.Dominio
 			if (!HayMediciones) return Interpretacion.SinSerie(hechos);
 			if (!hechos.HaySerie)
 				return new Interpretacion(Veredicto.Indeterminado,
-					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos,
+					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ClaveDeLaFrase, hechos,
 					Ultima.Resultado.AccionDelHallazgo);
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NuncaAparecio))
 				return new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-					$"en las {hechos.CantidadDeMediciones} pruebas que te hiciste nunca "
-					+ "apareció sangre en la orina", hechos);
+					"lectura.sangre-en-orina.nunca-aparecio", hechos);
 
 			// Ya estaba en lo mas alto: persistir no sube nada, y decirlo asi es mas
 			// honesto que inventar un escalon que este dominio no tiene. Lo que cambia es
 			// la frase, y no es adorno: "no es pasajera" es la informacion.
 			if (ReferenceEquals(hechos.Presencia, Presencia.Persiste))
 				return new Interpretacion(Veredicto.Empeorando, Severidad.Urgente,
-					$"la sangre en la orina apareció en las {hechos.PositivasSeguidas} pruebas "
-					+ "seguidas: no fue algo pasajero", hechos,
+					"lectura.sangre-en-orina.persiste", hechos,
 					Accion.BuscarAtencionMedica(Plazo.Pronto));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.Aparecio))
 				return new Interpretacion(Veredicto.Empeorando, Severidad.Urgente,
-					"apareció sangre en la orina, y eso conviene que lo revise un médico "
-					+ "pronto", hechos, Accion.BuscarAtencionMedica(Plazo.Pronto));
+					"lectura.sangre-en-orina.aparecio", hechos, Accion.BuscarAtencionMedica(Plazo.Pronto));
 
 			// EL DESCARGO, y es la unica lectura de este analito que no pide nada. Sin la
 			// serie, este mismo expediente decia "buscá atención médica pronto".
 			if (ReferenceEquals(hechos.Presencia, Presencia.NoConfirmado))
 				return new Interpretacion(Veredicto.HallazgoNoConfirmado, Severidad.Informativo,
-					"apareció sangre en la orina una vez y la prueba siguiente salió limpia: "
-					+ "fue pasajera", hechos);
+					"lectura.sangre-en-orina.no-confirmado", hechos);
 
 			// Estuvo de verdad y despues se apago. No es lo mismo que no haber estado
 			// nunca: conviene confirmarlo con una prueba mas.
 			return new Interpretacion(Veredicto.Mejorando, Severidad.Vigilar,
-				$"la sangre en la orina apareció {hechos.Positivas} veces y en la última ya "
-				+ "no está", hechos, Accion.RepetirElExamen(Plazo.EsteMes));
+					"lectura.sangre-en-orina.cedio", hechos, Accion.RepetirElExamen(Plazo.EsteMes));
 		}
 	}
 }

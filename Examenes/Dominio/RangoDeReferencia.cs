@@ -42,6 +42,10 @@ namespace Examenes.Dominio
 		internal static RangoDeReferencia HastaUnMaximoDe(decimal maximo, UnidadDeMedida unidad) =>
 			new RangoDeReferencia(new Medicion(0m, unidad), new Medicion(maximo, unidad));
 
+		/// <summary>
+		/// Los dos extremos y su unidad, para un mensaje de diagnostico. NO es texto de pantalla: lo
+		/// que una pantalla muestra lo arma quien redacta, con los numeros por separado.
+		/// </summary>
 		internal string Expresado => $"{Minimo.Valor} a {Maximo.Valor} {Maximo.Unidad.Simbolo}";
 
 		internal bool Contiene(Medicion medicion)

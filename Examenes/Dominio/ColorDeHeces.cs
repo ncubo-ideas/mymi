@@ -14,22 +14,16 @@ namespace Examenes.Dominio
 	// de porosidad que este dominio evita.
 	internal sealed class ColorDeHeces : MagnitudNominal
 	{
-		internal static readonly ColorDeHeces Chocolate = new ColorDeHeces("chocolate", "chocolate", true);
-		internal static readonly ColorDeHeces Marron = new ColorDeHeces("marron", "marrón", true);
-		internal static readonly ColorDeHeces Verdoso = new ColorDeHeces("verdoso", "verdoso", true);
+		internal static readonly ColorDeHeces Chocolate = new ColorDeHeces("chocolate", true);
+		internal static readonly ColorDeHeces Marron = new ColorDeHeces("marron", true);
+		internal static readonly ColorDeHeces Verdoso = new ColorDeHeces("verdoso", true);
 
 		// Los dos que no son esperables, y lo son por razones distintas que el dominio no
 		// necesita explicar para saber que hay que mirarlos.
-		internal static readonly ColorDeHeces Negro = new ColorDeHeces("negro", "negro", false);
-		internal static readonly ColorDeHeces Palido = new ColorDeHeces("palido", "pálido", false);
+		internal static readonly ColorDeHeces Negro = new ColorDeHeces("negro", false);
+		internal static readonly ColorDeHeces Palido = new ColorDeHeces("palido", false);
 
 		internal override string Nombre { get; }
-
-		// El nombre CON ACENTO, que es el que ve la persona. El canonico -sin acento- es
-		// la llave con la que llega del laboratorio y con la que se compara.
-		internal string ParaMostrar { get; private set; }
-
-		internal override string Expresado => ParaMostrar;
 
 		internal override bool EsEsperable { get; }
 
@@ -44,18 +38,17 @@ namespace Examenes.Dominio
 		internal override Accion AccionDelHallazgo =>
 			EsEsperable ? null : Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita);
 
-		internal override string ParaSonia => EsEsperable
-			? $"el color de las heces salió {ParaMostrar}, que es de lo esperable"
-			: $"el color de las heces salió {ParaMostrar}";
+		internal override string ClaveDeLaFrase => EsEsperable
+			? "resultado.color-de-las-heces.esperable"
+			: "resultado.color-de-las-heces.hallazgo";
 
 		// La serie que lo lee. Es la fabrica de MagnitudNominal: el Expediente arma la
 		// serie correcta sin un switch, preguntandole al resultado cual es la suya.
 		internal override SerieNominal NuevaSerie() => new SerieDeColorDeHeces();
 
-		private ColorDeHeces(string nombre, string paraMostrar, bool esEsperable)
+		private ColorDeHeces(string nombre, bool esEsperable)
 		{
 			Nombre = nombre;
-			ParaMostrar = paraMostrar;
 			EsEsperable = esEsperable;
 		}
 

@@ -26,9 +26,9 @@ namespace Examenes.Dominio
 
 			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			lineas.Add(new ReferenciaDeLectura("piso", rango.Minimo,
-				$"por debajo de {rango.Minimo.Expresado} es mas bajo de lo habitual"));
+				"linea.cloro.piso"));
 			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
-				$"lo normal llega hasta {rango.Maximo.Expresado}"));
+				"linea.cloro.techo"));
 
 			return lineas;
 		}
@@ -42,9 +42,7 @@ namespace Examenes.Dominio
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"el cloro cambió {Math.Abs(hechos.Cambio)} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que es demasiado para el tiempo transcurrido", hechos,
+					"lectura.cloro.salto-inverosimil", hechos,
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			// Mantenerse no puede juzgar por el signo -EsFavorable revienta-, asi que lo que
@@ -56,20 +54,16 @@ namespace Examenes.Dominio
 			if (!seMovio)
 				return ahoraEnRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"el cloro se mantiene en {Ultima.Valor.Expresado}, dentro de lo normal",
-						hechos)
+					"lectura.cloro.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, Severidad.Vigilar,
-						$"el cloro lleva tiempo en {Ultima.Valor.Expresado}, fuera de lo normal",
-						hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
+					"lectura.cloro.estable-fuera", hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 
 			if (ahoraEnRango)
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"el cloro volvió a {Ultima.Valor.Expresado}, dentro de lo normal", hechos);
+					"lectura.cloro.volvio", hechos);
 
 			return new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-				$"el cloro pasó de {hechos.ValorInicial} a {hechos.ValorFinal} "
-				+ $"{hechos.Unidad}, fuera de lo normal",
-				hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
+					"lectura.cloro.paso-fuera", hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 		}
 	}
 }
