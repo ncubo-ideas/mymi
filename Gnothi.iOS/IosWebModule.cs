@@ -26,12 +26,25 @@ internal sealed class IosWebModuleHost(UIViewController owner, ISecretStore stor
 //      NOT let anyone handle http or https -- `SetUrlSchemeHandler` throws for reserved
 //      schemes -- so here it has to be a scheme of our own.
 //
-//      [OPEN, AND IT DECIDES THE SHAPE] Whether that origin is a secure context is not
-//      measured. If it is not, the module does not start: origin storage and `crypto.subtle`
-//      fall over, and that is exactly what bit us on Android when the first version used
-//      `gnothi-mod://` there (03 §2). It is one line to check and it is the first thing to run
-//      on a device -- see PRUEBAS-WEBVIEW-IOS.md P0. If it fails, the fallback is a local
-//      server on 127.0.0.1 and the ONLY thing that changes is `OriginFor` plus who answers.
+//      [ANSWERED 2026-09-07, AND THE SHAPE IT DECIDED IS THIS ONE] This comment used to say
+//      the secure context was not measured, and it stayed that way after the measurement --
+//      which is how somebody planning the sala read it as still open. It is not: the probe
+//      below answered it in the four modules, on an iPhone 17 Pro simulator / iOS 26.5:
+//
+//          secureContext=true crypto.subtle=true storage=true origin=gnothi-mod://<module>
+//
+//      See HALLAZGOS-CORRIENDO-EL-GUION.md §1 and PRUEBAS-WEBVIEW-IOS.md P0. So `OriginFor`
+//      stays as it is and the 127.0.0.1 fallback is NOT needed: no port, no lifecycle, and the
+//      interception stays «before the network». Had it been false, the module would not have
+//      started at all -- origin storage and `crypto.subtle` fall over -- which is exactly what
+//      bit Android when its first version used `gnothi-mod://` there (03 §2).
+//
+//      WHAT IT DOES NOT ANSWER, AND THE SALA NEEDS IT. Android's sala serves itself over
+//      `https://sala.gnothi.local` and not a scheme of its own, for the Android version of
+//      this same reason. On iOS that reason is gone, so the sala CAN use a scheme -- but a
+//      secure origin is the floor, not the question: its substrate is a Blazor wasm document
+//      booting a .NET runtime, and whether THAT boots under a scheme handler is measured by
+//      booting it, not by reading this line.
 //
 //   2. THE BRIDGE IS ONE-WAY. `WKScriptMessageHandler` cannot return a value, so the module
 //      talks through `postMessage`. That costs nothing, because the contract was ALREADY
