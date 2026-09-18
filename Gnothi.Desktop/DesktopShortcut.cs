@@ -30,7 +30,7 @@ internal static class DesktopShortcut
 		shortcut.TargetPath = exe;
 		shortcut.Arguments = $"\"{modulesRoot}\" --journals \"{journalsRoot}\" --modulo {m.Name}";
 		shortcut.WorkingDirectory = Path.GetDirectoryName(exe);
-		shortcut.Description = $"La pantalla de {m.Manifest.Identity}, dentro de Gnothi";
+		shortcut.Description = $"La pantalla de {m.Manifest.Identity}, dentro de Mymi";
 		if (icon is not null) shortcut.IconLocation = icon + ",0";
 		shortcut.Save();
 

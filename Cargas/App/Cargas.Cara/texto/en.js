@@ -12,7 +12,7 @@ window.TextoDeLaCara['en'] = {
   },
 
   "franja": {
-    "preguntando": "Asking Gnothi…",
+    "preguntando": "Asking Mymi…",
     "buscando": "Looking for your fill-ups at the station…",
     "sinCargas": "No fill-ups yet. Press {actualizar}."
   },
@@ -65,7 +65,7 @@ window.TextoDeLaCara['en'] = {
   },
 
   "pie": {
-    "explicacion": "The record lives on this device. This screen does not reach the network: it asks Gnothi, and Gnothi answers with the engine it lends."
+    "explicacion": "The record lives on this device. This screen does not reach the network: it asks Mymi, and Mymi answers with the engine it lends."
   },
 
   "comun": {

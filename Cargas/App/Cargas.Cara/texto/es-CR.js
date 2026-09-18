@@ -12,7 +12,7 @@ window.TextoDeLaCara['es-CR'] = {
   },
 
   "franja": {
-    "preguntando": "Preguntándole a Gnothi…",
+    "preguntando": "Preguntándole a Mymi…",
     "buscando": "Buscando tus cargas en la estación…",
     "sinCargas": "Todavía no hay cargas. Apretá {actualizar}."
   },
@@ -65,7 +65,7 @@ window.TextoDeLaCara['es-CR'] = {
   },
 
   "pie": {
-    "explicacion": "El registro vive en este dispositivo. Esta pantalla no sale a la red: le pregunta a Gnothi, y Gnothi responde con el motor que le presta."
+    "explicacion": "El registro vive en este dispositivo. Esta pantalla no sale a la red: le pregunta a Mymi, y Mymi responde con el motor que le presta."
   },
 
   "comun": {

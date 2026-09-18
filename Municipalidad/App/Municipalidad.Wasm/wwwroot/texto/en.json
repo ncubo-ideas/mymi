@@ -249,8 +249,8 @@
       },
       "olvidoLaCarpeta": "The stored folder was forgotten; nothing inside it was touched.",
       "arribaHospedada": {
-        "uno": "The app is up, hosted in Gnothi, with {precargados} file preloaded.",
-        "varios": "The app is up, hosted in Gnothi, with {precargados} files preloaded."
+        "uno": "The app is up, hosted in Mymi, with {precargados} file preloaded.",
+        "varios": "The app is up, hosted in Mymi, with {precargados} files preloaded."
       },
       "arribaEnCarpeta": {
         "uno": "The app is up, with {precargados} file preloaded from “{carpeta}”.",
@@ -264,7 +264,7 @@
       "alAbrir": "On opening, the institution answered: {resultado}",
       "carpetaRechazoAlAbrir": "On opening, the institution answered, but the folder refused the write.",
       "actualizacion": "Whatever the institution published was fetched: {resultado}",
-      "entregaDeGnothi": "Gnothi delivered an envelope: {resultado}",
+      "entregaDeGnothi": "Mymi delivered an envelope: {resultado}",
       "noSeRegistroLaInstalacion": "This installation could not be registered: {rechazo}",
       "credencialRotada": "The credential was rotated with the refresh token.",
       "credencialNueva": "A new credential was obtained, with scope {alcance}.",
