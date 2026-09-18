@@ -121,9 +121,15 @@
                 IModel m = kind switch
                 {
                     "anthropic" => new ModelClaude(keyPath, model),
-                    // El de esta maquina: el mismo ModelFoundation y el mismo encuadre corto que
-                    // usa el telefono. Nada sale del equipo.
-                    "apple" => AppleModel.Create(Encuadre.ParaModeloLocal),
+                    // El de esta maquina: el mismo ModelFoundation y el mismo encuadre que usa
+                    // el telefono. Nada sale del equipo.
+                    //
+                    // EL ENCUADRE SALE DEL CATALOGO, o sea EN EL IDIOMA DE LA PERSONA, y eso no es
+                    // cosmetico: el 2026-09-17 se midio que un encuadre en otro idioma que el de la
+                    // persona es lo que hacia que el modelo del aparato dejara de consultar -- 4 de
+                    // 4 llamadas contra 0 de 8 --. La rama original traia el texto como constante;
+                    // master lo mudo al catalogo mientras tanto, y esto sigue a master.
+                    "apple" => AppleModel.Create(T("asistente.encuadre")),
                     _ => new ModelOpenAiCompatible(url, model, keyPath),
                 };
                 var loop = new AgentLoop(State.Dispatcher, m);
