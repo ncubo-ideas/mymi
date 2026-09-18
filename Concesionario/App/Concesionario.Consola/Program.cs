@@ -34,6 +34,7 @@ namespace Concesionario.Consola
 					case "costos":   return TheCostLedgerRecordedAndReadBack(AFolder(args, 1));
 					case "refresco": return await TheRefreshLoopAgainstTheDealership(args);
 					case "corte":    return await ACrashInTheMiddleOfABlock(args);
+					case "comprobar": return ComprobacionesDeLosCatalogos.Correr();
 					default:         Help(); return 1;
 				}
 			}
@@ -2162,6 +2163,8 @@ namespace Concesionario.Consola
 			Console.WriteLine("  corte    [carpeta] [url] [recurso] [id] [n]");
 			Console.WriteLine("                       aplica n eventos y MATA el proceso, para comprobar que");
 			Console.WriteLine("                       el 'refresco' siguiente no duplica ni saltea");
+			Console.WriteLine("  comprobar            coteja los dos catalogos de la cara hibrida y las claves");
+			Console.WriteLine("                       que su markup pide (no toca ningun journal)");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/DealershipCar-journal");
 			Console.WriteLine("url2    por defecto: http://localhost:8092/  (recurso 'vehicle', id = el VIN)");

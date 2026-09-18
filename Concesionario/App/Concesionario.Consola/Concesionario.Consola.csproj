@@ -17,4 +17,16 @@
     <ProjectReference Include="..\Concesionario.App\Concesionario.App.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Concesionario.Cara\texto\es-CR.js"
+          Link="cara.es-CR.js.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Concesionario.Cara\texto\en.js"
+          Link="cara.en.js.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Concesionario.Cara\index.html"
+          Link="cara.index.html.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
