@@ -341,6 +341,10 @@
   "pantalla.cara.icono-puesto":   { "es": "Listo: hay un icono de {quien} en tu escritorio ({archivo}). Abre esta pantalla directo.", "en": "Done: there is a {quien} icon on your desktop ({archivo}). It opens this screen directly." },
   "pantalla.cara.icono-fallo":    { "es": "No se pudo crear el icono: {detalle}", "en": "Could not create the icon: {detalle}" },
 
+  "//pantalla.cara.franja": "LA FRANJA SOBRE LA CARA ABIERTA (Cara.razor), que es lo unico de Mymi que se ve mientras la institucion tiene la ventana. El telefono tiene su gemela y NO comparte estas dos claves: iOS dice ios.adentro-de y general.listo, y que el vocabulario de las dos caras se unifique o no todavia no esta decidido. La flecha del boton la pone el marcado: es decoracion del render y no de la frase.",
+  "pantalla.cara.volver":         { "es": "Volver a Mymi", "en": "Back to Mymi" },
+  "pantalla.cara.dentro":         { "es": "dentro de Mymi · tu registro queda en esta computadora", "en": "inside Mymi · your record stays on this computer" },
+
   "//alta.escritorio": "EL ALTA EN LA VENTANA DE ESCRITORIO (Alta.razor). La hoja usa las MISMAS claves hoja.* que el telefono; aca va solo lo que existe en el escritorio y no en el telefono.",
   "alta.escritorio.titulo":       { "es": "Agregar una institución", "en": "Add an institution" },
   "alta.escritorio.lead":         { "es": "Pega el enlace que te dio la institución, o elige el paquete que te mandó.", "en": "Paste the link your institution gave you, or pick the package they sent you." },
