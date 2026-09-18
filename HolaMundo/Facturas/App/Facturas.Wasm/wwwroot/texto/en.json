@@ -1,0 +1,91 @@
+{
+  "//": "WHAT THIS SCREEN SAYS IN ITS OWN WORDS. Nothing that came out of the journal is here: an invoice's number, date, SKU, description and amounts are shown exactly as the provider recorded them. The store's name and its motto are not here either -- they are the institution's own voice and live in Textos.cs, where a translator does not see them. {clave} is a hole the code fills.",
+
+  "comun": {
+    "elegirCarpeta": "Choose folder"
+  },
+
+  "noEncontrado": {
+    "titulo": "Not found",
+    "cuerpo": "There is nothing at this address."
+  },
+
+  "misFacturas": {
+    "titulo": "My invoices",
+    "bajada": "your purchases, on your own computer.",
+
+    "fallo": {
+      "operacion": "The operation could not be completed.",
+      "apertura": "The app could not be opened.",
+      "paso": "Step: {paso}"
+    },
+
+    "pasos": {
+      "elegirCarpeta": "choosing the folder",
+      "darPermiso": "granting permission to the folder",
+      "abrir": "opening the app",
+      "refrescar": "refreshing against the provider"
+    },
+
+    "permiso": {
+      "explicacion": "Your folder is <strong>“{carpeta}”</strong>. The browser asks you to confirm write permission every time you reopen the app.",
+      "boton": "Grant permission to “{carpeta}”",
+      "reotorgar": "Grant permission again"
+    },
+
+    "carpeta": {
+      "explicacion": "This app keeps <strong>your</strong> invoices in a folder of <strong>yours</strong>. Choose the folder and the app writes its record there; nobody else reads it.",
+      "sinSoporte": "This browser has no <code>showDirectoryPicker</code>, so it cannot write to a folder of yours. The app still works, but the record lives in memory only and is lost when you close it.",
+      "abrirSinGuardar": "Open without saving anything"
+    },
+
+    "refresh": {
+      "boton": "Refresh",
+      "enCurso": "Refreshing…"
+    },
+
+    "resumen": {
+      "una": "{cuantas} invoice",
+      "varias": "{cuantas} invoices",
+      "total": "total <strong>{total}</strong>",
+      "leidoHasta": "read up to event {evento}"
+    },
+
+    "sinCarpeta": {
+      "titulo": "Nothing is being saved.",
+      "cuerpo": "This app is running without a folder: what you see is asked of the provider again every time you open it, and no record of yours is left on disk.",
+      "pie": "<strong>Without a folder:</strong> the record lives in memory only and is lost when you close it."
+    },
+
+    "guardadoFallando": {
+      "titulo": "The folder refused the write.",
+      "cuerpo": "What you see on screen is not saved in “{carpeta}”. It is usually the permission, which expires when you reopen."
+    },
+
+    "guardando": "Saved to “{carpeta}” after every change.",
+    "vacio": "There are no invoices yet. Press <em>Refresh</em>.",
+
+    "columna": {
+      "numero": "Number",
+      "fecha": "Date",
+      "lineas": "Lines",
+      "total": "Total"
+    }
+  },
+
+  "detalle": {
+    "titulo": "Invoice {numero}",
+    "volver": "Back to the list",
+    "sinAbrir": "The app is not open. <a href=\"\">Go back to the list</a> to open it.",
+    "noExiste": "There is no invoice numbered “{numero}” in your record.",
+    "fallo": "Invoice {numero} could not be opened: {detalle}",
+
+    "columna": {
+      "sku": "SKU",
+      "descripcion": "Description",
+      "cantidad": "Quantity",
+      "costoUnitario": "Unit cost",
+      "total": "Total"
+    }
+  }
+}

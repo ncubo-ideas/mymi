@@ -30,4 +30,12 @@ builder.Services.AddSingleton<AlmacenDeCredencial>(sp => new AlmacenDeCredencial
 // construye una vez y se mantiene alcanzable mientras la app vive.
 builder.Services.AddSingleton<EstadoDeLaApp>();
 
-await builder.Build().RunAsync();
+builder.Services.AddSingleton<Textos>();
+
+var host = builder.Build();
+
+await host.Services.GetRequiredService<Textos>().NegociarAsync(
+	host.Services.GetRequiredService<IJSRuntime>(),
+	new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+await host.RunAsync();

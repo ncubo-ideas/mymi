@@ -1,17 +1,17 @@
 @page "/factura/{Numero}"
-@using System.Globalization
 @using Facturas.App.Vistas
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
+@inject Textos textos
 
-<PageTitle>Factura @Numero</PageTitle>
+<PageTitle>@textos.Con("detalle.titulo", ("numero", Numero))</PageTitle>
 
-<button class="btn btn-outline-secondary mb-3" @onclick="Volver">&larr; Volver a la lista</button>
+<button class="btn btn-outline-secondary mb-3" @onclick="Volver">&larr; @textos["detalle.volver"]</button>
 
 @if (!estado.EstaArriba)
 {
     <div class="alert alert-warning">
-        La app no está abierta. <a href="">Volvé a la lista</a> para abrirla.
+        @((MarkupString)textos["detalle.sinAbrir"])
     </div>
 }
 else if (error.Length > 0)
@@ -20,18 +20,18 @@ else if (error.Length > 0)
 }
 else
 {
-    <h1>Factura @detalle.Numero</h1>
+    <h1>@textos.Con("detalle.titulo", ("numero", detalle.Numero))</h1>
     <p class="text-muted">
-        @detalle.Fecha.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)
+        @textos.Instante(detalle.Fecha)
     </p>
 
     <table class="table align-middle">
         <thead>
             <tr>
-                <th>SKU</th><th>Descripción</th>
-                <th class="text-end">Cantidad</th>
-                <th class="text-end">Costo unitario</th>
-                <th class="text-end">Total</th>
+                <th>@textos["detalle.columna.sku"]</th><th>@textos["detalle.columna.descripcion"]</th>
+                <th class="text-end">@textos["detalle.columna.cantidad"]</th>
+                <th class="text-end">@textos["detalle.columna.costoUnitario"]</th>
+                <th class="text-end">@textos["detalle.columna.total"]</th>
             </tr>
         </thead>
         <tbody>
@@ -40,16 +40,16 @@ else
                 <tr>
                     <td><code>@linea.Sku</code></td>
                     <td>@linea.Descripcion</td>
-                    <td class="text-end">@linea.Cantidad</td>
-                    <td class="text-end">@Plata(linea.CostoUnitario)</td>
-                    <td class="text-end">@Plata(linea.TotalDeLinea)</td>
+                    <td class="text-end">@textos.Cuenta(linea.Cantidad)</td>
+                    <td class="text-end">@textos.Monto(linea.CostoUnitario)</td>
+                    <td class="text-end">@textos.Monto(linea.TotalDeLinea)</td>
                 </tr>
             }
         </tbody>
         <tfoot>
             <tr class="fw-bold">
-                <td colspan="4" class="text-end">Total</td>
-                <td class="text-end">@Plata(detalle.Total)</td>
+                <td colspan="4" class="text-end">@textos["detalle.columna.total"]</td>
+                <td class="text-end">@textos.Monto(detalle.Total)</td>
             </tr>
         </tfoot>
     </table>
@@ -69,10 +69,9 @@ else
         // El dominio tira KeyNotFoundException si el numero no existe; la pantalla lo
         // traduce a un mensaje en vez de dejar reventar la UI.
         try { detalle = estado.Detalle(Numero); }
-        catch (Exception ex) { error = $"No se pudo abrir la factura {Numero}: {ex.Message}"; }
+        catch (KeyNotFoundException) { error = textos.Con("detalle.noExiste", ("numero", Numero)); }
+        catch (Exception ex) { error = textos.Con("detalle.fallo", ("numero", Numero), ("detalle", ex.Message)); }
     }
 
     private void Volver() => navegacion.NavigateTo("");
-
-    private static string Plata(decimal monto) => monto.ToString("N2", CultureInfo.InvariantCulture);
 }

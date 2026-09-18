@@ -1,0 +1,91 @@
+{
+  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Nada que haya salido del journal esta aca: el numero de una factura, su fecha, su SKU, su descripcion y sus montos se muestran tal como el proveedor los asento. El nombre del super y su lema tampoco estan aca -son voz de la institucion y viven en Textos.cs, donde quien traduzca no los ve-. El espanol de este archivo es de Costa Rica y es voseo -elegi, apreta, volves-: no lo pases a tuteo. {clave} es un hueco que el codigo llena.",
+
+  "comun": {
+    "elegirCarpeta": "Elegir carpeta"
+  },
+
+  "noEncontrado": {
+    "titulo": "No se encontró",
+    "cuerpo": "No hay nada en esta dirección."
+  },
+
+  "misFacturas": {
+    "titulo": "Mis facturas",
+    "bajada": "tus compras, en tu computadora.",
+
+    "fallo": {
+      "operacion": "No se pudo completar la operación.",
+      "apertura": "No se pudo abrir la app.",
+      "paso": "Paso: {paso}"
+    },
+
+    "pasos": {
+      "elegirCarpeta": "elegir carpeta",
+      "darPermiso": "dar permiso a la carpeta",
+      "abrir": "abrir la app",
+      "refrescar": "refrescar contra el proveedor"
+    },
+
+    "permiso": {
+      "explicacion": "Tu carpeta es <strong>«{carpeta}»</strong>. El browser pide confirmar el permiso de escritura cada vez que volvés a abrir la app.",
+      "boton": "Dar permiso a «{carpeta}»",
+      "reotorgar": "Volver a dar permiso"
+    },
+
+    "carpeta": {
+      "explicacion": "Esta app guarda <strong>tus</strong> facturas en una carpeta <strong>tuya</strong>. Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.",
+      "sinSoporte": "Este browser no tiene <code>showDirectoryPicker</code>, así que no puede escribir en una carpeta tuya. La app funciona igual, pero el registro vive solo en memoria y se pierde al cerrar.",
+      "abrirSinGuardar": "Abrir sin guardar nada"
+    },
+
+    "refresh": {
+      "boton": "Refresh",
+      "enCurso": "Refrescando…"
+    },
+
+    "resumen": {
+      "una": "{cuantas} factura",
+      "varias": "{cuantas} facturas",
+      "total": "total <strong>{total}</strong>",
+      "leidoHasta": "leído hasta el evento {evento}"
+    },
+
+    "sinCarpeta": {
+      "titulo": "No se está guardando nada.",
+      "cuerpo": "Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor cada vez que abrís, y no queda registro tuyo en disco.",
+      "pie": "<strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar."
+    },
+
+    "guardadoFallando": {
+      "titulo": "La carpeta rechazó la escritura.",
+      "cuerpo": "Lo que ves en pantalla no está guardado en «{carpeta}». Suele ser el permiso, que caduca al reabrir."
+    },
+
+    "guardando": "Se guarda en «{carpeta}» después de cada cambio.",
+    "vacio": "Todavía no hay facturas. Apretá <em>Refresh</em>.",
+
+    "columna": {
+      "numero": "Número",
+      "fecha": "Fecha",
+      "lineas": "Líneas",
+      "total": "Total"
+    }
+  },
+
+  "detalle": {
+    "titulo": "Factura {numero}",
+    "volver": "Volver a la lista",
+    "sinAbrir": "La app no está abierta. <a href=\"\">Volvé a la lista</a> para abrirla.",
+    "noExiste": "No hay ninguna factura con número «{numero}» en tu registro.",
+    "fallo": "No se pudo abrir la factura {numero}: {detalle}",
+
+    "columna": {
+      "sku": "SKU",
+      "descripcion": "Descripción",
+      "cantidad": "Cantidad",
+      "costoUnitario": "Costo unitario",
+      "total": "Total"
+    }
+  }
+}
