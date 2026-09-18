@@ -166,6 +166,19 @@ internal static class Conformance
 			assert("el banco de preguntas nombra tools que existen",
 				muertas.Length == 0,
 				$"nombres que ya no publica ningun modulo: {string.Join(", ", muertas)}");
+
+			// Y QUE ESTE ENTERO EN LOS DOS IDIOMAS. El idioma es la variable mas pesada que se
+			// midio sobre el tool calling -- el 2026-09-17 fue la diferencia entre 4 de 4 y 0 de
+			// 8 -- asi que una pregunta a la que le falte un lado deja ese lado sin medir, y no
+			// se nota: es un string vacio, no un error.
+			string[] mancas = [.. Preguntas.DeSonia
+				.Where(p => string.IsNullOrWhiteSpace(p.Es) || string.IsNullOrWhiteSpace(p.En))
+				.Select(p => p.Es.Length > 0 ? p.Es : p.En)
+				.Order()];
+
+			assert("el banco de preguntas esta entero en los dos idiomas",
+				mancas.Length == 0,
+				$"preguntas a las que les falta un idioma: {string.Join(" | ", mancas)}");
 		}
 
 		int compared = 0;
