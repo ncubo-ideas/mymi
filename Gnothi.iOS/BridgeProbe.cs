@@ -22,6 +22,12 @@ internal static class BridgeProbe
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_liberar")]
 	private static extern void Free(IntPtr p);
 
+	// EL MOTIVO, que el 0 se traga. Tres situaciones distintas caen en el mismo estado y no se
+	// atienden igual: una se espera -el modelo bajando-, otra se enciende, y la tercera no tiene
+	// arreglo. Sin esto, cada 0 cuesta media hora de hipotesis; ya paso el 2026-09-17.
+	[DllImport("__Internal", EntryPoint = "gnothi_fm_razon")]
+	private static extern IntPtr Reason();
+
 	// NO en el hilo principal: adentro del Swift se espera a que termine la generacion, y desde
 	// el hilo de UI eso se traba.
 	public static void Run(Action<string> log) => _ = Task.Run(() =>
@@ -34,7 +40,14 @@ internal static class BridgeProbe
 			// El 1 existe porque `availability` miente: en iOS 26.2 dice available y falla.
 			int estado = State();
 			log($"puente: estado = {estado}  ({(estado == 2 ? "genera" : estado == 1 ? "dice available pero NO genera" : "no disponible")})");
-			if (estado != 2) return;
+			if (estado != 2)
+			{
+				// El motivo solo se pide cuando hace falta: en el camino bueno no aporta nada.
+				IntPtr p = Reason();
+				try { log($"puente: motivo = {Marshal.PtrToStringUTF8(p)}"); }
+				finally { if (p != IntPtr.Zero) Free(p); }
+				return;
+			}
 
 			const string tools =
 				"""
