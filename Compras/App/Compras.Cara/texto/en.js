@@ -29,7 +29,19 @@ window.TextoDeLaCara['en'] = {
   },
 
   "hero": {
-    "puedeInteresarte": "MIGHT INTEREST YOU"
+    "//": "THE CAROUSEL. Same keys as the standalone app's ArmarHeroBanners.",
+    "puedeInteresarte": "MIGHT INTEREST YOU",
+    "nuevo": "NEW",
+    "nuevoTitulo": "Something new arrived in your {producto}",
+    "bajoDePrecio": "PRICE WENT DOWN",
+    "bajoDePrecioTitulo": "The {producto} you always buy went down in price",
+    "verlo": "See it",
+    "asiVienen": "How your purchases are going",
+    "casiTodoHabitualUno": "Mostly the usual · {cuantos} change of rhythm",
+    "casiTodoHabitualVarios": "Mostly the usual · {cuantos} changes of rhythm",
+    "todoComoSiempre": "Everything as usual here.",
+    "bienvenida": "Welcome to La Guaria",
+    "bienvenidaBajada": "Find out what always comes back and how your basket changes."
   },
 
   "inicio": {

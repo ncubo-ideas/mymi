@@ -29,7 +29,19 @@ window.TextoDeLaCara['es-CR'] = {
   },
 
   "hero": {
-    "puedeInteresarte": "PUEDE INTERESARTE"
+    "//": "EL CARRUSEL. Las mismas claves que ArmarHeroBanners de la app suelta: la superficie manda los ingredientes -que producto, cuantos ritmos- y la frase se arma aca. `casiTodoHabitual` esta aplanado a `Uno`/`Varios` porque este catalogo no anida el plural.",
+    "puedeInteresarte": "PUEDE INTERESARTE",
+    "nuevo": "NUEVO",
+    "nuevoTitulo": "Llegó algo nuevo de tus {producto}",
+    "bajoDePrecio": "BAJÓ DE PRECIO",
+    "bajoDePrecioTitulo": "El {producto} que comprás siempre bajó de precio",
+    "verlo": "Verlo",
+    "asiVienen": "Así vienen tus compras",
+    "casiTodoHabitualUno": "Casi todo habitual · {cuantos} cambio de ritmo",
+    "casiTodoHabitualVarios": "Casi todo habitual · {cuantos} cambios de ritmo",
+    "todoComoSiempre": "Todo como siempre por acá.",
+    "bienvenida": "Bienvenida a La Guaria",
+    "bienvenidaBajada": "Descubrí lo que siempre vuelve y cómo cambia tu carrito."
   },
 
   "inicio": {

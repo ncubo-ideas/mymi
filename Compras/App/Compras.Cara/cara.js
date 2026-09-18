@@ -200,6 +200,63 @@
     // en que orden: eso lo hace `LaPortadaDeLaCara` del lado de la superficie, porque son reglas
     // del producto (una novedad vieja no es noticia, una promo de algo que ella no compra no se
     // fuerza). Aca solo se dibuja lo que vino.
+    // LAS FRASES DEL CARRUSEL, con las MISMAS claves que `ArmarHeroBanners` de la app suelta.
+    //
+    // Hasta el 2026-09-18 el banner llegaba con `kicker`, `titulo`, `secundario` y `cta` ya
+    // escritos desde `LaPortadaDeLaCara`, en espanol duro: en ingles el carrusel quedaba en
+    // espanol arriba de una pantalla en ingles. Ahora la superficie manda los INGREDIENTES --
+    // que producto, cuantos ritmos cambiaron, cuantos dias le quedan a la promo -- y la frase se
+    // arma aca. QUE banner se muestra y en que orden lo sigue decidiendo ella: es regla de
+    // producto y las dos caras la comparten.
+    //
+    // El gancho y el detalle de una promocion NO pasan por catalogo: los escribio el
+    // supermercado para esa promocion, como el nombre de un producto.
+    function frasesDelBanner(b) {
+        if (b.variante === 'nuevo')
+            return {
+                kicker: I.texto('hero.nuevo'),
+                titulo: I.con('hero.nuevoTitulo', { producto: b.producto }),
+                cta: I.texto('hero.verlo'),
+                secundario: '',
+            };
+
+        if (b.variante === 'habitual')
+            return {
+                kicker: I.texto('hero.bajoDePrecio'),
+                titulo: I.con('hero.bajoDePrecioTitulo', { producto: b.producto }),
+                cta: I.texto('hero.verlo'),
+                secundario: '',
+            };
+
+        if (b.variante === 'promo')
+            return {
+                kicker: I.texto('hero.puedeInteresarte'),
+                titulo: b.gancho,
+                cta: '',
+                secundario: b.detalle + ' · ' + vigencia(b),
+            };
+
+        // EL NEUTRO SON DOS, y los separa si ya hay compras leidas: sin nada todavia, la
+        // bienvenida; con historial pero sin ninguna senal, como vienen las compras.
+        if (!b.hayCompras)
+            return {
+                kicker: '',
+                titulo: I.texto('hero.bienvenida'),
+                cta: '',
+                secundario: I.texto('hero.bienvenidaBajada'),
+            };
+
+        return {
+            kicker: '',
+            titulo: I.texto('hero.asiVienen'),
+            cta: '',
+            secundario: b.cuantosRitmos > 0
+                ? I.con(b.cuantosRitmos === 1 ? 'hero.casiTodoHabitualUno' : 'hero.casiTodoHabitualVarios',
+                        { cuantos: entero(b.cuantosRitmos) })
+                : I.texto('hero.todoComoSiempre'),
+        };
+    }
+
     function pintarPortada(c) {
         var cifras = $('cifras');
         var pista = $('lgHomeCarrusel');
@@ -228,6 +285,8 @@
 
         envoltorio.hidden = false;
         pista.innerHTML = banners.map(function (b) {
+            var dicho = frasesDelBanner(b);
+
             var precio = (b.precioAntes !== null && b.precioAntes !== undefined &&
                           b.precioAhora !== null && b.precioAhora !== undefined)
                 ? '<span class="lg-home-banner-precio">' +
@@ -235,17 +294,17 @@
                       '<span aria-hidden="true">&rarr;</span>' +
                       '<span class="lg-home-banner-precio-ahora">' + colones(b.precioAhora) + '</span>' +
                   '</span>'
-                : (b.secundario ? '<p class="lg-home-banner-secundario">' + texto(b.secundario) + '</p>' : '');
+                : (dicho.secundario ? '<p class="lg-home-banner-secundario">' + texto(dicho.secundario) + '</p>' : '');
 
             // EL CTA NO ES UN ENLACE. En la app lleva a `producto/<nombre>`, que es una ruta; esta
             // cara no tiene router, asi que se dibuja igual -- la marca lo pide -- pero sin href.
             return '<div class="lg-home-banner lg-home-banner--' + texto(b.variante) +
                         (b.foto ? '' : ' lg-home-banner--sin-imagen') + '">' +
                    '<div class="lg-home-banner-texto">' +
-                       (b.kicker ? '<span class="lg-home-banner-kicker">' + texto(b.kicker) + '</span>' : '') +
-                       '<h1>' + texto(b.titulo) + '</h1>' +
+                       (dicho.kicker ? '<span class="lg-home-banner-kicker">' + texto(dicho.kicker) + '</span>' : '') +
+                       '<h1>' + texto(dicho.titulo) + '</h1>' +
                        precio +
-                       (b.cta ? '<span class="lg-home-banner-cta">' + texto(b.cta) + ' &rarr;</span>' : '') +
+                       (dicho.cta ? '<span class="lg-home-banner-cta">' + texto(dicho.cta) + ' &rarr;</span>' : '') +
                    '</div>' +
                    (b.foto ? '<img class="lg-home-banner-imagen" src="' + texto(b.foto) + '" alt="" aria-hidden="true" />' : '') +
                    '</div>';
