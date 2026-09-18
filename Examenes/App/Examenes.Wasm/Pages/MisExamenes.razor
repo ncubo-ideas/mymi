@@ -6,7 +6,7 @@
 @inject NavigationManager navegacion
 @inject Textos textos
 
-<PageTitle>@textos["app.titulo"]</PageTitle>
+<PageTitle>@Textos.TituloDelModulo</PageTitle>
 
 @* EL BLOQUE DE MARCA, SOLO PARA EL ARRANQUE. La gota por la muestra, el círculo por el
    oráculo; solo trazo, nunca relleno. Una vez que el expediente está arriba (`else` de
@@ -36,7 +36,7 @@
    hace falta decirlo dos veces. *@
 @if (!estado.EstaArriba)
 {
-    <h1 class="titular">@textos["app.titulo"]</h1>
+    <h1 class="titular">@Textos.TituloDelModulo</h1>
     <p class="membrete">@textos["app.membrete"]</p>
 }
 
@@ -1919,8 +1919,9 @@ else
         return "chip--estable";
     }
 
-    // Formato explícito SIEMPRE. Medido en el negocio de facturas: la escala del decimal
-    // no sobrevive el journal (5571.50 entra, 5571.5 sale del replay), así que un
-    // ToString() pelado mostraría valores distintos antes y después de reabrir la app.
-    private static string Valor(decimal medido) => medido.ToString("0.##", CultureInfo.InvariantCulture);
+    /// <summary>
+    /// UN VALOR MEDIDO, dicho por el renderizador. El separador decimal lo pone el idioma, y
+    /// el formato es explicito siempre: la escala del decimal no sobrevive el journal.
+    /// </summary>
+    private string Valor(decimal medido) => textos.Numero(medido);
 }

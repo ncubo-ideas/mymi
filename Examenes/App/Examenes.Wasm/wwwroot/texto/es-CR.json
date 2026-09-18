@@ -1,8 +1,7 @@
 {
-  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS, en el idioma del registro. El espanol es el de Costa Rica y es voseo: no lo pase a tuteo. El nombre y el lema del laboratorio NO estan aca a proposito -son voz de la institucion y viven en Textos.cs-, y las frases que compone el dominio tampoco: esas llegan ya dichas por la puerta. Cada clave es una frase ENTERA: el espanol concuerda en genero y el ingles no, asi que pegar fragmentos produce concordancias rotas que ninguna comprobacion ve.",
+  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS, en el idioma del registro. El espanol es el de Costa Rica y es voseo: no lo pase a tuteo. El nombre del laboratorio, su lema y el titulo del modulo NO estan aca a proposito -son voz de la institucion, viven en Textos.cs y no se traducen-, y las frases que compone el dominio tampoco: esas llegan ya dichas por la puerta. Cada clave es una frase ENTERA: el espanol concuerda en genero y el ingles no, asi que pegar fragmentos produce concordancias rotas que ninguna comprobacion ve.",
 
   "app": {
-    "titulo": "Mis exámenes",
     "membrete": "Tu expediente, en tu computadora.",
     "privacidad": "Tus datos se quedan en tu dispositivo. Vos decidís qué compartir."
   },
@@ -206,6 +205,9 @@
     "meta": "meta",
     "hoy": "hoy",
     "veniasDe": "venías de {valor}",
+    "rangoDeReferencia": "Rango de referencia",
+    "nivelDeSiempre": "tu nivel de siempre, {valor}",
+    "esperableHasta": "esperable hasta {valor}",
     "categoriaSiempre": "{veces} veces, siempre lo esperable",
     "categoriaFuera": "{afuera} de {veces} fuera de lo esperable",
     "presenciaNinguna": "{pruebas} pruebas, ninguna",

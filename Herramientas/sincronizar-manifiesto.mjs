@@ -19,11 +19,17 @@
 //   - la description y el title de cada tool que YA existia en el manifiesto
 //   - la description de cada parametro que ya existia
 //
-// Por que preservar la descripcion: examenes la tiene curada en INGLES en el manifiesto y en
-// espanol en el codigo. Pisarla con la del codigo borraria el trabajo del dueno. Para una tool
-// NUEVA no hay nada que preservar, asi que se toma la del modulo como punto de partida y el
-// dueno la pule. Ese es el unico lugar donde el idioma puede entrar mezclado, y --check lo hace
-// visible.
+// Por que preservar la descripcion: puede estar curada en el manifiesto y no en el codigo, y el
+// generador no sabe cual de las dos es la buena. Para una tool NUEVA no hay nada que preservar,
+// asi que se toma la del modulo. UNA DESCRIPCION VACIA CUENTA COMO NUEVA: ese es el modo de
+// volver a tomarla del codigo -- se borra en el manifiesto y se sincroniza --, y es lo que se hizo
+// con examenes el 2026-09-18 para devolverlas al idioma del modulo.
+//
+// OJO CON EL IDIOMA: el titulo y la descripcion de una tool son VOZ DE LA INSTITUCION y siguen el
+// idioma del modulo, no el de quien pregunta -- ver Metodologia/Guias/reglas-de-localizacion.md.
+// Un manifiesto con los titulos en un idioma y las descripciones en otro es la mitad de la voz
+// traducida por el Host, y cuando el manifiesto se firme, un texto traducido queda fuera de la
+// firma. Preservar deja que eso pase sin avisar, asi que --check es el lugar donde se ve.
 //
 // El guardian de la suite sigue siendo la red: esto MANTIENE sincronizado, el guardian AVISA si
 // alguien igual edito a mano y se desvio.

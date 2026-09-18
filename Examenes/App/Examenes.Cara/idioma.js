@@ -53,10 +53,14 @@ window.Idioma = (function () {
         return dicho;
     }
 
-    // EL NOMBRE Y EL LEMA DE LA INSTITUCION NO SE TRADUCEN: son voz suya, no texto de esta
-    // caratula, asi que viven aca y no en los catalogos. Lo que no esta en el archivo no se
-    // puede traducir por descuido.
+    // EL NOMBRE, EL LEMA Y EL TITULO DEL MODULO NO SE TRADUCEN: son voz de la institucion, no
+    // texto de esta caratula, asi que viven aca y no en los catalogos. Lo que no esta en el
+    // archivo no se puede traducir por descuido.
+    //
+    // El lema lo escribe index.html sin data-texto, al lado del nombre. El titulo esta aca
+    // porque idioma.js es quien repone document.title.
     var LA_INSTITUCION = 'Laboratorio Clínico Delfos';
+    var EL_TITULO = 'Mis exámenes';
 
     document.documentElement.lang = etiqueta;
 
@@ -72,12 +76,13 @@ window.Idioma = (function () {
             etiquetados[j].setAttribute('title', dicho);
         }
 
-        document.title = texto('app.titulo') + ' · ' + LA_INSTITUCION;
+        document.title = EL_TITULO + ' · ' + LA_INSTITUCION;
     }
 
     return {
         etiqueta: etiqueta,
         institucion: LA_INSTITUCION,
+        titulo: EL_TITULO,
         texto: texto,
         con: con,
         pintarLoEstatico: pintarLoEstatico

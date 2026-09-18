@@ -34,10 +34,10 @@
 
     <div class="forma-pie forma-pie--extremos">
         <span class="forma-nota">@(HayEpisodio
-                ? textos.Con("forma.veniasDe", ("valor", Numero(Partida!.Valor)))
+                ? textos.Con("forma.veniasDe", ("valor", textos.Numero(Partida!.Valor)))
                 : textos["forma.hoy"])
-            <b>@Numero(Actual) @Unidad</b></span>
-        <span class="forma-nota forma-nota--der">@textos["forma.meta"] <b>@Numero(Meta?.Valor ?? Actual) @Unidad</b></span>
+            <b>@textos.Medida(Actual, Unidad)</b></span>
+        <span class="forma-nota forma-nota--der">@textos["forma.meta"] <b>@textos.Medida(Meta?.Valor ?? Actual, Unidad)</b></span>
     </div>
 </div>
 
@@ -73,6 +73,4 @@
     private string Avance => (Proporcion * 296).ToString("0.#", CultureInfo.InvariantCulture);
     private string Ahora => (12 + Proporcion * 296).ToString("0.#", CultureInfo.InvariantCulture);
     private string Falta => ((1 - Proporcion) * 296).ToString("0.#", CultureInfo.InvariantCulture);
-
-    private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
 }

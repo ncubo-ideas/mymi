@@ -17,6 +17,11 @@ namespace Examenes.Consola
 	// corre en microsegundos, no toca disco, y cuando algo se rompe dice exactamente que
 	// regla se rompio en vez de dejar un total distinto al esperado.
 	//
+	// LO UNICO QUE TOCA DISCO son los catalogos de las caratulas, al final, y viven en su propio
+	// archivo por eso: son texto de presentacion y no dominio, asi que lo que afirman no es una
+	// regla del expediente. Corren igual desde `comprobar`, porque una comprobacion en un
+	// subcomando aparte es una que nadie corre.
+	//
 	// Lo que se comprueba aca es lo que NO se puede ver en la salida de `medir`: que la
 	// unidad sea parte del dato, que los rangos dependan de la edad, que la direccion
 	// preocupante sea por analito, y que un examen sin serie conviva con los que si la
@@ -89,6 +94,8 @@ namespace Examenes.Consola
 			ElSexoEsUnaVariableDelDominio();
 			LosNombresDeLaFronteraSonLosDelDominio();
 			LosDosCatalogosDicenLasMismasClaves();
+			ElRenderizadorEsElUnicoQueEscribeUnaCifra();
+			ComprobacionesDeLosCatalogos.Correr(Titulo, Igual);
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -2323,6 +2330,36 @@ namespace Examenes.Consola
 				string.Join(", ", faltanEnElOtro));
 			Igual("  ninguna clave sobra en el otro idioma", "",
 				string.Join(", ", sobranEnElOtro));
+		}
+
+		// UN VALOR MEDIDO, DICHO UNA SOLA VEZ. El separador decimal es del idioma y el simbolo
+		// de la unidad no lo es, asi que una cifra escrita fuera del renderizador se ve igual
+		// que una escrita adentro hasta que la pantalla pasa al otro idioma -- y entonces la
+		// tarjeta dice 13.4 arriba y 13,4 en la frase de abajo, la misma cifra dos veces.
+		//
+		// Ninguna otra comprobacion lo ve: las dos cifras son correctas por separado.
+		private static void ElRenderizadorEsElUnicoQueEscribeUnaCifra()
+		{
+			Titulo("una cifra la escribe el renderizador, y el idioma pone el separador");
+
+			var enElRegistro = Examenes.App.Frases.Frases.De(
+				Examenes.App.Frases.Frases.IdiomaDelRegistro);
+			var enElOtro = Examenes.App.Frases.Frases.De(
+				Examenes.App.Frases.Frases.ElOtroIdioma);
+
+			Igual("el idioma del registro escribe la coma", "13,4", enElRegistro.Numero(13.4m));
+			Igual("  y el otro idioma escribe el punto", "13.4", enElOtro.Numero(13.4m));
+
+			// La escala del decimal no sobrevive el journal: 5571.50 entra y 5571.5 sale del
+			// replay, asi que el formato es explicito en los dos idiomas o la misma medicion
+			// se ve distinta antes y despues de reabrir la app.
+			Igual("la escala no cambia lo que se lee", "5571,5", enElRegistro.Numero(5571.50m));
+			Igual("  ni en el otro idioma", "5571.5", enElOtro.Numero(5571.50m));
+
+			// El simbolo lo asento el laboratorio: es dato del registro y cruza intacto.
+			Igual("el simbolo de la unidad no se traduce", "13,4 g/dL",
+				enElRegistro.Medida(13.4m, "g/dL"));
+			Igual("  ni en el otro idioma", "13.4 g/dL", enElOtro.Medida(13.4m, "g/dL"));
 		}
 
 		private static void LosNombresDeLaFronteraSonLosDelDominio()

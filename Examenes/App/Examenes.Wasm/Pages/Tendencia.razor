@@ -700,10 +700,11 @@ else
         return pasos;
     }
 
-    // Formato explícito SIEMPRE. Medido en el negocio de facturas: la escala del decimal
-    // no sobrevive el journal (5571.50 entra, 5571.5 sale del replay), así que un
-    // ToString() pelado mostraría valores distintos antes y después de reabrir la app.
-    private static string Valor(decimal medido) => medido.ToString("0.##", CultureInfo.InvariantCulture);
+    /// <summary>
+    /// UN VALOR MEDIDO, dicho por el renderizador. El separador decimal lo pone el idioma, y
+    /// el formato es explicito siempre: la escala del decimal no sobrevive el journal.
+    /// </summary>
+    private string Valor(decimal medido) => textos.Numero(medido);
 
     // EL ESTADO EN PALABRAS PARA EL CHIP GRANDE — RONDA 15: el MISMO vocabulario que ya
     // usa Home (EstadoBreve/Flecha en MisExamenes.razor) para que la cabecera del detalle

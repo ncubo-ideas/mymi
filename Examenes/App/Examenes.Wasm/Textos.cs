@@ -30,14 +30,21 @@ public sealed class Textos
 		new Dictionary<string, string>(StringComparer.Ordinal);
 
 	/// <summary>
-	/// EL NOMBRE Y EL LEMA DE LA INSTITUCION, que NO se traducen: son voz suya, no texto de esta
-	/// carátula. Viven aca y no en los catalogos justamente para que quien traduzca no los vea: lo
-	/// que no esta en el archivo no se puede traducir por descuido.
+	/// EL NOMBRE DE LA INSTITUCION, que NO se traduce: es voz suya, no texto de esta carátula. Este
+	/// y los dos de abajo viven aca y no en los catalogos justamente para que quien traduzca no los
+	/// vea: lo que no esta en el archivo no se puede traducir por descuido.
 	/// </summary>
 	public const string NombreDeLaInstitucion = "Laboratorio Clínico Delfos";
 
 	/// <summary>El lema de la institucion. Tampoco se traduce.</summary>
 	public const string LemaDeLaInstitucion = "Al servicio de su salud desde 1987";
+
+	/// <summary>
+	/// EL TITULO DEL MODULO, que tampoco se traduce: es el nombre con que la institucion declara
+	/// este modulo en su manifiesto, y el mismo que el Host y el instalador muestran. Una pantalla
+	/// que lo tradujera diria un nombre distinto del que la persona aprieta para entrar.
+	/// </summary>
+	public const string TituloDelModulo = "Mis exámenes";
 
 	/// <summary>La etiqueta completa del catalogo que se cargo, por ejemplo es-CR.</summary>
 	public string Etiqueta { get; private set; } = LaDelRegistro;

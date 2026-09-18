@@ -1,11 +1,10 @@
 window.TextoDeLaCara = window.TextoDeLaCara || {};
 window.TextoDeLaCara['es-CR'] = {
     // LO QUE ESTA CARA DICE CON SUS PROPIAS PALABRAS, en el idioma del registro. El espanol es
-    // el de Costa Rica y es voseo. El nombre y el lema del laboratorio NO estan aca: son voz de
-    // la institucion y viven en idioma.js. Las frases del dominio tampoco: llegan ya dichas.
+    // el de Costa Rica y es voseo. El nombre del laboratorio, su lema y el titulo del modulo NO
+    // estan aca: son voz de la institucion, viven en idioma.js y en index.html, y no se traducen.
+    // Las frases del dominio tampoco estan aca: llegan ya dichas.
     app: {
-        titulo: 'Mis exámenes',
-        lema: 'Al servicio de su salud desde 1987',
         preguntando: 'Preguntándole a Gnothi…',
         actualizar: 'Actualizar',
         saludo: 'Hola.',

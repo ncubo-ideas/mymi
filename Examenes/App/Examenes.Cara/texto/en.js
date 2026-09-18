@@ -3,9 +3,10 @@ window.TextoDeLaCara['en'] = {
     // THE SAME FACE IN THE OTHER LANGUAGE THIS MODULE SPEAKS. The keys are exactly the ones in
     // the record's catalogue: a key that is in one file and not in the other is a sentence that
     // arrives half-written, and nothing else on screen shows it.
+    //
+    // The lab's name, its tagline and the module's title are NOT here: they are the institution's
+    // voice, they live in idioma.js and index.html, and they are never translated.
     app: {
-        titulo: 'My tests',
-        lema: 'Serving your health since 1987',
         preguntando: 'Asking Gnothi…',
         actualizar: 'Refresh',
         saludo: 'Hello.',

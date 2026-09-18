@@ -6,9 +6,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- EL TITULO LO PONE idioma.js: la mitad es texto de esta caratula y la otra mitad es el
-     nombre de la institucion, que no se traduce. -->
-<title>Laboratorio Clínico Delfos</title>
+<!-- EL TITULO ENTERO ES VOZ DE LA INSTITUCION -- su titulo y su nombre -- y ninguna de las dos
+     mitades se traduce, asi que esta escrito una sola vez. idioma.js lo repone tal cual despues
+     de negociar, para las dos lenguas. -->
+<title>Mis exámenes · Laboratorio Clínico Delfos</title>
 <!-- LA HOJA DE LA INSTITUCION, TAL CUAL, y la estructura de carpetas tambien: `app.css` pide sus
      cuatro pesos por `../fuentes/PlusJakartaSans-*.woff2`, asi que aplanarla dejaria la pantalla
      en la tipografia de sistema sin que nada lo dijera. -->
@@ -63,8 +64,10 @@
                      0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
         </svg>
         <div>
+            <!-- EL NOMBRE Y EL LEMA, LOS DOS SIN data-texto: son voz de la institucion y no se
+                 traducen, y lo que no tiene clave no lo puede traducir nadie por descuido. -->
             <div class="marca-nombre">Laboratorio Clínico Delfos</div>
-            <div class="marca-claim" data-texto="app.lema">Al servicio de su salud desde 1987</div>
+            <div class="marca-claim">Al servicio de su salud desde 1987</div>
         </div>
 
         <!-- LA TECLA QUE VA A BUSCAR DATOS. Aca significa otra cosa que en la app suelta: no sale

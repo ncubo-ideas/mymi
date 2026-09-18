@@ -1,8 +1,7 @@
 {
-  "//": "THE SAME SCREEN IN THE OTHER LANGUAGE THIS APP SPEAKS. The keys are exactly the ones in the record's catalogue, and that is not style: a key that is in one file and not in the other is a sentence that arrives half-written -- with a raw {hole} on screen -- and no other check sees it. The lab's name and tagline are deliberately not here: they are the institution's voice and live in Textos.cs.",
+  "//": "THE SAME SCREEN IN THE OTHER LANGUAGE THIS APP SPEAKS. The keys are exactly the ones in the record's catalogue, and that is not style: a key that is in one file and not in the other is a sentence that arrives half-written -- with a raw {hole} on screen -- and no other check sees it. The lab's name, its tagline and the module's title are deliberately not here: they are the institution's voice, they live in Textos.cs, and they are never translated.",
 
   "app": {
-    "titulo": "My tests",
     "membrete": "Your record, on your own computer.",
     "privacidad": "Your data stays on your device. You decide what to share."
   },
@@ -206,6 +205,9 @@
     "meta": "goal",
     "hoy": "today",
     "veniasDe": "you were at {valor}",
+    "rangoDeReferencia": "Reference range",
+    "nivelDeSiempre": "your usual level, {valor}",
+    "esperableHasta": "expected up to {valor}",
     "categoriaSiempre": "{veces} times, always as expected",
     "categoriaFuera": "{afuera} of {veces} outside what is expected",
     "presenciaNinguna": "{pruebas} tests, none",

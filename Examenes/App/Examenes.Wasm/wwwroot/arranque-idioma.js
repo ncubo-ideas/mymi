@@ -4,18 +4,20 @@
     var LAS_QUE_HAY = ['es-CR', 'en'];
     var LA_DEL_REGISTRO = 'es-CR';
 
+    // EL NOMBRE DE LA INSTITUCION Y EL TITULO DEL MODULO NO SE TRADUCEN: son voz de la
+    // institucion, asi que el titulo del documento esta escrito UNA vez y no una por idioma.
+    // Lo que no esta en la tabla de abajo no se puede traducir por descuido.
     var LA_INSTITUCION = 'Laboratorio Clínico Delfos';
+    var EL_TITULO = 'Mis exámenes · ' + LA_INSTITUCION;
 
     var ARRANQUE = {
         'es-CR': {
-            titulo: 'Mis exámenes · ' + LA_INSTITUCION,
             cargando: 'Cargando',
             fallo: 'Ocurrió un error inesperado.',
             recargar: 'Recargar',
             descartar: 'Descartar este aviso'
         },
         'en': {
-            titulo: 'My tests · ' + LA_INSTITUCION,
             cargando: 'Loading',
             fallo: 'Something unexpected went wrong.',
             recargar: 'Reload',
@@ -54,7 +56,7 @@
     var dice = ARRANQUE[etiqueta] || ARRANQUE[LA_DEL_REGISTRO];
 
     document.documentElement.lang = etiqueta;
-    document.title = dice.titulo;
+    document.title = EL_TITULO;
 
     // EL ARO DE CARGA se pinta con una variable de CSS porque su texto es `content:` de un
     // pseudo-elemento: no hay nodo al que ponerle textContent, y Blazor lo pisa con el
