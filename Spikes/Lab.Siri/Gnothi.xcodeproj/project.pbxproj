@@ -17,6 +17,8 @@
 		1A0000000000000000000027 /* ExamenEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000017 /* ExamenEntity.swift */; };
 		1A0000000000000000000028 /* ExamenesIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000018 /* ExamenesIntents.swift */; };
 		1A0000000000000000000029 /* Instantanea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000019 /* Instantanea.swift */; };
+		1A000000000000000000002A /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001A /* AppShortcuts.xcstrings */; };
+		1A000000000000000000002B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001B /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +33,8 @@
 		1A0000000000000000000017 /* ExamenEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamenEntity.swift; sourceTree = "<group>"; };
 		1A0000000000000000000018 /* ExamenesIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamenesIntents.swift; sourceTree = "<group>"; };
 		1A0000000000000000000019 /* Instantanea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Instantanea.swift; sourceTree = "<group>"; };
+		1A000000000000000000001A /* AppShortcuts.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppShortcuts.xcstrings; sourceTree = "<group>"; };
+		1A000000000000000000001B /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +60,8 @@
 				1A0000000000000000000019 /* Instantanea.swift */,
 				1A0000000000000000000013 /* TotalDeFacturasIntent.swift */,
 				1A0000000000000000000014 /* GnothiShortcuts.swift */,
+				1A000000000000000000001A /* AppShortcuts.xcstrings */,
+				1A000000000000000000001B /* Localizable.xcstrings */,
 				324B413E3047666500C77003 /* Gnothi */,
 				1A0000000000000000000003 /* Products */,
 			);
@@ -118,6 +124,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				es,
+				en,
 				Base,
 			);
 			mainGroup = 1A0000000000000000000002;
@@ -136,6 +143,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				324B413F3047666600C77003 /* Assets.xcassets in Resources */,
+				1A000000000000000000002A /* AppShortcuts.xcstrings in Resources */,
+				1A000000000000000000002B /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
