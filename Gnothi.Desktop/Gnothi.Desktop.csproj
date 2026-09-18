@@ -159,7 +159,11 @@
     <!-- EL ICONO DEL EJECUTABLE. `SetIconFile` le pone cara a la VENTANA; esto se la pone al
          archivo, que es de donde Windows saca el icono de la barra de tareas, el del
          explorador y el de alt-tab. Sin los dos, Mymi tiene cara abierta y no la tiene
-         anclada. -->
+         anclada.
+
+         EN LA MAC NINGUNO DE LOS DOS SIRVE: ahi el nombre y el icono de una app se declaran en
+         un Info.plist, que es el de al lado, y lo pone adentro de Mymi.app empaquetar-mac.sh.
+         El icono de la Mac no es este .ico: se genera del mismo png que pintan los telefonos. -->
     <ApplicationIcon>mymi.ico</ApplicationIcon>
   </PropertyGroup>
 

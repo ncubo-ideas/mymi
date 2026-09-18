@@ -128,6 +128,14 @@ runtime); `WinExe` en Windows es sin consola, así que el handler de `UnhandledE
 que correrla con `dotnet run` desde una consola abierta—; y el MSI de abajo es del 2026-09-04, cuatro
 días **anterior** a la migración.
 
+🍎 **Y en la Mac ya hay empaquetado, desde el 2026-09-18.** `Gnothi.Desktop/empaquetar-mac.sh` arma
+`Mymi.app`: la ventana autocontenida adentro de `Contents/MacOS/`, el `Info.plist` que le da nombre e
+identidad, y un `.icns` generado del **mismo** dibujo que pintan los dos teléfonos. Hacía falta porque
+un ejecutable suelto no tiene ni nombre ni cara para macOS: el Dock lo nombraba «Gnothi.Desktop» y le
+ponía **el icono de GIMP**, y ninguna de las dos cosas se arregla desde C# —`SetIconFile` es un camino
+de Windows/Linux—. No reemplaza a los MSI ni a `publicar-mac.sh`: es lo mismo que ellos, del lado de la
+ventana y de la Mac.
+
 ---
 
 ## Comercio.Shell — el PWA en una ventana
