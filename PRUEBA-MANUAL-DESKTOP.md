@@ -157,6 +157,23 @@ Se abre una ventana nativa (WebView2 en Windows, WKWebView en macOS, WebKitGTK e
 - **Open** → la pantalla del módulo, con un botón por consulta. **Run** en `resumen` o `lista_de_examenes` muestra los datos (tabla si es una lista).
 - **Import a module…** → se abre el selector de archivos **del sistema** (NSOpenPanel en Mac); elegí `%TEMP%\gnothi-demo\examenes.gmod` y lo instala desde la interfaz (esto es la Parte 1.3, pero con un clic).
 - **Reload** relee `installation.json` del disco (así se ve un cambio de consentimiento hecho a mano).
+- **Ajustes → Proveedor**: en una Mac con macOS 26 y Apple Intelligence activo aparece **«Apple
+  Intelligence (en esta Mac)»** como primer proveedor, sin llave: el modelo corre en el equipo y
+  nada sale de él. Para que aparezca hay que haber armado el puente una vez, con Xcode 26:
+
+  ```bash
+  ./Gnothi.Desktop/armar-modelo.sh
+  ```
+
+  Es el mismo `Puente.swift` que usa la app de iOS, compilado como dylib universal. Si no está, el
+  preset simplemente no se ofrece. **Tenés que ver**, en Asistente, que una pregunta como «¿qué
+  exámenes me falta repetir?» dispare `examenes_que_me_falta_medir` y conteste (medido: 4,7 s con
+  un módulo instalado).
+
+  > **Límite medido:** el modelo de Apple admite **4 096 tokens** de contexto y el catálogo de los
+  > cinco módulos del banco suma ~6 600 solo de costo fijo, así que con todos encendidos la
+  > pregunta falla diciendo que el catálogo no entra. Apagá módulos o consultas en
+  > `installation.json` y tocá Reload. Con solo `examenes` encendido, entra y contesta.
 
 > Sin argumento, la ventana busca `Modulos` al lado del ejecutable (instalada) o en la raíz del repo (desarrollo).
 

@@ -175,7 +175,20 @@ internal sealed class ModelFoundation : IModel
 		JsonElement r = Json.Parse(crudo);
 
 		if (r.TryGetProperty("error", out JsonElement error))
-			throw new InvalidOperationException($"el modelo del telefono fallo: {error.GetString()}");
+		{
+			string e = error.GetString() ?? "";
+			// EL CATALOGO NO ENTRA. Medido en la Mac el 2026-09-08: el modelo de Apple admite 4 096
+			// tokens de contexto y cinco modulos con 32 tools suman ~6 600 solo de costo fijo. El
+			// error crudo dice "exceededContextWindowSize(...7307 tokens...)" y nadie sabe que hacer
+			// con eso; lo que puede hacer la persona es apagar modulos o consultas, que es la
+			// palanca que el Host ya le da (installation.json).
+			if (e.Contains("exceededContextWindowSize", StringComparison.Ordinal))
+				throw new InvalidOperationException(
+					"el catalogo de tus modulos no entra en el modelo de este equipo (admite 4096 tokens). "
+					+ "Apaga modulos o consultas que no uses, en installation.json, y volve a preguntar. "
+					+ $"Detalle: {e}");
+			throw new InvalidOperationException($"el modelo del telefono fallo: {e}");
+		}
 
 		var llamadas = new List<ToolCall>();
 
