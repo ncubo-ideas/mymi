@@ -86,6 +86,10 @@ internal static class Program
 			if (args[i] == "--auto" && int.TryParse(args[i + 1], out int s)) auto = s;
 		}
 
+		// Antes de que nadie toque el modelo: el resolver tiene que estar puesto cuando el
+		// primer DllImport de ModelFoundation se enlace.
+		AppleModel.Wire();
+
 		var state = new HostState(modulesRoot, journals) { Faces = faces, Frames = frames };
 		state.Reload();
 
