@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- LA VENTANA DE ESCRITORIO COMO APP DE macOS. Este archivo es a la Mac lo que app.manifest es
+     a Windows: no lo lee el compilador, lo lee el sistema. Lo copia empaquetar-mac.sh adentro
+     de Mymi.app/Contents/, y sin él no hay bundle: hay un ejecutable suelto.
+
+     ═══ QUÉ ARREGLA, Y ESTÁ MEDIDO ═══
+
+     Sin bundle, corriendo bin/Debug/net9.0/Gnothi.Desktop, medido el 2026-09-18:
+
+       - el Dock la nombra «Gnothi.Desktop» —el AssemblyName del csproj—, porque sin Info.plist
+         no hay CFBundleName y el nombre sale del archivo. `SetTitle("Mymi")` en Program.cs:111
+         nombra SOLO la ventana, y el Dock no lee títulos de ventana.
+       - el Dock le pone EL ICONO DE GIMP. Sin bundle no hay icono propio, así que el Dock usa
+         el del ARCHIVO ejecutable, y a un ejecutable sin extensión el Finder le pone el de la
+         app que dice abrirlo: `NSWorkspace.urlForApplication(toOpen:)` sobre ese binario
+         responde /Applications/GIMP.app. No es culpa de mymi.ico —tiene siete tamaños y dibuja
+         a Mymi— ni de la asociación de .ico, que la tiene Preview.
+
+     Y por qué no se arregla en código: `SetIconFile` (Program.cs:118) es un camino de
+     Windows/Linux. Photino.Native.dylib no exporta setApplicationIconImage:, solo un setIcon:
+     de ventana. El icono de una app de Mac se declara acá o no existe.
+
+     ═══ QUÉ CLAVE HACE QUÉ ═══
+
+       CFBundleName          el nombre corto: el Dock, el menú de la app y ⌘-Tab. Tope 15
+                             caracteres, y «Mymi» entra cuatro veces.
+       CFBundleDisplayName   el que muestra el Finder. Es el mismo a propósito: un nombre que
+                             cambia según dónde se lea es dos nombres.
+       CFBundleIconFile      el .icns DENTRO de Contents/Resources/, sin extensión. Lo genera
+                             empaquetar-mac.sh del MISMO dibujo que pintan los dos teléfonos
+                             —Gnothi.Mobile/Assets/img/mymi-hub.png—, no de una copia nueva.
+       CFBundleExecutable    tiene que decir exactamente el AssemblyName del csproj. Si alguien
+                             cambia uno sin el otro, la app no arranca: LaunchServices busca
+                             Contents/MacOS/<esto> y no lo encuentra.
+       CFBundleIdentifier    la identidad ante el sistema: TCC, LaunchServices y la firma la
+                             usan para reconocerla entre builds. Hermano del
+                             com.ncubo.gnothi.host que fija Gnothi.Host/publicar-mac.sh.
+
+     «Mymi» NO se traduce y por eso está una sola vez y en duro: es la marca, la misma regla que
+     deja intacta la voz de la institución (Metodologia/Guias/reglas-de-localizacion.md, regla 4).
+
+     ═══ LO QUE NO ESTÁ ACÁ, A PROPÓSITO ═══
+
+     Ni CFBundleDocumentTypes ni CFBundleURLTypes. En el teléfono existen porque ahí un .gmod
+     llega por Archivos o por AirDrop y `gnothi://alta` es la única forma de entrar sin AASA
+     (ver Gnothi.iOS/Info.plist). En el escritorio el alta entra por «Import a module…», que abre
+     el NSOpenPanel del sistema. El día que un .gmod deba abrirse con doble clic en la Mac, se
+     declara acá y se copian esas dos claves de allá. -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Mymi</string>
+
+	<key>CFBundleDisplayName</key>
+	<string>Mymi</string>
+
+	<key>CFBundleIdentifier</key>
+	<string>com.ncubo.gnothi.desktop</string>
+
+	<key>CFBundleExecutable</key>
+	<string>Gnothi.Desktop</string>
+
+	<key>CFBundleIconFile</key>
+	<string>mymi</string>
+
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+
+	<!-- La misma versión que declara el MSI (Gnothi.Installer/Gnothi.wxs:91). Dos instaladores
+	     de la misma cosa diciendo dos versiones distintas es una pregunta que nadie quiere
+	     contestar en una llamada de soporte. -->
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>0.1.0</string>
+
+	<!-- El piso lo pone .NET 9, no nosotros: es el macOS más viejo que soporta su runtime. La
+	     dylib de Apple Intelligence pide macOS 26, pero es opcional —sin ella la ventana corre
+	     igual y el preset no aparece—, así que no sube este piso. -->
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+
+	<!-- Sin esto la WKWebView se pinta a 1x y se escala: la cara entera sale borrosa en
+	     cualquier pantalla Retina, que son todas las de esta oficina. -->
+	<key>NSHighResolutionCapable</key>
+	<true/>
+
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+</dict>
+</plist>
