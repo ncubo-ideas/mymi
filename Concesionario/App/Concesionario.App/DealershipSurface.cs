@@ -56,30 +56,19 @@ namespace Concesionario.App
 		private const string TheModelAtDelivery = "YARIS-2019";
 		private const string TheVinAtDelivery = "1HGCM82633A004352";
 
-		/// <summary>
-		/// THE LANGUAGE A VIEW IS SAID IN, and it is WHOEVER ASKS that says which.
-		/// <para>
-		/// This surface has no browser: the Host hands it a granted folder and nothing else, and
-		/// <c>Gnothi.Contract</c> carries no language. But the face that consults it IS one, and has
-		/// already read the device's choice with <c>navigator.languages</c> -- so it sends the tag as
-		/// one more argument of the view, which <c>consultar</c> already carries. The contract did not
-		/// have to grow: that was the premise this member used to state, and it was wrong.
-		/// </para>
-		/// <para>
-		/// An empty tag, or one this module does not speak, falls back to the language the dealership
-		/// keeps its record in -- the same fall the standalone app makes when it cannot read the
-		/// choice. That is why the parameter is optional: a caller that says nothing gets what it got
-		/// before.
-		/// </para>
-		/// <para>
-		/// THE TWO <c>[Query]</c> METHODS DO NOT TAKE IT, and that asymmetry is the rule and not an
-		/// oversight: what the assistant asks, the institution answers in ITS language.
-		/// </para>
-		/// </summary>
-		private static string TheLanguageAsked(string language) =>
-			Wording.Phrases.IsALanguageThisModuleSpeaks(language)
-				? language
-				: Wording.Phrases.LanguageOfTheRecord;
+		// WHICH LANGUAGE A VIEW IS SAID IN, and it is said by WHOEVER ASKS FOR IT. This class has no
+		// browser -it runs in process inside Gnothi- but the face that queries it IS one, and has
+		// already read the device's choice; it sends the tag as one more argument of the view.
+		// Asking the device from here would tie the package to a browser, which is the very thing
+		// the hybrid form exists not to do.
+		//
+		// An empty tag, or one this module does not speak, falls to the language the dealership
+		// keeps its record in -- the same fall the standalone app makes when it cannot read the
+		// choice. Same shape as CargasSurface.Elegido.
+		private const string TheLanguageOfTheRecord = Wording.Phrases.LanguageOfTheRecord;
+
+		private static string Chosen(string language) =>
+			Wording.Phrases.IsALanguageThisModuleSpeaks(language) ? language : TheLanguageOfTheRecord;
 
 		private readonly string folder;
 
@@ -134,19 +123,30 @@ namespace Concesionario.App
 		// THE HEADER: whose car this is, what the manufacturer published for it, and the four
 		// counts the screen leads with.
 		[View("header")]
-		public object Header(string idioma = "") => !HasJournal ? NoData() : Read(api => (object)new
+		public object Header(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
-			hasData = true,
-			vin = api.ReadVin(),
-			plate = ThePlateOfThisVehicle.ReadThrough(api, Now(), TheLanguageAsked(idioma)),
-			specification = WhatTheManufacturerPublished.ReadThrough(api, TheLanguageAsked(idioma)),
-			due = api.CountDue(),
-			overdue = api.CountOverdue(),
-			scheduled = api.CountScheduled(),
-			upToDate = api.CountUpToDate(),
-			missed = api.MissedCount(),
-			nextDueKind = api.ReadNextDueKind(),
-			lastEventApplied = api.LastEventApplied(),
+			string said = Chosen(language);
+
+			return (object)new
+			{
+				hasData = true,
+				vin = api.ReadVin(),
+				plate = ThePlateOfThisVehicle.ReadThrough(api, Now(), said),
+				specification = WhatTheManufacturerPublished.ReadThrough(api, said),
+				due = api.CountDue(),
+				overdue = api.CountOverdue(),
+				scheduled = api.CountScheduled(),
+				upToDate = api.CountUpToDate(),
+				missed = api.MissedCount(),
+
+				// ASK BEFORE READING IT. `ReadNextDueKind` THROWS when nothing is due -- it says so
+				// itself: "pregunte HasAnythingDue antes" -- so a car that is up to date took the
+				// whole header down, and with it the screen, which is the one moment there was
+				// nothing wrong to report. AppState.NextDueKind already guarded it this way.
+				nextDueKind = api.HasAnythingDue() ? api.ReadNextDueKind() : "",
+
+				lastEventApplied = api.LastEventApplied(),
+			};
 		});
 
 		// WHERE THE VEHICLE STANDS, and where each of the nine operations stands. They travel
@@ -157,11 +157,10 @@ namespace Concesionario.App
 		// view is computed AGAINST AN INSTANT, and letting the page send it would let the screen
 		// move the answer.
 		[View("standing")]
-		public object Standing(string idioma = "") => !HasJournal ? NoData() : Read(api =>
+		public object Standing(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
 			DateTime asOf = Now();
-			string said = TheLanguageAsked(idioma);
-			Wording.Phrases phrases = Wording.Phrases.Of(said);
+			string said = Chosen(language);
 
 			// THE DUE STATE PER KIND, and it has to be asked for separately. `HowOneOperationStands`
 			// carries a DistanceStanding and a TimeStanding -- two countdowns, because an operation
@@ -175,50 +174,25 @@ namespace Concesionario.App
 			foreach (string kind in TheClosedSets.TheNineKinds)
 				dueStates[kind] = api.ReadDueState(kind);
 
-			// AND THE SAME SETS SAID, because a code is identity and a label is presentation. The
-			// face decides the colour off the CODE -- that is what a semaphore may not get wrong --
-			// and prints the LABEL, which is the only half that changes with the language. Leaving
-			// the face to map one to the other would put this catalogue in a third place, beside the
-			// door's and the standalone app's, and the first time they disagreed the screen would win.
-			var kindsSaid = new Dictionary<string, string>();
-			var kindsSaidShort = new Dictionary<string, string>();
-			var dueStatesSaid = new Dictionary<string, string>();
-
-			foreach (string kind in TheClosedSets.TheNineKinds)
-			{
-				kindsSaid[kind] = phrases.HowItIsSaid("board.operation", kind);
-				kindsSaidShort[kind] = phrases.HowItIsSaid("board.operation.short", kind);
-				dueStatesSaid[kind] = phrases.HowItIsSaid("board.dueState", dueStates[kind]);
-			}
-
-			WhereThisVehicleStands stands = WhereThisVehicleStands.ReadThrough(api, asOf, said);
-
 			return (object)new
 			{
-				vehicle = stands,
-
-				// THE DAY ALREADY SAID, in the order the language asks for. The raw day still travels
-				// in `vehicle.deliveredAt`: this is how it reads, not a second fact.
-				deliveredAtSaid = phrases.AShortDay(stands.DeliveredAt),
-
-				operations = WhereEachOperationStands.ReadThrough(api, asOf, said),
+				vehicle = WhereThisVehicleStands.ReadThrough(api, asOf, said),
+				operations =
+					WhereEachOperationStands.ReadThrough(api, asOf, said),
 				dueStates,
-				kindsSaid,
-				kindsSaidShort,
-				dueStatesSaid,
 			};
 		});
 
 		// THE STAYS AT THE SHOP, this year. The window is the same one the standalone app uses:
 		// from the first day of the current year to today.
 		[View("history")]
-		public object History(string idioma = "") => !HasJournal ? NoData() : Read(api =>
+		public object History(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
 			DateTime asOf = Now();
 			return (object)new
 			{
 				stays = TheStaysOfThisVehicle.ReadThrough(
-					api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf, TheLanguageAsked(idioma)),
+					api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf, Chosen(language)),
 			};
 		});
 
@@ -226,11 +200,11 @@ namespace Concesionario.App
 		// before that. Two windows, because both readings are comparisons and a single window
 		// would only give half of each.
 		[View("costs")]
-		public object Costs(string idioma = "") => !HasJournal ? NoData() : Read(api =>
+		public object Costs(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
 			DateTime asOf = Now();
 			DateTime aYearBack = asOf.AddYears(-1), twoYearsBack = asOf.AddYears(-2);
-			string said = TheLanguageAsked(idioma);
+			string said = Chosen(language);
 
 			return (object)new
 			{

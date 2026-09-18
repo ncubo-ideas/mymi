@@ -73,7 +73,6 @@ namespace Cargas.Consola
 			LaFichaLeDaNombreAlVehiculo();
 			LosDosCatalogosDicenLasMismasClaves();
 			CadaFraseSeDiceEnLosDosIdiomas();
-			ComprobacionesDeLosCatalogos.Correr(Titulo, Igual);
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0

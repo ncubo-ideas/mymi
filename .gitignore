@@ -85,6 +85,10 @@ xcuserdata/
 # de build y la regenera el script; el .swiftconstvalues cambia en cada corrida.
 Gnothi.iOS/Intents/out/
 
+# La dylib del puente a Apple Intelligence para la ventana de escritorio: salida de build, la
+# arma Gnothi.Desktop/armar-modelo.sh del MISMO Puente.swift de iOS, y solo existe en una Mac.
+Gnothi.Desktop/native/
+
 # Lo que deja xcodebuild al compilar Lab.Siri por linea de comandos. Xcode lo crea al lado del
 # .xcodeproj aunque se le pase CONFIGURATION_BUILD_DIR a otra parte.
 Spikes/Lab.Siri/build/

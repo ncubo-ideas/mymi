@@ -21,7 +21,16 @@ window.TextoDeLaCara['en'] = {
     },
     atencion: {
         rotulo: 'worth attention',
-        referencia: 'reference: {referencia}',
+        conteo: '1 result',
+        conteoVarios: '{cuantos} results',
+        tuResultado: 'Your result · {valor}',
+        referencia: 'Reference · {referencia}',
+        referenciaMinuscula: 'reference: {referencia}',
+        posibleErrorDeMedicion: 'possible measurement error',
+        vieneAumentando: 'has been rising',
+        vieneBajando: 'has been falling',
+        enSeguimiento: 'being followed',
+        seMantieneEstable: 'holding steady',
         pruebasNinguna: '{pruebas} tests, none',
         pruebasAlgunas: '{presentes} of {pruebas}',
         dentroDeLoEsperable: '{dentro} of {veces} within what is expected'
@@ -30,6 +39,7 @@ window.TextoDeLaCara['en'] = {
         rotulo: 'the rest is fine',
         titulo: 'These results are within what is expected.',
         enRango: 'in range',
+        nota: '{mediciones} · {tendencia}',
         medicion: '1 measurement',
         mediciones: '{cuantas} measurements'
     },
@@ -39,11 +49,12 @@ window.TextoDeLaCara['en'] = {
     },
     sinTendencia: {
         rotulo: 'no trend to show yet',
-        conUna: 'With a single measurement there is no saying which way it is heading yet.'
+        conUna: 'With your next result we can start showing you how it is changing.',
+        conVarias: 'There is not enough data yet to show how it is changing.'
     },
     historial: {
         titulo: 'Your history',
-        sinExamenes: 'No tests yet. Press Refresh.',
+        sinExamenes: 'No tests yet. Press <em>Refresh</em>.',
         intro: 'Here you can see your earlier results.',
         resultado: '1 result',
         resultados: '{cuantos} results'
@@ -51,5 +62,11 @@ window.TextoDeLaCara['en'] = {
     pedido: {
         faltaUnDato: 'One detail about you is missing'
     },
-    meses: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    meses: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+
+    // THE TRAJECTORY FOOTNOTES. Same keys and values as the standalone app.
+    forma: {
+        nivelDeSiempre: 'your usual level, {valor}',
+        esperableHasta: 'expected up to {valor}'
+    }
 };

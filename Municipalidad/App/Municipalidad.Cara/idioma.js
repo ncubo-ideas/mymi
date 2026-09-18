@@ -1,3 +1,17 @@
+// EL IDIOMA DE ESTA CARA, negociado con el aparato igual que lo hace la app suelta.
+//
+// La app suelta lee `navigator.languages` -- por JSInterop, en `Textos.cs` -- y elige entre las dos
+// que habla, con el espanol del registro como caida. Aca se hace lo MISMO y con la misma regla:
+// una cara hibrida corre adentro de un WebView, asi que el aparato si esta y preguntarselo no ata
+// nada al navegador que no estuviera atado ya.
+//
+// LO QUE NO SE NEGOCIA es la frase del dominio: esa la compone la superficie, que recibe la
+// etiqueta como un parametro mas de la vista. Este archivo solo decide en que idioma habla la
+// PANTALLA, y le pasa la etiqueta a quien redacta.
+//
+// La unica diferencia con el mismo archivo de Cargas es `data-texto-html`: esta institucion
+// escribe frases con <strong> adentro -- son suyas, del catalogo, no del registro -- y pintarlas
+// con textContent mostraria las etiquetas en crudo.
 window.Idioma = (function () {
     'use strict';
 
@@ -53,13 +67,10 @@ window.Idioma = (function () {
         return dicho;
     }
 
-    // EL NOMBRE DE LA MUNICIPALIDAD NO SE TRADUCE: es voz de la institucion, no texto de esta
-    // caratula, asi que vive aca y no en los catalogos. Lo que no esta en el archivo no se puede
-    // traducir por descuido.
-    //
-    // Lo escribe index.html en la banda, y esta aca ademas porque idioma.js es quien repone
-    // document.title despues de negociar.
-    var LA_INSTITUCION = 'MONTEVERDE Municipal Services';
+    // LA COMA DECIMAL ES DEL IDIOMA y no del dato, asi que quien escribe una cifra necesita saber
+    // en cual esta. Es la subetiqueta primaria, la misma con que `Frases.De` elige catalogo del
+    // otro lado del puente: las dos mitades de la pantalla escriben 1234,5 o 1234.5 juntas.
+    var lengua = typeof catalogo.idioma === 'string' ? catalogo.idioma : 'es';
 
     document.documentElement.lang = etiqueta;
 
@@ -68,16 +79,25 @@ window.Idioma = (function () {
         for (var i = 0; i < nodos.length; i++)
             nodos[i].textContent = texto(nodos[i].getAttribute('data-texto'));
 
+        // LAS QUE TRAEN MARCADO. Son del catalogo de esta cara -- las escribe la institucion, no el
+        // registro -- asi que entran tal cual. Ningun dato del journal pasa por aqui.
+        var conMarcado = document.querySelectorAll('[data-texto-html]');
+        for (var k = 0; k < conMarcado.length; k++)
+            conMarcado[k].innerHTML = texto(conMarcado[k].getAttribute('data-texto-html'));
+
         var etiquetados = document.querySelectorAll('[data-texto-aria]');
         for (var j = 0; j < etiquetados.length; j++)
             etiquetados[j].setAttribute('aria-label', texto(etiquetados[j].getAttribute('data-texto-aria')));
-
-        document.title = LA_INSTITUCION;
     }
+
+    // EL PUENTE TAMBIEN HABLA, y no tiene catalogo propio: lo pone el Host y es el mismo archivo
+    // en los cinco modulos. Se le pasan las frases ya elegidas; si no se las pasan, el cae al
+    // espanol. Va acá y no en cara.js porque este archivo corre en el <head>, antes que puente.js.
+    if (catalogo.puente) window.TextoDelPuente = catalogo.puente;
 
     return {
         etiqueta: etiqueta,
-        institucion: LA_INSTITUCION,
+        lengua: lengua,
         texto: texto,
         con: con,
         pintarLoEstatico: pintarLoEstatico

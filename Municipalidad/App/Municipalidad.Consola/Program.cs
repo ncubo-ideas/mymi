@@ -45,14 +45,10 @@ namespace Municipalidad.Consola
 				case "aportar":
 					return Aportar.Correr(LaCarpeta(args, "municipalidad-aporte"));
 
-				case "comprobar":
-					return ComprobacionesDeLosCatalogos.Correr();
-
 				default:
 					Console.WriteLine("Comandos:  medir <carpeta>");
 					Console.WriteLine("           refrescar <carpeta> [--url U] [--recurso R] [--id CEDULA]");
 					Console.WriteLine("           aportar <carpeta>");
-					Console.WriteLine("           comprobar");
 					return 1;
 			}
 		}

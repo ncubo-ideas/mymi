@@ -13,16 +13,4 @@
     <ProjectReference Include="..\Municipalidad.App\Municipalidad.App.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\Municipalidad.Cara\texto\es-CR.js"
-          Link="cara.es-CR.js.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Municipalidad.Cara\texto\en.js"
-          Link="cara.en.js.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Municipalidad.Cara\index.html"
-          Link="cara.index.html.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>

@@ -356,6 +356,20 @@ if ($SoloManifiesto) {
         New-Item -ItemType Directory -Path "$armado/web" -Force | Out-Null
         Copy-Item -Recurse "$caraHibrida/*" "$armado/web/"
 
+        # LA MARCA VIVE EN LA APP SUELTA (2026-09-18). La foto y la tipografia que la institucion
+        # publica en <X>.Wasm/wwwroot/brand/ son las mismas para sus tres formas: la hospedada las
+        # recibe con el publish, y la hibrida no tenia de donde, asi que Monteverde salia con
+        # banner "" y la tarjeta se pintaba de color liso mientras la app suelta ya traia la foto
+        # del edificio. Se completa lo que la cara NO trae: si ella tiene su propio brand/ (La
+        # Guaria, que la referencia desde su css), ese gana, archivo por archivo.
+        $marcaDeLaApp = "$carpetaDeApp/$raizDelModulo.Wasm/wwwroot/brand"
+        if (Test-Path $marcaDeLaApp) {
+            New-Item -ItemType Directory -Path "$armado/web/brand" -Force | Out-Null
+            Get-ChildItem -File $marcaDeLaApp | ForEach-Object {
+                if (-not (Test-Path "$armado/web/brand/$($_.Name)")) { Copy-Item $_.FullName "$armado/web/brand/" }
+            }
+        }
+
         # EL PUENTE LO PONE EL HOST, no la institucion, y es el unico archivo de web/ que no
         # escribio ella. El protocolo -- que la respuesta vuelve por callback y no por retorno,
         # que `consultar` no lleva el nombre del modulo -- es de Gnothi: pedirle a cada
@@ -444,7 +458,14 @@ $manifiesto = [ordered]@{
         # archivo que no viaja: la aduana del Host lo dejaria pasar sin banner, pero el
         # manifiesto habria dicho algo falso. Los cuatro primeros mocks si lo traen.
         banner    = if (Test-Path "$armado/web/brand/banner.jpg") { 'web/brand/banner.jpg' } else { '' }
-        font      = if ($m.Fuente) { [ordered]@{ family = $m.Fuente.family; file = $m.Fuente.file } } else { $null }
+        # LA TIPOGRAFIA SE DECLARA SOLO SI VIAJA, por la misma razon que el banner: la fila la
+        # nombra, pero si el archivo no quedo en web/ la aduana del Host lo anota como problema
+        # y la marca sale sin letra. Antes esto se declaraba a ciegas y la forma hibrida de Faro
+        # y Sotaventos nombraba una fuente que no llevaba.
+        font      = if ($m.Fuente -and $traeCara -and -not (Test-Path "$armado/$($m.Fuente.file)")) {
+                        Write-Warning "la fila declara la tipografia $($m.Fuente.file) y no esta en el paquete: sale sin ella"
+                        $null
+                    } elseif ($m.Fuente) { [ordered]@{ family = $m.Fuente.family; file = $m.Fuente.file } } else { $null }
     }
     '//publisher' = 'DE DONDE VIENE Y QUE VERSION ES. El dominio es el unico campo CONTRASTABLE: Gnothi ya sabe de que host bajo el bundle y compara.'
     publisher     = [ordered]@{

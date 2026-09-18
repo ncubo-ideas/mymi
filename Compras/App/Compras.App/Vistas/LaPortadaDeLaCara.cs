@@ -33,16 +33,50 @@ namespace Compras.App.Vistas
 	/// </summary>
 	public static class LaPortadaDeLaCara
 	{
-		/// <summary>Un slide del carrusel, con los mismos campos que el HeroBanner de la app.</summary>
+		/// <summary>
+		/// Un slide del carrusel. Trae los INGREDIENTES, no la frase.
+		/// <para>
+		/// Hasta el 2026-09-18 traia <c>Kicker</c>, <c>Titulo</c>, <c>Secundario</c> y <c>Cta</c> ya
+		/// escritos, en espanol duro: «NUEVO», «Llegó algo nuevo de tus …», «último día». Una cara
+		/// en ingles pintaba el carrusel en espanol y el resto de la pantalla en ingles. La app
+		/// suelta nunca tuvo el problema porque arma los suyos con su catalogo
+		/// (<c>ArmarHeroBanners</c>, claves <c>hero.*</c>), asi que la cara hace lo mismo con las
+		/// MISMAS claves y este tipo viaja con lo que no se traduce.
+		/// </para>
+		/// <para>
+		/// <c>Gancho</c> y <c>Detalle</c> SI son texto y no llevan clave a proposito: los escribe la
+		/// institucion para esa promocion, como el nombre de un producto. Traducirlos seria
+		/// inventarle palabras al supermercado.
+		/// </para>
+		/// </summary>
 		public sealed class Banner
 		{
+			/// <summary>nuevo | habitual | promo | neutro. Elige la clase y, en la cara, la frase.</summary>
 			public string Variante { get; init; } = "";
-			public string Kicker { get; init; } = "";
-			public string Titulo { get; init; } = "";
-			public string Secundario { get; init; } = "";
+
+			/// <summary>El nombre corto del producto, para «… de tus {producto}». Vacio si no aplica.</summary>
+			public string Producto { get; init; } = "";
+
+			/// <summary>De la promocion, tal como la escribio la institucion.</summary>
+			public string Gancho { get; init; } = "";
+
+			/// <summary>De la promocion, tal como la escribio la institucion.</summary>
+			public string Detalle { get; init; } = "";
+
+			/// <summary>Como aaaa-mm-dd. La cara arma «válida hasta el viernes 25» con su catalogo.</summary>
+			public string ValidaHasta { get; init; } = "";
+
+			/// <summary>Cero el ultimo dia, igual que en la promocion.</summary>
+			public int DiasQueQuedan { get; init; }
+
+			/// <summary>Solo el neutro: cuantos ritmos cambiaron, para elegir singular o plural.</summary>
+			public int CuantosRitmos { get; init; }
+
+			/// <summary>Solo el neutro: separa «así vienen tus compras» de la bienvenida.</summary>
+			public bool HayCompras { get; init; }
+
 			public decimal? PrecioAntes { get; init; }
 			public decimal? PrecioAhora { get; init; }
-			public string Cta { get; init; } = "";
 			public string Foto { get; init; } = "";
 		}
 
@@ -57,10 +91,8 @@ namespace Compras.App.Vistas
 			FirmaDeLaSemana firma,
 			IReadOnlyList<RitmoQueCambio> ritmos,
 			bool hayCompras,
-			DateTime alDia,
-			string idioma)
+			DateTime alDia)
 		{
-			Frases.Frases dice = Frases.Frases.De(idioma);
 			var banners = new List<Banner>();
 
 			ProductoQueEntroVista novedad = cambio is not null && cambio.Entraron.Count > 0
@@ -72,10 +104,7 @@ namespace Compras.App.Vistas
 				banners.Add(new Banner
 				{
 					Variante = "nuevo",
-					Kicker = dice.Diga("portada.nuevo"),
-					Titulo = dice.Diga("portada.nuevoTitulo",
-						("producto", Corto(novedad.Descripcion).ToLowerInvariant())),
-					Cta = dice.Diga("portada.verlo"),
+					Producto = Corto(novedad.Descripcion).ToLowerInvariant(),
 					Foto = Fotos.De(novedad.Sku),
 				});
 
@@ -84,12 +113,9 @@ namespace Compras.App.Vistas
 				banners.Add(new Banner
 				{
 					Variante = "habitual",
-					Kicker = dice.Diga("portada.bajoDePrecio"),
-					Titulo = dice.Diga("portada.bajoDePrecioTitulo",
-						("producto", Corto(oportunidad.Descripcion).ToLowerInvariant())),
+					Producto = Corto(oportunidad.Descripcion).ToLowerInvariant(),
 					PrecioAntes = oportunidad.Antes,
 					PrecioAhora = oportunidad.Ahora,
-					Cta = dice.Diga("portada.verlo"),
 					Foto = Fotos.De(oportunidad.Sku),
 				});
 
@@ -102,35 +128,36 @@ namespace Compras.App.Vistas
 				banners.Add(new Banner
 				{
 					Variante = "promo",
-					Kicker = dice.Diga("portada.puedeInteresarte"),
-					Titulo = promo.Gancho,
-					Secundario = dice.Diga("portada.promoSecundario",
-						("detalle", promo.Detalle), ("vigencia", Vigencia(promo, dice))),
+					Gancho = promo.Gancho,
+					Detalle = promo.Detalle,
+					ValidaHasta = promo.ValidaHasta,
+					DiasQueQuedan = promo.DiasQueQuedan,
 					Foto = Fotos.De(promo.Sku),
 				});
 
 			if (banners.Count == 0)
-				banners.Add(hayCompras
-					? new Banner
-					{
-						Variante = "neutro",
-						Titulo = dice.Diga("portada.asiVienen"),
-						Secundario = ritmos is not null && ritmos.Count > 0
-							? dice.Diga(ritmos.Count == 1
-									? "portada.casiTodoHabitual.uno"
-									: "portada.casiTodoHabitual.varios",
-								("cuantos", ritmos.Count.ToString(CultureInfo.InvariantCulture)))
-							: dice.Diga("portada.todoComoSiempre"),
-					}
-					: new Banner
-					{
-						Variante = "neutro",
-						Titulo = dice.Diga("portada.bienvenida"),
-						Secundario = dice.Diga("portada.bienvenidaBajada"),
-					});
+				banners.Add(new Banner
+				{
+					Variante = "neutro",
+					HayCompras = hayCompras,
+					CuantosRitmos = hayCompras && ritmos is not null ? ritmos.Count : 0,
+				});
 
 			return banners;
 		}
+
+		// AQUI VIVIAN `DesdeCuando` y `MesLegible`, que armaban «enero de 2025» y «enero» para la
+		// franja y para «cambió desde …». Se fueron el 2026-09-18 junto con el ultimo llamador:
+		// la superficie ahora manda `primerMes` y `desdeMes` CRUDOS, en aaaa-mm, y el mes lo dice
+		// la carátula con su catalogo. Componer el mes aca escribia espanol en una respuesta que
+		// la persona podia estar leyendo en ingles, y ninguna otra pieza lo pedia -- la app suelta
+		// tiene sus propias copias en MisCompras.razor.
+		//
+		// CON EL CARRUSEL YA CONVERTIDO, ESTE ARCHIVO NO ESCRIBE NI UNA PALABRA PARA LA PERSONA, y
+		// esa es la linea que conviene no cruzar de nuevo: acá se decide QUE se muestra y en que
+		// orden -- reglas de producto, que las dos caras tienen que compartir -- y el COMO se dice
+		// es de quien sabe en que idioma esta mirando. Lo unico que sale de aca como texto son
+		// `Gancho` y `Detalle`, que los escribio la institucion.
 
 		// LA OPORTUNIDAD ARRANCA EN 1 Y NO EN 0, igual que la app: la fila cero es la que ya
 		// protagoniza la carta de precios, asi que el hero toma la siguiente bajada.
@@ -166,28 +193,12 @@ namespace Compras.App.Vistas
 			return meses >= 0 && meses <= 2;
 		}
 
-		private static string Vigencia(PromocionVista promo, Frases.Frases dice)
-		{
-			if (promo.DiasQueQuedan == 0) return dice.Diga("portada.ultimoDia");
-
-			if (DateTime.TryParse(promo.ValidaHasta, CultureInfo.InvariantCulture,
-					DateTimeStyles.None, out DateTime hasta))
-				return dice.Diga("portada.validaHasta",
-					("dia", DiaCorto(hasta, dice)),
-					("numero", hasta.Day.ToString(CultureInfo.InvariantCulture)));
-
-			return dice.Diga("portada.quedanDias", ("dias", dice.Dias(promo.DiasQueQuedan)));
-		}
-
-		private static string DiaCorto(DateTime cuando, Frases.Frases dice) => dice.Diga(cuando.DayOfWeek switch
-		{
-			DayOfWeek.Monday => "portada.dia.lunes",
-			DayOfWeek.Tuesday => "portada.dia.martes",
-			DayOfWeek.Wednesday => "portada.dia.miercoles",
-			DayOfWeek.Thursday => "portada.dia.jueves",
-			DayOfWeek.Friday => "portada.dia.viernes",
-			DayOfWeek.Saturday => "portada.dia.sabado",
-			_ => "portada.dia.domingo",
-		});
+		// AQUI VIVIAN `Vigencia` y `DiaCorto`, que escribian «último día», «válida hasta el
+		// viernes 25» y los siete dias de la semana en espanol. Se fueron con el resto del
+		// carrusel el 2026-09-18: el banner de promocion ahora viaja con `validaHasta` en
+		// aaaa-mm-dd y `diasQueQuedan`, y la frase la arma la cara con `inicio.ultimoDia`,
+		// `inicio.validaHasta` y `comun.dia.*` -- las MISMAS claves con que la app suelta arma
+		// esa linea. La regla (cero dias = ultimo dia; sin fecha legible = «quedan N dias») no se
+		// perdio: viaja en los dos campos, que es lo que la regla mira.
 	}
 }

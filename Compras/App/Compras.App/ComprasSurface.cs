@@ -33,21 +33,20 @@ namespace Compras.App
 		private const string ActorName = "compras";
 
 		/// <summary>
-		/// EN QUE IDIOMA SE DICE UNA VISTA, y lo dice QUIEN LA PIDE.
+		/// EN QUE IDIOMA SE DICE UNA VISTA, y lo dice QUIEN LA PIDE. Esta clase no tiene navegador
+		/// -- corre en proceso adentro de Gnothi, en la caja de wasm -- pero la cara que la consulta
+		/// SI lo es, y ya negocio la eleccion del aparato con la misma regla que la app suelta.
+		/// Preguntarsela al dispositivo desde aca ataria el paquete al navegador, que es lo que la
+		/// forma hibrida existe para no hacer.
 		/// <para>
-		/// Esta clase no tiene navegador: el Host le entrega una carpeta concedida y nada mas, y
-		/// Gnothi.Contract no lleva idioma. Pero la cara que la consulta SI lo es, y ya leyo la
-		/// eleccion del aparato con <c>navigator.languages</c>, asi que la manda como un parametro mas
-		/// de la vista.
+		/// Antes esto era una constante con el idioma del registro y su comentario decia que no
+		/// habia forma de saber el de la persona. La habia: es un parametro mas de la vista, y el
+		/// Host los liga por nombre.
 		/// </para>
 		/// <para>
-		/// Una etiqueta vacia o que este modulo no habla cae al idioma del registro del supermercado,
-		/// que es la misma caida que hace la app suelta cuando no puede leer la eleccion. Por eso el
-		/// parametro es opcional: un llamador que no diga nada sigue recibiendo lo de antes.
-		/// </para>
-		/// <para>
-		/// LAS DOS <c>[Query]</c> NO LO TOMAN, y esa asimetria es la regla y no un olvido: lo que el
-		/// asistente pregunta lo contesta la institucion en SU idioma, no en el de quien pregunta.
+		/// Una etiqueta vacia o que este modulo no habla cae al idioma del registro del
+		/// supermercado, que es la misma caida que hace la app suelta cuando no puede leer la
+		/// eleccion.
 		/// </para>
 		/// </summary>
 		private static string Elegido(string idioma) =>
@@ -119,10 +118,15 @@ namespace Compras.App
 				hayDatos = true,
 				cantidad,
 				total = api.TotalDeCompras(),
-				desdeCuando = rango is null ? "" : rango.PrimerMes,
+				// EL MES VIAJA CRUDO -- `aaaa-mm` -- Y LO DICE LA CARA. `LaPortadaDeLaCara` escribe
+				// «enero de 2025» con su propia tabla de meses en espanol, asi que una pantalla en
+				// ingles quedaba con «87 purchases of yours desde enero de 2025». El nombre del mes
+				// es del idioma de quien mira, y la cara ya tiene las dos tablas -- las mismas que
+				// la app suelta, que arma esta linea igual: `comun.mesDeAnio` + `comun.mesLargo.N`.
+				primerMes = rango is null ? "" : rango.PrimerMes,
 				banners = LaPortadaDeLaCara.Banners(
 					cambio, precios, api.Promociones(ahora, dicho), api.Firma(dicho), ritmos,
-					hayCompras: cantidad > 0, alDia: ahora, idioma: dicho),
+					hayCompras: cantidad > 0, alDia: ahora),
 				cambios = ritmos.Count,
 
 				// «TU HABITUAL»: el mismo hecho que ya protagoniza un slide, pero suelto, porque la
@@ -150,7 +154,8 @@ namespace Compras.App
 					ahora = ritmos[0].Ahora,
 					masSeguido = ritmos[0].EsMasSeguido,
 					foto = Fotos.De(ritmos[0].Sku),
-					desde = cambio is null ? "" : cambio.Corte,
+					// Crudo por la misma razon que `primerMes`: «cambió desde enero» lo arma la cara.
+					desdeMes = cambio is null ? "" : cambio.Corte,
 				},
 			};
 		});
@@ -208,13 +213,19 @@ namespace Compras.App
 		// que no tiene equivalente en una pantalla de supermercado -- un super entrega facturas,
 		// no cambios de precio.
 		[View("movimientos")]
-		public object Movimientos(string idioma = "") => !HasJournal ? NoData() : Read(api => (object)new
+		public object Movimientos(string idioma = "")
 		{
-			precios = api.Precios(Elegido(idioma)),
-			ritmos = api.RitmosDelQuiebre(Elegido(idioma)),
-			ritmo = api.Ritmo(Elegido(idioma)),
-			recorrido = api.Recorrido(Elegido(idioma)),
-		});
+			if (!HasJournal) return NoData();
+
+			string dicho = Elegido(idioma);
+			return Read(api => (object)new
+			{
+				precios = api.Precios(dicho),
+				ritmos = api.RitmosDelQuiebre(dicho),
+				ritmo = api.Ritmo(dicho),
+				recorrido = api.Recorrido(dicho),
+			});
+		}
 
 		// LO QUE VIENE: la lista de la proxima compra, las promociones vigentes, lo que falta
 		// reponer y las garantias que todavia valen.

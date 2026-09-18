@@ -131,6 +131,24 @@
     <Compile Include="..\Gnothi.MobileShared\ModuleEnrollment.cs" Link="Movil\ModuleEnrollment.cs" />
   </ItemGroup>
 
+  <!-- APPLE INTELLIGENCE. El IModel del telefono es EL MISMO ARCHIVO que compila Gnothi.iOS, no
+       una copia (mismo precedente que Gnothi.Assistant.Tests con Snapshot.cs). Sus DllImport
+       apuntan a "__Internal"; AppleModel.Wire() los resuelve a la dylib. La dylib la deja
+       armar-modelo.sh en native/ y solo existe en una Mac con Xcode: sin ella el proyecto compila
+       igual y el preset no aparece. -->
+  <ItemGroup>
+    <Compile Include="..\Gnothi.iOS\ModelFoundation.cs" Link="ModelFoundation.cs" />
+    <None Include="native\libGnothiModelo.dylib" Condition="Exists('native\libGnothiModelo.dylib')"
+          CopyToOutputDirectory="PreserveNewest" Link="libGnothiModelo.dylib" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Markdown -> HTML para la burbuja del asistente. Los modelos devuelven markdown aunque el
+         encuadre pida prosa sin markdown -la instruccion es tendencia, no compuerta, medido en
+         Lab.Cruce-, asi que la ventana lo pinta en vez de mostrar los asteriscos. -->
+    <PackageReference Include="Markdig" Version="1.3.2" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
     <!-- The assistant brain -the SAME AgentLoop the phone runs- reused, not reimplemented. -->

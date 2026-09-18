@@ -373,39 +373,6 @@ namespace Concesionario.Dominio.Pruebas
 				Snippet = "counted.Applied++;",
 				Reason = "Cuenta de la corrida: cuantos entraron.",
 			},
-			// LAS CUATRO DEL COTEJO DE CATALOGOS DE LA CARA, y ninguna toca un valor del dominio: dos
-			// son el conteo de la propia corrida de comprobaciones y dos son desplazamientos dentro de
-			// una cadena. El archivo que las trae no referencia el dominio y no puede nombrarlo.
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Consola, File = "ComprobacionesDeLosCatalogos.cs",
-				Member = "Igual",
-				Snippet = "corridas++;",
-				Reason = "Cuenta de la corrida: cuantas comprobaciones se hicieron.",
-			},
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Consola, File = "ComprobacionesDeLosCatalogos.cs",
-				Member = "Igual",
-				Snippet = "if (!ok) fallas++;",
-				Reason = "Cuenta de la corrida: cuantas fallaron.",
-			},
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Consola, File = "ComprobacionesDeLosCatalogos.cs",
-				Member = "ElCatalogoDeLaCara",
-				Snippet = "int abre = asignacion.Success ? crudo.IndexOf('{', asignacion.Index + asignacion.Length) : -1;",
-				Reason = "Desplazamiento en una cadena: donde abre el objeto que el archivo de la cara "
-					+ "asigna, buscado despues del final de la asignacion.",
-			},
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Consola, File = "ComprobacionesDeLosCatalogos.cs",
-				Member = "ElCatalogoDeLaCara",
-				Snippet = "JsonDocument.Parse(crudo.Substring(abre, cierra - abre + 1)))",
-				Reason = "El largo del mismo tramo de cadena, para quedarse con el objeto y sin el punto "
-					+ "y coma que lo sigue.",
-			},
 			// NO ES UNA CUENTA: ES PROSA, Y EL DETECTOR LA LEE COMO CODIGO. Las instructions del
 			// servidor MCP viven en un RAW STRING LITERAL ($"""..."""), y el apagado de literales no
 			// conoce esa forma -- conoce "...", @"..." y $"..." -- asi que el texto entero llega vivo al

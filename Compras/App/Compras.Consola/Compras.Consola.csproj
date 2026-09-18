@@ -36,16 +36,5 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\Compras.Cara\texto\es-CR.js"
-          Link="cara.es-CR.js.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Compras.Cara\texto\en.js"
-          Link="cara.en.js.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Compras.Cara\index.html"
-          Link="cara.index.html.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>
+

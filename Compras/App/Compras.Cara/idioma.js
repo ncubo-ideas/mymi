@@ -1,3 +1,13 @@
+// EN QUE IDIOMA ABRE ESTA CARA, decidido con la MISMA REGLA que la app suelta: la primera de
+// `navigator.languages` que este modulo hable, y si ninguna, el idioma del registro del
+// supermercado. Es la regla de Compras.Wasm/Textos.cs -- LasQueHay = {"es-CR","en"}, caida a
+// es-CR -- escrita otra vez porque aca no hay .NET que la corra, no porque sea otra regla.
+//
+// LA ETIQUETA VIAJA A LA SUPERFICIE. Lo que esta pantalla escribe sale de estos catalogos; lo
+// que compone el DOMINIO -- «venís gastando 8% más que en agosto» -- lo dice la superficie, y
+// para decirlo en el idioma correcto hay que pasarselo: `idioma: I.etiqueta` en cada pedido.
+// Adentro de Gnothi no hay navegador que la superficie pueda consultar, y ese es justamente el
+// punto de la forma hibrida.
 window.Idioma = (function () {
     'use strict';
 
@@ -35,6 +45,9 @@ window.Idioma = (function () {
     var etiqueta = laPrimeraQueHablamos();
     var catalogo = todos[etiqueta] || todos[LA_DEL_REGISTRO] || {};
 
+    // UNA CLAVE QUE FALTA SE DICE CON SU PROPIO NOMBRE y no revienta la pantalla: una tarjeta a
+    // la que le falta un rotulo sigue sirviendo, y el hueco se ve. Es la misma decision que toma
+    // Frases.Diga del lado de .NET.
     function texto(clave) {
         var partes = String(clave).split('.');
         var nodo = catalogo;
@@ -53,51 +66,47 @@ window.Idioma = (function () {
         return dicho;
     }
 
-    // EL TITULO DEL MODULO NO SE TRADUCE: es voz de la institucion, no texto de esta caratula, asi
-    // que vive aca y no en los catalogos. Lo que no esta en el archivo no se puede traducir por
-    // descuido. La marca, que index.html escribe al lado del logo, cae en la misma regla.
-    var EL_TITULO = 'La Guaria y vos';
+    var lengua = typeof catalogo.idioma === 'string' ? catalogo.idioma : 'es';
 
+    // LA ETIQUETA DEL DOCUMENTO LA PONE ESTO, no el markup: el bundle se sirve igual para los dos
+    // idiomas, asi que un `lang` escrito a mano seria falso para la mitad de quienes lo abren.
     document.documentElement.lang = etiqueta;
 
+    // EL <title> NO PASA POR ACA a proposito: «La Guaria y vos» es voz de la institucion y no se
+    // traduce, igual que en la app suelta, donde vive en Textos.TituloDelModulo y fuera del
+    // catalogo -- justamente donde quien traduzca no lo ve.
     function pintarLoEstatico() {
         var nodos = document.querySelectorAll('[data-texto]');
         for (var i = 0; i < nodos.length; i++)
             nodos[i].textContent = texto(nodos[i].getAttribute('data-texto'));
 
-        // EL MARCADO VIENE ADENTRO DE LA FRASE en los rotulos que lo llevan -- un <strong> que abre
-        // el aviso --, y lo lleva porque la app suelta lo lleva y el valor esta copiado de ella. Es
-        // texto NUESTRO, del bundle, nunca del registro: nada de lo que la institucion asento pasa
-        // por aca.
+        // CON MARCADO, Y SOLO EL NUESTRO. Hay frases del catalogo que traen su propio <strong> --
+        // el aviso de que se esta guardando en este telefono es una --, y por textContent saldrian
+        // escritas en vez de aplicadas. Lo que entra aca es SIEMPRE una frase de estos archivos,
+        // nunca nada del registro del supermercado.
         var conMarcado = document.querySelectorAll('[data-texto-html]');
         for (var h = 0; h < conMarcado.length; h++)
             conMarcado[h].innerHTML = texto(conMarcado[h].getAttribute('data-texto-html'));
 
-        // ARIA Y title JUNTOS: la tecla chica de refrescar lleva los dos, y dejarlos separados era
-        // dejar uno de los dos en espanol sin que nada lo dijera.
         var etiquetados = document.querySelectorAll('[data-texto-aria]');
-        for (var j = 0; j < etiquetados.length; j++) {
-            var dicho = texto(etiquetados[j].getAttribute('data-texto-aria'));
-            etiquetados[j].setAttribute('aria-label', dicho);
-            etiquetados[j].setAttribute('title', dicho);
-        }
+        for (var j = 0; j < etiquetados.length; j++)
+            etiquetados[j].setAttribute('aria-label', texto(etiquetados[j].getAttribute('data-texto-aria')));
 
-        document.title = EL_TITULO;
+        var titulados = document.querySelectorAll('[data-texto-titulo]');
+        for (var k = 0; k < titulados.length; k++)
+            titulados[k].setAttribute('title', texto(titulados[k].getAttribute('data-texto-titulo')));
     }
 
-    // EL MES POR SU NUMERO, largo o corto, que es como los guarda el catalogo: una clave por mes,
-    // igual que en la app suelta. Un mes fuera de 1..12 se dice con su clave entre llaves, como
-    // cualquier otra que falte.
-    function mesLargo(m) { return texto('comun.mesLargo.' + m); }
-    function mesCorto(m) { return texto('comun.mes.' + m); }
+    // EL PUENTE TAMBIEN HABLA, y no tiene catalogo propio: lo pone el Host y es el mismo archivo
+    // en los cinco modulos. Se le pasan las frases ya elegidas; si no se las pasan, el cae al
+    // espanol. Va acá y no en cara.js porque este archivo corre en el <head>, antes que puente.js.
+    if (catalogo.puente) window.TextoDelPuente = catalogo.puente;
 
     return {
         etiqueta: etiqueta,
-        titulo: EL_TITULO,
+        lengua: lengua,
         texto: texto,
         con: con,
-        mesLargo: mesLargo,
-        mesCorto: mesCorto,
         pintarLoEstatico: pintarLoEstatico
     };
 })();

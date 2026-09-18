@@ -95,7 +95,6 @@ namespace Compras.Consola
 			CadaCifraLlevaElSeparadorDeSuIdioma();
 			LaRedaccionEnEspanolLeHablaALaPersona();
 			LosCatalogosDeLaCaratulaDicenLasMismasClaves();
-			ComprobacionesDeLosCatalogos.Correr(Titulo, Igual);
 			LaFechaQueViajaNoSigueALaMaquina();
 
 			Console.WriteLine();

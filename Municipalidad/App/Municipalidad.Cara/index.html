@@ -6,13 +6,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- EL TITULO ES VOZ DE LA INSTITUCION y no se traduce, asi que esta escrito una sola vez.
-     idioma.js lo repone tal cual despues de negociar, para las dos lenguas. -->
+<!-- EL NOMBRE DE LA INSTITUCION NO SE TRADUCE. Es como se llama ella, no texto de esta caratula:
+     la app suelta lo tiene aparte de los catalogos por la misma razon (Textos.TituloDelModulo). -->
 <title>MONTEVERDE Municipal Services</title>
 <!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
      leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
      repintarla en el otro. Es el mismo criterio que la app suelta, que negocia antes del primer
-     render. El modulo no tiene red, asi que los dos viajan en el bundle. -->
+     render. -->
 <script src="texto/es-CR.js"></script>
 <script src="texto/en.js"></script>
 <script src="idioma.js"></script>
@@ -39,6 +39,11 @@
   EL MARKUP ES EL DE Municipalidad.Wasm -- `marco`, `marco__banda`, `marco__sello`, `marco__nav`,
   `hoja`, `bajada`, `bloque`, `tarjeta`, `nota` --, con sus clases reales. Ninguna renombrada.
 
+  EL TEXTO VISIBLE VIENE DEL CATALOGO, por `data-texto`, y lo que se lee aca adentro es apenas el
+  espanol de respaldo para cuando alguien abre el archivo suelto. Los titulos y las bajadas son los
+  MISMOS de la app suelta -- `Layout/MainLayout.razor` y el encabezado de cada pagina --: antes la
+  bajada de cada pregunta era el renglon corto del menu de inicio, que es otro texto.
+
   LO QUE NO SE TRAJO: todo `ElArranque.razor`, que es el elegidor de carpeta y los permisos. En la
   forma hibrida la carpeta la concede Gnothi, asi que esa pantalla no tiene nada que hacer.
 -->
@@ -58,25 +63,23 @@
                 </svg>
             </span>
             <span class="marco__titulos">
-                <!-- EL NOMBRE NO LLEVA data-texto: es voz de la institucion y no se traduce. -->
                 <span class="marco__nombre">MONTEVERDE Municipal Services</span>
-                <span class="marco__apunte" data-texto="marco.apunte">Tu cuenta, en tu carpeta</span>
+                <span class="marco__apunte" data-texto="app.apunte">Tu cuenta, en tu carpeta</span>
             </span>
         </span>
 
         <!-- LAS SEIS, en el mismo orden que el nav de la app. Son botones y no enlaces porque no
              hay a donde navegar: la cara no tiene router, y un href a una ruta que no existe
              recargaria la pagina dentro del WebView.
-
-             EL data-pregunta ES IDENTIDAD Y NO SE TRADUCE: nombra la [View] que se le pide a la
-             superficie. Lo que se traduce es el rotulo, y por eso son dos atributos distintos. -->
+             DOS DE LOS SEIS VAN CORTOS -- `tituloCorto` --, que es la misma diferencia que hace el
+             nav de la app suelta entre el menu y el encabezado de la pagina. -->
         <nav class="marco__nav" id="nav">
-            <a href="#" data-pregunta="por-que-pago-mas" class="active" data-texto="nav.porQuePagoMas">Por qué pago más</a>
-            <a href="#" data-pregunta="que-se-me-vence" data-texto="nav.queSeMeVence">Qué se me vence</a>
-            <a href="#" data-pregunta="cuanto-apartar" data-texto="nav.cuantoApartar">Cuánto apartar</a>
-            <a href="#" data-pregunta="sin-comprobante" data-texto="nav.sinComprobante">Sin comprobante</a>
-            <a href="#" data-pregunta="cuanto-he-pagado" data-texto="nav.cuantoHePagado">Cuánto he pagado</a>
-            <a href="#" data-pregunta="que-tan-al-dia" data-texto="nav.queTanAlDia">Qué tan al día</a>
+            <a href="#" data-pregunta="por-que-pago-mas" class="active" data-texto="porQuePagoMas.titulo">Por qué pago más</a>
+            <a href="#" data-pregunta="que-se-me-vence" data-texto="queSeMeVence.titulo">Qué se me vence</a>
+            <a href="#" data-pregunta="cuanto-apartar" data-texto="cuantoApartar.titulo">Cuánto apartar</a>
+            <a href="#" data-pregunta="sin-comprobante" data-texto="sinComprobante.tituloCorto">Sin comprobante</a>
+            <a href="#" data-pregunta="cuanto-he-pagado" data-texto="cuantoHePagado.titulo">Cuánto he pagado</a>
+            <a href="#" data-pregunta="que-tan-al-dia" data-texto="queTanAlDia.tituloCorto">Qué tan al día</a>
         </nav>
     </div>
 </header>
@@ -84,45 +87,49 @@
 <main class="hoja">
     <section class="pregunta" data-pregunta="por-que-pago-mas">
         <h1 data-texto="porQuePagoMas.titulo">Por qué pago más</h1>
-        <p class="bajada" data-texto="porQuePagoMas.bajada">Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.</p>
-        <div id="por-que-pago-mas"><p class="nota" data-texto="comun.preguntando">Preguntándole a Mymi…</p></div>
+        <p class="bajada" data-texto="porQuePagoMas.bajada">Entre los dos últimos comprobantes de cada rubro: de cuánto a cuánto cambió, y qué lo explica.</p>
+        <div id="por-que-pago-mas"><p class="nota" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div>
     </section>
 
     <section class="pregunta" data-pregunta="que-se-me-vence" hidden>
         <h1 data-texto="queSeMeVence.titulo">Qué se me vence</h1>
-        <p class="bajada" data-texto="queSeMeVence.bajada">Lo que está por vencerse y lo que ya venció. Tu portal no contesta esto.</p>
-        <div id="que-se-me-vence"><p class="nota">…</p></div>
+        <p class="bajada" data-texto="queSeMeVence.bajada">Ésta es la pregunta que tu portal no contesta.</p>
+        <div id="que-se-me-vence"><p class="nota" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div>
     </section>
 
     <section class="pregunta" data-pregunta="cuanto-apartar" hidden>
         <h1 data-texto="cuantoApartar.titulo">Cuánto apartar</h1>
-        <p class="bajada" data-texto="cuantoApartar.bajada">Lo que esta app propone por mes, y lo que vos adoptaste.</p>
-        <div id="cuanto-apartar"><p class="nota">…</p></div>
+        <!-- CON MARCADO: la bajada de esta pregunta trae <strong> en la app suelta, y es el unico
+             lugar de este archivo donde el catalogo no se puede pintar con textContent. -->
+        <p class="bajada" data-texto-html="cuantoApartar.bajada">Dos cosas de dos dueños: lo que <strong>esta app propone</strong> y lo que <strong>vos adoptaste</strong>.</p>
+        <div id="cuanto-apartar"><p class="nota" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div>
     </section>
 
     <section class="pregunta" data-pregunta="sin-comprobante" hidden>
         <h1 data-texto="sinComprobante.titulo">Qué quedó sin comprobante</h1>
-        <p class="bajada" data-texto="sinComprobante.bajada">Lo que tu portal da por pagado y aquí no tiene recibo.</p>
-        <div id="sin-comprobante"><p class="nota">…</p></div>
+        <p class="bajada" data-texto="sinComprobante.bajada">Los períodos que tu portal da por pagados y de los que esta app nunca vio un recibo.</p>
+        <div id="sin-comprobante"><p class="nota" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div>
     </section>
 
     <section class="pregunta" data-pregunta="cuanto-he-pagado" hidden>
         <h1 data-texto="cuantoHePagado.titulo">Cuánto he pagado</h1>
-        <p class="bajada" data-texto="cuantoHePagado.bajada">El total de un año, con la mora adentro, y la serie de cada rubro.</p>
-        <div id="cuanto-he-pagado"><p class="nota">…</p></div>
+        <p class="bajada" data-texto="cuantoHePagado.bajada">Lo que pagaste en un año, y la serie de comprobantes de cada rubro.</p>
+        <div id="cuanto-he-pagado"><p class="nota" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div>
     </section>
 
     <section class="pregunta" data-pregunta="que-tan-al-dia" hidden>
-        <h1 data-texto="queTanAlDia.titulo">Qué tan al día está</h1>
-        <p class="bajada" data-texto="queTanAlDia.bajada">Qué entró de lo que el portal publica, y qué falta.</p>
-        <div id="que-tan-al-dia"><p class="nota">…</p></div>
+        <h1 data-texto="queTanAlDia.titulo">Qué tan al día está esto</h1>
+        <p class="bajada" data-texto="queTanAlDia.bajada">Hasta dónde leyó esta app lo que tu municipalidad publicó, y qué falta.</p>
+        <div id="que-tan-al-dia"><p class="nota" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div>
     </section>
 
     <div class="botones">
         <!-- LA UNICA TECLA QUE VA A BUSCAR DATOS. Aca significa otra cosa que en la app suelta: no
-             sale a la red -- no puede -- sino que le pide a GNOTHI que traiga lo nuevo. -->
+             sale a la red -- no puede -- sino que le pide a GNOTHI que traiga lo nuevo. Dice lo
+             mismo que el boton de la app suelta, que es lo que de verdad hace: traer lo que haya
+             publicado la institucion. -->
         <button class="suave" type="button" id="releer" aria-busy="false"
-                data-texto="boton.actualizar">Actualizar</button>
+                data-texto="arranque.traer">Traer lo que haya publicado la institución</button>
     </div>
 </main>
 

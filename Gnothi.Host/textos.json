@@ -380,6 +380,11 @@
   "ajustes.llave.borrar":         { "es": "Borrar", "en": "Delete" },
   "ajustes.llave.guardada":       { "es": "Llave guardada. Ya puedes cargar los modelos.", "en": "Key saved. You can load the models now." },
   "ajustes.llave.borrada":        { "es": "Llave borrada.", "en": "Key deleted." },
+  "//el-modelo-de-esta-mac": "LO QUE LA VENTANA DICE DEL MODELO DE APPLE INTELLIGENCE. Es la unica opcion que no pide llave, y la unica donde nada sale del equipo, asi que las dos frases existen para decir eso donde se decide.",
+
+  "ajustes.apple.sin-llave":      { "es": "Es el modelo de Apple Intelligence de esta Mac: no necesita llave y nada sale del equipo.", "en": "This is the Apple Intelligence model on this Mac: it needs no key and nothing leaves the machine." },
+  "asistente.sub.apple":          { "es": "Este modelo corre en esta Mac: nada sale del equipo.", "en": "This model runs on this Mac: nothing leaves it." },
+
   "ajustes.local":                { "es": "Este proveedor es local — no necesita llave, nada sale de la máquina.", "en": "This provider is local — it needs no key, nothing leaves the machine." },
   "ajustes.modelo":               { "es": "Modelo", "en": "Model" },
   "ajustes.modelo.en-uso":        { "es": "En uso: {modelo}.", "en": "In use: {modelo}." },

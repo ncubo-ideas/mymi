@@ -18,16 +18,4 @@
     <ProjectReference Include="..\Cargas.App\Cargas.App.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\Cargas.Cara\texto\es-CR.js"
-          Link="cara.es-CR.js.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Cargas.Cara\texto\en.js"
-          Link="cara.en.js.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Cargas.Cara\index.html"
-          Link="cara.index.html.dato"
-          CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>
