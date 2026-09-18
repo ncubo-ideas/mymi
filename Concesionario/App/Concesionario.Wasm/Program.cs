@@ -36,7 +36,13 @@ builder.Services.AddSingleton<GnothiBridge>(sp => new GnothiBridge(sp.GetRequire
 
 builder.Services.AddSingleton<AppState>();
 
+builder.Services.AddSingleton<Texts>();
+
 var host = builder.Build();
+
+await host.Services.GetRequiredService<Texts>().NegotiateAsync(
+    host.Services.GetRequiredService<IJSRuntime>(),
+    new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 // EN QUE HOSPEDAJE CORRE, decidido ANTES del render: el contenedor construye el puente del
 // journal con el destino ya puesto, y despues seria tarde. Se pregunta por la presencia del

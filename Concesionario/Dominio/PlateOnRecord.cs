@@ -54,9 +54,9 @@ namespace Concesionario.Dominio
 		internal abstract DateTime AssignedAt { get; }
 
 		/// <summary>
-		/// La placa dicha entera, o la constancia con nombre de que no hay ninguna. TOTAL, y la frase
-		/// es del dominio: la caratula la imprime y no compone nada.
+		/// La placa como forma y valores, o la constancia con nombre de que no hay ninguna. TOTAL, y
+		/// cual de las dos es lo dice su codigo: la caratula elige el marco y no recompone nada.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract APlateClause TheClause();
 	}
 }

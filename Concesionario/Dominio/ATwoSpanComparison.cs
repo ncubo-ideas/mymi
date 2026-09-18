@@ -46,21 +46,20 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Los dos periodos y el cambio en una sola frase. TOTAL: si alguno no tiene ritmo, la
-		/// frase sigue diciendo los dos periodos y dice que el cambio no se puede decir.
+		/// Los dos periodos y el cambio en una sola clausula. TOTAL: si alguno no tiene ritmo, la
+		/// clausula sigue trayendo los dos periodos y dice que el cambio no se puede decir.
 		/// </summary>
-		internal string Describe()
+		internal ARateClause TheClauseItComposes()
 		{
-			string bothSpans = "Primer periodo: " + _first.Describe()
-				+ ". Segundo periodo: " + _second.Describe() + ".";
-
 			if (!CanTheChangeBeSaid())
-				return bothSpans
-					+ " No se puede decir el cambio: uno de los dos periodos no tiene ritmo que "
-					+ "decir.";
+				return ARateClause.OfTwoPeriodsCompared(
+					_first.TheClauseOfItsPeriod(), _second.TheClauseOfItsPeriod(),
+					RateChange.CannotBeSaid, "");
 
-			return bothSpans + " El cambio del primero respecto al segundo: "
-				+ _first.HowItComparesTo(_second) + ".";
+			return ARateClause.OfTwoPeriodsCompared(
+				_first.TheClauseOfItsPeriod(), _second.TheClauseOfItsPeriod(),
+				_first.TheShapeOfItsChangeAgainst(_second),
+				_first.TheChangeAgainstAsSaid(_second));
 		}
 	}
 }

@@ -55,15 +55,15 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheMarchTyresCaseSaysBothFiguresAndTheyDiffer()
 		{
-			string said = ledger.DescribeSpendBetween(TheStartOfJanuary, TheStartOfFebruary);
+			string said = TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStartOfJanuary, TheStartOfFebruary, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡265000.00"),
+			Assert.That(said, Does.Contain("₡265.000,00"),
 				"La caja: ₡240000 de llantas mas ₡25000 de gasolina, los dos incurridos adentro.");
-			Assert.That(said, Does.Contain("₡87000.00"),
+			Assert.That(said, Does.Contain("₡87.000,00"),
 				"Lo consumido: ₡25000 de gasolina mas ₡62000 de la parte de las llantas que este "
 				+ "periodo consumio. §2.1: un total que no separa lo duradero de lo recurrente dice "
 				+ "'el carro se puso caro' cuando la verdad es 'compro llantas'.");
-			Assert.That("₡265000.00", Is.Not.EqualTo("₡87000.00"),
+			Assert.That("₡265.000,00", Is.Not.EqualTo("₡87.000,00"),
 				"Y DIFIEREN, que es lo que hace la distincion una respuesta y no un adorno.");
 		}
 
@@ -72,13 +72,13 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndTheStraightLineRuleIsSaidInsideTheSameAnswer()
 		{
-			string said = ledger.DescribeSpendBetween(TheStartOfJanuary, TheStartOfFebruary);
+			string said = TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStartOfJanuary, TheStartOfFebruary, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("línea recta"));
 			Assert.That(said, Does.Contain("4 meses"));
 			Assert.That(said, Does.Contain("2026-01-01"),
 				"El ancla de la ventana, para que la cuenta se pueda revisar sin abrir el codigo.");
-			Assert.That(said, Does.Contain("₡62000.00"),
+			Assert.That(said, Does.Contain("₡62.000,00"),
 				"Y la parte que a este periodo le toca, dicha.");
 		}
 
@@ -125,15 +125,21 @@ namespace Concesionario.Dominio.Pruebas
 
 			answering.Sort(StringComparer.Ordinal);
 
-			Assert.That(answering, Is.EqualTo(new[] { "Describe" }),
+			Assert.That(answering, Is.EqualTo(new[] { "TheClauseItComposes" }),
 				"ASpendSummary contesta " + string.Join(", ", answering) + ". L6: una sola "
 				+ "respuesta, con las dos vistas adentro. Un segundo miembro es la ley cediendo, y "
-				+ "cede en silencio: la frase seguiria diciendo las dos.");
+				+ "cede en silencio: la frase seguiria diciendo las dos. Que la CLAUSULA entregue "
+				+ "despues cada mitad por separado no abre el atajo: la clausula no cruza ninguna "
+				+ "puerta, y lo unico que cruza es la respuesta ya redactada, que dice las dos.");
 		}
 
 		// LA MITAD POR VALOR, SOBRE TODA RESPUESTA DE PERIODO Y POR REFLEXION, no sobre una lista que
-		// alguien escribio: se enumeran los Describe del agregado que hablan del gasto de UN periodo y
-		// se exige que cada uno traiga LAS DOS cifras.
+		// alguien escribio: se enumeran las lecturas del agregado que contestan con la CLAUSULA del
+		// gasto y se exige que cada una, ya redactada, traiga LAS DOS cifras.
+		//
+		// EL CENSO SE MUDO DEL TIPO string AL PORTADOR, y con eso entro la comparacion de dos
+		// periodos, que antes quedaba afuera por tomar cuatro extremos y no dos. Los argumentos se
+		// arman por CANTIDAD de extremos, asi que una lectura nueva entra sola.
 		[Test]
 		public void AndEveryPeriodAnswerOfTheAggregateCarriesBothFigures()
 		{
@@ -144,26 +150,29 @@ namespace Concesionario.Dominio.Pruebas
 				| BindingFlags.DeclaredOnly))
 			{
 				if (!(member.IsPublic || member.IsAssembly)) continue;
-				if (member.ReturnType != typeof(string)) continue;
-				if (!member.Name.Contains("Spend")) continue;
+				if (member.ReturnType != typeof(ASpendClause)) continue;
 
-				ParameterInfo[] slots = member.GetParameters();
+				object[] bounds = member.GetParameters().Length == 2
+					? new object[] { TheStartOfJanuary, TheStartOfFebruary }
+					: new object[]
+					{
+						TheStartOfJanuary, TheStartOfFebruary, TheStartOfJanuary,
+						TheStartOfFebruary,
+					};
 
-				if (slots.Length != 2) continue;
-
-				string said = (string)member.Invoke(
-					ledger, new object[] { TheStartOfJanuary, TheStartOfFebruary });
+				string said = TheSentenceTheDoorWouldCompose.TheSpend(
+					(ASpendClause)member.Invoke(ledger, bounds), TheLanguage.OfTheRecord);
 
 				read.Add(member.Name);
 
-				Assert.That(said, Does.Contain("₡265000.00"),
+				Assert.That(said, Does.Contain("₡265.000,00"),
 					member.Name + " no dice la caja del periodo.");
-				Assert.That(said, Does.Contain("₡87000.00"),
+				Assert.That(said, Does.Contain("₡87.000,00"),
 					member.Name + " no dice lo que el periodo consumio. Las dos van juntas o L6 ya "
 					+ "cedio.");
 			}
 
-			Assert.That(read, Has.Count.GreaterThanOrEqualTo(2),
+			Assert.That(read, Has.Count.GreaterThanOrEqualTo(3),
 				"El censo encontro " + read.Count + " lectura(s) de gasto de un periodo: "
 				+ string.Join(", ", read) + ". Si el numero baja, o el censo dejo de ver algo o el "
 				+ "agregado dejo de contestarlo.");
@@ -172,9 +181,11 @@ namespace Concesionario.Dominio.Pruebas
 				"LAS LECTURAS DE GASTO CENSADAS (" + read.Count + ") -- " + string.Join(", ", read));
 		}
 
-		// Y NINGUNA LECTURA DEL AGREGADO ENTREGA UN MONEY NI UNA CIFRA SUELTA. La unica que contesta
-		// un numero es el conteo de filas, que es un conteo que el dominio compone -- la primera
-		// categoria del censo numerico del door -- y no una mitad de la respuesta de L6.
+		// Y NINGUNA LECTURA DEL AGREGADO ENTREGA UN MONEY NI UNA CIFRA SUELTA. Las dos que contestan
+		// un numero son el conteo de filas -- un conteo que el dominio compone, la primera categoria
+		// del censo numerico del door -- y los MESES de la vida util de cada fila, que no son dinero:
+		// son un hecho recibido con la entrada, y cual fila tiene uno lo dice su clasificacion y nunca
+		// ese numero. Ninguna de las dos es una mitad de la respuesta de L6, que es la ley de aca.
 		[Test]
 		public void AndNoReadOfTheLedgerHandsOutAMoneyOrABareFigureExceptTheRowCount()
 		{
@@ -198,9 +209,13 @@ namespace Concesionario.Dominio.Pruebas
 
 			numbers.Sort(StringComparer.Ordinal);
 
-			Assert.That(numbers, Is.EqualTo(new[] { "CostEntryCountBetween" }),
+			Assert.That(
+				numbers,
+				Is.EqualTo(new[] { "CostEntryCountBetween", "CostEntryExpectedLivesBetween" }),
 				"Lecturas del libro que contestan un numero: " + string.Join(", ", numbers)
-				+ ". Solo el conteo de filas, que es un conteo compuesto por el dominio.");
+				+ ". El conteo de filas, que el dominio compone, y los meses de la vida util de cada "
+				+ "fila, que llegaron con la entrada. Cualquier otra seria un monto, una parte o una "
+				+ "diferencia, y las tres son mitades.");
 		}
 
 		private static IEnumerable<MemberInfo> TheExposedAnswersOf(Type subject)

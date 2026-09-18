@@ -51,7 +51,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("84 meses"),
 				"Test 10 de §11: la respuesta nombra los limites que rigen. Un 'Covered' sin decir "
 				+ "contra que se midio no se puede verificar.");
-			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("160000 km"));
+			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("160.000 km"));
 		}
 
 		// TEST 12 DE §11. Pasado de los limites propios, dentro del sobre del vehiculo.
@@ -188,9 +188,9 @@ namespace Concesionario.Dominio.Pruebas
 
 		private string TheSentenceAt(DateTime asOf, int currentReading)
 		{
-			return specification.DescribeCoverage(
-				TheSystem, 84, 160000, DistanceUnitCode.UnitA,
-				DeliveredAt, 10, currentReading, DistanceUnitCode.UnitA, asOf);
+			return TheSentenceTheDoorWouldCompose.TheCoverage(
+				specification, TheSystem, 84, 160000, DistanceUnitCode.UnitA,
+				DeliveredAt, 10, currentReading, DistanceUnitCode.UnitA, asOf, TheLanguage.OfTheRecord);
 		}
 	}
 }

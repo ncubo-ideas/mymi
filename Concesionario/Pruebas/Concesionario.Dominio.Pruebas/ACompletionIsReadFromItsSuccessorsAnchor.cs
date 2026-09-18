@@ -23,6 +23,11 @@ namespace Concesionario.Dominio.Pruebas
 	{
 		private const string TheVin = "1HGCM82633A004352";
 		private const int TheTimeLimitInDays = 180;
+
+		// EL IDIOMA EN QUE SE PIDE LA FRASE. Este fixture es sobre DE DONDE sale cada fila, asi que
+		// pregunta en uno solo; que las dos redacciones digan lo mismo lo afirma
+		// TheHistoryIsSaidInTheLanguageItIsAskedIn.
+		private const string InSpanish = TheLanguage.OfTheRecord;
 		private const int TheDistanceLimit = 8000;
 
 		// EL ANCLA SEMBRADA. Ni su instante ni su lectura son una completacion: nadie completo nada
@@ -58,8 +63,9 @@ namespace Concesionario.Dominio.Pruebas
 				}));
 
 			Assert.That(
-				schedule.CompletionReadingsOf(OperationKindCode.FluidChange),
-				Is.EqualTo(new[] { "43900 km", "38700 km", "34100 km" }),
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.FluidChange, InSpanish),
+				Is.EqualTo(new[] { "43.900 km", "38.700 km", "34.100 km" }),
 				"Cada fila trae la lectura de SU completacion, no la del ancla sembrada ni la de la "
 				+ "vecina: si el camino emitiera desde el predecesor las tres saldrian corridas.");
 		}
@@ -77,13 +83,15 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo("2026-01-30 11:45:00"));
 
 			Assert.That(
-				schedule.CompletionReadingsOf(OperationKindCode.FluidChange)[0],
-				Is.EqualTo("43900 km"));
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.FluidChange, InSpanish)[0],
+				Is.EqualTo("43.900 km"));
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.FluidChange),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.FluidChange, InSpanish),
 				Does.Contain(
-					"La más reciente se hizo el 2026-01-30 11:45:00 con el odómetro en 43900 km"),
+					"La más reciente se hizo el 2026-01-30 11:45:00 con el odómetro en 43.900 km"),
 				"Y la frase del juego nombra esa misma: si el camino se corriera un eslabon, la frase "
 				+ "y la columna se corren juntas y ninguna de las dos lo delata sola.");
 		}
@@ -106,8 +114,9 @@ namespace Concesionario.Dominio.Pruebas
 				+ "estuvo en el taller el 14 de febrero.");
 
 			Assert.That(
-				schedule.CompletionReadingsOf(OperationKindCode.FluidChange),
-				Does.Not.Contain("44500 km"),
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.FluidChange, InSpanish),
+				Does.Not.Contain("44.500 km"),
 				"Y con ella iria un odometro que nadie leyo al completar nada.");
 		}
 
@@ -124,8 +133,9 @@ namespace Concesionario.Dominio.Pruebas
 				Does.Not.Contain("2025-01-10 07:30:00"));
 
 			Assert.That(
-				schedule.CompletionReadingsOf(OperationKindCode.FluidChange),
-				Does.Not.Contain("30000 km"),
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.FluidChange, InSpanish),
+				Does.Not.Contain("30.000 km"),
 				"El ancla sembrada es de donde se empieza a medir, no algo que se hizo. Con tres "
 				+ "completaciones son tres filas y no cuatro.");
 
@@ -177,11 +187,11 @@ namespace Concesionario.Dominio.Pruebas
 				+ "y despues por instante daria las mismas tres filas en el orden equivocado.");
 
 			Assert.That(
-				schedule.CompletionReadingsOnRecord(),
-				Is.EqualTo(new[] { "43900 km", "38700 km", "34100 km" }));
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOnRecord(schedule, InSpanish),
+				Is.EqualTo(new[] { "43.900 km", "38.700 km", "34.100 km" }));
 
 			Assert.That(
-				schedule.DescribeEachCompletionOnRecord()[0],
+				TheSentenceTheDoorWouldCompose.EachCompletionOnRecord(schedule, InSpanish)[0],
 				Does.Contain("Cambio de filtro").And.Contain("2026-01-30 11:45:00"),
 				"Y la frase de la fila 0 nombra la clase de la fila 0: con las columnas cruzadas el "
 				+ "instante calza y la clase no.");
@@ -199,11 +209,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(schedule.CompletionKindsOnRecord(), Does.Not.Contain("Cambio de fluido"));
 
 			Assert.That(
-				schedule.DescribeEachCompletionOnRecord(),
+				TheSentenceTheDoorWouldCompose.EachCompletionOnRecord(schedule, InSpanish),
 				Has.Some.Contains("Cambio de fluido"));
 
 			Assert.That(
-				schedule.DescribeEachCompletionOnRecord(),
+				TheSentenceTheDoorWouldCompose.EachCompletionOnRecord(schedule, InSpanish),
 				Has.None.Contains("FluidChange"),
 				"La frase que una persona lee no dice el nombre del miembro, y la columna que una "
 				+ "maquina direcciona no dice la frase. Los dos son el mismo hecho dicho dos veces.");

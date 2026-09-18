@@ -33,6 +33,10 @@ namespace Cargas.Dominio
 			return new Volumen(EnLitros + otro.EnLitros, UnidadDeVolumen.Litro);
 		}
 
-		internal string Expresado => $"{Valor:0.###} {Unidad.Simbolo}";
+		/// <summary>
+		/// EL SIMBOLO DE LA UNIDAD, aplanado. La cifra NO se escribe aca: el separador decimal
+		/// es una decision del idioma, y el dominio no tiene uno.
+		/// </summary>
+		internal string SimboloDeLaUnidad => Unidad.Simbolo;
 	}
 }

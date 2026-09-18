@@ -1,0 +1,50 @@
+/* LO POCO QUE LA CARA AGREGA A LA HOJA DE LA INSTITUCION.
+ *
+ * `app.css` VIAJA TAL CUAL, sin tocar una regla. Antes esta hoja entresacaba bloques a mano y el
+ * resultado no se parecia: cada regla que no se copiaba era una diferencia silenciosa, y decidir
+ * cuales copiar era decidir como se ve la institucion. Copiar el archivo entero saca esa decision
+ * de aca.
+ *
+ * Y NO CUESTA LO QUE PARECE: la hoja de Faro son 54 KB sin comprimir contra 212 KB de dominio en
+ * dll. En el paquete, el css no es el que pesa.
+ *
+ * Lo unico que va aca es lo que app.css no tiene porque en la app suelta lo ponia otro lado: el
+ * pie de esta cara, y el estado del cartero. */
+
+/* El pie: en la app suelta esto no existe porque la app sabe si pudo o no. Aca la cara le pide a
+   Gnothi, y sin decir como le fue, «no hay cargas» y «el cartero no pudo» se ven igual. */
+footer {
+    max-width: 74rem; margin: 0 auto; padding: 0 22px 40px;
+    color: var(--tenue-2); font-size: 12.5px;
+}
+footer p { margin: 0 0 6px; max-width: 60ch; }
+footer .malo { color: var(--rojo); }
+
+/* Lo que falta para poder calcular. Va bajo el cuadro y en tono de apunte: es una explicacion,
+   no un instrumento. */
+.faltante {
+    padding: 10px 0;
+    border-top: 1px solid var(--bisel);
+    font-size: 14px; color: var(--tenue);
+}
+.faltante:first-child { border-top: 0; }
+.faltante b { color: var(--tinta); font-weight: 600; }
+
+/* QUE `hidden` GANE, y esto es el arreglo de un defecto real, no una precaucion.
+ *
+ * `[hidden] { display: none }` vive en la hoja del navegador, que es la de MENOR precedencia.
+ * Cualquier regla de la institucion que fije `display` en esa misma clase le gana, y el nodo
+ * se sigue viendo con el atributo puesto. Medido en el telefono el 2026-09-14: `.placa` es
+ * `inline-flex` en cargas, asi que la placa salia DOS VECES -- la fija y el selector, los dos
+ * marcados como escondidos, los dos visibles.
+ *
+ * La app suelta no tiene este problema porque Blazor no esconde: con un `@if` el nodo que no
+ * toca NO SE DIBUJA. Una cara hibrida es HTML estatico, los dos nodos existen siempre, y
+ * esconder es la unica herramienta. Entonces la herramienta tiene que funcionar.
+ *
+ * Va en `cara.css` -- que carga despues de la hoja de la institucion -- y no en la de ella:
+ * esto es una consecuencia de COMO pinta esta cara, no una opinion sobre su diseno.
+ *
+ * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
+ * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
+[hidden] { display: none !important; }

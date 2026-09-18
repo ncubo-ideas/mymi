@@ -63,7 +63,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheAnswerGivesNoNumberInPlaceOfTheMissingReading()
 		{
-			string said = profile.DescribeWarrantyEnvelopeWithNoOdometer(InsideTheTimeHalf);
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelopeWithNoOdometer(
+				profile, InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Not.Contain("quedan 60000 km"),
 				"Ley L5: ni cero ni la lectura de la entrega. Las dos darian 60000 km de sobra, que "
@@ -78,7 +79,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheTimeHalfIsStillSaidBecauseItNeedsNoReading()
 		{
-			string said = profile.DescribeWarrantyEnvelopeWithNoOdometer(InsideTheTimeHalf);
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelopeWithNoOdometer(
+				profile, InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("12 meses de 36 meses"));
 			Assert.That(said, Does.Contain("Distancia: no se puede medir"));
@@ -94,8 +96,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(answer.CanBeEvaluated(), Is.True);
 			Assert.That(answer.Standing(), Is.SameAs(EnvelopeStanding.Reached));
 			Assert.That(answer.SuspendedByAnAbsentReading(), Is.False);
-			Assert.That(answer.Describe(), Does.Contain("Alcanzado por tiempo"));
-			Assert.That(answer.Describe(), Does.Contain("Distancia: no se puede medir"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(answer, TheLanguage.OfTheRecord),
+				Does.Contain("Alcanzado por tiempo"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(answer, TheLanguage.OfTheRecord),
+				Does.Contain("Distancia: no se puede medir"));
 		}
 
 		// LA LECTURA GUARDADA DEL STANDING REVIENTA para la suspension, y su mensaje manda a
@@ -118,8 +124,13 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheTotalReadStillAnswersWithWords()
 		{
 			Assert.DoesNotThrow(
-				() => { string _ = profile.DescribeWarrantyEnvelopeWithNoOdometer(InsideTheTimeHalf); });
-			Assert.That(profile.DescribeWarrantyEnvelopeWithNoOdometer(InsideTheTimeHalf),
+				() => {
+					string _ = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelopeWithNoOdometer(
+						profile, InsideTheTimeHalf, TheLanguage.OfTheRecord);
+				});
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelopeWithNoOdometer(
+					profile, InsideTheTimeHalf, TheLanguage.OfTheRecord),
 				Is.Not.Empty);
 		}
 	}

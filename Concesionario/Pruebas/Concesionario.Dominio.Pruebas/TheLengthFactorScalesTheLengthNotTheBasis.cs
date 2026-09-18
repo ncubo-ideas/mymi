@@ -166,7 +166,12 @@ namespace Concesionario.Dominio.Pruebas
 				"15000 unidades recorridas de un limite de 10000, y aun asi no vence: con "
 				+ "LowDistance los limites de distancia se ignoran y decide el tiempo, que va en "
 				+ "233 de 365.");
-			Assert.That(vencimiento.Describe(), Does.Contain("de poca distancia"));
+			ADueReason motivo = vencimiento.TheReason();
+			int cual = Array.IndexOf(motivo.ClauseCodes, LimitClause.UsageProfile);
+
+			Assert.That(cual, Is.GreaterThanOrEqualTo(0));
+			Assert.That(
+				motivo.ClauseUsageProfiles[cual], Is.EqualTo(UsageProfile.LowDistance.Name));
 		}
 
 		private static bool EsExpuesto(MemberInfo miembro)

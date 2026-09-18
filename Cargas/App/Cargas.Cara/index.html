@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!-- SIN lang ESCRITO A MANO: el bundle se sirve igual para los dos idiomas, asi que una etiqueta
+     fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de negociar con
+     el aparato, con la misma regla que usa la app suelta. -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tablero · Estaciones Faro</title>
+<!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
+     leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
+     repintarla en el otro. Pesan ~3 KB cada uno. Es el mismo criterio que la app suelta, que
+     negocia antes del primer render. -->
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
+<!-- LA HOJA DE LA INSTITUCION, TAL CUAL. No una copia curada: el archivo que sirve la app suelta.
+     Entresacar bloques a mano era decidir como se ve Faro, y cada regla que no se copiaba era una
+     diferencia silenciosa. -->
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="cara.css">
+</head>
+<body>
+
+<!--
+  LA CARA DE CARGAS EN LA FORMA HIBRIDA, y lo importante es lo que NO tiene.
+
+  No trae motor: la aduana del Host lo rechaza incluso adentro de web/, y esa es la promesa entera
+  de la forma. Tampoco trae dominio ni superficie: viajan al lado, en dominio/*.dll, y corren sobre
+  el motor que presta Gnothi. La forma hospedada de este mismo modulo pesa 12,4 MB.
+
+  EL MARKUP ES EL DE Cargas.Wasm/Pages/Tablero.razor y Layout/MainLayout.razor, con sus clases
+  reales: `capo`, `capo-dentro`, `marca`, `placa`, `tablero`, `franja`, `cuadro`, `instrumento`,
+  `cifra`, `sello`, `medidor`, `chispa`, `tira`. No se renombro ninguna -- si se renombrara, la
+  hoja de la institucion dejaria de alcanzarlas y volveriamos a tener una pantalla parecida en vez
+  de la pantalla.
+
+  LO QUE NO SE TRAJO: las pestañas de las otras pantallas -Mi carro, Ruta, Lealtad- y los
+  formularios. Esta cara es el tablero, y en la forma hibrida la carpeta la concede Gnothi.
+-->
+
+<header class="capo">
+    <div class="capo-dentro">
+        <div class="marca">
+            <!-- El surtidor con su haz, solo trazo, nunca relleno. El mismo SVG de la app. -->
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+                 fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+                <path d="M16 34 L18 12 h4 L24 34 z" />
+                <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
+                <path d="M26 8 l6 -2.5 M26 11 l7 0" />
+            </svg>
+            <div>
+                <div class="marca-nombre">Estaciones Faro</div>
+                <div class="marca-claim">Tu camino, claro</div>
+            </div>
+        </div>
+
+        <span class="placa" id="placa-fija" hidden></span>
+        <select class="placa placa--selector" id="placa" data-texto-aria="capo.deQueVehiculo"
+                aria-label="Elegí de qué carro es el tablero" hidden></select>
+
+        <!-- LA UNICA TECLA QUE VA A BUSCAR DATOS, y va en contorno y no en el naranja de accion:
+             el tablero se pone al dia solo al abrir, asi que apretar esto es «volve a chequear
+             AHORA». Aca ademas significa otra cosa que en la app suelta: no sale a la red -- no
+             puede -- sino que le pide a GNOTHI que traiga lo nuevo. -->
+        <button class="tecla tecla--contorno" id="releer" style="margin-left:auto" aria-busy="false"
+                data-texto="capo.actualizar">Actualizar</button>
+    </div>
+</header>
+
+<main class="tablero">
+    <!-- LA FRANJA. Lo primero de la pantalla es la frase del DOMINIO -«venías rindiendo 12.6 y el
+         último tramo dio 9.4»-, armada con los hechos de ella y nunca un consejo de plantilla que
+         esta pantalla no tiene de dónde sacar. El color de la luz lo decide la severidad del
+         dominio; acá solo se pinta. -->
+    <div id="franja" class="franja franja--neutra">
+        <span class="franja-luz"></span>
+        <div class="franja-texto">
+            <p class="franja-frase" data-texto="franja.preguntando">Preguntándole a Mymi…</p>
+        </div>
+    </div>
+
+    <!-- EL CUADRO. Los instrumentos, en el orden en que se preguntan: cuánto me queda, cómo viene
+         rindiendo, cuándo tengo que cargar, cuánto me cuesta andar. -->
+    <div id="cuadro" class="cuadro"></div>
+
+    <h2 class="seccion-titulo" data-texto="faltantes.titulo">Lo que falta para poder calcular</h2>
+    <div id="faltantes"><p class="apunte">…</p></div>
+</main>
+
+<footer>
+    <p data-texto="pie.explicacion">El registro vive en este dispositivo. Esta pantalla no sale a la red:
+       le pregunta a Mymi, y Mymi responde con el motor que le presta.</p>
+    <p class="mono" id="conexion">—</p>
+</footer>
+
+<!-- EL PUENTE LO PONE EL HOST, no la institución: `armar-bundle.ps1` lo copia a web/ al armar
+     cualquier paquete híbrido. El protocolo -que la respuesta vuelve por callback y no por
+     retorno- es de Gnothi. -->
+<script src="puente.js"></script>
+<script src="cara.js"></script>
+</body>
+</html>

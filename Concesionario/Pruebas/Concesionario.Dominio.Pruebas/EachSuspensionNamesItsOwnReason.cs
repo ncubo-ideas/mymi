@@ -50,7 +50,7 @@ namespace Concesionario.Dominio.Pruebas
 		public void ASettledAnswerIsSuspendedByNothing()
 		{
 			EnvelopeAnswer settled = new ASettledEnvelopeAnswer(
-				EnvelopeStanding.Inside, string.Empty);
+				EnvelopeStanding.Inside, AClauseUnderTest.WithNoEnvelope());
 
 			Assert.That(CuantosMotivosDeclara(settled), Is.EqualTo(0));
 		}
@@ -114,7 +114,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheThreeReasonsAreSaidDifferently()
 		{
 			List<string> frases = LasTresSuspensiones()
-				.Select(suspension => suspension.Describe())
+				.Select(suspension => TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					suspension, TheLanguage.OfTheRecord))
 				.ToList();
 
 			Assert.That(frases.Distinct().Count(), Is.EqualTo(frases.Count),
@@ -124,7 +125,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheAbsentDeliverySaysThereIsNothingToMeasureFrom()
 		{
-			Assert.That(new AnEnvelopeSuspendedByAnAbsentDelivery(string.Empty).Describe(),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+					new AnEnvelopeSuspendedByAnAbsentDelivery(AClauseUnderTest.WithNoEnvelope()), TheLanguage.OfTheRecord),
 				Does.Contain("ninguna entrega"));
 		}
 
@@ -133,7 +136,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheAbsentReadingSaysTheReadingIsMissingAndNotThatItIsZero()
 		{
-			string said = new AnEnvelopeSuspendedByAnAbsentReading(string.Empty).Describe();
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				new AnEnvelopeSuspendedByAnAbsentReading(AClauseUnderTest.WithNoEnvelope()), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("ninguna lectura del odómetro"));
 			Assert.That(said, Does.Not.Contain(" 0 "),
@@ -147,8 +151,10 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheUnitMismatchNamesBothUnitsAndSaysTheyAreNeverConverted()
 		{
-			string said = new AnEnvelopeSuspendedByAUnitMismatch(
-				DistanceUnit.UnitA, DistanceUnit.UnitB, string.Empty).Describe();
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				new AnEnvelopeSuspendedByAUnitMismatch(
+					DistanceUnit.UnitA, DistanceUnit.UnitB,
+					AClauseUnderTest.WithAnEnvelopeIn(DistanceUnit.UnitA)), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain(DistanceUnit.UnitA.Name));
 			Assert.That(said, Does.Contain(DistanceUnit.UnitB.Name));
@@ -159,16 +165,16 @@ namespace Concesionario.Dominio.Pruebas
 		public void AUnitMismatchThatDoesNotNameBothUnitsIsRefused()
 		{
 			Assert.Throws<DomainException>(() => new AnEnvelopeSuspendedByAUnitMismatch(
-				null, DistanceUnit.UnitB, string.Empty));
+				null, DistanceUnit.UnitB, AClauseUnderTest.WithAnEnvelopeIn(DistanceUnit.UnitA)));
 			Assert.Throws<DomainException>(() => new AnEnvelopeSuspendedByAUnitMismatch(
-				DistanceUnit.UnitA, null, string.Empty));
+				DistanceUnit.UnitA, null, AClauseUnderTest.WithAnEnvelopeIn(DistanceUnit.UnitA)));
 		}
 
 		// Una respuesta decidida sin resultado no es una respuesta decidida.
 		[Test]
 		public void ASettledAnswerWithoutAStandingIsRefused()
 		{
-			Assert.Throws<DomainException>(() => new ASettledEnvelopeAnswer(null, string.Empty));
+			Assert.Throws<DomainException>(() => new ASettledEnvelopeAnswer(null, AClauseUnderTest.WithNoEnvelope()));
 		}
 
 		private static int CuantosMotivosDeclara(EnvelopeAnswer answer)
@@ -192,7 +198,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			List<EnvelopeAnswer> todas = new List<EnvelopeAnswer>
 			{
-				new ASettledEnvelopeAnswer(EnvelopeStanding.Inside, string.Empty),
+				new ASettledEnvelopeAnswer(
+					EnvelopeStanding.Inside, AClauseUnderTest.WithNoEnvelope()),
 			};
 
 			todas.AddRange(LasTresSuspensiones());
@@ -204,10 +211,10 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			return new List<EnvelopeAnswer>
 			{
-				new AnEnvelopeSuspendedByAnAbsentDelivery(string.Empty),
-				new AnEnvelopeSuspendedByAnAbsentReading(string.Empty),
+				new AnEnvelopeSuspendedByAnAbsentDelivery(AClauseUnderTest.WithNoEnvelope()),
+				new AnEnvelopeSuspendedByAnAbsentReading(AClauseUnderTest.WithNoEnvelope()),
 				new AnEnvelopeSuspendedByAUnitMismatch(
-					DistanceUnit.UnitA, DistanceUnit.UnitB, string.Empty),
+					DistanceUnit.UnitA, DistanceUnit.UnitB, AClauseUnderTest.WithAnEnvelopeIn(DistanceUnit.UnitA)),
 			};
 		}
 	}

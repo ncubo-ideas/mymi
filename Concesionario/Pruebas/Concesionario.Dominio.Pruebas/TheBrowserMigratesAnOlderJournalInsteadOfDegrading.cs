@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Choreography.Theater;
 using Concesionario.App;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 using Puppeteer;
@@ -74,7 +75,8 @@ namespace Concesionario.Dominio.Pruebas
 				"La agenda si esta: es un journal completo y usable, no uno roto.");
 
 			Exception missing = Assert.Catch(
-				() => WhatTheManufacturerPublished.ReadThrough(beforeTheApp));
+				() => WhatTheManufacturerPublished.ReadThrough(
+					beforeTheApp, TheLanguage.OfTheRecord));
 
 			Assert.That(missing, Is.InstanceOf<LanguageException>(),
 				"EL FALSIFICADOR DE ESTA PRUEBA: sin la tercera global, componer la hoja revienta. "
@@ -90,7 +92,7 @@ namespace Concesionario.Dominio.Pruebas
 			asTheBrowserOpensIt.Start();
 
 			WhatTheManufacturerPublished sheet = WhatTheManufacturerPublished.ReadThrough(
-				new DealershipCarAPI(asTheBrowserOpensIt));
+				new DealershipCarAPI(asTheBrowserOpensIt), TheLanguage.OfTheRecord);
 
 			Assert.That(sheet.Model, Is.EqualTo(AppState.TheModelAtDelivery));
 			Assert.That(sheet.HasASealedRevision, Is.False,
@@ -118,7 +120,8 @@ namespace Concesionario.Dominio.Pruebas
 			another.Start();
 
 			Assert.That(
-				WhatTheManufacturerPublished.ReadThrough(new DealershipCarAPI(another)).Model,
+				WhatTheManufacturerPublished.ReadThrough(
+					new DealershipCarAPI(another), TheLanguage.OfTheRecord).Model,
 				Is.EqualTo(AnotherModel));
 
 			Assert.That(AnotherModel, Is.Not.EqualTo(AppState.TheModelAtDelivery),

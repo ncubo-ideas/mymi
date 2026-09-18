@@ -84,27 +84,12 @@ namespace Compras.Dominio
 
 		internal bool EsComestible => Categoria.EsComestible;
 
-		/// <summary>La línea, escrita por el dominio con SUS hechos. No es un consejo: es lo que pasó.</summary>
-		internal string ParaElAsistente
-		{
-			get
-			{
-				string hace = DiasDesdeLaUltima >= 60
-					? $"hace {DiasDesdeLaUltima / 30} meses"
-					: $"hace {DiasDesdeLaUltima} días";
-
-				// Se dice DE DONDE sale el numero con el que se lo esta juzgando: "suele
-				// reponerse cada X" no es lo mismo si el X lo midio ella o lo supusimos.
-				string cada = EsRitmoObservado
-					? $"y vos lo comprás cada {DiasEsperados} días"
-					: $"y suele reponerse cada {DiasEsperados} días";
-
-				// La mencion sale del repertorio: el nombre es una llave (FrutasYVerduras) y
-				// eso no se le muestra a nadie.
-				return EstaVencido
-					? $"la última vez que entró {Categoria.Mencion} a tu canasta fue {hace}, {cada}"
-					: $"{Categoria.Mencion} entró {hace}: al día";
-			}
-		}
+		/// <summary>
+		/// QUE FRASE dice este hueco, por su nombre: `atrasado` o `al-dia`. La clave la elige el
+		/// dominio y la redaccion la escribe una capa de presentacion, en el idioma que le pidieron.
+		/// Los valores que van en sus huecos -- la mencion del departamento, los dias -- ya estan
+		/// publicados aparte, asi que esta lectura no los repite.
+		/// </summary>
+		internal string Clave => EstaVencido ? "atrasado" : "al-dia";
 	}
 }

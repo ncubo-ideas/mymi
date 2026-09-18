@@ -79,37 +79,34 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El precio dicho CON su vigencia: la operacion, el hito, el dinero como su propia moneda
-		/// lo dice y entre que fechas rige. La vigencia no es un adorno de la frase -- es lo que
+		/// El precio CON su vigencia, como forma y valores: la operacion, el hito, el dinero con su
+		/// moneda y entre que dias rige. La vigencia no es un adorno de la respuesta -- es lo que
 		/// impide leer un precio viejo como el de hoy.
 		/// </summary>
-		internal string APriceCarriesItsValidity()
+		internal APriceClause APriceCarriesItsValidity(string revisionCode)
 		{
-			return _kind.HowItIsSaid + " a los " + _milestone.Describe()
-				+ ": " + _price.Expressed()
-				+ ", vigente del " + Fecha(_validFrom) + " al " + Fecha(_validUntil) + ".";
+			return APriceClause.Published(
+				revisionCode, _kind, _milestone, _price, Fecha(_validFrom), Fecha(_validUntil));
 		}
 
 		/// <summary>
-		/// Lo mismo, y ademas si esa vigencia rige EN EL INSTANTE RECIBIDO. El dominio no lee ningun
-		/// reloj, asi que el instante entra por parametro; sin el, "vencido" no se puede decir
-		/// respecto a nada. Se compara al segundo entero, que es la resolucion que el journal
+		/// Lo mismo, y ademas donde cae EL INSTANTE RECIBIDO dentro de esa vigencia. El dominio no
+		/// lee ningun reloj, asi que el instante entra por parametro; sin el, "vencido" no se puede
+		/// decir respecto a nada. Se compara al segundo entero, que es la resolucion que el journal
 		/// conserva.
 		/// </summary>
-		internal string APriceCarriesItsValidity(DateTime asOf)
+		internal APriceClause APriceCarriesItsValidity(string revisionCode, DateTime asOf)
 		{
-			if (asOf < _validFrom)
-				return APriceCarriesItsValidity()
-					+ " Al " + Fecha(asOf)
-					+ " esa vigencia todavía no ha empezado, así que este precio no es el vigente.";
+			return APriceCarriesItsValidity(revisionCode)
+				.AskedAt(WhereItFalls(asOf), Fecha(asOf));
+		}
 
-			if (asOf > _validUntil)
-				return APriceCarriesItsValidity()
-					+ " Al " + Fecha(asOf)
-					+ " esa vigencia ya pasó, así que este precio no es el vigente.";
+		private string WhereItFalls(DateTime asOf)
+		{
+			if (asOf < _validFrom) return PriceValidity.NotYetStarted;
+			if (asOf > _validUntil) return PriceValidity.AlreadyPassed;
 
-			return APriceCarriesItsValidity()
-				+ " Al " + Fecha(asOf) + " esa vigencia está rigiendo.";
+			return PriceValidity.InForce;
 		}
 
 		private static string Fecha(DateTime instant)

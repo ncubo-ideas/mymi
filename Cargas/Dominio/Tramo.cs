@@ -33,16 +33,20 @@ namespace Cargas.Dominio
 		/// y mismo combustible que el resto de la serie.</summary>
 		internal bool EsComparable { get; private set; }
 
-		/// <summary>"otro surtidor" u "otro combustible"; vacio si es comparable.</summary>
+		/// <summary>EL CODIGO de la reserva -- otro surtidor, otro combustible --; vacio si es
+		/// comparable. Es identidad y no una frase: la redaccion es del idioma.</summary>
 		internal string MotivoDeReserva { get; private set; }
 
 		/// <summary>Rendimiento implausible sobre la linea base: probable carga sin
 		/// registrar. Lo marca la serie despues de conocer la base.</summary>
 		internal bool EsSospechoso { get; private set; }
 
-		/// <summary>Que dato falta, cuando esta bloqueado: "el kilometraje de tu carga
-		/// del 25/07/2026". Vacio si esta calculado.</summary>
-		internal string QueFalta { get; private set; }
+		/// <summary>LA FECHA DE LA CARGA a la que le falta el kilometraje, cuando esta
+		/// bloqueado. Por defecto si esta calculado: entonces no falta nada.</summary>
+		internal DateTime FechaDeLaCargaTrunca { get; private set; }
+
+		/// <summary>Si hay una carga trunca que nombrar. Total: decide sin reventar.</summary>
+		internal bool HayCargaTrunca => !EstaCalculado;
 
 		/// <summary>El instrumento que midio los litros consumidos; vacio si los midieron
 		/// varios. Con el la serie decide la comparabilidad.</summary>
@@ -57,7 +61,6 @@ namespace Cargas.Dominio
 		private Tramo()
 		{
 			MotivoDeReserva = "";
-			QueFalta = "";
 			InstrumentoDeLosLitros = "";
 			CombustibleDelTramo = "";
 		}
@@ -82,14 +85,14 @@ namespace Cargas.Dominio
 		}
 
 		internal static Tramo Bloqueado(DateTime desde, DateTime hasta, decimal litros,
-			string queFalta) =>
+			DateTime fechaDeLaCargaTrunca) =>
 			new Tramo
 			{
 				EstaCalculado = false,
 				Desde = desde,
 				Hasta = hasta,
 				Litros = litros,
-				QueFalta = queFalta,
+				FechaDeLaCargaTrunca = fechaDeLaCargaTrunca,
 			};
 
 		/// <summary>El rendimiento como magnitud, para el calculo. Leerlo en un tramo
@@ -97,7 +100,7 @@ namespace Cargas.Dominio
 		internal Rendimiento Rendimiento =>
 			rendimiento ?? throw new ErrorDeDominio(
 				"Un tramo bloqueado no tiene rendimiento: consultar antes EstaCalculado. "
-				+ $"Lo que falta: {QueFalta}");
+				+ "Le falta el kilometraje de la carga que lo cierra.");
 
 		// Las marcas las pone la serie, que es quien conoce la base y el instrumento de
 		// referencia; el tramo solo las porta.
@@ -131,9 +134,5 @@ namespace Cargas.Dominio
 		internal decimal KilometrosComoSeVen => mirada.DistanciaComoSeVe(Kilometros);
 		internal string SimboloDelRendimiento => mirada.SimboloDelRendimiento;
 		internal string SimboloDeLaDistancia => mirada.SimboloDeLaDistancia;
-
-		internal string Expresado => EstaCalculado
-			? $"{Kilometros:0} km / {Litros:0.#} L = {RendimientoEnKmPorLitro:0.#} km/L"
-			: $"bloqueado: falta {QueFalta}";
 	}
 }

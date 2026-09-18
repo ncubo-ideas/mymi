@@ -42,14 +42,19 @@ namespace Concesionario.Dominio
 			return EnteredAt <= asOf;
 		}
 
-		/// <summary>
-		/// La estadia abierta en palabras: sigue adentro, y lo dice sin inventar una salida ni
-		/// ningun dia.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Sigue abierta, por su codigo.</summary>
+		internal override string TheShapeItHas()
 		{
-			return "Está " + TheEntryClause() + ", y todavía no lo han entregado: la estadía sigue "
-				+ "abierta, así que aún no hay días que decir. " + TheSubjectClause();
+			return StayShape.StillOpen;
+		}
+
+		/// <summary>
+		/// La estadia abierta como forma y valores: donde esta y desde cuando, sin inventar una salida
+		/// ni ningun dia.
+		/// </summary>
+		internal override AStayClause TheClause()
+		{
+			return AStayClause.StillOpen(Branch, Subject.Value, TheInstant(EnteredAt));
 		}
 
 		/// <summary>

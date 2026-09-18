@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Concesionario.App.Wording;
 using NUnit.Framework;
 
 namespace Concesionario.Dominio.Pruebas
@@ -66,7 +67,11 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheRefusalSaysWhatToAskFirst()
 		{
 			DomainException error = Assert.Throws<DomainException>(
-				() => { EnvelopeStanding _ = new AnEnvelopeSuspendedByAnAbsentReading("").Standing(); });
+				() => {
+					EnvelopeStanding _ =
+						new AnEnvelopeSuspendedByAnAbsentReading(
+							AClauseUnderTest.WithNoEnvelope()).Standing();
+				});
 
 			Assert.That(error.Message, Does.Contain("evaluar"),
 				"El mensaje manda preguntar primero si se podia evaluar. Sin eso, quien llame "
@@ -89,19 +94,28 @@ namespace Concesionario.Dominio.Pruebas
 		public void EveryAnswerSaysSomethingIncludingTheOnesThatCouldNotDecide()
 		{
 			foreach (EnvelopeAnswer answer in LasCuatroVariantes())
-				Assert.That(answer.Describe(), Is.Not.Empty, answer.GetType().Name);
+				Assert.That(
+					TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+						answer, TheLanguage.OfTheRecord),
+					Is.Not.Empty, answer.GetType().Name);
 		}
 
 		// LEY L11, y estructural en vez de por costumbre: la clausula no la pone quien compone --
-		// que puede olvidarse -- sino cada variante, incluidas las suspendidas.
+		// que puede olvidarse -- sino el marco de la respuesta, el mismo para las cuatro variantes.
+		// Desde que la redaccion vive en el catalogo, el marco es la clave 'envelope.said' y la ley
+		// es su hueco {law}: por eso la frase se compara contra la clausula del catalogo y no contra
+		// una copia escrita aqui, que es la unica forma de que las dos no dejen de decir lo mismo.
 		[Test]
 		public void EveryAnswerSaysItIsNotAnAdjudication()
 		{
-			foreach (EnvelopeAnswer answer in LasCuatroVariantes())
-				Assert.That(answer.Describe(),
-					Does.Contain(EnvelopeAnswer.TheStandingIsNotAnAdjudication()),
-					answer.GetType().Name + " no dice que esto no es la adjudicacion de un "
-					+ "reclamo. Estar adentro del sobre no es una promesa de que le paguen.");
+			foreach (string language in new[]
+				{ TheLanguage.OfTheRecord, TheLanguage.OfAnEnglishReader })
+				foreach (EnvelopeAnswer answer in LasCuatroVariantes())
+					Assert.That(
+						TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(answer, language),
+						Does.Contain(Phrases.Of(language).Say("envelope.law")),
+						answer.GetType().Name + " no dice que esto no es la adjudicacion de un "
+						+ "reclamo. Estar adentro del sobre no es una promesa de que le paguen.");
 		}
 
 		// LA CUENTA (C57). Cuatro variantes, exactamente una que contesta. Sin esto, las pruebas
@@ -132,7 +146,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			List<EnvelopeAnswer> todas = new List<EnvelopeAnswer>
 			{
-				new ASettledEnvelopeAnswer(EnvelopeStanding.Inside, string.Empty),
+				new ASettledEnvelopeAnswer(
+					EnvelopeStanding.Inside, AClauseUnderTest.WithNoEnvelope()),
 			};
 
 			todas.AddRange(LasTresSuspensiones());
@@ -144,10 +159,10 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			return new List<EnvelopeAnswer>
 			{
-				new AnEnvelopeSuspendedByAnAbsentDelivery(string.Empty),
-				new AnEnvelopeSuspendedByAnAbsentReading(string.Empty),
+				new AnEnvelopeSuspendedByAnAbsentDelivery(AClauseUnderTest.WithNoEnvelope()),
+				new AnEnvelopeSuspendedByAnAbsentReading(AClauseUnderTest.WithNoEnvelope()),
 				new AnEnvelopeSuspendedByAUnitMismatch(
-					DistanceUnit.UnitA, DistanceUnit.UnitB, string.Empty),
+					DistanceUnit.UnitA, DistanceUnit.UnitB, AClauseUnderTest.WithAnEnvelopeIn(DistanceUnit.UnitA)),
 			};
 		}
 	}

@@ -59,7 +59,7 @@ Y los tipos calzan casi uno a uno con los de `IModel`:
 Ajustes sería un proveedor más — y el único **sin URL y sin clave**.
 
 La línea que hay que cambiar es una, y es la misma que hoy rompe con Anthropic
-([`Shell.cs:428`](../../Gnothi.Movil/Shell.cs)): construye siempre `ModelOpenAiCompatible` sin
+([`Shell.cs:428`](../../Gnothi.MobileShared/Shell.cs)): construye siempre `ModelOpenAiCompatible` sin
 mirar qué proveedor eligió la persona.
 
 ## Lo que NO resuelve

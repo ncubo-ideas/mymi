@@ -122,13 +122,10 @@ namespace Cargas.Dominio
 		internal DateTime FechaDelSorteo =>
 			Detalle.FueAnunciado ? Detalle.FechaDelSorteo : default;
 
-		internal string MontoPorBoletoExpresado =>
-			Detalle.FueAnunciado ? Detalle.MontoPorBoleto.Expresado : "";
-
 		internal decimal MontoPorBoleto =>
 			Detalle.FueAnunciado ? Detalle.MontoPorBoleto.Monto : 0m;
 
-		internal string MonedaDeLaRegla =>
-			Detalle.FueAnunciado ? Detalle.MontoPorBoleto.Moneda.Codigo : "";
+		internal string MonedaPorBoleto =>
+			Detalle.FueAnunciado ? Detalle.MontoPorBoleto.CodigoDeMoneda : "";
 	}
 }

@@ -29,9 +29,7 @@
       "sinAvaluoNota": "Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega solo, con el resto de tus movimientos, cuando ella lo publique."
     },
     "pie": "Un aumento nunca apura: ya pasó. Lo que apura es lo que vence, y eso está en",
-    "pieEnlace": "qué se me vence",
-    "sinNingunComprobante": "Tu app no ha visto ni un comprobante de este rubro, así que no hay nada que comparar. Eso no quiere decir que no lo pagués: quiere decir que tus pagos de este rubro todavía no han llegado aquí.",
-    "conUnSoloComprobante": "De este rubro hay un solo período con comprobante, y para ver una variación hacen falta dos. No es que el cobro no haya cambiado: es que todavía no hay contra qué compararlo."
+    "pieEnlace": "qué se me vence"
   },
 
   "queSeMeVence": {
@@ -71,10 +69,7 @@
     "falloLaApp": "La app falló al intentar guardarlo, y eso no es algo que hayas hecho vos ({tipo}: {detalle}).",
     "entro": "Listo, quedó tuyo.",
     "entroCuerpo": "Tu reserva quedó registrada y guardada en tu carpeta.",
-    "rechazado": "No se registró, y ésta es la razón.",
-    "sinUnPago": "Tu app todavía no ha visto ningún comprobante, así que no hay de dónde proyectar lo que vas a pagar este año. En cuanto entre el primer pago, esta propuesta aparece sola.",
-    "sinReservaAdoptada": "Todavía no adoptaste una reserva, así que no hay con qué comparar la propuesta. Adoptar una es tuyo y no de la municipalidad: es cuánto decidís apartar cada mes.",
-    "sinNingunaDeLasDos": "Sin un pago del que proyectar y sin una reserva adoptada, no hay dos mitades que comparar. Las dos entran solas: la propuesta con el primer comprobante, la adoptada cuando la pongás."
+    "rechazado": "No se registró, y ésta es la razón."
   },
 
   "sinComprobante": {
@@ -86,8 +81,7 @@
     "cotejadoContra": "cotejado contra el {dia}",
     "noEsDeuda": "Esto no es una deuda",
     "noEsDeudaCuerpo": "Tu portal da esos períodos por saldados; lo que falta es el respaldo aquí, casi siempre porque se pagaron por un camino que no deja comprobante digital —la ventanilla, por ejemplo. No los sumés a nada que se te venza.",
-    "fotoConFecha": "La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana dice otra cosa. El cotejo es contra el {dia} y no contra hoy.",
-    "nuncaHuboConsulta": "Tu app no tiene ninguna consulta al portal registrada, así que no hay con qué cotejar lo que sí vio pagar. Esto NO dice que todo esté en orden: dice que la pregunta todavía no se puede contestar, y se va a poder en cuanto entre una consulta."
+    "fotoConFecha": "La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana dice otra cosa. El cotejo es contra el {dia} y no contra hoy."
   },
 
   "cuantoHePagado": {
@@ -255,8 +249,8 @@
       },
       "olvidoLaCarpeta": "Se olvidó la carpeta guardada; no se tocó nada de lo que hay adentro.",
       "arribaHospedada": {
-        "uno": "La app está arriba, hospedada en Gnothi, con {precargados} archivo precargado.",
-        "varios": "La app está arriba, hospedada en Gnothi, con {precargados} archivos precargados."
+        "uno": "La app está arriba, hospedada en Mymi, con {precargados} archivo precargado.",
+        "varios": "La app está arriba, hospedada en Mymi, con {precargados} archivos precargados."
       },
       "arribaEnCarpeta": {
         "uno": "La app está arriba, con {precargados} archivo precargado de «{carpeta}».",
@@ -270,7 +264,7 @@
       "alAbrir": "Al abrir, la institución contestó: {resultado}",
       "carpetaRechazoAlAbrir": "Al abrir, la institución contestó, pero la carpeta rechazó la escritura.",
       "actualizacion": "Se trajo lo que haya publicado la institución: {resultado}",
-      "entregaDeGnothi": "Gnothi entregó un sobre: {resultado}",
+      "entregaDeGnothi": "Mymi entregó un sobre: {resultado}",
       "noSeRegistroLaInstalacion": "No se pudo registrar esta instalación: {rechazo}",
       "credencialRotada": "Se rotó la credencial con el token de refresco.",
       "credencialNueva": "Se obtuvo una credencial nueva, con alcance {alcance}.",

@@ -5,12 +5,13 @@ using System.Globalization;
 namespace Concesionario.Dominio
 {
 	/// <summary>
-	/// La respuesta de un periodo del libro: el gasto dicho con sus dos vistas, moneda por moneda, o
-	/// la constancia con nombre de que no hay ninguno. Es un carrier interno -- se arma en cada
+	/// La respuesta de un periodo del libro: el gasto dicho con sus dos vistas, moneda por moneda,
+	/// o la constancia con nombre de que no hay ninguno. Es un carrier interno -- se arma en cada
 	/// lectura y no cruza hacia ninguna caratula.
 	/// <para>
-	/// Contesta TOTALMENTE las dos preguntas con las que se distinguen sus tres situaciones, asi que
-	/// ningun llamador pregunta que tipo tiene en la mano.
+	/// Contesta TOTALMENTE las dos preguntas con las que se distinguen sus tres situaciones, asi
+	/// que ningun llamador pregunta que tipo tiene en la mano, y entrega su situacion por un CODIGO
+	/// para que quien redacte elija el marco sin conocer los tipos.
 	/// </para>
 	/// </summary>
 	internal abstract class SpendInAPeriod
@@ -30,9 +31,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Arma la respuesta con las entradas que tocan el periodo -- las que se incurrieron adentro y
-		/// las que consumen adentro. Sin ninguna, la respuesta es la ausencia con nombre. Con mas de
-		/// una moneda, el estado con nombre en que no hay total entre ellas.
+		/// Arma la respuesta con las entradas que tocan el periodo -- las que se incurrieron
+		/// adentro y las que consumen adentro. Sin ninguna, la respuesta es la ausencia con nombre.
+		/// Con mas de una moneda, el estado con nombre en que no hay total entre ellas.
 		/// </summary>
 		internal static SpendInAPeriod Of(DateTime from, DateTime to, List<ACostEntry> touching)
 		{
@@ -61,27 +62,41 @@ namespace Concesionario.Dominio
 		internal abstract bool HasAnyCost();
 
 		/// <summary>
-		/// Si todo el gasto del periodo esta dicho en una sola moneda. TOTAL: un periodo sin gasto no
-		/// esta dicho en ninguna, y una moneda que este modulo no nombra no se sabe la misma que otra.
+		/// Si todo el gasto del periodo esta dicho en una sola moneda. TOTAL: un periodo sin gasto
+		/// no esta dicho en ninguna, y una moneda que este modulo no nombra no se sabe la misma que
+		/// otra.
 		/// </summary>
 		internal abstract bool IsSaidInOneCurrency();
 
 		/// <summary>
-		/// El periodo en una frase, con las dos vistas adentro. TOTAL: la ausencia tambien se dice con
-		/// palabras y nombra los dos instantes por los que se pregunto.
+		/// Que tiene este periodo que decir, por su codigo. TOTAL, y es lo mismo que las dos
+		/// preguntas de arriba dicho como nombre: el booleano lo pregunta quien decide, el codigo
+		/// lo lleva quien redacta.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract string TheShapeItHas();
 
 		/// <summary>
-		/// El periodo dicho moneda por moneda. TOTAL, y con mas de una dice que no hay total entre
-		/// ellas en vez de sumar dos escalas que nadie puede comparar.
+		/// Cada moneda del periodo con sus dos vistas y las partes que reparte, en el orden en que
+		/// cada moneda aparecio. TOTAL: vacia donde no hay ningun gasto.
 		/// </summary>
-		internal abstract string DescribePerCurrency();
+		internal abstract List<ASummaryClause> TheClausesOfItsCurrencies();
+
+		/// <summary>Donde empieza el periodo, como instante con su hora. TOTAL.</summary>
+		internal string TheInstantItStartsAt()
+		{
+			return TheInstant(_from);
+		}
+
+		/// <summary>Donde termina el periodo, como instante con su hora. TOTAL.</summary>
+		internal string TheInstantItEndsAt()
+		{
+			return TheInstant(_to);
+		}
 
 		/// <summary>
-		/// Las entradas que se INCURRIERON adentro del periodo, en orden del instante en que pasaron.
-		/// TOTAL: vacia cuando ninguna. Son las filas del periodo, y su dinero es el que salio del
-		/// banco aca.
+		/// Las entradas que se INCURRIERON adentro del periodo, en orden del instante en que
+		/// pasaron. TOTAL: vacia cuando ninguna. Son las filas del periodo, y su dinero es el que
+		/// salio del banco aca.
 		/// </summary>
 		internal List<ACostEntry> TheEntriesIncurredInside()
 		{
@@ -91,12 +106,6 @@ namespace Concesionario.Dominio
 				if (entry.WasIncurredBetween(_from, _to)) inside.Add(entry);
 
 			return inside;
-		}
-
-		/// <summary>La clausula que las tres situaciones comparten: entre cuando y cuando.</summary>
-		protected string ThePeriodClause()
-		{
-			return "Entre el " + TheInstant(_from) + " y el " + TheInstant(_to);
 		}
 
 		/// <summary>Un instante dicho como instante, con su hora.</summary>

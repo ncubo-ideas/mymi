@@ -323,7 +323,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Ni registro la entrega.");
 
 			Assert.That(
-				after.DescribePublishedWarrantyEnvelope(),
+				after.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
 				Does.Contain("no ha publicado"),
 				"Y la mitad publicada contesta con palabras igual, que es la ley L7: que a este "
 				+ "vehiculo le falte todo no vuelve incitable lo que la agencia publico -- o no "

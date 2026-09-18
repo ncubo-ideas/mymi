@@ -196,13 +196,17 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			IReadOnlyDictionary<string, string> elCatalogo = ElCatalogoEnEspanol.ElCatalogo();
 
+			// LAS DOS LISTAS, y la segunda no se copia aca: es la MISMA con que se generan sus casos.
+			List<string> ejercitadas = new List<string>(LasClavesQueEstaPruebaEjercita);
+			ejercitadas.AddRange(LasQueDiceUnaVistaCuandoNoHayConQueContestar);
+
 			List<string> sinEjercitar = new List<string>();
 			foreach (KeyValuePair<string, string> cada in elCatalogo)
-				if (Array.IndexOf(LasClavesQueEstaPruebaEjercita, cada.Key) < 0) sinEjercitar.Add(cada.Key);
+				if (!ejercitadas.Contains(cada.Key)) sinEjercitar.Add(cada.Key);
 			sinEjercitar.Sort(StringComparer.Ordinal);
 
 			List<string> queYaNoExisten = new List<string>();
-			foreach (string cada in LasClavesQueEstaPruebaEjercita)
+			foreach (string cada in ejercitadas)
 				if (!elCatalogo.ContainsKey(cada)) queYaNoExisten.Add(cada);
 			queYaNoExisten.Sort(StringComparer.Ordinal);
 
@@ -329,7 +333,41 @@ namespace Municipalidad.Dominio.Pruebas
 
 			yield return ("faltante · falta poco para avisar, y aun asi vence de mas",
 				f => LaFraseDe(new FaltanteDeReserva(12000m, 11500m, 20000m), f));
+
+			// LAS SEIS QUE NO TIENEN PORTADOR, y por eso entran distinto a todas las de arriba.
+			//
+			// Aquellas las compone el dominio: hay un portador que entrega clave y valores. Estas las
+			// dice una VISTA cuando NO HAY con que contestar -- sin un pago, sin una reserva adoptada,
+			// sin una consulta al portal --, o sea justamente cuando el dominio no compuso nada. No hay
+			// portador que las traiga porque no hay hecho del que hablar, asi que se piden por su clave,
+			// que es el mismo camino que usa la Vista.
+			//
+			// VINIERON DEL CATALOGO DE PANTALLA de la carátula Blazor el 2026-09-17, cuando las Vistas
+			// se mudaron a Municipalidad.App para que las dos caras leyeran la misma. Ese catalogo lo
+			// baja el navegador por HTTP; este proyecto corre tambien en proceso y en la caja de wasm,
+			// donde no hay navegador. Ver el comentario en CatalogoEnEspanol.
+			//
+			// Y no llevan huecos: las cinco afirmaciones de la prueba 2 les aplican igual, porque lo que
+			// se comprueba es que esten en los dos idiomas y que ninguna salga como "{clave}".
+			foreach (string clave in LasQueDiceUnaVistaCuandoNoHayConQueContestar)
+			{
+				string esta = clave;
+				yield return ("sin con que contestar · " + esta, f => f.Diga(esta));
+			}
 		}
+
+		/// <summary>
+		/// Las seis que una Vista pide por su clave. Se nombran una sola vez y desde aca las lee tanto
+		/// el caso que las redacta como el inventario: una lista escrita dos veces es una lista que se
+		/// desincroniza.
+		/// </summary>
+		private static readonly string[] LasQueDiceUnaVistaCuandoNoHayConQueContestar =
+		{
+			"sinComprobante.nuncaHuboConsulta",
+			"cuantoApartar.sinUnPago", "cuantoApartar.sinReservaAdoptada",
+			"cuantoApartar.sinNingunaDeLasDos",
+			"porQuePagoMas.sinNingunComprobante", "porQuePagoMas.conUnSoloComprobante",
+		};
 
 		// ------------------------------------------------------------------ los portadores
 

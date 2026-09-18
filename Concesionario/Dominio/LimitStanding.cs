@@ -10,9 +10,9 @@ namespace Concesionario.Dominio
 	internal abstract class LimitStanding
 	{
 		private static readonly LimitStanding TimeOutsideTheLaw =
-			new ADimensionOutsideTheLaw("tiempo");
+			new ADimensionOutsideTheLaw(IntervalDimension.Time);
 		private static readonly LimitStanding DistanceOutsideTheLaw =
-			new ADimensionOutsideTheLaw("distancia");
+			new ADimensionOutsideTheLaw(IntervalDimension.Distance);
 		private static readonly LimitStanding NoUsableReadingToCountFrom =
 			new ADimensionSuspendedByAnAbsentReading();
 
@@ -46,7 +46,7 @@ namespace Concesionario.Dominio
 			IntervalLengthFactor factor)
 		{
 			if (factor.DistanceIsIgnored)
-				return new ADimensionSuspendedByTheUsageProfile(factor.Profile.HowItIsSaid);
+				return new ADimensionSuspendedByTheUsageProfile(factor.Profile.Name);
 
 			if (!from.HasReading || !latestUsable.Exists())
 				return NoUsableReadingToCountFrom;
@@ -142,10 +142,57 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La clausula que esta dimension aporta al motivo: la dimension y el monto, o por que no
-		/// se pudo evaluar. Componerla es del dominio, no de la vista.
+		/// QUE CLAUSULA aporta esta dimension al motivo, por su codigo, o vacia donde no aporta
+		/// ninguna. Elegirla es del dominio; decirla es de quien la muestra.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract string TheClauseItAdds();
+
+		/// <summary>La dimension de la clausula, por su codigo. TOTAL.</summary>
+		internal abstract string TheDimensionItMeasures();
+
+		/// <summary>
+		/// Cuanto lleva contado esta dimension desde el ancla, o cero donde la clausula no cuenta
+		/// ninguno. TOTAL.
+		/// </summary>
+		internal virtual int TheAmountItReached()
+		{
+			return 0;
+		}
+
+		/// <summary>
+		/// El limite ya escalado contra el que se cuenta, o cero donde la clausula no nombra
+		/// ninguno. TOTAL.
+		/// </summary>
+		internal virtual int TheLimitItIsAgainst()
+		{
+			return 0;
+		}
+
+		/// <summary>
+		/// La unidad del limite, por su nombre, o vacia donde la clausula no nombra ninguna. TOTAL.
+		/// </summary>
+		internal virtual string TheUnitOfTheLimit()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// La unidad en que estan las mediciones cuando no coincide con la del limite, o vacia donde
+		/// coinciden. TOTAL.
+		/// </summary>
+		internal virtual string TheUnitTheMeasurementsAreIn()
+		{
+			return "";
+		}
+
+		/// <summary>
+		/// El perfil de uso que ignora esta dimension, por su codigo, o vacio donde no la ignora
+		/// ninguno. TOTAL.
+		/// </summary>
+		internal virtual string TheUsageProfileThatIgnoresIt()
+		{
+			return "";
+		}
 
 		/// <summary>
 		/// Lo que le queda a esta dimension: el monto compuesto con su unidad, o cual razon impide

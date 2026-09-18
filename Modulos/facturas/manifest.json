@@ -5,7 +5,12 @@
   "title": "Mis facturas",
   "institution": "Súper El Triunfo",
   "about": { "locale": "es-CR" },
-  "brand": { "slogan": "Ahorro y calidad en un solo lugar" },
+  "brand": {
+    "shortName": "El Triunfo",
+    "color": "#C86B12",
+    "logo": "brand/logo.png",
+    "slogan": "Ahorro y calidad en un solo lugar"
+  },
 
   "//substrate": "A RANGE, not an exact version: if a module pins one precise version, every Host update orphans every installed module.",
   "substrate": {

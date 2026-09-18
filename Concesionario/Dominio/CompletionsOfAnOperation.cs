@@ -70,9 +70,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El historial en una frase. TOTAL: las dos ausencias tambien se dicen con palabras, y cada
-		/// una nombra su propia razon.
+		/// El historial como forma y valores. TOTAL: las dos ausencias tambien contestan, y cada una
+		/// con su propio codigo, que es lo que deja que quien redacte nombre su razon.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract ACompletionsClause TheClause();
 	}
 }

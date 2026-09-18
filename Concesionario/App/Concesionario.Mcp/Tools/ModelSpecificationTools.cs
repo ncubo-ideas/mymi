@@ -17,6 +17,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class ModelSpecificationTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTA CARA PIDE LAS FRASES DEL DOMINIO, que es el del registro y no el de
+		/// quien pregunta: esta superficie es la voz del concesionario hablandole al modelo, igual
+		/// que el titulo y las descripciones de estas mismas tools.
+		/// </summary>
+		private const string TheVoiceOfTheDealership = Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public ModelSpecificationTools(JournalReader reader)
@@ -161,7 +168,7 @@ namespace Concesionario.Mcp.Tools
 				{
 					Kind = kind,
 					Published = api.IsFluidPublished(kind),
-					Says = api.DescribeFluid(kind),
+					Says = api.DescribeFluid(kind, TheVoiceOfTheDealership),
 					Revision = api.ReadFluidRevision(kind),
 				});
 
@@ -172,7 +179,7 @@ namespace Concesionario.Mcp.Tools
 				{
 					Position = position,
 					Published = api.IsTyrePublished(position),
-					Says = api.DescribeTyre(position),
+					Says = api.DescribeTyre(position, TheVoiceOfTheDealership),
 					Revision = api.ReadTyreRevision(position),
 				});
 
@@ -189,7 +196,7 @@ namespace Concesionario.Mcp.Tools
 				Fuel = new PublishedFuel
 				{
 					Published = api.IsFuelPublished(),
-					Says = api.DescribeFuel(),
+					Says = api.DescribeFuel(TheVoiceOfTheDealership),
 					MinimumGrade = api.ReadMinimumFuelGrade(),
 					PermittedGrades = api.PermittedFuelGrades(),
 					ProhibitedGrades = api.ProhibitedFuelGrades(),
@@ -234,7 +241,8 @@ namespace Concesionario.Mcp.Tools
 			if (envelopeKnown)
 				try
 				{
-					thisVehicleSays = api.DescribeWarrantyEnvelope(askedAt);
+					thisVehicleSays = api.DescribeWarrantyEnvelope(
+						askedAt, TheVoiceOfTheDealership);
 
 					if (wholeRecord && system.Length > 0)
 					{
@@ -243,7 +251,8 @@ namespace Concesionario.Mcp.Tools
 						standing = standingCanBeEvaluated
 							? api.ReadCoverageStandingForThisVehicle(system, askedAt)
 							: "";
-						standingSays = api.DescribeCoverageForThisVehicle(system, askedAt);
+						standingSays = api.DescribeCoverageForThisVehicle(
+							system, askedAt, TheVoiceOfTheDealership);
 					}
 				}
 				catch (Exception thrown) when (TheAssistantIsTold.TheRecordContradictsItself(thrown))
@@ -266,12 +275,13 @@ namespace Concesionario.Mcp.Tools
 				SystemInTheCatalogue =
 					system.Length > 0 && api.TheVocabularyIsTheManufacturers(system),
 				Published = api.IsCoveragePublished(),
-				Says = api.DescribeCoverageSummary(),
+				Says = api.DescribeCoverageSummary(TheVoiceOfTheDealership),
 				Revision = api.ReadCoverageRevision(),
 				CoveredSystems = api.CoveredSystems(),
-				Exclusions = api.CoverageExclusions(),
+				Exclusions = api.CoverageExclusions(TheVoiceOfTheDealership),
 				ServicingPolicyPublished = servicingPolicyPublished,
-				ServicingPolicySays = api.DescribePublishedServicingElsewhereRule(),
+				ServicingPolicySays = api.DescribePublishedServicingElsewhereRule(
+					TheVoiceOfTheDealership),
 				ServicingPolicyRevision = api.ReadServicingPolicyRevision(),
 				EnvelopeKnown = envelopeKnown,
 				AskedAt = askedAt.ToString("O"),
@@ -327,7 +337,8 @@ namespace Concesionario.Mcp.Tools
 
 			DateTime askedAt = TheClockTheAssistantReads.TheInstantThisWasAsked();
 
-			PublishedPriceRecord record = api.PublishedServicePricesAsOf(askedAt);
+			PublishedPriceRecord record =
+				api.PublishedServicePricesAsOf(askedAt, TheVoiceOfTheDealership);
 
 			var prices = new List<PublishedPrice>();
 
@@ -352,7 +363,7 @@ namespace Concesionario.Mcp.Tools
 				CurrentRevision = TheCurrentRevisionCode(api),
 				Operation = kind,
 				IntervalPublished = intervalPublished,
-				IntervalSays = api.DescribePublishedServiceInterval(kind),
+				IntervalSays = api.DescribePublishedServiceInterval(kind, TheVoiceOfTheDealership),
 				IntervalRevision = api.ReadServiceIntervalRevision(kind),
 				AnyPriceOnRecord = anyOnRecord,
 				PriceCountOnRecord = api.PublishedServicePriceCount(),

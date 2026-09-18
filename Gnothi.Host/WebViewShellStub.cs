@@ -9,9 +9,14 @@ namespace Gnothi.Host;
 // plataformas, y deja dicha la imposibilidad justo donde alguien la buscaria.
 //
 // El archivo se llama WebViewShellStub.cs para no chocar con el WebViewShell.cs de
-// Gnothi.Mobile, que es el de verdad y compila la misma clase en su lugar. Gnothi.Mobile
+// Gnothi.MobileShared, que es el de verdad y compila la misma clase en su lugar. Gnothi.Mobile
 // EXCLUYE este archivo de su glob; si algun dia entraran los dos, chocarian dos definiciones
 // y esa es la senal correcta.
+//
+// LA VENTANA DE ESCRITORIO ES LA EXCEPCION: Gnothi.Desktop compila el WebViewShell real contra
+// este ensamblado y lo registra por Module.ShellFactory antes de cargar el catalogo, asi que
+// ahi "webview" e "hybrid" si corren. Este stub queda para el Host sin ventana -el frente MCP-,
+// donde sigue sin haber donde pintar una cara.
 internal sealed class WebViewShell : IShell
 {
 	private const string PorQue =

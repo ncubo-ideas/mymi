@@ -1,17 +1,17 @@
 using Android.App;
 using Android.Webkit;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 using Java.Interop;
 using System.Text;
 
 namespace Gnothi.Mobile;
 
 // THE ANDROID TWIN OF THE WEB MODULE HOST. Everything that is a decision lives in
-// Gnothi.Movil; what is here is how a WebView is talked to, and nothing else.
+// Gnothi.MobileShared; what is here is how a WebView is talked to, and nothing else.
 //
 // THIS FILE USED TO BE 500 LINES and most of them were not about Android. The CSP with its
 // hash computation, the MIME map, the path guard, the journal, the cursor, the bridge protocol
-// and its dispatch went to Gnothi.Movil when the iOS one had to be written -- not to save
+// and its dispatch went to Gnothi.MobileShared when the iOS one had to be written -- not to save
 // typing, but because every one of them IS the module's contract, and two copies of a contract
 // is two contracts.
 internal sealed class AndroidWebModuleHost(Activity owner, ISecretStore store, Action<string> log)
@@ -214,6 +214,14 @@ internal sealed class BridgeToModule(AndroidWebModule module) : Java.Lang.Object
 	[JavascriptInterface]
 	[Export("pull")]
 	public void Pull(string id, string after) => module.Serve("pull", id, after, null);
+
+	// The seventh of the contract, and the only one that runs the arrow backwards: a HYBRID
+	// face asks, and the answer comes from the module's surface loaded in process. No module
+	// parameter -- a face can only ask about the module it belongs to.
+	[JavascriptInterface]
+	[Export("consultar")]
+	public void Query(string id, string tool, string argumentsJson) =>
+		module.Serve("consultar", id, tool, argumentsJson);
 
 	// The seventh, and the only one no bundle calls: the watchdog Gnothi injects into the
 	// document reports a refusal back through the same door. See WebModule.Serve.

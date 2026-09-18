@@ -1,0 +1,285 @@
+{
+  "//": "WHAT THIS SCREEN SAYS IN ITS OWN WORDS. The sentences the domain composes are NOT here: the door brings those already said, in the language it was asked for. Keys are exactly the ones in es-CR.json. Product descriptions, branch names and receipt numbers come from the supermarket's record and are never translated: an English screen that says «leche» is correct. The supermarket's own name and tagline are not translated either — they are the institution's voice. {clave} is a hole the code fills.",
+
+  "comun": {
+    "volver": "Back",
+    "inicio": "Home",
+    "compras": "Purchases",
+    "abriendo": "Opening your purchases…",
+    "nuestroSitio": "Our website",
+    "verTodos": "See all",
+    "sinAbrir": "The app has not opened on this computer yet.",
+    "sinAbrirEnlace": "Go to Home",
+    "sinAbrirCola": "and pick your folder.",
+    "sinCompras": "No purchases yet.",
+    "mirando": "Looking at your last {compras} purchases.",
+    "deTotal": "{cuantos} of {total}",
+    "yMas": "and {cuantos} more",
+    "compra": "purchase",
+    "comprasPlural": "purchases",
+    "am": "a.m.",
+    "pm": "p.m.",
+    "fechaLarga": "{mes} {numero}, {anio}",
+    "mesDeAnio": "{mes} {anio}",
+
+    "//chrome": "WHAT THE SHELL SAYS, not a screen. The last three are also written by hand in index.html and app.css, because they show when the app did not start and no catalogue is loaded yet: there they stay in the language of the record, and this layer replaces them as soon as it negotiates.",
+    "noEncontradaTitulo": "Page not found",
+    "noEncontradaTexto": "There is nothing at this address.",
+    "errorInesperado": "Something went wrong.",
+    "recargar": "Reload",
+    "errorEnLaPantalla": "Something broke in this part of the screen.",
+
+    "mes": {
+      "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr", "5": "May", "6": "Jun",
+      "7": "Jul", "8": "Aug", "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+    },
+    "mesLargo": {
+      "1": "January", "2": "February", "3": "March", "4": "April", "5": "May", "6": "June",
+      "7": "July", "8": "August", "9": "September", "10": "October", "11": "November",
+      "12": "December"
+    },
+    "dia": {
+      "lunes": "Monday", "martes": "Tuesday", "miercoles": "Wednesday", "jueves": "Thursday",
+      "viernes": "Friday", "sabado": "Saturday", "domingo": "Sunday"
+    },
+    "diaLargo": {
+      "lunes": "Monday", "martes": "Tuesday", "miercoles": "Wednesday", "jueves": "Thursday",
+      "viernes": "Friday", "sabado": "Saturday", "domingo": "Sunday"
+    }
+  },
+
+  "hero": {
+    "nuevo": "NEW",
+    "nuevoTitulo": "Something new arrived in your {producto}",
+    "bajoDePrecio": "PRICE WENT DOWN",
+    "bajoDePrecioTitulo": "The {producto} you always buy went down in price",
+    "verlo": "See it",
+    "puedeInteresarte": "MIGHT INTEREST YOU",
+    "asiVienen": "How your purchases are going",
+    "casiTodoHabitual": {
+      "uno": "Mostly the usual · {cuantos} change of rhythm",
+      "varios": "Mostly the usual · {cuantos} changes of rhythm"
+    },
+    "todoComoSiempre": "Everything as usual here.",
+    "bienvenida": "Welcome to La Guaria",
+    "bienvenidaBajada": "Find out what always comes back and how your basket changes."
+  },
+
+  "inicio": {
+    "saludo": "Hello!",
+    "sitioDe": "{marca} website",
+    "errorOperacion": "The operation could not be completed.",
+    "errorAbrir": "The app could not be opened.",
+    "permisoCaduca": "Your folder is <strong>«{carpeta}»</strong>. The browser asks you to confirm write permission every time you reopen the app.",
+    "darPermiso": "Grant permission to «{carpeta}»",
+    "elegirCarpeta": "Pick a folder",
+    "guardaEnTuCarpeta": "This app keeps <strong>your</strong> purchases in a folder of <strong>yours</strong>. Pick the folder and the app writes its record there; nobody else reads it.",
+    "modoCarpeta": "A folder of yours",
+    "modoCarpetaDa": "It stays on your disk, and <strong>your assistant can read it</strong>.",
+    "sinSelector": "This browser has no folder picker.",
+    "enEstaApp": "In this app",
+    "enEsteNavegador": "In this browser",
+    "modoNavegadorDa": "It is also saved and survives closing, but the browser manages it: <strong>your assistant cannot read it</strong>.",
+    "noDisponible": "Not available here.",
+    "guardarAca": "Save here",
+    "contextoInseguro": "This page is not a <strong>secure context</strong>, and the browser turns off both ways of saving. Come in over <code>https</code> or <code>localhost</code> and both appear. It is not your browser's fault.",
+    "sinAlmacenamiento": "This browser cannot save anything permanently. The app still works, but the record lives only in memory and is lost on closing.",
+    "abrirSinGuardar": "Open without saving anything",
+
+    "yaNoSeActualiza": "No longer updating",
+    "buscando": "Looking…",
+    "buscarNuevas": "Look for new purchases",
+    "compraTuya": "{cuantas} purchase of yours",
+    "comprasTuyas": "{cuantas} purchases of yours",
+    "desde": "since {cuando}",
+
+    "migrada": "<strong>Your new purchases now come in through {donde}, on this same phone.</strong> What you see here stays and is still yours; what this copy stops doing is looking for news.",
+    "hospedada": "<strong>It is being saved on this phone.</strong> Your record is yours and it is here: Mymi gave this supermarket a folder on your phone, and your assistant can read it from there.",
+    "sinCarpeta": "<strong>Nothing is being saved.</strong> This app is running without a folder: what you see is asked of the provider again every time you open it, and no record of yours stays on disk.",
+    "guardarEnNavegador": "Save in this browser",
+    "guardadoEnApp": "Saved in this app",
+    "guardadoEnNavegador": "Saved in this browser",
+    "asistenteNoLoVe": "your assistant cannot read it.",
+    "escrituraRechazada": "<strong>The folder refused the write.</strong> What you see on screen is not saved in «{carpeta}». It is usually the permission, which expires on reopening.",
+    "volverADarPermiso": "Grant permission again",
+
+    "tusCompras": "Your purchases",
+    "cambioReciente": "There is {cuantos} recent change",
+    "cambiosRecientes": "There are {cuantos} recent changes",
+    "todoComoSiempre": "Everything as usual",
+
+    "cambioPill": "CHANGED",
+    "cambioDesde": "changed since {mes}",
+    "verLosCambios": "See the changes",
+    "verMenos": "See less",
+    "entraron": "came in",
+    "dejoDeAparecer": "stopped showing up",
+
+    "enQueSeLlena": "What fills your basket",
+    "categoriaPrincipal": "Your main category accounts for",
+    "categoriasPrincipales": "Your {cuantas} main categories account for",
+    "representanEl": "{cuantas} <strong class=\"mk-carrito-cifra\">{porcentaje}</strong> of your purchases.",
+    "otros": "Others",
+    "verTodasLasCategorias": "See all the categories",
+    "estaCategoria": "this category",
+    "estasCategorias": "these {cuantas} categories",
+    "carrito": {
+      "mayoria": "Most of your basket goes on {cuantas}.",
+      "masDeLaMitad": "More than half of your basket is in {cuantas}.",
+      "casiLaMitad": "Almost half of your basket is in {cuantas}.",
+      "parteImportante": "A sizeable part of your basket is in {cuantas}."
+    },
+
+    "tuHabitual": "YOUR REGULAR",
+    "mejorPrecio": "BEST PRICE",
+    "ahora": "Now",
+    "menos": "{monto} less",
+
+    "quizaTeToque": "You may be due",
+    "sueleVolver": "usually comes back {cadencia}",
+    "hace": "{dias} ago",
+    "yMasFaltantes": "And {cuantos} more. Your assistant can give you the full list.",
+
+    "loQueCasiNuncaFalta": "What hardly ever misses",
+
+    "tuMes": "Your month at the supermarket",
+    "esteMes": "This month",
+    "ritmoHabitual": "You are going at your usual pace.",
+    "gastasteMas": "you spent more",
+    "gastasteMenos": "you spent less",
+    "mismaFrecuencia": "You bought just as often, but {gasto}.",
+    "esteMesGasto": "This month {gasto} than in {mes}.",
+    "entreCompras": "between purchases",
+    "menosQueEn": "less than in {mes}",
+    "masQueEn": "more than in {mes}",
+    "graficaEtiqueta": "The month's purchases, one per point.",
+    "verLaGrafica": "See the chart",
+    "verTuRitmo": "See your rhythm",
+    "versus": "vs",
+    "entroEsteAnio": "came in this year",
+
+    "asiTeFue": "How it went with the products you always buy.",
+    "habituales": {
+      "cambio": {
+        "uno": "{cuantos} regular changed in price",
+        "varios": "{cuantos} regulars changed in price"
+      },
+      "subio": {
+        "uno": "{cuantos} regular went up in price",
+        "varios": "{cuantos} regulars went up in price"
+      },
+      "bajo": {
+        "uno": "{cuantos} regular went down in price",
+        "varios": "{cuantos} regulars went down in price"
+      }
+    },
+
+    "tuUltimaCompra": "Your last purchase",
+
+    "loQueDejoDeEntrar": "What stopped coming in",
+    "haceMasDeLoHabitual": "{que} longer ago than usual",
+    "dondeCompras": "Where you buy",
+    "sobreTodoEn": "mostly at {sucursal} · since {desde} also at {otras}",
+    "siempreEn": "always at {sucursal}",
+    "primeraYUltima": "first time on {primera} · last on {ultima}",
+    "sinSucursal": {
+      "una": "{cuantas} older purchase does not say which branch it was at.",
+      "varias": "{cuantas} older purchases do not say which branch they were at."
+    },
+    "tusGarantias": "Your warranties",
+    "teCubreHasta": "{producto} is covered until {fecha}",
+    "cubreHasta": "covered until {fecha}",
+    "laCompraste": "you bought it on {fecha} · {meses} of warranty",
+    "numeroDelReclamo": "the number for the claim is {numero}",
+
+    "ultimoDia": "last day",
+    "validaHasta": "valid until {dia} the {numero}",
+    "quedanDias": "{dias} to go",
+
+    "verTodosTusRecibos": "See all your receipts",
+    "historialAMano": "Your history always at hand",
+    "promocionesYMas": "Promotions and more",
+    "sinCarpetaAviso": "No folder: the record lives only in memory and is lost on closing."
+  },
+
+  "infaltables": {
+    "titulo": "The ones that never miss",
+    "bajada": "Those products that end up in your basket over and over.",
+    "cadaVez": "every time you go",
+    "casiCadaVez": "almost every time you go",
+    "enQueSeLlena": "What fills your basket?"
+  },
+
+  "precios": {
+    "titulo": "Your regulars",
+    "bajada": "The products you buy often and that changed in price.",
+    "sinCambios": "No regular has changed in price yet.",
+    "loLlevasCadaVez": "you take it every time you go",
+    "loLlevasCasiCadaVez": "you take it almost every time you go"
+  },
+
+  "producto": {
+    "unoDeTusInfaltables": "One of your regulars",
+    "sinCompras": "There is no purchase of yours with <strong>«{nombre}»</strong>.",
+    "verLosQueNuncaFaltan": "See the ones that never miss",
+    "comprasEnQueAparecio": "purchases it showed up in",
+    "unidadesLlevadas": "units taken",
+    "gastadoEnEsto": "spent on this product",
+    "ultimaVez": "last time you took it",
+    "comoLoFuisteLlevando": "How you have been taking it",
+    "unidadesPorAnio": "Units per year.",
+    "unidadesPorMes": "Units per month.",
+    "mesAMes": "{anio}, month by month."
+  },
+
+  "recibos": {
+    "pestana": "Your purchases",
+    "titulo": "Find that thing you bought",
+    "bajada": "Search for a product or go through your earlier purchases.",
+    "buscarPlaceholder": "Search leche, arroz, galletas…",
+    "buscarEtiqueta": "Search your purchases",
+    "sinCompras": "No purchases yet. Press <em>Refresh</em> on Home.",
+    "probaConOtro": "Try another product, or a whole aisle — <em>limpieza</em>, <em>proteinas</em>.",
+    "hoy": "TODAY",
+    "producto": {
+      "uno": "{cuantos} product",
+      "varios": "{cuantos} products"
+    },
+    "deProducto": {
+      "uno": "of {cuantos} product",
+      "varios": "of {cuantos} products"
+    },
+    "masRecientes": "The {cuantas} most recent of {total}. Search above to find an older one — and your assistant can consult them all.",
+    "resultadosRecientes": "The {cuantas} most recent of {total}. The totals above are for all of them — and your assistant can consult them one by one."
+  },
+
+  "detalle": {
+    "unaCompra": "A purchase",
+    "sinAbrir": "The app has not opened yet. Go back to the list and open it there.",
+    "sinEsaCompra": "There is no purchase with number «{numero}».",
+    "tuCompraDel": "Your purchase of",
+    "diaLargo": "{dia}, {mes} {numero}",
+    "aLas": "at {hora}",
+    "estoLlevaste": "This is what you took",
+    "conGarantia": "under warranty",
+    "rebaja": "<strong>{producto}</strong> costs <strong>{monto} less</strong> today than on this purchase.",
+    "paraReclamar": "If you have to claim anything from this purchase, the number is <strong>{numero}</strong>.",
+    "verRestantes": "See the remaining {cuantas} lines",
+    "soloLasPrimeras": "Show only the first {cuantas}",
+    "paginas": "Pages of this purchase",
+    "paginaAnterior": "Previous page",
+    "paginaSiguiente": "Next page",
+    "deLineas": "{desde}–{hasta} of {total} lines"
+  },
+
+  "ritmo": {
+    "titulo": "Your supermarket rhythm",
+    "bajada": "There are days and times that repeat more than they seem to.",
+    "sinRitmo": "There are still not enough purchases to measure a rhythm.",
+    "mirando": "Looking at your last {compras} purchases.",
+    "cada": "Every {dias}",
+    "volves": "you go back to the supermarket",
+    "diaQueMasCompras": "the day you buy most",
+    "aQueHora": "What time you usually go"
+  }
+}

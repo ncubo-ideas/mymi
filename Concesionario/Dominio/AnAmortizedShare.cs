@@ -8,9 +8,10 @@ namespace Concesionario.Dominio
 	/// util, por cuanto de esa ventana cae adentro del periodo. Se compone en cada lectura y no se
 	/// guarda en ninguna parte.
 	/// <para>
-	/// Su frase dice la regla y no solo el resultado -- el gasto entero, la vida util, el instante en
-	/// que se incurrio y lo que a este periodo le toca -- para que quien lea pueda revisar la cuenta
-	/// en vez de creerla.
+	/// Sale como valores ya tipados y nunca como una frase, y los entrega TODOS -- el gasto entero,
+	/// en que se fue, la vida util, el instante en que se incurrio y lo que a este periodo le toca
+	/// -- porque la regla se dice y no solo el resultado: quien lea puede revisar la cuenta en vez
+	/// de creerla.
 	/// </para>
 	/// </summary>
 	internal sealed class AnAmortizedShare
@@ -32,9 +33,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La parte que ese periodo consumio de ese gasto. Revienta si el periodo no toca la ventana:
-		/// un cero ahi se leeria como que el periodo consumio nada de algo que estaba activo, y hay
-		/// que preguntar antes si consume algo.
+		/// La parte que ese periodo consumio de ese gasto. Revienta si el periodo no toca la
+		/// ventana: un cero ahi se leeria como que el periodo consumio nada de algo que estaba
+		/// activo, y hay que preguntar antes si consume algo.
 		/// </summary>
 		internal static AnAmortizedShare Of(
 			Money whole, CostSubject subject, AnExpectedLife life, DateTime incurredAt,
@@ -74,20 +75,62 @@ namespace Concesionario.Dominio
 			return _share;
 		}
 
-		/// <summary>
-		/// La parte en una frase, con la regla adentro: el gasto entero, en que se fue, a lo largo de
-		/// cuanto se reparte, desde cuando, y lo que a este periodo le toca.
-		/// </summary>
-		internal string Describe()
+		/// <summary>La forma de la moneda del gasto entero, por su codigo. TOTAL.</summary>
+		internal string TheShapeOfTheWholeCurrency()
 		{
-			return _whole.Expressed() + " en " + _subject.Value + ", en línea recta a lo largo de "
-				+ _life.HowItIsSaid() + " desde el " + TheInstant(_incurredAt)
-				+ ": a este período le tocan " + _share.Expressed() + ".";
+			return _whole.TheShapeOfItsCurrency();
 		}
 
-		private static string TheInstant(DateTime instant)
+		/// <summary>Los digitos del gasto entero, en cultura invariante. TOTAL.</summary>
+		internal string TheWholeAsSaid()
 		{
-			return instant.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+			return _whole.TheAmountAsSaid();
+		}
+
+		/// <summary>El codigo de la moneda del gasto entero. TOTAL.</summary>
+		internal string TheCodeOfTheWholeCurrency()
+		{
+			return _whole.TheCodeOfItsCurrency();
+		}
+
+		/// <summary>En que se fue, con las palabras que llegaron. TOTAL.</summary>
+		internal string TheSubjectItWasSpentOn()
+		{
+			return _subject.Value;
+		}
+
+		/// <summary>A lo largo de cuantos meses se reparte, tal como llegaron. TOTAL.</summary>
+		internal int TheMonthsItIsSpreadOver()
+		{
+			return _life.TheMonthsItLasts();
+		}
+
+		/// <summary>
+		/// El instante en que se incurrio, dicho como INSTANTE con su hora: es el ancla de la
+		/// ventana, y de que dia local es un instante necesitaria una zona que este libro no tiene.
+		/// TOTAL.
+		/// </summary>
+		internal string TheInstantItWasIncurred()
+		{
+			return _incurredAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+		}
+
+		/// <summary>La forma de la moneda de la parte, por su codigo. TOTAL.</summary>
+		internal string TheShapeOfTheShareCurrency()
+		{
+			return _share.TheShapeOfItsCurrency();
+		}
+
+		/// <summary>Los digitos de la parte que a este periodo le toca. TOTAL.</summary>
+		internal string TheShareAsSaid()
+		{
+			return _share.TheAmountAsSaid();
+		}
+
+		/// <summary>El codigo de la moneda de la parte. TOTAL.</summary>
+		internal string TheCodeOfTheShareCurrency()
+		{
+			return _share.TheCodeOfItsCurrency();
 		}
 	}
 }

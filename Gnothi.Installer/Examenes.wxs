@@ -55,7 +55,7 @@
 
     <!-- Si Gnothi no esta instalado en esta cuenta, no seguir. -->
     <Launch Condition="GNOTHIHOSTEXE AND GNOTHIMODULES"
-            Message="Gnothi no esta instalado en esta cuenta. Instala primero Gnothi desde su pagina de descarga y vuelve a ejecutar este instalador del Laboratorio Clinico Delfos." />
+            Message="Mymi no esta instalado en esta cuenta. Instala primero Mymi desde su pagina de descarga y vuelve a ejecutar este instalador del Laboratorio Clinico Delfos." />
 
     <!-- Per-usuario, sin admin. -->
     <StandardDirectory Id="LocalAppDataFolder">

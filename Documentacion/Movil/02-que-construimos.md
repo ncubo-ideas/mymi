@@ -42,7 +42,7 @@ Qué resuelve: hasta ahora un módulo era un DLL que sólo el asistente veía. A
 trae **su propia pantalla**, y la persona la abre adentro de Gnothi, con su registro guardándose
 en su teléfono.
 
-Lo neutral vive una vez, en `Gnothi.Movil/`:
+Lo neutral vive una vez, en `Gnothi.MobileShared/`:
 
 | pieza | qué decide |
 |---|---|

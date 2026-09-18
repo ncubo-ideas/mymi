@@ -80,7 +80,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new CanastasComparadas();
 
-		return lector.Consultar(api => api.ComparacionConElAnioAnterior());
+		return lector.Consultar(api => api.ComparacionConElAnioAnterior(ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "la_firma_de_mi_canasta", UseStructuredContent = true)]
@@ -98,7 +98,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new FirmaDeLaSemana();
 
-		return lector.Consultar(api => api.Firma(cuantasCompras));
+		return lector.Consultar(api => api.Firma(ComprasAPI.IdiomaDelRegistro, cuantasCompras));
 	}
 
 	[McpServerTool(Name = "que_cambio_en_mi_canasta", UseStructuredContent = true)]
@@ -126,7 +126,7 @@ internal sealed class ComprasTools
 
 		// SIN FECHA, LA BUSCA EL DOMINIO, y el campo corte de la respuesta dice cual eligio.
 		return lector.Consultar(api =>
-			corte == default ? api.CambioDelQuiebre(cuantasCompras) : api.Cambio(corte, cuantasCompras));
+			corte == default ? api.CambioDelQuiebre(ComprasAPI.IdiomaDelRegistro, cuantasCompras) : api.Cambio(corte, ComprasAPI.IdiomaDelRegistro, cuantasCompras));
 	}
 
 	[McpServerTool(Name = "cada_cuanto_compro", UseStructuredContent = true)]
@@ -146,7 +146,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new RitmoDeUnProducto();
 
-		return lector.Consultar(api => api.Ritmo(producto, corte));
+		return lector.Consultar(api => api.Ritmo(producto, corte, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "que_cambio_en_mi_rutina", UseStructuredContent = true)]
@@ -168,7 +168,7 @@ internal sealed class ComprasTools
 		// todo una IA- no tiene forma de saber cuando cambio esta canasta, y una fecha
 		// adivinada devuelve "no cambio nada", que se lee como un hecho y no como un fallo.
 		return lector.Consultar(api =>
-			corte == default ? api.RitmosDelQuiebre() : api.RitmosQueCambiaron(corte));
+			corte == default ? api.RitmosDelQuiebre(ComprasAPI.IdiomaDelRegistro) : api.RitmosQueCambiaron(corte, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "mi_ritmo_de_super", UseStructuredContent = true)]
@@ -186,7 +186,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new RitmoDelSuperVista();
 
-		return lector.Consultar(api => api.Ritmo());
+		return lector.Consultar(api => api.Ritmo(ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]
@@ -204,7 +204,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new CanastaDelMesVista();
 
-		return lector.Consultar(api => api.Canasta(anio, mes));
+		return lector.Consultar(api => api.Canasta(anio, mes, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "comparar_canastas", UseStructuredContent = true)]
@@ -223,7 +223,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new CanastasComparadas();
 
-		return lector.Consultar(api => api.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues));
+		return lector.Consultar(api => api.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "garantia_de_producto", UseStructuredContent = true)]
@@ -240,7 +240,7 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new GarantiaDeProducto();
 
 		// El "hoy" lo pone la superficie: el dominio no lee el reloj.
-		return lector.Consultar(api => api.Garantia(producto, DateTime.Now));
+		return lector.Consultar(api => api.Garantia(producto, DateTime.Now, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	// ---------------------------------------------------- lo que NO esta (el hueco)
@@ -265,7 +265,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new List<AbastecimientoEnEspera>();
 
-		return lector.Consultar(api => api.AbastecimientosPendientes(DateTime.Now));
+		return lector.Consultar(api => api.AbastecimientosPendientes(DateTime.Now, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "consumo_de", UseStructuredContent = true)]
@@ -290,7 +290,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new ConsumoEnElTiempo();
 
-		return lector.Consultar(api => api.Consumo(termino));
+		return lector.Consultar(api => api.Consumo(termino, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "promociones_vigentes", UseStructuredContent = true)]
@@ -306,7 +306,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new List<PromocionVista>();
 
-		return lector.Consultar(api => api.Promociones(DateTime.Now));
+		return lector.Consultar(api => api.Promociones(DateTime.Now, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "para_mi_proxima_compra", UseStructuredContent = true)]
@@ -326,7 +326,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new ListaDeLaProximaCompra();
 
-		return lector.Consultar(api => api.Lista(DateTime.Now));
+		return lector.Consultar(api => api.Lista(DateTime.Now, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "en_cuales_compras", UseStructuredContent = true)]
@@ -348,7 +348,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new ComprasHalladas();
 
-		return lector.Consultar(api => api.Halladas(termino));
+		return lector.Consultar(api => api.Halladas(termino, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "garantias_por_vencer", UseStructuredContent = true)]
@@ -362,7 +362,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new List<GarantiaDeProducto>();
 
-		return lector.Consultar(api => api.GarantiasPorVencer(DateTime.Now));
+		return lector.Consultar(api => api.GarantiasPorVencer(DateTime.Now, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "donde_compro", UseStructuredContent = true)]
@@ -379,7 +379,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new RecorridoDeSucursalesVista();
 
-		return lector.Consultar(api => api.Recorrido());
+		return lector.Consultar(api => api.Recorrido(ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "como_me_cambio_el_precio", UseStructuredContent = true)]
@@ -400,7 +400,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new SerieDePreciosVista();
 
-		return lector.Consultar(api => api.Serie(producto));
+		return lector.Consultar(api => api.Serie(producto, ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "como_me_cambiaron_los_precios", UseStructuredContent = true)]
@@ -419,7 +419,7 @@ internal sealed class ComprasTools
 	{
 		if (!lector.HayJournal) return new List<PrecioQueCambio>();
 
-		return lector.Consultar(api => api.Precios());
+		return lector.Consultar(api => api.Precios(ComprasAPI.IdiomaDelRegistro));
 	}
 
 	[McpServerTool(Name = "mi_canasta_frente_a_antes", UseStructuredContent = true)]
@@ -442,7 +442,7 @@ internal sealed class ComprasTools
 
 		// SIN MESES, LA VENTANA LA PONE EL DOMINIO (3): el mismo juicio que usa la app.
 		return lector.Consultar(api =>
-			meses <= 0 ? api.FrenteAlPasado(DateTime.Now) : api.FrenteAlPasado(DateTime.Now, meses));
+			meses <= 0 ? api.FrenteAlPasado(DateTime.Now, ComprasAPI.IdiomaDelRegistro) : api.FrenteAlPasado(DateTime.Now, ComprasAPI.IdiomaDelRegistro, meses));
 	}
 
 	private const string SinJournal =

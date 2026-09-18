@@ -13,6 +13,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class ShopStayTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTE SERVIDOR PIDE LAS FRASES, que es el del REGISTRO y no el de quien
+		/// pregunta: la caratula MCP es voz de la institucion hablandole al modelo.
+		/// </summary>
+		private const string TheVoiceOfTheDealership =
+			Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public ShopStayTools(JournalReader reader)
@@ -98,11 +105,11 @@ namespace Concesionario.Mcp.Tools
 			// unica pregunta que alcanza una estadia abierta. Si estuvieran adentro, la disponibilidad
 			// de un periodo bien dicho se volveria precondicion de saber si el carro esta adentro AHORA.
 			bool insideRightNow = api.IsInsideTheShopAt(askedAt);
-			string currentStaySays = api.DescribeTheStayAt(askedAt);
+			string currentStaySays = api.DescribeTheStayAt(askedAt, TheVoiceOfTheDealership);
 
 			try
 			{
-				ShopStayRecord record = api.StaysBetween(fromDay, toDay);
+				ShopStayRecord record = api.StaysBetween(fromDay, toDay, TheVoiceOfTheDealership);
 
 				var rows = new List<RecordedStay>();
 
@@ -130,7 +137,7 @@ namespace Concesionario.Mcp.Tools
 					Days = api.DaysInTheShopBetween(fromDay, toDay),
 					DayCount = api.DaysInTheShopCountBetween(fromDay, toDay),
 					StayCount = api.StayCountBetween(fromDay, toDay),
-					Says = api.DescribeDaysInTheShopBetween(fromDay, toDay),
+					Says = api.DescribeDaysInTheShopBetween(fromDay, toDay, TheVoiceOfTheDealership),
 					Stays = rows,
 					InsideRightNow = insideRightNow,
 					CurrentStaySays = currentStaySays,

@@ -233,8 +233,9 @@ namespace Concesionario.Dominio.Pruebas
 				"En el agregado, SI. Currency.OfPublished es total, y lo es para que una entrada que "
 				+ "ya existe vuelva a leerse en vez de reventar en cada arranque.");
 			Assert.That(
-				direct.DescribeEachCostEntryBetween(TheYearFrom, TheYearTo)[0],
-				Does.Contain("240000 " + TheCodeTheSetDoesNotName),
+				TheSentenceTheDoorWouldCompose.EachCostEntry(
+				direct, TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)[0],
+				Does.Contain("240.000 " + TheCodeTheSetDoesNotName),
 				"Y se dice con su codigo detras y el monto tal como llego: sin que el conjunto la "
 				+ "nombre no se sabe su signo ni cuantos decimales tiene.");
 		}

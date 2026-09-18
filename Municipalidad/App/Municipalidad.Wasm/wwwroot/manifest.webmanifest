@@ -1,6 +1,6 @@
 {
-  "name": "Mi cuenta municipal",
-  "short_name": "Mi cuenta",
+  "name": "MONTEVERDE Municipal Services",
+  "short_name": "MONTEVERDE",
   "description": "Su cuenta con la municipalidad, guardada en una carpeta suya. Funciona sin conexión.",
   "id": "./",
   "start_url": "./",

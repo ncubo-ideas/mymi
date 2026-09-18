@@ -115,29 +115,29 @@ namespace Concesionario.Dominio.Pruebas
 				TheDurableCostByTheDoor(byTheDoor);
 				TheRestByTheDoor(byTheDoor);
 
-				string[] theMoneyThatWasSent = { "₡240000.00", "₡45000.00", "$120.50" };
+				string[] theMoneyThatWasSent = { "₡240.000,00", "₡45.000,00", "$120,50" };
 				string[] theLivesThatWereSent = { "48 meses", "", "" };
 				string[] theClassesThatWereSent = { "Durable", "Recurring", "Recurring" };
 
 				Assert.That(
-					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo).Money,
+					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Money,
 					Is.EqualTo(theMoneyThatWasSent),
 					"Por el feed, los tres montos que la sucursal dijo y no otros tres -- cada uno con "
 					+ "el signo de SU moneda.");
 
 				Assert.That(
-					byTheDoor.Api.CostEntriesBetween(TheYearFrom, TheYearTo).Money,
+					byTheDoor.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Money,
 					Is.EqualTo(theMoneyThatWasSent),
 					"Y por la puerta, los mismos tres.");
 
 				Assert.That(
-					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo).ExpectedLife,
+					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).ExpectedLife,
 					Is.EqualTo(theLivesThatWereSent),
 					"Y la vida util donde la sucursal la mando, que es la unica columna que separa los "
 					+ "dos comandos.");
 
 				Assert.That(
-					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo).Classification,
+					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Classification,
 					Is.EqualTo(theClassesThatWereSent),
 					"Y la clase, que ninguna de las dos senales trae: la puso CUAL de los dos comandos "
 					+ "aplico la ingesta.");
@@ -180,17 +180,17 @@ namespace Concesionario.Dominio.Pruebas
 					ADealershipNarrative.TheOilChangeCurrency,
 					ADealershipNarrative.TheOilChangeSubject));
 
-				string live = byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo).Money[0];
+				string live = byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Money[0];
 
 				byTheFeed.CloseAndReopenFromTheJournal();
 
 				Assert.That(
-					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo).Money[0],
+					byTheFeed.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Money[0],
 					Is.EqualTo(live),
 					"El monto se dijo distinto vivo y reproducido. Por este camino eso no puede pasar; el "
 					+ "dia que pase, este es el renglon que lo dice.");
 
-				Assert.That(live, Is.EqualTo("₡45000.00"),
+				Assert.That(live, Is.EqualTo("₡45.000,00"),
 					"PRIMERA RAZON: el dominio DICE el monto en las unidades menores de su moneda, asi "
 					+ "que la escala que el journal deja caer se vuelve a poner al decirlo.");
 			}
@@ -248,7 +248,7 @@ namespace Concesionario.Dominio.Pruebas
 					+ "instante que cruzara crudo diria una cosa vivo y otra reproducido.");
 
 				Assert.That(
-					byTheFeed.Api.CostEntriesBetween(TheColonesHalfFrom, TheColonesHalfTo).IncurredAt,
+					byTheFeed.Api.CostEntriesBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord).IncurredAt,
 					Is.EqualTo(new[] { "2026-06-30 23:59:59" }),
 					"Y la fila lo dice en segundos enteros, que es la forma en que quedo escrito.");
 			}
@@ -383,7 +383,7 @@ namespace Concesionario.Dominio.Pruebas
 		// dejaria pasar una columna con otro contenido.
 		private static Dictionary<string, string> TheSevenAnswersOf(AScheduleOnARealJournal journal)
 		{
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			return new Dictionary<string, string>
 			{
@@ -393,8 +393,8 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeSpendBetween",
-					journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo)
-					+ " // " + journal.Api.DescribeSpendBetween(TheYearFrom, TheYearTo)
+					journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord)
+					+ " // " + journal.Api.DescribeSpendBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"IsSpendSaidInOneCurrencyBetween",
@@ -405,12 +405,11 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeSpendPerCurrencyBetween",
-					journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo)
+					journal.Api.DescribeSpendPerCurrencyBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"DescribeTwoPeriodsOfSpendCompared",
-					journal.Api.DescribeTwoPeriodsOfSpendCompared(
-						TheColonesHalfFrom, TheColonesHalfTo, TheYearBeforeFrom, TheYearBeforeTo)
+					journal.Api.DescribeTwoPeriodsOfSpendCompared(TheColonesHalfFrom, TheColonesHalfTo, TheYearBeforeFrom, TheYearBeforeTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"CostEntryCountBetween",

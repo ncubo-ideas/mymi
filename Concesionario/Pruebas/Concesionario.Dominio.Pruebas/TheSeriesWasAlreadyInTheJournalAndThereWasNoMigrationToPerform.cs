@@ -220,17 +220,17 @@ namespace Concesionario.Dominio.Pruebas
 
 				// 3. LA FRASE -- los dos extremos, la distancia entre ellos y el ritmo por dia.
 				Assert.That(
-					api.DescribeRateOfUse(TheMeasurablePeriodFrom, TheMeasurablePeriodTo),
-					Does.Contain("de " + TheFirstReading + " km el 2025-10-01 00:00:00")
-						.And.Contain("a " + TheThirdReading + " km el 2026-01-20 00:00:00")
-						.And.Contain((TheThirdReading - TheFirstReading) + " km en 111 días")
+					api.DescribeRateOfUse(TheMeasurablePeriodFrom, TheMeasurablePeriodTo, TheLanguage.OfTheRecord),
+					Does.Contain("de " + Said(TheFirstReading) + " km el 2025-10-01 00:00:00")
+						.And.Contain("a " + Said(TheThirdReading) + " km el 2026-01-20 00:00:00")
+						.And.Contain(Said(TheThirdReading - TheFirstReading) + " km en 111 días")
 						.And.Contain("unos 34 km por día"),
-					"L7: el tramo se dice con el ritmo. 3800 km en 111 dias son 34,23 por dia, "
+					"L7: el tramo se dice con el ritmo. 3.800 km en 111 dias son 34,23 por dia, "
 					+ "redondeados a 34 y presentados con 'unos' -- DEC-77.");
 				Assert.That(
-					api.DescribeRateOfUse(TheMixedPeriodFrom, TheMixedPeriodTo),
+					api.DescribeRateOfUse(TheMixedPeriodFrom, TheMixedPeriodTo, TheLanguage.OfTheRecord),
 					Does.Contain("lecturas en km y en mi")
-						.And.Contain(TheReadingInTheOtherUnit + " mi del 2026-02-10 00:00:00"),
+						.And.Contain(Said(TheReadingInTheOtherUnit) + " mi del 2026-02-10 00:00:00"),
 					"L3 y L11: nombra las dos unidades Y la lectura que introdujo la segunda, con "
 					+ "su fecha.");
 
@@ -238,7 +238,7 @@ namespace Concesionario.Dominio.Pruebas
 				// limites, y la unica que puede decir que uno de los dos periodos no tiene ritmo.
 				string compared = api.DescribeTwoPeriodsOfUseCompared(
 					TheMixedPeriodFrom, TheMixedPeriodTo,
-					TheMeasurablePeriodFrom, TheMeasurablePeriodTo);
+					TheMeasurablePeriodFrom, TheMeasurablePeriodTo, TheLanguage.OfTheRecord);
 
 				Assert.That(compared,
 					Does.Contain("Primer periodo:").And.Contain("Segundo periodo:")
@@ -252,7 +252,7 @@ namespace Concesionario.Dominio.Pruebas
 				// registro que escondiera las filas cuando la frase dice 'suspendido' deshace G5 en
 				// silencio.
 				OdometerSeriesRecord rows =
-					api.ReadingsBetween(TheMixedPeriodFrom, TheMixedPeriodTo);
+					api.ReadingsBetween(TheMixedPeriodFrom, TheMixedPeriodTo, TheLanguage.OfTheRecord);
 
 				Assert.That(rows.Value, Is.EqualTo(new[]
 				{
@@ -272,9 +272,10 @@ namespace Concesionario.Dominio.Pruebas
 					"L5: cada fila dice de que fuente vino, y las cinco fuentes del conjunto llegaron "
 					+ "escritas por la app de antes.");
 				Assert.That(rows.Says[3],
-					Is.EqualTo(TheReadingInTheOtherUnit + " mi el 2026-02-10 00:00:00, leída en una "
-						+ "revisión"),
-					"La frase de la fila la compone el dominio entera, con la fuente adentro.");
+					Is.EqualTo(Said(TheReadingInTheOtherUnit) + " mi el 2026-02-10 00:00:00, leída en "
+						+ "una revisión"),
+					"La frase de la fila se compone entera de sus cuatro columnas, con la fuente "
+					+ "dicha por el catalogo.");
 				Assert.That(rows.ObservedAt[0], Is.EqualTo("2025-10-01 00:00:00"));
 
 				// 6. EL CONTEO -- la unica de las seis que contesta con un numero, y es un conteo de
@@ -329,15 +330,15 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(
 					api.ReadingCountBetween(TheMixedPeriodFrom, TheMixedPeriodTo), Is.EqualTo(0));
 				Assert.That(
-					api.ReadingsBetween(TheMixedPeriodFrom, TheMixedPeriodTo).Value, Is.Empty);
+					api.ReadingsBetween(TheMixedPeriodFrom, TheMixedPeriodTo, TheLanguage.OfTheRecord).Value, Is.Empty);
 				Assert.That(
-					api.DescribeRateOfUse(TheMixedPeriodFrom, TheMixedPeriodTo),
+					api.DescribeRateOfUse(TheMixedPeriodFrom, TheMixedPeriodTo, TheLanguage.OfTheRecord),
 					Does.Not.Contain("por día"),
 					"Y ninguna de las seis revienta sobre una carpeta vacia: son TOTALES.");
 				Assert.That(
 					api.DescribeTwoPeriodsOfUseCompared(
 						TheMixedPeriodFrom, TheMixedPeriodTo,
-						TheMeasurablePeriodFrom, TheMeasurablePeriodTo),
+						TheMeasurablePeriodFrom, TheMeasurablePeriodTo, TheLanguage.OfTheRecord),
 					Does.Contain("No se puede decir el cambio"));
 
 				fresh.Dispose();
@@ -510,6 +511,14 @@ namespace Concesionario.Dominio.Pruebas
 				})
 				.PerformCommand();
 			}
+		}
+
+		// El valor de una columna dicho como la frase lo dice: la columna cruza el NUMERO y la frase
+		// le pone los separadores de miles del idioma.
+		private static string Said(int value)
+		{
+			return TheSentenceTheDoorWouldCompose.ANumberAsTheSentenceSaysIt(
+				value, TheLanguage.OfTheRecord);
 		}
 	}
 }

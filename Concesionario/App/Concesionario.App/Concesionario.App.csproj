@@ -19,6 +19,10 @@
     <ProjectReference Include="..\Concesionario.Frontera\Concesionario.Frontera.csproj" />
 
     <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <!-- The label the Host lends: [ModuleSurface], [Query], [View], [Deliver]. Zero
+         dependencies on purpose: it is what lets the module travel as two small DLLs
+         instead of dragging the MCP SDK along. -->
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
   </ItemGroup>
 
   <ItemGroup>

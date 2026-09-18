@@ -48,7 +48,26 @@ namespace Concesionario.Dominio
 			return _distance == other._distance && _unit == other._unit;
 		}
 
-		/// <summary>El hito dicho: la distancia con la unidad en que se publico.</summary>
+		/// <summary>
+		/// La distancia a la que se publico, tal como se publico. Va siempre con la unidad: una
+		/// distancia suelta no nombra ningun hito.
+		/// </summary>
+		internal int TheDistanceItNames()
+		{
+			return _distance;
+		}
+
+		/// <summary>La unidad de esa distancia, como se dice. Aca no se convierte a ninguna
+		/// otra.</summary>
+		internal string TheUnitItIsIn()
+		{
+			return _unit.Name;
+		}
+
+		/// <summary>
+		/// El hito dicho, para un rechazo del dominio que nombra de cual habla: no pasa por ningun
+		/// renderizador y no elige ningun idioma.
+		/// </summary>
 		internal string Describe()
 		{
 			return _distance + " " + _unit.Name;

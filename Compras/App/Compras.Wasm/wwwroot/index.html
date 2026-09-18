@@ -3,7 +3,10 @@
      en css/app.css. Un supermercado es verde y blanco: el verde entra como masa en la barra
      superior y como acento en lo demas, no como fondo. El primer intento puso toda la app
      sobre un gradiente verde oscuro y se leia clinico, que es el tono de Delfos. -->
-<html lang="es">
+<!-- SIN lang ESCRITO A MANO: el documento se sirve igual para los dos idiomas, asi que una
+     etiqueta fija seria falsa para la mitad de quienes lo abren. La pone Textos despues de
+     negociar con el dispositivo, que es lo que leen el lector de pantalla y el guionado. -->
+<html>
 
 <head>
     <meta charset="utf-8" />
@@ -32,8 +35,11 @@
         <div class="loading-progress-text"></div>
     </div>
 
+    <!-- ESCRITA A MANO EN EL IDIOMA DEL REGISTRO, y es deliberado: esta caja se dibuja cuando
+         Blazor no arrancó, o sea justo cuando no hay catálogo cargado con qué decirla. Textos la
+         reemplaza apenas negocia; si nunca llega a negociar, se ve la caída de siempre. -->
     <div id="blazor-error-ui">
-        Ocurrió un error inesperado.
+        <span class="mensaje">Ocurrió un error inesperado.</span>
         <a href="." class="reload">Recargar</a>
         <span class="dismiss">🗙</span>
     </div>

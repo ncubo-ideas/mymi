@@ -1,0 +1,42 @@
+/* LO POCO QUE LA CARA AGREGA A LA HOJA DE LA INSTITUCION.
+ *
+ * `css/app.css` VIAJA TAL CUAL, sin tocar una regla. Es la hoja mas liviana de los cinco modulos:
+ * 830 lineas y ni una fuente ni una imagen, asi que en el paquete no se nota.
+ *
+ * Lo unico que va aca es lo que la app suelta resuelve con su ROUTER y esta cara no tiene: mostrar
+ * una sola pregunta a la vez. */
+
+/* SEIS PREGUNTAS, UNA A LA VEZ. La app suelta tiene seis paginas y un router; una cara hibrida es
+   un solo index.html. Aplanar las seis en una pagina larga habria sido mas facil de escribir y
+   habria perdido lo que la institucion decidio que es su app: que son seis preguntas separadas, y
+   que se entra a UNA.
+   El switch lo hace el JS con este atributo; el resto del estilo lo pone la hoja de ella. */
+.pregunta[hidden] { display: none; }
+
+/* El pie con lo que hizo el cartero. En la app suelta no existe porque la app sabe sola si pudo o
+   no; aca la cara le PIDE a Gnothi, y sin decir como le fue, «no hay nada» y «el cartero no pudo»
+   se ven exactamente igual. */
+footer {
+    max-width: 60rem; margin: 0 auto; padding: 0 1.5rem 3rem;
+    font-size: .8rem; opacity: .75;
+}
+footer p { margin: 0 0 .4rem; max-width: 60ch; }
+
+/* QUE `hidden` GANE, y esto es el arreglo de un defecto real, no una precaucion.
+ *
+ * `[hidden] { display: none }` vive en la hoja del navegador, que es la de MENOR precedencia.
+ * Cualquier regla de la institucion que fije `display` en esa misma clase le gana, y el nodo
+ * se sigue viendo con el atributo puesto. Medido en el telefono el 2026-09-14: `.placa` es
+ * `inline-flex` en cargas, asi que la placa salia DOS VECES -- la fija y el selector, los dos
+ * marcados como escondidos, los dos visibles.
+ *
+ * La app suelta no tiene este problema porque Blazor no esconde: con un `@if` el nodo que no
+ * toca NO SE DIBUJA. Una cara hibrida es HTML estatico, los dos nodos existen siempre, y
+ * esconder es la unica herramienta. Entonces la herramienta tiene que funcionar.
+ *
+ * Va en `cara.css` -- que carga despues de la hoja de la institucion -- y no en la de ella:
+ * esto es una consecuencia de COMO pinta esta cara, no una opinion sobre su diseno.
+ *
+ * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
+ * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
+[hidden] { display: none !important; }

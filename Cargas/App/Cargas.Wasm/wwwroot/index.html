@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<!-- SIN lang ESCRITO A MANO: el documento se sirve igual para los dos idiomas, asi que una
+     etiqueta fija seria falsa para la mitad de quienes lo abren. La pone Textos despues de
+     negociar con el dispositivo, que es lo que leen el lector de pantalla y el guionado. -->
+<html>
 
 <head>
     <meta charset="utf-8" />
@@ -7,6 +10,11 @@
     <title>Tablero · Estaciones Faro</title>
     <meta name="theme-color" content="#04171D" />
     <base href="/app/" />
+    <!-- LO QUE SE VE ANTES DE QUE HAYA CATALOGO: el título, el aro y el canal de fallos. Se
+         negocia acá, con la misma regla que Textos, porque estas tres superficies se pintan
+         antes de que el catálogo llegue —y la del fallo, justamente cuando ya no va a llegar—.
+         Sin defer: el aro se pinta apenas hay body. -->
+    <script src="arranque-idioma.js"></script>
     <!-- CERO WEBFONTS: la sans y la mono del tablero son las del sistema. Con un
          payload sin trimming de ~35 MB, no agregar descargas de fuentes es deliberado. -->
     <link rel="stylesheet" href="css/app.css" />
@@ -41,7 +49,7 @@
     </div>
 
     <div id="blazor-error-ui">
-        Ocurrió un error inesperado.
+        <span class="frase">Ocurrió un error inesperado.</span>
         <a href="." class="reload">Recargar</a>
         <span class="dismiss">🗙</span>
     </div>

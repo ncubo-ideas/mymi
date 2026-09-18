@@ -1,0 +1,309 @@
+@using Gnothi.Host
+@using Gnothi.MobileShared
+@inject HostState State
+@inject Photino.NET.PhotinoWindow Window
+
+@*
+    THE ENROLLMENT ON THE DESKTOP -- the same one the phone runs.
+
+    The person pastes the link her institution gave her (the go.gnothi one or the bundle's own
+    address) or picks the .gmod file. ModuleEnrollment downloads or reads it, inspects it, checks
+    the signature and the origin, and PROPOSES. Nothing is written until she taps Instalar. What
+    the sheet says is what the phone's sheet says, in fewer words: who, what it will answer,
+    where the record goes, whom Gnothi will talk to for it, and what Gnothi checked.
+
+    It takes every form -cargo, hosted, hybrid- because the enrollment does; on this machine a
+    hosted module will install but has no shell to run in (the desktop has no WebView shell for
+    a whole PWA), and the sheet says so before she decides.
+
+    EVERY PHRASE COMES FROM THE CATALOG, and from the SAME keys the phone's sheet uses (hoja.*,
+    alta.error.*, propuesta.*): two faces of one product cannot word the same check differently.
+    Only what exists on the desktop alone -the title of this card, the hybrid form, "install on
+    this computer"- has keys of its own, under alta.escritorio.* and hoja.forma.hibrido.*.
+*@
+
+<div class="query">
+    <div class="title">@T("alta.escritorio.titulo")</div>
+    <div class="desc">@T("alta.escritorio.lead")</div>
+
+    <input type="text" @bind="link" placeholder="@T("alta.escritorio.enlace.placeholder")" style="width:100%" disabled="@busy" />
+    <div style="margin-top:10px">
+        <button class="small" disabled="@(busy || string.IsNullOrWhiteSpace(link))" @onclick="ExamineLink">@(busy ? T("alta.escritorio.revisando") : T("alta.escritorio.agregar"))</button>
+        <button class="small ghost" disabled="@busy" @onclick="ExamineFile">@T("alta.escritorio.elegir-archivo")</button>
+    </div>
+
+    @if (progress is not null)
+    {
+        <div class="meta" style="margin-top:8px">@progress</div>
+    }
+    @if (error is not null)
+    {
+        <div class="notice denied">@error</div>
+    }
+
+    @if (proposal is { } p)
+    {
+        <div class="card" style="margin-top:14px">
+            <div class="row">
+                <div>
+                    <span style="font-size:26px">@HostState.Icon(p.Manifest)</span>
+                    <span class="title">@p.Manifest.Identity</span>
+                    <div class="meta">
+                        @* WHO: the institution's own words -legal name, tax id- are not translated. *@
+                        @(p.Manifest.Publisher?.Legal is { Length: > 0 } legal ? legal : p.Manifest.Institution)
+                        @if (p.Manifest.Publisher?.TaxId is { Length: > 0 } tax) { <text>, @tax</text> }
+                        @if (Procedencia(p) is { } proc) { <text> · </text>@proc }
+                        @if (p.Manifest.Publisher?.Version is { Length: > 0 } v) { <text> · v@(v)</text> }
+                    </div>
+                </div>
+            </div>
+
+            @if (p.Manifest.About is { } about && (about.Description.Length > 0 || about.DoesNotDo.Length > 0))
+            {
+                <p class="desc">@about.Description @about.DoesNotDo</p>
+            }
+
+            @if (p.Update.Kind != UpdateKind.Fresh)
+            {
+                <div class="notice">@p.Update.Describe()</div>
+            }
+
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.que-contesta")</h3>
+            @foreach (DeclaredTool t in p.Manifest.Tools)
+            {
+                <div class="meta"><strong>@(t.Title.Length > 0 ? t.Title : t.Name)</strong> — @t.Description</div>
+            }
+
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.donde-vive")</h3>
+            <div class="meta"><code>@p.JournalGoesTo</code></div>
+            @if (p.Manifest.Journal is { } j && (j.ExpectedSize.Length > 0 || j.Updates.Length > 0 || j.Retention.Length > 0))
+            {
+                <div class="meta">
+                    @if (j.ExpectedSize.Length > 0) { <text>@T("hoja.journal.tamano", ("tamano", j.ExpectedSize)) </text> }
+                    @if (j.Updates.Length > 0) { <text>@T("hoja.journal.refresco", ("refresco", j.Updates)) </text> }
+                    @if (j.Retention.Length > 0) { <text>@T("hoja.journal.retencion", ("retencion", j.Retention))</text> }
+                </div>
+            }
+
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.con-quien")</h3>
+            <div class="meta">
+                @if (p.Publisher.Length > 0) { <code>@p.Publisher</code><text> — @T("hoja.unica-red")</text> }
+                else { <text>@T("hoja.sin-publicador")</text> }
+            </div>
+
+            <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.reviso")</h3>
+            <ul class="meta" style="margin:0;padding-left:18px">
+                <li>@Origen(p)</li>
+                @if (!p.Provenance.Secure && p.ServedBy.Length > 0) { <li>@T("hoja.respaldo.inseguro")</li> }
+                <li>@Firma(p.Provenance)</li>
+                <li>@Forma(p.Inspection)</li>
+                <li>
+                    @if (p.Inspection.Excesses.Count > 0) { @M("hoja.caps.pide-mas", ("lista", string.Join(", ", p.Inspection.Excesses)))<text> @T("hoja.caps.apagado")</text> }
+                    else { <text>@T("hoja.caps.no-pide")</text> }
+                </li>
+                <li>@T("hoja.sin-ejecutables")</li>
+            </ul>
+
+            <div style="margin-top:14px">
+                <button class="small" disabled="@busy" @onclick="Accept">@Boton(p.Update.Kind)</button>
+                <button class="small ghost" disabled="@busy" @onclick="Discard">@T("propuesta.ahora-no")</button>
+            </div>
+        </div>
+    }
+
+    @if (result.Count > 0)
+    {
+        <pre style="margin-top:12px">@string.Join("\n", result)</pre>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback Installed { get; set; }
+
+    private string link = "";
+    private bool busy;
+    private string? progress;
+    private string? error;
+    private EnrollmentProposal? proposal;
+    private readonly List<string> result = [];
+
+    private async Task ExamineLink()
+    {
+        EnrollmentLink parsed = ModuleEnrollment.ParseLink(link);
+        await Examine(() => State.Enrollment.Examine(parsed.Bundle, EnrollmentSource.PastedLink, parsed.Seal, CancellationToken.None, Progress));
+    }
+
+    private async Task ExamineFile()
+    {
+        string[]? picked;
+        try
+        {
+            picked = Window.ShowOpenFile(
+                title: T("instituciones.elegir.titulo"),
+                multiSelect: false,
+                filters: [(T("instituciones.elegir.gmod"), [".gmod", ".zip"]), (T("instituciones.elegir.todos"), ["*"])]);
+        }
+        catch (Exception e)
+        {
+            error = T("instituciones.elegir.fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
+            return;
+        }
+        if (picked is not { Length: > 0 } || string.IsNullOrWhiteSpace(picked[0])) return;
+
+        string path = picked[0];
+        await Examine(async () =>
+        {
+            byte[] zip = await File.ReadAllBytesAsync(path);
+            return await State.Enrollment.ExamineFile(zip, Path.GetFileName(path), CancellationToken.None, Progress);
+        });
+    }
+
+    private async Task Examine(Func<Task<EnrollmentProposal>> how)
+    {
+        if (proposal is not null) { State.Enrollment.Discard(proposal); proposal = null; }
+        busy = true; error = null; result.Clear(); progress = T("alta.paso.revisando");
+        try
+        {
+            // OFF THE UI THREAD: the download and the inspection are real work.
+            proposal = await Task.Run(how);
+            progress = null;
+        }
+        catch (Exception e)
+        {
+            progress = null;
+            error = Motivo(e);
+        }
+        finally { busy = false; }
+    }
+
+    // The enrollment's own step text already comes from the catalog (alta.paso.*); only the
+    // byte count is composed here.
+    private void Progress(EnrollmentProgress p)
+    {
+        progress = p.Total is long total && total > 0
+            ? T("alta.escritorio.progreso", ("texto", p.Text), ("bajados", Mb(p.Bytes)), ("total", Mb(total)))
+            : p.Text;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Accept()
+    {
+        if (proposal is not { } p) return;
+        busy = true; error = null;
+        try
+        {
+            string module = await Task.Run(() => State.Enrollment.Accept(p));
+            proposal = null;
+            State.Reload();
+            result.Add(T("alta.listo", ("titulo", p.Manifest.Identity)));
+            foreach (string line in await Task.Run(() => State.VerifyNewModules(CancellationToken.None))) result.Add(line);
+            await Installed.InvokeAsync();
+        }
+        catch (Exception e)
+        {
+            error = Motivo(e);
+        }
+        finally { busy = false; }
+    }
+
+    private void Discard()
+    {
+        if (proposal is not { } p) return;
+        State.Enrollment.Discard(p);
+        proposal = null;
+    }
+
+    // A phrase that carries <b> in the catalog, with its values HTML-escaped -what esc() does on
+    // the phone- and rendered as markup, not as text.
+    private static MarkupString M(string clave, params (string Nombre, string Valor)[] valores) =>
+        (MarkupString)T(clave, [.. valores.Select(v => (v.Nombre, System.Net.WebUtility.HtmlEncode(v.Valor)))]);
+
+    private static string Mb(long bytes) => $"{bytes / 1048576.0:0.0} MB";
+
+    private static string Boton(UpdateKind kind) => kind switch
+    {
+        UpdateKind.Fresh => T("alta.escritorio.instalar"),
+        UpdateKind.Same => T("hoja.boton.reinstalar"),
+        UpdateKind.Downgrade => T("hoja.boton.volver"),
+        _ => T("hoja.boton.actualizar"),
+    };
+
+    // WHERE IT COMES FROM, in one line under the name: what it declares against what served it.
+    private static MarkupString? Procedencia(EnrollmentProposal p)
+    {
+        string dominio = p.Manifest.Publisher?.Domain ?? "";
+        if (dominio.Length == 0 && p.ServedBy.Length == 0) return null;
+        if (dominio.Length == 0) return M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", ""));
+        if (p.ServedBy.Length == 0) return M("hoja.proc.archivo", ("dominio", dominio));
+        return string.Equals(dominio, p.ServedBy, StringComparison.OrdinalIgnoreCase)
+            ? M("hoja.proc.mismo-dominio", ("servido", p.ServedBy))
+            : M("hoja.proc.distinto", ("dominio", dominio), ("servido", p.ServedBy));
+    }
+
+    // The phone's refusals, in the person's words -the same keys ui.html uses. What is not one
+    // of these is shown with its detail.
+    private static string Motivo(Exception e) => e switch
+    {
+        PackageSealMismatchException => T("alta.error.sello"),
+        PackageSignatureInvalidException => T("alta.error.firma"),
+        PackageKeyRevokedException => T("alta.error.llave-retirada"),
+        PackageNotBackedException => T("alta.error.no-reconocido"),
+        PackageCollisionException c => T("alta.error.colision",
+            ("modulo", c.Module),
+            ("instalada", c.InstalledInstitution.Length > 0 ? c.InstalledInstitution : T("alta.error.otra-institucion")),
+            ("entrante", c.IncomingInstitution.Length > 0 ? c.IncomingInstitution : T("alta.error.otra-institucion"))),
+        HttpRequestException => T("alta.error.sin-conexion"),
+        _ => T("alta.error.no-se-pudo", ("detalle", $"{e.GetType().Name}: {e.Message}")),
+    };
+
+    // WHO ANSWERS FOR IT. The same cases the phone's sheet enumerates, one whole phrase each.
+    private static MarkupString Origen(EnrollmentProposal p)
+    {
+        Gnothi.MobileShared.Provenance pr = p.Provenance;
+        string via = pr.Source == EnrollmentSource.PastedLink ? T("hoja.via.pegado") : "";
+        return pr.Origin switch
+        {
+            OriginCheck.Verified => M("hoja.respaldo.verificado", ("host", p.ServedBy), ("via", via)),
+            OriginCheck.NoOrigin => M("hoja.archivo.sin-ninguno"),
+            OriginCheck.NoWellKnown => Dos(M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", via)), M("hoja.respaldo.sin-publicacion")),
+            OriginCheck.NotListed => Dos(M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", via)), M("hoja.respaldo.no-publicado")),
+            OriginCheck.NotDeclared => p.ServedBy.Length > 0
+                ? Dos(M("hoja.respaldo.sirvio", ("host", p.ServedBy), ("via", via)), M("hoja.respaldo.sin-origen"))
+                : M("hoja.archivo.sin-origen"),
+            OriginCheck.DeclaresAnother => M("hoja.respaldo.otro-origen", ("quien", pr.DeclaredOrigin)),
+            _ => (MarkupString)System.Net.WebUtility.HtmlEncode(pr.Origin.ToString()),
+        };
+    }
+
+    private static MarkupString Firma(Gnothi.MobileShared.Provenance p) => p.Signer switch
+    {
+        SignerCheck.Unsigned => M("hoja.firma.sin-firma"),
+        SignerCheck.Published => p.SignedSince.Length > 0
+            ? M("hoja.firma.publicada.desde", ("desde", p.SignedSince))
+            : Dos(M("hoja.firma.publicada.primera", ("llave", p.SignerId)), M("hoja.firma.publicada.recordar")),
+        SignerCheck.Pinned => Dos(M("hoja.firma.conocida", ("desde", p.SignedSince)), M("hoja.firma.conocida.detalle")),
+        SignerCheck.Rotated => Dos(M("hoja.firma.rotada", ("llave", p.SignerId)), M("hoja.firma.rotada.detalle")),
+        SignerCheck.Unknown => M("hoja.firma.desconocida", ("llave", p.SignerId)),
+        SignerCheck.Changed => M("hoja.firma.cambiada", ("llave", p.SignerId)),
+        SignerCheck.Revoked => M("alta.error.llave-retirada"),
+        _ => (MarkupString)System.Net.WebUtility.HtmlEncode(p.Signer.ToString()),
+    };
+
+    // WHAT IT CARRIES. Cargo and hosted are the phone's phrases; the hybrid is the form the
+    // desktop hosts and the phone does not name yet, and the hosted one adds what is true only
+    // here: there is nowhere to run it.
+    private static MarkupString Forma(PackageInspection i) => i.Form switch
+    {
+        PackageForm.Cargo => Dos(M("hoja.forma.cargo"), M("hoja.forma.cargo.detalle")),
+        PackageForm.Hybrid => Dos(M("hoja.forma.hibrido", ("archivos", i.Files.ToString()), ("peso", Mb(i.Bytes))), M("hoja.forma.hibrido.detalle")),
+        PackageForm.Hosted => Dos(
+            M("hoja.forma.hospedado", ("archivos", i.Files.ToString()), ("peso", Mb(i.Bytes))),
+            i.EngineFiles > 0 ? M("hoja.forma.motor", ("peso", Mb(i.EngineBytes))) : new MarkupString(""),
+            M("hoja.forma.hospedado.sin-donde")),
+        _ => (MarkupString)System.Net.WebUtility.HtmlEncode($"{i.Files} · {Mb(i.Bytes)}"),
+    };
+
+    // Two or three whole phrases, one after the other. Never fragments of one.
+    private static MarkupString Dos(params MarkupString[] frases) =>
+        (MarkupString)string.Join(" ", frases.Select(f => f.Value).Where(s => s.Length > 0));
+}

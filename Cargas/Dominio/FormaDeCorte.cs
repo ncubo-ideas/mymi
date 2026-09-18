@@ -48,20 +48,22 @@ namespace Cargas.Dominio
 				+ $"{Automatico.Nombre}, {Preseteado.Nombre}, {Indeterminado.Nombre}.");
 		}
 
-		/// <summary>COMO SE DETUVO, dicho para la persona. Es lo que hay que ENUNCIAR
-		/// antes de pedirle que confirme: la pantalla estaba pidiendo confirmar una
-		/// afirmacion que nunca decia, y "si, quedo asi" no dice que es "asi".
-		///
-		/// Vive aca y no en la caratula porque la inferencia es de este tipo: quien sabe
-		/// que un corte automatico significa tanque lleno es la FormaDeCorte, y la frase
-		/// que lo explica es la misma pieza de conocimiento.</summary>
-		internal string ComoSeDetuvo()
+		/// <summary>
+		/// LA CLAVE DE COMO SE DETUVO, para poder ENUNCIARLO antes de pedirle que confirme: la
+		/// pantalla estaba pidiendo confirmar una afirmacion que nunca decia, y "si, quedo asi"
+		/// no dice que es "asi".
+		/// <para>
+		/// Es una clave y no una frase porque la redaccion es del idioma; quien la elige si es
+		/// este tipo, que es el que sabe que un corte automatico significa tanque lleno.
+		/// Indeterminado no infiere nada, asi que nunca genera un faltante que confirmar: no hay
+		/// suposicion que enunciar, y por eso su clave es vacia.
+		/// </para>
+		/// </summary>
+		internal string ClaveDeComoSeDetuvo()
 		{
-			if (ReferenceEquals(this, Automatico)) return "el surtidor cortó solo";
-			if (ReferenceEquals(this, Preseteado)) return "cargaste un monto fijo";
+			if (ReferenceEquals(this, Automatico)) return Automatico.Nombre;
+			if (ReferenceEquals(this, Preseteado)) return Preseteado.Nombre;
 
-			// Indeterminado no infiere nada, asi que nunca genera un faltante que
-			// confirmar: no hay suposicion que enunciar.
 			return "";
 		}
 

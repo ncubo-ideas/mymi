@@ -56,7 +56,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ASealedSheetWithTheEngineOilOnly();
 
-			string answer = specification.DescribeFluid(FluidKindCode.BrakeFluid);
+			string answer = TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.BrakeFluid, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Is.Not.Empty,
 				"Una cadena vacia no es 'no publicado': es una respuesta que no dice nada y que la "
@@ -82,7 +83,10 @@ namespace Concesionario.Dominio.Pruebas
 			foreach (FluidKindCode kind in Enum.GetValues(typeof(FluidKindCode)))
 			{
 				Assert.That(specification.IsFluidPublished(kind), Is.False);
-				Assert.That(specification.DescribeFluid(kind), Is.Not.Empty);
+				Assert.That(
+					TheSentenceTheDoorWouldCompose.TheFluid(
+						specification, kind, TheLanguage.OfTheRecord),
+					Is.Not.Empty);
 				Assert.That(specification.ReadFluidRevision(kind), Is.EqualTo(""));
 			}
 		}
@@ -102,8 +106,10 @@ namespace Concesionario.Dominio.Pruebas
 				TheRevision, FluidKindCode.EngineOil, TheGrade,
 				4.6m, VolumeUnitCode.UnitA, 15000, DistanceUnitCode.UnitA, 365);
 
-			Assert.That(onlyInADraft.DescribeFluid(FluidKindCode.EngineOil),
-				Is.EqualTo(neverPublished.DescribeFluid(FluidKindCode.EngineOil)),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				onlyInADraft, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
+				Is.EqualTo(TheSentenceTheDoorWouldCompose.TheFluid(
+					neverPublished, FluidKindCode.EngineOil, TheLanguage.OfTheRecord)),
 				"D6: la ausencia tiene UNA sola clase aca, a proposito. Una ausencia distinguible "
 				+ "contaria que existe una revision en preparacion, que es lo unico que el gate de "
 				+ "sellado existe para no contar.");
@@ -120,7 +126,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ASealedSheetWithTheEngineOilOnly();
 
-			Assert.That(specification.DescribeFluid(FluidKindCode.BrakeFluid),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.BrakeFluid, TheLanguage.OfTheRecord),
 				Does.Not.Contain(TheRevision),
 				"Una respuesta sin valor no puede llevar procedencia: la procedencia diria que "
 				+ "esa revision contesto por los frenos, y no contesto.");

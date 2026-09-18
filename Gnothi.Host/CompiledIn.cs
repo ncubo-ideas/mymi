@@ -10,7 +10,7 @@ namespace Gnothi.Host;
 // POR QUE. Existia para un solo escenario: si en iOS hubiera que ir por NativeAOT -- que
 // prohibe cargar ensamblados en runtime -- para poder tener App Intents nativos. Y ese
 // escenario dejo de ser el unico camino: el Host y la caratula de Swift ya se pasan los datos
-// por una FOTO en un contenedor compartido (Gnothi.Movil/Snapshot.cs), sin NativeAOT, sin
+// por una FOTO en un contenedor compartido (Gnothi.MobileShared/Snapshot.cs), sin NativeAOT, sin
 // puente Swift-.NET y sin perder la carga dinamica de modulos.
 //
 // SE DESCONGELA SI, y solo si, pasa alguna de estas dos:

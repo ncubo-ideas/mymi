@@ -196,7 +196,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		bucle = new BucleDeRefresh(api, fuente, RutaDeExamenes.Rutear, BajarADisco);
 
 		UltimoMensaje = modo.Hospedada
-			? $"arriba, hospedada en Gnothi. {precargados} archivos precargados"
+			? $"arriba, hospedada en Mymi. {precargados} archivos precargados"
 			: puente.HayDestino
 				? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
 				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
@@ -365,7 +365,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// EL NOMBRE DICE "DONDE VIVE" Y LA PANTALLA YA NO, a proposito: el dato no se mudo a
 	// ningun lado, sigue en el telefono de ella. Lo que cambio es quien lo escribe. El campo
 	// conserva el nombre porque viaja en el sobre de eventos, que es contrato (13 §10.6).
-	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Gnothi";
+	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Mymi";
 
 	// LO QUE SONIA AFIRMÓ POR SÍ MISMA, que es lo único que cruza en el traspaso (13 §5.1).
 	// Los hechos del laboratorio NO viajan: el módulo nuevo los vuelve a pedir desde cero.
@@ -509,7 +509,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			BajarADisco);
 
 		ResultadoDeRefresh resultado = await unaVez.Ejecutar(ct);
-		UltimoMensaje = $"entrega de Gnothi: {resultado}";
+		UltimoMensaje = $"entrega de Mymi: {resultado}";
 		return resultado;
 	}
 

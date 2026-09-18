@@ -41,16 +41,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El historial en palabras: la clase, cuantas completaciones hay y como se hizo la mas
-		/// reciente. Las filas dicen el resto de si mismas.
+		/// El historial como forma y valores: la clase, cuantas completaciones hay y como se hizo la
+		/// mas reciente. Las filas dicen el resto de si mismas.
 		/// </summary>
-		internal override string Describe()
+		internal override ACompletionsClause TheClause()
 		{
-			return _kind.HowItIsSaid + ": " + HowManyCompletions()
-				+ (HowManyCompletions() == 1
-					? " completación registrada"
-					: " completaciones registradas")
-				+ ". La más reciente " + _rows[0].HowItWasDone() + ".";
+			return ACompletionsClause.OnRecord(_kind.Name, _rows);
 		}
 	}
 }

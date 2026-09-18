@@ -61,7 +61,7 @@
        entrara por el glob, chocarian dos definiciones de StdioShell y ademas arrastraria el
        SDK de MCP -las dos cosas que el stub existe para evitar. -->
   <Compile Include="..\Gnothi.Host\*.cs"
-           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs" />
+           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs" />
   <Compile Include="..\Gnothi.Assistant\*.cs" />
 
   <!-- LA CASCARA DEL TELEFONO, compartida con iOS. Vivia dentro de MainActivity.cs y se saco
@@ -73,7 +73,7 @@
        y en MainActivity.cs solo lo que sabe de WebView, de hilos de UI y del log del sistema.
 
        Gnothi.iOS incluye este MISMO glob. Si algo se agrega aca, aparece en los dos. -->
-  <Compile Include="..\Gnothi.Movil\*.cs" />
+  <Compile Include="..\Gnothi.MobileShared\*.cs" />
 
   <!-- LOS TEXTOS DEL HOST EN SUS DOS IDIOMAS, y no entran por Assets\ a proposito.
        Assets\**\* ya viaja solo por el glob del SDK de Android, pero desde ahi solo lo alcanza

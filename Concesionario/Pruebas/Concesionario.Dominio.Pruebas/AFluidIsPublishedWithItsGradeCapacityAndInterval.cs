@@ -50,8 +50,11 @@ namespace Concesionario.Dominio.Pruebas
 				4.6m, VolumeUnitCode.UnitA, 15000, DistanceUnitCode.UnitA, 365);
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil), Is.EqualTo(
-				"Aceite de motor: grado 5W-30, capacidad 4.6 L, se cambia cada 15000 km o 365 "
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFluid(
+					specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
+				Is.EqualTo(
+				"Aceite de motor: grado 5W-30, capacidad 4,6 L, se cambia cada 15.000 km o 365 "
 				+ "días. Publicado en la revisión REV-2025-01."));
 		}
 
@@ -67,9 +70,11 @@ namespace Concesionario.Dominio.Pruebas
 				6.0m, VolumeUnitCode.UnitA, 60000, DistanceUnitCode.UnitA, 0);
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFluid(FluidKindCode.Coolant),
-				Does.Contain("se cambia cada 60000 km."));
-			Assert.That(specification.DescribeFluid(FluidKindCode.Coolant),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.Coolant, TheLanguage.OfTheRecord),
+				Does.Contain("se cambia cada 60.000 km."));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.Coolant, TheLanguage.OfTheRecord),
 				Does.Not.Contain("days"));
 		}
 
@@ -81,7 +86,8 @@ namespace Concesionario.Dominio.Pruebas
 				1.0m, VolumeUnitCode.UnitA, 0, DistanceUnitCode.UnitA, 730);
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFluid(FluidKindCode.BrakeFluid),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.BrakeFluid, TheLanguage.OfTheRecord),
 				Does.Contain("se cambia cada 730 días."));
 		}
 
@@ -96,10 +102,11 @@ namespace Concesionario.Dominio.Pruebas
 				7.5m, VolumeUnitCode.UnitB, 90000, DistanceUnitCode.UnitB, 0);
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeFluid(FluidKindCode.TransmissionFluid);
+			string answer = TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.TransmissionFluid, TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("capacidad 7.5 gal"));
-			Assert.That(answer, Does.Contain("cada 90000 mi"));
+			Assert.That(answer, Does.Contain("capacidad 7,5 gal"));
+			Assert.That(answer, Does.Contain("cada 90.000 mi"));
 		}
 
 		[Test]
@@ -169,9 +176,11 @@ namespace Concesionario.Dominio.Pruebas
 				4.6m, VolumeUnitCode.UnitA, 15000, DistanceUnitCode.UnitA, 365);
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Contain("0W-20"));
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Not.Contain("5W-30"));
 		}
 
@@ -188,11 +197,14 @@ namespace Concesionario.Dominio.Pruebas
 				3.0m, VolumeUnitCode.UnitA, 0, DistanceUnitCode.UnitA, 180);
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Contain("5W-30"));
-			Assert.That(specification.DescribeFluid(FluidKindCode.WasherFluid),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.WasherFluid, TheLanguage.OfTheRecord),
 				Does.Contain("Winter mix"));
-			Assert.That(specification.DescribeFluid(FluidKindCode.WasherFluid),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.WasherFluid, TheLanguage.OfTheRecord),
 				Does.Not.Contain("5W-30"));
 		}
 	}

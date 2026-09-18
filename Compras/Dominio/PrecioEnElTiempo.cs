@@ -61,8 +61,18 @@ namespace Compras.Dominio
 		/// <summary>La dirección del cambio. Preguntar HayCambioReal primero.</summary>
 		internal abstract bool Subio { get; }
 
-		/// <summary>La lectura en una línea, escrita por el dominio con SUS hechos.</summary>
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice esta serie, por su nombre: `sin-precios`, `una-sola-vez`, `subio`, `bajo` o
+		/// `se-mantuvo`. La direccion la decide el dominio: quien redacta no tiene por que saber que un
+		/// cambio positivo subio.
+		/// </summary>
+		internal abstract string Clave { get; }
+
+		/// <summary>El mes de la primera observacion. Vacio cuando no hay ninguna: lectura total.</summary>
+		internal abstract string PrimerMesExpresado { get; }
+
+		/// <summary>El mes de la ultima observacion. Vacio cuando no hay ninguna: lectura total.</summary>
+		internal abstract string UltimoMesExpresado { get; }
 
 		private sealed class SinPrecios : PrecioEnElTiempo
 		{
@@ -84,7 +94,9 @@ namespace Compras.Dominio
 				throw new InvalidOperationException(
 					$"No hay compras de «{Sku}»: no hay dirección que dar. Preguntar HayCambioReal antes.");
 
-			internal override string ParaElAsistente => $"no hay compras de «{Sku}» en el historial";
+			internal override string Clave => "sin-precios";
+			internal override string PrimerMesExpresado => "";
+			internal override string UltimoMesExpresado => "";
 		}
 
 		private sealed class Serie : PrecioEnElTiempo
@@ -144,35 +156,15 @@ namespace Compras.Dominio
 				}
 			}
 
-			internal override string ParaElAsistente
-			{
-				get
-				{
-					string unidad = UnidadDeReferencia;
-					string desde = observados[0].MesExpresado;
-					string hasta = observados[observados.Count - 1].MesExpresado;
+			internal override string Clave =>
+				!HaySerie ? "una-sola-vez"
+				: !HayCambioReal ? "se-mantuvo"
+				: Subio ? "subio"
+				: "bajo";
 
-					if (!HaySerie)
-						return $"{Descripcion} lo compraste una sola vez, en {desde}, a "
-							+ $"{Colones(UltimoPrecioPorUnidad)} por {unidad}: todavía no hay con qué comparar";
+			internal override string PrimerMesExpresado => observados[0].MesExpresado;
 
-					string tramo = $"de {Colones(PrimerPrecioPorUnidad)} a {Colones(UltimoPrecioPorUnidad)} "
-						+ $"por {unidad}, entre {desde} y {hasta}";
-
-					if (HayCambioReal)
-						return Subio
-							? $"{Descripcion} te subió {Porcentaje(CambioEnProporcion)}: {tramo}"
-							: $"{Descripcion} te bajó {Porcentaje(Math.Abs(CambioEnProporcion))}: {tramo}";
-
-					return $"{Descripcion} se mantuvo {tramo}";
-				}
-			}
-
-			private static string Colones(decimal monto) =>
-				Plata.Colones(monto);
-
-			private static string Porcentaje(decimal proporcion) =>
-				(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+			internal override string UltimoMesExpresado => observados[observados.Count - 1].MesExpresado;
 		}
 	}
 
@@ -186,19 +178,33 @@ namespace Compras.Dominio
 		internal string NumeroDeCompra { get; private set; }
 		internal decimal PrecioDeLinea { get; private set; }
 		internal decimal PrecioPorUnidad { get; private set; }
-		internal string PresentacionExpresada { get; private set; }
+
+		/// <summary>Como se vendia ese dia. Su codigo y sus valores cruzan; el dicho lo arma quien redacta.</summary>
+		internal Presentacion Presentacion { get; private set; }
+
+		/// <summary>El codigo de la presentacion, aplanado para que el print lo alcance en un solo nivel.</summary>
+		internal string ClaveDeLaPresentacion => Presentacion.Clave;
+
+		/// <summary>Cuanto mide una pieza de esa presentacion, aplanado por la misma razon.</summary>
+		internal decimal ContenidoDeLaPresentacion => Presentacion.Contenido;
+
+		/// <summary>Cuantas piezas trae el empaque de esa presentacion, aplanado por la misma razon.</summary>
+		internal int PiezasDeLaPresentacion => Presentacion.Piezas;
+
+		/// <summary>El simbolo con que se mide una pieza de esa presentacion, aplanado por la misma razon.</summary>
+		internal string SimboloDeLaPresentacion => Presentacion.SimboloDelContenido;
 
 		internal PrecioObservado(DateTime fecha, string numeroDeCompra, decimal precioDeLinea,
-			decimal precioPorUnidad, string presentacionExpresada)
+			decimal precioPorUnidad, Presentacion presentacion)
 		{
 			ArgumentNullException.ThrowIfNull(numeroDeCompra);
-			ArgumentNullException.ThrowIfNull(presentacionExpresada);
+			ArgumentNullException.ThrowIfNull(presentacion);
 
 			Fecha = fecha;
 			NumeroDeCompra = numeroDeCompra;
 			PrecioDeLinea = precioDeLinea;
 			PrecioPorUnidad = precioPorUnidad;
-			PresentacionExpresada = presentacionExpresada;
+			Presentacion = presentacion;
 		}
 
 		internal string MesExpresado => $"{Fecha.Year:0000}-{Fecha.Month:00}";

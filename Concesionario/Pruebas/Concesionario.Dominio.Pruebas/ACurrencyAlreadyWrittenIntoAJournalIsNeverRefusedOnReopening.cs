@@ -190,13 +190,13 @@ namespace Concesionario.Dominio.Pruebas
 			CloseAndReopen();
 
 			string said = api.DescribeServicePrice(
-				TheOperation, TheMilestone, TheUnit, WhileItIsInForce);
+				TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			TestContext.Out.WriteLine("LA FRASE DESPUES DE REABRIR -- " + said);
 
 			Assert.That(said, Is.EqualTo(
-				"Revisión a los 10000 km: 85000.1 XYZ, vigente del 2025-01-01 al 2026-12-31. "
-				+ "Al 2025-06-15 esa vigencia está rigiendo. "
+				"Revisión a los 10.000 km: 85.000,1 XYZ, vigente del 1 de enero de 2025 al 31 de diciembre de 2026. "
+				+ "Al 15 de junio de 2025 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-01."));
 		}
 
@@ -214,8 +214,9 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(HowManyTimesItSays(heard, "[Puppeteer ERROR]"), Is.EqualTo(0));
 			Assert.That(api.PublishedServicePriceCount(), Is.EqualTo(1));
 			Assert.That(
-				api.DescribeServicePrice(TheOperation, TheMilestone, TheUnit, WhileItIsInForce),
-				Does.Contain("₡85000.10"),
+				api.DescribeServicePrice(
+					TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord),
+				Does.Contain("₡85.000,10"),
 				"Y aca SI hay simbolo y decimales, porque el conjunto la nombra: es la unica "
 				+ "diferencia entre los dos caminos, y esta del lado de la frase y no del journal.");
 		}
@@ -239,11 +240,13 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(HowManyTimesItSays(heard, "[Puppeteer ERROR]"), Is.EqualTo(0));
 			Assert.That(api.PublishedServicePriceCount(), Is.EqualTo(2));
 			Assert.That(
-				api.DescribeServicePrice(TheOperation, TheMilestone, TheUnit, WhileItIsInForce),
-				Does.Contain("85000.1 XYZ"));
+				api.DescribeServicePrice(
+					TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord),
+				Does.Contain("85.000,1 XYZ"));
 			Assert.That(
-				api.DescribeServicePrice("FluidChange", 20000, TheUnit, WhileItIsInForce),
-				Does.Contain("₡85000.10"));
+				api.DescribeServicePrice(
+					"FluidChange", 20000, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord),
+				Does.Contain("₡85.000,10"));
 		}
 
 		// LA MITIGACION QUE DEC-87 RECLAMA ES PARCIAL, y esto lo mide en vez de discutirlo. PROBE 9
@@ -280,12 +283,12 @@ namespace Concesionario.Dominio.Pruebas
 			api.SealRevision(TheRevision);
 
 			string live = api.DescribeServicePrice(
-				TheOperation, TheMilestone, TheUnit, WhileItIsInForce);
+				TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			CloseAndReopen();
 
 			string replayed = api.DescribeServicePrice(
-				TheOperation, TheMilestone, TheUnit, WhileItIsInForce);
+				TheOperation, TheMilestone, TheUnit, WhileItIsInForce, TheLanguage.OfTheRecord);
 
 			TestContext.Out.WriteLine("VIVO     -- " + live);
 			TestContext.Out.WriteLine("REPLAYADO -- " + replayed);

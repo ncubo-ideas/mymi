@@ -8,13 +8,13 @@
 
            Gnothi.Host/*.cs        el nucleo          identico
            Gnothi.Assistant/*.cs   la Puerta 2        identico
-           Gnothi.Movil/*.cs       la cascara         identico
+           Gnothi.MobileShared/*.cs       la cascara         identico
            Assets/ui.html          la cara            EL MISMO ARCHIVO
            ════════════════
            MainActivity.cs         WebView Android    ~120 lineas
            ViewController.cs       WKWebView iOS      ~120 lineas
 
-       POR QUE NO MAUI. Ver el comentario largo en Gnothi.Movil/Shell.cs. En resumen: la cara
+       POR QUE NO MAUI. Ver el comentario largo en Gnothi.MobileShared/Shell.cs. En resumen: la cara
        de Gnothi ya es un HTML, asi que la UI YA ESTA compartida; MAUI compartiria su propio
        framework -que no usamos- y NO compartiria el puente del WebView, que es API nativa de
        cada plataforma igual. -->
@@ -149,7 +149,7 @@
     <Compile Include="..\Gnothi.Mobile\StdioShellStub.cs" />
 
     <Compile Include="..\Gnothi.Assistant\*.cs" />
-    <Compile Include="..\Gnothi.Movil\*.cs" />
+    <Compile Include="..\Gnothi.MobileShared\*.cs" />
 
     <!-- LOS TEXTOS DEL HOST EN SUS DOS IDIOMAS. Va como EmbeddedResource y no como
          BundleResource: no lo lee la pagina desde el bundle, lo lee Textos.cs desde el

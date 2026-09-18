@@ -7,6 +7,9 @@
 #                      (por omision)               WebView. Es la del telefono.
 #   -Forma cargo       manifest.json + dominio/    los dll del modulo, que el Host carga en
 #                                                  proceso. Es la del escritorio.
+#   -Forma hibrida     manifest.json + web/        la cara en html/css/js escritos a mano, y la
+#                                    + dominio/    superficie al lado. El motor lo presta el
+#                                                  Host, y web/ NO lo puede traer.
 #
 # LO QUE CAMBIA ES LO QUE VIAJA, NO LO QUE SE DECLARA. Quien es la institucion, que ofrece y
 # donde vive su narrativa sale de la misma fila del catalogo en las dos formas: una lista de
@@ -47,7 +50,10 @@ param(
     # QUE FORMA DEL PAQUETE. 'hospedada' arma la app publicada para el WebView del telefono;
     # 'cargo' arma los dll que el Host carga en proceso en el escritorio. La declaracion de la
     # institucion es la misma en las dos: sale de la fila del catalogo.
-    [ValidateSet('hospedada', 'cargo')]
+    # 'hibrida' es la tercera: la cara en web/ -html, css y un js, escritos a mano- y la
+    # superficie al lado en dominio/, con el motor prestado por el Host. Ni el peso de la
+    # hospedada ni la falta de pantalla de la cargo.
+    [ValidateSet('hospedada', 'cargo', 'hibrida')]
     [string] $Forma      = 'hospedada',
 
     [string] $Proyecto   = '',        # se deduce del modulo si no se pasa
@@ -58,6 +64,11 @@ param(
     [string] $Llave      = '',        # the institution's signing key file; created on first use. Default: <Salida>/.keys/<Modulo>.key.json
     [string] $Salida     = '',        # por omision: <Gnothi.Mobile>/bundles
     [string] $Version    = '',        # overrides the catalog's publisher.version, to rehearse an UPDATE of an installed module
+
+    # QUE VERSION DEL MOTOR resuelve el publish. Vacio = la que pide el csproj, que es lo normal.
+    # Se pasa cuando el feed de la institucion no contesta y hay que quedarse en una version que
+    # ya este en la cache local: sin esto el restore sale a la red y el publish muere en NU1301.
+    [string] $Motor      = '',
 
     # REESCRIBIR SOLO EL MANIFIESTO Y EL LOGO, sobre un bundle YA armado, y rezipear.
     #
@@ -70,16 +81,23 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# LA VERSION DEL MOTOR SE FIJA POR AMBIENTE, no en cada linea de dotnet. MSBuild toma las
+# variables de ambiente como propiedades, asi que esto alcanza para los tres builds que corren
+# aca -- el modulo, y el Host dos veces, para empaquetar y para firmar -- sin tocar ninguna de
+# las lineas largas, que estan escritas enteras a proposito (ver la nota del zip).
+if ($Motor) { $env:VersionDelMotor = $Motor }
+
 $raiz = Split-Path -Parent $PSScriptRoot
 
 # LOS CINCO MODULOS DEL POC. Cada institucion declara lo suyo; lo unico que comparten es la
 # forma. El concesionario tambien va en espanol: Kenneth paso su PWA a espanol el 2026-09-08 y la
 # tarjeta lo sigue (2026-09-09).
 #
-# LA MUNICIPALIDAD NO SE NOMBRA, y no es una casilla pendiente: es la respuesta. El concesionario
-# inventa una marca y no pasa nada; toda municipalidad plausible es una que existe, con vecinos que
-# le pagan, asi que su modulo usa el sustantivo comun y su dominio es el TLD reservado para
-# ejemplos. El nombre real llega el dia que una municipalidad de verdad adopte el modulo.
+# LA MUNICIPALIDAD SE NOMBRA, por pedido expreso: su Titulo, su Institucion, su Marca y su
+# RazonSocial. EL DOMINIO NO LA SIGUE y se queda en el TLD reservado para ejemplos, que es donde
+# estaba el riesgo: la razon por la que nada la nombraba se deja escrita, porque en esa parte no ha
+# dejado de valer. El concesionario inventa una marca y no pasa nada, pero toda municipalidad
+# plausible es una que existe, con vecinos que le pagan, y un dominio plausible seria el suyo.
 $catalogo = @{
     'examenes' = @{
         Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
@@ -91,6 +109,7 @@ $catalogo = @{
         Rubro       = 'laboratorio'
         Descripcion = 'Tus resultados de laboratorio, con su historia y que te toca repetir.'
         NoHace      = 'No interpreta resultados ni reemplaza a tu medico.'
+        Idioma      = 'es-CR'
         Dominio     = 'delfos.cr'
         RazonSocial = 'Laboratorio Clínico Delfos S.A.'
         Cedula      = '3-101-123456'
@@ -119,6 +138,7 @@ $catalogo = @{
         Rubro       = 'supermercado'
         Descripcion = 'Tu historial de compras, con tus garantias y lo que sueles llevar.'
         NoHace      = 'No te dice que comer ni juzga tu canasta.'
+        Idioma      = 'es-CR'
         Dominio     = 'laguaria.cr'
         RazonSocial = 'Supermercado La Guaria S.A.'
         Cedula      = '3-101-654321'
@@ -147,6 +167,7 @@ $catalogo = @{
         Rubro       = 'combustible'
         Descripcion = 'Tus cargas de combustible y el rendimiento de cada vehiculo.'
         NoHace      = ''
+        Idioma      = 'es-CR'
         Dominio     = 'faro.cr'
         RazonSocial = 'Estaciones Faro S.A.'
         Cedula      = '3-101-777888'
@@ -175,6 +196,7 @@ $catalogo = @{
         Rubro       = 'taller'
         Descripcion = 'El plan de mantenimiento de tu vehiculo y lo que le toca.'
         NoHace      = ''
+        Idioma      = 'es-CR'
         Dominio     = 'sotavento.com'
         RazonSocial = 'Sotaventos Motors Inc.'
         Cedula      = ''
@@ -194,16 +216,17 @@ $catalogo = @{
     }
     'municipalidad' = @{
         Proyecto    = "$raiz/Municipalidad/App/Municipalidad.Wasm/Municipalidad.Wasm.csproj"
-        Titulo      = 'Mi cuenta municipal'
-        Institucion = 'Tu municipalidad'
-        Marca       = 'Tu municipalidad'
+        Titulo      = 'MONTEVERDE Municipal Services'
+        Institucion = 'Municipalidad de Monteverde'
+        Marca       = 'Monteverde'
         Slogan      = 'Lo que el portal no te dice'
         Color       = '#2C306C'
         Rubro       = 'gobierno'
         Descripcion = 'Tus cobros municipales: por qué te subieron, qué se te vence y cuánto apartar.'
         NoHace      = 'No dice cuánto debés hoy: eso lo dice el portal de tu municipalidad.'
-        Dominio     = 'municipalidad.example'
-        RazonSocial = 'Municipalidad del POC'
+        Idioma      = 'es-CR'
+        Dominio     = 'monteverde.example'
+        RazonSocial = 'Municipalidad de Monteverde'
         Cedula      = ''
         Version     = '1.0.0'
         Retencion   = '5 anos'
@@ -226,20 +249,34 @@ if (-not $catalogo.ContainsKey($Modulo)) {
 }
 $m = $catalogo[$Modulo]
 
-$esCargo = $Forma -eq 'cargo'
+$esCargo   = $Forma -eq 'cargo'
+$esHibrida = $Forma -eq 'hibrida'
+
+# LAS DOS PREGUNTAS QUE DE VERDAD MANDAN, y son independientes: la forma dejo de ser binaria
+# cuando aparecio una que trae las dos mitades.
+$traeSuperficie = $esCargo -or $esHibrida   # dominio/*.dll, y load.entry en el manifiesto
+$traeCara       = -not $esCargo             # web/, y por lo tanto una pantalla propia
 
 # EL PROYECTO DEPENDE DE LA FORMA, y el de la forma cargo se DEDUCE del otro en vez de ser una
 # sexta columna: los cinco modulos ponen su app en <X>/App/<X>.Wasm y su superficie en
 # <X>/App/<X>.App, asi que la fila ya dice donde estan las dos. Una columna mas seria un dato
 # que se puede contradecir con el que esta al lado.
-if (-not $Proyecto) {
-    $Proyecto = $m.Proyecto
+$carpetaDeApp  = Split-Path -Parent (Split-Path -Parent $m.Proyecto)
+$raizDelModulo = [IO.Path]::GetFileNameWithoutExtension($m.Proyecto) -replace '\.Wasm$', ''
 
-    if ($esCargo) {
-        $carpetaDeApp = Split-Path -Parent (Split-Path -Parent $m.Proyecto)
-        $raizDelModulo = [IO.Path]::GetFileNameWithoutExtension($m.Proyecto) -replace '\.Wasm$', ''
-        $Proyecto = "$carpetaDeApp/$raizDelModulo.App/$raizDelModulo.App.csproj"
-    }
+# LA CARA DE LA FORMA HIBRIDA TAMBIEN SE DEDUCE, por la misma razon que la cargo: la fila ya
+# dice donde vive el modulo, y una columna mas seria un dato que se puede contradecir con el
+# que esta al lado. Los tres viven de hermanos: <X>.Wasm, <X>.App y <X>.Cara.
+#
+# Y NO ES UN PROYECTO: es una carpeta de archivos estaticos. No hay nada que publicar porque no
+# hay nada que compilar, que es el punto entero de la forma.
+$caraHibrida = "$carpetaDeApp/$raizDelModulo.Cara"
+
+if (-not $Proyecto) {
+    # Lo que se PUBLICA depende de la forma: la hospedada publica su app wasm, y las otras dos
+    # publican la superficie. En la hibrida la cara no pasa por aca: se copia.
+    $Proyecto = if ($traeSuperficie) { "$carpetaDeApp/$raizDelModulo.App/$raizDelModulo.App.csproj" }
+                else { $m.Proyecto }
 }
 
 if (-not $Recurso)    { $Recurso = $m.Recurso }
@@ -256,12 +293,15 @@ if (-not $Salida) { $Salida = "$PSScriptRoot/bundles" }
 #
 # Y POR ESO LA CARGO VA EN SU PROPIO SUBDIRECTORIO: dos archivos del mismo nombre no caben en
 # una carpeta, y renombrar uno de los dos rompe la decision de arriba.
-$dondeVa = if ($esCargo) { "$Salida/cargo" } else { $Salida }
+# CADA FORMA EN SU CARPETA: el archivo se llama <modulo>.gmod en las tres, y tres archivos del
+# mismo nombre no caben juntos. Renombrar uno rompe la decision de que la forma se lee de
+# ADENTRO y no del nombre.
+$dondeVa = if ($esCargo) { "$Salida/cargo" } elseif ($esHibrida) { "$Salida/hibrida" } else { $Salida }
 $armado  = "$dondeVa/$Modulo"
 $zip     = "$dondeVa/$Modulo.gmod"
 
 # LO QUE TIENE QUE ESTAR PARA REESCRIBIR SOLO EL MANIFIESTO, que es distinto en cada forma.
-$loQueTraeElPaquete = if ($esCargo) { 'dominio' } else { 'web' }
+$loQueTraeElPaquete = if ($esCargo) { 'dominio' } else { 'web' }   # lo que -SoloManifiesto exige que ya este
 
 # --- publicar lo que viaja -------------------------------------------------------------
 $publicado = $null
@@ -271,7 +311,7 @@ if ($SoloManifiesto) {
         throw "-SoloManifiesto necesita un paquete ya armado, y no hay $armado/$loQueTraeElPaquete. Corre el script sin el switch la primera vez."
     }
     Write-Host "solo el manifiesto de $Modulo ($Forma; lo que viaja queda como esta)"
-    if ($esCargo) { $dllsQueViajan = Get-ChildItem "$armado/dominio" -Filter *.dll }
+    if ($traeSuperficie) { $dllsQueViajan = Get-ChildItem "$armado/dominio" -Filter *.dll }
 } else {
     Write-Host "publicando $Modulo ($Forma)..."
     $publicado = "$dondeVa/.publish-$Modulo"
@@ -284,7 +324,7 @@ if ($SoloManifiesto) {
     if (Test-Path $armado) { Remove-Item -Recurse -Force $armado }
     New-Item -ItemType Directory -Path $armado -Force | Out-Null
 
-    if ($esCargo) {
+    if ($traeSuperficie) {
         # SOLO LOS ENSAMBLADOS PROPIOS DEL MODULO, por su prefijo. El publish deja al lado el
         # motor, el contrato y la BCL, y los tres se rechazan al instalar: los presta el Host.
         # El filtro por prefijo es tambien lo que hace que un modulo con TRES ensamblados
@@ -300,7 +340,34 @@ if ($SoloManifiesto) {
 
         New-Item -ItemType Directory -Path "$armado/dominio" -Force | Out-Null
         $dllsQueViajan | ForEach-Object { Copy-Item $_.FullName "$armado/dominio/" }
-    } else {
+    }
+
+    if ($esHibrida) {
+        # LA CARA SE COPIA, NO SE PUBLICA. Son html, css y un js escritos a mano: no hay build,
+        # y por eso no hay `wwwroot` que buscar ni artefactos que filtrar. Lo que la institucion
+        # escribio es lo que el navegador pide.
+        if (-not (Test-Path $caraHibrida)) {
+            throw "la forma hibrida necesita la cara en $caraHibrida, y no existe. Son archivos estaticos: index.html y lo que cuelgue de el."
+        }
+        if (-not (Test-Path "$caraHibrida/index.html")) {
+            throw "la cara en $caraHibrida no tiene index.html, y sin el la aduana del Host rechaza el paquete."
+        }
+
+        New-Item -ItemType Directory -Path "$armado/web" -Force | Out-Null
+        Copy-Item -Recurse "$caraHibrida/*" "$armado/web/"
+
+        # EL PUENTE LO PONE EL HOST, no la institucion, y es el unico archivo de web/ que no
+        # escribio ella. El protocolo -- que la respuesta vuelve por callback y no por retorno,
+        # que `consultar` no lleva el nombre del modulo -- es de Gnothi: pedirle a cada
+        # institucion que le acierte sola es pedirle que reimplemente una regla de seguridad.
+        #
+        # Va DESPUES de copiar la cara a proposito: si el paquete trae su propio puente.js, este
+        # lo pisa. La version que corre es siempre la del Host.
+        $puente = "$PSScriptRoot/cara/puente.js"
+        if (-not (Test-Path $puente)) { throw "falta el puente de la cara hibrida en $puente" }
+        Copy-Item -Force $puente "$armado/web/puente.js"
+    }
+    elseif (-not $esCargo) {
         # `dotnet publish` de un Blazor Wasm deja la app en wwwroot/ y al lado deja los dll del
         # publish, que NO van al bundle: lo que la institucion sirve es exactamente lo que el
         # navegador pide.
@@ -349,12 +416,12 @@ $manifiesto = [ordered]@{
     # -- declararla ademas de traer web/ hace que el paquete se rechace, porque un modulo es
     # cargo o es hospedado y no los dos.
     '//load'      = 'DONDE VIVE LA SUPERFICIE. El Host carga exactamente este ensamblado; el dominio se resuelve al lado. El motor NO viaja: se lo presta el Host.'
-    load          = if ($esCargo) { [ordered]@{ entry = "dominio/$([IO.Path]::GetFileNameWithoutExtension($Proyecto)).dll" } } else { $null }
+    load          = if ($traeSuperficie) { [ordered]@{ entry = "dominio/$([IO.Path]::GetFileNameWithoutExtension($Proyecto)).dll" } } else { $null }
     # LO QUE EL MODULO DECLARA NECESITAR, y tambien solo en la forma cargo: ahi corre EN
     # PROCESO bajo el Host, que es donde la declaracion es contrastable y donde su exceso sale
     # como warning al instalar. Lo que corre en un WebView lo acota la CSP y no esta lista.
     '//capabilities' = 'Lo que el modulo declara necesitar. Es CONTRASTABLE: la superficie abre una carpeta y ningun socket, asi que network en false y folder en own son la verdad y son detectables.'
-    capabilities  = if ($esCargo) { [ordered]@{ network = $false; folder = 'own'; speaker = $false; microphone = $false } } else { $null }
+    capabilities  = if ($traeSuperficie) { [ordered]@{ network = $false; folder = 'own'; speaker = $false; microphone = $false } } else { $null }
     '//brand'     = 'LA MARCA. La institucion declara y el Host compone: ella pone el material, el decide el lugar, el tamano y el contraste.'
     brand         = [ordered]@{
         shortName = $m.Marca
@@ -392,7 +459,11 @@ $manifiesto = [ordered]@{
         category    = $m.Rubro
         description = $m.Descripcion
         doesNotDo   = $m.NoHace
-        locale      = if ($Modulo -eq 'dealership') { 'en-US' } else { 'es-CR' }
+        # EL IDIOMA DEL REGISTRO de la institucion, y es lo que se le dice al modelo para que le
+        # pase sus valores de texto libre en ese idioma. Sale de la FILA, como todo lo demas de
+        # este bloque: vivio en un `if` sobre el nombre del modulo, el concesionario paso a espanol
+        # el 2026-09-08, y la linea se quedo diciendo en-US hasta que alguien la leyo.
+        locale      = $m.Idioma
     }
     '//journal'   = 'LO QUE LA INSTITUCION PROMETE SOBRE EL REGISTRO. La pantalla del alta ya decia DONDE va a vivir; esto es cuanto, cada cuanto y por cuanto tiempo.'
     journal       = [ordered]@{
@@ -412,7 +483,7 @@ $manifiesto = [ordered]@{
 # `File.ReadAllText` lo tolera -- que es como lo lee AltaDeModulo -- un manifiesto con BOM
 # revienta en cuanto alguien lo lea con `JsonDocument.Parse(string)`. No vale la pena la trampa.
 if (-not $Origen) { $manifiesto.Remove('origin') }
-if (-not $esCargo) {
+if (-not $traeSuperficie) {
     $manifiesto.Remove('//load'); $manifiesto.Remove('load')
     $manifiesto.Remove('//capabilities'); $manifiesto.Remove('capabilities')
 }
@@ -468,10 +539,10 @@ $n  = (Get-ChildItem -Recurse $armado -File).Count
 
 Write-Host ""
 Write-Host "paquete listo: $zip"
-Write-Host "  forma      : $Forma$(if ($esCargo) { "  (load.entry $($manifiesto.load.entry))" } else { '  (web/)' })"
+Write-Host "  forma      : $Forma$(if ($esHibrida) { "  (web/ + $($manifiesto.load.entry))" } elseif ($esCargo) { "  (load.entry $($manifiesto.load.entry))" } else { '  (web/)' })"
 Write-Host "  archivos   : $n"
 Write-Host "  tamano     : $mb MB"
-if ($esCargo) {
+if ($traeSuperficie) {
     Write-Host "  ensamblados: $(($dllsQueViajan | ForEach-Object { $_.Name }) -join ', ')"
     Write-Host "               el motor NO viaja: lo presta el Host"
 }

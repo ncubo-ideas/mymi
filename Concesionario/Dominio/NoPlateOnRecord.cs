@@ -38,11 +38,12 @@ namespace Concesionario.Dominio
 			get { throw NothingWasPublished(); }
 		}
 
-		/// <summary>La ausencia en palabras, diciendo quien publica una placa.</summary>
-		internal override string Describe()
+		/// <summary>
+		/// La ausencia con su propio codigo y sin ningun texto que parezca una placa.
+		/// </summary>
+		internal override APlateClause TheClause()
 		{
-			return "No hay ninguna placa registrada para este vehículo al instante preguntado. La "
-				+ "placa de un vehículo la publica el concesionario.";
+			return APlateClause.WithNoneOnRecord();
 		}
 
 		private static DomainException NothingWasPublished()

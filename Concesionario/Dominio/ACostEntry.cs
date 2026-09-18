@@ -7,9 +7,14 @@ namespace Concesionario.Dominio
 	/// Una cosa que se gasto en este vehiculo: su dinero, el instante en que se incurrio, el asunto
 	/// recibido y su clasificacion. Lo que se GASTO, no lo que el fabricante publico.
 	/// <para>
-	/// No tiene clave de ninguna clase y no tiene maquina de estados: tiene una clasificacion, que ES
-	/// su tipo. Queda abierta a herencia porque esa es la variacion que carga -- una que el periodo
-	/// consume entera y una que se reparte a lo largo de su vida util.
+	/// No tiene clave de ninguna clase y no tiene maquina de estados: tiene una clasificacion, que
+	/// ES su tipo. Queda abierta a herencia porque esa es la variacion que carga -- una que el
+	/// periodo consume entera y una que se reparte a lo largo de su vida util.
+	/// </para>
+	/// <para>
+	/// Sale como valores ya tipados y nunca como una frase: la redaccion vive donde se elige el
+	/// idioma, y el dominio no elige uno. La clasificacion es la que dice cual de las dos cosas hay
+	/// que leer, asi que ninguna se lee de un cero.
 	/// </para>
 	/// </summary>
 	internal abstract class ACostEntry
@@ -56,10 +61,22 @@ namespace Concesionario.Dominio
 			get { return _subject; }
 		}
 
-		/// <summary>El dinero dicho como su propia moneda lo dice.</summary>
-		internal string TheMoneyItSays()
+		/// <summary>La forma de la moneda en que costo, por su codigo. TOTAL.</summary>
+		internal string TheShapeOfItsCurrency()
 		{
-			return _money.Expressed();
+			return _money.TheShapeOfItsCurrency();
+		}
+
+		/// <summary>Los digitos de lo que costo, en cultura invariante. TOTAL.</summary>
+		internal string TheAmountAsSaid()
+		{
+			return _money.TheAmountAsSaid();
+		}
+
+		/// <summary>El codigo de la moneda en que costo. TOTAL.</summary>
+		internal string TheCodeOfItsCurrency()
+		{
+			return _money.TheCodeOfItsCurrency();
 		}
 
 		/// <summary>En que se fue, dicho hacia afuera.</summary>
@@ -69,8 +86,8 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Cuando se incurrio, dicho como INSTANTE con su hora y no como un dia de calendario: de que
-		/// dia local es un instante necesitaria una zona que este libro no tiene.
+		/// Cuando se incurrio, dicho como INSTANTE con su hora y no como un dia de calendario: de
+		/// que dia local es un instante necesitaria una zona que este libro no tiene.
 		/// </summary>
 		internal string TheInstantItWasIncurred()
 		{
@@ -84,8 +101,8 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Si se SABE que este gasto esta en la misma moneda que ese otro. TOTAL, y es la pregunta con
-		/// la que se agrupa por moneda recorriendo la lista.
+		/// Si se SABE que este gasto esta en la misma moneda que ese otro. TOTAL, y es la pregunta
+		/// con la que se agrupa por moneda recorriendo la lista.
 		/// </summary>
 		internal bool IsInTheSameCurrencyAs(ACostEntry other)
 		{
@@ -100,14 +117,21 @@ namespace Concesionario.Dominio
 		internal abstract CostClassification Classification();
 
 		/// <summary>
-		/// Como se dice su vida util, o nada cuando no tiene ninguna. TOTAL: una celda vacia dice que
-		/// no tiene, y un cero se leeria como una vida de cero meses.
+		/// Si este gasto se reparte a lo largo de una vida util. TOTAL, y es la pregunta que hay
+		/// que hacer antes de pedir los meses o la parte: la clasificacion es la que lo dice, no un
+		/// cero.
 		/// </summary>
-		internal abstract string HowItsExpectedLifeIsSaid();
+		internal abstract bool SpreadsItselfOverTime();
 
 		/// <summary>
-		/// Si ese periodo consumio algo de este gasto. TOTAL, y es la pregunta que hay que hacer antes
-		/// de pedir el dinero consumido.
+		/// A lo largo de cuantos meses se reparte, tal como llegaron. TOTAL: el que no se reparte
+		/// contesta cero, y cual de los dos es lo dice su clasificacion y nunca ese cero.
+		/// </summary>
+		internal abstract int TheMonthsOfItsExpectedLife();
+
+		/// <summary>
+		/// Si ese periodo consumio algo de este gasto. TOTAL, y es la pregunta que hay que hacer
+		/// antes de pedir el dinero consumido.
 		/// </summary>
 		internal abstract bool ConsumesAnythingBetween(DateTime from, DateTime to);
 
@@ -118,22 +142,11 @@ namespace Concesionario.Dominio
 		internal abstract Money TheMoneyItConsumedBetween(DateTime from, DateTime to);
 
 		/// <summary>
-		/// La clausula que hace visible la regla con que este gasto se reparte en ese periodo, o nada
-		/// cuando no hay regla que hacer visible. TOTAL.
+		/// La parte que ese periodo consumio, con la regla que la saco adentro. Accesor GUARDADO:
+		/// un gasto que no se reparte no tiene regla que hacer visible, y un periodo que no toca la
+		/// ventana no tiene parte.
 		/// </summary>
-		internal abstract string TheClauseOfItsConsumptionBetween(DateTime from, DateTime to);
-
-		/// <summary>
-		/// La entrada en una frase, dicha entera: el dinero, en que se fue, cuando, y de que clase es.
-		/// Es lo que hace que una fila sirva sola.
-		/// </summary>
-		internal abstract string Describe();
-
-		/// <summary>La clausula que las dos variantes comparten: cuanto, en que y cuando.</summary>
-		protected string TheSpendClause()
-		{
-			return _money.Expressed() + " en " + _subject.Value + " el " + TheInstant(_incurredAt);
-		}
+		internal abstract AnAmortizedShare TheShareItGivesBetween(DateTime from, DateTime to);
 
 		/// <summary>Un instante dicho como instante, con su hora.</summary>
 		protected static string TheInstant(DateTime instant)

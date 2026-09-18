@@ -112,8 +112,8 @@ namespace Concesionario.Dominio.Pruebas
 			DateTime local = new DateTime(2026, 1, 20, 8, 0, 0, DateTimeKind.Local);
 
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(local),
-				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(local.ToUniversalTime())),
+				journal.Api.DescribeWarrantyEnvelope(local, TheLanguage.OfTheRecord),
+				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(local.ToUniversalTime(), TheLanguage.OfTheRecord)),
 				"El mismo momento, dicho de dos maneras, es una sola respuesta. Sin convertir en la "
 				+ "frontera, la seccion de garantia leeria las 8:00 de una zona como las 8:00 UTC y "
 				+ "preguntaria por un momento distinto del que la persona quiso.");

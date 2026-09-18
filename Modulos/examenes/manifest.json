@@ -102,5 +102,11 @@
         }
       ]
     }
-  ]
+  ],
+  "brand": {
+    "shortName": "Delfos",
+    "color": "#0e2f55",
+    "logo": "brand/logo.png",
+    "slogan": "Tu salud, en tus manos"
+  }
 }

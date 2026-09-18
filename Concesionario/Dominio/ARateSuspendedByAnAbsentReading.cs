@@ -39,11 +39,10 @@ namespace Concesionario.Dominio
 			return RateStanding.SuspendedByAnAbsentReading;
 		}
 
-		/// <summary>La ausencia con el periodo nombrado. Nunca cero y nunca la frase vacia.</summary>
-		internal override string Describe()
+		/// <summary>La ausencia con el periodo nombrado. Nunca cero, nunca vacia.</summary>
+		internal override ARateInAPeriod TheClauseOfItsPeriod()
 		{
-			return "no se puede decir cuánto se maneja entre el " + _from + " y el " + _to
-				+ ": no hay ninguna lectura del odómetro en ese periodo";
+			return ARateInAPeriod.SuspendedByAnAbsentReading(_from, _to);
 		}
 	}
 }

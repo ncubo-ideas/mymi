@@ -253,5 +253,11 @@
         }
       ]
     }
-  ]
+  ],
+  "brand": {
+    "shortName": "La Guaria",
+    "color": "#2f6b3f",
+    "logo": "brand/logo.png",
+    "slogan": "Tu canasta, más cerca de vos"
+  }
 }

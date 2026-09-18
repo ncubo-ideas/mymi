@@ -41,26 +41,32 @@ namespace Concesionario.Dominio
 			get { return _distanceLeft <= 0; }
 		}
 
-		/// <summary>
-		/// La clausula de la mitad de distancia. El limite alcanzado exacto tiene frase propia: "0
-		/// pasados del limite" se leeria como un defecto y no como una respuesta.
-		/// </summary>
-		protected override string TheDistanceHalfInWords()
+		/// <summary>Medida, que es la forma que trae numero.</summary>
+		internal override string TheDistanceHalfShape()
 		{
-			if (_distanceLeft == 0)
-				return "Distancia: justo en un límite de " + Amount(_distanceLimit) + ".";
-
-			if (_distanceLeft < 0)
-				return "Distancia: " + Amount(-_distanceLeft) + " pasados de un límite de "
-					+ Amount(_distanceLimit) + ".";
-
-			return "Distancia: " + (_distanceLeft == 1 ? "queda " : "quedan ")
-				+ Amount(_distanceLeft) + " de " + Amount(_distanceLimit) + ".";
+			return EnvelopeDistanceHalf.Measured;
 		}
 
-		private string Amount(int quantity)
+		/// <summary>
+		/// Lo que queda del limite, en una fila. Cero es el limite alcanzado exacto y negativo es
+		/// cuanto se paso; las dos son respuestas, y cual de las tres se dice lo elige quien redacta
+		/// por el signo.
+		/// </summary>
+		internal override int[] TheDistanceLeftCounted()
 		{
-			return quantity + " " + _unit.Name;
+			return OneAmountOf(_distanceLeft);
+		}
+
+		/// <summary>El limite contra el que se midio, en una fila.</summary>
+		internal override int[] TheDistanceLimitCounted()
+		{
+			return OneAmountOf(_distanceLimit);
+		}
+
+		/// <summary>La unidad en que estan las dos, por su nombre.</summary>
+		internal override string TheUnitTheDistanceIsSaidIn()
+		{
+			return _unit.Name;
 		}
 	}
 }

@@ -110,14 +110,18 @@ namespace Concesionario.Dominio.Pruebas
 			TheStayOfThreeDays();
 			TheStayOfOneDay();
 
-			string said = stays.DescribeDaysInTheShopBetween(TheFirstOfJune, TheLastOfJune);
+			string said = TheSentenceTheDoorWouldCompose.TheStayPeriod(
+				stays, TheFirstOfJune, TheLastOfJune, TheLanguage.OfTheRecord);
 
-			foreach (string day in TheFourDays) Assert.That(said, Does.Contain(day));
+			// LOS CUATRO DIAS Y LOS DOS LIMITES SON DIAS y la frase los dice en palabras, asi que lo
+			// que se espera se compone con el mismo renderizador: la lista, en la forma corta; los dos
+			// limites, en la larga.
+			foreach (string day in TheFourDays) Assert.That(said, Does.Contain(AShortDay(day)));
 
 			Assert.That(said, Does.Contain("4 días"));
 			Assert.That(said, Does.Contain("2 estadías"));
-			Assert.That(said, Does.Contain(TheFirstOfJune));
-			Assert.That(said, Does.Contain(TheLastOfJune));
+			Assert.That(said, Does.Contain(ADay(TheFirstOfJune)));
+			Assert.That(said, Does.Contain(ADay(TheLastOfJune)));
 		}
 
 		// EL CONTROL DEL PERIODO (C61): un periodo mas angosto ve menos. Sin el, una lectura que
@@ -145,6 +149,18 @@ namespace Concesionario.Dominio.Pruebas
 			stays.RecordStay(TheOtherBranch, TheOtherSubject,
 				new DateTime(2026, 6, 20, 7, 0, 0), new DateTime(2026, 6, 20, 11, 0, 0),
 				new[] { "2026-06-20" });
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
+		}
+
+		private static string AShortDay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.AShortDayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

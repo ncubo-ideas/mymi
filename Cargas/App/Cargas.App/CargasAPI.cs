@@ -231,7 +231,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.PuedeAnotarOdometro(@transaccion, @kilometros, @unidad))
-						Error 'el kilometraje no es coherente con la serie o la carga no existe';
+						Error 'kilometraje-incoherente';
 				",
 				@"
 					bitacoraDeCargas.AnotarOdometro(@transaccion, @kilometros, @unidad, @origen);
@@ -252,7 +252,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.ConoceTransaccion(@transaccion))
-						Error 'no hay una carga con esa transaccion';
+						Error 'carga-desconocida';
 				",
 				@"
 					bitacoraDeCargas.DeclararTanque(@transaccion, @estado);
@@ -273,7 +273,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.PuedeConfirmarTanque(@transaccion))
-						Error 'no hay una inferencia de tanque esperando confirmacion';
+						Error 'sin-inferencia-de-tanque';
 				",
 				@"
 					bitacoraDeCargas.ConfirmarTanque(@transaccion);
@@ -292,7 +292,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.ConoceTransaccion(@transaccion))
-						Error 'no hay una carga con esa transaccion';
+						Error 'carga-desconocida';
 				",
 				@"
 					bitacoraDeCargas.AdjuntarFoto(@transaccion, @nombre);
@@ -352,7 +352,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(bitacoraDeCargas.ConocePlaca(@placa))
-						Error 'no hay un vehiculo con esa placa';
+						Error 'vehiculo-desconocido';
 				",
 				@"
 					bitacoraDeCargas.CompletarFicha(@placa, @alias, @marca, @modelo,
@@ -453,15 +453,15 @@ namespace Cargas.App
 						carga.IdentificacionDelSurtidor surtidor,
 						carga.NombreDelTipo tipo,
 						carga.Litros litros,
-						carga.VolumenExpresado volumen,
+						carga.VolumenCargado volumenValor,
+						carga.SimboloDelVolumen volumenUnidad,
 						carga.PrecioPorUnidad precio,
 						carga.MontoDelTotal total,
 						carga.MonedaDelTotal moneda,
 						carga.NombreDelCorte corte,
-						carga.KilometrajeExpresado kilometraje,
-						carga.KilometrajeAnotado kilometrajeAnotado,
 						carga.OrigenDelKilometraje origenDelKilometraje,
-						carga.TanqueExpresado tanque,
+						carga.ClaveDelTanque claveDelTanque,
+						carga.OrigenDelTanqueDicho origenDelTanqueDicho,
 						carga.ElKilometrajeCuentaParaCalcular cuentaParaCalcular,
 						carga.NumeroDeLaTransaccion transaccion,
 						carga.TieneKilometraje tieneKilometraje,
@@ -478,8 +478,8 @@ namespace Cargas.App
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<CargaEnLista> Cargas(string placa) =>
-			ProyeccionDeVistas.Cargas(ListaDeCargas(placa));
+		public IReadOnlyList<CargaEnLista> Cargas(string placa, string idioma) =>
+			ProyeccionDeVistas.Cargas(ListaDeCargas(placa), idioma);
 
 		// LOS TRAMOS: los calculados con su rendimiento y los bloqueados con lo que les
 		// falta, en la misma lista. Es la consulta que ninguna pantalla de la estacion
@@ -499,8 +499,7 @@ namespace Cargas.App
 						tramo.EsComparable esComparable,
 						tramo.MotivoDeReserva motivoDeReserva,
 						tramo.EsSospechoso esSospechoso,
-						tramo.QueFalta queFalta,
-						tramo.Expresado expresado,
+						tramo.FechaDeLaCargaTrunca fechaDeLaCargaTrunca,
 						tramo.RendimientoComoSeVe rendimientoComoSeVe,
 						tramo.KilometrosComoSeVen kilometrosComoSeVen,
 						tramo.SimboloDelRendimiento simboloDelRendimiento,
@@ -511,8 +510,8 @@ namespace Cargas.App
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<TramoEnLista> Tramos(string placa) =>
-			ProyeccionDeVistas.Tramos(ListaDeTramos(placa));
+		public IReadOnlyList<TramoEnLista> Tramos(string placa, string idioma) =>
+			ProyeccionDeVistas.Tramos(ListaDeTramos(placa), idioma);
 
 		// LA consulta que justifica el dominio: la lectura de la serie entera, con su
 		// veredicto semantico.
@@ -528,8 +527,8 @@ namespace Cargas.App
 					evaluacion = bitacoraDeCargas.EvaluarRendimientoDe(@placa);
 					print evaluacion.NombreDelVeredicto veredicto,
 						evaluacion.NombreDeLaSeveridad severidad,
-						evaluacion.ParaSonia paraSonia,
-						evaluacion.AccionLegible accion,
+						evaluacion.ClaveDeLaAccion claveDeLaAccion,
+						evaluacion.ClaveDelPlazo claveDelPlazo,
 						evaluacion.PideAlgo pideAlgo,
 						evaluacion.ActualKmPorLitro actual,
 						evaluacion.HabitualKmPorLitro habitual,
@@ -538,7 +537,9 @@ namespace Cargas.App
 						evaluacion.TramosCalculados tramosCalculados,
 						evaluacion.TramosBloqueados tramosBloqueados,
 						evaluacion.HaySerie haySerie,
-						evaluacion.QueFalta queFalta,
+						evaluacion.ClaveDeLoQueFalta claveDeLoQueFalta,
+						evaluacion.FechaDeLaCargaTrunca fechaDeLaCargaTrunca,
+						evaluacion.FechaDelTotalQueNoCuadra fechaDelTotalQueNoCuadra,
 						evaluacion.MotivoDeReserva motivoDeReserva,
 						evaluacion.EstaMejorando estaMejorando,
 						evaluacion.EstaEmpeorando estaEmpeorando,
@@ -546,6 +547,7 @@ namespace Cargas.App
 						evaluacion.ActualComoSeVe actualComoSeVe,
 						evaluacion.HabitualComoSeVe habitualComoSeVe,
 						evaluacion.CambioPorcentualComoSeVe cambioPorcentualComoSeVe,
+						evaluacion.ClaveDelCambio claveDelCambio,
 						evaluacion.SimboloDelRendimiento simbolo;
 				}
 			")
@@ -553,8 +555,8 @@ namespace Cargas.App
 			.PerformQuery();
 		}
 
-		public RendimientoDelVehiculo Rendimiento(string placa) =>
-			ProyeccionDeVistas.Rendimiento(EvaluacionDeRendimiento(placa));
+		public RendimientoDelVehiculo Rendimiento(string placa, string idioma) =>
+			ProyeccionDeVistas.Rendimiento(EvaluacionDeRendimiento(placa), idioma);
 
 		// LA AUTONOMIA: capacidad estimada por rendimiento habitual. Combina dos
 		// derivaciones; no esta en ninguna pantalla; siempre es proyeccion.
@@ -596,7 +598,6 @@ namespace Cargas.App
 					ritmo = bitacoraDeCargas.RitmoDe(@placa);
 					print ritmo.NombreDeLaSituacion situacion,
 						ritmo.SePudoMedir sePudoMedir,
-						ritmo.Expresada expresada,
 						ritmo.KilometrosPorDia kilometrosPorDia,
 						ritmo.Kilometros kilometros,
 						ritmo.Dias dias,
@@ -612,8 +613,8 @@ namespace Cargas.App
 			.PerformQuery();
 		}
 
-		public RitmoDelVehiculo Ritmo(string placa) =>
-			ProyeccionDeVistas.Ritmo(RitmoDeManejo(placa));
+		public RitmoDelVehiculo Ritmo(string placa, string idioma) =>
+			ProyeccionDeVistas.Ritmo(RitmoDeManejo(placa), idioma);
 
 		// EN CUANTOS DIAS VA A TENER QUE CARGAR. No hay un PerformQuery propio: es la
 		// COMPOSICION de dos consultas que ya existen, y por eso es un metodo de la App
@@ -666,16 +667,15 @@ namespace Cargas.App
 					print completitud.CargasConKilometraje cargasConKilometraje,
 						completitud.TotalDeCargas totalDeCargas,
 						completitud.TramosCalculados tramosCalculados,
-						completitud.TramosBloqueados tramosBloqueados,
-						completitud.Expresada expresada;
+						completitud.TramosBloqueados tramosBloqueados;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
 			.PerformQuery();
 		}
 
-		public CompletitudDelVehiculo Completitud(string placa) =>
-			ProyeccionDeVistas.Completitud(CompletitudDeDatos(placa));
+		public CompletitudDelVehiculo Completitud(string placa, string idioma) =>
+			ProyeccionDeVistas.Completitud(CompletitudDeDatos(placa), idioma);
 
 		// QUE FALTA. La consulta que ninguna pantalla puede contestar, porque una
 		// pantalla solo renderiza datos que tiene y esto es una AUSENCIA.
@@ -687,11 +687,13 @@ namespace Cargas.App
 				foreach (faltante in bitacoraDeCargas.FaltantesDe(@placa)) {
 					print faltante.FechaDeLaCarga fecha,
 						faltante.NumeroDeLaTransaccion transaccion,
-						faltante.QueFalta queFalta,
-						faltante.QueDesbloquea queDesbloquea,
-						faltante.ParaSonia paraSonia,
+						faltante.ClaveDeLoQueFalta claveDeLoQueFalta,
+						faltante.ClaveDeLoQueDesbloquea claveDeLoQueDesbloquea,
+						faltante.KilometrosDelTramo kilometrosDelTramo,
+						faltante.DesdeLaCarga desdeLaCarga,
+						faltante.HastaLaCarga hastaLaCarga,
 						faltante.LoQueSeSupone loQueSeSupone,
-						faltante.LaSuposicion laSuposicion,
+						faltante.ClaveDelCorte claveDelCorte,
 						faltante.NaceDeUnaSuposicion naceDeUnaSuposicion;
 				}
 			")
@@ -699,8 +701,8 @@ namespace Cargas.App
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) =>
-			ProyeccionDeVistas.Faltantes(LoQueFaltaParaCalcular(placa));
+		public IReadOnlyList<FaltanteEnLista> Faltantes(string placa, string idioma) =>
+			ProyeccionDeVistas.Faltantes(LoQueFaltaParaCalcular(placa), idioma);
 
 		// El kilometraje esperado para el prellenado. `hoy` viaja como parametro y no lo
 		// lee el dominio: el modelo no toca el reloj.
@@ -740,16 +742,15 @@ namespace Cargas.App
 				foreach (costo in bitacoraDeCargas.CostoPorDistanciaDe(@placa)) {
 					print costo.CodigoDeMoneda moneda,
 						costo.MontoPorKilometro montoPorKilometro,
-						costo.Kilometros kilometros,
-						costo.Expresado expresado;
+						costo.Kilometros kilometros;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<CostoEnLista> Costos(string placa) =>
-			ProyeccionDeVistas.Costos(CostoPorDistancia(placa));
+		public IReadOnlyList<CostoEnLista> Costos(string placa, string idioma) =>
+			ProyeccionDeVistas.Costos(CostoPorDistancia(placa), idioma);
 
 		// Como evoluciono lo que paga por litro, POR SURTIDOR: el precio es estado del
 		// instrumento, no un numero suelto.
@@ -780,8 +781,7 @@ namespace Cargas.App
 					print gasto.CodigoDeMoneda moneda,
 						gasto.Monto monto,
 						gasto.CantidadDeCargas cargas,
-						gasto.Litros litros,
-						gasto.Expresado expresado;
+						gasto.Litros litros;
 				}
 			")
 			.WithParameters(p => {
@@ -791,8 +791,8 @@ namespace Cargas.App
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) =>
-			ProyeccionDeVistas.Gastos(GastoDelPeriodo(anio, mes));
+		public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes, string idioma) =>
+			ProyeccionDeVistas.Gastos(GastoDelPeriodo(anio, mes), idioma);
 
 		// EL GASTO DE UN CARRO. El tablero es de un vehiculo, asi que su instrumento de
 		// gasto tiene que serlo tambien: con dos carros, el gasto de todos conviviendo con
@@ -806,8 +806,7 @@ namespace Cargas.App
 					print gastoDelCarro.CodigoDeMoneda moneda,
 						gastoDelCarro.Monto monto,
 						gastoDelCarro.CantidadDeCargas cargas,
-						gastoDelCarro.Litros litros,
-						gastoDelCarro.Expresado expresado;
+						gastoDelCarro.Litros litros;
 				}
 			")
 			.WithParameters(p => {
@@ -818,8 +817,8 @@ namespace Cargas.App
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<GastoEnLista> GastosDe(string placa, int anio, int mes) =>
-			ProyeccionDeVistas.Gastos(GastoDelPeriodoDe(placa, anio, mes), "gastoDelCarro");
+		public IReadOnlyList<GastoEnLista> GastosDe(string placa, int anio, int mes, string idioma) =>
+			ProyeccionDeVistas.Gastos(GastoDelPeriodoDe(placa, anio, mes), idioma, "gastoDelCarro");
 
 		// La lealtad, discreta: presente para que se sienta real, no es el foco.
 		// LAS TOMBOLAS. El "hoy" lo pone la caratula, como en Odometro y ProximaCarga: el
@@ -840,15 +839,16 @@ namespace Cargas.App
 						sorteo.CantidadDeBoletos boletos,
 						sorteo.EstaVencido estaVencido,
 						sorteo.DiasParaElSorteo diasParaElSorteo,
-						sorteo.MontoPorBoletoExpresado montoPorBoleto,
-						sorteo.ParaSonia paraSonia;
+						sorteo.MontoPorBoleto montoPorBoleto,
+						sorteo.MonedaPorBoleto monedaPorBoleto,
+						sorteo.ClaveDeLaExplicacion clave;
 				}
 			")
 			.WithParameters(p => { p["hoy", typeof(DateTime)] = hoy; })
 			.PerformQuery();
 
-		public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy) =>
-			ProyeccionDeVistas.Sorteos(ListaDeSorteos(hoy));
+		public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy, string idioma) =>
+			ProyeccionDeVistas.Sorteos(ListaDeSorteos(hoy), idioma);
 
 		public string BoletosPorCarga(string placa)
 		{
@@ -863,18 +863,20 @@ namespace Cargas.App
 						explicacion.HayRegla hayRegla,
 						explicacion.BoletosQueDaLaRegla queDaLaRegla,
 						explicacion.BoletosEmitidos emitidos,
-						explicacion.SobranteExpresado sobrante,
+						explicacion.Sobrante sobrante,
+						explicacion.MonedaDeLaCarga moneda,
+						explicacion.MonedaDeLaRegla monedaDeLaRegla,
 						explicacion.LaCuentaCuadra cuadra,
 						explicacion.ProbablementeFaltaUnDato probablementeFaltaUnDato,
-						explicacion.ParaSonia paraSonia;
+						explicacion.ClaveDeLaExplicacion clave;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa) =>
-			ProyeccionDeVistas.BoletosDeLasCargas(BoletosPorCarga(placa));
+		public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa, string idioma) =>
+			ProyeccionDeVistas.BoletosDeLasCargas(BoletosPorCarga(placa), idioma);
 
 		public string EstadoDeLealtad() =>
 			app.Using(@"

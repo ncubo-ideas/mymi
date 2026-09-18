@@ -1,4 +1,5 @@
 using System;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using Concesionario.Wasm.Parts;
 using NUnit.Framework;
@@ -158,7 +159,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(front.Revision, Is.EqualTo(TheFirstRevision));
 			Assert.That(front.Says, Does.StartWith("Llanta delantera:"));
 			Assert.That(front.Says, Does.Contain(TheFrontTyre));
-			Assert.That(front.Says, Does.Contain("2.4 bar"));
+			Assert.That(front.Says, Does.Contain("2,4 bar"));
 
 			PublishedTyre rear = TheTyreRow(sheet, "Rear");
 
@@ -239,7 +240,7 @@ namespace Concesionario.Dominio.Pruebas
 				"1FTFW1ET5DFA00001", AppState.TheProfileAtDelivery))
 			{
 				WhatTheManufacturerPublished sheet =
-					WhatTheManufacturerPublished.ReadThrough(bare.Api);
+					WhatTheManufacturerPublished.ReadThrough(bare.Api, TheLanguage.OfTheRecord);
 
 				Assert.That(sheet.HasASealedRevision, Is.False);
 				Assert.That(sheet.CurrentRevision, Is.Empty);
@@ -316,14 +317,14 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheRowLabelIsTheCanonsNameSaidInTheLanguageOfTheScreen()
 		{
-			Assert.That(HowACanonNameReads.AFluid("EngineOil"), Is.EqualTo("Aceite de motor"));
+			Assert.That(HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "EngineOil"), Is.EqualTo("Aceite de motor"));
 			Assert.That(
-				HowACanonNameReads.AFluid("PowerSteeringFluid"),
+				HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "PowerSteeringFluid"),
 				Is.EqualTo("Líquido de dirección asistida"));
-			Assert.That(HowACanonNameReads.ATyre("Front"), Is.EqualTo("Delantera"));
-			Assert.That(HowACanonNameReads.AnOperation("FluidChange"), Is.EqualTo("Cambio de fluido"));
-			Assert.That(HowACanonNameReads.ADueState("Overdue"), Is.EqualTo("Atrasada"));
-			Assert.That(HowACanonNameReads.AStanding("NotPublished"), Is.EqualTo("Sin publicar"));
+			Assert.That(HowACanonNameReads.ATyre(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "Front"), Is.EqualTo("Delantera"));
+			Assert.That(HowACanonNameReads.AnOperation(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "FluidChange"), Is.EqualTo("Cambio de fluido"));
+			Assert.That(HowACanonNameReads.ADueState(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "Overdue"), Is.EqualTo("Atrasada"));
+			Assert.That(HowACanonNameReads.AStanding(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "NotPublished"), Is.EqualTo("Sin publicar"));
 		}
 
 		// EL MAPEO ES EXHAUSTIVO SOBRE LOS CONJUNTOS QUE LA PANTALLA RECORRE. No alcanza con probar
@@ -349,7 +350,7 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AnUnknownNameFallsBackToTheSpacedFormInsteadOfVanishing()
 		{
-			Assert.That(HowACanonNameReads.AFluid("SomethingNew"), Is.EqualTo("Something new"));
+			Assert.That(HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, "SomethingNew"), Is.EqualTo("Something new"));
 			Assert.That(AppState.Spaced(""), Is.Empty);
 			Assert.That(AppState.Spaced(null), Is.Null);
 		}
@@ -372,11 +373,11 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			switch (mapeo)
 			{
-				case "AnOperation": return HowACanonNameReads.AnOperation(name);
-				case "ADueState": return HowACanonNameReads.ADueState(name);
-				case "AFluid": return HowACanonNameReads.AFluid(name);
-				case "ATyre": return HowACanonNameReads.ATyre(name);
-				case "AStanding": return HowACanonNameReads.AStanding(name);
+				case "AnOperation": return HowACanonNameReads.AnOperation(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, name);
+				case "ADueState": return HowACanonNameReads.ADueState(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, name);
+				case "AFluid": return HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, name);
+				case "ATyre": return HowACanonNameReads.ATyre(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, name);
+				case "AStanding": return HowACanonNameReads.AStanding(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, name);
 			}
 
 			throw new ArgumentException("No hay ningún mapeo llamado '" + mapeo + "'.");
@@ -397,7 +398,7 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhatTheManufacturerPublished TheSheetTheScreenShows()
 		{
-			return WhatTheManufacturerPublished.ReadThrough(journal.Api);
+			return WhatTheManufacturerPublished.ReadThrough(journal.Api, TheLanguage.OfTheRecord);
 		}
 
 		private static PublishedFluid TheFluidRow(
