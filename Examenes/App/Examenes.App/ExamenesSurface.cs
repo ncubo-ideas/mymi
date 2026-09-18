@@ -78,7 +78,7 @@ namespace Examenes.App
 		public object ListaDeExamenes()
 		{
 			if (!HasJournal) return NoData();
-			return Read(ConsultasDelModulo.HacerListaDeExamenes);
+			return Read(api => ConsultasDelModulo.HacerListaDeExamenes(api, ExamenesAPI.IdiomaDelRegistro));
 		}
 
 		// ------------------------------------------------------------------ lo que pinta la cara
@@ -109,7 +109,8 @@ namespace Examenes.App
 
 		// La tabla: la misma que ya contesta la tool, pero por la puerta de la cara.
 		[View("examenes")]
-		public object Examenes(string idioma = "") => !HasJournal ? NoData() : Read(ConsultasDelModulo.HacerListaDeExamenes);
+		public object Examenes(string idioma = "") => !HasJournal ? NoData()
+			: Read(api => ConsultasDelModulo.HacerListaDeExamenes(api, Elegido(idioma)));
 
 		// LO QUE UN GRAFICO NECESITA Y EL CUADRO NO DA: los puntos de una serie con su numero, y
 		// las lineas que los acompanan. Es exactamente lo que la tool no puede contestar.

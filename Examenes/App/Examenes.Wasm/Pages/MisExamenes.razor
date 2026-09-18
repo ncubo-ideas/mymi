@@ -889,7 +889,7 @@ else
                     @if (!string.IsNullOrEmpty(lectura.ParaSonia))
                     {
                         <p class="inicio-cambio-conclusion">
-                            @lectura.ParaSonia@(lectura.PideAlgo && !string.IsNullOrEmpty(lectura.Accion) ? ":" : ".")
+                            @lectura.ParaSonia@(lectura.PideAlgo && !string.IsNullOrEmpty(lectura.Accion) ? ": " : ".")
                             @if (lectura.PideAlgo && !string.IsNullOrEmpty(lectura.Accion))
                             {
                                 <b>@lectura.Accion</b>

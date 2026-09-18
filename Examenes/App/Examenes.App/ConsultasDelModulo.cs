@@ -38,10 +38,10 @@ namespace Examenes.App
 		}
 
 		// LA LISTA DE EXAMENES. Filas planas: exactamente lo que una ventana pinta como tabla.
-		public static object HacerListaDeExamenes(ExamenesAPI api)
+		public static object HacerListaDeExamenes(ExamenesAPI api, string idioma)
 		{
 			ArgumentNullException.ThrowIfNull(api);
-			return new { hayDatos = true, examenes = api.Examenes(ExamenesAPI.IdiomaDelRegistro) };
+			return new { hayDatos = true, examenes = api.Examenes(idioma) };
 		}
 
 		// Todavia no hay nada registrado. Se dice DONDE se busco, porque "no hay datos" sin

@@ -445,7 +445,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		return tool switch
 		{
 			ConsultasDelModulo.Resumen => ConsultasDelModulo.HacerResumen(api!),
-			ConsultasDelModulo.ListaDeExamenes => ConsultasDelModulo.HacerListaDeExamenes(api!),
+			ConsultasDelModulo.ListaDeExamenes =>
+				ConsultasDelModulo.HacerListaDeExamenes(api!, ExamenesAPI.IdiomaDelRegistro),
 			_ => throw new ArgumentException($"El módulo no atiende la tool '{tool}'."),
 		};
 	}
