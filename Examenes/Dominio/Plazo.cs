@@ -21,35 +21,33 @@ namespace Examenes.Dominio
 	internal sealed class Plazo
 	{
 		// Sin apuro: el proximo control que ya ibas a tener.
-		internal static readonly Plazo EnLaProximaCita =
-			new Plazo("en la proxima cita", "en la próxima cita", 1);
+		internal static readonly Plazo EnLaProximaCita = new Plazo("en-la-proxima-cita", 1);
 
-		internal static readonly Plazo EsteMes = new Plazo("este mes", "este mes", 2);
+		internal static readonly Plazo EsteMes = new Plazo("este-mes", 2);
 
 		// El "espere una semana" de la repeticion de un examen.
-		internal static readonly Plazo EstaSemana = new Plazo("esta semana", "esta semana", 3);
+		internal static readonly Plazo EstaSemana = new Plazo("esta-semana", 3);
 
 		// No espera a que consigas cita. Es el plazo del rojo reservado.
-		internal static readonly Plazo Pronto = new Plazo("pronto", "pronto", 4);
+		internal static readonly Plazo Pronto = new Plazo("pronto", 4);
 
 		// El plazo que no es del dominio decidir: repetir un examen suelto no corre, y
 		// cuando corresponde lo dice el medico. Pesa cero porque no apura nada.
 		internal static readonly Plazo CuandoElMedicoLoIndique =
-			new Plazo("cuando el medico lo indique", "cuando el médico lo indique", 0);
+			new Plazo("cuando-el-medico-lo-indique", 0);
 
-		// La etiqueta interna, sin acentos: para comparar y serializar.
-		internal string Nombre { get; private set; }
-
-		// El plazo como se le dice a la persona, con acentos, listo para encadenar
-		// despues del que: "mostráselo a tu médico" + "este mes".
-		internal string ParaMostrar { get; private set; }
+		/// <summary>
+		/// EL CODIGO de este plazo: identidad, para comparar y serializar, y lo unico que cruza el
+		/// wire. Como se dice lo busca con este codigo la capa que redacta, en el idioma que le
+		/// pidieron.
+		/// </summary>
+		internal string Clave { get; private set; }
 
 		private readonly int peso;
 
-		private Plazo(string nombre, string paraMostrar, int peso)
+		private Plazo(string clave, int peso)
 		{
-			Nombre = nombre;
-			ParaMostrar = paraMostrar;
+			Clave = clave;
 			this.peso = peso;
 		}
 

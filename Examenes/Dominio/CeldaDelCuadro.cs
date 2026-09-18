@@ -47,17 +47,29 @@ namespace Examenes.Dominio
 		// es con el que se pide la interpretacion; para los demas, el nombre del examen.
 		internal string Analito { get; private set; }
 
-		internal string ParaMostrar { get; private set; }
+		/// <summary>El codigo del analito dentro de una clave de frase.</summary>
+		internal string ClaveDelAnalito { get; private set; }
 
 		// La fecha de la COLUMNA, ya sin hora. Se repite en todas las celdas de la misma
 		// columna a proposito: es lo que le permite a la superficie reconstruir el
 		// encabezado sin una segunda consulta.
 		internal DateTime Fecha { get; private set; }
 
-		// El resultado ya dicho, con unidad. Es ResultadoExpresado y no un decimal por la
-		// misma razon que la lista: un colesterol ("280 mg/dL") y una orina ("ambar")
-		// conviven en el mismo cuadro sin que ninguno tenga que mentir sobre su forma.
-		internal string Expresado { get; private set; }
+		// EL RESULTADO COMO CODIGO Y COMO NUMERO, y los dos porque un colesterol y una
+		// orina conviven en el mismo cuadro sin que ninguno tenga que mentir sobre su
+		// forma: el numero viaja como numero con su unidad, y la categoria como codigo.
+
+		/// <summary>El codigo de la categoria que se midio, vacio cuando lo que se midio es un numero.</summary>
+		internal string ClaveDelResultado { get; private set; }
+
+		/// <summary>El numero que se midio, cero cuando lo que se midio es una categoria.</summary>
+		internal decimal Valor { get; private set; }
+
+		/// <summary>El simbolo de la unidad, vacio cuando lo que se midio es una categoria.</summary>
+		internal string Unidad { get; private set; }
+
+		/// <summary>Si lo que se midio es un numero con unidad.</summary>
+		internal bool EsNumero { get; private set; }
 
 		// NO HAY LECTURA COLGADA ACA, y es una decision. Hubo tres campos mas —si la fila
 		// formaba serie, su severidad y su frase— que existian para las filas SIN serie, o
@@ -68,9 +80,11 @@ namespace Examenes.Dominio
 		// Dejarlos habria sido peor que redundante: la magnitud sola contesta lo mismo
 		// siempre y la serie sabe bajarlo cuando el hallazgo no se repitio, asi que la
 		// pantalla tendria dos respuestas distintas para la misma pregunta.
-		internal CeldaDelCuadro(int fila, int columna, string analito, string paraMostrar,
-			DateTime fecha, string expresado)
+		internal CeldaDelCuadro(int fila, int columna, string analito, string claveDelAnalito,
+			DateTime fecha, LecturaDeExamen lectura)
 		{
+			ArgumentNullException.ThrowIfNull(lectura);
+
 			if (fila < 0)
 				throw new ArgumentOutOfRangeException(nameof(fila), fila, "La fila no puede ser negativa.");
 			if (columna < 0)
@@ -80,9 +94,12 @@ namespace Examenes.Dominio
 			Fila = fila;
 			Columna = columna;
 			Analito = analito;
-			ParaMostrar = paraMostrar;
+			ClaveDelAnalito = claveDelAnalito;
 			Fecha = fecha;
-			Expresado = expresado;
+			ClaveDelResultado = lectura.ClaveDelResultado;
+			Valor = lectura.Valor;
+			Unidad = lectura.Unidad;
+			EsNumero = lectura.EsNumero;
 		}
 	}
 }

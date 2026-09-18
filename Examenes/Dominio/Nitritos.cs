@@ -41,7 +41,7 @@ namespace Examenes.Dominio
 			this.positivo = positivo;
 		}
 
-		internal override string Expresado => Etiqueta;
+		internal override string Clave => Etiqueta;
 
 		internal override bool FueRealizada => realizada;
 
@@ -84,10 +84,10 @@ namespace Examenes.Dominio
 		internal override Accion AccionDelHallazgo =>
 			EsHallazgo ? Accion.MostrarleEstoATuMedico(Plazo.EstaSemana) : null;
 
-		internal override string ParaSonia =>
-			!realizada ? "el laboratorio no corrió esta prueba"
-			: positivo ? "los nitritos salieron positivos, que suele indicar una infección urinaria"
-			: "los nitritos salieron negativos, que es lo esperable";
+		internal override string ClaveDeLaFrase =>
+			!realizada ? "resultado.no-realizado"
+			: positivo ? "resultado.nitritos.positivo"
+			: "resultado.nitritos.negativo";
 
 		/// <summary>
 		/// La frontera. La tira llega como texto en el evento del proveedor y se resuelve UNA

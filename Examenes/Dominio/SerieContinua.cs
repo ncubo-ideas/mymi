@@ -91,24 +91,25 @@ namespace Examenes.Dominio
 		internal override bool UltimaEsHallazgo(Paciente paciente) =>
 			Ultimo != null && Ultimo.HayRangoPara(paciente) && !Ultimo.EsNormalPara(paciente);
 
-		// La referencia contra la que se lee el ultimo valor, ya dicha. Sale del rango
-		// del propio examen —que es donde vive el conocimiento por edad— y se dice como
-		// se lee: un rango que arranca en cero es un techo ("hasta 4.5 ng/mL"), uno con
-		// piso real es una banda ("entre 13 y 17 g/dL").
-		internal override string ReferenciaLegible(Paciente paciente)
+		// La referencia contra la que se lee el ultimo valor. Sale del rango del propio
+		// examen —que es donde vive el conocimiento por edad— y se elige como se lee: un
+		// rango que arranca en cero es un techo, uno con piso real es una banda.
+		internal override Interpretacion ConSuReferencia(Interpretacion lectura, Paciente paciente)
 		{
-			if (Ultimo == null) return "";
+			if (Ultimo == null) return lectura;
 
 			RangoDeReferencia rango = Ultimo.RangoPara(paciente);
 
-			// Sin rango la referencia NO es vacia: es "depende de tu sexo". Es la unica
-			// frase honesta al lado de un numero que no se puede juzgar, y la escribe el
-			// dominio —igual que todas las demas— para que la pantalla no la componga.
-			if (rango == null) return "depende de tu sexo";
+			// Sin rango la referencia NO es ninguna: es "depende de tu sexo". Es la unica
+			// frase honesta al lado de un numero que no se puede juzgar, y la elige el
+			// dominio —igual que todas las demas— para que la pantalla no la invente.
+			if (rango == null) return lectura.ConReferencia("referencia.depende-del-sexo");
 
 			return rango.Minimo.Valor == 0m
-				? $"hasta {rango.Maximo.Expresado}"
-				: $"entre {rango.Minimo.Expresado} y {rango.Maximo.Expresado}";
+				? lectura.ConReferencia("referencia.hasta", 0m, rango.Maximo.Valor,
+					rango.Maximo.Unidad.Simbolo)
+				: lectura.ConReferencia("referencia.entre", rango.Minimo.Valor, rango.Maximo.Valor,
+					rango.Maximo.Unidad.Simbolo);
 		}
 
 		// LA operacion del dominio. Evalua la serie completa, no el ultimo valor.

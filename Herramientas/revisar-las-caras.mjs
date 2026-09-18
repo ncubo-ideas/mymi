@@ -58,9 +58,9 @@ const modulos = {
     marca: "Delfos",
     cara: "Examenes/App/Examenes.Cara",
     app: "Examenes/App/Examenes.Wasm/wwwroot",
-    // Delfos no esta localizado ni en su app suelta: no hay catalogo que comparar, y eso no es
-    // un hueco. Se revisa igual la hoja y las clases.
-    textos: null,
+    // Delfos se localizo el 2026-09-18 (PR 10107, Kenneth), asi que ya hay catalogo que
+    // comparar. Nombra su carpeta y su global como los otros tres en espanol.
+    textos: 'texto', global: 'TextoDeLaCara', atributo: 'data-texto', llamada: 'I', verbos: ['texto', 'con'],
   },
   municipalidad: {
     marca: "Monteverde",

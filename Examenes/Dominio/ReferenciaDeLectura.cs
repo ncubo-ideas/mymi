@@ -25,16 +25,17 @@ namespace Examenes.Dominio
 
 		// Que decirle a la persona cuando pregunta por esa linea. La pantalla no la
 		// inventa: la muestra.
-		internal string ParaSonia { get; private set; }
+		/// <summary>La frase con que esta linea se explica, por su nombre.</summary>
+		internal string Clave { get; private set; }
 
-		internal ReferenciaDeLectura(string nombre, Medicion valor, string paraSonia)
+		internal ReferenciaDeLectura(string nombre, Medicion valor, string clave)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 			ArgumentNullException.ThrowIfNull(valor);
 
 			Nombre = nombre;
 			Valor = valor;
-			ParaSonia = paraSonia ?? "";
+			Clave = clave ?? "";
 		}
 
 		internal decimal Numero => Valor.Valor;

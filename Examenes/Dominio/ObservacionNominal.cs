@@ -41,7 +41,8 @@ namespace Examenes.Dominio
 		// Expresado es el mismo dato escrito como se lee, con acentos.
 		internal string Categoria => Resultado.Nombre;
 
-		internal string Expresado => Resultado.Expresado;
+		/// <summary>El codigo de la categoria: identidad, y lo unico que cruza el wire.</summary>
+		internal string ClaveDelResultado => Resultado.Clave;
 
 		internal bool EsEsperable => Resultado.EsEsperable;
 

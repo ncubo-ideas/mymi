@@ -1,11 +1,13 @@
 {
   "//": "THIS FILE BELONGS TO THE MODULE. The institution writes it, and some day will sign it. It declares who it is, which substrate it needs, which capabilities it asks for, and its list of tools. Gnothi reads it to build the catalog WITHOUT starting the module.",
-  "//sincronizado": "2026-09-02: alineado con lo que el DLL expone (gnothi_verify_module -> matches). Se quito el fantasma revisar_mis_analitos y se declararon presencia_de y que_me_falta_medir, con descripciones en ingles (las unifico el dueno). Los tres parametros 'analito' llevan su 'enum' de valores validos, que el schema le pasa al modelo. OJO DE PROCESO: este modulo no tiene un manifiesto fuente unico como compras (Compras/manifiesto.json), por eso se desincronizo. Un guardian que compare declarado contra lo que el modulo expone evitaria que vuelva a pasar en silencio.",
+  "//sincronizado": "2026-09-18: las descripciones volvieron al IDIOMA DEL MODULO. Estaban curadas a mano en ingles y el titulo de cada tool en espanol, o sea la voz de la institucion traducida a medias por el Host; la regla de localizacion (Metodologia/Guias/reglas-de-localizacion.md) las pone del lado que no se traduce, junto al titulo, al lema y al journal. Ya no se escriben a mano: las toma el generador desde el tools/list del modulo, que es donde el dueno las escribe una sola vez. Correr 'node Herramientas/sincronizar-manifiesto.mjs examenes' despues de tocar un [Description]. La misma pasada corrigio tres 'enum' atrasados: declaraban cuatro analitos numericos y tres binarios, y el modulo acepta once y seis.",
   "manifest": "1.0",
   "module": "examenes",
   "title": "Mis exámenes",
   "institution": "Clinical laboratory (POC mock)",
-  "about": { "locale": "es-CR" },
+  "about": {
+    "locale": "es-CR"
+  },
   "//substrate": "A RANGE, not an exact version: if a module pins one precise version, every Host update orphans every installed module.",
   "substrate": {
     "range": ">=3.0.0 <4.0.0"
@@ -18,31 +20,38 @@
     "microphone": false
   },
   "//tools": "THE LIST GNOTHI HANDS TO THE ASSISTANT. The description travels as is: it is not documentation, it is the only thing the AI has in order to decide whether this tool answers the person's question.",
-  "//names": "The tool names, their parameter names and the analyte values are the module's REAL ones, over the protocol. They are not translated: they have to match what the module's MCP server exposes, or tools/call fails and gnothi_verify_module reports a mismatch.",
-  "//no-precedent": "This is the FIRST module with parameterized tools. The invoices manifest declares 'input': [] in its only tool, so there is no example of how a parameter is declared. Three of the four here take an analyte, and the module publishes them as TWO separate enums -four numeric analytes and three binary ones, measured by asking it for its tools/list-, because the questions that can be asked of each set are not the same: a nitrite does not have a velocity. The 'input' schema of this manifest only models type and description, so the valid values cannot be expressed and have to be repeated in the description. This is the concrete evidence for deciding the format, which is still open in the team's set.",
+  "//names": "The tool names, their parameter names and the analyte values are the module's REAL ones, over the protocol. They are not translated: they have to match what the module's MCP server exposes, or tools/call fails and gnothi_verify_module reports a mismatch. The titles and descriptions are not translated either, for a different reason: they are the institution speaking to the model, so they follow the module's language and not the asker's.",
+  "//no-precedent": "This is the FIRST module with parameterized tools. The invoices manifest declares 'input': [] in its only tool, so there is no example of how a parameter is declared. Four of the five here take an analyte, and the module publishes them as THREE separate enums -numeric, binary and nominal, read from its tools/list-, because the questions that can be asked of each set are not the same: a nitrite does not have a velocity, and a colour does not appear, it comes out. The valid values live in this file's 'enum', which the generator fills from the module's own schema, so the description does NOT repeat them: that was the older workaround, from before the parameters were typed, and a list repeated in prose is a list that goes stale.",
   "tools": [
     {
       "name": "que_me_falta_medir",
       "title": "Qué me toca repetir",
-      "description": "Every analyte the person has history for, with how long since each was last measured, how often it should be repeated, and WHETHER IT IS OVERDUE. Use it when they ask 'which tests am I due for?', 'how long since I had my cholesterol checked?' or 'am I up to date?'. IT RETURNS THE UP-TO-DATE ONES TOO, so a row appearing does NOT mean it is pending: read estaVencido on each one, and read cuantosVencidos, which is the count that answers the question - cuantosVencidos zero means the person is up to date with everything, and then you say exactly that instead of listing rows as if they were pending. Each row carries its own lectura already written; say that. The interval is decided by each analyte and is not fixed - a cholesterol in range repeats every five years and a high one every year. Only analytes measured at least once appear: for one never done there is nothing to repeat.",
+      "description": "Todos los analitos con historia, con cuanto hace que no se miden, cada cuanto conviene repetir cada uno, y SI ESTA VENCIDO O NO. Usala cuando pregunte '¿que examenes me toca hacerme?', '¿hace cuanto que no me chequeo el colesterol?' o '¿estoy al dia?'. DEVUELVE TAMBIEN LOS QUE ESTAN AL DIA, asi que un renglon no significa que este pendiente: mira estaVencido en cada uno, y mira cuantosVencidos, que es el numero que contesta la pregunta -en cero, la persona esta al dia con todo-. Es lo que NINGUNA pantalla puede mostrar: la app muestra lo que hay, esto dice lo que FALTA. La periodicidad la decide cada analito y no es fija — un colesterol en rango se repite cada cinco anos y uno alto todos los anos. Solo aparecen analitos que ya se midieron alguna vez: de uno que nunca se hizo no hay nada que repetir.",
       "readOnly": true,
       "input": []
     },
     {
       "name": "evaluar_tendencia",
       "title": "Cómo viene un analito",
-      "description": "Answers whether one of the person's analytes IS GOING UP, is going down or is stable, looking at their whole history and not at the latest result. It is the question their lab sheet cannot answer, because a sheet carries one value and one date. If sugiereRepetirElExamen comes back true, the change is too large for the time elapsed and the most likely cause is a measurement error: suggest repeating the test, do not alarm. It only works for analytes carrying a NUMBER; for the ones reported as present or absent the tool is presencia_de. The analyte is passed as one of these exact values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina.",
+      "description": "Contesta si un analito de la persona VIENE SUBIENDO, viene bajando o esta estable, mirando toda su historia y no el ultimo resultado. Es la pregunta que su hoja de laboratorio no puede contestar, porque una hoja trae un valor y una fecha. Usala cuando pregunte cosas como '¿mi antigeno prostatico viene subiendo o esta estable?' o '¿como viene mi colesterol?'. Devuelve la tendencia, los valores inicial y final con su unidad, y cuantos dias pasaron entre los dos. Si sugiereRepetirElExamen viene en true, el cambio es demasiado grande para el tiempo transcurrido y lo mas probable es un error de medicion: hay que sugerir repetir el examen, no alarmar.",
       "readOnly": true,
       "input": [
         {
           "name": "analito",
           "type": "string",
-          "description": "Which analyte to evaluate. Valid values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina.",
+          "description": "Cual analito evaluar.",
           "enum": [
             "AntigenoProstatico",
             "ColesterolTotal",
             "ColesterolLdl",
-            "Hemoglobina"
+            "Hemoglobina",
+            "Trigliceridos",
+            "GlucosaEnAyunas",
+            "NitrogenoUreico",
+            "Sodio",
+            "Potasio",
+            "Cloro",
+            "ProteinasTotales"
           ]
         }
       ]
@@ -50,18 +59,25 @@
     {
       "name": "velocidad_de",
       "title": "Qué tan rápido cambia",
-      "description": "Answers HOW FAST an analyte has been changing, in units per year, and whether that rate on its own already demands attention even if the absolute value is still within range. It differs from evaluar_tendencia: the trend looks at the whole series and this looks at the MOST RECENT stretch, which is how a prostate-specific antigen is read in clinical practice. The analyte is passed as one of these exact values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina.",
+      "description": "Contesta A QUE RITMO viene cambiando un analito, en unidades por ano, y si ese ritmo por si solo ya exige atencion aunque el valor absoluto todavia este en rango. Es distinto de evaluar_tendencia: la tendencia mira la serie entera y esto mira el tramo MAS RECIENTE, que es como se lee un antigeno prostatico en la practica clinica. Usala cuando pregunte '¿que tan rapido esta subiendo?', '¿deberia preocuparme por la velocidad?' o cuando evaluar_tendencia haya dado 'en ascenso' y haga falta el ritmo. Si esAplicable viene en false, ese analito no se interpreta por velocidad -el colesterol se lee por nivel, no por pendiente- y no hay que inventar una lectura.",
       "readOnly": true,
       "input": [
         {
           "name": "analito",
           "type": "string",
-          "description": "Which analyte to measure. Valid values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina.",
+          "description": "Cual analito medir.",
           "enum": [
             "AntigenoProstatico",
             "ColesterolTotal",
             "ColesterolLdl",
-            "Hemoglobina"
+            "Hemoglobina",
+            "Trigliceridos",
+            "GlucosaEnAyunas",
+            "NitrogenoUreico",
+            "Sodio",
+            "Potasio",
+            "Cloro",
+            "ProteinasTotales"
           ]
         }
       ]
@@ -69,32 +85,34 @@
     {
       "name": "presencia_de",
       "title": "Si sigue apareciendo",
-      "description": "Answers how an analyte reported as PRESENT or ABSENT - occult blood, nitrites - is doing, looking at its whole history and not at the latest test. Use it when they ask 'am I still passing blood?', 'did the infection clear?' or 'has this happened to me before?'. It returns whether it appeared, whether it PERSISTS -two or more consecutive positive tests: it was repeated and came back-, whether it was not confirmed -it appeared once and the next one was negative- or whether it cleared. It differs from evaluar_tendencia, which only works for analytes carrying a number: a nitrite is not going up. Pay attention to positivasSeguidas: a confirmed finding and an isolated one do NOT call for the same thing, and the right action comes in the accion field. The analyte is passed as one of these exact values: Nitritos, SangreEnOrina, SangreEnHeces.",
+      "description": "Contesta como viene un analito que se informa como PRESENTE o AUSENTE — sangre oculta, nitritos — mirando toda su historia y no la ultima prueba. Usala cuando pregunte '¿me sigue saliendo sangre?', '¿la infeccion cedio?' o '¿esto ya me habia pasado?'. Devuelve si aparecio, si PERSISTE (dos o mas pruebas positivas seguidas: ya se repitio y volvio a salir), si no se confirmo (aparecio una vez y la siguiente dio negativa) o si cedio. Es distinto de evaluar_tendencia, que solo sirve para analitos con numero: un nitrito no viene subiendo. Presta atencion a positivasSeguidas: un hallazgo confirmado y uno aislado NO piden lo mismo, y la accion correcta viene en el campo accion.",
       "readOnly": true,
       "input": [
         {
           "name": "analito",
           "type": "string",
-          "description": "Which binary analyte to evaluate. Valid values: Nitritos, SangreEnOrina, SangreEnHeces.",
+          "description": "Cual analito binario evaluar.",
           "enum": [
             "Nitritos",
             "SangreEnOrina",
-            "SangreEnHeces"
+            "SangreEnHeces",
+            "ProteinaEnOrina",
+            "Cetonas",
+            "GlucosaEnOrina"
           ]
         }
       ]
     },
     {
-      "//": "2026-09-08: LA TRAJO EL MERGE DE master. El modulo gano constancia_de -la tercera forma de un analito, la categorica- y esta copia se quedo con cuatro, asi que gnothi_verify_module la reporto como expuesta-sin-declarar. Es exactamente lo que anticipa el //sincronizado de arriba, y esta vez el guardian de la suite lo atajo en vez de que pasara en silencio. La descripcion es la del modulo (Examenes.Mcp/Tools/ExamenesTools.cs) traducida al ingles como las otras cuatro: QUE LA REVISE EL DUENO, que es quien las unifico.",
       "name": "constancia_de",
       "title": "Si el color sigue saliendo raro",
-      "description": "Answers how an analyte reported as a CATEGORY - the colour of the urine, of the stool - is doing, looking at its whole history and not at the latest test. Use it when they ask 'does the colour still come out odd?', 'has this happened to me before?' or 'is this colour normal?'. It returns whether it was always within what is expected, whether it went outside, whether it PERSISTS -two or more consecutive times outside: it was already repeated-, whether it was not confirmed -it went outside once and the next one came back- or whether it returned to what is expected. It differs from evaluar_tendencia, which only works for analytes carrying a number, and from presencia_de, which works for the ones reported as positive or negative: a colour is not going up and does not appear, it COMES OUT. Pay attention to noEsperablesSeguidas: an isolated unexpected category and a repeated one do NOT call for the same thing, and the right action comes in the accion field. The analyte is passed as one of these exact values: ColorDeLaOrina, ColorDeLasHeces.",
+      "description": "Contesta como viene un analito que se informa como una CATEGORIA — el color de la orina, el de las heces — mirando toda su historia y no la ultima vez. Usala cuando pregunte '¿el color me sigue saliendo raro?', '¿esto ya me habia pasado?' o '¿es normal este color?'. Devuelve si siempre estuvo dentro de lo esperable, si se salio, si PERSISTE (dos o mas veces seguidas afuera: ya se repitio), si no se confirmo (se salio una vez y la siguiente volvio) o si volvio a lo esperable. Es distinto de evaluar_tendencia, que solo sirve para analitos con numero, y de presencia_de, que sirve para los de positivo o negativo: un color no viene subiendo ni aparece, SALE. Presta atencion a noEsperablesSeguidas: una categoria inesperada aislada y una repetida NO piden lo mismo, y la accion correcta viene en el campo accion.",
       "readOnly": true,
       "input": [
         {
           "name": "analito",
           "type": "string",
-          "description": "Which nominal analyte to evaluate. Valid values: ColorDeLaOrina, ColorDeLasHeces.",
+          "description": "Cual analito nominal evaluar.",
           "enum": [
             "ColorDeLaOrina",
             "ColorDeLasHeces"

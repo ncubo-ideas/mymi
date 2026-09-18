@@ -53,17 +53,18 @@ namespace Examenes.Dominio
 		//
 		// Con todo en rango no se dice "M de M": la fraccion existe para contar los que NO
 		// estan, y sin ninguno afuera es ruido.
-		internal string ParaSonia
+		/// <summary>
+		/// LA FRASE QUE ESTE EXPEDIENTE ELIGE, por su nombre. Vacia cuando no hay nada en rango, que
+		/// es una respuesta: sin nada que decir no se dice nada. El plural lo resuelve quien redacta,
+		/// con la cuenta que va al lado.
+		/// </summary>
+		internal string ClaveDeLaFrase
 		{
 			get
 			{
 				if (EnSuRango == 0) return "";
 
-				string valores = EnSuRango == 1 ? "valor está" : "valores están";
-
-				return EnSuRango == Analitos
-					? $"Tus {EnSuRango} {valores} en su rango."
-					: $"{EnSuRango} de tus {Analitos} {valores} en su rango.";
+				return EnSuRango == Analitos ? "enRango.todos" : "enRango.algunos";
 			}
 		}
 	}

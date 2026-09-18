@@ -45,7 +45,7 @@ namespace Examenes.Dominio
 			this.positivo = positivo;
 		}
 
-		internal override string Expresado => Etiqueta;
+		internal override string Clave => Etiqueta;
 
 		internal override bool FueRealizada => realizada;
 
@@ -84,10 +84,10 @@ namespace Examenes.Dominio
 		internal override Accion AccionDelHallazgo =>
 			EsHallazgo ? Accion.BuscarAtencionMedica(Plazo.Pronto) : null;
 
-		internal override string ParaSonia =>
-			!realizada ? "el laboratorio no corrió esta prueba"
-			: positivo ? "apareció sangre en la orina, y eso conviene que lo revise un médico pronto"
-			: "no apareció sangre en la orina, que es lo esperable";
+		internal override string ClaveDeLaFrase =>
+			!realizada ? "resultado.no-realizado"
+			: positivo ? "resultado.sangre-en-orina.positivo"
+			: "resultado.sangre-en-orina.negativo";
 
 		/// <summary>
 		/// La frontera. Un evento sin el campo significa que la prueba no se corrio —un

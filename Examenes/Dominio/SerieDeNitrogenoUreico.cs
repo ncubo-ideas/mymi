@@ -27,9 +27,9 @@ namespace Examenes.Dominio
 
 			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			lineas.Add(new ReferenciaDeLectura("piso", rango.Minimo,
-				$"por debajo de {rango.Minimo.Expresado} es mas bajo de lo habitual"));
+				"linea.nitrogeno-ureico.piso"));
 			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
-				$"lo normal llega hasta {rango.Maximo.Expresado}"));
+				"linea.nitrogeno-ureico.techo"));
 
 			return lineas;
 		}
@@ -43,9 +43,7 @@ namespace Examenes.Dominio
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"el nitrógeno ureico cambió {Math.Abs(hechos.Cambio)} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que es demasiado para el tiempo transcurrido", hechos,
+					"lectura.nitrogeno-ureico.salto-inverosimil", hechos,
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			// Mantenerse no puede juzgar por el signo -EsFavorable revienta-, asi que lo que
@@ -57,20 +55,16 @@ namespace Examenes.Dominio
 			if (!seMovio)
 				return ahoraEnRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"el nitrógeno ureico se mantiene en {Ultima.Valor.Expresado}, dentro de lo normal",
-						hechos)
+					"lectura.nitrogeno-ureico.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, Severidad.Vigilar,
-						$"el nitrógeno ureico lleva tiempo en {Ultima.Valor.Expresado}, fuera de lo normal",
-						hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
+					"lectura.nitrogeno-ureico.estable-fuera", hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 
 			if (ahoraEnRango)
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"el nitrógeno ureico volvió a {Ultima.Valor.Expresado}, dentro de lo normal", hechos);
+					"lectura.nitrogeno-ureico.volvio", hechos);
 
 			return new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-				$"el nitrógeno ureico pasó de {hechos.ValorInicial} a {hechos.ValorFinal} "
-				+ $"{hechos.Unidad}, fuera de lo normal",
-				hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
+					"lectura.nitrogeno-ureico.paso-fuera", hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 		}
 	}
 }

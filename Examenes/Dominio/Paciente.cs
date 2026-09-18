@@ -64,6 +64,6 @@ namespace Examenes.Dominio
 		// el HDL— y NO los que no lo tienen, que siguen interpretandose igual que siempre.
 		internal bool SeSabeElSexo => Sexo.EsConocido;
 
-		public override string ToString() => $"{Edad} años, {Sexo.ParaMostrar}";
+		public override string ToString() => $"{Edad} años, {Sexo.Nombre}";
 	}
 }

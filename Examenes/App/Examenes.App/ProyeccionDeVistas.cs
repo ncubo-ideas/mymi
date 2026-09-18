@@ -16,6 +16,10 @@ namespace Examenes.App
 	// ya hizo todo el trabajo de serializacion". Un cliente REST hace exactamente esto.
 	// La diferencia es que aca el cliente esta en el mismo proceso.
 	//
+	// Y ES DONDE SE ESCRIBE LA FRASE. El dominio manda la clave y sus valores; aca se le
+	// pide al renderizador del idioma que la diga. Los codigos siguen viajando al lado:
+	// una pantalla decide con el codigo y muestra el dicho.
+	//
 	// El formato de fecha es el del formatter: MM/dd/yyyy HH:mm:ss en cultura
 	// invariante.
 	internal static class ProyeccionDeVistas
@@ -23,7 +27,7 @@ namespace Examenes.App
 		private const string FormatoDeFecha = "MM/dd/yyyy HH:mm:ss";
 		private const string FormatoDeFechaSinHora = "MM/dd/yyyy";
 
-		internal static IReadOnlyList<ExamenEnLista> Lista(string json)
+		internal static IReadOnlyList<ExamenEnLista> Lista(string json, Frases.Frases frases)
 		{
 			var examenes = new List<ExamenEnLista>();
 			if (string.IsNullOrWhiteSpace(json)) return examenes;
@@ -34,30 +38,61 @@ namespace Examenes.App
 			// lista vacia, no un error.
 			if (!documento.RootElement.TryGetProperty("examen", out JsonElement arreglo)) return examenes;
 
+			// LAS LECTURAS LLEGAN PLANAS Y CON EL INDICE DE SU EXAMEN, que es lo que deja
+			// rearmar el resultado de cada fila sin volver a decidir que va donde. Ver
+			// LecturaEnLaLista: el print proyecta un solo nivel.
+			var porFila = new Dictionary<int, List<(string, string, decimal, string, bool)>>();
+			if (documento.RootElement.TryGetProperty("lectura", out JsonElement lecturas))
+				foreach (JsonElement elemento in Elementos(lecturas))
+				{
+					int fila = Entero(elemento, "fila");
+					if (!porFila.TryGetValue(fila, out var suyas))
+					{
+						suyas = new List<(string, string, decimal, string, bool)>();
+						porFila[fila] = suyas;
+					}
+
+					suyas.Add((Texto(elemento, "analito"), Texto(elemento, "resultado"),
+						Decimal(elemento, "valor"), Texto(elemento, "unidad"),
+						Booleano(elemento, "esNumero")));
+				}
+
+			int cual = 0;
 			foreach (JsonElement elemento in Elementos(arreglo))
+			{
+				string clave = Texto(elemento, "nombre");
+				porFila.TryGetValue(cual, out var suyas);
+
 				examenes.Add(new ExamenEnLista
 				{
-					Nombre = Texto(elemento, "nombre"),
+					Nombre = Frases.LaRedaccion.Nombre(frases, clave),
 					Fecha = Fecha(elemento, "fecha"),
-					Resultado = Texto(elemento, "resultado"),
+					Resultado = Frases.LaRedaccion.Resultado(frases, clave,
+						suyas ?? new List<(string, string, decimal, string, bool)>()),
 					AportaSerieContinua = Booleano(elemento, "aportaSerieContinua"),
 				});
+
+				cual++;
+			}
 
 			return examenes;
 		}
 
-		internal static TendenciaDeAnalito Tendencia(string json)
+		internal static TendenciaDeAnalito Tendencia(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new TendenciaDeAnalito();
 
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			string tendencia = Texto(raiz, "tendencia");
+
 			return new TendenciaDeAnalito
 			{
 				Analito = Texto(raiz, "analito"),
-				Tendencia = Texto(raiz, "tendencia"),
-				ParaMostrar = Texto(raiz, "paraMostrar"),
+				Tendencia = tendencia,
+				TendenciaDicha = Frases.LaRedaccion.Tendencia(frases, tendencia),
+				ParaMostrar = Frases.LaRedaccion.Nombre(frases, Texto(raiz, "claveDelAnalito")),
 				Mediciones = Entero(raiz, "mediciones"),
 				ValorInicial = Decimal(raiz, "valorInicial"),
 				ValorFinal = Decimal(raiz, "valorFinal"),
@@ -69,29 +104,32 @@ namespace Examenes.App
 			};
 		}
 
-		internal static PresenciaDeAnalito Presencia(string json)
+		internal static PresenciaDeAnalito Presencia(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new PresenciaDeAnalito();
 
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			string presencia = Texto(raiz, "presencia");
+
 			return new PresenciaDeAnalito
 			{
 				Analito = Texto(raiz, "analito"),
-				ParaMostrar = Texto(raiz, "paraMostrar"),
-				Presencia = Texto(raiz, "presencia"),
+				ParaMostrar = Frases.LaRedaccion.Nombre(frases, Texto(raiz, "claveDelAnalito")),
+				Presencia = presencia,
+				PresenciaDicha = Frases.LaRedaccion.Presencia(frases, presencia),
 				Mediciones = Entero(raiz, "mediciones"),
 				Positivas = Entero(raiz, "positivas"),
 				PositivasSeguidas = Entero(raiz, "positivasSeguidas"),
 				Dias = Entero(raiz, "dias"),
-				UltimoResultado = Texto(raiz, "ultimoResultado"),
+				UltimoResultado = Frases.LaRedaccion.Categoria(frases, Texto(raiz, "ultimoResultado")),
 				EstaPresente = Booleano(raiz, "estaPresente"),
 				HaySerie = Booleano(raiz, "haySerie"),
 			};
 		}
 
-		internal static IReadOnlyList<PruebaEnSerie> Pruebas(string json)
+		internal static IReadOnlyList<PruebaEnSerie> Pruebas(string json, Frases.Frases frases)
 		{
 			var pruebas = new List<PruebaEnSerie>();
 			if (string.IsNullOrWhiteSpace(json)) return pruebas;
@@ -103,7 +141,7 @@ namespace Examenes.App
 				pruebas.Add(new PruebaEnSerie
 				{
 					Fecha = Fecha(elemento, "fecha"),
-					Expresado = Texto(elemento, "expresado"),
+					Expresado = Frases.LaRedaccion.Categoria(frases, Texto(elemento, "resultado")),
 					EsPositivo = Booleano(elemento, "esPositivo"),
 					EsHallazgo = Booleano(elemento, "esHallazgo"),
 				});
@@ -111,20 +149,23 @@ namespace Examenes.App
 			return pruebas;
 		}
 
-		internal static ConstanciaDeAnalito Constancia(string json)
+		internal static ConstanciaDeAnalito Constancia(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ConstanciaDeAnalito();
 
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			string constancia = Texto(raiz, "constancia");
+
 			return new ConstanciaDeAnalito
 			{
 				Analito = Texto(raiz, "analito"),
-				ParaMostrar = Texto(raiz, "paraMostrar"),
-				Constancia = Texto(raiz, "constancia"),
+				ParaMostrar = Frases.LaRedaccion.Nombre(frases, Texto(raiz, "claveDelAnalito")),
+				Constancia = constancia,
+				ConstanciaDicha = Frases.LaRedaccion.Constancia(frases, constancia),
 				Mediciones = Entero(raiz, "mediciones"),
-				UltimaCategoria = Texto(raiz, "ultimaCategoria"),
+				UltimaCategoria = Frases.LaRedaccion.Categoria(frases, Texto(raiz, "ultimaCategoria")),
 				UltimaEsEsperable = Booleano(raiz, "ultimaEsEsperable"),
 				NoEsperables = Entero(raiz, "noEsperables"),
 				NoEsperablesSeguidas = Entero(raiz, "noEsperablesSeguidas"),
@@ -135,7 +176,7 @@ namespace Examenes.App
 			};
 		}
 
-		internal static IReadOnlyList<ObservacionEnSerie> Observaciones(string json)
+		internal static IReadOnlyList<ObservacionEnSerie> Observaciones(string json, Frases.Frases frases)
 		{
 			var observaciones = new List<ObservacionEnSerie>();
 			if (string.IsNullOrWhiteSpace(json)) return observaciones;
@@ -148,7 +189,7 @@ namespace Examenes.App
 				observaciones.Add(new ObservacionEnSerie
 				{
 					Fecha = Fecha(elemento, "fecha"),
-					Expresado = Texto(elemento, "expresado"),
+					Expresado = Frases.LaRedaccion.Categoria(frases, Texto(elemento, "resultado")),
 					EsEsperable = Booleano(elemento, "esEsperable"),
 					EsHallazgo = Booleano(elemento, "esHallazgo"),
 				});
@@ -156,22 +197,25 @@ namespace Examenes.App
 			return observaciones;
 		}
 
-		internal static LoMasUrgente Urgente(string json)
+		internal static LoMasUrgente Urgente(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new LoMasUrgente();
 
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			string severidad = Texto(raiz, "severidad");
+
 			return new LoMasUrgente
 			{
-				Severidad = Texto(raiz, "severidad"),
-				Accion = Texto(raiz, "accion"),
+				Severidad = severidad,
+				SeveridadDicha = Frases.LaRedaccion.Severidad(frases, severidad),
+				Accion = Frases.LaRedaccion.Accion(frases, Texto(raiz, "accion"), Texto(raiz, "plazo")),
 				PideAlgo = Booleano(raiz, "pideAlgo"),
 			};
 		}
 
-		internal static IReadOnlyList<CeldaEnCuadro> Cuadro(string json)
+		internal static IReadOnlyList<CeldaEnCuadro> Cuadro(string json, Frases.Frases frases)
 		{
 			var celdas = new List<CeldaEnCuadro>();
 			if (string.IsNullOrWhiteSpace(json)) return celdas;
@@ -187,9 +231,11 @@ namespace Examenes.App
 					Fila = Entero(elemento, "fila"),
 					Columna = Entero(elemento, "columna"),
 					Analito = Texto(elemento, "analito"),
-					ParaMostrar = Texto(elemento, "paraMostrar"),
+					ParaMostrar = Frases.LaRedaccion.Nombre(frases, Texto(elemento, "claveDelAnalito")),
 					Fecha = Fecha(elemento, "fecha"),
-					Expresado = Texto(elemento, "expresado"),
+					Expresado = Booleano(elemento, "esNumero")
+						? frases.Medida(Decimal(elemento, "valor"), Texto(elemento, "unidad"))
+						: Frases.LaRedaccion.Categoria(frases, Texto(elemento, "resultado")),
 				});
 
 			return celdas;
@@ -214,7 +260,7 @@ namespace Examenes.App
 			return puntos;
 		}
 
-		internal static IReadOnlyList<LineaDeReferencia> Referencias(string json)
+		internal static IReadOnlyList<LineaDeReferencia> Referencias(string json, Frases.Frases frases)
 		{
 			var lineas = new List<LineaDeReferencia>();
 			if (string.IsNullOrWhiteSpace(json)) return lineas;
@@ -228,13 +274,14 @@ namespace Examenes.App
 					Nombre = Texto(elemento, "nombre"),
 					Valor = Decimal(elemento, "valor"),
 					Unidad = Texto(elemento, "unidad"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					ParaSonia = Frases.LaRedaccion.Linea(frases, Texto(elemento, "clave"),
+						Decimal(elemento, "valor"), Texto(elemento, "unidad")),
 				});
 
 			return lineas;
 		}
 
-		internal static IReadOnlyList<ControlEnEspera> Controles(string json)
+		internal static IReadOnlyList<ControlEnEspera> Controles(string json, Frases.Frases frases)
 		{
 			var controles = new List<ControlEnEspera>();
 			if (string.IsNullOrWhiteSpace(json)) return controles;
@@ -243,40 +290,67 @@ namespace Examenes.App
 			if (!documento.RootElement.TryGetProperty("control", out JsonElement arreglo)) return controles;
 
 			foreach (JsonElement elemento in Elementos(arreglo))
+			{
+				string severidad = Texto(elemento, "severidad");
+
 				controles.Add(new ControlEnEspera
 				{
 					Analito = Texto(elemento, "analito"),
-					ParaMostrar = Texto(elemento, "paraMostrar"),
+					ParaMostrar = Frases.LaRedaccion.Nombre(frases, Texto(elemento, "claveDelAnalito")),
 					UltimaMedicion = Fecha(elemento, "ultimaMedicion"),
 					DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
 					MesesRecomendados = Entero(elemento, "mesesRecomendados"),
 					DiasQueFaltan = Entero(elemento, "diasQueFaltan"),
 					EstaVencido = Booleano(elemento, "estaVencido"),
-					Severidad = Texto(elemento, "severidad"),
-					Accion = Texto(elemento, "accion"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					Severidad = severidad,
+					SeveridadDicha = Frases.LaRedaccion.Severidad(frases, severidad),
+					Accion = Frases.LaRedaccion.Accion(frases, Texto(elemento, "accion"),
+						Texto(elemento, "plazo")),
+					ParaSonia = Frases.LaRedaccion.Control(frases,
+						Texto(elemento, "clave"), Texto(elemento, "claveDelAnalito"),
+						Texto(elemento, "claveDeLoQueHace"), Entero(elemento, "anosDesdeLaUltima"),
+						Entero(elemento, "diasDesdeLaUltima"), Texto(elemento, "claveDeCadaCuanto"),
+						Entero(elemento, "anosRecomendados"), Entero(elemento, "mesesRecomendados")),
 				});
+			}
 
 			return controles;
 		}
 
-		internal static InterpretacionDeAnalito Interpretacion(string json)
+		internal static InterpretacionDeAnalito Interpretacion(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new InterpretacionDeAnalito();
 
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			string veredicto = Texto(raiz, "veredicto");
+			string severidad = Texto(raiz, "severidad");
+
 			return new InterpretacionDeAnalito
 			{
 				Analito = Texto(raiz, "analito"),
-				ParaMostrar = Texto(raiz, "paraMostrar"),
-				Veredicto = Texto(raiz, "veredicto"),
-				Severidad = Texto(raiz, "severidad"),
+				ParaMostrar = Frases.LaRedaccion.Nombre(frases, Texto(raiz, "claveDelAnalito")),
+				Veredicto = veredicto,
+				VeredictoDicho = Frases.LaRedaccion.Veredicto(frases, veredicto),
+				Severidad = severidad,
+				SeveridadDicha = Frases.LaRedaccion.Severidad(frases, severidad),
 				Forma = Texto(raiz, "forma"),
-				ParaSonia = Texto(raiz, "paraSonia"),
-				Accion = Texto(raiz, "accion"),
-				ReferenciaLegible = Texto(raiz, "referencia"),
+				ParaSonia = Frases.LaRedaccion.Lectura(frases,
+					Texto(raiz, "clave"), Texto(raiz, "claveDelAnalito"),
+					Decimal(raiz, "valorInicial"), Decimal(raiz, "valorFinal"), Texto(raiz, "unidad"),
+					Entero(raiz, "dias"), Decimal(raiz, "cambio"),
+					Entero(raiz, "cuantas"), Entero(raiz, "cuantasSeguidas"),
+					Texto(raiz, "claveDeLaCategoria"),
+					Decimal(raiz, "nivelPropio"), Decimal(raiz, "limiteCitado"),
+					Decimal(raiz, "ritmoPorAno"), Texto(raiz, "claveDeLaColetilla")),
+				Accion = Frases.LaRedaccion.Accion(frases, Texto(raiz, "accion"), Texto(raiz, "plazo")),
+				ReferenciaLegible = Frases.LaRedaccion.Referencia(frases,
+					Texto(raiz, "claveDeLaReferencia"), Decimal(raiz, "minimoDeLaReferencia"),
+					Decimal(raiz, "maximoDeLaReferencia"), Texto(raiz, "unidadDeLaReferencia")),
+				MinimoDeLaReferencia = Decimal(raiz, "minimoDeLaReferencia"),
+				MaximoDeLaReferencia = Decimal(raiz, "maximoDeLaReferencia"),
+				UnidadDeLaReferencia = Texto(raiz, "unidadDeLaReferencia"),
 				PideAlgo = Booleano(raiz, "pideAlgo"),
 				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
 				NoLeCorresponde = Booleano(raiz, "noLeCorresponde"),
@@ -284,7 +358,7 @@ namespace Examenes.App
 			};
 		}
 
-		internal static LoQueEstaBien EstaEnRango(string json)
+		internal static LoQueEstaBien EstaEnRango(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new LoQueEstaBien();
 
@@ -296,29 +370,35 @@ namespace Examenes.App
 				EnSuRango = Entero(raiz, "enSuRango"),
 				Analitos = Entero(raiz, "analitos"),
 				HayAlgo = Booleano(raiz, "hayAlgo"),
-				ParaSonia = Texto(raiz, "paraSonia"),
+				ParaSonia = Frases.LaRedaccion.EnRango(frases, Texto(raiz, "clave"),
+					Entero(raiz, "enSuRango"), Entero(raiz, "analitos")),
 			};
 		}
 
-		internal static FaltaElSexoDelPaciente PedidoDeSexo(string json)
+		internal static FaltaElSexoDelPaciente PedidoDeSexo(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new FaltaElSexoDelPaciente();
 
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			string severidad = Texto(raiz, "severidad");
+
 			return new FaltaElSexoDelPaciente
 			{
 				HaceFalta = Booleano(raiz, "haceFalta"),
 				SinInterpretar = Entero(raiz, "sinInterpretar"),
 				Analitos = Entero(raiz, "analitos"),
-				Severidad = Texto(raiz, "severidad"),
-				ParaSonia = Texto(raiz, "paraSonia"),
-				PorQue = Texto(raiz, "porQue"),
+				Severidad = severidad,
+				SeveridadDicha = Frases.LaRedaccion.Severidad(frases, severidad),
+				ParaSonia = Frases.LaRedaccion.PedidoDeSexo(frases, Texto(raiz, "clave"),
+					Entero(raiz, "sinInterpretar"), Entero(raiz, "analitos"),
+					Codigos(raiz, "porRango"), Codigos(raiz, "porAplicabilidad")),
+				PorQue = frases.Diga(Texto(raiz, "porQue")),
 			};
 		}
 
-		internal static VelocidadDeAnalito Velocidad(string json)
+		internal static VelocidadDeAnalito Velocidad(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new VelocidadDeAnalito();
 
@@ -328,14 +408,15 @@ namespace Examenes.App
 			return new VelocidadDeAnalito
 			{
 				Analito = Texto(raiz, "analito"),
-				ParaMostrar = Texto(raiz, "paraMostrar"),
+				ParaMostrar = Frases.LaRedaccion.Nombre(frases, Texto(raiz, "claveDelAnalito")),
 				PorAno = Decimal(raiz, "porAno"),
 				Unidad = Texto(raiz, "unidad"),
 				Dias = Entero(raiz, "dias"),
 				Umbral = Decimal(raiz, "umbral"),
 				EsAplicable = Booleano(raiz, "esAplicable"),
 				ExigeAtencion = Booleano(raiz, "exigeAtencion"),
-				Expresada = Texto(raiz, "expresada"),
+				Expresada = Frases.LaRedaccion.Velocidad(frases, Texto(raiz, "clave"),
+					Decimal(raiz, "porAno"), Texto(raiz, "unidad")),
 			};
 		}
 
@@ -353,6 +434,21 @@ namespace Examenes.App
 				if (nombre.Length > 0) nombres.Add(nombre);
 			}
 			return nombres;
+		}
+
+		// Los codigos que emitio un foreach sobre una lista de strings: la llave del
+		// arreglo es el nombre de la variable del foreach y la columna se llama "analito".
+		private static IReadOnlyList<string> Codigos(JsonElement raiz, string variable)
+		{
+			var codigos = new List<string>();
+			if (!raiz.TryGetProperty(variable, out JsonElement arreglo)) return codigos;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+			{
+				string codigo = Texto(elemento, "analito");
+				if (codigo.Length > 0) codigos.Add(codigo);
+			}
+			return codigos;
 		}
 
 		// Un solo print emite un objeto; varios emiten un arreglo. Tratar los dos casos

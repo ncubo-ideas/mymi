@@ -26,9 +26,9 @@ namespace Examenes.Dominio
 
 			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			lineas.Add(new ReferenciaDeLectura("piso", rango.Minimo,
-				$"por debajo de {rango.Minimo.Expresado} es mas bajo de lo habitual"));
+				"linea.proteinas-totales.piso"));
 			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
-				$"lo normal llega hasta {rango.Maximo.Expresado}"));
+				"linea.proteinas-totales.techo"));
 
 			return lineas;
 		}
@@ -42,9 +42,7 @@ namespace Examenes.Dominio
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"las proteínas totales cambiaron {Math.Abs(hechos.Cambio)} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que es demasiado para el tiempo transcurrido", hechos,
+					"lectura.proteinas-totales.salto-inverosimil", hechos,
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			// Mantenerse no puede juzgar por el signo -EsFavorable revienta-, asi que lo que
@@ -56,21 +54,16 @@ namespace Examenes.Dominio
 			if (!seMovio)
 				return ahoraEnRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"las proteínas totales se mantienen en {Ultima.Valor.Expresado}, dentro de lo normal",
-						hechos)
+					"lectura.proteinas-totales.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, Severidad.Vigilar,
-						$"las proteínas totales llevan tiempo en {Ultima.Valor.Expresado}, fuera de lo normal",
-						hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
+					"lectura.proteinas-totales.estable-fuera", hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 
 			if (ahoraEnRango)
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"las proteínas totales volvieron a {Ultima.Valor.Expresado}, dentro de lo "
-					+ "normal", hechos);
+					"lectura.proteinas-totales.volvio", hechos);
 
 			return new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-				$"las proteínas totales pasaron de {hechos.ValorInicial} a {hechos.ValorFinal} "
-				+ $"{hechos.Unidad}, fuera de lo normal",
-				hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
+					"lectura.proteinas-totales.paso-fuera", hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 		}
 	}
 }

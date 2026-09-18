@@ -38,6 +38,13 @@ namespace Examenes.Dominio
 
 		internal bool EstaVacia => Cuantas == 0;
 
-		internal string Expresado => $"{Desde.Valor}–{Hasta.Valor} {Desde.Unidad.Simbolo}: {Cuantas}";
+		/// <summary>El piso de la banda, para el hueco de la frase.</summary>
+		internal decimal Piso => Desde.Valor;
+
+		/// <summary>El techo de la banda, para el hueco de la frase.</summary>
+		internal decimal Techo => Hasta.Valor;
+
+		/// <summary>El simbolo de la unidad de los dos extremos. NO se traduce.</summary>
+		internal string Unidad => Desde.Unidad.Simbolo;
 	}
 }

@@ -1,6 +1,7 @@
 @using System.Globalization
 @using System.Linq
 @using Examenes.App.Vistas
+@inject Textos textos
 
 @*  LA FORMA DE LOS NOMINALES: qué categoría salió cada vez.
 
@@ -45,8 +46,6 @@
     [Parameter] public int Seguidas { get; set; }
     [Parameter] public string Descripcion { get; set; } = "";
 
-    private static readonly System.Globalization.CultureInfo Cultura = new("es-CR");
-
     private DateTime Primera => Observaciones.Count == 0 ? default : Observaciones[0].Fecha;
     private string Ultima => Observaciones.Count == 0 ? "" : Observaciones[^1].Expresado;
 
@@ -57,8 +56,12 @@
         get
         {
             int afuera = Observaciones.Count(o => o.EsHallazgo);
-            if (afuera == 0) return $"{Observaciones.Count} veces, siempre lo esperable";
-            return $"{afuera} de {Observaciones.Count} fuera de lo esperable";
+            string veces = Observaciones.Count.ToString(CultureInfo.InvariantCulture);
+
+            return afuera == 0
+                ? textos.Con("forma.categoriaSiempre", ("veces", veces))
+                : textos.Con("forma.categoriaFuera",
+                    ("afuera", afuera.ToString(CultureInfo.InvariantCulture)), ("veces", veces));
         }
     }
 
@@ -77,6 +80,6 @@
         return (12 + p * 296).ToString("0.#", CultureInfo.InvariantCulture);
     }
 
-    private static string Fecha(DateTime fecha) =>
-        fecha == default ? "" : fecha.ToString("MMM yyyy", Cultura);
+    private string Fecha(DateTime fecha) =>
+        fecha == default ? "" : fecha.ToString("MMM yyyy", textos.Cultura);
 }

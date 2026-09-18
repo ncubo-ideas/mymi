@@ -22,7 +22,7 @@ namespace Examenes.Dominio
 		{
 		}
 
-		internal override string Nombre => Suyo.ParaMostrar;
+		internal override string Clave => Suyo.Clave;
 
 		// TECHO SOLO, y no depende del sexo ni de la edad. El corte de 150 mg/dL es el mismo
 		// para adultos, a diferencia del colesterol total, cuyo techo baja a los 50: no todo

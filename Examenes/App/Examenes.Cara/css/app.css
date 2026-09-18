@@ -865,7 +865,7 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--mono); font-size: 13px; color: var(--tenue);
     inset: calc(22vh + 2.4rem) 0 auto 0;
 }
-.loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
+.loading-progress-text:after { content: var(--blazor-load-percentage-text, var(--texto-cargando, "Cargando")); }
 
 #blazor-error-ui {
     background: #7f1d1d; color: #ffffff;

@@ -14,8 +14,8 @@ namespace Examenes.Dominio
 	// tendria que decidirse afuera.
 	internal sealed class AnalitoBinario : Analito
 	{
-		internal AnalitoBinario(string nombre, string paraMostrar, params string[] sinonimos)
-			: base(nombre, paraMostrar, RequisitoAnatomico.Ninguno, sinonimos)
+		internal AnalitoBinario(string nombre, params string[] sinonimos)
+			: base(nombre, RequisitoAnatomico.Ninguno, sinonimos)
 		{
 		}
 	}
