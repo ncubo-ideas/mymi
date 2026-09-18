@@ -66,5 +66,19 @@ window.TextoDeLaCara['es-CR'] = {
     forma: {
         nivelDeSiempre: 'tu nivel de siempre, {valor}',
         esperableHasta: 'esperable hasta {valor}'
+    },
+
+    // LAS FRASES DEL PUENTE, que las dice el Host y no la cara. El puente es el mismo archivo en
+    // los cinco modulos y no tiene catalogo propio: las lee de window.TextoDelPuente, que publica
+    // idioma.js, y si no estan cae al espanol -- que es lo que esta cara hacia, asi que su pie
+    // decia «al dia, en 69 ms» debajo de una pantalla en ingles. Las llaves y los huecos NO se
+    // traducen: son el cable, como window.gnothi y consultar.
+    puente: {
+        sinPuente: 'esta página solo corre dentro de Mymi, en la forma híbrida: no hay puente, y sin puente no tiene a quién preguntarle',
+        sinPuenteCorto: 'sin puente: esta pantalla no corre dentro de Mymi',
+        pidiendo: 'pidiéndole a Mymi que traiga lo nuevo…',
+        alDia: 'al día, en {ms} ms · {dicho}',
+        noSePudo: 'no se pudo traer lo nuevo ({ms} ms): {porque}',
+        tiro: 'pull tiró: {porque}'
     }
 };

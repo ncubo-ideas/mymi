@@ -68,5 +68,18 @@ window.TextoDeLaCara['en'] = {
     forma: {
         nivelDeSiempre: 'your usual level, {valor}',
         esperableHasta: 'expected up to {valor}'
+    },
+
+    // THE BRIDGE'S PHRASES, said by the Host and not by the face. The bridge is the same file in
+    // all five modules and has no catalogue of its own: it reads them from window.TextoDelPuente,
+    // which idioma.js publishes, and falls back to Spanish when they are missing. Same keys as the
+    // Spanish catalogue: they are the cable, not copy.
+    puente: {
+        sinPuente: 'this page only runs inside Mymi, in the hybrid form: there is no bridge, and without one it has no one to ask',
+        sinPuenteCorto: 'no bridge: this screen is not running inside Mymi',
+        pidiendo: 'asking Mymi to bring what is new…',
+        alDia: 'up to date, in {ms} ms · {dicho}',
+        noSePudo: 'could not bring what is new ({ms} ms): {porque}',
+        tiro: 'pull threw: {porque}'
     }
 };
