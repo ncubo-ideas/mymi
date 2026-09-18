@@ -70,6 +70,30 @@ steps:
   - script: dotnet run --project Gnothi.Assistant.Tests --no-build -c Release
     displayName: "Guardian 1 - la Puerta 2 se puede borrar"
 
+  # GUARDIAN 3 - LAS CARAS HIBRIDAS DICEN LO MISMO EN LOS DOS IDIOMAS.
+  #
+  # Cada cara lleva sus dos catalogos -- texto/es-CR.js y texto/en.js -- y su markup los nombra
+  # por atributo. Una clave que esta en uno y no en el otro sale a pantalla como {clave}, un hueco
+  # que la traduccion se comio borra un dato sin dejar rastro, y un data-texto mal escrito compila
+  # siempre: nada de eso pone rojo a un compilador ni a la suite.
+  #
+  # Cada consola lo coteja con 'comprobar', que no toca ningun journal.
+  #
+  # COMPRAS.CONSOLA NO ESTA EN Gnothi.slnx, asi que el build del solution no la deja compilada y
+  # --no-build no la encontraria. Se compila aparte, como los modulos del banco.
+  - script: dotnet build Compras/App/Compras.Consola -c Release
+    displayName: Compilar la consola de Compras (fuera del solution)
+
+  # set -e porque un 'script' de varias lineas solo falla por la ULTIMA: sin esto, una consola roja
+  # en medio de la lista pasaria en verde.
+  - script: |
+      set -e
+      for modulo in Cargas Compras Examenes Municipalidad Concesionario; do
+        echo "== $modulo =="
+        dotnet run --project "$modulo/App/$modulo.Consola" --no-build -c Release -- comprobar
+      done
+    displayName: "Guardian 3 - los catalogos de cada cara estan parejos"
+
   # GUARDIAN 2 - EL NUCLEO NO HABLA MCP.
   # El workload tarda unos minutos la primera vez; es el precio de tener el test.
   - script: dotnet workload install android --skip-sign-check
