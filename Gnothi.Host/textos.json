@@ -180,19 +180,19 @@
   "chat.ejemplo2":                { "es": "«mira mis exámenes y mis compras juntos»", "en": "«look at my lab results and my shopping together»" },
 
   "journal.titulo":               { "es": "Datos de tus instituciones", "en": "Your institutions' data" },
-  "journal.lead":                 { "es": "Información que Mymi mantiene en este dispositivo. Nadie más la lee: al preguntar, al asistente viaja solo lo que la consulta elegida devuelve.", "en": "Information Mymi keeps on this device. Nobody else reads it: when you ask, only what the chosen query returns travels to the assistant." },
+  "journal.lead":                 { "es": "Nadie más las lee.", "en": "No one else reads them." },
 
   "ajustes.cap.datos":            { "es": "Datos en este teléfono", "en": "Data on this phone" },
   "ajustes.cap.tecnica":          { "es": "Información técnica", "en": "Technical information" },
   "ajustes.proveedor-ia":         { "es": "Proveedor de IA", "en": "AI provider" },
   "ajustes.permanecen":           { "es": "Tus datos permanecen en este dispositivo.", "en": "Your data stays on this device." },
 
-  "prov.lead":                    { "es": "Todos hablan el mismo formato. El asistente le manda solo lo que la consulta elegida devuelve.", "en": "They all speak the same format. The assistant sends it only what the chosen query returns." },
+  "prov.lead":                    { "es": "Al modelo viaja solo lo que la consulta elegida devuelve.", "en": "Only what the chosen query returns travels to the model." },
   "prov.cap.acceso":              { "es": "Acceso", "en": "Access" },
-  "prov.hint":                    { "es": "Sirve cualquier clave del proveedor — gratuita o de pago. Se guarda solo en este teléfono y no viaja a ningún lado salvo al proveedor.", "en": "Any key from the provider works — free or paid. It is kept on this phone only and goes nowhere except to the provider." },
+  "prov.hint":                    { "es": "Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.", "en": "It is kept on this phone only, and goes nowhere except to the provider." },
   "prov.cambiar":                 { "es": "Cambiar proveedor", "en": "Change provider" },
-  "prov.elegir.titulo":           { "es": "Elige el proveedor del modelo", "en": "Pick the model's provider" },
-  "prov.elegir.lead":             { "es": "Todos hablan el mismo formato. Elige uno y pega su llave — gratuita o de pago.", "en": "They all speak the same format. Pick one and paste its key — free or paid." },
+  "prov.elegir.titulo":           { "es": "Elegí el proveedor del modelo", "en": "Pick the model's provider" },
+  "prov.elegir.lead":             { "es": "Todos hablan el mismo formato. La llave puede ser gratuita o de pago.", "en": "They all speak the same format. The key can be free or paid." },
   "prov.usar-este":               { "es": "Usar este", "en": "Use this one" },
   "prov.nombre-del-modelo":       { "es": "nombre-del-modelo", "en": "model-name" },
 
@@ -205,7 +205,7 @@
   "scan.apunta":                  { "es": "Apunta al código de tu institución", "en": "Point at your institution's code" },
 
   "agregar.titulo":               { "es": "Tus instituciones, siempre contigo.", "en": "Your institutions, always with you." },
-  "agregar.lead":                 { "es": "Tu laboratorio, tu supermercado, tu emisor de facturas te dan un módulo. Agrégalo y lleva contigo su información y sus servicios. Mymi lo revisa y te muestra qué trae antes de instalar nada.", "en": "Your lab, your supermarket, your invoice issuer each hand you a module. Add it and carry their information and services with you. Mymi checks it and shows you what it carries before installing anything." },
+  "agregar.lead":                 { "es": "Mymi revisa el módulo y te muestra qué trae antes de instalar nada.", "en": "Mymi checks the module and shows you what it brings before installing anything." },
   "agregar.escanear":             { "es": "Escanear su código", "en": "Scan their code" },
   "agregar.escanear.sub":         { "es": "el QR de su página, o el de tu hoja de resultados", "en": "the QR on their page, or the one on your results sheet" },
   "agregar.pegar":                { "es": "Pegar su enlace", "en": "Paste their link" },
@@ -466,6 +466,8 @@
   "detalle.fijar.boton":          { "es": "Ponerlo en tu pantalla de inicio", "en": "Put it on your home screen" },
   "detalle.fijar.dicho":          { "es": "Un icono de {quien} que abre esta app acá adentro.", "en": "An icon of {quien} that opens this app right here." },
   "detalle.fijar.pedido":         { "es": "Listo, pedido", "en": "Done, requested" },
+  "detalle.fijar.lugar":         { "es": "En tu pantalla de inicio", "en": "On your home screen" },
+  "detalle.fijar.agregar":       { "es": "Agregar", "en": "Add" },
   "detalle.fijar.si-no-aparece":  { "es": "Si no aparece, revisa que tu pantalla de inicio acepte accesos directos.", "en": "If it does not show up, check that your home screen accepts shortcuts." },
   "detalle.fijar.fallo":          { "es": "No se pudo poner el acceso directo.", "en": "The shortcut could not be placed." },
 

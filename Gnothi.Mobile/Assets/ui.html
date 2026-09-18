@@ -664,12 +664,12 @@
 <div class="view" id="v-journal">
   <div class="scroll">
     <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Datos de tus instituciones</h2>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="journal.titulo">Datos de tus instituciones</h2>
     <!-- «Información que Gnothi mantiene en este dispositivo» era el título otra vez. Y la
          segunda mitad -- lo que viaja al asistente -- estaba TAMBIÉN en la pantalla del
          proveedor, palabra por palabra. Cada promesa se hace una vez, en la pantalla donde
          importa: acá el registro es de ella; allá es donde hay un tercero. -->
-    <p class="qlead">Nadie más las lee.</p>
+    <p class="qlead" data-i18n="journal.lead">Nadie más las lee.</p>
     <div id="journal"></div>
   </div>
 </div>
@@ -704,11 +704,11 @@
 <div class="view" id="v-prov">
   <div class="scroll">
     <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Proveedor de IA</h2>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="ajustes.proveedor-ia">Proveedor de IA</h2>
     <!-- «Todos hablan el mismo formato» se fue: es verdad cuando se ELIGE proveedor, y eso pasa
          en la otra hoja, donde también estaba escrito. Acá ya hay uno puesto. Queda lo único que
          esta pantalla tiene que decir, que es qué sale del teléfono. -->
-    <p class="qlead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
+    <p class="qlead" data-i18n="prov.lead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
     <div class="kv" id="set-model"></div>
 
     <h3 class="cap" data-i18n="prov.cap.acceso">Acceso</h3>
@@ -718,7 +718,7 @@
          pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver.
          El id es para poder OCULTARLO: con el modelo del aparato no hay proveedor al que
          viajarle, así que la frase deja de ser cierta. Ver paint(). -->
-    <p class="hint" id="prov-hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
+    <p class="hint" id="prov-hint" data-i18n="prov.hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
 
     <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)" data-i18n="prov.cambiar">Cambiar proveedor</button>
   </div>
@@ -780,12 +780,12 @@
      "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
-    <h4>Tus instituciones, siempre contigo.</h4>
+    <h4 data-i18n="agregar.titulo">Tus instituciones, siempre contigo.</h4>
     <!-- UNA SOLA FRASE, y es la que ella no puede adivinar. Eran tres: la primera repetía el
          título con otras palabras, la segunda repetía «llevá con vos» que el título ya dice, y
          la tercera -la única con información- quedaba al final. Las tres vías de abajo dicen qué
          hacer; esto dice lo que pasa después de tocarlas. -->
-    <p>Mymi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
+    <p data-i18n="agregar.lead">Mymi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
     <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
          row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
     <div class="vias">
@@ -825,7 +825,7 @@
      the list comes back with the row marked, so she goes on with the next. -->
 <div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
   <div class="card">
-    <h4>Esto encontré en lo que elegiste</h4>
+    <h4 data-i18n="hallazgos.titulo">Esto encontré en lo que elegiste</h4>
     <!-- SIN PÁRRAFO. Decía «tocá el módulo que querés agregar» -- sobre una lista de módulos --,
          «Gnothi te muestra qué trae antes de instalarlo» -- ya dicho en la hoja anterior -- y
          «podés seguir con el siguiente», que se descubre cuando vuelve la lista con la fila
@@ -838,9 +838,9 @@
 <!-- the provider picker: choose, then just paste that provider's key -->
 <div id="psheet" class="osheet" onclick="if(event.target===this)gn.psheet(false)">
   <div class="card">
-    <h4>Elegí el proveedor del modelo</h4>
+    <h4 data-i18n="prov.elegir.titulo">Elegí el proveedor del modelo</h4>
     <!-- «Elegí uno» sobre una lista, bajo un título que dice «elegí el proveedor», sobraba. -->
-    <p>Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
+    <p data-i18n="prov.elegir.lead">Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
     <div id="plist"></div>
     <div id="pcustom" style="display:none">
       <input id="cu-url" autocomplete="off" spellcheck="false" placeholder="https://servidor/v1">
@@ -1572,7 +1572,7 @@ const gn = {
               // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
               // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
               // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
-              + '<b>En tu pantalla de inicio</b>'
+              + '<b>' + esc(T('detalle.fijar.lugar')) + '</b>'
               // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
               // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
               // pantalla sí.
@@ -1580,7 +1580,7 @@ const gn = {
               + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
               + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
               + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
-              + '<span>Agregar</span></button>'
+              + '<span>' + esc(T('detalle.fijar.agregar')) + '</span></button>'
               + '<p class="fijar-dicho" id="fijar-dicho"></p>'
               + '</div></div>'
             : '')
