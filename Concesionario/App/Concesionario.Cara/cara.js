@@ -9,53 +9,45 @@
     'use strict';
 
     var P = window.Puente;
+    var I = window.Idioma;
     var $ = P.$;
 
-    // ---------------------------------------------------------------- el diccionario
+    // LO ESTATICO SE DICE YA, y no en arrancar(): el markup de arriba ya esta parseado cuando este
+    // script corre, y esperar a DOMContentLoaded seria pintar en un idioma para repintar en el otro.
+    I.pintarLoEstatico();
+
+    // ---------------------------------------------------------------- lo que ya viene dicho
     //
-    // EL DOMINIO HABLA EN INGLES Y LA PANTALLA EN ESPAÑOL, y la traduccion es de la pantalla y
-    // no del dominio: `DealershipCarAPI` devuelve "Overdue" y "FluidChange" porque ese es su
-    // vocabulario cerrado, y ponerle acentos seria mezclar la etiqueta con su presentacion.
+    // EL DOMINIO HABLA EN INGLES: `DealershipCarAPI` devuelve "Overdue" y "FluidChange" porque ese
+    // es su vocabulario cerrado, y ponerle acentos seria mezclar la etiqueta con su presentacion.
     //
-    // Es el mismo diccionario de Parts/ComoSeLee.cs, traido tal cual.
+    // QUIEN LO TRADUCE YA NO ES ESTA PANTALLA. Aca habia tres diccionarios copiados a mano de
+    // Parts/ComoSeLee.cs, en espanol, y eran un TERCER juego de estas mismas etiquetas -- el de la
+    // puerta, el de la app suelta y este --, del que ademas solo existia la mitad espanola. Ahora la
+    // superficie manda las tres tablas ya dichas, en el idioma que se le pidio: `kindsSaid`,
+    // `kindsSaidShort` y `dueStatesSaid`. El codigo sigue viajando al lado, porque es identidad.
+    //
+    // EL COLOR Y EL DIBUJO SIGUEN ACA, y eso no es una inconsistencia: no dependen del idioma. Es
+    // la misma reparticion que hace ComoSeLee, que tambien deja `Tono` y `Dibujo` de su lado.
 
-    var LAS_NUEVE = {
-        Inspection: 'Revisión', FluidChange: 'Cambio de líquidos', FilterChange: 'Cambio de filtro',
-        WearPartReplacement: 'Piezas de desgaste', TimedComponent: 'Componente por tiempo',
-        SoftwareUpdate: 'Actualización de software', RecallRemedy: 'Llamado a revisión',
-        Diagnostic: 'Diagnóstico', Repair: 'Reparación'
-    };
-
-    var CORTO = {
-        Inspection: 'Revisión', FluidChange: 'Líquidos', FilterChange: 'Filtro',
-        WearPartReplacement: 'Desgaste', TimedComponent: 'Por tiempo',
-        SoftwareUpdate: 'Software', RecallRemedy: 'Llamado',
-        Diagnostic: 'Diagnóstico', Repair: 'Reparación'
-    };
-
-    var ESTADOS = {
-        Overdue: 'Vencido', Due: 'Toca ahora', DueSoon: 'Se acerca', NotDue: 'Al día',
-        Deferred: 'Pospuesto', Completed: 'Realizado', Missed: 'No se hizo',
-        Superseded: 'Reemplazado'
-    };
-
-    // El tono del semaforo, decidido por el ESTADO del dominio. Un estado que esta pantalla no
-    // conozca cae en neutro, que es lo unico honesto que se puede decir de el.
     var TONOS = {
         Overdue: 'danger', Missed: 'danger',
         Due: 'warn', DueSoon: 'warn', Deferred: 'warn',
         NotDue: 'ok', Completed: 'ok'
     };
 
-    // Separa un identificador en palabras, para lo que el diccionario no tenga. Es el `Spaced`
+    // Separa un identificador en palabras, para lo que la puerta no haya dicho. Es el `Spaced`
     // de AppState: mejor «Wear Part Replacement» que «WearPartReplacement».
     function espaciado(s) {
         return String(s || '').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
     }
 
-    function operacion(k) { return LAS_NUEVE[k] || espaciado(k); }
-    function operacionCorta(k) { return CORTO[k] || espaciado(k); }
-    function estado(s) { return ESTADOS[s] || espaciado(s); }
+    // Lo dicho por la puerta, con el codigo espaciado como respaldo: una clase que ella no nombre
+    // se lee todavia, en el vocabulario del dominio, en vez de desaparecer de la pantalla.
+    function dicho(tabla, clave) {
+        return (tabla && tabla[clave]) || espaciado(clave);
+    }
+
     function tono(s) { return TONOS[s] || 'mute'; }
 
     // ---------------------------------------------------------------- formato
@@ -73,14 +65,27 @@
         return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
 
-    var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    // EL ORDEN DE LA FECHA ES DEL IDIOMA -- «12 sep 2026» contra «Sep 12, 2026» --, asi que la arma
+    // una frase con huecos nombrados y no una concatenacion. El mes sale del catalogo.
     function fecha(iso) {
         if (!iso) return '';
         var d = new Date(iso);
         if (isNaN(d.getTime())) return String(iso).slice(0, 10);
-        return d.getDate() + ' ' + MESES[d.getMonth()] + ' ' + d.getFullYear();
+        return I.con('comun.fechaCorta', {
+            numero: d.getDate(), mes: I.mes(d.getMonth() + 1), anio: d.getFullYear() });
     }
     function plural(n, una, varias) { return n === 1 ? una : varias; }
+
+    // LA FRASE DEL CATALOGO SE ESCAPA PRIMERO Y SE LLENA DESPUES, y ese orden es la regla: la
+    // sentencia es nuestra, y si algun hueco llegara a traer marcado propio, al reves ese marcado
+    // saldria escrito en vez de aplicado. Lo que venga del registro lo escapa quien arma el hueco.
+    function frase(clave, huecos) {
+        var salida = texto(I.texto(clave));
+        for (var hueco in huecos)
+            if (Object.prototype.hasOwnProperty.call(huecos, hueco))
+                salida = salida.split('{' + hueco + '}').join(huecos[hueco]);
+        return salida;
+    }
 
     // ---------------------------------------------------------------- los dibujitos
     //
@@ -142,23 +147,26 @@
         // EL TITULAR LO DECIDE LO PEOR QUE HAYA, y en ese orden: primero lo vencido, despues lo
         // que toca ahora, despues lo que no se hizo. Un «todo al día» arriba de un vencido se
         // contradice solo.
+        var vencidos = I.con(plural(h.overdue, 'estado.unVencido', 'estado.variosVencidos'), { count: h.overdue });
+        var tocan = I.con(plural(h.due, 'estado.unaToca', 'estado.variasTocan'), { count: h.due });
+        var sinHacer = I.con('estado.sinHacer', { count: h.missed });
+
         var titular, matiz;
-        if (h.overdue > 0) { titular = h.overdue + ' ' + plural(h.overdue, 'vencido', 'vencidos'); matiz = 'danger'; }
-        else if (h.due > 0) { titular = h.due + ' te ' + plural(h.due, 'toca', 'tocan') + ' ahora'; matiz = 'warn'; }
-        else if (h.missed > 0) { titular = h.missed + ' sin hacer'; matiz = 'mute'; }
-        else { titular = 'Todo al día'; matiz = 'ok'; }
+        if (h.overdue > 0) { titular = vencidos; matiz = 'danger'; }
+        else if (h.due > 0) { titular = tocan; matiz = 'warn'; }
+        else if (h.missed > 0) { titular = sinHacer; matiz = 'mute'; }
+        else { titular = I.texto('estado.todoAlDia'); matiz = 'ok'; }
 
         var conteos = '';
-        if (h.overdue > 0) conteos += '<span class="d-pill d-pill--danger">' + h.overdue + ' ' +
-            plural(h.overdue, 'vencido', 'vencidos') + '</span>';
-        if (h.due > 0) conteos += '<span class="d-pill d-pill--warn">' + h.due + ' te ' +
-            plural(h.due, 'toca', 'tocan') + ' ahora</span>';
-        if (h.missed > 0) conteos += '<span class="d-pill d-pill--mute">' + h.missed + ' sin hacer</span>';
-        if (alDia > 0) conteos += '<span class="d-pill d-pill--ok">' + alDia + ' al día</span>';
+        if (h.overdue > 0) conteos += '<span class="d-pill d-pill--danger">' + texto(vencidos) + '</span>';
+        if (h.due > 0) conteos += '<span class="d-pill d-pill--warn">' + texto(tocan) + '</span>';
+        if (h.missed > 0) conteos += '<span class="d-pill d-pill--mute">' + texto(sinHacer) + '</span>';
+        if (alDia > 0) conteos += '<span class="d-pill d-pill--ok">' +
+            texto(I.con('estado.alDia', { count: alDia })) + '</span>';
 
         caja.innerHTML =
             '<div class="d-card__head">' +
-                '<span class="d-card__title">Estado de tu vehículo</span>' +
+                '<span class="d-card__title">' + texto(I.texto('estado.titulo')) + '</span>' +
                 '<span class="d-pill d-pill--' + matiz + '">' + texto(titular) + '</span>' +
             '</div>' +
             '<div class="d-health">' +
@@ -168,8 +176,8 @@
                 '</div>' +
                 '<div class="d-health__body"><p class="d-health__what">' +
                     (programadas
-                        ? 'de las ' + programadas + ' operaciones que tu concesionario programó están al día.'
-                        : 'Tu concesionario todavía no programó operaciones para este vehículo.') +
+                        ? frase('estado.deLasProgramadas', { count: programadas })
+                        : texto(I.texto('estado.sinProgramadas'))) +
                 '</p></div>' +
             '</div>' +
             (conteos ? '<div class="d-health__counts">' + conteos + '</div>' : '');
@@ -177,7 +185,7 @@
 
     // ---------------------------------------------------------------- lo que sigue
 
-    function pintarSigue(h, ops, estados) {
+    function pintarSigue(h, ops, estados, dichos) {
         var caja = $('sigue');
         var siguiente = h.nextDueKind || '';
 
@@ -185,8 +193,10 @@
             caja.innerHTML =
                 '<section class="d-next d-next--ok">' +
                     '<span class="d-next__icon">' + glifo('check', 22, 2.4) + '</span>' +
-                    '<div><div class="d-next__kicker">Nada pendiente</div>' +
-                    '<div class="d-next__title">No hay nada que agendar ahora mismo.</div></div>' +
+                    '<div><div class="d-next__kicker">' +
+                    texto(I.texto('sigue.nadaKicker')) + '</div>' +
+                    '<div class="d-next__title">' +
+                    texto(I.texto('sigue.nadaTitulo')) + '</div></div>' +
                 '</section>';
             return;
         }
@@ -207,10 +217,12 @@
             '<section class="d-next d-next--' + t + '">' +
                 '<span class="d-next__icon">' + glifo(dibujo(estados[siguiente]), 22, 2.4) + '</span>' +
                 '<div>' +
-                    '<div class="d-next__kicker">Lo que sigue</div>' +
-                    '<div class="d-next__title">' + texto(operacion(siguiente)) + '</div>' +
+                    '<div class="d-next__kicker">' + texto(I.texto('sigue.kicker')) + '</div>' +
+                    '<div class="d-next__title">' +
+                    texto(dicho(dichos.kindsSaid, siguiente)) + '</div>' +
                     (suya && suya.says
-                        ? '<div class="d-says"><span class="d-says__label">Lo que dice tu registro</span>' +
+                        ? '<div class="d-says"><span class="d-says__label">' +
+                          texto(I.texto('sigue.loQueDice')) + '</span>' +
                           texto(suya.says) + '</div>'
                         : '') +
                 '</div>' +
@@ -219,7 +231,7 @@
 
     // ---------------------------------------------------------------- los numeros
 
-    function pintarNumeros(v) {
+    function pintarNumeros(v, diaDicho) {
         var caja = $('numeros');
         var html = '';
 
@@ -227,14 +239,16 @@
             html += '<div class="d-tile">' +
                 '<div><span class="d-tile__v">' + entero(v.odometer) + '</span>' +
                 '<span class="d-tile__u">' + texto(v.odometerUnit) + '</span></div>' +
-                '<div class="d-tile__k">han recorrido juntos</div></div>';
+                '<div class="d-tile__k">' + texto(I.texto('numeros.recorridos')) + '</div></div>';
         }
 
         if (v && v.deliveryRecorded) {
+            // EL DIA LO DICE LA PUERTA, que tiene el orden y los meses de los dos idiomas. Si no
+            // llegara dicho, esta pantalla lo arma con su propio catalogo.
             html += '<div class="d-tile">' +
                 '<div class="d-tile__v" style="font-size:15px;letter-spacing:-.2px">' +
-                texto(fecha(v.deliveredAt)) + '</div>' +
-                '<div class="d-tile__k">última lectura que envió tu concesionario</div></div>';
+                texto(diaDicho || fecha(v.deliveredAt)) + '</div>' +
+                '<div class="d-tile__k">' + texto(I.texto('numeros.ultimaLectura')) + '</div></div>';
         }
 
         caja.innerHTML = html;
@@ -244,34 +258,38 @@
 
     // LAS NUEVE, cada una con su punto de color. Sin porcentaje, porque no hay: una operacion
     // esta o no esta al dia, y un numero inventado ahi seria peor que el punto.
-    function pintarVistazo(ops, estados) {
+    function pintarVistazo(ops, estados, dichos) {
         var caja = $('vistazo');
         caja.setAttribute('aria-busy', 'false');
 
         var lista = (ops && ops.operations) || [];
         if (!lista.length) {
-            P.apunte(caja, 'Todavía no hay operaciones programadas para este vehículo.');
+            P.apunte(caja, I.texto('vistazo.sinOperaciones'));
             return;
         }
 
         caja.innerHTML = '<div class="d-dots">' + lista.map(function (o) {
             var s = estados[o.kind] || "";
-            return '<div class="d-dot" title="' + atributo(estado(s)) + '">' +
+            // El titulo es el ESTADO dicho, y `dueStatesSaid` viene keyed por clase igual que
+            // `dueStates`. Si no llegara, el respaldo es el codigo del ESTADO y no el de la clase.
+            var estadoDicho = (dichos.dueStatesSaid && dichos.dueStatesSaid[o.kind]) || espaciado(s);
+            return '<div class="d-dot" title="' + atributo(estadoDicho) + '">' +
                 '<span class="d-dot__ring d-dot__ring--' + tono(s) + '">' +
                 glifo(dibujo(s), 18, 2.6) + '</span>' +
-                '<span class="d-dot__k">' + texto(operacionCorta(o.kind)) + '</span></div>';
+                '<span class="d-dot__k">' +
+                texto(dicho(dichos.kindsSaidShort, o.kind)) + '</span></div>';
         }).join('') + '</div>';
     }
 
     // ---------------------------------------------------------------- el historial
 
-    function pintarHistorial(h) {
+    function pintarHistorial(h, dichos) {
         var caja = $('historial');
         caja.setAttribute('aria-busy', 'false');
 
         var estadias = (h && h.stays && (h.stays.stays || h.stays.visits)) || [];
         if (!estadias.length) {
-            P.apunte(caja, 'Tu carro no estuvo en el taller este año.');
+            P.apunte(caja, I.texto('historial.sinEstadias'));
             return;
         }
 
@@ -281,7 +299,9 @@
                 '<span class="d-step__bullet d-step__bullet--' + tono(s) + '"></span>' +
                 '<div><div class="d-step__when d-step__when--' + tono(s) + '">' +
                 texto(fecha(e.day || e.at || e.when)) + '</div>' +
-                '<div class="d-step__title">' + texto(operacion(e.kind) || e.title || 'Estadía') + '</div>' +
+                '<div class="d-step__title">' +
+                texto((dichos && dichos.kindsSaid && dichos.kindsSaid[e.kind]) ||
+                      e.title || I.texto('historial.estadia')) + '</div>' +
                 (e.says ? '<div class="d-step__sub">' + texto(e.says) + '</div>' : '') +
                 '</div></div>';
         }).join('') + '</div>';
@@ -296,49 +316,65 @@
     }
 
     function pintarTodo() {
-        P.pedir('header')
+        // EL IDIOMA VIAJA CON LA PREGUNTA. La superficie no tiene navegador -- corre en proceso
+        // adentro de Gnothi -- y esta cara si lo es, y ya negocio con el aparato; asi que se lo
+        // dice. Sin esto la pantalla quedaba en ingles con las frases del dominio y las nueve
+        // clases en espanol.
+        var lengua = { idioma: I.etiqueta };
+
+        P.pedir('header', lengua)
             .then(function (h) {
                 if (h.hasData === false) {
-                    $('subtitulo').textContent = 'Todavía no hay nada de tu carro en este dispositivo.';
-                    P.apunte($('estado'), 'Apretá Actualizar para que Mymi traiga lo que publicó tu concesionario.');
+                    $('subtitulo').textContent = I.texto('capo.sinNada');
+                    P.apunte($('estado'),
+                        I.con('capo.apreta', { actualizar: I.texto('capo.actualizar') }));
                     return;
                 }
 
+                // LA PLACA, EL MODELO Y EL VIN son dato del registro y no se traducen; lo que el
+                // idioma decide es como se los nombra y en que orden van.
                 var p = h.plate || {};
+                var partes =
+                    (p.plate ? I.con('capo.placa', { placa: p.plate }) + ' · ' : '') +
+                    (h.specification && h.specification.model ? h.specification.model + ' · ' : '');
+
                 $('subtitulo').textContent =
-                    (p.plate ? 'Placa ' + p.plate + ' · ' : '') +
-                    (h.specification && h.specification.model ? h.specification.model + ' · ' : '') +
-                    'VIN ' + (h.vin || '');
+                    I.con('capo.identidad', { partes: partes, vin: h.vin || '' });
 
                 // El estado y el vistazo necesitan las dos vistas, asi que se piden juntas y se
                 // pintan cuando estan ambas: pintar media tarjeta y completarla despues haria
                 // saltar la pantalla delante de quien la esta leyendo.
-                P.pedir('standing')
+                P.pedir('standing', lengua)
                     .then(function (s) {
                         pintarEstado(h, s);
-                        pintarSigue(h, (s.operations && s.operations.operations) || [], s.dueStates || {});
-                        pintarNumeros(s.vehicle);
-                        pintarVistazo(s.operations, s.dueStates || {});
+                        pintarSigue(h, (s.operations && s.operations.operations) || [],
+                                    s.dueStates || {}, s);
+                        pintarNumeros(s.vehicle, s.deliveredAtSaid);
+                        pintarVistazo(s.operations, s.dueStates || {}, s);
+
+                        // EL HISTORIAL NOMBRA LAS MISMAS NUEVE CLASES, asi que se pinta con las
+                        // etiquetas que ya vinieron dichas con el standing en vez de pedirlas otra
+                        // vez: una segunda tabla seria la misma respuesta preguntada dos veces.
+                        P.pedir('history', lengua)
+                            .then(function (hist) { pintarHistorial(hist, s); })
+                            .catch(function (e) { P.apunte($('historial'), e.message, true); });
                     })
                     .catch(function (e) { P.apunte($('estado'), e.message, true); });
             })
             .catch(function (e) { P.apunte($('estado'), e.message, true); });
-
-        P.pedir('history').then(pintarHistorial)
-            .catch(function (e) { P.apunte($('historial'), e.message, true); });
     }
 
     function releer() {
         var b = $('releer');
         b.disabled = true;
         b.setAttribute('aria-busy', 'true');
-        b.textContent = 'Actualizando…';
+        b.textContent = I.texto('capo.actualizando');
 
         P.refrescar(contar).then(function (r) {
             if (r) pintarTodo();
             b.disabled = false;
             b.setAttribute('aria-busy', 'false');
-            b.textContent = 'Actualizar';
+            b.textContent = I.texto('capo.actualizar');
         });
     }
 

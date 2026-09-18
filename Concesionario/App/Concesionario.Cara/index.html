@@ -1,9 +1,20 @@
 <!DOCTYPE html>
-<html lang="es-CR">
+<!-- SIN lang ESCRITO A MANO: el bundle se sirve igual para los dos idiomas, asi que una etiqueta
+     fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de negociar con
+     el aparato, con la misma regla que usa la app suelta. -->
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- LA MITAD DE LA DERECHA ES VOZ DE LA INSTITUCION y no se traduce; la de la izquierda es el
+     titulo de esta pantalla y si. idioma.js repone el titulo entero despues de negociar. -->
 <title>Mi plan de mantenimiento · Sotavento Motors</title>
+<!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
+     leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
+     repintarla en el otro. El modulo no tiene red, asi que los dos viajan en el bundle. -->
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
 <!-- LAS HOJAS DE LA INSTITUCION, TAL CUAL. `app.css` pone el reset, el cuerpo y la tipografia;
      `dueno.css` el vocabulario `d-*` de la pantalla del dueño. No una copia curada: los archivos
      que sirve la app suelta. -->
@@ -46,19 +57,21 @@
                 </svg>
             </span>
             <span>
+                <!-- EL NOMBRE NO LLEVA data-texto: es voz de la institucion y no se traduce. -->
                 <span class="d-top__name">Sotavento Motors</span>
-                <span class="d-top__kicker">Servicio al propietario</span>
+                <span class="d-top__kicker" data-texto="capo.kicker">Servicio al propietario</span>
             </span>
         </div>
 
         <!-- LA UNICA TECLA QUE VA A BUSCAR DATOS. Aca significa otra cosa que en la app suelta:
              no sale a la red -- no puede y no le hace falta -- sino que le pide a GNOTHI que
              traiga lo nuevo. -->
-        <button class="d-releer" id="releer" aria-busy="false">Actualizar</button>
+        <button class="d-releer" id="releer" aria-busy="false"
+                data-texto="capo.actualizar">Actualizar</button>
     </div>
 
-    <h1 class="d-top__hello" id="saludo">Mi plan de mantenimiento</h1>
-    <p class="d-top__sub" id="subtitulo">Preguntándole a Mymi…</p>
+    <h1 class="d-top__hello" id="saludo" data-texto="capo.saludo">Mi plan de mantenimiento</h1>
+    <p class="d-top__sub" id="subtitulo" data-texto="comun.preguntando">Preguntándole a Mymi…</p>
 </div>
 
 <div class="d-lift d__pad d__gap">
@@ -73,15 +86,15 @@
     <!-- Los numeros: el odometro y la ultima lectura que envio el concesionario. -->
     <div class="d-tiles" id="numeros"></div>
 
-    <div class="d-sec"><span class="d-sec__title">Un vistazo a tu carro</span></div>
+    <div class="d-sec"><span class="d-sec__title" data-texto="vistazo.titulo">Un vistazo a tu carro</span></div>
     <section class="d-card" id="vistazo" aria-busy="true"></section>
 
-    <div class="d-sec"><span class="d-sec__title">Lo que pasó este año</span></div>
+    <div class="d-sec"><span class="d-sec__title" data-texto="historial.titulo">Lo que pasó este año</span></div>
     <section class="d-card d-card--pad" id="historial" aria-busy="true"></section>
 </div>
 
 <footer>
-    <p>El registro vive en este dispositivo. Esta pantalla no sale a la red:
+    <p data-texto="pie.explicacion">El registro vive en este dispositivo. Esta pantalla no sale a la red:
        le pregunta a Mymi, y Mymi responde con el motor que le presta.</p>
     <p class="apunte mono" id="conexion">—</p>
 </footer>
