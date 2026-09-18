@@ -2,6 +2,7 @@ using System.Text.Json;
 using Gnothi.Assistant;
 using Gnothi.Host;
 using Gnothi.MobileShared;   // Snapshot: la foto que lee la App Intent de Siri
+using Gnothi.Assistant.Tests;   // Preguntas: el banco con que se mide la seleccion de tools
 
 namespace Gnothi.Conformance;
 
@@ -137,6 +138,34 @@ internal static class Conformance
 			assert("hay al menos una tool publicada para comparar", false,
 				$"el catalogo de {modulesRoot} salio vacio");
 			return 1;
+		}
+
+		// EL BANCO DE PREGUNTAS NO SE QUEDO VIEJO.
+		//
+		// Preguntas.cs nombra, por cada pregunta de Sonia, que tool TENDRIA que contestarla. Es un
+		// instrumento de medicion, no una prueba de comportamiento: sirve para medir seleccion de
+		// tools contra un modelo, y para eso tiene que nombrar tools que existan. Un modulo que
+		// renombra una consulta deja el banco midiendo contra un nombre muerto, y eso no se nota
+		// -- el banco no se compila contra nada, son strings.
+		//
+		// SOLO SE EXIGEN LAS TOOLS DE LOS MODULOS QUE ESTE BANCO TIENE. El banco local de esta Mac
+		// no siempre trae los cinco modulos, y una asercion que exigiera todos fallaria por lo que
+		// falta instalar y no por lo que esta mal escrito.
+		{
+			HashSet<string> publicadas = [.. published1];
+			HashSet<string> modulosDelBanco =
+				[.. ToolIndex.Of(one).All.Select(e => e.ModuleName)];
+
+			string[] muertas = [.. Preguntas.DeSonia
+				.Where(p => modulosDelBanco.Contains(p.Modulo))
+				.SelectMany(p => p.Esperadas.Concat(p.Tolerables))
+				.Distinct()
+				.Where(nombre => !publicadas.Contains(nombre))
+				.Order()];
+
+			assert("el banco de preguntas nombra tools que existen",
+				muertas.Length == 0,
+				$"nombres que ya no publica ningun modulo: {string.Join(", ", muertas)}");
 		}
 
 		int compared = 0;
