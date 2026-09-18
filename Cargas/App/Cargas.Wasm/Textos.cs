@@ -48,9 +48,6 @@ namespace Cargas.Wasm
 		/// </summary>
 		public string Idioma => SubetiquetaPrimaria(Etiqueta);
 
-		/// <summary>Si la eleccion de la persona se pudo atender, o se cayo al idioma del registro.</summary>
-		public bool AtendioLaEleccion { get; private set; }
-
 		/// <summary>
 		/// El texto de esa clave. Una clave que falta se dice con su propio nombre entre llaves y no
 		/// revienta: una pantalla a la que le falta una palabra sigue sirviendo, y el hueco se ve.
@@ -143,9 +140,6 @@ namespace Cargas.Wasm
 				Etiqueta = LaDelRegistro;
 				textos = await CargarAsync(http, Etiqueta);
 			}
-
-			AtendioLaEleccion = pedidas.Length > 0
-				&& SubetiquetaPrimaria(pedidas[0]) == SubetiquetaPrimaria(Etiqueta);
 
 			Formato.Hablar(Idioma);
 

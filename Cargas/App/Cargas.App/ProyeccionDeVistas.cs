@@ -194,6 +194,7 @@ namespace Cargas.App
 			return new RendimientoDelVehiculo
 			{
 				Veredicto = Texto(raiz, "veredicto"),
+				VeredictoComoSeDice = LaRedaccion.Etiqueta(frases, Texto(raiz, "veredicto")),
 				Severidad = Texto(raiz, "severidad"),
 				ParaSonia = LaRedaccion.Lectura(frases, Texto(raiz, "veredicto"),
 					Texto(raiz, "simbolo"), Decimal(raiz, "actualComoSeVe"),

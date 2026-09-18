@@ -100,6 +100,12 @@ namespace Cargas.App.Vistas
 		// de la presentacion, y se invierten con la unidad; esto no.
 		public string Veredicto { get; init; } = "";
 
+		// EL MISMO VEREDICTO, DICHO. El codigo de arriba sigue cruzando intacto porque es
+		// IDENTIDAD -- con el se decide el tono y el sello --, y esto es lo que se lee. Viaja
+		// dicho porque una cara que no sea Blazor no tiene como pedir la etiqueta: la carátula
+		// de la app suelta llama a Textos.ComoSeDice, y la cara hibrida es html y js pelados.
+		public string VeredictoComoSeDice { get; init; } = "";
+
 		public string Severidad { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
 		public string Accion { get; init; } = "";

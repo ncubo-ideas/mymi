@@ -41,22 +41,17 @@ namespace Cargas.App
 		private const string ActorName = "cargas";
 
 		/// <summary>
-		/// EN QUE IDIOMA CONTESTA ESTA SUPERFICIE, y hoy es el del registro de la estacion.
+		/// EN QUE IDIOMA SE DICE UNA VISTA, y lo dice QUIEN LA PIDE. Esta clase no tiene navegador
+		/// -- corre en proceso adentro de Gnothi, en la caja de wasm -- pero la cara que la consulta
+		/// SI lo es, y ya leyo la eleccion del aparato. Preguntarsela al dispositivo desde aca
+		/// ataria el paquete al navegador, que es lo que la forma hibrida existe para no hacer.
 		/// <para>
-		/// La app suelta se lo pregunta al dispositivo -- <c>navigator.languages</c>, por JSInterop --
-		/// porque ahi la carátula ES el navegador. Aca no hay navegador: esta clase corre en proceso
-		/// adentro de Gnothi, y en la caja de wasm, donde no hay ni <c>navigator</c> ni una carpeta
-		/// que servir. Preguntarselo al dispositivo desde aca ataria el paquete al navegador, que es
-		/// exactamente lo que la forma hibrida existe para no hacer.
-		/// </para>
-		/// <para>
-		/// ASI QUE CAE AL IDIOMA DEL REGISTRO, que es la misma caida que la app suelta ya hace cuando
-		/// no puede leer la eleccion. NO es la respuesta final: el dia que Gnothi le pase al modulo el
-		/// idioma de la persona, este miembro deja de ser una constante y pasa a ser lo que el Host
-		/// dijo. Esa es la unica linea que cambia, y vive aca justamente para que sea una.
+		/// Una etiqueta vacia o que este modulo no habla cae al idioma del registro de la estacion,
+		/// que es la misma caida que hace la app suelta cuando no puede leer la eleccion.
 		/// </para>
 		/// </summary>
-		private static string ElIdioma => Frases.Frases.IdiomaDelRegistro;
+		private static string Elegido(string idioma) =>
+			Frases.Frases.EsUnaEtiquetaConocida(idioma) ? idioma : Frases.Frases.IdiomaDelRegistro;
 
 		private readonly string folder;
 
@@ -108,10 +103,12 @@ namespace Cargas.App
 		// proxima carga se calculan CONTRA UNA FECHA, y dejar que la pagina la mande seria dejar
 		// que la pantalla mueva el resultado.
 		[View("tablero")]
-		public object Tablero(string placa)
+		public object Tablero(string placa, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(placa)) throw new ArgumentException("falta la placa", nameof(placa));
 			if (!HasJournal) return NoData();
+
+			string dicho = Elegido(idioma);
 
 			return Read(api =>
 			{
@@ -119,11 +116,11 @@ namespace Cargas.App
 				return (object)new
 				{
 					placa,
-					rendimiento = api.Rendimiento(placa, ElIdioma),
+					rendimiento = api.Rendimiento(placa, dicho),
 					autonomia = api.Autonomia(placa),
 					proxima = api.ProximaCarga(placa, hoy),
-					tramos = api.Tramos(placa, ElIdioma),
-					costos = api.Costos(placa, ElIdioma),
+					tramos = api.Tramos(placa, dicho),
+					costos = api.Costos(placa, dicho),
 					odometro = api.Odometro(placa, hoy),
 				};
 			});
@@ -133,27 +130,31 @@ namespace Cargas.App
 		// el dominio sabe la respuesta: le falta un tramo cerrado entre dos tanques llenos, o el
 		// kilometraje anotado. Es lo que convierte un guion en una instruccion.
 		[View("faltantes")]
-		public object Faltantes(string placa)
+		public object Faltantes(string placa, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(placa)) throw new ArgumentException("falta la placa", nameof(placa));
 			if (!HasJournal) return NoData();
 
+			string dicho = Elegido(idioma);
+
 			return Read(api => (object)new
 			{
 				placa,
-				faltantes = api.Faltantes(placa, ElIdioma),
-				completitud = api.Completitud(placa, ElIdioma),
+				faltantes = api.Faltantes(placa, dicho),
+				completitud = api.Completitud(placa, dicho),
 			});
 		}
 
 		// LA LISTA DE CARGAS de un vehiculo: el historial, que es lo que el tablero no da.
 		[View("cargas")]
-		public object Cargas(string placa)
+		public object Cargas(string placa, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(placa)) throw new ArgumentException("falta la placa", nameof(placa));
 			if (!HasJournal) return NoData();
 
-			return Read(api => (object)new { placa, cargas = api.Cargas(placa, ElIdioma) });
+			string dicho = Elegido(idioma);
+
+			return Read(api => (object)new { placa, cargas = api.Cargas(placa, dicho) });
 		}
 
 		// ------------------------------------------------------------ lo que el cartero deja
