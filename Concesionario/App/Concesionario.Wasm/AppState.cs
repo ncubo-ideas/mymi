@@ -174,7 +174,7 @@ namespace Concesionario.Wasm
 			try { await FlushToDiskAsync(); } catch (WriteRefusedException) { }
 
 			LastMessage = mode.Hosted
-				? $"arriba, hospedada en Gnothi. {preloaded} archivos precargados"
+				? $"arriba, hospedada en Mymi. {preloaded} archivos precargados"
 				: bridge.HasDestination
 					? $"arriba. {preloaded} archivos precargados de '{bridge.FolderName}'"
 					: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
@@ -230,7 +230,7 @@ namespace Concesionario.Wasm
 		// migrada: es el destino, no el origen.
 		public bool Migrated => !mode.Hosted && Account is { Migrada: true };
 
-		public string WhereItLivesNow => Account?.Host is { Length: > 0 } where ? where : "Gnothi";
+		public string WhereItLivesNow => Account?.Host is { Length: > 0 } where ? where : "Mymi";
 
 		public bool Hosted => mode.Hosted;
 
@@ -262,7 +262,7 @@ namespace Concesionario.Wasm
 				FlushToDiskAsync);
 
 			ResultadoDeRefresh result = await once.Ejecutar(ct);
-			LastMessage = $"delivery from Gnothi: {result}";
+			LastMessage = $"delivery from Mymi: {result}";
 			return result;
 		}
 		private async Task FlushToDiskAsync()

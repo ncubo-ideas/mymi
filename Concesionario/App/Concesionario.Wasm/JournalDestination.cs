@@ -56,7 +56,7 @@ namespace Concesionario.Wasm
 			Func<ValueTask<ListResult>> list,
 			Func<string, ValueTask<ReadResult>> read,
 			Func<string, string, ValueTask<WriteResult>> write,
-			string name = "Gnothi")
+			string name = "Mymi")
 		{
 			ArgumentNullException.ThrowIfNull(list);
 			ArgumentNullException.ThrowIfNull(read);

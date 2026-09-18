@@ -121,7 +121,7 @@ public sealed class LoopbackSpikeService : Service
 				Canal, "Puerta de loopback (spike)", NotificationImportance.Low));
 
 		Notification aviso = new Notification.Builder(this, Canal)
-			.SetContentTitle("Gnothi está contestando en el dispositivo")
+			.SetContentTitle("Mymi está contestando en el dispositivo")
 			.SetContentText($"Puerta de loopback abierta en el puerto {Port}")
 			.SetSmallIcon(Android.Resource.Drawable.StatSysDownload)
 			.SetOngoing(true)

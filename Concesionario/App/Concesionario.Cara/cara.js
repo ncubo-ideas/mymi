@@ -300,7 +300,7 @@
             .then(function (h) {
                 if (h.hasData === false) {
                     $('subtitulo').textContent = 'Todavía no hay nada de tu carro en este dispositivo.';
-                    P.apunte($('estado'), 'Apretá Actualizar para que Gnothi traiga lo que publicó tu concesionario.');
+                    P.apunte($('estado'), 'Apretá Actualizar para que Mymi traiga lo que publicó tu concesionario.');
                     return;
                 }
 

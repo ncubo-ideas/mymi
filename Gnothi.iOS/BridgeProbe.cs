@@ -42,7 +42,7 @@ internal static class BridgeProbe
 				  "description":"Dice si un analito de la persona viene subiendo, bajando o estable.",
 				  "params":[{"name":"analito","description":"Cual analito. Valores validos: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."}]}]
 				""";
-			const string instrucciones = "Sos el asistente de Gnothi. Prosa corta, sin markdown.";
+			const string instrucciones = "Sos el asistente de Mymi. Prosa corta, sin markdown.";
 
 			// PASO 1 · la intencion: se espera que pida la tool, no que conteste.
 			string uno = Call(

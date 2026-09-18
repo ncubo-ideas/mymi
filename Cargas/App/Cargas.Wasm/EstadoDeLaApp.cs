@@ -289,7 +289,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		bucle = new BucleDeRefresh(api, fuente, RutaDeCargas.Rutear, BajarADisco);
 
 		UltimoMensaje = modo.Hospedada
-			? $"arriba, hospedada en Gnothi. {precargados} archivos precargados"
+			? $"arriba, hospedada en Mymi. {precargados} archivos precargados"
 			: puente.HayDestino
 				? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
 				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
@@ -359,7 +359,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// es el destino, no el origen.
 	public bool Migrada => !modo.Hospedada && Cuenta is { Migrada: true };
 
-	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Gnothi";
+	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Mymi";
 
 	public bool Hospedada => modo.Hospedada;
 
@@ -392,7 +392,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			BajarADisco);
 
 		ResultadoDeRefresh resultado = await unaVez.Ejecutar(ct);
-		UltimoMensaje = $"entrega de Gnothi: {resultado}";
+		UltimoMensaje = $"entrega de Mymi: {resultado}";
 		return resultado;
 	}
 	// El unico camino por el que la app baja a disco. Recuerda si fallo, para que la
@@ -660,7 +660,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		string sobre = Traspaso.Armar(api!, DondeEstaElProveedor, DateTime.UtcNow);
 		string nombre = $"mis-anotaciones-cargas-{DateTime.UtcNow:yyyy-MM-dd}.txt";
 		ResultadoDeCompartir resultado = await puenteDeTraspaso.Compartir(nombre, sobre, "Mis anotaciones de cargas");
-		UltimoMensaje = $"traspaso hacia Gnothi: {(resultado.Ok ? resultado.Como : resultado.Motivo)}";
+		UltimoMensaje = $"traspaso hacia Mymi: {(resultado.Ok ? resultado.Como : resultado.Motivo)}";
 		return resultado;
 	}
 

@@ -249,8 +249,8 @@
       },
       "olvidoLaCarpeta": "Se olvidó la carpeta guardada; no se tocó nada de lo que hay adentro.",
       "arribaHospedada": {
-        "uno": "La app está arriba, hospedada en Gnothi, con {precargados} archivo precargado.",
-        "varios": "La app está arriba, hospedada en Gnothi, con {precargados} archivos precargados."
+        "uno": "La app está arriba, hospedada en Mymi, con {precargados} archivo precargado.",
+        "varios": "La app está arriba, hospedada en Mymi, con {precargados} archivos precargados."
       },
       "arribaEnCarpeta": {
         "uno": "La app está arriba, con {precargados} archivo precargado de «{carpeta}».",
@@ -264,7 +264,7 @@
       "alAbrir": "Al abrir, la institución contestó: {resultado}",
       "carpetaRechazoAlAbrir": "Al abrir, la institución contestó, pero la carpeta rechazó la escritura.",
       "actualizacion": "Se trajo lo que haya publicado la institución: {resultado}",
-      "entregaDeGnothi": "Gnothi entregó un sobre: {resultado}",
+      "entregaDeGnothi": "Mymi entregó un sobre: {resultado}",
       "noSeRegistroLaInstalacion": "No se pudo registrar esta instalación: {rechazo}",
       "credencialRotada": "Se rotó la credencial con el token de refresco.",
       "credencialNueva": "Se obtuvo una credencial nueva, con alcance {alcance}.",
