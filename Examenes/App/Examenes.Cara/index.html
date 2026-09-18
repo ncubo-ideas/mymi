@@ -76,7 +76,7 @@
                 data-texto-aria="app.actualizar">↻</button>
     </div>
 
-    <p class="inicio-hero-kicker"><strong data-texto="app.saludo">Hola.</strong>
+    <p class="inicio-hero-kicker"><strong data-texto="app.saludo">Hola, Sonia.</strong>
        <span data-texto="app.kicker">Entendé cómo venís, no solo cómo saliste hoy.</span></p>
 
     <div class="inicio-hero-chequeo" id="chequeo" hidden>
@@ -104,7 +104,10 @@
      mejor que cualquier frase de plantilla. -->
 <section class="inicio-sintendencia" id="sintendencia" hidden></section>
 
-<section class="inicio-historial">
+<!-- LA TARJETA ES LA DE LA APP. Esto decia `inicio-historial`, una clase que ninguna hoja
+     define, asi que el historial salia sobre el fondo de la pagina mientras en la app suelta va
+     en un panel navy con borde y respiro (MisExamenes.razor:1029). -->
+<section class="inicio-historial-tarjeta">
     <h2 class="seccion inicio-historial-titulo" id="historial" data-texto="historial.titulo">Tu historial</h2>
     <div id="historial-cuerpo"><p class="apunte">…</p></div>
 </section>

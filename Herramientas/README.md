@@ -110,6 +110,41 @@ Deja al guardián de la suite —`Gnothi.Assistant.Tests/Conformance.cs`, que ar
 cruza su manifiesto contra su `tools/list` real— como la red: esto mantiene sincronizado, el guardián
 avisa si alguien igual editó a mano y se desvió.
 
+## `revisar-las-caras.mjs` — que la cara híbrida siga diciendo lo que dice su app
+
+Cada negocio tiene **dos pantallas del mismo hecho**: la app suelta en Blazor (`<X>.Wasm`, que es la
+fuente del diseño) y la cara híbrida (`<X>.Cara`, html y js planos que corren dentro de Mymi). Nada
+las ata. Se escribieron a mano el 2026-09-14, las apps se localizaron el 16 y el 17, y el 18 **sólo
+una de las cinco hablaba inglés adentro de Mymi**. Cuatro días bastaron.
+
+```bash
+node Herramientas/revisar-las-caras.mjs              # las cinco
+node Herramientas/revisar-las-caras.mjs compras      # una o varias
+node Herramientas/revisar-las-caras.mjs --silencio   # sólo los hallazgos
+```
+
+Sale con código 1 si encuentra algo, para que sirva de compuerta.
+
+### Qué revisa, y son las tres formas en que se desincronizaron de verdad
+
+| | qué compara | por qué duele |
+|---|---|---|
+| **la hoja** | que `css/app.css` de la cara sea idéntica a la de su app, y que el html la enlace | ahí viven el color, la tipografía y el layout de la institución; entresacar reglas a mano es decidir cómo se ve ella |
+| **las clases** | que toda clase que la cara escribe tenga regla en alguna hoja que viaja | es el modo mudo de verse mal: el bloque sale sin caja, sin color o sin espacio, **sin un solo error en consola** |
+| **los catálogos** | que los dos idiomas tengan las mismas claves, que ninguna que la cara pide falte, y que lo compartido con la app diga **exactamente** lo mismo | una cara con su propia redacción es una segunda institución |
+
+Lo de las clases no es teórico: `inicio-atencion-detalle` dejaba la caja de lectura de Delfos pelada,
+y `apunte` —que escribe el puente del Host en las **cinco** caras— no estaba en tres hojas, así que
+un fallo se veía igual que una nota.
+
+### Qué no puede revisar
+
+**Si la cara lee un campo que la superficie no serializa.** Eso sólo se ve corriendo: `h.stays.stays`,
+`h.plate.plate` y `x.cuando` pintaban vacío para siempre. Al tocar una cara, leer el record de
+`Vistas/`, no lo que parece razonable.
+
+Tampoco juzga el diseño. Dice si la cara se desvió de su app, no si las dos se ven bien.
+
 ## `replicar-seccion-gnothi.mjs` — el paso a paso «Se usa con Gnothi», en cada página
 
 Cada página de institución (`<Negocio>/PaginaDeDescarga/descarga/index.html`) trae la misma

@@ -40,3 +40,12 @@ footer p { margin: 0 0 .4rem; max-width: 60ch; }
  * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
  * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
 [hidden] { display: none !important; }
+
+/* EL APUNTE DEL PUENTE. Lo escribe `puente.js`, que pone el Host y es el mismo en los cinco
+   modulos: cada consulta deja un <p class="apunte">, o "apunte malo" si fallo. La hoja de la
+   institucion no define esa clase -- su app suelta nunca la necesito, porque sabe sola si pudo --
+   asi que el aviso salia como parrafo pelado y un fallo se veia igual que una nota.
+
+   Va aca y no en app.css a proposito: app.css es la hoja de ella y viaja sin tocar una regla. */
+.apunte { color: var(--tinta-tenue); font-size: .85rem; margin: 0; }
+.apunte.malo { color: var(--alarma); }
