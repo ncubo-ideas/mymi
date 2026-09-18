@@ -136,7 +136,14 @@ public sealed class Shell : IDisposable
 	private readonly Func<string, IModel>? modeloLocal;
 
 	/// <summary>El proveedor que corre en el aparato, sin url y sin llave.</summary>
+	///
+	/// ES UNA IDENTIDAD, NO UNA ETIQUETA: se guarda en model.cfg y es lo que `Modelo()` compara
+	/// para construir ModelFoundation. La cara lo MUESTRA traducido -- ver ajustes.proveedor.local
+	/// en textos.json --, pero lo que viaja y se guarda es esta cadena.
 	public const string ProveedorLocal = "En este teléfono";
+
+	/// <summary>Como se llama el modelo del aparato en la pantalla y en model.cfg.</summary>
+	public const string ModeloLocal = "apple-on-device";
 
 	// EL ICONO POR RUBRO, no por nombre de modulo.
 	//
@@ -1266,6 +1273,18 @@ public sealed class Shell : IDisposable
 
 			// Para que la pagina no pida llave donde no hace falta.
 			["local"] = name == ProveedorLocal,
+
+			// Y PARA QUE SE PUEDA VOLVER. El del aparato era el default cuando no habia model.cfg,
+			// pero NO estaba en la lista del selector: quien elegia otro proveedor una vez perdia
+			// para siempre el unico donde el dato no sale del telefono, que es justamente la puerta
+			// que este producto persigue. Se manda la terna entera -identidad, url vacia y modelo-
+			// para que la pagina no tenga que saberse ninguna de las tres.
+			["proveedorLocal"] = modeloLocal is null ? null : new Dictionary<string, object?>
+			{
+				["name"] = ProveedorLocal,
+				["url"] = "",
+				["model"] = ModeloLocal,
+			},
 			["model"] = model,
 			// SI HAY llave para ESTE proveedor, nunca la llave.
 			["keyPresent"] = File.Exists(KeyPath),
@@ -1297,15 +1316,18 @@ public sealed class Shell : IDisposable
 		return new ModelOpenAiCompatible(url, model, KeyPath);
 	}
 
-	// EL ENCUADRE, en un solo lugar. Viaja tal cual hasta el modelo: no es documentacion, es lo
-	// unico que separa "te leo tus numeros" de "te diagnostico". Medido: un modelo capaz lo
-	// respeta 7 de 7; el del telefono se le escapa 2 de 4 -ver Spikes/Lab.Cruce-.
-	private const string Encuadre =
-		"Sos el asistente de Mymi. Los datos que devuelven las herramientas son los datos REALES " +
-		"de la persona que te pregunta, leidos de los registros que sus instituciones le entregaron " +
-		"y que viven en su propio telefono. No vienen de ningun servidor. Contestale sobre SUS " +
-		"numeros, en su idioma, en prosa corrida y sin markdown. El veredicto clinico ya viene hecho " +
-		"y no es tuyo: no diagnostiques ni recomendes tratamiento.";
+	// EL ENCUADRE, en un solo lugar y EN EL IDIOMA DE LA PERSONA. Viaja tal cual hasta el modelo:
+	// no es documentacion, es lo unico que separa "te leo tus numeros" de "te diagnostico".
+	// Medido: un modelo capaz lo respeta 7 de 7; el del telefono se le escapa 2 de 4 -ver
+	// Spikes/Lab.Cruce-.
+	//
+	// ESTABA QUEMADO EN CASTELLANO, y eso se veia en la cara del producto: el 2026-09-17, en un
+	// iPhone en ingles, con la UI en ingles y una pregunta escrita en ingles, el asistente
+	// contesto EN ESPANOL y con la gramatica rota -«mis ultimos compras»-. Decia «contestale en
+	// su idioma» adentro de una instruccion en castellano, y el modelo chico sigue el idioma en
+	// el que se le habla, no el que se le describe. Por la regla 1 de la guia de localizacion el
+	// idioma del Host sigue a LA PERSONA, asi que el encuadre tambien.
+	private static string Encuadre => Textos.T("asistente.encuadre");
 
 	private (string name, string url, string model) Provider()
 	{
@@ -1325,7 +1347,7 @@ public sealed class Shell : IDisposable
 		// no sale del telefono, asi que arrancar en otro seria elegir por la persona la opcion
 		// menos privada. Si no hay modelo propio, el de siempre.
 		return modeloLocal is not null
-			? (ProveedorLocal, "", "apple-on-device")
+			? (ProveedorLocal, "", ModeloLocal)
 			: ("Groq", ModelUrl, ModelName);
 	}
 

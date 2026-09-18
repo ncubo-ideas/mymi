@@ -664,12 +664,12 @@
 <div class="view" id="v-journal">
   <div class="scroll">
     <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Datos de tus instituciones</h2>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="journal.titulo">Datos de tus instituciones</h2>
     <!-- «Información que Gnothi mantiene en este dispositivo» era el título otra vez. Y la
          segunda mitad -- lo que viaja al asistente -- estaba TAMBIÉN en la pantalla del
          proveedor, palabra por palabra. Cada promesa se hace una vez, en la pantalla donde
          importa: acá el registro es de ella; allá es donde hay un tercero. -->
-    <p class="qlead">Nadie más las lee.</p>
+    <p class="qlead" data-i18n="journal.lead">Nadie más las lee.</p>
     <div id="journal"></div>
   </div>
 </div>
@@ -704,19 +704,21 @@
 <div class="view" id="v-prov">
   <div class="scroll">
     <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Proveedor de IA</h2>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="ajustes.proveedor-ia">Proveedor de IA</h2>
     <!-- «Todos hablan el mismo formato» se fue: es verdad cuando se ELIGE proveedor, y eso pasa
          en la otra hoja, donde también estaba escrito. Acá ya hay uno puesto. Queda lo único que
          esta pantalla tiene que decir, que es qué sale del teléfono. -->
-    <p class="qlead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
+    <p class="qlead" data-i18n="prov.lead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
     <div class="kv" id="set-model"></div>
 
     <h3 class="cap" data-i18n="prov.cap.acceso">Acceso</h3>
     <!-- The key card: state and actions, and an editor that NEVER echoes the stored value. -->
     <div class="key" id="set-key"></div>
     <!-- «Gratuita o de pago» vive en la hoja donde se elige proveedor, que es donde ella se
-         pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver. -->
-    <p class="hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
+         pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver.
+         El id es para poder OCULTARLO: con el modelo del aparato no hay proveedor al que
+         viajarle, así que la frase deja de ser cierta. Ver paint(). -->
+    <p class="hint" id="prov-hint" data-i18n="prov.hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
 
     <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)" data-i18n="prov.cambiar">Cambiar proveedor</button>
   </div>
@@ -778,12 +780,12 @@
      "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
-    <h4>Tus instituciones, siempre contigo.</h4>
+    <h4 data-i18n="agregar.titulo">Tus instituciones, siempre contigo.</h4>
     <!-- UNA SOLA FRASE, y es la que ella no puede adivinar. Eran tres: la primera repetía el
          título con otras palabras, la segunda repetía «llevá con vos» que el título ya dice, y
          la tercera -la única con información- quedaba al final. Las tres vías de abajo dicen qué
          hacer; esto dice lo que pasa después de tocarlas. -->
-    <p>Mymi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
+    <p data-i18n="agregar.lead">Mymi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
     <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
          row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
     <div class="vias">
@@ -823,7 +825,7 @@
      the list comes back with the row marked, so she goes on with the next. -->
 <div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
   <div class="card">
-    <h4>Esto encontré en lo que elegiste</h4>
+    <h4 data-i18n="hallazgos.titulo">Esto encontré en lo que elegiste</h4>
     <!-- SIN PÁRRAFO. Decía «tocá el módulo que querés agregar» -- sobre una lista de módulos --,
          «Gnothi te muestra qué trae antes de instalarlo» -- ya dicho en la hoja anterior -- y
          «podés seguir con el siguiente», que se descubre cuando vuelve la lista con la fila
@@ -836,9 +838,9 @@
 <!-- the provider picker: choose, then just paste that provider's key -->
 <div id="psheet" class="osheet" onclick="if(event.target===this)gn.psheet(false)">
   <div class="card">
-    <h4>Elegí el proveedor del modelo</h4>
+    <h4 data-i18n="prov.elegir.titulo">Elegí el proveedor del modelo</h4>
     <!-- «Elegí uno» sobre una lista, bajo un título que dice «elegí el proveedor», sobraba. -->
-    <p>Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
+    <p data-i18n="prov.elegir.lead">Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
     <div id="plist"></div>
     <div id="pcustom" style="display:none">
       <input id="cu-url" autocomplete="off" spellcheck="false" placeholder="https://servidor/v1">
@@ -1570,7 +1572,7 @@ const gn = {
               // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
               // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
               // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
-              + '<b>En tu pantalla de inicio</b>'
+              + '<b>' + esc(T('detalle.fijar.lugar')) + '</b>'
               // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
               // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
               // pantalla sí.
@@ -1578,7 +1580,7 @@ const gn = {
               + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
               + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
               + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
-              + '<span>Agregar</span></button>'
+              + '<span>' + esc(T('detalle.fijar.agregar')) + '</span></button>'
               + '<p class="fijar-dicho" id="fijar-dicho"></p>'
               + '</div></div>'
             : '')
@@ -1685,17 +1687,36 @@ const gn = {
       + ' · ' + (files === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: files }));
 
     const s = gn.state.settings || {};
+    // EL NOMBRE DEL PROVEEDOR LOCAL SE TRADUCE; EL DE LOS DEMAS NO. «Groq» es el nombre de una
+    // empresa y se dice igual en los dos idiomas; «En este teléfono» es texto NUESTRO, o sea UI
+    // del Host, que por la regla 1 sigue a la persona. Lo que viaja en `s.name` es la IDENTIDAD
+    // que se guarda en model.cfg y no se toca: acá solo se elige como mostrarla.
+    const nombreProv = s.local ? T('ajustes.proveedor.local') : (s.name || s.provider);
+    const nombreServ = s.local ? T('ajustes.servidor.local')  : s.provider;
     document.getElementById('set-model').innerHTML =
-        '<div><span>' + T('ajustes.proveedor') + '</span><b>' + esc(s.name || s.provider) + '</b></div>'
-      + '<div><span>' + T('ajustes.servidor') + '</span><b>' + esc(s.provider) + '</b></div>'
+        '<div><span>' + T('ajustes.proveedor') + '</span><b>' + esc(nombreProv) + '</b></div>'
+      + '<div><span>' + T('ajustes.servidor') + '</span><b>' + esc(nombreServ) + '</b></div>'
       + '<div><span>' + T('ajustes.modelo') + '</span><b>' + esc(s.model) + '</b></div>';
-    document.getElementById('set-prov-sub').textContent = (s.name || s.provider || '—') + (s.model ? ' · ' + s.model : '');
-    document.getElementById('set-key-sub').innerHTML = s.keyPresent
-      ? '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1E9E6A;margin-right:6px"></i>' + T('ajustes.clave.puesta')
-      : '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--off);margin-right:6px"></i>' + T('ajustes.clave.falta');
+    document.getElementById('set-prov-sub').textContent = (nombreProv || '—') + (s.model ? ' · ' + s.model : '');
+    // EL PUNTO ROJO NO VA DONDE NO HAY NADA QUE FALTAR. El Host manda `local` desde que existe el
+    // proveedor del aparato -Shell.cs, «para que la pagina no pida llave donde no hace falta»- y
+    // esta pagina no lo leia: mostraba «No key — the assistant cannot answer» sobre el unico
+    // proveedor que no lleva llave, y que estaba contestando igual. Visto en un iPhone 17 Pro el
+    // 2026-09-17.
+    const punto = (c) => '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + c + ';margin-right:6px"></i>';
+    document.getElementById('set-key-sub').innerHTML = s.local
+      ? punto('#1E9E6A') + T('ajustes.clave.no-hace-falta')
+      : s.keyPresent ? punto('#1E9E6A') + T('ajustes.clave.puesta')
+                     : punto('var(--off)') + T('ajustes.clave.falta');
 
     // The stored key is NEVER echoed back into the page: the editor opens empty, always.
-    document.getElementById('set-key').innerHTML = gn.keyEdit
+    // Y EL PIE TAMBIEN: hablarle de llaves gratuitas o de pago a quien no necesita ninguna es
+    // ofrecerle un problema que no tiene. Se OCULTA, no se vacia: el repintado de data-i18n
+    // recorre el marcado y le volveria a poner el texto.
+    document.getElementById('prov-hint').hidden = !!s.local;
+    document.getElementById('set-key').innerHTML = s.local
+      ? '<div class="st"><i class="dot ok"></i><b>' + T('ajustes.local.telefono') + '</b></div>'
+      : gn.keyEdit
       ? '<div class="st"><b>' + T('ajustes.clave.pega-nueva') + '</b></div>'
         + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(T('ajustes.clave.placeholder')) + '">'
         + '<div class="btns"><button class="btn" onclick="gn.saveKey()">' + T('ajustes.llave.guardar') + '</button>'
@@ -1718,12 +1739,24 @@ const gn = {
   // ── the provider: pick one, then just paste ITS key ─────────────────────
   // Every entry speaks the OpenAI shape, which is the one wire format the app implements.
   // 'Otro' covers anything else that speaks it too -- LM Studio on the LAN included.
+  // LA LISTA DEL SELECTOR, CON EL APARATO ADELANTE CUANDO LO HAY. El Host manda la terna entera
+  // en settings.proveedorLocal, asi que la pagina no se sabe ni el nombre ni el modelo: los
+  // recibe. Va PRIMERO a proposito -- es el unico donde el dato no sale del telefono --, y su
+  // nombre se muestra traducido aunque lo que se guarde sea la identidad que vino.
+  provList() {
+    const s = (gn.state && gn.state.settings) || {};
+    const local = s.proveedorLocal
+      ? [{ name: s.proveedorLocal.name, url: s.proveedorLocal.url, model: s.proveedorLocal.model,
+           nota: 'prov.nota.local', local: true }]
+      : [];
+    return local.concat(PROV);
+  },
   psheet(on) {
     if (on) {
       const cur = (gn.state && gn.state.settings) ? gn.state.settings.name : '';
-      document.getElementById('plist').innerHTML = PROV.map((p, i) =>
+      document.getElementById('plist').innerHTML = gn.provList().map((p, i) =>
         '<div class="prow" onclick="gn.pickProvider(' + i + ')">'
-        + '<div class="t"><b>' + esc(p.name) + '</b>' + peq(T(p.nota)) + '</div>'
+        + '<div class="t"><b>' + esc(p.local ? T('ajustes.proveedor.local') : p.name) + '</b>' + peq(T(p.nota)) + '</div>'
         + (cur === p.name ? '<span class="cur">✓</span>' : '') + '</div>').join('')
         + '<div class="prow" onclick="document.getElementById(\'pcustom\').style.display=\'block\'">'
         + '<div class="t"><b>' + T('prov.otro') + '</b>' + peq(T('prov.otro.nota')) + '</div></div>';
@@ -1731,7 +1764,7 @@ const gn = {
     }
     document.getElementById('psheet').classList.toggle('on', on);
   },
-  pickProvider(i) { gn.useProvider(PROV[i]); },
+  pickProvider(i) { gn.useProvider(gn.provList()[i]); },
   saveCustom() {
     const url = document.getElementById('cu-url').value.trim();
     const model = document.getElementById('cu-model').value.trim();
@@ -1744,7 +1777,9 @@ const gn = {
     if (s) {
       gn.state = s;
       // no key for this provider yet -> open the editor right away: pick, paste, done.
-      gn.keyEdit = !s.settings.keyPresent;
+      // Salvo el del aparato, que no lleva llave: ahi abrir el editor seria pedir lo que no hace
+      // falta, que es el mismo error que la tarjeta de acceso ya tenia.
+      gn.keyEdit = !s.settings.local && !s.settings.keyPresent;
       gn.paint();
     }
   },
