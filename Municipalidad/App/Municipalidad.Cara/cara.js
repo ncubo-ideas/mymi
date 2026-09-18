@@ -13,7 +13,12 @@
     'use strict';
 
     var P = window.Puente;
+    var I = window.Idioma;
     var $ = P.$;
+
+    // LO ESTATICO SE DICE YA, y no en arrancar(): el markup de arriba ya esta parseado cuando este
+    // script corre, y esperar a DOMContentLoaded seria pintar en un idioma para repintar en el otro.
+    I.pintarLoEstatico();
 
     // Que pregunta se esta mirando, y cuales ya se pidieron. Se piden POR DEMANDA: abrir la cara no
     // tiene por que costar seis vueltas al Host cuando la persona va a leer una.
@@ -27,6 +32,18 @@
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
+    // LA FRASE DEL CATALOGO SE ESCAPA PRIMERO Y SE LLENA DESPUES, y ese orden es la regla: la
+    // sentencia es nuestra, y si algun hueco llegara a traer marcado propio, al reves ese marcado
+    // saldria escrito en vez de aplicado. Lo que venga del registro lo escapa quien arma el hueco,
+    // que es por lo que aca adentro no se vuelve a escapar.
+    function frase(clave, huecos) {
+        var dicho = texto(I.texto(clave));
+        for (var hueco in huecos)
+            if (Object.prototype.hasOwnProperty.call(huecos, hueco))
+                dicho = dicho.split('{' + hueco + '}').join(huecos[hueco]);
+        return dicho;
+    }
+
     // COLONES SIN DECIMALES Y CON SEPARADOR DE MILES. Es como se lee un recibo municipal.
     function colones(n) {
         var x = Number(n);
@@ -35,6 +52,13 @@
     }
 
     function plural(n, una, varias) { return n === 1 ? una : varias; }
+
+    // CUANTOS DIAS, dicho entero, para que «1 días» no aparezca nunca en ningun idioma. Es la unica
+    // palabra suelta del catalogo, y se puede resolver a mano porque las dos lenguas tienen dos
+    // formas; todo lo demas entra como frase entera.
+    function dias(n) {
+        return n + ' ' + texto(I.texto(plural(n, 'comun.dia', 'comun.dias')));
+    }
 
     // LA URGENCIA LA DECIDE EL DOMINIO y aca solo se pinta. Una urgencia que esta pantalla no
     // conozca cae en neutra, que es lo unico honesto que se puede decir de ella.
@@ -61,7 +85,7 @@
     function porQuePagoMas(r) {
         var v = (r && r.variacion) || {};
         var rubros = v.rubros || [];
-        if (!rubros.length) return nada('Todavía no hay dos comprobantes del mismo rubro para comparar.');
+        if (!rubros.length) return nada(I.texto('porQuePagoMas.sinDosComprobantes'));
 
         return rubros.map(function (x) {
             if (!x.sePuedeVer)
@@ -82,32 +106,37 @@
         var v = (r && r.vence) || {};
         var porVencer = v.porVencer || [], vencidos = v.vencidos || [];
         if (!porVencer.length && !vencidos.length)
-            return nada('No hay nada por vencerse ni vencido. Tu cuenta está al día.');
+            return nada(I.texto('queSeMeVence.nada'));
 
         var html = '';
 
         // LO VENCIDO VA PRIMERO, y el orden no es estetico: es lo unico de esta pantalla que ya
         // esta costando plata.
         if (vencidos.length)
-            html += bloque('Ya venció', vencidos.map(function (x) {
+            html += bloque(I.texto('queSeMeVence.yaVencio'), vencidos.map(function (x) {
                 return '<div class="' + parte(x.urgencia) + '">' +
                     '<div class="tarjeta__cabeza"><strong>' + texto(x.rubro) + '</strong>' +
                     '<span class="mono">' + colones(x.monto) + '</span></div>' +
                     '<p>' + texto(x.dice) + '</p>' +
-                    '<p class="nota mono">' + texto(x.periodo) + ' · venció ' + texto(x.vencio) +
-                    ' · ' + x.dias + ' ' + plural(x.dias, 'día', 'días') +
-                    (Number(x.costoProyectado) > 0 ? ' · mora proyectada ' + colones(x.costoProyectado) : '') +
+                    '<p class="nota mono">' +
+                    frase('queSeMeVence.pieVencido', {
+                        periodo: texto(x.periodo), vencio: texto(x.vencio), dias: dias(x.dias) }) +
+                    (Number(x.costoProyectado) > 0
+                        ? frase('queSeMeVence.pieVencidoMora', { mora: colones(x.costoProyectado) })
+                        : '') +
                     '</p></div>';
             }).join(''));
 
         if (porVencer.length)
-            html += bloque('Por vencer', porVencer.map(function (x) {
+            html += bloque(I.texto('queSeMeVence.porVencer'), porVencer.map(function (x) {
                 return '<div class="' + parte(x.urgencia) + '">' +
                     '<div class="tarjeta__cabeza"><strong>' + texto(x.rubro) + '</strong>' +
                     '<span class="mono">' + colones(x.monto) + '</span></div>' +
                     '<p>' + texto(x.dice) + '</p>' +
-                    '<p class="nota mono">' + texto(x.periodo) + ' · vence ' + texto(x.vence) +
-                    ' · faltan ' + x.faltan + ' ' + plural(x.faltan, 'día', 'días') + '</p></div>';
+                    '<p class="nota mono">' +
+                    frase('queSeMeVence.piePorVencer', {
+                        periodo: texto(x.periodo), vence: texto(x.vence), faltan: dias(x.faltan) }) +
+                    '</p></div>';
             }).join(''));
 
         return html;
@@ -116,25 +145,29 @@
     function cuantoApartar(r) {
         var v = (r && r.reserva) || {};
         if (!v.sePuedeProponer)
-            return nada('Todavía no hay suficiente historia para proponer cuánto apartar por mes.');
+            return nada(I.texto('cuantoApartar.sinPropuesta'));
 
         var html = '<div class="tarjeta">' +
-            '<div class="tarjeta__cabeza"><strong>La propuesta</strong>' +
-            '<span class="mono">' + colones(v.propuestoPorMes) + ' / mes</span></div>' +
+            '<div class="tarjeta__cabeza"><strong>' + texto(I.texto('cuantoApartar.laPropuesta')) + '</strong>' +
+            '<span class="mono">' + frase('cuantoApartar.porMes', { monto: colones(v.propuestoPorMes) }) +
+            '</span></div>' +
             '<p>' + texto(v.diceLaPropuesta) + '</p>' +
-            '<p class="nota mono">proyección del año ' + colones(v.proyeccionDelAnio) + '</p></div>';
+            '<p class="nota mono">' +
+            frase('cuantoApartar.proyeccion', { monto: colones(v.proyeccionDelAnio) }) + '</p></div>';
 
         if (v.hayReservaAdoptada)
             html += '<div class="' + parte(v.urgencia) + '">' +
-                '<div class="tarjeta__cabeza"><strong>Lo que adoptaste</strong>' +
-                '<span class="mono">' + colones(v.adoptadoPorMes) + ' / mes</span></div>' +
+                '<div class="tarjeta__cabeza"><strong>' + texto(I.texto('cuantoApartar.loAdoptado')) + '</strong>' +
+                '<span class="mono">' + frase('cuantoApartar.porMes', { monto: colones(v.adoptadoPorMes) }) +
+                '</span></div>' +
                 '<p>' + texto(v.diceElFaltante) + '</p>' +
-                '<p class="nota mono">vence este mes ' + colones(v.venceEsteMes) +
-                ' · falta ' + colones(v.faltante) + '</p></div>';
+                '<p class="nota mono">' +
+                frase('cuantoApartar.pieAdoptado', {
+                    vence: colones(v.venceEsteMes), falta: colones(v.faltante) }) + '</p></div>';
         else
             // ADOPTAR ES UNA ESCRITURA, y `consultar` solo alcanza [View]. La cara lo dice en vez de
             // ofrecer un boton que no puede cumplir.
-            html += nada('Todavía no adoptaste una reserva. Se adopta desde la app de la municipalidad.');
+            html += nada(I.texto('cuantoApartar.sinAdoptar'));
 
         return html;
     }
@@ -142,12 +175,13 @@
     function sinComprobante(r) {
         var v = (r && r.sinComprobante) || {};
         if (!v.hayAlgunaConsulta)
-            return nada('Todavía no se ha consultado el portal, así que no hay con qué comparar.');
+            return nada(I.texto('sinComprobante.sinConsulta'));
 
         var periodos = v.periodos || [];
         var html = '<div class="' + (periodos.length ? 'parte tibia' : 'tarjeta') + '">' +
             '<p>' + texto(v.dice) + '</p>' +
-            '<p class="nota mono">consultado el ' + texto(v.diaDeLaConsulta) + '</p></div>';
+            '<p class="nota mono">' +
+            frase('sinComprobante.cotejado', { dia: texto(v.diaDeLaConsulta) }) + '</p></div>';
 
         if (periodos.length)
             html += periodos.map(function (x) {
@@ -161,13 +195,13 @@
 
     function cuantoHePagado(r) {
         var v = (r && r.pagado) || {};
-        if (!v.hayAlgunComprobante) return nada('Todavía no hay comprobantes en tu carpeta.');
+        if (!v.hayAlgunComprobante) return nada(I.texto('cuantoHePagado.sinComprobantes'));
 
         var html = '<div class="tarjeta">' +
             '<div class="tarjeta__cabeza"><strong>' + v.anio + '</strong>' +
             '<span class="mono">' + colones(v.totalDelAnio) + '</span></div>' +
             (v.elAnioPedidoNoTieneComprobantes
-                ? nada('Ese año no tiene comprobantes.') : '') + '</div>';
+                ? nada(I.texto('cuantoHePagado.anioSinComprobantes')) : '') + '</div>';
 
         // LOS AÑOS QUE SE PUEDEN PEDIR los dice el dominio: la cara no los adivina de las fechas.
         var anios = v.aniosQueSePuedenPedir || [];
@@ -182,9 +216,13 @@
                 '</strong><span class="mono">' + texto(s.estado) + '</span></div>' +
                 '<p>' + texto(s.dice) + '</p>' +
                 (s.lineas || []).map(function (l) {
-                    return '<p class="nota mono">' + texto(l.periodo) + ' · ' + colones(l.monto) +
-                        (Number(l.mora) > 0 ? ' (mora ' + colones(l.mora) + ')' : '') +
-                        (l.cubre > 1 ? ' · cubre ' + l.cubre + ' períodos' : '') + '</p>';
+                    return '<p class="nota mono">' +
+                        frase('cuantoHePagado.linea', {
+                            periodo: texto(l.periodo), monto: colones(l.monto) }) +
+                        (Number(l.mora) > 0
+                            ? frase('cuantoHePagado.lineaMora', { mora: colones(l.mora) }) : '') +
+                        (l.cubre > 1
+                            ? frase('cuantoHePagado.lineaCubre', { cuantos: l.cubre }) : '') + '</p>';
                 }).join('') + '</div>';
         }).join('');
 
@@ -197,14 +235,18 @@
 
         var html = '<div class="tarjeta"><p>' +
             (v.hayAlgunaConsulta
-                ? 'El portal se consultó el ' + texto(v.diaDeLaUltimaConsulta) + '.'
-                : 'Todavía no se ha consultado el portal.') +
-            '</p><p class="nota mono">' + v.rubrosConHistoria + ' ' +
-            plural(v.rubrosConHistoria, 'rubro con historia', 'rubros con historia') +
-            ' · leído hasta el evento ' + v.ultimoEventoLeido + '</p></div>';
+                ? frase('queTanAlDia.consultadoEl', { dia: texto(v.diaDeLaUltimaConsulta) })
+                : texto(I.texto('queTanAlDia.sinConsulta'))) +
+            '</p><p class="nota mono">' +
+            frase('queTanAlDia.pie', {
+                rubros: frase(plural(v.rubrosConHistoria,
+                                     'queTanAlDia.unRubroConHistoria',
+                                     'queTanAlDia.rubrosConHistoria'),
+                              { cuantos: v.rubrosConHistoria }),
+                evento: v.ultimoEventoLeido }) + '</p></div>';
 
         if (rubros.length)
-            html += bloque('Los rubros', rubros.map(function (x) {
+            html += bloque(I.texto('queTanAlDia.losRubros'), rubros.map(function (x) {
                 return '<div class="tarjeta"><div class="tarjeta__cabeza"><strong>' +
                     texto(x.rubro || x.nombre) + '</strong>' +
                     (x.estado ? '<span class="mono">' + texto(x.estado) + '</span>' : '') + '</div>' +
@@ -215,7 +257,7 @@
         // sacarlas a su propia pregunta las dejaria sin el contexto que las explica.
         var fincas = (v.fincas && v.fincas.fincas) || [];
         if (fincas.length)
-            html += bloque('Tus fincas', fincas.map(function (f) {
+            html += bloque(I.texto('queTanAlDia.tusFincas'), fincas.map(function (f) {
                 return '<div class="tarjeta"><div class="tarjeta__cabeza"><strong>' +
                     texto(f.numero) + '</strong>' +
                     (f.tieneAvaluo ? '<span class="mono">' + colones(f.avaluo) + '</span>' : '') +
@@ -257,12 +299,18 @@
         traidas[cual] = true;
 
         var caja = $(cual);
-        var argumentos = cual === 'cuanto-he-pagado' ? { anio: 0 } : {};
+
+        // EL IDIOMA VIAJA CON LA PREGUNTA. La superficie no tiene navegador -- corre en proceso
+        // adentro de Gnothi -- y esta cara si lo es, y ya negocio con el aparato; asi que se lo
+        // dice. Sin esto la pantalla quedaba en ingles con las frases del dominio en espanol.
+        var argumentos = cual === 'cuanto-he-pagado'
+            ? { anio: 0, idioma: I.etiqueta }
+            : { idioma: I.etiqueta };
 
         P.pedir(cual, argumentos)
             .then(function (r) {
                 if (r && r.hayDatos === false) {
-                    P.apunte(caja, 'Todavía no hay nada de tu cuenta en este dispositivo.');
+                    P.apunte(caja, I.texto('comun.sinNada'));
                     return;
                 }
                 caja.innerHTML = PINTORES[cual](r);
@@ -283,7 +331,8 @@
             var b = e.target.closest('button[data-anio]');
             if (!b) return;
 
-            P.pedir('cuanto-he-pagado', { anio: Number(b.getAttribute('data-anio')) })
+            P.pedir('cuanto-he-pagado', {
+                anio: Number(b.getAttribute('data-anio')), idioma: I.etiqueta })
                 .then(function (r) {
                     $('cuanto-he-pagado').innerHTML = cuantoHePagado(r);
                     cablearLosAnios();
@@ -309,13 +358,13 @@
         var b = $('releer');
         b.disabled = true;
         b.setAttribute('aria-busy', 'true');
-        b.textContent = 'Actualizando…';
+        b.textContent = I.texto('boton.actualizando');
 
         P.refrescar(contar).then(function (r) {
             if (r) repintar();
             b.disabled = false;
             b.setAttribute('aria-busy', 'false');
-            b.textContent = 'Actualizar';
+            b.textContent = I.texto('boton.actualizar');
         });
     }
 

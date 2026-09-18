@@ -47,23 +47,26 @@ namespace Municipalidad.App
 		private bool HayJournal => MunicipalidadApp.HayJournalEn(carpeta);
 
 		/// <summary>
-		/// EN QUE IDIOMA CONTESTA ESTA SUPERFICIE, y hoy es el del registro de la municipalidad.
+		/// EN QUE IDIOMA SE DICE UNA VISTA, y lo dice QUIEN LA PIDE.
 		/// <para>
-		/// La app suelta se lo pregunta al dispositivo -- <c>navigator.languages</c>, por JSInterop --
-		/// porque ahi la carátula ES el navegador. Aca no hay navegador: esta clase corre en proceso
-		/// adentro de Gnothi, y en la caja de wasm, donde no hay ni <c>navigator</c> ni una carpeta que
-		/// servir. Preguntarselo al dispositivo desde aca ataria el paquete de carga al navegador, que
-		/// es exactamente lo que la forma hibrida existe para no hacer.
+		/// Esta clase no tiene navegador: corre en proceso adentro de Gnothi, y en la caja de wasm, donde
+		/// no hay ni <c>navigator</c> ni una carpeta que servir. Pero la cara que la consulta SI lo es, y
+		/// ya leyo la eleccion del aparato con <c>navigator.languages</c>. Preguntarselo al dispositivo
+		/// desde aca ataria el paquete de carga al navegador, que es exactamente lo que la forma hibrida
+		/// existe para no hacer.
 		/// </para>
 		/// <para>
-		/// ASI QUE CAE AL IDIOMA DEL REGISTRO, que es la misma caida que la app suelta ya hace cuando no
-		/// puede leer la eleccion. NO es la respuesta final: el dia que Gnothi le pase al modulo el
-		/// idioma de la persona -- el Host ya lo hace viajar con cada parametro de texto libre -- este
-		/// miembro deja de ser una constante y pasa a ser lo que el Host dijo. Esa es la unica linea
-		/// que cambia, y vive aca justamente para que sea una.
+		/// Una etiqueta vacia o que este modulo no habla cae al idioma del registro de la municipalidad,
+		/// que es la misma caida que hace la app suelta cuando no puede leer la eleccion. Por eso el
+		/// parametro es opcional: un llamador que no diga nada sigue recibiendo lo de antes.
+		/// </para>
+		/// <para>
+		/// LAS DOS <c>[Query]</c> NO LO TOMAN, y esa asimetria es la regla y no un olvido: lo que el
+		/// asistente pregunta lo contesta la institucion en SU idioma, no en el de quien pregunta.
 		/// </para>
 		/// </summary>
-		private static string ElIdioma => Frases.Frases.IdiomaDelRegistro;
+		private static string Elegido(string idioma) =>
+			Frases.Frases.EsUnaEtiquetaConocida(idioma) ? idioma : Frases.Frases.IdiomaDelRegistro;
 
 		// ------------------------------------------------------------ lo que contesta al asistente
 
@@ -92,46 +95,46 @@ namespace Municipalidad.App
 
 		/// <summary>Que cambio entre los dos ultimos comprobantes de cada rubro, y que lo explica.</summary>
 		[View("por-que-pago-mas")]
-		public object PorQuePagoMas() => Leer(api => (object)new
+		public object PorQuePagoMas(string idioma = "") => Leer(api => (object)new
 		{
-			variacion = LaVariacionDeCadaRubro.LeerPor(api, ElIdioma),
+			variacion = LaVariacionDeCadaRubro.LeerPor(api, Elegido(idioma)),
 		});
 
 		/// <summary>Lo que esta por vencerse y lo que ya vencio.</summary>
 		[View("que-se-me-vence")]
-		public object QueSeMeVence() => Leer(api =>
+		public object QueSeMeVence(string idioma = "") => Leer(api =>
 		{
 			DateTime alDia = ElInstanteEnQueSePregunto();
-			return (object)new { vence = LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), ElIdioma) };
+			return (object)new { vence = LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), Elegido(idioma)) };
 		});
 
 		/// <summary>Lo que esta app propone apartar por mes, y lo que la persona adopto.</summary>
 		[View("cuanto-apartar")]
-		public object CuantoApartar() => Leer(api =>
+		public object CuantoApartar(string idioma = "") => Leer(api =>
 		{
 			DateTime alDia = ElInstanteEnQueSePregunto();
-			return (object)new { reserva = LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), ElIdioma) };
+			return (object)new { reserva = LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), Elegido(idioma)) };
 		});
 
 		/// <summary>Lo que el portal da por pagado y aca no tiene recibo.</summary>
 		[View("sin-comprobante")]
-		public object SinComprobante() => Leer(api => (object)new
+		public object SinComprobante(string idioma = "") => Leer(api => (object)new
 		{
-			sinComprobante = LoSinComprobante.LeerPor(api, ElIdioma),
+			sinComprobante = LoSinComprobante.LeerPor(api, Elegido(idioma)),
 		});
 
 		/// <summary>
 		/// El total de un anio con la mora adentro. El anio lo elige la cara -- es la unica vista con
-		/// un parametro de verdad -- y <c>loEligioLaPersona</c> dice si fue una eleccion o el ano por
-		/// omision, porque el dominio lo redacta distinto.
+		/// un parametro que no es el idioma -- y <c>loEligioLaPersona</c> dice si fue una eleccion o el
+		/// ano por omision, porque el dominio lo redacta distinto.
 		/// </summary>
 		[View("cuanto-he-pagado")]
-		public object CuantoHePagado(int anio) => Leer(api =>
+		public object CuantoHePagado(int anio, string idioma = "") => Leer(api =>
 		{
 			bool loEligio = anio > 0;
 			int elAnio = loEligio ? anio : ElInstanteEnQueSePregunto().Year;
 
-			return (object)new { pagado = LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligio, ElIdioma) };
+			return (object)new { pagado = LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligio, Elegido(idioma)) };
 		});
 
 		/// <summary>Que entro de lo que el portal publica, y que falta.</summary>
@@ -195,10 +198,17 @@ namespace Municipalidad.App
 		/// </para>
 		/// <para>
 		/// LA SEMILLA HACE FALTA. Un anfitrion que no siembra deja al DSL sin sus globales, y el bucle
-		/// muere al pedir el cursor. La guarda del upgrade es una-vez-por-actor, asi que no habia nada
-		/// que evitar. Y las escrituras no son alcanzables desde afuera: <c>[Deliver]</c> lo busca la
-		/// cascara por su propio marcador, no esta en el manifiesto, y <c>consultar</c> solo llega a
-		/// <c>[View]</c>.
+		/// muere al pedir el cursor. Y las escrituras no son alcanzables desde afuera:
+		/// <c>[Deliver]</c> lo busca la cascara por su propio marcador, no esta en el manifiesto, y
+		/// <c>consultar</c> solo llega a <c>[View]</c>.
+		/// </para>
+		/// <para>
+		/// LA GUARDA DEL UPGRADE ES UNA-VEZ-POR-ACTOR EN EFECTO, NO EN EL JOURNAL, y esa distincion se
+		/// paga en disco: el cuerpo del upgrade corre una sola vez, pero el comando que lo lleva deja
+		/// UNA entrada inerte en CADA hidratacion. Esta superficie hidrata una vez por proceso, asi que
+		/// es una entrada por APERTURA y ninguna por PREGUNTA, que es lo que la promesa dice. Medido, y
+		/// las respuestas vuelven byte-identicas antes y despues; lo que no se puede afirmar es que
+		/// abrir no escriba.
 		/// </para>
 		/// <para>
 		/// UN CAMPO NORMAL, y antes era <c>static</c> con candado. Lo era por una razon que no
