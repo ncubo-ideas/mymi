@@ -136,7 +136,14 @@ public sealed class Shell : IDisposable
 	private readonly Func<string, IModel>? modeloLocal;
 
 	/// <summary>El proveedor que corre en el aparato, sin url y sin llave.</summary>
+	///
+	/// ES UNA IDENTIDAD, NO UNA ETIQUETA: se guarda en model.cfg y es lo que `Modelo()` compara
+	/// para construir ModelFoundation. La cara lo MUESTRA traducido -- ver ajustes.proveedor.local
+	/// en textos.json --, pero lo que viaja y se guarda es esta cadena.
 	public const string ProveedorLocal = "En este teléfono";
+
+	/// <summary>Como se llama el modelo del aparato en la pantalla y en model.cfg.</summary>
+	public const string ModeloLocal = "apple-on-device";
 
 	// EL ICONO POR RUBRO, no por nombre de modulo.
 	//
@@ -1266,6 +1273,18 @@ public sealed class Shell : IDisposable
 
 			// Para que la pagina no pida llave donde no hace falta.
 			["local"] = name == ProveedorLocal,
+
+			// Y PARA QUE SE PUEDA VOLVER. El del aparato era el default cuando no habia model.cfg,
+			// pero NO estaba en la lista del selector: quien elegia otro proveedor una vez perdia
+			// para siempre el unico donde el dato no sale del telefono, que es justamente la puerta
+			// que este producto persigue. Se manda la terna entera -identidad, url vacia y modelo-
+			// para que la pagina no tenga que saberse ninguna de las tres.
+			["proveedorLocal"] = modeloLocal is null ? null : new Dictionary<string, object?>
+			{
+				["name"] = ProveedorLocal,
+				["url"] = "",
+				["model"] = ModeloLocal,
+			},
 			["model"] = model,
 			// SI HAY llave para ESTE proveedor, nunca la llave.
 			["keyPresent"] = File.Exists(KeyPath),
@@ -1328,7 +1347,7 @@ public sealed class Shell : IDisposable
 		// no sale del telefono, asi que arrancar en otro seria elegir por la persona la opcion
 		// menos privada. Si no hay modelo propio, el de siempre.
 		return modeloLocal is not null
-			? (ProveedorLocal, "", "apple-on-device")
+			? (ProveedorLocal, "", ModeloLocal)
 			: ("Groq", ModelUrl, ModelName);
 	}
 
