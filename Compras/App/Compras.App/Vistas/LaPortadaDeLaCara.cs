@@ -130,27 +130,13 @@ namespace Compras.App.Vistas
 			return banners;
 		}
 
-		/// <summary>«enero de 2025» desde el primer mes del rango, para «87 compras tuyas desde…».</summary>
-		public static string DesdeCuando(RangoDelHistorialVista rango)
-		{
-			if (rango is null || rango.PrimerMes.Length < 7) return "";
-
-			string[] partes = rango.PrimerMes.Split('-');
-			if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return "";
-
-			return $"{Meses[mes - 1]} de {partes[0]}";
-		}
-
-		/// <summary>«enero» desde el aaaa-mm del corte, para «cambió desde enero».</summary>
-		public static string MesLegible(string aaaaMm)
-		{
-			if (aaaaMm is null) return "";
-
-			string[] partes = aaaaMm.Split('-');
-			if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return aaaaMm;
-
-			return Meses[mes - 1];
-		}
+		// AQUI VIVIAN `DesdeCuando` y `MesLegible`, que armaban «enero de 2025» y «enero» para la
+		// franja y para «cambió desde …». Se fueron el 2026-09-18 junto con el ultimo llamador:
+		// la superficie ahora manda `primerMes` y `desdeMes` CRUDOS, en aaaa-mm, y el mes lo dice
+		// la carátula con su catalogo. Componer el mes aca escribia espanol en una respuesta que
+		// la persona podia estar leyendo en ingles, y ninguna otra pieza lo pedia -- la app suelta
+		// tiene sus propias copias en MisCompras.razor. Lo que sigue componiendo espanol en este
+		// archivo es `Banners`, y esa es la fuga que queda.
 
 		// LA OPORTUNIDAD ARRANCA EN 1 Y NO EN 0, igual que la app: la fila cero es la que ya
 		// protagoniza la carta de precios, asi que el hero toma la siguiente bajada.

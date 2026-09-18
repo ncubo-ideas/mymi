@@ -1,9 +1,21 @@
 <!DOCTYPE html>
-<html lang="es-CR">
+<!-- SIN lang ESCRITO A MANO: el bundle se sirve igual para los dos idiomas, asi que una etiqueta
+     fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de negociar con
+     el aparato, con la misma regla que usa la app suelta. -->
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- EL TITULO NO SE TRADUCE: «La Guaria y vos» es voz de la institucion, igual que en la app
+     suelta, donde vive en Textos.TituloDelModulo y fuera del catalogo. -->
 <title>La Guaria y vos</title>
+<!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
+     leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
+     repintarla en el otro. Es el mismo criterio que la app suelta, que negocia antes del primer
+     render. -->
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
 <!-- LA PILA DE LA INSTITUCION, TAL CUAL Y EN SU ORDEN. Bootstrap primero y `app.css` despues, que
      es como la sirve la app suelta: `app.css` pisa a Bootstrap en lo que la marca decide, y al
      reves se veria un Bootstrap crudo con acentos verdes.
@@ -47,6 +59,12 @@
 
   LO QUE NO SE TRAJO, Y NO ES OLVIDO: el boton de WhatsApp. Sale de `ConfiguracionDeLaInstitucion`,
   que es del arranque de la app suelta; aca no hay quien lo configure y no se inventa uno.
+
+  HABLA LOS DOS IDIOMAS QUE HABLA LA APP SUELTA, y con las mismas palabras: los rotulos de abajo
+  llevan `data-texto` con la clave del catalogo de la institucion, y el texto escrito al lado es
+  el de es-CR, que es el respaldo visible mientras idioma.js no negocio. La etiqueta elegida viaja
+  ademas a la superficie en cada pedido -`idioma: I.etiqueta`-, porque las frases del DOMINIO no
+  las escribe esta pagina.
 -->
 
 <main class="container py-4" style="max-width:56rem">
@@ -64,7 +82,7 @@
             </span>
         </div>
 
-        <p class="lg-home-saludo">¡Hola!</p>
+        <p class="lg-home-saludo" data-texto="inicio.saludo">¡Hola!</p>
 
         <div class="lg-home-carrusel-envoltorio" id="carrusel-envoltorio" hidden>
             <div class="lg-home-carrusel" id="lgHomeCarrusel"></div>
@@ -72,19 +90,21 @@
         </div>
     </section>
 
-    <!-- LA FRANJA DE ARRIBA, en el idioma de ella y no en el del sistema: el boton dice lo que
-         hace, y al lado va su historia con este super. «Buscar compras nuevas» significa otra cosa
-         que en la app suelta: no sale a la red -- no puede -- sino que le pide a GNOTHI que traiga
-         lo nuevo con SU credencial. -->
+    <!-- LA FRANJA DE ARRIBA: el boton dice lo que hace, y al lado va su historia con este super.
+         «Buscar compras nuevas» significa otra cosa que en la app suelta: no sale a la red -- no
+         puede -- sino que le pide a GNOTHI que traiga lo nuevo con SU credencial.
+         El texto escrito aca es el de es-CR y es el RESPALDO: lo pisa idioma.js apenas negocia,
+         y esta escrito -y no vacio- para que la pantalla nunca aparezca en blanco si el catalogo
+         no cargo. -->
     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-        <button class="btn btn-primary" id="releer">Buscar compras nuevas</button>
+        <button class="btn btn-primary" id="releer" data-texto="inicio.buscarNuevas">Buscar compras nuevas</button>
         <span class="text-body-secondary" id="cifras">—</span>
     </div>
 
     <!-- HOSPEDADA: es el aviso que la app suelta muestra cuando corre adentro de Gnothi, palabra
          por palabra. Aca es SIEMPRE cierto, asi que no hay rama que elegir. -->
     <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
-        <div class="flex-grow-1">
+        <div class="flex-grow-1" data-texto-html="inicio.hospedada">
             <strong>Se está guardando en este teléfono.</strong>
             Tu registro es tuyo y está acá: Mymi le dio a este supermercado una carpeta en tu
             teléfono, y tu asistente la puede leer desde ahí.
@@ -95,7 +115,7 @@
          la pestana de Compras. -->
     <div class="lg-home-estado mb-3">
         <a class="lg-home-estado-link" href="#" data-pestana="compras">
-            <span class="lg-home-estado-fuerte">Tus compras</span>
+            <span class="lg-home-estado-fuerte" data-texto="inicio.tusCompras">Tus compras</span>
             <span class="lg-home-estado-punto" aria-hidden="true">&middot;</span>
             <span class="lg-home-estado-cambio" id="estado-cambio">—</span>
             <svg class="lg-home-estado-flecha" width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -104,6 +124,7 @@
             </svg>
         </a>
         <button class="lg-home-estado-refrescar" id="refrescar-chico"
+                data-texto-aria="inicio.buscarNuevas" data-texto-titulo="inicio.buscarNuevas"
                 aria-label="Buscar compras nuevas" title="Buscar compras nuevas">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -124,29 +145,29 @@
     <div class="mk-oportunidad mb-3" id="oportunidad" hidden></div>
 
     <!-- PARA TU PROXIMA COMPRA. Compacta a proposito: la portada no le adivina el carrito a nadie. -->
-    <div class="card mb-3" id="proxima"><div class="card-body"><p class="apunte">Preguntándole a Mymi…</p></div></div>
+    <div class="card mb-3" id="proxima"><div class="card-body"><p class="apunte" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div></div>
 
     <!-- TU MES EN EL SUPER: primero la conclusion, el detalle detras. -->
-    <h2 class="mk-titulo">Tu mes en el súper</h2>
+    <h2 class="mk-titulo" data-texto="inicio.tuMes">Tu mes en el súper</h2>
     <div class="card mb-3" id="mes"><div class="card-body"></div></div>
 
     <!-- TUS HABITUALES: la firma de la semana, que es lo que hace que la pantalla la reconozca a
          ella y no a un cliente promedio. -->
-    <h2 class="mk-titulo">Tus habituales</h2>
+    <h2 class="mk-titulo" data-texto="precios.titulo">Tus habituales</h2>
     <div class="card mb-3" id="firma"><div class="card-body"></div></div>
 
     <!-- LO QUE SE MOVIO: precios y ritmos. -->
-    <h2 class="mk-titulo">Lo que se movió</h2>
+    <h2 class="mk-titulo" data-texto="cara.loQueSeMovio">Lo que se movió</h2>
     <div class="card mb-3" id="movimientos"><div class="card-body"></div></div>
 </div>
 
 <!-- ============================================================ COMPRAS -->
 <div id="pestana-compras" hidden>
-    <h2 class="mk-titulo">Tus compras</h2>
+    <h2 class="mk-titulo" data-texto="recibos.pestana">Tus compras</h2>
     <div class="card mb-3" id="compras"><div class="card-body"><p class="apunte">…</p></div></div>
 </div>
 
-<p class="text-body-secondary small mt-4 mb-0">
+<p class="text-body-secondary small mt-4 mb-0" data-texto="cara.pie">
     El registro vive en este dispositivo. Esta pantalla no sale a la red: le pregunta a Mymi, y
     Mymi responde con el motor que le presta.
 </p>
@@ -163,7 +184,10 @@
                 <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
                 <path d="M7.8 16.6v-4.7h4.4v4.7"/>
             </svg>
-            Inicio
+            <!-- EL ROTULO EN SU PROPIO <span> y no suelto como en MainLayout: `data-texto` escribe
+                 el textContent del nodo, y sobre el <a> eso se llevaria puesto el icono. La caja
+                 anonima que el flex le daba al texto suelto y este span se paran igual. -->
+            <span data-texto="comun.inicio">Inicio</span>
         </a>
         <a class="pestana" href="#" data-pestana="compras">
             <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
@@ -171,7 +195,7 @@
                 <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
                 <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
             </svg>
-            Compras
+            <span data-texto="comun.compras">Compras</span>
         </a>
     </div>
 </nav>

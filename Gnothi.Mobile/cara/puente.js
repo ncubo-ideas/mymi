@@ -47,7 +47,7 @@ window.Puente = (function () {
         return new Promise(function (resolver, rechazar) {
             if (!window.gnothiPuente || !window.gnothiPuente.consultar) {
                 rechazar(new Error(
-                    'esta página solo corre dentro de Gnothi, en la forma híbrida: ' +
+                    'esta página solo corre dentro de Mymi, en la forma híbrida: ' +
                     'no hay puente, y sin puente no tiene a quién preguntarle'));
                 return;
             }
@@ -76,10 +76,10 @@ window.Puente = (function () {
         decir = decir || function () {};
         return new Promise(function (resolver) {
             if (!window.gnothiPuente || !window.gnothiPuente.pull) {
-                decir('sin puente: esta pantalla no corre dentro de Gnothi', true);
+                decir('sin puente: esta pantalla no corre dentro de Mymi', true);
                 resolver(null); return;
             }
-            decir('pidiéndole a Gnothi que traiga lo nuevo…');
+            decir('pidiéndole a Mymi que traiga lo nuevo…');
 
             var id = 'p' + (++siguiente);
             var t0 = Date.now();
