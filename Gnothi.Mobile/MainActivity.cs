@@ -156,6 +156,11 @@ public partial class MainActivity : Activity
 
 		web.LoadUrl("file:///android_asset/ui.html");
 
+		// EL CONTADOR DEL BORDE DE LA HIBRIDA, enganchado SIEMPRE y no dentro de PrepareTheBox: la
+		// mitad que hace falta para comparar es justamente la de la caja APAGADA, y ahí ese método
+		// se sale en la primera línea. Ver el comentario en HybridShell.Counting.
+		Gnothi.Host.HybridShell.Log = Log;
+
 		PrepareTheBox();
 
 		// THE TWO FOLDERS ARE CHOSEN BY THE PLATFORM, not by the shell. adb cannot write into the private
@@ -167,6 +172,16 @@ public partial class MainActivity : Activity
 			Log,
 			(kind, id, payload) => RunOnUiThread(() =>
 				web?.EvaluateJavascript(Shell.PushScript(kind, id, payload), null)));
+
+		// A QUIEN CALENTAR, desde afuera y no compilado, porque lo que se esta midiendo es si vale la
+		// pena -- y para eso hace falta correr el MISMO build con y sin:
+		//
+		//     adb shell am start -n ... --es calentar examenes
+		//     adb shell am start -n ... --es calentar examenes,compras
+		//
+		// Sin el extra no se calienta nada, que es como venia. Ver Shell.Rehydrate.
+		if (Intent?.GetStringExtra("calentar") is { Length: > 0 } aCalentar)
+			shell.WarmUp = [.. aCalentar.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
 		_ = Task.Run(Start);
 	}

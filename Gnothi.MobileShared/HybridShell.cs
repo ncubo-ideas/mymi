@@ -1,3 +1,4 @@
+using System.Diagnostics;
 namespace Gnothi.Host;
 
 // THE HYBRID SHELL: the institution's face in the WebView, its surface loaded IN PROCESS, and the
@@ -48,10 +49,16 @@ namespace Gnothi.Host;
 internal sealed class HybridShell : IShell
 {
 	private readonly InProcessShell surface;
+	private readonly string moduleName;
+
+	// EL MISMO ENGANCHE QUE LA CAJA. Lo pone la plataforma al arrancar, no esta clase.
+	internal static Action<string> Log { get; set; } = _ => { };
 	private readonly WebViewShell face;
 
 	public HybridShell(string name, Shell shell, string grantedFolder)
 	{
+		moduleName = name;
+
 		// The face reads [0] and [1] as they are: to WebViewShell this Shell is indistinguishable
 		// from a hosted module's, and that is the idea -- it never finds out it is hybrid.
 		face = new WebViewShell(name, shell, grantedFolder);
@@ -98,14 +105,38 @@ internal sealed class HybridShell : IShell
 	// AND HOW FAR IT HAS ALREADY READ, which comes from the same actor that does the recording. It is
 	// what makes the postman ask from there onwards: the face has no way of knowing it, and no way of
 	// moving it either.
-	public Task<long> Cursor(CancellationToken ct) => surface.Cursor(ct);
+	public Task<long> Cursor(CancellationToken ct) => Counting("cursor", "", () => surface.Cursor(ct));
 
 	// AND WHAT THE FACE ASKS FOR. It goes to the same surface that answers the assistant, but to
 	// ANOTHER set of methods: the ones marked [View]. One implementation of the domain, two publics,
 	// and neither can come in through the other's door.
 	public Task<object> View(
 		string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct) =>
-		surface.View(name, arguments, accepts);
+		Counting("consultar", name, () => surface.View(name, arguments, accepts));
+
+	// THE SAME INSTRUMENT AS THE BOX'S, on purpose, and that is the whole point of it being here.
+	//
+	// `BoxedInstance.Ask` counts and times every round trip through the border. Without the same
+	// count on THIS side, the box's figure answers nothing: painting the exámenes screen costs what
+	// it costs because the domain has work to do, and the question was never «how long does the box
+	// take» but «how much MORE than in process». A number measured on one side only invites exactly
+	// the mistake this project keeps making -- a figure that looks like evidence and is half a
+	// comparison.
+	//
+	// It is the same shape of line so the two logs can be read side by side, and grepped the same.
+	private int trips;
+
+	private async Task<T> Counting<T>(string verb, string name, Func<Task<T>> ask)
+	{
+		long started = Stopwatch.GetTimestamp();
+		int mine = ++trips;
+		try { return await ask().ConfigureAwait(false); }
+		finally
+		{
+			Log($"hibrida: {moduleName} borde #{mine} {verb}/{name}"
+				+ $" {(Stopwatch.GetTimestamp() - started) * 1000 / Stopwatch.Frequency} ms");
+		}
+	}
 
 	// The face, for whoever has to open it. This class does not open it: opening it is an act of the
 	// person's, not of the dispatcher's.

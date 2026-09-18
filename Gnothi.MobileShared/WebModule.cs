@@ -514,10 +514,27 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 		// THE FACE ASKS IN BOTH FORMS THAT CARRY NO ENGINE: the hybrid and the box. The only thing that
 		// changes between them is WHERE the question lands -- in the Host's process or inside a wasm --
 		// and the face neither knows that nor needs to. See B12.
+		// AND SE DECIDE POR LA FORMA DEL MÓDULO, NO POR SI LA CAJA ESTÁ PRENDIDA. Acá había un
+		// `|| BoxShell.Preferred` —entró con la caja, en `dac6af6`— y hacía que con `--ez caja true`
+		// TODO módulo recibiera el cableado de la híbrida, incluida una HOSPEDADA. Medido en el
+		// teléfono el 2026-09-18, municipalidad hospedada con la caja prendida:
+		//
+		//     municipalidad: la cara pidio desde 23; la superficie va en 0
+		//     municipalidad: pull after=0 -> 3126 bytes
+		//     NotSupportedException: this shell does not take deliveries
+		//
+		// Dos daños de una: el cursor de la cara (23) se reemplazaba por el 0 que devuelve el default
+		// de `IShell.Cursor` —o sea el cartero volvía a traer el historial entero en cada refresco, que
+		// es exactamente el defecto que el comentario de `Pull` dice haber arreglado— y después el sobre
+		// se le entregaba a una cáscara que no recibe entregas, con la excepción a la vista de la
+		// persona. Sin la caja prendida el mismo módulo hacía `pull after=23 -> 23 bytes` y no fallaba.
+		//
+		// Y el disyunto no hacía falta: un módulo EN CAJA sigue declarando `hybrid` en su
+		// installation.json —la caja es el anfitrión, no una forma del paquete, ver C10— así que la
+		// primera cláusula ya lo cubre.
 		string forma = m.Installation.Shell.Type;
 		bool preguntona = forma.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
-			|| forma.Equals("caja", StringComparison.OrdinalIgnoreCase)
-			|| Gnothi.Host.BoxShell.Preferred;
+			|| forma.Equals("caja", StringComparison.OrdinalIgnoreCase);
 
 		// IT IS WIRED BEFORE STARTING, not after: a hybrid face says `listo()` and asks in the same tick,
 		// because it has no actor to hydrate. See Live.

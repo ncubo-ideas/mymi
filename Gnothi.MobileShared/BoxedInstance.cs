@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -133,6 +134,18 @@ internal sealed class BoxedInstance : IDisposable
 		log($"caja: {module} vivo -- {Declaration}");
 	}
 
+	// EVERY ROUND TRIP, COUNTED AND TIMED, because «what it costs to paint the screen» was the last
+	// term of the box's arithmetic that nobody had measured -- and it turned out to be the one that
+	// decides iOS. There the engine is an interpreter (Pulley, no JIT allowed), and a round trip
+	// measured at ~1,2 ms with Cranelift costs ~27,5 ms interpreted: at 42 trips that is over a
+	// second of screen, at 12 it is a third. The difference between those two answers is this
+	// counter, and until now the only figure anybody had came from READING cara.js.
+	//
+	// It logs one line per trip on purpose. A total would hide the composition, and the composition
+	// is the actionable part: eighteen `tendencia` calls chained one per analyte is a different
+	// problem -- and a different fix -- than eighteen different views.
+	private int trips;
+
 	// ONE REQUEST, ONE ANSWER. Serialised: the guest is a single thread and the protocol is one line
 	// per request, so two questions at once would mix the answers up.
 	internal async Task<string> Ask(string verb, string name, string payload, CancellationToken ct)
@@ -140,11 +153,21 @@ internal sealed class BoxedInstance : IDisposable
 		if (closed) throw new InvalidOperationException($"caja: {module} ya no esta viva");
 
 		await oneAtATime.WaitAsync(ct).ConfigureAwait(false);
+		long started = Stopwatch.GetTimestamp();
+		int mine = ++trips;
 		try
 		{
 			// The protocol separates with tabs because the payload is json and carries spaces and braces.
 			toTheBox.WriteLine(verb + "\t" + name + "\t" + payload.Replace("\t", " ").Replace("\n", " "));
 			string? itSaid = await Task.Run(WaitForLine, ct).ConfigureAwait(false);
+
+			// THE WAIT IS MEASURED FROM BEFORE THE SEMAPHORE'S RELEASE, so the number is what the
+			// face actually waited -- queueing included. The border is one at a time, so a trip that
+			// waited its turn cost the screen that time whether or not the guest was busy.
+			log($"caja: {module} borde #{mine} {verb}/{name}"
+				+ $" {(Stopwatch.GetTimestamp() - started) * 1000 / Stopwatch.Frequency} ms"
+				+ (itSaid is null ? " -- SIN RESPUESTA" : ""));
+
 			return itSaid ?? throw new TimeoutException(
 				$"caja: {module} no contesto a {verb} {name} en {Patience.TotalSeconds:0} s");
 		}

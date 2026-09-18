@@ -20,9 +20,27 @@ namespace Gnothi.Mobile;
 // three, the bundle carries its own .wasm, and this file is left with nothing but the paths.
 public partial class MainActivity : Activity
 {
-	// THE MODULE THAT RUNS IN THE BOX IN THIS CUT. One only, and by name, on purpose: what this came
-	// to measure is how the WebView sees the box, not how many modules fit.
-	private const string TheOneInTheBox = "examenes";
+	// WHICH MODULES RUN IN THE BOX, and this used to be one name -- "examenes" -- because what the
+	// first cut came to measure was how the WebView sees the box, not how many modules fit.
+	//
+	// NOW IT IS THE FORM THAT DECIDES, not a name: every installed HYBRID module runs in a box. That
+	// is the rule the box always meant, and writing it as a name was the scaffolding of a cut that has
+	// already been measured -- the substrate no longer carries any module inside it, so there is
+	// nothing about examenes that makes it the one that fits.
+	//
+	// AND A LIST CAN STILL NARROW IT, which is what the memory measurement needs: the cost of a box is
+	// read by opening ONE more module at a time against a fresh process, so the ladder has to be
+	// switchable from outside without rebuilding.
+	//
+	//     adb shell am start -n ... --ez caja true                       -> every hybrid
+	//     adb shell am start -n ... --ez caja true --es caja-solo examenes,compras
+	//
+	// Empty means every hybrid. The names are the module's, the same ones the Host installed.
+	private string[] theOnesInTheBox = [];
+
+	private bool GoesInTheBox(string name) =>
+		theOnesInTheBox.Length == 0
+		|| Array.Exists(theOnesInTheBox, each => each.Equals(name, StringComparison.OrdinalIgnoreCase));
 
 	// THE SUBSTRATE, and the name is the point: it is no longer «examenes in a box». It is the .NET
 	// runtime, the BCL, the engine and the border -- ONE for every module -- and each module's DLLs
@@ -51,6 +69,12 @@ public partial class MainActivity : Activity
 	{
 		bool on = Intent?.GetBooleanExtra("caja", false) ?? false;
 		if (!on) return;
+
+		// THE LADDER'S RUNG, read before anything else so the log says which one this run is.
+		string? only = Intent?.GetStringExtra("caja-solo");
+		theOnesInTheBox = string.IsNullOrWhiteSpace(only)
+			? []
+			: [.. only.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
 		try
 		{
@@ -108,8 +132,8 @@ public partial class MainActivity : Activity
 			// institution's package, without touching a byte -- runs inside the box. The others carry
 			// on as they are, which is what makes the measurement comparable.
 			Module.ShellFactory = (name, installation) =>
-				name.Equals(TheOneInTheBox, StringComparison.OrdinalIgnoreCase)
-				&& installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
+				installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
+				&& GoesInTheBox(name)
 					? new BoxShell(name, installation.Shell, installation.GrantedFolder)
 					: null;
 
@@ -128,7 +152,9 @@ public partial class MainActivity : Activity
 				Log($"caja: prueba del canario con la jaula mala -- canto {(passed ? "CERRADA (MAL: no la vio)" : "abierta (bien: la vio)")}");
 			}
 
-			Log($"caja: encendida para '{TheOneInTheBox}'");
+			Log(theOnesInTheBox.Length == 0
+				? "caja: encendida para todos los modulos hibridos"
+				: $"caja: encendida solo para {string.Join(", ", theOnesInTheBox)}");
 		}
 		catch (Exception ex)
 		{

@@ -216,6 +216,27 @@ public sealed class Shell : IDisposable
 		// is network, it is a warning, and the screen is already painted.
 		_ = Task.Run(() => ReviewOrigins(stop.Token));
 
+		// AND THE REHYDRATION, MOVED OFF THE PERSON'S WAIT.
+		//
+		// A module's actor rebuilds itself from the journal the first time anybody asks it anything,
+		// behind a `Lazy<T>` -- and that is right, because listing a module's tools must not cost
+		// reading its history. But it puts the cost on the FIRST QUESTION, which is the moment the
+		// person is looking at an empty screen.
+		//
+		// Measured on the phone, 2026-09-17: exámenes ~694 ms, compras ~337 ms. Once per launch, not
+		// per opening -- reopening a module costs nothing. And it is not the journal's length: compras
+		// has 390 events against exámenes' 225 and takes half the time, so what costs is what each
+		// domain REBUILDS, not what it reads.
+		//
+		// So this does not make it faster. It makes it EARLIER: between Gnothi opening and somebody
+		// tapping «Abrir» there are seconds going spare, and the screen is already painted by now.
+		//
+		// WHY IT IS A LIST AND NOT «ALL OF THEM». A live module costs ~26 MB, and Gnothi with the five
+		// reached 482 MB: warming everything makes the process bigger and more killable by Android --
+		// and when the system kills it, the rehydration comes back. Warming too much can cost exactly
+		// what it means to save. Who goes on the list is a product decision and it is not made here.
+		if (WarmUp.Count > 0) _ = Task.Run(() => Rehydrate(stop.Token));
+
 		// 3 - THE PERSON'S SWITCH, WATCHED. The UI's switches write installation.json and this is what
 		//     makes them effective; and an edit from OUTSIDE (adb, another tool) repaints the screen by
 		//     the same path. One single source of truth: their file.
@@ -910,6 +931,45 @@ public sealed class Shell : IDisposable
 
 	/// A module from the catalogue by name, or null. It is needed by the screen that puts a web module
 	/// on screen, which is the only part of this that is still the platform's.
+	/// <summary>
+	/// QUÉ MÓDULOS SE REHIDRATAN ANTES DE QUE ALGUIEN PREGUNTE. Vacío = ninguno, que es lo de siempre.
+	/// Lo pone quien arma la plataforma, no esta clase: cuáles vale la pena calentar depende del
+	/// aparato y de a qué entra la persona, y eso el núcleo no lo sabe.
+	/// </summary>
+	public IReadOnlyList<string> WarmUp { get; set; } = [];
+
+	/// <summary>
+	/// Les pregunta el cursor, que es lo más barato que fuerza el arranque del actor — y es la misma
+	/// pregunta que el cartero hace después, así que no inventa trabajo: lo adelanta.
+	/// <para>
+	/// UNO A LA VEZ, a propósito: rehidratar dos actores en paralelo compite por el disco justo
+	/// cuando la pantalla de inicio todavía se está armando, y lo que se busca es que no se note.
+	/// </para>
+	/// <para>
+	/// Nada de esto puede tumbar Gnothi: un módulo que falla al calentarse se salta, y la persona lo
+	/// abre como siempre — pagando el arranque, que es exactamente lo que pasaba antes.
+	/// </para>
+	/// </summary>
+	private async Task Rehydrate(CancellationToken ct)
+	{
+		foreach (string name in WarmUp)
+		{
+			if (ct.IsCancellationRequested) return;
+
+			Module? m = catalog?.Find(name);
+			if (m is null) { log($"calentado: '{name}' no está instalado; se salta"); continue; }
+
+			long started = System.Diagnostics.Stopwatch.GetTimestamp();
+			try
+			{
+				await m.Cursor(ct);
+				log($"calentado: {name} listo en "
+					+ $"{(System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000 / System.Diagnostics.Stopwatch.Frequency} ms");
+			}
+			catch (Exception e) { log($"calentado: {name} no se pudo ({e.GetType().Name}); se abre como siempre"); }
+		}
+	}
+
 	public Module? Find(string name) => catalog?.Find(name);
 
 	/// The installed modules, so the platform can walk them without seeing the catalogue.

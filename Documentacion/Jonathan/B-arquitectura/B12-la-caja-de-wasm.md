@@ -241,6 +241,7 @@ jaula**, que es lo único que puede degradarse sin que nadie lo note.
 
 - **iOS.** No hay JIT: wasmtime tendría que ir interpretado o compilado antes. Sin medir. *(En
   Android ya está contestado: Cranelift compiló 12 MB de wasm a arm64 en 1,2 s.)*
+  **Investigado de escritorio el 2026-09-17 — ver abajo, «iOS: hay camino, y no es el de Android».**
 - **Las vistas con parámetros.** `serie` y `tendencia` piden un analito; las siete se llamaron sin
   argumentos.
 
@@ -260,3 +261,263 @@ No es una quinta forma: **es un cambio de anfitrión para las formas que ya exis
 superficie, los cuatro marcadores y el journal son los mismos. Lo que cambia es **quién ejecuta el C#
 de la institución y qué puede alcanzar desde ahí** — y con eso, dos cosas que ninguna de las cuatro
 resolvía a la vez: que el módulo pese lo que es, y que no haya que confiar en que se porte bien.
+
+---
+
+# iOS: hay camino, y no es el de Android · 2026-09-17
+
+> **ACTUALIZADO el mismo día, y ya no es sólo escritorio: el sustrato COMPILA y CORRE sobre Pulley,
+> y el precio está medido.** Ver «Lo que se corrió», al final de esta sección. Lo que sigue
+> inmediatamente abajo es la investigación previa; se deja porque es el razonamiento que llevó a la
+> prueba, pero los números inferidos **quedaron superados por los medidos**.
+
+**Lo que sigue era investigación de escritorio**: no había un iPhone en la prueba, y ni siquiera
+estaba comprobado que el sustrato compilara para el destino que se propone. «Hay camino» quería decir
+que existe la pieza y que el binario se puede construir — **no que ande**.
+
+## Lo que se cae, y es más de lo que parecía
+
+**Cranelift está descartado**, y no sólo por el JIT. iOS no le deja a una app de terceros crear
+páginas ejecutables, así que el compilador no tiene dónde escribir. Eso ya se sabía.
+
+**Lo que NO se sabía es que tampoco salva precompilar.** El truco que hizo barata la caja en Android
+—compilar una vez y después abrir el `.cwasm`— no cruza: la documentación de wasmtime lo dice en la
+misma frase que el requisito de páginas ejecutables, *«Support for statically linking in a single
+precompiled module is not supported at this time»*. Abrir un precompilado **también** necesita mapear
+código como ejecutable.
+
+Así que la respuesta de Android no se puede copiar. Hace falta otra.
+
+## La pieza que existe: Pulley
+
+Es el **intérprete portable** de wasmtime. En las plataformas donde Cranelift no corre, se usa solo,
+y sus requisitos son los de wasmtime mismo: si el motor compila para ese destino, Pulley corre ahí.
+
+Y hay un detalle que **mejora** la historia del artefacto en vez de empeorarla: Pulley igual necesita
+que el módulo se traduzca a su bytecode, pero **eso lo hace Cranelift en otra máquina**
+(`wasmtime compile --target pulley64`). O sea que en iOS el `.cwasm` del sustrato **viajaría dentro
+del bundle firmado de la app**, no producido en el aparato.
+
+Hoy el artefacto es «confiable porque lo produjo Gnothi en este teléfono» —por eso se le verifica la
+huella antes de abrirlo, porque wasmtime no valida su contenido—. En iOS sería «viene firmado junto
+con la app». Es una posición más fuerte, no más débil.
+
+## Y una diferencia con Android que hay que decir fuerte
+
+Lo que hizo posible el camino de Android fue que **bytecodealliance publica `libwasmtime.so` ya
+compilado para `aarch64-android`**. Para iOS **no publica nada**. Lo que hay es un paquete
+comunitario que vendoriza rebanadas de iOS device y simulador **compiladas desde fuente por ellos
+mismos**, y que se describe a sí mismo como *«a community build/test package, not an official
+Wasmtime distribution»*.
+
+**Eso cambia de quién es el motor.** En Android usamos un binario oficial; en iOS habría que hacerse
+cargo de construirlo y de sostenerlo en cada versión. No es un bloqueante, es un costo permanente que
+no aparece en ninguna medición.
+
+## El precio, y por qué es el número que decide
+
+La documentación de Pulley dice **~10x más lento** que Cranelift o que nativo, y avisa que no es apto
+para tareas intensivas en cómputo.
+
+Aplicado a lo medido en Android, da esto — **y los tres renglones de la derecha son inferencia, no
+medición**:
+
+| | Android, Cranelift *(medido)* | iOS, Pulley *(inferido)* |
+|---|---|---|
+| arranque de un módulo | 32–50 ms | ~320–500 ms |
+| una consulta por el borde | ~1 ms | ~10 ms |
+| pintar una pantalla (~42 idas y vueltas) | ~42 ms | **~420 ms** |
+
+**Ese ~420 hay que tratarlo con desconfianza, porque tiene tres supuestos encadenados:**
+
+1. el **~1 ms** lo midió el spike **sobre vistas simples**, no sobre las de exámenes;
+2. las **~42 idas y vueltas** salen de **leer `cara.js`**, no de contarlas corriendo;
+3. el **×10** es la cifra **genérica** de la documentación, no medida sobre nuestra carga — que es el
+   runtime de .NET adentro de wasm, un caso bastante peor que el promedio de un benchmark.
+
+Un número con tres supuestos encadenados **se lee igual de firme que uno medido**. Es el modo exacto
+en que este proyecto ya se equivocó tres veces en un día: el largo del asset que mentía, el artefacto
+viejo que corría, el barrido que no barría. Los tres parecían datos.
+
+**Y acá se cruzan dos pendientes:** el único término que quedó sin medir de la caja —cuánto cuesta
+pintar la pantalla— es justo el que decide iOS. En Android, a 1 ms, nadie se entera; a 10 ms son
+cuatro décimas de pantalla en blanco por apertura, y eso sí se ve. Ver `F2` · `P24`.
+
+## Una nota que juega a favor, del lado de la tienda
+
+`B11` deja abierto *«si wasm cuenta como interpreted code para Apple»*. Con Pulley la pregunta se
+vuelve más fácil de defender: no es una metáfora, **es literalmente un intérprete**, y el código de
+la institución nunca llega a ser código nativo. De las cuatro formas, ésta es la que mejor se para
+frente al `4.7` — con el hueco que `B11` ya señalaba intacto: el texto de Apple enumera *«HTML5 and
+JavaScript»* y **no nombra wasm**.
+
+## El primer paso, y es barato
+
+**Compilar nuestro `sustrato.wasm` con `--target pulley64` en la laptop.** Sin iPhone, sin motor de
+iOS, sin nada. Contesta lo único que hoy no se sabe y que invalida todo lo demás si sale mal: si un
+componente WASI preview 2 con el runtime de .NET adentro **tiene traducción a Pulley**.
+
+Si eso falla, los ~420 ms no son una estimación optimista: **son un número sobre algo que no
+existe**.
+
+**Fuentes, consultadas el 2026-09-17:** [Platform Support](https://docs.wasmtime.dev/stability-platform-support.html) ·
+[Using Pulley](https://docs.wasmtime.dev/examples-pulley.html) ·
+[swift-wasmtime](https://github.com/OpenCow42/swift-wasmtime) ·
+[issue #12251](https://github.com/bytecodealliance/wasmtime/issues/12251), donde alguien le hizo esta
+misma pregunta a los mantenedores y **se cerró sin respuesta**.
+
+## Lo que se corrió · 2026-09-17
+
+**El sustrato compila a Pulley y corre.** CLI de wasmtime v48.0.2, en la laptop, con el mismo
+`sustrato.wasm` (11 131 552 bytes) que va en el APK y el `dominio/` de exámenes montado de sólo
+lectura — las dos puertas, igual que en el teléfono.
+
+Los cinco pasos del cargador dieron OK en los dos motores: la carpeta montada, `Assembly.LoadFrom`,
+`GetTypes` (57 tipos), la clase marcada (`ExamenesSurface`) y la construcción sobre la carpeta
+concedida. **No hubo que cambiar una línea del sustrato.**
+
+### El precio, medido
+
+| | Cranelift *(nativo)* | **Pulley** | cociente |
+|---|---|---|---|
+| arranque del módulo, los 5 pasos | **17 ms** *(16–18, n=5)* | **329 ms** *(315–341, n=5)* | **×19** |
+| 42 consultas por el borde | **49 ms** | **1 157 ms** | **×24** |
+| una consulta | ~1,2 ms | **~27,5 ms** | ×24 |
+| el artefacto | 19,3 MB | **15,5 MB** | — |
+| compilarlo | 0,71 s | 0,68 s | — |
+
+**Y hay que decir que la estimación previa se quedó corta por tres veces.** Acá arriba, antes de
+correr nada, este documento decía ~420 ms para pintar una pantalla, aplicando el ×10 genérico de la
+documentación. **Lo medido da ~1,2 s** — porque el multiplicador real sobre nuestra carga no es 10
+sino **19 a 24**. El runtime de .NET adentro de wasm es un caso peor que el promedio de un benchmark,
+que era justamente la sospecha anotada y ahora es un hecho.
+
+**Dos supuestos de los tres se cayeron, y uno se confirmó.** El ~1 ms por consulta que el spike había
+medido sobre vistas simples **se confirmó de forma independiente**: 1,2 ms. El ×10 **se refutó**. Lo
+que sigue sin medirse es la cuenta de 42, que sale de leer `cara.js` y no de contarlas corriendo.
+
+### Lo que este número NO dice, y hay que leerlo con eso al lado
+
+- **Es un PISO.** El journal estaba **vacío**, así que las vistas casi no trabajaron. Con el registro
+  real de una persona, las dos columnas suben — y la de Pulley sube ×24.
+- **Es una laptop x86_64 interpretando `pulley64`, no un iPhone.** El cociente debería trasladarse;
+  los valores absolutos no. En el teléfono el arranque nativo son 32–50 ms, no 17.
+- **Y el artefacto es MÁS CHICO**, que es lo único que mejora: 15,5 MB contra 19,3. El bytecode de
+  Pulley es más compacto que el código máquina, y ese archivo es el que viajaría dentro del IPA.
+
+### Qué queda decidido
+
+**«Se puede» dejó de ser una pregunta abierta: se puede, y no hace falta tocar el sustrato.** Lo que
+está abierto ahora es si **se debe**, y eso ya no es una duda técnica sino un número de producto:
+**más de un segundo de pantalla en blanco por apertura, en el mejor caso**, contra los ~49 ms de hoy
+en Android.
+
+Antes de mover una pieza más conviene contar las idas y vueltas de verdad —el último supuesto que
+queda en pie— porque **si son 42 la pantalla tarda un segundo, y si son 12 tarda un tercio**. Es el
+mismo pendiente `4` de `C10`, y ahora tiene dueño: lo decide iOS.
+
+## Los otros motores, y el patrón que recién se ve mirándolos juntos · 2026-09-17
+
+Quedarse en wasmtime hacía parecer que el problema era de wasmtime. **No lo es: es de la
+plataforma**, y se ve al poner los cinco al lado.
+
+| motor | ¿JIT en iOS? | ¿modelo de componentes? | velocidad |
+|---|---|---|---|
+| **wasmtime + Pulley** | no | **SÍ** | **×19–24**, medido sobre nuestra carga |
+| **WAMR** con AOT | n/a — compila antes | **no** | cerca de nativa; **iOS no está en su lista** |
+| **Wasm3** | no | **no** | «el intérprete de wasm más rápido»; recomendado explícitamente para iOS |
+| **WasmKit** (Swift) | no | **no** | intérprete de máquina de registros; **~3,5× más lento que Wasm3** |
+| **JavaScriptCore en proceso** | **NO** | n/a | intérprete |
+| **JavaScriptCore en un WKWebView** | **SÍ** | n/a | **nativa** |
+
+### Primer patrón: en iOS, TODO motor en proceso es un intérprete
+
+No es una carencia de wasmtime. **Apple no le deja a ningún proceso de terceros escribir memoria
+ejecutable**, así que Pulley, Wasm3 y WasmKit están todos en la misma situación por la misma razón, y
+sólo se diferencian en cuánto pierden.
+
+Y el caso de JavaScriptCore lo deja desnudo, porque es **el mismo motor en los dos lados de la línea**:
+
+- **En proceso**, por `JSContext` desde la app: **sin JIT**. Apple no se lo habilita a nadie.
+- **Dentro de un `WKWebView`**: **con JIT**, porque ahí el código corre en el proceso *WebContent* de
+  Apple, no en el nuestro.
+
+La única excepción es `BrowserEngineKit`, de iOS 17.4 para navegadores alternativos en la UE, con un
+entitlement que una app común no obtiene.
+
+### Segundo patrón: el único que habla componentes es wasmtime
+
+Wasm3, WasmKit y WAMR son **módulos core + WASI preview 1**. Nuestro sustrato es un **componente
+preview 2** — por eso `WasmBox` llama a `wasmtime_component_*` y hay que darle `wasi:http` para que
+instancie.
+
+**Así que la elección de hoy no es «qué motor»: es que el formato del sustrato ya eligió el motor.**
+
+### Y el tercero, que es el incómodo
+
+**El motor de wasm más rápido disponible en un iPhone es el que Gnothi YA usa** — el del WebView, en
+la forma hospedada. Con JIT, en otro proceso, y gratis.
+
+Eso le da a la pregunta de este documento —*«¿la máquina virtual de quién?»*— una respuesta específica
+de iOS, y es un dilema, no una opción:
+
+| | la VM es de Gnothi | la VM es del WebView |
+|---|---|---|
+| quién decide los imports | **Gnothi**, y está medido con el canario | el puente, que es JS |
+| velocidad | intérprete: ×19–24 | **nativa** |
+| contención | **capacidades de WASI, falsable** | el sandbox del proceso WebContent |
+| el reparo de la tienda | el `4.7` de Apple, sin nombrar wasm | **el `4.7.2`**, que `B11` ya marca: exponerle archivos y red a software que no viene en el binario **requiere permiso previo de Apple** |
+
+En Android no hay que elegir: la caja es rápida **y** los imports son de Gnothi. **En iOS hay que
+elegir**, y las dos columnas pierden algo que en Android se tenía junto.
+
+### Lo que esto convierte en la pregunta de mayor palanca
+
+**¿Puede el sustrato publicarse como módulo core con WASI preview 1, en vez de componente preview 2?**
+
+De esa respuesta cuelga todo lo demás:
+
+- **si sí** → se abren Wasm3 (el intérprete más rápido, pensado para iOS) y **WAMR con AOT**, que es
+  velocidad cercana a nativa sin depender del WebView. Es el único camino que rompe el dilema de
+  arriba en vez de elegir un lado.
+- **si no** → en iOS queda wasmtime con Pulley y su ×19–24, o mudar el sustrato al WebView y aceptar
+  que los imports dejan de ser de Gnothi.
+
+**Y hay un aviso para la segunda opción:** un `WKWebView` tampoco corre un componente p2 directamente.
+Haría falta transpilarlo (`jco`), que es otra pieza y otro riesgo.
+
+### Lo que NO cambia con ningún motor
+
+**Cambiar de motor obliga a rehacer la garantía, no sólo el binding.** Son las 30 entradas de
+`Wasmtime.cs`, `Cage` entero —los preopens y el `fsMutable:false` son API de wasmtime— y **el canario
+vuelto a escribir y a correr contra la semántica nueva**. Las 8 fugas cerradas y las 2 puertas
+abiertas no se heredan: se vuelven a demostrar.
+
+Y ninguno toca lo que hoy domina la pantalla, que es **el replay del journal**: ~700 ms en cada
+apertura, iguales en la caja y en proceso. A velocidad nativa siguen siendo ~700 ms.
+
+**Fuentes, 2026-09-17:** [WAMR](https://github.com/wasm-micro-runtime/wasm-micro-runtime) ·
+[Wasm3](https://github.com/wasm3/wasm3) · [WasmKit](https://github.com/swiftwasm/WasmKit) ·
+[Platform Support — Wasmtime](https://docs.wasmtime.dev/stability-platform-support.html)
+
+### El replay bajo Pulley, MEDIDO — ya no es «×20 inferido» · 2026-09-17
+
+Hasta acá los «~14 s» eran una multiplicación: 700 ms del teléfono × el ×19–24 medido con el journal
+vacío. Ahora hay un journal real en la laptop —armado desde el publicador con el `entregar` del borde,
+**18 eventos, 4,5 KB**— y el replay corrió en los dos motores, tres veces cada uno:
+
+| | Cranelift | **Pulley** | cociente |
+|---|---|---|---|
+| arranque sin pedidos | 166 ms | 967 ms | ×6 |
+| **el replay** (primer `cursor`) | **~290 ms** | **~4 600 ms** | **×16** |
+| tres vistas después del replay | ~135 ms | ~2 700 ms | ×20 |
+| **hasta la primera pantalla** (sin las 18 tendencias) | ~590 ms | **~8,2 s** | ×14 |
+
+**Con 18 eventos.** El teléfono tiene ~225 y ahí el replay nativo cuesta ~700 ms, así que el número
+real de iOS está **por encima** de estos 4,6 s, no por debajo. La forma de la cuenta se confirma: el
+intérprete multiplica el trabajo del dominio, y el dominio es lo que manda.
+
+**Lo que esto cierra:** «¿cuánto cuesta el replay bajo Pulley?» ya no se infiere. Con un journal
+chico son **cuatro segundos y medio**, más casi tres para las tres primeras vistas — antes de las 18
+`tendencia`. Calentarlo lo saca de la espera de la persona pero **el trabajo sigue ahí**: bajar iOS a
+algo usable exige reducir el trabajo del replay, no moverlo.

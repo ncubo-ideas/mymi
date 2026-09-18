@@ -647,6 +647,11 @@ arranque domine:
 a arm64. **Es el costo grande y es evitable**: `wasmtime_component_serialize` / `deserialize`
 permiten compilar una vez —al instalar— y después mapear el resultado. No se probó.
 
+> **SUPERADO el 2026-09-17.** Se probó, y está puesto: el componente se precompila y se abre del
+> artefacto. **Esos 163 MB ya no se pagan**; el costo de entrada es ~94 MB. Ver «La escalera de los
+> cinco módulos», al final de este documento. Los números de esta sección se dejan como estaban
+> porque son lo que se midió ese día, no porque sigan describiendo lo que corre.
+
 **3 · Con tres instancias el PSS baja tanto como sube**, entre 243 y 321 MB. Eso no es error de
 medición: **es Android reclamando páginas del código compilado**, y es evidencia de que esos 163 MB
 están mapeados y no clavados.
@@ -665,6 +670,11 @@ hospedada cuesta por uno.
 Empata alrededor del décimo módulo vivo — o gana desde el primero **si el componente se precompila**,
 que es la pieza que falta probar.
 
+> **Rehecho el 2026-09-17, con el componente ya precompilado y los cinco módulos reales.** La entrada
+> bajó de 163 a ~94 MB y la colada subió de ~16 a ~26. **Para un módulo vivo la hospedada sigue siendo
+> más barata**, y eso no cambió. Lo que la caja compra no es memoria: es que haya **cinco vivos a la
+> vez**, que en hospedada es imposible. Ver «La escalera de los cinco módulos».
+
 ## Y hay que decir que esto desdice lo que se escribió hace unas horas
 
 En la laptop, tres instancias costaron **+72 MB cada una** de memoria privada, y con ese número se
@@ -678,6 +688,9 @@ el destino.
 
 **Lo que sigue sin probarse, y es lo que decide de verdad:** precompilar el componente
 (`wasmtime_component_serialize`) para no pagar los 163 MB en cada arranque.
+
+> **Probado y cerrado.** Primero el mecanismo —«Precompilar el componente», más abajo— y después la
+> cuenta entera con los cinco módulos, el 2026-09-17.
 
 ---
 
@@ -1811,3 +1824,218 @@ viejo ya no están. El listado que prueba la contención sirve también de inven
 > existe) y `Ncubo.Puppeteer 3.0.0-beta.10044` ya no estaba en la caché local. Y el restore fallido
 > **pisa `obj/project.assets.json`** —queda un stub de 5 KB—, así que después del 403 tampoco sirve
 > `--no-restore`: se pierden las dos salidas de una vez. Se resolvió dando acceso al feed.
+
+# La escalera de los cinco módulos — un molde, muchas coladas · 2026-09-17
+
+**Xiaomi 2407FPN8EG, aparato limpio, `dumpsys meminfo`, proceso fresco en cada escalón.** Los cinco
+módulos del POC dados de alta como **híbridos** desde `bundles/hibrida/`, y en cada escalón se
+verificó en el log que aparecieran los `caja: <modulo> vivo` esperados antes de leer la memoria.
+
+Esta es la medición que `C10` pedía como punto 4 y que estuvo bajada de prioridad: se hizo cuando
+pasó a decidir algo.
+
+## Lo medido
+
+| módulos vivos | **en caja** | en proceso *(control)* |
+|---|---|---|
+| 0 — Gnothi sola | 257 MB | 257 MB |
+| 1 | **377 MB** | — |
+| 2 | **404 MB** | — |
+| 3 | **425 MB** | — |
+| 4 | **457 MB** | 350 MB |
+| 5 | **482 MB** | 339 MB |
+
+## Un molde, muchas coladas
+
+Ésa es la forma de la cuenta, y explica en una línea por qué el sustrato tenía que dejar de llevar el
+módulo adentro.
+
+| | dónde vive | qué es | qué cuesta |
+|---|---|---|---|
+| **el molde** | `engine`, `component`, `linker` **estáticos** en `WasmBox` | el arm64 ya compilado de todo el sustrato: runtime .NET, BCL, motor, borde | **~94 MB, una vez** |
+| **cada colada** | un `store` nuevo por `BoxedInstance`, con sus dos montajes | la memoria y el estado propios de ese módulo | **~26 MB** |
+
+`Prepare` sale temprano si el componente ya está, así que el molde se arma **una vez por sustrato** y
+las cinco cajas lo usan. Los marginales lo confirman: **+27, +21, +32, +25**, estables y monótonos.
+El primer módulo salta +120 porque ahí se paga el molde más su propia colada.
+
+**Y lo que se comparte es el código, no el estado.** Por eso cada caja cuesta 26 MB y no los 200 KB
+que pesa el dll del módulo: lo que paga no es «el módulo», es **un mundo .NET entero de datos** — su
+heap, sus assemblies cargados, su GC. Si el costo fuera sólo el módulo, cinco cajas costarían ~1 MB;
+cuestan 130. **La caja no es barata porque el módulo sea chico: es barata porque el molde no se
+repite.**
+
+La forma hospedada hace lo contrario —**un molde por módulo**, cada uno con sus 10 MB de runtime
+compilados aparte— y por eso sólo puede tener **uno vivo**.
+
+## Los 163 MB ya no existen, y esto corrige lo escrito arriba
+
+El corte del spike midió **+163 MB una vez** por compilar el componente, con la nota «es evitable:
+`wasmtime_component_serialize` / `deserialize` permiten compilar una vez y después mapear el
+resultado. **No se probó**».
+
+**Ya está probado y ya está puesto.** El artefacto precompilado se guarda con la huella de su fuente
+en el nombre, se verifica antes de abrirse y se abre en 4 ms. Con eso:
+
+| | spike, compilando en cada arranque | hoy, del precompilado |
+|---|---|---|
+| costo de entrada | **163 MB** | **~94 MB** |
+| por módulo vivo | ~16 MB | ~26 MB |
+| módulos vivos medidos | tres, inestables | **cinco, monótonos** |
+
+Los dos renglones se movieron y **en direcciones distintas**, así que no es que la cuenta mejorara en
+bloque: la entrada bajó casi a la mitad y la colada subió. Lo que cambió de verdad es que **la entrada
+dejó de ser el término que manda**.
+
+## Contra la hospedada, la cuenta rehecha
+
+| | primer módulo vivo | cinco vivos a la vez |
+|---|---|---|
+| **hospedada** | +58,8 MB | **imposible** — uno, por la regla de desalojo |
+| **caja** | +120 MB (molde + colada) | **+225 MB** |
+
+Para **un** módulo vivo la hospedada sigue siendo más barata, y hay que decirlo. Lo que la caja compra
+no es memoria: es que **haya cinco a la vez**, y que cada uno esté en una jaula cuyas puertas están
+medidas.
+
+## Lo que el control obliga a decir del ruido
+
+El control —los mismos módulos con `--ez caja` apagado, corriendo en proceso por `HybridShell`— dio
+**350 MB con cuatro y 339 con cinco**: bajó al agregar uno. Eso no es medición, es Android reclamando
+páginas, el mismo efecto que el corte viejo ya había visto con tres instancias.
+
+Así que la resta «cuánto cuesta la jaula contra correr en proceso» sale entre **107 y 143 MB** según
+qué par se tome, y **ese rango es lo honesto**: los números de la caja son monótonos y los del control
+no, y una resta hereda el ruido del peor de sus dos lados.
+
+## Por qué el control es lo que le da sentido a la tabla
+
+Sin él, los 482 MB no dicen nada: podrían ser de una pantalla vacía. Lo que lo hace una medición es
+que con la caja apagada **los cinco módulos abrieron igual** —sirvieron su cara, hicieron el pull del
+publicador, entregaron a la superficie— y el log no trae **ni una** línea `caja:`.
+
+**Mismo paquete, mismos bytes, mismo trabajo; lo único que cambió fue quién ejecuta.** Esa es la
+costura de `Module.ShellFactory`, y es la única resta que significa algo.
+
+## Lo que hizo falta para poder correrla
+
+**El portón dejó de elegir por nombre.** `TheBox` tenía `TheOneInTheBox = "examenes"` — andamio del
+primer corte, cuando el sustrato llevaba exámenes adentro y no había otro que cupiera. Ahora decide
+**la forma**: todo módulo híbrido instalado corre en caja. Y se puede estrechar desde afuera, que es
+lo que la escalera necesita:
+
+```
+adb shell am start -n ... --ez caja true --es caja-solo examenes,compras
+```
+
+Vacío significa todos los híbridos.
+
+## Una trampa del empaquetado, y muerde
+
+`Gnothi.Mobile/bundles/` en la raíz estaba **mezclada**: cuatro paquetes híbridos y
+`municipalidad.gmod` **hospedado**, 12,7 MB con 198 archivos de motor Blazor, más un `compras.gmod`
+viejo. Los buenos están en `bundles/hibrida/` —municipalidad ahí pesa 76 KB—, pero la página de la
+institución sirve `bundles/<modulo>.gmod`, o sea **la raíz**.
+
+Costó una corrida entera: municipalidad abrió en forma hospedada en medio de la escalera, sin una
+palabra de aviso, y contaminó los números. Es `B10` visto desde el otro lado — el cambio de forma que
+nadie anuncia, pero del lado de quien arma.
+
+**Y es la misma familia de siempre: dos copias, y la que se usa no es la que uno cree.** Mientras las
+dos carpetas existan, alguien va a instalar la equivocada.
+
+# Lo que cuesta pintar la pantalla — el último término, medido · 2026-09-17
+
+**Era el único número de la cuenta de la caja que nadie tenía, y estuvo bajado de prioridad con razón
+mientras no decidía nada. Decidió algo el día que apareció iOS**, porque allá el motor es un
+intérprete y todo lo que cueste una ida y vuelta se multiplica.
+
+Xiaomi 2407FPN8EG, exámenes con el journal real de la persona, la misma pantalla en las dos
+condiciones — **caja encendida y caja apagada**, que es el mismo módulo corriendo en proceso por
+`HybridShell`.
+
+## El instrumento, y por qué está en los dos lados
+
+`BoxedInstance.Ask` y `HybridShell.Counting` cuentan y cronometran **cada ida y vuelta**, con la misma
+forma de línea para que los dos logs se lean y se grepeen igual.
+
+**Que esté en los dos lados no es prolijidad: es la medición.** La pregunta nunca fue «cuánto tarda la
+caja» sino **«cuánto MÁS que en proceso»**, y un número de un solo lado es media comparación que se
+lee como evidencia entera. Es el mismo error que este set viene persiguiendo todo el día.
+
+Y `HybridShell.Log` se engancha **fuera** de `PrepareTheBox`, a propósito: la mitad que hace falta
+para comparar es justamente la de la caja apagada, y ahí ese método se sale en la primera línea.
+
+## Cuántas son, contadas y no leídas
+
+| | |
+|---|---|
+| **total para pintar exámenes** | **22** |
+| `consultar/tendencia` | **18** |
+| `consultar/analitos`, `consultar/historial`, `consultar/alertas` | 1 cada una |
+| `cursor` | 1 |
+
+**El 82 % de las llamadas son la misma vista repetida, una por analito.** Y son 22, no las ~42 que
+este documento venía estimando: esa cifra suponía que la pantalla se pinta dos veces, y en esta
+corrida se pintó una.
+
+## La suma engañaba, y a favor de la caja
+
+| | en proceso | en caja |
+|---|---|---|
+| suma de las 22 | 2 416 ms | 1 214 ms |
+| **reloj de pared** | **~970 ms** | **~1 214 ms** |
+
+**En proceso las tres primeras corrieron EN PARALELO** —se completaron en orden #3, #2, #1, con 712,
+734 y 812 ms— porque ahí no hay nada que serialice. En la caja el borde es `SemaphoreSlim(1,1)`: van
+de a una, y ahí la suma **sí** es el reloj.
+
+Sumar las dos columnas y compararlas habría dado «la caja es el doble de rápida», que es exactamente
+al revés. **Una suma sobre llamadas que se solapan no es un tiempo.**
+
+## Lo que cuesta cada cosa, separado
+
+**Hay un calentón de ~700–800 ms que pagan las dos, y no es del ejecutor: es el replay del journal.**
+En proceso lo pagaron tres llamadas a la vez; en la caja lo pagó el `cursor`, 706 ms.
+
+**En régimen, una `tendencia`:**
+
+| | mediana |
+|---|---|
+| en proceso | **~2–3 ms** |
+| **en caja** | **~10 ms** |
+
+**La caja cuesta 3 a 5 veces por consulta.** No 24, que era lo que sugería la corrida de laptop —y esa
+corrida no estaba mal: sus 1,2 ms con journal vacío cuadran con los 2–3 ms en proceso. **Lo que estaba
+mal era extrapolar el cociente de un intérprete a una comparación entre dos motores nativos.**
+
+## El veredicto, en una línea
+
+**La caja agrega ~250–300 ms a una pantalla que en proceso tarda ~1 s.** En Android eso es aceptable,
+y el punto `4` de `C10` queda **cerrado**.
+
+## Y lo que esto le hace a iOS, que es lo que no se veía
+
+El ×19–24 de Pulley **no se aplica al borde: se aplica a todo lo que corre adentro de wasm**, y eso
+incluye el calentón.
+
+| | Android, caja *(medido)* | iOS, Pulley *(inferido ×20)* |
+|---|---|---|
+| el replay inicial | ~700 ms | **~14 s** |
+| las 18 tendencias | ~180 ms | ~3,6 s |
+| **la pantalla entera** | **~1,2 s** | **~18 s** |
+
+**Eso ya no es un problema de transición.** Dieciocho segundos no se maquillan con una pantalla que se
+llena de a poco.
+
+**Y el arreglo obvio no alcanza.** Agrupar las 18 `tendencia` en una sola llamada ahorra ~160 ms en
+Android y ~3 s de los 18 en iOS: **el que manda es el replay, y el replay no se agrupa.**
+
+## Lo que habría que medir antes de decidir nada de iOS
+
+**El replay, no el borde.** Los ~700 ms se pagan en cada apertura porque el actor se rehidrata; si el
+journal pudiera quedar caliente entre aperturas, la cuenta cambia entera — y cambia en las dos
+plataformas, no sólo en la que tiene intérprete.
+
+Es, otra vez, la lección del día: **el costo grande no estaba donde lo buscábamos.** Se midió el
+borde, y lo que domina es el dominio.

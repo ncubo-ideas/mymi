@@ -1342,3 +1342,49 @@ cuestan tiempo y no se deducen del mensaje:
 `3` **iOS** — no hay JIT, wasmtime tendría que ir interpretado; sin probar. · `4` **cuánto cuesta
 pintar la pantalla entera contra la híbrida** — bajado de prioridad, el número no existe y conviene
 que se sepa que no existe.
+
+## P24 · Lo que queda abierto de la caja al cambiar de frente · 2026-09-17
+
+Se cierra la medición de memoria y se pasa a investigar iOS. Esto es lo que queda atrás, para que no
+se pierda por el cambio de tema.
+
+### De la caja
+
+**`1` Cuánto cuesta PINTAR LA PANTALLA, y es el único término sin medir de la cuenta.** La memoria ya
+está contestada —ver `F8`, «La escalera de los cinco módulos»—; lo que falta es el tiempo. «La
+pantalla» no es una pregunta sino **~42 idas y vueltas por apertura**: `cara.js` pide `historial`,
+`alertas` y `analitos`, y después una `tendencia` **por analito, de a una y en orden**, y todo se
+pinta dos veces. En proceso cada una es una llamada a un método; en la caja es el FIFO, despertar el
+hilo del invitado, reflexión, serializar y salir por el callback, **con `SemaphoreSlim(1,1)`, una a la
+vez**. A 1 ms nadie se entera; a 30 ms son 600 ms de pantalla en blanco.
+
+**`2` `Gnothi.Mobile/bundles/` en la raíz está MEZCLADA y hay que decidir qué se hace.** Tenía cuatro
+paquetes híbridos y `municipalidad.gmod` **hospedado** (12,7 MB), más un `compras.gmod` viejo. Hoy se
+reemplazaron por los de `bundles/hibrida/`, pero **el problema no era el contenido sino que haya dos
+carpetas**: la página de la institución sirve la raíz, y mientras las dos existan alguien va a
+instalar la equivocada. O se borra la raíz, o se regenera desde `hibrida/` en cada armado.
+
+**`3` iOS** — es el frente que arranca ahora. No hay JIT y wasmtime tendría que ir interpretado.
+
+### De municipalidad, que vive en otra rama
+
+En `trim/modulos-hinridos`, commit `d92be12`. **No está en `trim/spike-wasm-mobile`**, así que quien
+mire sólo esta rama no lo ve:
+
+- El choque de `Textos` quedó resuelto: las seis frases que dice una Vista cuando no hay con qué
+  contestar se mudaron al catálogo de `Municipalidad.App`, las Vistas reciben `string idioma`, y
+  `Textos` **no se movió** — sigue en `Municipalidad.Wasm` con su JSInterop, que es donde tiene que
+  estar para que el paquete de carga no arrastre el navegador.
+- **Y quedó una prueba en rojo que NO es de ese cambio: `AskingThroughTheSurfaceLeavesTheJournalWithoutANewEntry`.**
+  Sólo llama a las dos `[Query]`. Lo que afirma es serio y hay que mirarlo: *«Una pregunta del Host
+  dejó una entrada en el journal de la persona. Eso es un segundo escritor sobre el mismo actor.»*
+  **Una lectura está escribiendo.** 212 de 213 pasan.
+
+### Fuera del código
+
+**La lámina de «Caja en Gnothi documentation» quedó publicada mintiendo y huérfana.** Dice «compila,
+APK armado, falta el cable» —falso desde hoy—, y probablemente lleva los 163 MB y los nombres de
+archivo en español. La sesión que la republicaba desapareció. El volcado con todo lo nuevo lo tiene la
+sesión coordinadora.
+
+**Y nada de esto está commiteado.**
