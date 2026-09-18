@@ -33,11 +33,25 @@ namespace Compras.App
 		private const string ActorName = "compras";
 
 		/// <summary>
-		/// EN QUE IDIOMA LE PREGUNTA ESTA SUPERFICIE A LA PUERTA, que es el del registro del
-		/// supermercado y no el de la persona: el Host le entrega a una superficie una carpeta
-		/// concedida y nada mas, y Gnothi.Contract no lleva idioma.
+		/// EN QUE IDIOMA SE DICE UNA VISTA, y lo dice QUIEN LA PIDE.
+		/// <para>
+		/// Esta clase no tiene navegador: el Host le entrega una carpeta concedida y nada mas, y
+		/// Gnothi.Contract no lleva idioma. Pero la cara que la consulta SI lo es, y ya leyo la
+		/// eleccion del aparato con <c>navigator.languages</c>, asi que la manda como un parametro mas
+		/// de la vista.
+		/// </para>
+		/// <para>
+		/// Una etiqueta vacia o que este modulo no habla cae al idioma del registro del supermercado,
+		/// que es la misma caida que hace la app suelta cuando no puede leer la eleccion. Por eso el
+		/// parametro es opcional: un llamador que no diga nada sigue recibiendo lo de antes.
+		/// </para>
+		/// <para>
+		/// LAS DOS <c>[Query]</c> NO LO TOMAN, y esa asimetria es la regla y no un olvido: lo que el
+		/// asistente pregunta lo contesta la institucion en SU idioma, no en el de quien pregunta.
+		/// </para>
 		/// </summary>
-		private const string ElIdioma = ComprasAPI.IdiomaDelRegistro;
+		private static string Elegido(string idioma) =>
+			Frases.Frases.EsUnaEtiquetaConocida(idioma) ? idioma : ComprasAPI.IdiomaDelRegistro;
 
 		private readonly string folder;
 
@@ -89,13 +103,14 @@ namespace Compras.App
 		// Es el mismo reparto que en las otras cuatro caras: la superficie decide QUE se dice, la
 		// cara decide COMO se ve.
 		[View("portada")]
-		public object Portada() => !HasJournal ? NoData() : Read(api =>
+		public object Portada(string idioma = "") => !HasJournal ? NoData() : Read(api =>
 		{
+			string dicho = Elegido(idioma);
 			DateTime ahora = DateTime.Now;
 			RangoDelHistorialVista rango = api.Rango();
-			CambioDeLaCanasta cambio = api.CambioDelQuiebre(ElIdioma);
-			var ritmos = api.RitmosDelQuiebre(ElIdioma);
-			var precios = api.Precios(ElIdioma);
+			CambioDeLaCanasta cambio = api.CambioDelQuiebre(dicho);
+			var ritmos = api.RitmosDelQuiebre(dicho);
+			var precios = api.Precios(dicho);
 			int cantidad = api.CantidadDeCompras();
 			PrecioQueCambio habitual = LaPortadaDeLaCara.Oportunidad(precios);
 
@@ -104,10 +119,10 @@ namespace Compras.App
 				hayDatos = true,
 				cantidad,
 				total = api.TotalDeCompras(),
-				desdeCuando = LaPortadaDeLaCara.DesdeCuando(rango),
+				desdeCuando = rango is null ? "" : rango.PrimerMes,
 				banners = LaPortadaDeLaCara.Banners(
-					cambio, precios, api.Promociones(ahora, ElIdioma), api.Firma(ElIdioma), ritmos,
-					hayCompras: cantidad > 0, alDia: ahora),
+					cambio, precios, api.Promociones(ahora, dicho), api.Firma(dicho), ritmos,
+					hayCompras: cantidad > 0, alDia: ahora, idioma: dicho),
 				cambios = ritmos.Count,
 
 				// «TU HABITUAL»: el mismo hecho que ya protagoniza un slide, pero suelto, porque la
@@ -124,7 +139,7 @@ namespace Compras.App
 
 				// «EN QUE SE LLENA TU CARRITO»: la canasta del ultimo mes con sus departamentos ya
 				// ordenados del que mas pesa al que menos -- el orden lo da el dominio.
-				canasta = ElUltimoMes(api, rango),
+				canasta = ElUltimoMes(api, rango, dicho),
 
 				// «UN CAMBIO EN TU RUTINA»: el primero, que ya viene ordenado del dominio, con su
 				// foto y su «cambio desde enero». El resto se abre detras del enlace.
@@ -135,33 +150,33 @@ namespace Compras.App
 					ahora = ritmos[0].Ahora,
 					masSeguido = ritmos[0].EsMasSeguido,
 					foto = Fotos.De(ritmos[0].Sku),
-					desde = cambio is null ? "" : LaPortadaDeLaCara.MesLegible(cambio.Corte),
+					desde = cambio is null ? "" : cambio.Corte,
 				},
 			};
 		});
 
 		// EL ULTIMO MES CON COMPRAS, y cual es lo decide el RANGO -- que es del dominio -- y no esta
 		// clase mirando la ultima fila de una tabla. Nulo cuando todavia no hay ningun mes cerrado.
-		private static object ElUltimoMes(ComprasAPI api, RangoDelHistorialVista rango)
+		private static object ElUltimoMes(ComprasAPI api, RangoDelHistorialVista rango, string dicho)
 		{
 			if (rango is null || rango.MesesConCompras == 0) return null;
 
 			string[] partes = rango.UltimoMes.Split('-');
 			if (partes.Length < 2) return null;
 
-			return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), ElIdioma);
+			return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), dicho);
 		}
 
 		// LO DE ARRIBA: cuanto lleva gastado, desde cuando, y la firma de la semana -- a que hora
 		// y que dia hace el super, que es lo que hace que la pantalla la reconozca a ella.
 		[View("cabecera")]
-		public object Cabecera() => !HasJournal ? NoData() : Read(api => (object)new
+		public object Cabecera(string idioma = "") => !HasJournal ? NoData() : Read(api => (object)new
 		{
 			hayDatos = true,
 			cantidad = api.CantidadDeCompras(),
 			total = api.TotalDeCompras(),
 			rango = api.Rango(),
-			firma = api.Firma(ElIdioma),
+			firma = api.Firma(Elegido(idioma)),
 			ultimoEvento = api.UltimoEventoProcesado(),
 		});
 
@@ -169,8 +184,9 @@ namespace Compras.App
 		// no dice nada: «₡92 400» es un numero; «₡92 400, 8% mas que el mes pasado» es una
 		// lectura. El mes lo elige el DOMINIO -- el ultimo con compras, que sale de Rango().
 		[View("canasta")]
-		public object Canasta() => !HasJournal ? NoData() : Read(api =>
+		public object Canasta(string idioma = "") => !HasJournal ? NoData() : Read(api =>
 		{
+			string dicho = Elegido(idioma);
 			RangoDelHistorialVista rango = api.Rango();
 			if (rango.MesesConCompras == 0) return (object)new { hayDatos = false };
 
@@ -182,9 +198,9 @@ namespace Compras.App
 			return (object)new
 			{
 				hayDatos = true,
-				mes = api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), ElIdioma),
-				contraElMesAnterior = api.ComparacionConElMesAnterior(ElIdioma),
-				contraElAnioPasado = api.CambioDelQuiebre(ElIdioma),
+				mes = api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), dicho),
+				contraElMesAnterior = api.ComparacionConElMesAnterior(dicho),
+				contraElAnioPasado = api.CambioDelQuiebre(dicho),
 			};
 		});
 
@@ -192,12 +208,12 @@ namespace Compras.App
 		// que no tiene equivalente en una pantalla de supermercado -- un super entrega facturas,
 		// no cambios de precio.
 		[View("movimientos")]
-		public object Movimientos() => !HasJournal ? NoData() : Read(api => (object)new
+		public object Movimientos(string idioma = "") => !HasJournal ? NoData() : Read(api => (object)new
 		{
-			precios = api.Precios(ElIdioma),
-			ritmos = api.RitmosDelQuiebre(ElIdioma),
-			ritmo = api.Ritmo(ElIdioma),
-			recorrido = api.Recorrido(ElIdioma),
+			precios = api.Precios(Elegido(idioma)),
+			ritmos = api.RitmosDelQuiebre(Elegido(idioma)),
+			ritmo = api.Ritmo(Elegido(idioma)),
+			recorrido = api.Recorrido(Elegido(idioma)),
 		});
 
 		// LO QUE VIENE: la lista de la proxima compra, las promociones vigentes, lo que falta
@@ -207,15 +223,16 @@ namespace Compras.App
 		// dependen de CONTRA QUE FECHA se preguntan, y dejar que la pagina la mande seria dejar
 		// que la pantalla mueva el resultado.
 		[View("proxima")]
-		public object Proxima() => !HasJournal ? NoData() : Read(api =>
+		public object Proxima(string idioma = "") => !HasJournal ? NoData() : Read(api =>
 		{
+			string dicho = Elegido(idioma);
 			DateTime ahora = DateTime.Now;
 			return (object)new
 			{
-				lista = api.Lista(ahora, ElIdioma),
-				promociones = api.Promociones(ahora, ElIdioma),
-				abastecimientos = api.AbastecimientosPendientes(ahora, ElIdioma),
-				garantias = api.GarantiasVigentes(ahora, ElIdioma),
+				lista = api.Lista(ahora, dicho),
+				promociones = api.Promociones(ahora, dicho),
+				abastecimientos = api.AbastecimientosPendientes(ahora, dicho),
+				garantias = api.GarantiasVigentes(ahora, dicho),
 			};
 		});
 

@@ -1,0 +1,103 @@
+window.Idioma = (function () {
+    'use strict';
+
+    var LAS_QUE_HAY = ['es-CR', 'en'];
+    var LA_DEL_REGISTRO = 'es-CR';
+
+    function primaria(etiqueta) {
+        if (!etiqueta) return '';
+        var limpia = String(etiqueta).trim().toLowerCase();
+        var guion = limpia.indexOf('-');
+        return guion < 0 ? limpia : limpia.slice(0, guion);
+    }
+
+    function loQuePidioElDispositivo() {
+        try {
+            if (navigator.languages && navigator.languages.length)
+                return Array.prototype.slice.call(navigator.languages);
+            return [navigator.language || ''];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function laPrimeraQueHablamos() {
+        var pedidas = loQuePidioElDispositivo();
+        for (var i = 0; i < pedidas.length; i++) {
+            var lengua = primaria(pedidas[i]);
+            for (var j = 0; j < LAS_QUE_HAY.length; j++)
+                if (primaria(LAS_QUE_HAY[j]) === lengua) return LAS_QUE_HAY[j];
+        }
+        return LA_DEL_REGISTRO;
+    }
+
+    var todos = window.TextoDeLaCara || {};
+    var etiqueta = laPrimeraQueHablamos();
+    var catalogo = todos[etiqueta] || todos[LA_DEL_REGISTRO] || {};
+
+    function texto(clave) {
+        var partes = String(clave).split('.');
+        var nodo = catalogo;
+        for (var i = 0; i < partes.length; i++) {
+            if (!nodo || typeof nodo !== 'object') return '{' + clave + '}';
+            nodo = nodo[partes[i]];
+        }
+        return typeof nodo === 'string' ? nodo : '{' + clave + '}';
+    }
+
+    function con(clave, huecos) {
+        var dicho = texto(clave);
+        for (var hueco in huecos)
+            if (Object.prototype.hasOwnProperty.call(huecos, hueco))
+                dicho = dicho.split('{' + hueco + '}').join(huecos[hueco]);
+        return dicho;
+    }
+
+    // EL TITULO DEL MODULO NO SE TRADUCE: es voz de la institucion, no texto de esta caratula, asi
+    // que vive aca y no en los catalogos. Lo que no esta en el archivo no se puede traducir por
+    // descuido. La marca, que index.html escribe al lado del logo, cae en la misma regla.
+    var EL_TITULO = 'La Guaria y vos';
+
+    document.documentElement.lang = etiqueta;
+
+    function pintarLoEstatico() {
+        var nodos = document.querySelectorAll('[data-texto]');
+        for (var i = 0; i < nodos.length; i++)
+            nodos[i].textContent = texto(nodos[i].getAttribute('data-texto'));
+
+        // EL MARCADO VIENE ADENTRO DE LA FRASE en los rotulos que lo llevan -- un <strong> que abre
+        // el aviso --, y lo lleva porque la app suelta lo lleva y el valor esta copiado de ella. Es
+        // texto NUESTRO, del bundle, nunca del registro: nada de lo que la institucion asento pasa
+        // por aca.
+        var conMarcado = document.querySelectorAll('[data-texto-html]');
+        for (var h = 0; h < conMarcado.length; h++)
+            conMarcado[h].innerHTML = texto(conMarcado[h].getAttribute('data-texto-html'));
+
+        // ARIA Y title JUNTOS: la tecla chica de refrescar lleva los dos, y dejarlos separados era
+        // dejar uno de los dos en espanol sin que nada lo dijera.
+        var etiquetados = document.querySelectorAll('[data-texto-aria]');
+        for (var j = 0; j < etiquetados.length; j++) {
+            var dicho = texto(etiquetados[j].getAttribute('data-texto-aria'));
+            etiquetados[j].setAttribute('aria-label', dicho);
+            etiquetados[j].setAttribute('title', dicho);
+        }
+
+        document.title = EL_TITULO;
+    }
+
+    // EL MES POR SU NUMERO, largo o corto, que es como los guarda el catalogo: una clave por mes,
+    // igual que en la app suelta. Un mes fuera de 1..12 se dice con su clave entre llaves, como
+    // cualquier otra que falte.
+    function mesLargo(m) { return texto('comun.mesLargo.' + m); }
+    function mesCorto(m) { return texto('comun.mes.' + m); }
+
+    return {
+        etiqueta: etiqueta,
+        titulo: EL_TITULO,
+        texto: texto,
+        con: con,
+        mesLargo: mesLargo,
+        mesCorto: mesCorto,
+        pintarLoEstatico: pintarLoEstatico
+    };
+})();

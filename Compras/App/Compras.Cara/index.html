@@ -1,9 +1,20 @@
 <!DOCTYPE html>
-<html lang="es-CR">
+<!-- SIN lang ESCRITO A MANO: el bundle se sirve igual para los dos idiomas, asi que una etiqueta
+     fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de negociar con
+     el aparato, con la misma regla que usa la app suelta. -->
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- EL TITULO ES VOZ DE LA INSTITUCION y no se traduce, asi que esta escrito una sola vez.
+     idioma.js lo repone tal cual despues de negociar, para las dos lenguas. -->
 <title>La Guaria y vos</title>
+<!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
+     leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
+     repintarla en el otro. El modulo no tiene red, asi que los dos viajan en el bundle. -->
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
 <!-- LA PILA DE LA INSTITUCION, TAL CUAL Y EN SU ORDEN. Bootstrap primero y `app.css` despues, que
      es como la sirve la app suelta: `app.css` pisa a Bootstrap en lo que la marca decide, y al
      reves se veria un Bootstrap crudo con acentos verdes.
@@ -64,7 +75,7 @@
             </span>
         </div>
 
-        <p class="lg-home-saludo">¡Hola!</p>
+        <p class="lg-home-saludo" data-texto="portada.saludo">¡Hola!</p>
 
         <div class="lg-home-carrusel-envoltorio" id="carrusel-envoltorio" hidden>
             <div class="lg-home-carrusel" id="lgHomeCarrusel"></div>
@@ -77,14 +88,17 @@
          que en la app suelta: no sale a la red -- no puede -- sino que le pide a GNOTHI que traiga
          lo nuevo con SU credencial. -->
     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-        <button class="btn btn-primary" id="releer">Buscar compras nuevas</button>
+        <button class="btn btn-primary" id="releer" data-texto="boton.buscar">Buscar compras nuevas</button>
         <span class="text-body-secondary" id="cifras">—</span>
     </div>
 
     <!-- HOSPEDADA: es el aviso que la app suelta muestra cuando corre adentro de Gnothi, palabra
          por palabra. Aca es SIEMPRE cierto, asi que no hay rama que elegir. -->
+    <!-- EL <strong> VIENE ADENTRO DE LA FRASE, que esta copiada entera de la app suelta: partirla
+         en dos claves habria sido traducir de nuevo una oracion que ya estaba traducida, y habria
+         puesto el enfasis donde lo decida esta cara en vez de donde lo decidio la institucion. -->
     <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
-        <div class="flex-grow-1">
+        <div class="flex-grow-1" data-texto-html="aviso.hospedada">
             <strong>Se está guardando en este teléfono.</strong>
             Tu registro es tuyo y está acá: Mymi le dio a este supermercado una carpeta en tu
             teléfono, y tu asistente la puede leer desde ahí.
@@ -95,7 +109,7 @@
          la pestana de Compras. -->
     <div class="lg-home-estado mb-3">
         <a class="lg-home-estado-link" href="#" data-pestana="compras">
-            <span class="lg-home-estado-fuerte">Tus compras</span>
+            <span class="lg-home-estado-fuerte" data-texto="estado.tusCompras">Tus compras</span>
             <span class="lg-home-estado-punto" aria-hidden="true">&middot;</span>
             <span class="lg-home-estado-cambio" id="estado-cambio">—</span>
             <svg class="lg-home-estado-flecha" width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -103,7 +117,7 @@
                 <path d="M4 12h15M14 6l6 6-6 6"/>
             </svg>
         </a>
-        <button class="lg-home-estado-refrescar" id="refrescar-chico"
+        <button class="lg-home-estado-refrescar" id="refrescar-chico" data-texto-aria="boton.buscar"
                 aria-label="Buscar compras nuevas" title="Buscar compras nuevas">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -124,29 +138,29 @@
     <div class="mk-oportunidad mb-3" id="oportunidad" hidden></div>
 
     <!-- PARA TU PROXIMA COMPRA. Compacta a proposito: la portada no le adivina el carrito a nadie. -->
-    <div class="card mb-3" id="proxima"><div class="card-body"><p class="apunte">Preguntándole a Mymi…</p></div></div>
+    <div class="card mb-3" id="proxima"><div class="card-body"><p class="apunte" data-texto="comun.preguntando">Preguntándole a Mymi…</p></div></div>
 
     <!-- TU MES EN EL SUPER: primero la conclusion, el detalle detras. -->
-    <h2 class="mk-titulo">Tu mes en el súper</h2>
+    <h2 class="mk-titulo" data-texto="mes.titulo">Tu mes en el súper</h2>
     <div class="card mb-3" id="mes"><div class="card-body"></div></div>
 
     <!-- TUS HABITUALES: la firma de la semana, que es lo que hace que la pantalla la reconozca a
          ella y no a un cliente promedio. -->
-    <h2 class="mk-titulo">Tus habituales</h2>
+    <h2 class="mk-titulo" data-texto="firma.titulo">Tus habituales</h2>
     <div class="card mb-3" id="firma"><div class="card-body"></div></div>
 
     <!-- LO QUE SE MOVIO: precios y ritmos. -->
-    <h2 class="mk-titulo">Lo que se movió</h2>
+    <h2 class="mk-titulo" data-texto="movimientos.titulo">Lo que se movió</h2>
     <div class="card mb-3" id="movimientos"><div class="card-body"></div></div>
 </div>
 
 <!-- ============================================================ COMPRAS -->
 <div id="pestana-compras" hidden>
-    <h2 class="mk-titulo">Tus compras</h2>
+    <h2 class="mk-titulo" data-texto="compras.titulo">Tus compras</h2>
     <div class="card mb-3" id="compras"><div class="card-body"><p class="apunte">…</p></div></div>
 </div>
 
-<p class="text-body-secondary small mt-4 mb-0">
+<p class="text-body-secondary small mt-4 mb-0" data-texto="pie.explicacion">
     El registro vive en este dispositivo. Esta pantalla no sale a la red: le pregunta a Mymi, y
     Mymi responde con el motor que le presta.
 </p>
@@ -154,7 +168,10 @@
 
 </main>
 
-<!-- LAS PESTANAS, fijas al pie, que es donde llega el pulgar. Mismo markup que MainLayout. -->
+<!-- LAS PESTANAS, fijas al pie, que es donde llega el pulgar. Mismo markup que MainLayout, con una
+     sola diferencia: el rotulo va adentro de un <span>. Suelto era un nodo de texto hermano del
+     <svg>, y escribirle el rotulo traducido se habria llevado el icono por delante. `data-pestana`
+     es identidad -- nombra la seccion -- y no se traduce; el rotulo si. -->
 <nav class="pestanas">
     <div class="pestanas-dentro">
         <a class="pestana active" href="#" data-pestana="inicio">
@@ -163,7 +180,7 @@
                 <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
                 <path d="M7.8 16.6v-4.7h4.4v4.7"/>
             </svg>
-            Inicio
+            <span data-texto="pestana.inicio">Inicio</span>
         </a>
         <a class="pestana" href="#" data-pestana="compras">
             <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
@@ -171,7 +188,7 @@
                 <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
                 <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
             </svg>
-            Compras
+            <span data-texto="pestana.compras">Compras</span>
         </a>
     </div>
 </nav>

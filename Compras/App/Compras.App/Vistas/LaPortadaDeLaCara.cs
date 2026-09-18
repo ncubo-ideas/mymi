@@ -46,12 +46,6 @@ namespace Compras.App.Vistas
 			public string Foto { get; init; } = "";
 		}
 
-		private static readonly string[] Meses =
-		{
-			"enero", "febrero", "marzo", "abril", "mayo", "junio",
-			"julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre",
-		};
-
 		/// <summary>
 		/// Los banners vigentes, en el orden en que la app los pone: novedad, oportunidad, promo.
 		/// Nunca vacio -- sin ninguna senal cae al mismo respaldo neutro de la app.
@@ -63,8 +57,10 @@ namespace Compras.App.Vistas
 			FirmaDeLaSemana firma,
 			IReadOnlyList<RitmoQueCambio> ritmos,
 			bool hayCompras,
-			DateTime alDia)
+			DateTime alDia,
+			string idioma)
 		{
+			Frases.Frases dice = Frases.Frases.De(idioma);
 			var banners = new List<Banner>();
 
 			ProductoQueEntroVista novedad = cambio is not null && cambio.Entraron.Count > 0
@@ -76,9 +72,10 @@ namespace Compras.App.Vistas
 				banners.Add(new Banner
 				{
 					Variante = "nuevo",
-					Kicker = "NUEVO",
-					Titulo = $"Llegó algo nuevo de tus {Corto(novedad.Descripcion).ToLowerInvariant()}",
-					Cta = "Verlo",
+					Kicker = dice.Diga("portada.nuevo"),
+					Titulo = dice.Diga("portada.nuevoTitulo",
+						("producto", Corto(novedad.Descripcion).ToLowerInvariant())),
+					Cta = dice.Diga("portada.verlo"),
 					Foto = Fotos.De(novedad.Sku),
 				});
 
@@ -87,11 +84,12 @@ namespace Compras.App.Vistas
 				banners.Add(new Banner
 				{
 					Variante = "habitual",
-					Kicker = "BAJÓ DE PRECIO",
-					Titulo = $"El {Corto(oportunidad.Descripcion).ToLowerInvariant()} que comprás siempre bajó de precio",
+					Kicker = dice.Diga("portada.bajoDePrecio"),
+					Titulo = dice.Diga("portada.bajoDePrecioTitulo",
+						("producto", Corto(oportunidad.Descripcion).ToLowerInvariant())),
 					PrecioAntes = oportunidad.Antes,
 					PrecioAhora = oportunidad.Ahora,
-					Cta = "Verlo",
+					Cta = dice.Diga("portada.verlo"),
 					Foto = Fotos.De(oportunidad.Sku),
 				});
 
@@ -104,9 +102,10 @@ namespace Compras.App.Vistas
 				banners.Add(new Banner
 				{
 					Variante = "promo",
-					Kicker = "PUEDE INTERESARTE",
+					Kicker = dice.Diga("portada.puedeInteresarte"),
 					Titulo = promo.Gancho,
-					Secundario = $"{promo.Detalle} · {Vigencia(promo)}",
+					Secundario = dice.Diga("portada.promoSecundario",
+						("detalle", promo.Detalle), ("vigencia", Vigencia(promo, dice))),
 					Foto = Fotos.De(promo.Sku),
 				});
 
@@ -115,41 +114,22 @@ namespace Compras.App.Vistas
 					? new Banner
 					{
 						Variante = "neutro",
-						Titulo = "Así vienen tus compras",
+						Titulo = dice.Diga("portada.asiVienen"),
 						Secundario = ritmos is not null && ritmos.Count > 0
-							? $"Casi todo habitual · {ritmos.Count} {(ritmos.Count == 1 ? "cambio" : "cambios")} de ritmo"
-							: "Todo como siempre por acá.",
+							? dice.Diga(ritmos.Count == 1
+									? "portada.casiTodoHabitual.uno"
+									: "portada.casiTodoHabitual.varios",
+								("cuantos", ritmos.Count.ToString(CultureInfo.InvariantCulture)))
+							: dice.Diga("portada.todoComoSiempre"),
 					}
 					: new Banner
 					{
 						Variante = "neutro",
-						Titulo = "Bienvenida a La Guaria",
-						Secundario = "Descubrí lo que siempre vuelve y cómo cambia tu carrito.",
+						Titulo = dice.Diga("portada.bienvenida"),
+						Secundario = dice.Diga("portada.bienvenidaBajada"),
 					});
 
 			return banners;
-		}
-
-		/// <summary>«enero de 2025» desde el primer mes del rango, para «87 compras tuyas desde…».</summary>
-		public static string DesdeCuando(RangoDelHistorialVista rango)
-		{
-			if (rango is null || rango.PrimerMes.Length < 7) return "";
-
-			string[] partes = rango.PrimerMes.Split('-');
-			if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return "";
-
-			return $"{Meses[mes - 1]} de {partes[0]}";
-		}
-
-		/// <summary>«enero» desde el aaaa-mm del corte, para «cambió desde enero».</summary>
-		public static string MesLegible(string aaaaMm)
-		{
-			if (aaaaMm is null) return "";
-
-			string[] partes = aaaaMm.Split('-');
-			if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return aaaaMm;
-
-			return Meses[mes - 1];
 		}
 
 		// LA OPORTUNIDAD ARRANCA EN 1 Y NO EN 0, igual que la app: la fila cero es la que ya
@@ -186,26 +166,28 @@ namespace Compras.App.Vistas
 			return meses >= 0 && meses <= 2;
 		}
 
-		private static string Vigencia(PromocionVista promo)
+		private static string Vigencia(PromocionVista promo, Frases.Frases dice)
 		{
-			if (promo.DiasQueQuedan == 0) return "último día";
+			if (promo.DiasQueQuedan == 0) return dice.Diga("portada.ultimoDia");
 
 			if (DateTime.TryParse(promo.ValidaHasta, CultureInfo.InvariantCulture,
 					DateTimeStyles.None, out DateTime hasta))
-				return $"válida hasta el {DiaCorto(hasta)} {hasta.Day}";
+				return dice.Diga("portada.validaHasta",
+					("dia", DiaCorto(hasta, dice)),
+					("numero", hasta.Day.ToString(CultureInfo.InvariantCulture)));
 
-			return $"quedan {promo.DiasQueQuedan} días";
+			return dice.Diga("portada.quedanDias", ("dias", dice.Dias(promo.DiasQueQuedan)));
 		}
 
-		private static string DiaCorto(DateTime cuando) => cuando.DayOfWeek switch
+		private static string DiaCorto(DateTime cuando, Frases.Frases dice) => dice.Diga(cuando.DayOfWeek switch
 		{
-			DayOfWeek.Monday => "lunes",
-			DayOfWeek.Tuesday => "martes",
-			DayOfWeek.Wednesday => "miércoles",
-			DayOfWeek.Thursday => "jueves",
-			DayOfWeek.Friday => "viernes",
-			DayOfWeek.Saturday => "sábado",
-			_ => "domingo",
-		};
+			DayOfWeek.Monday => "portada.dia.lunes",
+			DayOfWeek.Tuesday => "portada.dia.martes",
+			DayOfWeek.Wednesday => "portada.dia.miercoles",
+			DayOfWeek.Thursday => "portada.dia.jueves",
+			DayOfWeek.Friday => "portada.dia.viernes",
+			DayOfWeek.Saturday => "portada.dia.sabado",
+			_ => "portada.dia.domingo",
+		});
 	}
 }

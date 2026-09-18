@@ -10,7 +10,12 @@
     'use strict';
 
     var P = window.Puente;
+    var I = window.Idioma;
     var $ = P.$;
+
+    // LO ESTATICO SE DICE YA, y no en arrancar(): el markup de arriba ya esta parseado cuando este
+    // script corre, y esperar a DOMContentLoaded seria pintar en un idioma para repintar en el otro.
+    I.pintarLoEstatico();
 
     // EL CUERPO DE LA TARJETA, no la tarjeta. La hoja de la institucion espera `card > card-body`
     // -- es de Bootstrap, y `app.css` la pisa para ponerle la sombra y el radio de La Guaria --
@@ -42,27 +47,72 @@
         return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
 
-    var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                 'julio', 'agosto', 'setiembre', 'octubre', 'noviembre', 'diciembre'];
-    var MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    // LOS MESES SALEN DEL CATALOGO, una clave por mes, igual que en la app suelta. Eran dos
+    // arreglos en espanol escritos aca: el nombre del mes es palabra de esta pantalla y no dato del
+    // registro, asi que se traduce.
+    function mesLargo(m) { return I.mesLargo(m || 1); }
 
-    function mesLargo(m) { return MESES[(m || 1) - 1] || ''; }
+    // «enero de 2025» / «January 2025» DESDE EL aaaa-mm QUE MANDA LA SUPERFICIE. El mes lo nombra
+    // esta cara y no ella: la superficie decide QUE se dice y la cara COMO se ve, y un nombre de mes
+    // es lo segundo. Antes lo componia LaPortadaDeLaCara con un arreglo en espanol, que era un
+    // tercer juego de nombres de mes -- el de la app suelta, el de esta cara y ese -- y el unico que
+    // no seguia al idioma.
+    function mesDeAnio(aaaaMm) {
+        var partes = String(aaaaMm || '').split('-');
+        if (partes.length < 2) return String(aaaaMm || '');
+        var m = Number(partes[1]);
+        if (!(m >= 1 && m <= 12)) return String(aaaaMm);
+        return I.con('comun.mesDeAnio', { mes: mesLargo(m), anio: partes[0] });
+    }
 
+    // Y el mes solo, para «cambió desde enero».
+    function soloElMes(aaaaMm) {
+        var partes = String(aaaaMm || '').split('-');
+        if (partes.length < 2) return String(aaaaMm || '');
+        var m = Number(partes[1]);
+        return (m >= 1 && m <= 12) ? mesLargo(m) : String(aaaaMm);
+    }
+
+    // Y EL ORDEN DE LA FECHA TAMBIEN ES DEL IDIOMA -- «12 sep 2026» contra «Sep 12, 2026» --, asi
+    // que la arma una frase con huecos nombrados y no una concatenacion.
     function fecha(iso) {
         if (!iso) return '';
         var d = new Date(iso);
         if (isNaN(d.getTime())) return String(iso).slice(0, 10);
-        return d.getDate() + ' ' + MESES_CORTOS[d.getMonth()] + ' ' + d.getFullYear();
+        return I.con('comun.fechaCorta', {
+            numero: d.getDate(), mes: I.mesCorto(d.getMonth() + 1), anio: d.getFullYear() });
     }
 
     function plural(n, una, varias) { return n === 1 ? una : varias; }
+
+    // CUANTOS DIAS, dicho entero, para que «1 días» no aparezca nunca en ningun idioma.
+    function dias(n) {
+        return n + ' ' + texto(I.texto(plural(n, 'comun.dia', 'comun.dias')));
+    }
+
+    // LA FRASE DEL CATALOGO NO SE ESCAPA, Y ES DELIBERADO. Varias traen marcado propio -- el
+    // <strong class="mk-carrito-cifra"> de la cifra del carrito, el <strong> del ahorro -- porque
+    // estan copiadas enteras de la app suelta, que ya las lleva asi; escaparlas imprimiria las
+    // etiquetas en vez de aplicarlas.
+    //
+    // ES SEGURO PORQUE EL CATALOGO ES NUESTRO: viaja en el bundle y nada del registro pasa por el.
+    // LO QUE VIENE DEL REGISTRO LO ESCAPA QUIEN ARMA EL HUECO, con texto(), en el llamado. Esa es
+    // la linea que hay que respetar al agregar una clave nueva.
+    function frase(clave, huecos) {
+        var dicho = I.texto(clave);
+        for (var hueco in huecos)
+            if (Object.prototype.hasOwnProperty.call(huecos, hueco))
+                dicho = dicho.split('{' + hueco + '}').join(huecos[hueco]);
+        return dicho;
+    }
 
     // EL SIGNO DEL CAMBIO, y el color NO sigue al signo: sigue a lo que significa. En un
     // supermercado gastar MAS es la noticia mala aunque el numero suba, asi que subir va en rojo
     // y bajar en verde -- al reves que en un grafico financiero. Es la misma regla que la app.
     function delta(cambio) {
         var x = Number(cambio);
-        if (!isFinite(x) || x === 0) return '<span class="delta--igual">igual</span>';
+        if (!isFinite(x) || x === 0)
+            return '<span class="delta--igual">' + texto(I.texto('delta.igual')) + '</span>';
         var clase = x > 0 ? 'delta--sube' : 'delta--baja';
         return '<span class="' + clase + '">' + (x > 0 ? '▲' : '▼') + ' ' +
                Math.abs(Math.round(x * 100) / 100) + '%</span>';
@@ -94,16 +144,22 @@
         var envoltorio = $('carrusel-envoltorio');
 
         if (!c || c.hayDatos === false) {
-            cifras.textContent = 'Todavía no hay compras en este dispositivo.';
+            cifras.textContent = I.texto('portada.sinCompras');
             return;
         }
 
-        cifras.textContent = entero(c.cantidad) + ' ' + plural(c.cantidad, 'compra tuya', 'compras tuyas') +
-            (c.desdeCuando ? ' desde ' + c.desdeCuando : '') + ' · ' + colones(c.total);
+        var cuantas = I.con(plural(c.cantidad, 'portada.compraTuya', 'portada.comprasTuyas'),
+                            { cuantas: entero(c.cantidad) });
+
+        cifras.textContent = c.desdeCuando
+            ? I.con('portada.cifrasDesde',
+                    { compras: cuantas, desde: mesDeAnio(c.desdeCuando), total: colones(c.total) })
+            : I.con('portada.cifras', { compras: cuantas, total: colones(c.total) });
 
         $('estado-cambio').textContent = c.cambios > 0
-            ? 'Hay ' + c.cambios + ' ' + plural(c.cambios, 'cambio reciente', 'cambios recientes')
-            : 'Todo como siempre';
+            ? I.con(plural(c.cambios, 'estado.cambioReciente', 'estado.cambiosRecientes'),
+                    { cuantos: c.cambios })
+            : I.texto('estado.sinCambios');
         $('estado-cambio').className = 'lg-home-estado-cambio' +
             (c.cambios > 0 ? '' : ' lg-home-estado-cambio--calmo');
 
@@ -163,8 +219,8 @@
         var montoOtros = otros.reduce(function (s, d) { return s + Number(d.monto || 0); }, 0);
 
         var cuantas = top.length === 1
-            ? 'Tu categoría principal representa'
-            : 'Tus ' + top.length + ' categorías principales representan';
+            ? I.texto('carrito.unaCategoria')
+            : I.con('carrito.variasCategorias', { cuantas: top.length });
 
         function grow(p) { return Math.max(1, Math.round(Number(p || 0) * 1000)); }
 
@@ -172,14 +228,15 @@
         caja.querySelector('.card-body').innerHTML =
             '<div class="mk-carrito-cabeza">' +
                 '<div class="mk-carrito-titulos">' +
-                    '<h2 class="mk-carrito-titulo">En qué se llena tu carrito</h2>' +
-                    '<p class="mk-carrito-periodo">' + texto(mesLargo(k.mes)) + '/' + texto(k.anio) +
-                        ' &middot; ' + colones(k.gastoTotal) + '</p>' +
+                    '<h2 class="mk-carrito-titulo">' + texto(I.texto('carrito.titulo')) + '</h2>' +
+                    '<p class="mk-carrito-periodo">' +
+                        frase('carrito.periodo', { mes: texto(mesLargo(k.mes)), anio: texto(k.anio),
+                                                   monto: colones(k.gastoTotal) }) + '</p>' +
                 '</div>' +
                 '<img class="mk-carrito-ilustracion" src="assets/hero-canasta-3d.png" alt="" aria-hidden="true" />' +
             '</div>' +
-            '<p class="mk-carrito-destacado">' + cuantas +
-                ' el <strong class="mk-carrito-cifra">' + porcentaje(propTop) + '</strong> de tus compras.</p>' +
+            '<p class="mk-carrito-destacado">' +
+                frase('carrito.representan', { cuantas: cuantas, porcentaje: porcentaje(propTop) }) + '</p>' +
             '<div class="mk-carrito-barra" aria-hidden="true">' +
                 top.map(function (d, i) {
                     return '<span class="mk-carrito-segmento mk-carrito-segmento--' + (i + 1) +
@@ -202,7 +259,7 @@
                     ? '<div class="mk-carrito-dato mk-carrito-dato--otros">' +
                       '<span class="mk-carrito-punto mk-carrito-punto--otros" aria-hidden="true"></span>' +
                       '<span class="mk-carrito-dato-texto">' +
-                          '<span class="mk-carrito-dato-nombre">Otros</span>' +
+                          '<span class="mk-carrito-dato-nombre">' + texto(I.texto('carrito.otros')) + '</span>' +
                           '<span class="mk-carrito-dato-cifras">' + colones(montoOtros) + ' &middot; ' +
                               porcentaje(propOtros) + '</span>' +
                       '</span></div>'
@@ -223,14 +280,16 @@
             (h.foto ? '<img class="mk-oportunidad-foto" src="' + texto(h.foto) + '" alt="" />' : '') +
             '<div class="mk-oportunidad-que">' +
                 '<div class="mk-oportunidad-kicker-fila">' +
-                    '<span class="mk-oportunidad-kicker">TU HABITUAL</span>' +
-                    '<span class="mk-oportunidad-badge">MEJOR PRECIO</span>' +
+                    '<span class="mk-oportunidad-kicker">' + texto(I.texto('habitual.kicker')) + '</span>' +
+                    '<span class="mk-oportunidad-badge">' + texto(I.texto('habitual.badge')) + '</span>' +
                 '</div>' +
                 '<strong class="mk-oportunidad-nombre">' + texto(h.descripcion) + '</strong>' +
-                '<div class="mk-oportunidad-precio"><span>Ahora</span><strong>' + colones(h.ahora) + '</strong></div>' +
+                '<div class="mk-oportunidad-precio"><span>' + texto(I.texto('habitual.ahora')) +
+                    '</span><strong>' + colones(h.ahora) + '</strong></div>' +
                 '<div class="mk-oportunidad-ahorro">' +
-                    '<span class="precio-antes">' + colones(h.antes) + '</span> &middot; ' +
-                    '<strong>' + colones(h.ahorro) + ' menos</strong>' +
+                    frase('habitual.ahorro', {
+                        antes: '<span class="precio-antes">' + colones(h.antes) + '</span>',
+                        ahorro: colones(h.ahorro) }) +
                 '</div>' +
             '</div>';
     }
@@ -248,14 +307,17 @@
             '<span class="mk-cambio-que">' +
                 '<span class="mk-cambio-nombre">' +
                     '<strong>' + texto(r.descripcion) + '</strong>' +
-                    '<span class="mk-cambio-pill">CAMBIÓ</span>' +
+                    '<span class="mk-cambio-pill">' + texto(I.texto('rutina.pill')) + '</span>' +
                 '</span>' +
                 '<span class="mk-cambio-linea">' +
                     '<span>' + texto(r.antes) + '</span>' +
                     '<span aria-hidden="true">&rarr;</span>' +
                     '<span>' + texto(r.ahora) + '</span>' +
                 '</span>' +
-                (r.desde ? '<span class="mk-cambio-desde">cambió desde ' + texto(r.desde) + '</span>' : '') +
+                (r.desde
+                    ? '<span class="mk-cambio-desde">' +
+                      frase('rutina.desde', { cuando: texto(soloElMes(r.desde)) }) + '</span>'
+                    : '') +
             '</span>';
     }
 
@@ -268,7 +330,7 @@
         caja.setAttribute('aria-busy', 'false');
 
         if (!c || c.hayDatos === false) {
-            P.apunte(caja, 'Todavía no hay compras en este dispositivo. Apretá Actualizar.');
+            P.apunte(caja, I.con('firma.sinCompras', { buscar: I.texto('boton.buscar') }));
             return;
         }
 
@@ -278,9 +340,9 @@
         var f = c.firma || {}, r = c.rango || {};
         caja.innerHTML =
             (f.paraElAsistente ? '<p class="apunte" style="margin:0 0 12px">' + texto(f.paraElAsistente) + '</p>' : '') +
-            (f.cuantosHabituales ? dato('Productos que siempre vuelven', entero(f.cuantosHabituales)) : '') +
-            (f.comprasMiradas ? dato('Compras miradas para saberlo', entero(f.comprasMiradas)) : '') +
-            (r.mesesConCompras ? dato('Meses con compras', entero(r.mesesConCompras)) : '');
+            (f.cuantosHabituales ? dato(I.texto('firma.habituales'), entero(f.cuantosHabituales)) : '') +
+            (f.comprasMiradas ? dato(I.texto('firma.miradas'), entero(f.comprasMiradas)) : '') +
+            (r.mesesConCompras ? dato(I.texto('firma.meses'), entero(r.mesesConCompras)) : '');
     }
 
     // ---------------------------------------------------------------- el mes
@@ -290,7 +352,7 @@
         caja.setAttribute('aria-busy', 'false');
 
         if (!c || c.hayDatos === false) {
-            P.apunte(caja, 'Todavía no hay un mes cerrado que mirar.');
+            P.apunte(caja, I.texto('mes.sinMes'));
             return;
         }
 
@@ -300,13 +362,13 @@
         // persona que elija un mes seria pedirle que sepa cual tiene datos.
         caja.innerHTML =
             '<p class="mk-titulo" style="margin:0 0 10px">' +
-                texto(mesLargo(m.mes)) + ' de ' + texto(m.anio) + '</p>' +
-            dato('Gasto del mes', colones(m.gastoTotal)) +
-            dato('En comida', colones(m.gastoComestible)) +
-            dato('En lo demás', colones(m.gastoNoComestible)) +
-            dato('Compras', entero(m.cantidadDeCompras)) +
+                frase('comun.mesDeAnio', { mes: texto(mesLargo(m.mes)), anio: texto(m.anio) }) + '</p>' +
+            dato(I.texto('mes.gasto'), colones(m.gastoTotal)) +
+            dato(I.texto('mes.comida'), colones(m.gastoComestible)) +
+            dato(I.texto('mes.resto'), colones(m.gastoNoComestible)) +
+            dato(I.texto('mes.compras'), entero(m.cantidadDeCompras)) +
             (anterior.hayComparacion
-                ? dato('Contra el mes anterior', delta(anterior.cambio),
+                ? dato(I.texto('mes.contraAnterior'), delta(anterior.cambio),
                        '<span class="apunte" style="font-weight:400"> · ' + colones(anterior.gastoAntes) + '</span>')
                 : '') +
             // LA FRASE ES `paraElAsistente`, NO `corte`. `Corte` es el mes por el que se partió el
@@ -334,30 +396,34 @@
         var html = '';
 
         if (r.esObservado && r.diasEntreCompras)
-            html += '<p class="apunte" style="margin:0 0 12px">Vas al súper cada <b>' +
-                    entero(r.diasEntreCompras) + '</b> ' +
-                    plural(r.diasEntreCompras, 'día', 'días') + ', sobre ' +
-                    entero(r.comprasMiradas) + ' compras.</p>';
+            html += '<p class="apunte" style="margin:0 0 12px">' +
+                    frase('movimientos.ritmo', {
+                        cada: entero(r.diasEntreCompras),
+                        dias: texto(I.texto(plural(r.diasEntreCompras, 'comun.dia', 'comun.dias'))),
+                        miradas: entero(r.comprasMiradas) }) + '</p>';
 
         if (precios.length) {
-            html += '<p class="mk-titulo" style="margin:4px 0 6px">Precios que se movieron</p>';
+            html += '<p class="mk-titulo" style="margin:4px 0 6px">' +
+                    texto(I.texto('movimientos.precios')) + '</p>';
             precios.slice(0, 8).forEach(function (p) {
                 html += dato(p.descripcion,
                     colones(p.ahora),
-                    '<span class="apunte" style="font-weight:400"> · antes ' + colones(p.antes) + '</span>');
+                    '<span class="apunte" style="font-weight:400">' +
+                    frase('movimientos.antes', { antes: colones(p.antes) }) + '</span>');
             });
         }
 
         if (ritmos.length) {
-            html += '<p class="mk-titulo" style="margin:14px 0 6px">Ritmos que cambiaron</p>';
+            html += '<p class="mk-titulo" style="margin:14px 0 6px">' +
+                    texto(I.texto('movimientos.ritmos')) + '</p>';
             ritmos.slice(0, 8).forEach(function (x) {
                 html += '<div class="dato"><span>' + texto(x.descripcion) + '</span><b>' +
-                        texto(x.ahora) + '<span class="apunte" style="font-weight:400"> · antes ' +
-                        texto(x.antes) + '</span></b></div>';
+                        texto(x.ahora) + '<span class="apunte" style="font-weight:400">' +
+                        frase('movimientos.antes', { antes: texto(x.antes) }) + '</span></b></div>';
             });
         }
 
-        if (!html) html = '<p class="apunte">Nada se movió: tus precios y tus ritmos vienen iguales.</p>';
+        if (!html) html = '<p class="apunte">' + texto(I.texto('movimientos.nada')) + '</p>';
         caja.innerHTML = html;
     }
 
@@ -372,7 +438,8 @@
         var html = '';
 
         if (lista.existe && lista.cuantosTocan) {
-            html += '<p class="mk-titulo" style="margin:0 0 6px">Tu próxima compra</p>';
+            html += '<p class="mk-titulo" style="margin:0 0 6px">' +
+                    texto(I.texto('proxima.lista')) + '</p>';
             if (lista.paraElAsistente)
                 html += '<p class="apunte" style="margin:0 0 10px">' + texto(lista.paraElAsistente) + '</p>';
             (lista.productos || []).slice(0, 10).forEach(function (x) {
@@ -385,11 +452,13 @@
         // La pantalla no puede renderizar una ausencia que nadie le paso -- se la pasa el
         // dominio.
         if (faltan.length) {
-            html += '<p class="mk-titulo" style="margin:14px 0 6px">Hace rato que no comprás</p>';
+            html += '<p class="mk-titulo" style="margin:14px 0 6px">' +
+                    texto(I.texto('proxima.faltan')) + '</p>';
             faltan.slice(0, 8).forEach(function (a) {
-                html += dato(a.titulo, entero(a.diasDesdeLaUltima) + ' días',
+                html += dato(a.titulo, dias(a.diasDesdeLaUltima),
                     a.esRitmoObservado && a.diasEsperados
-                        ? '<span class="apunte" style="font-weight:400"> · solés cada ' + entero(a.diasEsperados) + '</span>'
+                        ? '<span class="apunte" style="font-weight:400">' +
+                          frase('proxima.soles', { cada: entero(a.diasEsperados) }) + '</span>'
                         : '');
             });
         }
@@ -398,17 +467,21 @@
         // servidas por el super, y esta cara no sale a la red. Lo que queda es lo que el dominio
         // sabe: el gancho y hasta cuando vale.
         if (promos.length) {
-            html += '<p class="mk-titulo" style="margin:14px 0 6px">Puede interesarte</p>';
+            html += '<p class="mk-titulo" style="margin:14px 0 6px">' +
+                    texto(I.texto('proxima.promos')) + '</p>';
             promos.slice(0, 6).forEach(function (x) {
                 html += '<div class="dato"><span>' + texto(x.gancho) +
                         (x.detalle ? '<br><span class="apunte">' + texto(x.detalle) + '</span>' : '') +
                         '</span><b class="apunte" style="font-weight:600">' +
-                        (x.validaHasta ? 'hasta ' + texto(x.validaHasta) : '') + '</b></div>';
+                        (x.validaHasta
+                            ? frase('proxima.hasta', { cuando: texto(x.validaHasta) }) : '') +
+                        '</b></div>';
             });
         }
 
         if (garantias.length) {
-            html += '<p class="mk-titulo" style="margin:14px 0 6px">Garantías vigentes</p>';
+            html += '<p class="mk-titulo" style="margin:14px 0 6px">' +
+                    texto(I.texto('proxima.garantias')) + '</p>';
             garantias.slice(0, 6).forEach(function (g) {
                 html += dato(g.descripcion, fecha(g.fechaDeCompra),
                     g.numeroDeCompra ? '<span class="apunte mono" style="font-weight:400"> · ' +
@@ -416,7 +489,7 @@
             });
         }
 
-        if (!html) html = '<p class="apunte">Nada pendiente: ni lista, ni reposiciones, ni garantías por vencer.</p>';
+        if (!html) html = '<p class="apunte">' + texto(I.texto('proxima.nada')) + '</p>';
         caja.innerHTML = html;
     }
 
@@ -428,7 +501,7 @@
 
         var filas = (r && (r.compras || r.lista)) || (Array.isArray(r) ? r : []);
         if (!filas.length) {
-            P.apunte(caja, 'Ninguna compra todavía.');
+            P.apunte(caja, I.texto('compras.ninguna'));
             return;
         }
 
@@ -452,22 +525,27 @@
         // LA PORTADA PRIMERO, y en una sola vuelta: el carrusel, la franja de cifras, el renglon
         // de estado, la rutina, el carrito y el habitual salen todos de la MISMA lectura. Partirlo
         // en seis pedidos serian seis saltos del puente para pintar una pantalla.
-        P.pedir('portada').then(pintarPortada)
+        // EL IDIOMA VIAJA CON CADA PREGUNTA. La superficie no tiene navegador -- corre en proceso
+        // adentro de Gnothi -- y esta cara si lo es, y ya negocio con el aparato; asi que se lo
+        // dice. Sin esto la pantalla quedaba en ingles con las frases del dominio en espanol.
+        var lengua = { idioma: I.etiqueta };
+
+        P.pedir('portada', lengua).then(pintarPortada)
             .catch(function (e) { $('cifras').textContent = e.message; });
 
-        P.pedir('cabecera').then(pintarFirma)
+        P.pedir('cabecera', lengua).then(pintarFirma)
             .catch(function (e) { P.apunte(cuerpo('firma'), e.message, true); });
 
-        P.pedir('canasta').then(pintarMes)
+        P.pedir('canasta', lengua).then(pintarMes)
             .catch(function (e) { P.apunte(cuerpo('mes'), e.message, true); });
 
-        P.pedir('movimientos').then(pintarMovimientos)
+        P.pedir('movimientos', lengua).then(pintarMovimientos)
             .catch(function (e) { P.apunte(cuerpo('movimientos'), e.message, true); });
 
-        P.pedir('proxima').then(pintarProxima)
+        P.pedir('proxima', lengua).then(pintarProxima)
             .catch(function (e) { P.apunte(cuerpo('proxima'), e.message, true); });
 
-        P.pedir('compras').then(pintarCompras)
+        P.pedir('compras', lengua).then(pintarCompras)
             .catch(function (e) { P.apunte(cuerpo('compras'), e.message, true); });
     }
 
@@ -477,14 +555,14 @@
         b.disabled = true;
         chico.disabled = true;
         b.setAttribute('aria-busy', 'true');
-        b.textContent = 'Buscando…';
+        b.textContent = I.texto('boton.buscando');
 
         P.refrescar(contar).then(function (r) {
             if (r) pintarTodo();
             b.disabled = false;
             chico.disabled = false;
             b.setAttribute('aria-busy', 'false');
-            b.textContent = 'Buscar compras nuevas';
+            b.textContent = I.texto('boton.buscar');
         });
     }
 
