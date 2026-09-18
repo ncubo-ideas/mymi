@@ -18,7 +18,7 @@ namespace Examenes.Dominio
 		{
 		}
 
-		internal override string Nombre => Suyo.ParaMostrar;
+		internal override string Clave => Suyo.Clave;
 
 		// Piso Y TECHO: alejarse es peor en las dos direcciones, igual que en la hemoglobina
 		// y al reves del colesterol.

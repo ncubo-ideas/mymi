@@ -142,7 +142,7 @@ namespace Examenes.Consola
 			Console.WriteLine();
 			Console.WriteLine("-- el mismo salto en UN DIA es otra cosa --");
 			diario.Aplicar(RutaDeExamenes.Rutear(Muestras.SaltoInverosimil()));
-			TendenciaDeAnalito conSalto = api.Tendencia(Muestras.AnalitoDelColesterol);
+			TendenciaDeAnalito conSalto = api.Tendencia(Muestras.AnalitoDelColesterol, ExamenesAPI.IdiomaDelRegistro);
 			Console.WriteLine($"colesterol tras el salto    : {conSalto.Tendencia}");
 			Console.WriteLine($"sugiere repetir el examen   : {conSalto.SugiereRepetirElExamen}");
 
@@ -171,11 +171,11 @@ namespace Examenes.Consola
 		// respuesta es otra, y las dos son distintas de "no hay datos de eso".
 		private static void ImprimirElSexo(ExamenesAPI api)
 		{
-			FaltaElSexoDelPaciente pedido = api.PedidoDeSexo();
-			InterpretacionDeAnalito antigeno = api.Interpretacion(Muestras.AnalitoDelAntigeno);
-			InterpretacionDeAnalito hemoglobina = api.Interpretacion("Hemoglobina");
+			FaltaElSexoDelPaciente pedido = api.PedidoDeSexo(ExamenesAPI.IdiomaDelRegistro);
+			InterpretacionDeAnalito antigeno = api.Interpretacion(Muestras.AnalitoDelAntigeno, ExamenesAPI.IdiomaDelRegistro);
+			InterpretacionDeAnalito hemoglobina = api.Interpretacion("Hemoglobina", ExamenesAPI.IdiomaDelRegistro);
 
-			LoQueEstaBien enRango = api.LoQueEstaEnRango();
+			LoQueEstaBien enRango = api.LoQueEstaEnRango(ExamenesAPI.IdiomaDelRegistro);
 
 			Console.WriteLine($"    sexo                      : {api.SexoDelPaciente()}");
 			Console.WriteLine($"    analitos con historia     : {string.Join(", ", api.Analitos())}");
@@ -213,7 +213,7 @@ namespace Examenes.Consola
 			// los controles: verifica que la proyeccion del DSL trae algo. Una llave mal
 			// puesta en el print devuelve vacio, y vacio se ve igual que "no hay nada que
 			// hacer" — que es justo la respuesta que no se puede confundir.
-			LoMasUrgente urgente = api.Urgente();
+			LoMasUrgente urgente = api.Urgente(ExamenesAPI.IdiomaDelRegistro);
 			Console.WriteLine($"lo mas urgente              : {urgente.Severidad}"
 				+ (urgente.PideAlgo ? $" - {urgente.Accion}" : " (no pide nada)"));
 
@@ -221,7 +221,7 @@ namespace Examenes.Consola
 			// promete —el conteo de lo que esta en rango arriba, y lo que pide algo al
 			// lado— y hasta ahora solo se podia mirar en el browser. Van pegados porque se
 			// leen juntos: cada uno solo dice media cosa.
-			LoQueEstaBien enRango = api.LoQueEstaEnRango();
+			LoQueEstaBien enRango = api.LoQueEstaEnRango(ExamenesAPI.IdiomaDelRegistro);
 			string conteo = $"{enRango.EnSuRango} de {enRango.Analitos}";
 			Console.WriteLine($"lo que esta en rango        : {conteo}"
 				+ (enRango.HayAlgo ? $" - {enRango.ParaSonia}" : " (nada que afirmar todavia)"));
@@ -257,9 +257,9 @@ namespace Examenes.Consola
 			// UNA QUE SE MOVIO Y UNA QUE NO. El colesterol de Sonia sube 30 mg/dL en dos
 			// anos y la hemoglobina se mueve 0.3 g/dL en el mismo tramo: si las dos dieran
 			// "en ascenso", el umbral por analito no estaria haciendo nada.
-			bool colesterolOk = api.Tendencia(Muestras.AnalitoDelColesterol).Tendencia
+			bool colesterolOk = api.Tendencia(Muestras.AnalitoDelColesterol, ExamenesAPI.IdiomaDelRegistro).Tendencia
 				== Muestras.TendenciaEsperadaDelColesterol;
-			bool hemoglobinaOk = api.Tendencia(Muestras.AnalitoDeLaHemoglobina).Tendencia
+			bool hemoglobinaOk = api.Tendencia(Muestras.AnalitoDeLaHemoglobina, ExamenesAPI.IdiomaDelRegistro).Tendencia
 				== Muestras.TendenciaEsperadaDeLaHemoglobina;
 			Console.WriteLine($"TENDENCIAS CORRECTAS        : {colesterolOk && hemoglobinaOk}");
 		}
@@ -269,7 +269,7 @@ namespace Examenes.Consola
 		// decide nada; si la grilla sale mal, esta mal el dominio.
 		private static void ImprimirCuadro(ExamenesAPI api)
 		{
-			IReadOnlyList<CeldaEnCuadro> celdas = api.Cuadro();
+			IReadOnlyList<CeldaEnCuadro> celdas = api.Cuadro(ExamenesAPI.IdiomaDelRegistro);
 			if (celdas.Count == 0) { Console.WriteLine("  (sin examenes)"); return; }
 
 			int filas = 0, columnas = 0;
@@ -311,7 +311,7 @@ namespace Examenes.Consola
 		// guion.
 		private static void ImprimirControles(ExamenesAPI api)
 		{
-			IReadOnlyList<ControlEnEspera> controles = api.Controles(FechaDeCorte);
+			IReadOnlyList<ControlEnEspera> controles = api.Controles(FechaDeCorte, ExamenesAPI.IdiomaDelRegistro);
 			if (controles.Count == 0) { Console.WriteLine("  (sin analitos con historia)"); return; }
 
 			foreach (ControlEnEspera c in controles)
@@ -335,9 +335,9 @@ namespace Examenes.Consola
 		{
 			foreach (string analito in api.Analitos())
 			{
-				InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+				InterpretacionDeAnalito lectura = api.Interpretacion(analito, ExamenesAPI.IdiomaDelRegistro);
 				IReadOnlyList<PuntoDeSerie> puntos = api.Puntos(analito);
-				IReadOnlyList<LineaDeReferencia> lineas = api.Referencias(analito);
+				IReadOnlyList<LineaDeReferencia> lineas = api.Referencias(analito, ExamenesAPI.IdiomaDelRegistro);
 
 				var valores = new List<string>();
 				foreach (PuntoDeSerie p in puntos) valores.Add(Formato(p.Valor));
@@ -346,13 +346,13 @@ namespace Examenes.Consola
 				// otra puerta -Pruebas en vez de Puntos- porque no devuelven lo mismo, y se
 				// pintan como lo que son: una tira de si y de no. Son DOS de las tres formas
 				// las que no traen numeros; la tercera esta abajo.
-				foreach (PruebaEnSerie prueba in api.Pruebas(analito))
+				foreach (PruebaEnSerie prueba in api.Pruebas(analito, ExamenesAPI.IdiomaDelRegistro))
 					valores.Add(prueba.EsPositivo ? "●" : "○");
 
 				// Y LOS NOMINALES TAMPOCO: tienen categorias. Tercera puerta, por la misma
 				// razon que la segunda -un color no tiene ValorNumerico ni un si o un no-,
 				// y se pintan diciendo cual salio, que es el hecho.
-				foreach (ObservacionEnSerie observacion in api.Observaciones(analito))
+				foreach (ObservacionEnSerie observacion in api.Observaciones(analito, ExamenesAPI.IdiomaDelRegistro))
 					valores.Add(observacion.EsEsperable
 						? observacion.Expresado
 						: $"[{observacion.Expresado}]");
@@ -371,7 +371,7 @@ namespace Examenes.Consola
 			// ceros. Se lee por su propia puerta: cuantas pruebas, cuantas dieron positivas
 			// y cuantas SEGUIDAS, que es lo que cambia la conducta. Son TRES puertas y no
 			// dos: la tercera, abajo, es la de los nominales.
-			if (api.Interpretacion(analito).Forma == FormaDePresencia)
+			if (api.Interpretacion(analito, ExamenesAPI.IdiomaDelRegistro).Forma == FormaDePresencia)
 			{
 				ImprimirPresencia(api, analito);
 				return;
@@ -381,13 +381,13 @@ namespace Examenes.Consola
 			// categoria salio y si volvio a lo esperable. Antes de que los colores formaran
 			// serie caian por la puerta continua, y salian como una tendencia "no aplica"
 			// con un valor cero y sin unidad: la carencia estaba aca, no en el dominio.
-			if (api.Interpretacion(analito).Forma == FormaDeCategoria)
+			if (api.Interpretacion(analito, ExamenesAPI.IdiomaDelRegistro).Forma == FormaDeCategoria)
 			{
 				ImprimirConstancia(api, analito);
 				return;
 			}
 
-			TendenciaDeAnalito t = api.Tendencia(analito);
+			TendenciaDeAnalito t = api.Tendencia(analito, ExamenesAPI.IdiomaDelRegistro);
 
 			// La frase la arma la SUPERFICIE con los hechos del dominio. El dominio no
 			// devuelve prosa, y por eso no puede devolver un consejo de plantilla.
@@ -402,7 +402,7 @@ namespace Examenes.Consola
 			// La LECTURA la da el analito, no esta caratula. Antes esta funcion decidia
 			// que imprimir mirando un bool generico; ahora solo muestra lo que el analito
 			// concluyo, incluida la accion.
-			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+			InterpretacionDeAnalito lectura = api.Interpretacion(analito, ExamenesAPI.IdiomaDelRegistro);
 			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");
 			if (lectura.PideAlgo)
 				Console.WriteLine($"  {"",-22} ^ {lectura.Severidad} - {lectura.Accion}");
@@ -410,7 +410,7 @@ namespace Examenes.Consola
 			// La velocidad solo se dice donde significa algo. Que el colesterol no la
 			// muestre no es un hueco de la caratula: es el analito contestando que no se
 			// interpreta asi.
-			VelocidadDeAnalito v = api.Velocidad(analito);
+			VelocidadDeAnalito v = api.Velocidad(analito, ExamenesAPI.IdiomaDelRegistro);
 			if (!v.EsAplicable) return;
 
 			Console.WriteLine($"  {"",-22} ritmo: {v.Expresada} (tramo de {v.Dias} dias, umbral {Formato(v.Umbral)})");
@@ -428,10 +428,10 @@ namespace Examenes.Consola
 		// puede mostrar, y es la razon de que estas series existan.
 		private static void ImprimirPresencia(ExamenesAPI api, string analito)
 		{
-			PresenciaDeAnalito p = api.Presencia(analito);
+			PresenciaDeAnalito p = api.Presencia(analito, ExamenesAPI.IdiomaDelRegistro);
 
 			var tira = new List<string>();
-			foreach (PruebaEnSerie prueba in api.Pruebas(analito))
+			foreach (PruebaEnSerie prueba in api.Pruebas(analito, ExamenesAPI.IdiomaDelRegistro))
 				tira.Add(prueba.EsPositivo ? "●" : "○");
 
 			string relato = p.HaySerie
@@ -440,7 +440,7 @@ namespace Examenes.Consola
 
 			Console.WriteLine($"  {p.ParaMostrar,-22} {p.Presencia,-20} {relato}");
 
-			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+			InterpretacionDeAnalito lectura = api.Interpretacion(analito, ExamenesAPI.IdiomaDelRegistro);
 			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");
 			if (lectura.PideAlgo)
 				Console.WriteLine($"  {"",-22} ^ {lectura.Severidad} - {lectura.Accion}");
@@ -450,10 +450,10 @@ namespace Examenes.Consola
 		// observacion sola puede mostrar, y es la razon de que estas series existan.
 		private static void ImprimirConstancia(ExamenesAPI api, string analito)
 		{
-			ConstanciaDeAnalito c = api.Constancia(analito);
+			ConstanciaDeAnalito c = api.Constancia(analito, ExamenesAPI.IdiomaDelRegistro);
 
 			var tira = new List<string>();
-			foreach (ObservacionEnSerie observacion in api.Observaciones(analito))
+			foreach (ObservacionEnSerie observacion in api.Observaciones(analito, ExamenesAPI.IdiomaDelRegistro))
 				tira.Add(observacion.EsEsperable
 					? observacion.Expresado
 					: $"[{observacion.Expresado}]");
@@ -464,7 +464,7 @@ namespace Examenes.Consola
 
 			Console.WriteLine($"  {c.ParaMostrar,-22} {c.Constancia,-20} {relato}");
 
-			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+			InterpretacionDeAnalito lectura = api.Interpretacion(analito, ExamenesAPI.IdiomaDelRegistro);
 			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");
 			if (lectura.PideAlgo)
 				Console.WriteLine($"  {"",-22} ^ {lectura.Severidad} - {lectura.Accion}");
@@ -509,7 +509,7 @@ namespace Examenes.Consola
 			ExamenesApp app = Abrir(carpeta);
 			var api = new ExamenesAPI(app);
 
-			VelocidadDeAnalito v = api.Velocidad(analito);
+			VelocidadDeAnalito v = api.Velocidad(analito, ExamenesAPI.IdiomaDelRegistro);
 			Console.WriteLine($"analito   : {v.Analito}");
 			Console.WriteLine($"ritmo     : {v.Expresada}");
 			Console.WriteLine($"tramo     : {v.Dias} dias");

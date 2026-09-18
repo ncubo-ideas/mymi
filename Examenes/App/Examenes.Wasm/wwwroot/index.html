@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<!-- SIN lang ESCRITO A MANO: el documento se sirve igual para los dos idiomas, asi que una
+     etiqueta fija seria falsa para la mitad de quienes lo abren. La pone arranque-idioma.js
+     antes de que haya Blazor, y la confirma Textos despues de negociar con el dispositivo. -->
+<html>
 
 <head>
     <meta charset="utf-8" />
@@ -7,6 +10,10 @@
     <title>Mis exámenes · Laboratorio Clínico Delfos</title>
     <meta name="theme-color" content="#0e2f55" />
     <base href="/app/" />
+    <!-- LO QUE SE VE ANTES DE QUE HAYA CATALOGO: el titulo y el canal de fallos. Se negocia
+         aca, con la misma regla que Textos, porque estas dos superficies se pintan antes de
+         que el catalogo llegue -y la del fallo, justamente cuando ya no va a llegar-. -->
+    <script src="arranque-idioma.js"></script>
     <!-- CERO WEBFONTS: Georgia y Segoe UI son de sistema. Con un payload sin trimming
          de ~35 MB, no agregar descargas de fuentes es deliberado. -->
     <link rel="stylesheet" href="css/app.css" />
@@ -27,9 +34,9 @@
     </div>
 
     <div id="blazor-error-ui">
-        Ocurrió un error inesperado.
+        <span class="frase">Ocurrió un error inesperado.</span>
         <a href="." class="reload">Recargar</a>
-        <span class="dismiss">🗙</span>
+        <span class="dismiss" aria-label="Descartar este aviso">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>

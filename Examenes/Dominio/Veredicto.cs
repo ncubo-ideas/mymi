@@ -58,7 +58,7 @@ namespace Examenes.Dominio
 		// El cambio es demasiado grande para el tiempo transcurrido. No es un hallazgo
 		// clinico: es una medicion que hay que repetir.
 		internal static readonly Veredicto ProbableErrorDeMedicion =
-			new Veredicto("probable error de medicion");
+			new Veredicto("probable-error-de-medicion");
 
 		// HUBO un pico, se repitio el examen a los pocos dias, y el valor volvio a lo de
 		// siempre. El pico NO ERA. Es buena noticia, y merece nombre propio porque sin el
@@ -67,7 +67,7 @@ namespace Examenes.Dominio
 		//
 		// Alvaro: "pasó de 3 a casi 4, y cuando lo vuelve a medir pasa otra vez a 3. Ahí al
 		// médico esa segunda lectura le sirve."
-		internal static readonly Veredicto PicoNoConfirmado = new Veredicto("pico no confirmado");
+		internal static readonly Veredicto PicoNoConfirmado = new Veredicto("pico-no-confirmado");
 
 		// APARECIO UN HALLAZGO BINARIO, se repitio la prueba, y no volvio a aparecer. Es
 		// el hermano de PicoNoConfirmado para la forma 5, y son DOS y no uno porque no
@@ -79,7 +79,7 @@ namespace Examenes.Dominio
 		// que aparecio una vez se sigue leyendo como "buscá atención médica pronto" para
 		// siempre.
 		internal static readonly Veredicto HallazgoNoConfirmado =
-			new Veredicto("hallazgo no confirmado");
+			new Veredicto("hallazgo-no-confirmado");
 
 		// ------------------------------------------------- los dos de la aplicabilidad
 		//
@@ -90,7 +90,7 @@ namespace Examenes.Dominio
 		// ESTE ANALITO NO LE CORRESPONDE A ESTA PERSONA. La tarjeta no existe, y la tool
 		// MCP contesta esto en vez de un valor. Es lo que distingue esta correccion de un
 		// filtro de pantalla: si la tool devolviera el numero, el dominio no cambio.
-		internal static readonly Veredicto NoAplica = new Veredicto("no aplica");
+		internal static readonly Veredicto NoAplica = new Veredicto("no-aplica");
 
 		// NO SE PUEDE INTERPRETAR HASTA SABER EL SEXO. El valor medido se muestra igual
 		// —el laboratorio lo midio— y lo que se retiene es la lectura, porque es lo que el
@@ -100,8 +100,12 @@ namespace Examenes.Dominio
 		// Indeterminado ("una sola medicion") se resuelve esperando el proximo examen;
 		// este SE RESUELVE AHORA, en dos toques. Por eso la superficie insiste con uno y
 		// no con el otro.
-		internal static readonly Veredicto RequiereSexo = new Veredicto("requiere sexo");
+		internal static readonly Veredicto RequiereSexo = new Veredicto("requiere-sexo");
 
+		/// <summary>
+		/// EL CODIGO de este veredicto: identidad, y lo unico que cruza el wire. Como se dice lo busca con este
+		/// codigo la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
 
 		private Veredicto(string nombre)

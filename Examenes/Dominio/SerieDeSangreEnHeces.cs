@@ -39,33 +39,28 @@ namespace Examenes.Dominio
 			if (!HayMediciones) return Interpretacion.SinSerie(hechos);
 			if (!hechos.HaySerie)
 				return new Interpretacion(Veredicto.Indeterminado,
-					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos,
+					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ClaveDeLaFrase, hechos,
 					Ultima.Resultado.AccionDelHallazgo);
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NuncaAparecio))
 				return new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-					$"en las {hechos.CantidadDeMediciones} pruebas que te hiciste nunca "
-					+ "apareció sangre en las heces", hechos);
+					"lectura.sangre-en-heces.nunca-aparecio", hechos);
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.Persiste))
 				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					$"la sangre en las heces apareció en las {hechos.PositivasSeguidas} pruebas "
-					+ "seguidas: ya no es un resultado suelto", hechos,
+					"lectura.sangre-en-heces.persiste", hechos,
 					Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.Aparecio))
 				return new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-					"apareció sangre en las heces por primera vez; muchas veces se debe a "
-					+ "algo común", hechos, Accion.RepetirElExamen(Plazo.EsteMes));
+					"lectura.sangre-en-heces.aparecio", hechos, Accion.RepetirElExamen(Plazo.EsteMes));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NoConfirmado))
 				return new Interpretacion(Veredicto.HallazgoNoConfirmado, Severidad.Informativo,
-					"una vez apareció sangre en las heces y en la prueba siguiente ya no "
-					+ "estaba", hechos);
+					"lectura.sangre-en-heces.no-confirmado", hechos);
 
 			return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-				$"la sangre en las heces apareció {hechos.Positivas} veces y en la última "
-				+ "ya no está", hechos);
+					"lectura.sangre-en-heces.cedio", hechos);
 		}
 	}
 }

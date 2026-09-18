@@ -36,12 +36,18 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private readonly HttpClient http;
 	private readonly ConfiguracionDelProveedor proveedor;
 
+	// EN QUE IDIOMA LE PREGUNTA ESTA PANTALLA A LA PUERTA: el que la persona eligio en su
+	// dispositivo, negociado una vez al arrancar. La puerta no lo adivina y el dominio no lo
+	// conoce -- una frase es texto de presentacion y el idioma se elige aca.
+	private readonly Textos textos;
+
 	private ExamenesApp? app;
 	private ExamenesAPI? api;
 	private BucleDeRefresh? bucle;
 
-	public EstadoDeLaApp(PuenteDeJournal puente, ModoDeLaApp modo, ConfiguracionDeGnothi gnothi, PuenteDeGnothi puenteDeGnothi, AlmacenDeCredencial almacen, HttpClient http, ConfiguracionDelProveedor proveedor)
+	public EstadoDeLaApp(PuenteDeJournal puente, ModoDeLaApp modo, ConfiguracionDeGnothi gnothi, PuenteDeGnothi puenteDeGnothi, AlmacenDeCredencial almacen, HttpClient http, ConfiguracionDelProveedor proveedor, Textos textos)
 	{
+		ArgumentNullException.ThrowIfNull(textos);
 		ArgumentNullException.ThrowIfNull(puente);
 		ArgumentNullException.ThrowIfNull(modo);
 		ArgumentNullException.ThrowIfNull(gnothi);
@@ -57,6 +63,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		this.almacen = almacen;
 		this.http = http;
 		this.proveedor = proveedor;
+		this.textos = textos;
 	}
 
 	public bool EstaArriba => app is not null;
@@ -438,7 +445,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		return tool switch
 		{
 			ConsultasDelModulo.Resumen => ConsultasDelModulo.HacerResumen(api!),
-			ConsultasDelModulo.ListaDeExamenes => ConsultasDelModulo.HacerListaDeExamenes(api!),
+			ConsultasDelModulo.ListaDeExamenes =>
+				ConsultasDelModulo.HacerListaDeExamenes(api!, ExamenesAPI.IdiomaDelRegistro),
 			_ => throw new ArgumentException($"El módulo no atiende la tool '{tool}'."),
 		};
 	}
@@ -515,7 +523,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	// ---------------------------------------------------------------- consultas
 
-	public IReadOnlyList<ExamenEnLista> Examenes() { Exigir(); return api!.Examenes(); }
+	public IReadOnlyList<ExamenEnLista> Examenes() { Exigir(); return api!.Examenes(textos.Idioma); }
 
 	// Los analitos de los que hay historia. Es lo que la pantalla recorre para mostrar
 	// una lectura por serie, sin conocer las clases del dominio.
@@ -532,21 +540,21 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public IReadOnlyList<LineaDeReferencia> Referencias(string analito)
 	{
 		Exigir();
-		return api!.Referencias(analito);
+		return api!.Referencias(analito, textos.Idioma);
 	}
 
 	// EL CUADRO HISTORICO, plano. La pantalla lo rearma; el dominio decidio que va donde.
-	public IReadOnlyList<CeldaEnCuadro> Cuadro() { Exigir(); return api!.Cuadro(); }
+	public IReadOnlyList<CeldaEnCuadro> Cuadro() { Exigir(); return api!.Cuadro(textos.Idioma); }
 
 	// LO QUE EL ANALITO CONCLUYE. La pantalla ya no arma el consejo: lo pide.
 	public InterpretacionDeAnalito Interpretacion(string analito)
 	{
 		Exigir();
-		return api!.Interpretacion(analito);
+		return api!.Interpretacion(analito, textos.Idioma);
 	}
 
 	// LA consulta que justifica la app. No es el ultimo valor: es la lectura de la serie.
-	public TendenciaDeAnalito Tendencia(string analito) { Exigir(); return api!.Tendencia(analito); }
+	public TendenciaDeAnalito Tendencia(string analito) { Exigir(); return api!.Tendencia(analito, textos.Idioma); }
 
 	// A QUE RITMO viene cambiando. Es otra pregunta que la tendencia y mira otro tramo: la
 	// tendencia mira la serie entera, la velocidad mira el mas reciente. Estaba tipada en
@@ -556,10 +564,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// La consulta es TOTAL: se le puede preguntar a cualquier analito y contesta "no
 	// aplica" donde no corresponde -hoy la velocidad solo existe en el antigeno-, asi que
 	// la pantalla no tiene que saber cual la tiene.
-	public VelocidadDeAnalito Velocidad(string analito) { Exigir(); return api!.Velocidad(analito); }
+	public VelocidadDeAnalito Velocidad(string analito) { Exigir(); return api!.Velocidad(analito, textos.Idioma); }
 
 	// La pregunta con la que se abre la app. Ver ExamenesAPI.LoMasUrgente.
-	public LoMasUrgente Urgente() { Exigir(); return api!.Urgente(); }
+	public LoMasUrgente Urgente() { Exigir(); return api!.Urgente(textos.Idioma); }
 
 	// ---------------------------------------------------------------- el sexo
 
@@ -584,27 +592,27 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	// EL DATO QUE FALTA, ya contado y ya dicho por el dominio. La pantalla pone los dos
 	// botones; el texto, el conteo y la severidad vienen de aca.
-	public FaltaElSexoDelPaciente PedidoDeSexo() { Exigir(); return api!.PedidoDeSexo(); }
+	public FaltaElSexoDelPaciente PedidoDeSexo() { Exigir(); return api!.PedidoDeSexo(textos.Idioma); }
 
 	// LOS BINARIOS SE LEEN POR OTRA PUERTA. Un nitrito no tiene tendencia ni puntos con
 	// numero: tiene presencias en fechas. Son dos consultas y no una porque no devuelven
 	// lo mismo, igual que en el dominio.
-	public PresenciaDeAnalito Presencia(string analito) { Exigir(); return api!.Presencia(analito); }
+	public PresenciaDeAnalito Presencia(string analito) { Exigir(); return api!.Presencia(analito, textos.Idioma); }
 
-	public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) { Exigir(); return api!.Pruebas(analito); }
+	public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) { Exigir(); return api!.Pruebas(analito, textos.Idioma); }
 
 	// Y LOS NOMINALES POR UNA TERCERA. Un color no tiene tendencia ni un si o un no: tiene
 	// una categoria por fecha, y lo que se puede leer de la serie es si volvio a lo
 	// esperable.
-	public ConstanciaDeAnalito Constancia(string analito) { Exigir(); return api!.Constancia(analito); }
+	public ConstanciaDeAnalito Constancia(string analito) { Exigir(); return api!.Constancia(analito, textos.Idioma); }
 
-	public IReadOnlyList<ObservacionEnSerie> Observaciones(string analito) { Exigir(); return api!.Observaciones(analito); }
+	public IReadOnlyList<ObservacionEnSerie> Observaciones(string analito) { Exigir(); return api!.Observaciones(analito, textos.Idioma); }
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeExamenes(); }
 
 	public int AnalitosFueraDeRango() { Exigir(); return api!.AnalitosFueraDeRango(); }
 
-	public LoQueEstaBien LoQueEstaEnRango() { Exigir(); return api!.LoQueEstaEnRango(); }
+	public LoQueEstaBien LoQueEstaEnRango() { Exigir(); return api!.LoQueEstaEnRango(textos.Idioma); }
 
 	public int EdadDelPaciente() { Exigir(); return api!.EdadDelPaciente(); }
 

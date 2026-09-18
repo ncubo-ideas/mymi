@@ -22,7 +22,7 @@ namespace Examenes.Dominio
 	/// analitos de verdad, no un sistema de laboratorio clinico. Que esten nombradas aca y
 	/// no construidas es lo que hace que el modelo se lea rico sin inflar el alcance.
 	///
-	/// Lo que la raiz declara es deliberadamente POCO: solo <see cref="Expresado"/>. No
+	/// Lo que la raiz declara es deliberadamente POCO: solo <see cref="Clave"/>. No
 	/// declara un valor numerico, porque un color no tiene numero; no declara orden, porque
 	/// un binario no se ordena. Cada capacidad aparece en la rama que de verdad la tiene, y
 	/// esa es toda la razon de que la jerarquia exista. Si la raiz hubiera declarado
@@ -32,12 +32,15 @@ namespace Examenes.Dominio
 	internal abstract class Magnitud
 	{
 		/// <summary>
-		/// El resultado ya dicho, completo. "280.0 mg/dL", "ambar", "negativo".
+		/// EL CODIGO DE LO QUE SE MIDIO: <c>ambar</c>, <c>negativo</c>. Vacio cuando lo que se midio
+		/// es un numero, que viaja como numero y con su unidad.
 		/// </summary>
-		/// No es un volcado de estado ni un contrato para parsear: es la forma en que el
-		/// dominio DICE un resultado, que para un valor medido incluye la unidad y para un
-		/// binario incluye el vocabulario de su analito.
-		internal abstract string Expresado { get; }
+		/// El codigo es identidad y no se toca; como se dice lo busca con el la capa que
+		/// redacta, en el idioma que le pidieron.
+		internal abstract string Clave { get; }
+
+		/// <summary>Si lo que se midio es un numero con unidad, y no una categoria ni un si o un no.</summary>
+		internal abstract bool EsNumero { get; }
 	}
 
 	/// <summary>
@@ -61,6 +64,10 @@ namespace Examenes.Dominio
 	{
 		/// <summary>El numero. Sin la unidad no es un dato clinico — de ahi la rama entera.</summary>
 		internal abstract decimal Valor { get; }
+
+		internal override string Clave => "";
+
+		internal override bool EsNumero => true;
 	}
 
 	/// <summary>
@@ -126,9 +133,11 @@ namespace Examenes.Dominio
 		/// una infeccion urinaria no espera un mes.
 		internal abstract Accion AccionDelHallazgo { get; }
 
-		/// <summary>La lectura para la persona, escrita por el propio analito.</summary>
+		/// <summary>La frase con que este resultado se lee solo, por su nombre.</summary>
 		/// Una linea, no un consejo: el consejo sale de la accion. Ver Interpretacion.
-		internal abstract string ParaSonia { get; }
+		internal abstract string ClaveDeLaFrase { get; }
+
+		internal override bool EsNumero => false;
 
 		/// <summary>QUE SERIE LEE A ESTE ANALITO. La fabrica de "el plural" de la forma 5.</summary>
 		///
@@ -157,8 +166,10 @@ namespace Examenes.Dominio
 	/// binaria, y por eso existe <see cref="SerieNominal"/>.
 	internal abstract class MagnitudNominal : Magnitud
 	{
-		/// <summary>Como se llama esta categoria para el paciente.</summary>
+		/// <summary>El codigo de esta categoria, que es tambien el de la magnitud.</summary>
 		internal abstract string Nombre { get; }
+
+		internal override string Clave => Nombre;
 
 		/// <summary>Si esta categoria es de las que se esperan. Un ámbar si, un rojizo no.</summary>
 		internal abstract bool EsEsperable { get; }
@@ -175,8 +186,10 @@ namespace Examenes.Dominio
 		/// <summary>QUE HACER con esta categoria inesperada, y CUANDO. Null si es la esperada.</summary>
 		internal abstract Accion AccionDelHallazgo { get; }
 
-		/// <summary>La lectura para la persona, escrita por la propia categoria.</summary>
-		internal abstract string ParaSonia { get; }
+		/// <summary>La frase con que esta categoria se lee sola, por su nombre.</summary>
+		internal abstract string ClaveDeLaFrase { get; }
+
+		internal override bool EsNumero => false;
 
 		/// <summary>QUE SERIE LEE A ESTE ANALITO. La fabrica de "el plural" de la forma 6.</summary>
 		///

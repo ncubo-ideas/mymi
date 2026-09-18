@@ -184,7 +184,7 @@ namespace Examenes.Consola
 		// 5 de 6. Con esto puesto, quitar un analito de la semilla o cambiarle un valor lo
 		// rompe aca antes de que llegue a la demo.
 		internal const string ConteoEsperadoDeLaPortada = "17 de 18";
-		internal const string TendenciaEsperadaDelColesterol = "en ascenso";
+		internal const string TendenciaEsperadaDelColesterol = "en-ascenso";
 		internal const string TendenciaEsperadaDeLaHemoglobina = "estable";
 
 		// Una senal de un tipo que esta app no consume. La ruta debe devolver null y el

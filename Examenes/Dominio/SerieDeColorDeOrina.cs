@@ -29,8 +29,8 @@ namespace Examenes.Dominio
 		// aca y no en SerieNominal —al reves de SerieBinaria, que dice "lo esperable es
 		// negativo" para los tres— porque el vocabulario es de ESTA muestra: los esperables
 		// de la orina y los de las heces son dos conjuntos distintos.
-		internal override string ReferenciaLegible(Paciente paciente) =>
-			Ultima == null ? "" : "lo esperable es transparente, amarillo pálido o ámbar";
+		internal override Interpretacion ConSuReferencia(Interpretacion lectura, Paciente paciente) =>
+			Ultima == null ? lectura : lectura.ConReferencia("referencia.color-de-la-orina");
 
 		protected override Interpretacion Leer(Paciente paciente)
 		{
@@ -46,41 +46,34 @@ namespace Examenes.Dominio
 			// se repite para confirmarse—.
 			if (!hechos.HaySerie)
 				return new Interpretacion(Veredicto.Observado,
-					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos,
+					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ClaveDeLaFrase, hechos,
 					Ultima.Resultado.AccionDelHallazgo);
 
 			if (ReferenceEquals(hechos.Constancia, Constancia.SiempreEsperable))
 				return new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-					$"en las {hechos.CantidadDeMediciones} veces que te lo hiciste el color de "
-					+ "la orina estuvo dentro de lo esperable", hechos);
+					"lectura.color-de-la-orina.siempre-esperable", hechos);
 
 			// LA ESCALERA, que es la pieza entera: el mismo color, leido con historia, deja
 			// de esperar a la proxima cita.
 			if (ReferenceEquals(hechos.Constancia, Constancia.Persiste))
 				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
 					hechos.LaUltimaSeRepitio
-						? $"el color de la orina salió {hechos.UltimaCategoria} las "
-							+ $"{hechos.NoEsperablesSeguidas} veces seguidas: ya no es un "
-							+ "resultado suelto"
-						: "el color de la orina no vuelve a lo esperable en las "
-							+ $"{hechos.NoEsperablesSeguidas} últimas veces",
+						? "lectura.color-de-la-orina.persiste-la-misma"
+						: "lectura.color-de-la-orina.persiste",
 					hechos, Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 
 			if (ReferenceEquals(hechos.Constancia, Constancia.Aparecio))
 				return new Interpretacion(Veredicto.Empeorando,
 					Ultima.Resultado.SeveridadDelHallazgo,
-					$"el color de la orina salió {hechos.UltimaCategoria}, y la vez anterior "
-					+ "era de lo esperable", hechos, Ultima.Resultado.AccionDelHallazgo);
+					"lectura.color-de-la-orina.aparecio", hechos, Ultima.Resultado.AccionDelHallazgo);
 
 			if (ReferenceEquals(hechos.Constancia, Constancia.NoConfirmado))
 				return new Interpretacion(Veredicto.HallazgoNoConfirmado, Severidad.Informativo,
-					"una vez el color de la orina salió fuera de lo esperable y en el examen "
-					+ $"siguiente volvió a {hechos.UltimaCategoria}", hechos);
+					"lectura.color-de-la-orina.no-confirmado", hechos);
 
 			// LA BUENA NOTICIA que solo la serie puede dar.
 			return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-				$"el color de la orina estuvo fuera de lo esperable {hechos.NoEsperables} veces "
-				+ $"y en la última ya salió {hechos.UltimaCategoria}", hechos);
+					"lectura.color-de-la-orina.volvio", hechos);
 		}
 	}
 }

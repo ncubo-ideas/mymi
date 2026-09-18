@@ -37,7 +37,7 @@ namespace Examenes.Dominio
 		internal static readonly Severidad Vigilar = new Severidad("vigilar", 1);
 
 		// Amerita cita, y la accion que acompana dice el plazo explicito.
-		internal static readonly Severidad ConsultePronto = new Severidad("consulte pronto", 2);
+		internal static readonly Severidad ConsultePronto = new Severidad("consulte-pronto", 2);
 
 		// RESERVADO para lo que de verdad es urgente (ej. sangre en orina). Es el unico
 		// que la UI puede pintar de rojo.
@@ -45,6 +45,10 @@ namespace Examenes.Dominio
 
 		// La etiqueta interna, sin acentos: con este texto se compara y se serializa, no
 		// se le habla a nadie — igual que Nombre en Tendencia.
+		/// <summary>
+		/// EL CODIGO de esta severidad: identidad, y lo unico que cruza el wire. Como se dice lo busca con este
+		/// codigo la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
 
 		private readonly int peso;

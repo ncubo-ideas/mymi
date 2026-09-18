@@ -76,15 +76,11 @@ namespace Examenes.Dominio
 		}
 
 		// La meta dicha entera, para cuando la frase todavia no nombro el valor actual.
-		internal string Expresada => YaLlego
-			? $"estás en {Actual.Expresado}, dentro de lo deseable"
-			: $"de {Actual.Expresado} a {Objetivo.Expresado}: te faltan {CuantoFalta} {Actual.Unidad.Simbolo}";
+
 
 		// La meta dicha SIN repetir el valor actual, para encadenar despues de una frase
 		// que ya lo dijo. Son dos por lo mismo que ParaMostrar y Nombre son dos en Analito:
 		// la misma cosa se dice distinto segun donde caiga.
-		internal string ComoObjetivo => YaLlego
-			? "y ya estás dentro de lo deseable"
-			: $"tu meta ahora es bajar a {Objetivo.Expresado}";
+
 	}
 }
