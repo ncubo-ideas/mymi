@@ -59,7 +59,7 @@
   "guardado": {
     "migrada": "<strong>Your new tests now come in through {donde}, on this same phone.</strong> What you see here stays and is still yours; what this copy stops doing is looking for updates.",
     "abrir": "Open {donde}",
-    "hospedada": "<strong>It is being saved on this phone.</strong> Your record is yours and it is here: Gnothi gave this lab a folder on your phone, and your assistant can read it from there.",
+    "hospedada": "<strong>It is being saved on this phone.</strong> Your record is yours and it is here: Mymi gave this lab a folder on your phone, and your assistant can read it from there.",
     "sinDestino": "<strong>Nothing is being saved.</strong> This app is running with no destination: what you see it asks the provider for again every time you open it, and no record of yours is kept.",
     "guardarEnEsteNavegador": "Save in this browser",
     "rechazo": "<strong>The folder refused the write.</strong> What you see on screen is not saved in “{carpeta}”. It is usually the permission, which expires when you reopen.",

@@ -5,12 +5,12 @@ window.TextoDeLaCara['es-CR'] = {
     // estan aca: son voz de la institucion, viven en idioma.js y en index.html, y no se traducen.
     // Las frases del dominio tampoco estan aca: llegan ya dichas.
     app: {
-        preguntando: 'Preguntándole a Gnothi…',
+        preguntando: 'Preguntándole a Mymi…',
         actualizar: 'Actualizar',
         saludo: 'Hola.',
         kicker: 'Entendé cómo venís, no solo cómo saliste hoy.',
         ultimoChequeo: 'Tu último chequeo',
-        pie: 'El registro vive en este dispositivo. Esta pantalla no sale a la red: le pregunta a Gnothi, y Gnothi responde con el motor que le presta.'
+        pie: 'El registro vive en este dispositivo. Esta pantalla no sale a la red: le pregunta a Mymi, y Mymi responde con el motor que le presta.'
     },
     portada: {
         urgente: 'Hay algo que conviene revisar pronto.',

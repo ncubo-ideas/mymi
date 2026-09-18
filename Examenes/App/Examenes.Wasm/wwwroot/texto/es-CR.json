@@ -59,7 +59,7 @@
   "guardado": {
     "migrada": "<strong>Tus exámenes nuevos ahora entran por {donde}, en este mismo teléfono.</strong> Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de hacer es buscar novedades.",
     "abrir": "Abrir {donde}",
-    "hospedada": "<strong>Se está guardando en este teléfono.</strong> Tu expediente es tuyo y está acá: Gnothi le dio a este laboratorio una carpeta en tu teléfono, y tu asistente la puede leer desde ahí.",
+    "hospedada": "<strong>Se está guardando en este teléfono.</strong> Tu expediente es tuyo y está acá: Mymi le dio a este laboratorio una carpeta en tu teléfono, y tu asistente la puede leer desde ahí.",
     "sinDestino": "<strong>No se está guardando nada.</strong> Esta app está funcionando sin destino: lo que ves lo vuelve a pedir al proveedor cada vez que abrís, y no queda registro tuyo.",
     "guardarEnEsteNavegador": "Guardar en este navegador",
     "rechazo": "<strong>La carpeta rechazó la escritura.</strong> Lo que ves en pantalla no está guardado en «{carpeta}». Suele ser el permiso, que caduca al reabrir.",

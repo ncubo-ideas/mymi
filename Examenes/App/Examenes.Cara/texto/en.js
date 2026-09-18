@@ -7,12 +7,12 @@ window.TextoDeLaCara['en'] = {
     // The lab's name, its tagline and the module's title are NOT here: they are the institution's
     // voice, they live in idioma.js and index.html, and they are never translated.
     app: {
-        preguntando: 'Asking Gnothi…',
+        preguntando: 'Asking Mymi…',
         actualizar: 'Refresh',
         saludo: 'Hello.',
         kicker: 'See where you are heading, not just how you did today.',
         ultimoChequeo: 'Your last check-up',
-        pie: 'The record lives on this device. This screen does not go out to the network: it asks Gnothi, and Gnothi answers with the engine it lends.'
+        pie: 'The record lives on this device. This screen does not go out to the network: it asks Mymi, and Mymi answers with the engine it lends.'
     },
     portada: {
         urgente: 'There is something worth looking at soon.',
