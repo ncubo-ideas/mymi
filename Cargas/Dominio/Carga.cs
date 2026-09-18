@@ -131,24 +131,33 @@ namespace Cargas.Dominio
 		internal string IdentificacionDelSurtidor => Surtidor.Identificacion;
 		internal string NombreDelTipo => Tipo.Nombre;
 		internal decimal Litros => Volumen.EnLitros;
-		internal string VolumenExpresado => Volumen.Expresado;
+		internal decimal VolumenCargado => Volumen.Valor;
+		internal string SimboloDelVolumen => Volumen.SimboloDeLaUnidad;
 		internal decimal PrecioPorUnidad => Surtidor.PrecioPorUnidad.Monto;
 		internal decimal MontoDelTotal => Total.Monto;
 		internal string MonedaDelTotal => Total.Moneda.Codigo;
-		internal string TotalExpresado => Total.Expresado;
 		internal string NombreDelCorte => Corte.Nombre;
 		internal string TextoDeLaPlaca => Placa.Texto;
 		internal string NumeroDeLaTransaccion => Transaccion.Texto;
-		internal string KilometrajeExpresado => Odometro.Expresada;
 
-		// EL NUMERO Y SU PROCEDENCIA, POR SEPARADO. KilometrajeExpresado los junta -"42 380 km
-		// (observado)"- y esa es la frase para quien lee la bitacora entera, el MCP. La
-		// caratula necesita el numero solo: "observado" y "confirmado" son palabras del
-		// dominio que Sonia no eligio, y en la parada sobran; la procedencia queda a mano
-		// para quien la quiera mirar. Vacios cuando no hay lectura, que es informacion.
-		internal string KilometrajeAnotado => Odometro.Existe ? Odometro.Kilometraje.Expresada : "";
+		/// <summary>
+		/// EL NUMERO, SU UNIDAD Y SU PROCEDENCIA, POR SEPARADO, para que quien redacte los junte
+		/// -- "42 380 km (observado)" -- o muestre el numero solo. La caratula necesita el numero
+		/// solo: "observado" y "confirmado" son palabras del dominio que Sonia no eligio, y en la
+		/// parada sobran; la procedencia queda a mano para quien la quiera mirar. Cero y vacio
+		/// cuando no hay lectura, que es informacion y se pregunta por <c>TieneKilometraje</c>.
+		/// </summary>
 		internal string OrigenDelKilometraje => Odometro.Existe ? Odometro.Origen.Nombre : "";
-		internal string TanqueExpresado => Tanque.Expresada;
+
+		/// <summary>
+		/// EL CODIGO DEL ESTADO DEL TANQUE Y SU PROCEDENCIA, incluida la inferencia de la
+		/// estacion, que es la que prellena el switch. Vacios cuando nadie dijo nada.
+		/// </summary>
+		internal string ClaveDelTanque => Tanque.ClaveDelEstado;
+
+		internal string OrigenDelTanqueDicho =>
+			Tanque.FueDeclarada ? Tanque.Origen.Nombre : "";
+
 		internal bool TieneKilometraje => Odometro.Existe;
 
 		/// <summary>Si este kilometraje alimenta el ritmo y los tramos. Un estimado NO, y
@@ -163,8 +172,8 @@ namespace Cargas.Dominio
 			? ""
 			: (Tanque.EsLleno ? EstadoDelTanque.Lleno.Nombre : EstadoDelTanque.Parcial.Nombre);
 
-		/// <summary>De donde sale esa suposicion, dicho para la persona.</summary>
-		internal string ComoSeDetuvoElSurtidor => Corte.ComoSeDetuvo();
+		/// <summary>EL CODIGO de donde sale esa suposicion, para que quien redacte la enuncie.</summary>
+		internal string ClaveDeComoSeDetuvoElSurtidor => Corte.ClaveDeComoSeDetuvo();
 
 		/// <summary>El nombre del archivo de la foto, o "" si no hay. Total a proposito:
 		/// FotoDelTablero.NombreDeArchivo revienta cuando no existe -y hace bien, devolver

@@ -1,5 +1,5 @@
 using Foundation;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 using Security;
 
 namespace Gnothi.iOS;

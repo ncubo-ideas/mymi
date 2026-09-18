@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mi cuenta municipal</title>
+<title>MONTEVERDE Municipal Services</title>
 <meta name="description" content="Tu cuenta con la municipalidad, guardada en una carpeta tuya. Funciona sin conexión.">
 <meta name="theme-color" content="#2C306C">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%232C306C'/%3E%3Cg fill='%23fff' transform='translate(7 7) scale(.7)'%3E%3Cpath d='M24 4 2 17v5h44v-5L24 4Z'/%3E%3Crect x='5' y='25' width='5' height='13' rx='1'/%3E%3Crect x='16' y='25' width='5' height='13' rx='1'/%3E%3Crect x='27' y='25' width='5' height='13' rx='1'/%3E%3Crect x='38' y='25' width='5' height='13' rx='1'/%3E%3Crect x='2' y='41' width='44' height='4' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
@@ -216,21 +216,230 @@ footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
             </svg>
         </span>
         <div class="marco__titulos">
-            <div class="nombre">Mi cuenta municipal</div>
+            <div class="nombre">MONTEVERDE Municipal Services</div>
             <div class="apunte">Tu cuenta, en tu carpeta</div>
         </div>
     </div>
 </header>
 
 <main>
-    <h1>Tu cuenta con la municipalidad, en tu propia computadora.</h1>
+    <h1>Tu cuenta con la municipalidad, en tu propio aparato.</h1>
     <p class="entrada">
-        No en la nuestra. La app se abre en tu navegador, guarda tu cuenta en una carpeta que elegís
+        No en la nuestra. La app se usa dentro de Gnothi, guarda tu cuenta en una carpeta que elegís
         vos, y sigue contestando con la red apagada.
     </p>
 
+
+    <!-- SE USA CON GNOTHI: EL PASO A PASO POR AMBIENTE. Es la misma sección que estrenó la página
+         de La Guaria (Compras/PaginaDeDescarga/descarga/index.html) y la genera el mismo molde
+         (Herramientas/replicar-seccion-gnothi.mjs) con la voz y la paleta de esta institución; si cambia el
+         flujo, cambia en el molde y se vuelve a correr.
+  
+         Primero Gnothi (una vez), después la institución (un toque). Un panel por ambiente porque
+         los pasos no son los mismos: en el teléfono Gnothi viene de la tienda y el módulo entra por
+         el enlace al dominio de Gnothi (go.gnothi.app/alta, especificación 13 §7); en Windows Gnothi
+         se descarga de acá y el módulo se agrega desde la ventana de Gnothi. Los rótulos entre
+         comillas son los del catálogo del Host (Gnothi.Host/textos.json).
+  
+         LOS DESCARGABLES no van al repo y hay que armarlos antes de levantar URL1 (ver nginx.conf):
+           descargas/municipalidad.gmod        la forma cargo, para el escritorio
+           descargas/movil/municipalidad.gmod  la forma hospedada, para el teléfono; lleva el ORIGEN
+                                         adentro y tiene que ser el que sirve esta página
+           descargas/gnothi/Gnothi.Host.zip  Gnothi para Windows
+  
+         EL ENLACE DE ALTA SE ARMA EN EL NAVEGADOR con location.origin (esta página es estática y no
+         sabe desde dónde la sirven), sin sello &h=: el sello lo calcula quien puede leer el zip.
+         El panel inicial lo elige el user agent; sin JavaScript se ven los tres. -->
+    <style>
+      .gnothi {
+        --g-acento: var(--indigo); --g-acento-hondo: var(--indigo-alto); --g-sobre-acento: var(--sobre-indigo);
+        --g-tinta: var(--tinta); --g-tenue: var(--tinta-suave); --g-linea: var(--linea);
+        --g-suave: var(--acento-fondo); --g-carta: var(--papel); --g-radio: 10px;
+        color: var(--g-tinta); background: var(--papel); border: 1px solid var(--linea); border-radius: 14px; padding: 24px; margin: 0 0 22px; box-shadow: var(--sombra);
+      }
+      .gnothi h2 { font-size: 26px; line-height: 1.12; margin: 0 0 12px; letter-spacing: -.01em; font-weight: 750; }
+      .gnothi h2 em { font-style: normal; color: var(--g-acento); }
+      .gnothi__lead { margin: 0; color: var(--g-tenue); font-size: 15.5px; max-width: 62ch; line-height: 1.6; }
+      .gnothi__lead strong { color: var(--g-tinta); font-weight: 600; }
+  
+      .gnothi__ambientes { display: none; gap: 8px; flex-wrap: wrap; margin: 26px 0 0; padding: 0; list-style: none; }
+      .js .gnothi__ambientes { display: flex; }
+      .gnothi__ambientes li { margin: 0; }
+      .gnothi__ambientes button {
+        font: inherit; font-size: 14px; font-weight: 600; color: var(--g-tinta); background: transparent;
+        border: 1px solid var(--g-linea); border-radius: 999px; padding: 9px 18px; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px; transition: background .18s, color .18s, border-color .18s;
+      }
+      .gnothi__ambientes button:hover { background: var(--g-suave); }
+      .gnothi__ambientes button[aria-selected="true"] { background: var(--g-acento); color: var(--g-sobre-acento); border-color: var(--g-acento); }
+      .gnothi__ambientes svg { width: 15px; height: 15px; flex: none; }
+  
+      .gnothi__ambiente { padding: 30px 0 34px; border-bottom: 1px solid var(--g-linea); display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 40px; }
+      .gnothi__ambiente:last-of-type { border-bottom: 0; }
+      .js .gnothi__ambiente:not(.activo) { display: none; }
+      .js .gnothi__ambiente { border-bottom: 0; }
+      .gnothi__ambiente h3 { font-size: 15px; font-weight: 700; margin: 0 0 8px; color: var(--g-tinta); letter-spacing: 0; text-transform: none; }
+      .gnothi__nota { margin: 0; color: var(--g-tenue); font-size: 14px; line-height: 1.55; }
+      .gnothi__descargas { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 18px; }
+  
+      .gnothi__boton {
+        display: inline-flex; align-items: center; gap: 11px; text-decoration: none;
+        background: var(--g-acento); color: var(--g-sobre-acento); font-weight: 600; font-size: 15px;
+        padding: 13px 24px; border-radius: var(--g-radio); border: 1px solid transparent; transition: background .18s;
+      }
+      .gnothi__boton:hover { background: var(--g-acento-hondo); color: var(--g-sobre-acento); }
+      .gnothi__boton--suave { background: transparent; color: var(--g-acento); border-color: var(--g-linea); }
+      .gnothi__boton--suave:hover { background: var(--g-suave); color: var(--g-acento); }
+      .gnothi__boton--inerte { background: var(--g-suave); color: var(--g-tenue); border-color: var(--g-linea); cursor: default; pointer-events: none; }
+      .gnothi__boton small { display: block; font-size: 11px; font-weight: 400; opacity: .85; letter-spacing: .02em; }
+      .gnothi__boton .dos { display: flex; flex-direction: column; line-height: 1.15; }
+  
+      .gnothi__pasos { margin: 0; padding: 0; list-style: none; counter-reset: g; }
+      .gnothi__pasos li { counter-increment: g; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--g-linea); margin: 0; }
+      .gnothi__pasos li:first-child { padding-top: 0; }
+      .gnothi__pasos li:last-child { border-bottom: 0; }
+      .gnothi__pasos li::before { content: counter(g); font-size: 12.5px; color: var(--g-acento); padding-top: 3px; font-variant-numeric: tabular-nums; }
+      .gnothi__pasos p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--g-tinta); }
+      .gnothi__pasos b { font-weight: 700; }
+      .gnothi__pasos span { color: var(--g-tenue); }
+      .gnothi code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; background: var(--g-suave); border: 1px solid var(--g-linea); border-radius: 5px; padding: 2px 6px; }
+  
+      .gnothi__enlace { margin: 18px 0 0; padding: 14px 16px; background: var(--g-suave); border: 1px solid var(--g-linea); border-radius: calc(var(--g-radio) + 4px); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; font-size: 13.5px; color: var(--g-tenue); line-height: 1.5; }
+      .gnothi__enlace > span { grid-column: 1 / -1; }
+      .gnothi__enlace > code { display: block; overflow-wrap: anywhere; background: var(--g-carta); padding: 7px 10px; }
+      .gnothi__enlace button { display: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--g-acento); background: var(--g-carta); border: 1px solid var(--g-linea); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+      .js .gnothi__enlace button { display: inline-block; }
+      .gnothi__enlace button:hover { background: var(--g-acento); color: var(--g-sobre-acento); border-color: var(--g-acento); }
+  
+      .gnothi__suelta { margin: 24px 0 0; color: var(--g-tenue); font-size: 14px; max-width: 70ch; line-height: 1.55; }
+      .gnothi__suelta b { color: var(--g-tinta); font-weight: 700; }
+      .gnothi__suelta a { color: var(--g-acento); }
+  
+      @media (max-width: 760px) { .gnothi__ambiente { grid-template-columns: 1fr; gap: 22px; } }
+    </style>
+  
+    <section class="gnothi" id="gnothi">
+      <h2>Se usa con <em>Gnothi</em>.</h2>
+      <p class="gnothi__lead">Gnothi es la aplicación que junta lo que cada institución te entrega —tu laboratorio, tu supermercado— y se lo muestra a tu asistente de IA, en tu propio aparato. <strong>Se instala una sola vez</strong>, gratis; después, cada institución se agrega con un toque. La Municipalidad de Monteverde es una de ellas.</p>
+  
+      <ul class="gnothi__ambientes" role="tablist" aria-label="Elegí tu aparato">
+        <li><button type="button" role="tab" id="tab-android" aria-controls="amb-android" aria-selected="false" data-ambiente="android"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.6 6.4h8.8v5.2a1 1 0 0 1-1 1h-.6v2.2a.9.9 0 1 1-1.8 0v-2.2H7v2.2a.9.9 0 1 1-1.8 0v-2.2h-.6a1 1 0 0 1-1-1V6.4Zm-1.5.1a.9.9 0 0 1 .9.9v3.6a.9.9 0 1 1-1.8 0V7.4a.9.9 0 0 1 .9-.9Zm11.8 0a.9.9 0 0 1 .9.9v3.6a.9.9 0 1 1-1.8 0V7.4a.9.9 0 0 1 .9-.9ZM8 1.6c2.2 0 4 1.5 4.4 3.6H3.6C4 3.1 5.8 1.6 8 1.6Zm-1.7 2a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Zm3.4 0a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Z"/></svg> Android</button></li>
+        <li><button type="button" role="tab" id="tab-iphone" aria-controls="amb-iphone" aria-selected="false" data-ambiente="iphone"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.3 8.5c0-1.5 1.2-2.2 1.3-2.2-.7-1-1.8-1.2-2.2-1.2-.9-.1-1.8.5-2.3.5s-1.2-.5-2-.5C4.9 5.1 3 6.4 3 9c0 .8.1 1.6.4 2.4.4 1.2 1.9 3.9 3.4 3.9.7 0 1.2-.5 2.1-.5.9 0 1.3.5 2.1.5 1.5 0 2.8-2.5 3.2-3.6-1.9-.9-2.9-2.1-2.9-3.2ZM9.9 3.9c.5-.6.8-1.4.7-2.2-.7 0-1.5.5-2 1.1-.4.5-.8 1.3-.7 2.1.8.1 1.5-.4 2-1Z"/></svg> iPhone</button></li>
+        <li><button type="button" role="tab" id="tab-computadora" aria-controls="amb-computadora" aria-selected="false" data-ambiente="computadora"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="8.5" rx="1.2"/><path d="M5.5 14h5M8 11v3"/></svg> Computadora</button></li>
+      </ul>
+  
+      <div class="gnothi__ambiente" id="amb-android" role="tabpanel" aria-labelledby="tab-android" data-ambiente="android">
+        <div>
+          <h3>En tu teléfono Android</h3>
+          <p class="gnothi__nota">Gnothi está en Google Play. MONTEVERDE Municipal Services se agrega desde esta misma página, con un toque.</p>
+          <div class="gnothi__descargas">
+            <a class="gnothi__boton" href="https://play.google.com/store/apps/details?id=com.ncubo.gnothi.host" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2.5 1.6c0-.5.5-.8.9-.6l10.4 6.3c.4.3.4.9 0 1.2L3.4 14.9c-.4.3-.9 0-.9-.5V1.6Z"/></svg><span class="dos"><small>Disponible en</small>Google Play</span></a>
+            <a class="gnothi__boton gnothi__boton--suave" id="agregar-android" href="https://go.gnothi.app/alta">Agregar MONTEVERDE Municipal Services a Gnothi</a>
+          </div>
+        </div>
+        <div>
+          <ol class="gnothi__pasos">
+            <li><p><b>Instalá Gnothi desde Google Play.</b> <span>Es gratuita y se instala una sola vez: la misma Gnothi sirve para todas tus instituciones.</span></p></li>
+            <li><p><b>Volvé a esta página en el teléfono y tocá «Agregar MONTEVERDE Municipal Services a Gnothi».</b> <span>Gnothi baja el módulo desde esta misma dirección y te muestra una hoja: quién lo entrega, qué preguntas va a contestar y en qué carpeta del teléfono guarda tu cuenta. Nada se escribe antes de que la leas.</span></p></li>
+            <li><p><b>Tocá «Instalar en mi teléfono».</b> <span>MONTEVERDE Municipal Services aparece en tu lista de instituciones.</span></p></li>
+            <li><p><b>Preguntá.</b> <span>Tu asistente ve a MONTEVERDE Municipal Services junto a tus otras instituciones. Cada consulta tiene un interruptor: apagás la que no querés que lea.</span></p></li>
+          </ol>
+          <div class="gnothi__enlace">
+            <span>¿Estás leyendo esto en una computadora? En Gnothi tocá <b>Pegar su enlace</b> y pegá este. Si te llegó el archivo <code>municipalidad.gmod</code> por correo o WhatsApp, abrilo: el teléfono te ofrece Gnothi.</span>
+            <code id="enlace-movil">https://go.gnothi.app/alta?bundle=…/descargas/movil/municipalidad.gmod</code>
+            <button type="button" data-copiar="enlace-movil">Copiar</button>
+          </div>
+        </div>
+      </div>
+  
+      <div class="gnothi__ambiente" id="amb-iphone" role="tabpanel" aria-labelledby="tab-iphone" data-ambiente="iphone">
+        <div>
+          <h3>En tu iPhone</h3>
+          <p class="gnothi__nota">Los mismos pasos que en Android. Gnothi para iPhone está en camino a la App Store.</p>
+          <div class="gnothi__descargas">
+            <span class="gnothi__boton gnothi__boton--inerte" aria-disabled="true"><span class="dos"><small>Próximamente en</small>App Store</span></span>
+            <a class="gnothi__boton gnothi__boton--suave" id="agregar-iphone" href="https://go.gnothi.app/alta">Agregar MONTEVERDE Municipal Services a Gnothi</a>
+          </div>
+        </div>
+        <div>
+          <ol class="gnothi__pasos">
+            <li><p><b>Instalá Gnothi desde la App Store</b> <span>cuando esté publicada. Una sola vez, para todas tus instituciones.</span></p></li>
+            <li><p><b>Volvé a esta página en el iPhone y tocá «Agregar MONTEVERDE Municipal Services a Gnothi».</b> <span>Gnothi se abre con la hoja del módulo: quién lo entrega, qué contesta y dónde guarda tu cuenta.</span></p></li>
+            <li><p><b>Tocá «Instalar en mi teléfono».</b></p></li>
+            <li><p><b>Preguntá.</b> <span>Tu asistente ve a MONTEVERDE Municipal Services, y vos decidís qué consultas quedan encendidas.</span></p></li>
+          </ol>
+        </div>
+      </div>
+  
+      <div class="gnothi__ambiente" id="amb-computadora" role="tabpanel" aria-labelledby="tab-computadora" data-ambiente="computadora">
+        <div>
+          <h3>En tu computadora</h3>
+          <p class="gnothi__nota">Gnothi para Windows se descarga de acá. No pide permisos de administrador y no toca nada fuera de su carpeta.</p>
+          <div class="gnothi__descargas">
+            <a class="gnothi__boton" href="descargas/gnothi/Gnothi.Host.zip" download><svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="dos"><small>Descargar para</small>Windows</span></a>
+            <a class="gnothi__boton gnothi__boton--suave" href="descargas/municipalidad.gmod" download>Descargar el módulo de MONTEVERDE Municipal Services</a>
+          </div>
+        </div>
+        <div>
+          <ol class="gnothi__pasos">
+            <li><p><b>Descargá e instalá Gnothi.</b> <span>Una sola vez. Si Windows muestra el aviso de SmartScreen, elegí «Más información» y «Ejecutar de todas formas». La primera vez que abre, Gnothi te pregunta antes de registrarse con tu asistente (Claude u otro) y hace un respaldo de la configuración que va a tocar.</span></p></li>
+            <li><p><b>Abrí Gnothi y elegí «Agregar una institución».</b> <span>Pegá el enlace de MONTEVERDE Municipal Services que está abajo, o tocá «Elegir el archivo…» y buscá el <code>municipalidad.gmod</code> que bajaste con el botón.</span></p></li>
+            <li><p><b>Leé la hoja y tocá «Instalar en esta computadora».</b> <span>Te dice quién entrega el módulo, qué va a contestar y en qué carpeta guarda tu cuenta: <code>Documentos\Gnothi\municipalidad</code>. La misma que usa la app.</span></p></li>
+            <li><p><b>Reiniciá tu asistente y preguntá.</b> <span>«¿Por qué me subió bienes inmuebles?» Todo se contesta desde tu computadora; nada sube a la nube.</span></p></li>
+          </ol>
+          <div class="gnothi__enlace">
+            <span>El enlace de MONTEVERDE Municipal Services, para pegar en Gnothi:</span>
+            <code id="enlace-escritorio">…/descargas/municipalidad.gmod</code>
+            <button type="button" data-copiar="enlace-escritorio">Copiar</button>
+          </div>
+        </div>
+      </div>
+  
+      <p class="gnothi__suelta"><b>¿Sin Gnothi?</b> La app también funciona suelta, en el navegador: <a href="/app/">abrila</a> y elegí la carpeta donde querés guardar tu cuenta. Cuando instalés Gnothi, va a leer esa misma carpeta.</p>
+    </section>
+  
+    <script>
+      (function () {
+        document.documentElement.classList.add('js');
+  
+        // The enrollment link, with the origin this page is served from: the hosted form for the
+        // phones, the cargo form for the computer. Both are called municipalidad.gmod (armar-bundle.ps1).
+        var origen = location.origin;
+        var movil = origen + '/descargas/movil/municipalidad.gmod';
+        var cargo = origen + '/descargas/municipalidad.gmod';
+        var alta = 'https://go.gnothi.app/alta?bundle=' + encodeURIComponent(movil);
+        ['agregar-android', 'agregar-iphone'].forEach(function (id) { var a = document.getElementById(id); if (a) a.href = alta; });
+        var eMovil = document.getElementById('enlace-movil'), eEscritorio = document.getElementById('enlace-escritorio');
+        if (eMovil) eMovil.textContent = alta;
+        if (eEscritorio) eEscritorio.textContent = cargo;
+  
+        // Copy: the button says "Copiado" for a moment. Without a clipboard (plain http off
+        // localhost) the text is left selected to copy by hand.
+        function seleccionar(nodo) { var r = document.createRange(); r.selectNodeContents(nodo); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+        document.querySelectorAll('[data-copiar]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var code = document.getElementById(b.getAttribute('data-copiar')); if (!code) return;
+            var listo = function () { var antes = b.textContent; b.textContent = 'Copiado'; setTimeout(function () { b.textContent = antes; }, 1600); };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code.textContent).then(listo, function () { seleccionar(code); });
+            else seleccionar(code);
+          });
+        });
+  
+        // The device: proposed by the user agent, changed by the person.
+        var tabs = Array.prototype.slice.call(document.querySelectorAll('.gnothi__ambientes [role="tab"]'));
+        var paneles = Array.prototype.slice.call(document.querySelectorAll('.gnothi__ambiente'));
+        function elegir(nombre) {
+          tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.ambiente === nombre)); });
+          paneles.forEach(function (p) { p.classList.toggle('activo', p.dataset.ambiente === nombre); });
+        }
+        tabs.forEach(function (t) { t.addEventListener('click', function () { elegir(t.dataset.ambiente); }); });
+        var ua = navigator.userAgent || '';
+        elegir(/Android/i.test(ua) ? 'android' : /iPhone|iPad|iPod/i.test(ua) ? 'iphone' : 'computadora');
+      })();
+    </script>
+
     <div class="tarjeta abrir">
-        <h2>Abrila</h2>
+        <h2>Sin Gnothi: abrila suelta</h2>
         <p>
             <a class="boton" href="/app/">Abrir la app</a>
         </p>
@@ -292,8 +501,8 @@ footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
 
 <footer>
     <p class="suave">
-        Esta app no nombra a ninguna municipalidad. La institución que la entregue es la que pone su
-        nombre. Esta página y la app que enlaza son un prototipo que funciona.
+        Esta app lleva el nombre de la institución que la entrega. Esta página y la app que enlaza
+        son un prototipo que funciona.
     </p>
 </footer>
 

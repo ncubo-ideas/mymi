@@ -2,6 +2,7 @@
 @using System.Globalization
 @using Compras.App.Vistas
 @using Compras.App
+@inject Textos textos
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 
@@ -11,25 +12,25 @@
    criterio de color que la portada -reusa .infaltable-fila tal cual, ver Infaltables.razor-,
    solo que sin el limite de tres. *@
 
-<PageTitle>Tus habituales · La Guaria y vos</PageTitle>
+<PageTitle>@textos["precios.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
 <Volver Respaldo="" />
 
-<h1>Tus habituales</h1>
+<h1>@textos["precios.titulo"]</h1>
 <p class="text-body-secondary mb-4">
-    Los productos que comprás seguido y cambiaron de precio.
+    @textos["precios.bajada"]
 </p>
 
 @if (!estado.EstaArriba)
 {
     <div class="aviso">
-        La app todavía no abrió en esta computadora.
-        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+        @textos["comun.sinAbrir"]
+        <a href="">@textos["comun.sinAbrirEnlace"]</a> @textos["comun.sinAbrirCola"]
     </div>
 }
 else if (precios is null || precios.Count == 0)
 {
-    <p class="text-body-secondary">Ningún habitual cambió de precio todavía.</p>
+    <p class="text-body-secondary">@textos["precios.sinCambios"]</p>
 }
 else
 {
@@ -61,7 +62,7 @@ else
                     }
                 </span>
                 <span class="etiqueta @(precio.Subio ? "etiqueta-cambio" : "etiqueta-verde")">
-                    @(precio.Subio ? "▲" : "▼") @Porcentaje(precio.CambioEnProporcion)
+                    @(precio.Subio ? "▲" : "▼") @textos.Porcentaje(Math.Abs(precio.CambioEnProporcion))
                 </span>
                 <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
             </button>
@@ -89,16 +90,9 @@ else
         return habitual is null ? "" : Frecuencia(habitual);
     }
 
-    private static string Frecuencia(ProductoQueVuelve habitual) =>
-        habitual.EstaEnTodas
-            ? "lo llevás cada vez que vas"
-            : "lo llevás casi cada vez que vas";
+    private string Frecuencia(ProductoQueVuelve habitual) =>
+        textos[habitual.EstaEnTodas ? "precios.loLlevasCadaVez" : "precios.loLlevasCasiCadaVez"];
 
-    // SIN SIGNO, a proposito: el ▲/▼ de al lado ya dice la direccion.
-    private static string Porcentaje(decimal proporcion) =>
-        Math.Abs(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
-
-    private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
-
-    private static string Colones(decimal monto) => Plata.Colones(monto);
+    private static string Foto(string sku) => Compras.App.Vistas.Fotos.De(sku);
+    private string Colones(decimal monto) => textos.Monto(monto);
 }

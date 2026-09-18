@@ -44,7 +44,7 @@ namespace Concesionario.Dominio.Pruebas
 		public void NotPublishedIsAMemberOfTheStandingAndNotAReasonForSuspending()
 		{
 			EnvelopeAnswer answer = new ASettledEnvelopeAnswer(
-				EnvelopeStanding.NotPublished, string.Empty);
+				EnvelopeStanding.NotPublished, AClauseUnderTest.WithNoEnvelope());
 
 			Assert.That(answer.CanBeEvaluated(), Is.True,
 				"Se pudo evaluar: lo que se evaluo es que la agencia no publico ningun sobre. "
@@ -58,7 +58,7 @@ namespace Concesionario.Dominio.Pruebas
 		public void ASettledUnpublishedAnswerIsSuspendedByNothing()
 		{
 			EnvelopeAnswer answer = new ASettledEnvelopeAnswer(
-				EnvelopeStanding.NotPublished, string.Empty);
+				EnvelopeStanding.NotPublished, AClauseUnderTest.WithNoEnvelope());
 
 			Assert.That(answer.SuspendedByAnAbsentDelivery(), Is.False);
 			Assert.That(answer.SuspendedByAnAbsentReading(), Is.False);
@@ -69,8 +69,9 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheUnpublishedAnswerNamesItselfInWords()
 		{
-			string said = new ASettledEnvelopeAnswer(EnvelopeStanding.NotPublished, string.Empty)
-				.Describe();
+			string said = TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				new ASettledEnvelopeAnswer(
+					EnvelopeStanding.NotPublished, AClauseUnderTest.WithNoEnvelope()), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("Sin publicar"));
 			Assert.That(said, Does.Contain("sobre de garantía"),

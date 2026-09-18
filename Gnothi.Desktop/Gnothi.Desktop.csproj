@@ -41,7 +41,14 @@
     <!-- WinExe: on Windows no console pops up behind the window; on macOS and Linux the SDK
          treats it as a plain Exe, which is what we want. -->
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <!-- ONE target framework, chosen by the OS that builds: net9.0-windows on Windows, so the
+         optional WebView2 face (WebView2WebModule.cs, the "cara ventana" flag) gets WinForms + WebView2;
+         plain net9.0 everywhere else, where that file is not compiled and the face is the frame
+         inside the window. One framework and not two because "dotnet run" on this project
+         -what PRUEBA-MANUAL-DESKTOP.md and every script use- refuses to run a multi-targeted
+         project without an explicit framework. -->
+    <TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net9.0-windows</TargetFramework>
+    <TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Gnothi.Desktop</RootNamespace>
@@ -83,6 +90,14 @@
     <PackageReference Include="Photino.Native" Version="4.0.22" />
   </ItemGroup>
 
+  <!-- The WebView2 face, only in the Windows build. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3179.45" />
+  </ItemGroup>
+
   <!-- Photino serves wwwroot FROM THE OUTPUT FOLDER (a PhysicalFileProvider over
        bin/.../wwwroot), unlike the WinForms BlazorWebView, which read it from the project via
        static web assets. Without this the process dies at startup with
@@ -91,10 +106,54 @@
     <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- THE HYBRID FORM ON THE DESKTOP. The neutral layer of the hosted form -the bridge protocol,
+       the CSP, the journal, the courier, `consultar`- lives in Gnothi.MobileShared as shared
+       source, and the phones compile it in. The same is done here with the six files it takes,
+       with the precedent of the suite (Gnothi.Assistant.Tests compiles ModuleEnrollment.cs against
+       the Host through InternalsVisibleTo). What the window writes of its own is the adapter to
+       the web engine -FrameWebModule.cs, and WebView2WebModule.cs on Windows- and the enrollment
+       screen, Alta.razor.
+       CS0436: WebViewShell and HybridShell also exist as stubs in the Host; the compiler prefers
+       this project's copy, which is the real one. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS0436</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Gnothi.MobileShared\WebModule.cs" Link="Movil\WebModule.cs" />
+    <Compile Include="..\Gnothi.MobileShared\BundleServer.cs" Link="Movil\BundleServer.cs" />
+    <Compile Include="..\Gnothi.MobileShared\HybridShell.cs" Link="Movil\HybridShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\WebViewShell.cs" Link="Movil\WebViewShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\GnothiCourier.cs" Link="Movil\GnothiCourier.cs" />
+    <Compile Include="..\Gnothi.MobileShared\GnothiCredential.cs" Link="Movil\GnothiCredential.cs" />
+    <!-- EL ALTA, la misma del telefono: bajar o leer el paquete, inspeccionarlo, firma, respaldo de
+         origen, propuesta, y solo despues installation.json, con las tres formas. Reemplaza a
+         ModuleInstaller como puerta de la ventana porque aquel toma solo cargo. -->
+    <Compile Include="..\Gnothi.MobileShared\ModuleEnrollment.cs" Link="Movil\ModuleEnrollment.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
     <!-- The assistant brain -the SAME AgentLoop the phone runs- reused, not reimplemented. -->
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- EL ICONO DEL EJECUTABLE. `SetIconFile` le pone cara a la VENTANA; esto se la pone al
+         archivo, que es de donde Windows saca el icono de la barra de tareas, el del
+         explorador y el de alt-tab. Sin los dos, Mymi tiene cara abierta y no la tiene
+         anclada. -->
+    <ApplicationIcon>mymi.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="mymi.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- LA CARA DE MYMI, Y ES EL MISMO ARCHIVO que pintan los dos telefonos: se enlaza, no se
+         copia. Si la marca cambia, cambia en las tres caras a la vez; dos copias divergen. -->
+    <Content Include="..\Gnothi.Mobile\Assets\img\mymi-hub.png" Link="wwwroot\mymi.png"
+             CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

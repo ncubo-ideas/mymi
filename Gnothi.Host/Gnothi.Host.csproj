@@ -18,6 +18,10 @@
        puertas y afirma resultado identico". -->
   <ItemGroup>
     <InternalsVisibleTo Include="Gnothi.Assistant.Tests" />
+    <!-- La ventana de escritorio compila la capa neutra de Gnothi.MobileShared (WebModule,
+         BundleServer, HybridShell, WebViewShell, el cartero) contra este ensamblado para alojar
+         la forma hibrida, igual que la suite compila ModuleEnrollment. Ver Module.ShellFactory. -->
+    <InternalsVisibleTo Include="Gnothi.Desktop" />
   </ItemGroup>
 
   <PropertyGroup>

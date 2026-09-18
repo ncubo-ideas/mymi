@@ -41,11 +41,10 @@ namespace Concesionario.Dominio
 			return new List<StayDay>();
 		}
 
-		/// <summary>La ausencia en palabras, con los dos dias del periodo adentro.</summary>
-		internal override string Describe()
+		/// <summary>La ausencia con su propio codigo y con los dos dias del periodo adentro.</summary>
+		internal override AStayPeriodClause TheClause()
 		{
-			return "Entre el " + _from.HowItIsSaid() + " y el " + _to.HowItIsSaid()
-				+ " no hay ninguna estadía en el taller con días registrados.";
+			return AStayPeriodClause.WithNoStayOnRecord(_from.HowItIsSaid(), _to.HowItIsSaid());
 		}
 	}
 }

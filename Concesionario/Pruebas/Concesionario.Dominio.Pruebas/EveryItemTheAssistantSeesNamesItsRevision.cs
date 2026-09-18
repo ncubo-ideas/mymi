@@ -134,7 +134,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (PublishedFluid each in takes.Fluids)
 			{
-				Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(each.Kind)), each.Kind);
+				Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, each.Kind)), each.Kind);
 				Assert.That(each.Published, Is.EqualTo(each.Kind == "EngineOil"), each.Kind);
 				Assert.That(
 					each.Revision, Is.EqualTo(each.Kind == "EngineOil" ? TheFirstRevision : ""),
@@ -253,10 +253,10 @@ namespace Concesionario.Dominio.Pruebas
 				"LOS DOS HITOS, sin que nadie nombre ninguno. Ahi esta P-12 entero: la tool enumera "
 				+ "lo que el fabricante publico en vez de pedirle un numero a quien pregunta.");
 
-			PublishedPrice current = ThePriceAt(pricing, "10000 km");
-			PublishedPrice stale = ThePriceAt(pricing, "20000 km");
+			PublishedPrice current = ThePriceAt(pricing, "10.000 km");
+			PublishedPrice stale = ThePriceAt(pricing, "20.000 km");
 
-			Assert.That(current.Says, Does.StartWith("Cambio de fluido a los 10000 km: $89.90"),
+			Assert.That(current.Says, Does.StartWith("Cambio de fluido a los 10.000 km: $89,90"),
 				"LA FORMA FUERTE: el hito y el monto en una frase con su conectiva, asi que una fila "
 				+ "armada con el hito de una y el monto de otra se ve.");
 			Assert.That(current.Says, Does.Contain("vigente del"));
@@ -267,7 +267,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(pricing.AskedAt, Is.Not.Empty,
 				"Y se dice CONTRA QUE INSTANTE se juzgo. Sin el, 'vigente' no es respecto de nada.");
 
-			Assert.That(stale.Says, Does.StartWith("Cambio de fluido a los 20000 km: $149.90"));
+			Assert.That(stale.Says, Does.StartWith("Cambio de fluido a los 20.000 km: $149,90"));
 			Assert.That(stale.Says, Does.Contain("esa vigencia ya pasó"),
 				"Un precio viejo mostrado como vigente es una promesa que la sucursal no hizo.");
 			Assert.That(stale.Says, Does.Not.Contain("esa vigencia está rigiendo"));
@@ -289,7 +289,7 @@ namespace Concesionario.Dominio.Pruebas
 				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 			Assert.That(pricing.Prices, Has.Count.EqualTo(1));
-			Assert.That(pricing.Prices[0].Milestone, Is.EqualTo("10000 km"));
+			Assert.That(pricing.Prices[0].Milestone, Is.EqualTo("10.000 km"));
 
 			foreach (PropertyInfo each in typeof(PublishedPrice).GetProperties())
 				Assert.That(
@@ -383,8 +383,9 @@ namespace Concesionario.Dominio.Pruebas
 			// EL CONTROL: la puerta SI compone la frase emparejada cuando le llega la mitad del
 			// vehiculo, asi que el renglon de arriba mira una diferencia real.
 			Assert.That(
-				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
-				Does.Contain("le quedan 2000 km"));
+				journal.Api.DescribeServiceInterval(
+					"FluidChange", 2000, "UnitA", TheLanguage.OfTheRecord),
+				Does.Contain("le quedan 2.000 km"));
 		}
 
 		// Y CUANDO NO HAY INTERVALO PUBLICADO NO SE ANUNCIA NADA. Sin esto, la frase de arriba podria
@@ -550,7 +551,7 @@ namespace Concesionario.Dominio.Pruebas
 		// posicion de otra.
 		private static string TheTyreSubjectFor(string position)
 		{
-			return "Llanta " + HowACanonNameReads.ATyre(position).ToLowerInvariant();
+			return "Llanta " + HowACanonNameReads.ATyre(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, position).ToLowerInvariant();
 		}
 	}
 }

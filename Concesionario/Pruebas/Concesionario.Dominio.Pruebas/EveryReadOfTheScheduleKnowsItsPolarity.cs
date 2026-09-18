@@ -79,11 +79,11 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AnUnscheduledKindSaysThereIsNothingOfThatKindOnTheSchedule()
 		{
-			string reason = schedule.ReadDueReason(OperationKindCode.FilterChange);
+			ADueReason reason = schedule.TheDueReasonFor(OperationKindCode.FilterChange);
 
-			Assert.That(reason, Does.Contain("no tiene agendada"));
-			Assert.That(reason, Does.Contain("cambio de filtro"),
-				"Y nombra la clase: una frase generica obligaria a la vista a saber sobre que "
+			Assert.That(reason.Shape, Is.EqualTo(ADueReason.NoOperationScheduled));
+			Assert.That(reason.Kind, Is.EqualTo(MaintenanceOperationKind.FilterChange.Name),
+				"Y nombra la clase: un motivo generico obligaria a la vista a saber sobre que "
 				+ "clase estaba preguntando.");
 		}
 
@@ -182,7 +182,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.Throws<DomainException>(() => schedule.ReadDueState((OperationKindCode)99));
 			Assert.Throws<DomainException>(() => schedule.DeferralsUsed((OperationKindCode)99));
-			Assert.Throws<DomainException>(() => schedule.ReadDueReason((OperationKindCode)99));
+			Assert.Throws<DomainException>(
+				() => schedule.TheDueReasonFor((OperationKindCode)99));
 			Assert.Throws<DomainException>(() => schedule.CanBeDeferred((OperationKindCode)99));
 		}
 
@@ -194,8 +195,8 @@ namespace Concesionario.Dominio.Pruebas
 			SeedTheFluidChange();
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("todavía no se ha evaluado"));
+				schedule.TheDueReasonFor(OperationKindCode.FluidChange).Shape,
+				Is.EqualTo(ADueReason.NotEvaluatedYet));
 		}
 
 		private void SeedTheFluidChange()

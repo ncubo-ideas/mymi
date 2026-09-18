@@ -128,8 +128,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ledger.RecordDurableCost(Incurred, 240000m, "CRC", TheSubject, 48);
 
-			string[] said = ledger.CostEntryExpectedLivesBetween(
-				Incurred, new DateTime(2026, 1, 31, 0, 0, 0));
+			string[] said = TheSentenceTheDoorWouldCompose.EachCostEntryExpectedLife(
+				ledger, Incurred, new DateTime(2026, 1, 31, 0, 0, 0), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Is.EqualTo(new[] { "48 meses" }));
 		}
@@ -139,8 +139,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ledger.RecordRecurringCost(Incurred, 25000m, "CRC", "Gasolina de enero");
 
-			string[] said = ledger.CostEntryExpectedLivesBetween(
-				Incurred, new DateTime(2026, 1, 31, 0, 0, 0));
+			string[] said = TheSentenceTheDoorWouldCompose.EachCostEntryExpectedLife(
+				ledger, Incurred, new DateTime(2026, 1, 31, 0, 0, 0), TheLanguage.OfTheRecord);
 
 			Assert.That(said, Is.EqualTo(new[] { "" }),
 				"Una celda vacia dice que no tiene vida util. Un cero ahi se leeria como una vida "

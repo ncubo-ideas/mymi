@@ -1,0 +1,57 @@
+/* LO POCO QUE LA CARA AGREGA A LAS HOJAS DE LA INSTITUCION.
+ *
+ * `app.css` y `dueno.css` VIAJAN TAL CUAL, sin tocar una regla. Antes esta hoja tenia copiados a
+ * mano los bloques de `dueno.css` que me parecia que hacian falta, y elegir cuales era decidir
+ * como se ve Sotavento. Copiar los archivos enteros saca esa decision de aca.
+ *
+ * SON LAS DOS, y no solo la del dueño: `dueno.css` da el vocabulario `d-*` de esta pantalla, pero
+ * el reset, el cuerpo y la tipografia los pone `app.css`. Llevar una sola dejaba la pantalla sin
+ * piso.
+ *
+ * Y NO CUESTA LO QUE PARECE: las dos juntas son 44 KB sin comprimir contra 409 KB de dominio en
+ * dll. En el paquete, el css no es el que pesa.
+ *
+ * Lo unico que va aca es lo que ninguna de las dos tiene, porque en la app suelta no existe: el
+ * estado del cartero. */
+
+/* EL PIE CON LO QUE HIZO EL CARTERO. En la app suelta esto no existe porque la app sabe si pudo o
+   no. Aca la cara le PIDE a Gnothi, y sin decir como le fue, «no hay nada» y «el cartero no pudo»
+   se ven exactamente igual. */
+footer {
+    max-width: 30rem; margin: 0 auto; padding: 8px 18px 40px;
+    color: var(--d-muted-2); font-size: 12.5px;
+}
+footer p { margin: 0 0 6px; }
+footer .malo { color: var(--d-danger-ink); }
+
+/* La tecla de refresco va en el capo oscuro, asi que su contorno es blanco y no el azul de
+   accion: sobre el navy, un boton azul desaparece. */
+.d-releer {
+    font: inherit; font-size: 13px; font-weight: 600;
+    padding: 6px 14px; cursor: pointer; white-space: nowrap;
+    background: transparent; color: #fff;
+    border: 1px solid rgba(255, 255, 255, .45); border-radius: 999px;
+    transition: border-color .12s ease, background .12s ease;
+}
+.d-releer:hover:not(:disabled) { border-color: #fff; background: rgba(255, 255, 255, .10); }
+.d-releer:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.d-releer:disabled { opacity: .55; cursor: progress; }
+
+/* QUE `hidden` GANE, y esto es el arreglo de un defecto real, no una precaucion.
+ *
+ * `[hidden] { display: none }` vive en la hoja del navegador, que es la de MENOR precedencia.
+ * Cualquier regla de la institucion que fije `display` en esa misma clase le gana, y el nodo
+ * se sigue viendo con el atributo puesto. Medido en el telefono el 2026-09-14: `.placa` es
+ * `inline-flex` en cargas, asi que la placa salia DOS VECES -- la fija y el selector, los dos
+ * marcados como escondidos, los dos visibles.
+ *
+ * La app suelta no tiene este problema porque Blazor no esconde: con un `@if` el nodo que no
+ * toca NO SE DIBUJA. Una cara hibrida es HTML estatico, los dos nodos existen siempre, y
+ * esconder es la unica herramienta. Entonces la herramienta tiene que funcionar.
+ *
+ * Va en `cara.css` -- que carga despues de la hoja de la institucion -- y no en la de ella:
+ * esto es una consecuencia de COMO pinta esta cara, no una opinion sobre su diseno.
+ *
+ * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
+ * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
+[hidden] { display: none !important; }

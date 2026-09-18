@@ -75,7 +75,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(vencimiento.DistanceIsSuspended, Is.False,
 				"No hay dimension de distancia que suspender: esta base no tiene ninguna de las "
 				+ "dos. Suspendida y ausente no son lo mismo.");
-			Assert.That(vencimiento.Describe(), Does.Contain("cruce de umbral observado"));
+			Assert.That(
+				vencimiento.TheReason().Shape, Is.EqualTo(ADueReason.WaitsForACrossing));
 		}
 
 		// No necesita ancla ni lecturas para contestar, porque no mide nada desde ningun lado.

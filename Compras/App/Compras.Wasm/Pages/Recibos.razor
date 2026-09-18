@@ -2,6 +2,7 @@
 @using System.Globalization
 @using Compras.App.Vistas
 @using Compras.App
+@inject Textos textos
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 
@@ -11,31 +12,31 @@
    Sigue el diseño de la app: una búsqueda arriba y los recibos AGRUPADOS POR FECHA, con
    HOY separado del resto. Nadie recuerda el número de un ticket; recuerda cuándo fue. *@
 
-<PageTitle>Tus compras · La Guaria y vos</PageTitle>
+<PageTitle>@textos["recibos.pestana"] · @Textos.TituloDelModulo</PageTitle>
 
-<h1>Encontrá eso que llevaste</h1>
+<h1>@textos["recibos.titulo"]</h1>
 <p class="text-body-secondary mb-4">
-    Buscá un producto o recorré tus compras anteriores.
+    @textos["recibos.bajada"]
 </p>
 
 @if (!estado.EstaArriba)
 {
     <div class="aviso">
-        La app todavía no abrió en esta computadora.
-        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+        @textos["comun.sinAbrir"]
+        <a href="">@textos["comun.sinAbrirEnlace"]</a> @textos["comun.sinAbrirCola"]
     </div>
 }
 else
 {
     <div class="buscador mb-4">
         <span class="buscador-lupa" aria-hidden="true">&#8981;</span>
-        <input class="form-control" type="search" placeholder="Buscar leche, arroz, galletas…"
-               value="@termino" @oninput="Buscar" aria-label="Buscar en tus compras" />
+        <input class="form-control" type="search" placeholder="@textos["recibos.buscarPlaceholder"]"
+               value="@termino" @oninput="Buscar" aria-label="@textos["recibos.buscarEtiqueta"]" />
     </div>
 
     @if (compras.Count == 0)
     {
-        <p class="text-body-secondary">Todavía no hay compras. Apretá <em>Refresh</em> en Inicio.</p>
+        <p class="text-body-secondary">@((MarkupString)textos["recibos.sinCompras"])</p>
     }
     else if (Filas().Count == 0)
     {
@@ -43,7 +44,7 @@ else
            dominio, que es el que sabe qué se buscó. *@
         <p class="text-body-secondary">
             @(hallazgo is null ? "" : hallazgo.ParaElAsistente)
-            Probá con otro producto, o con un pasillo entero — <em>limpieza</em>, <em>proteinas</em>.
+            @((MarkupString)textos["recibos.probaConOtro"])
         </p>
     }
     else
@@ -55,7 +56,7 @@ else
         {
             <p class="hallazgo-dicho">
                 <strong>@Junta(hallazgo.Productos)</strong>
-                &middot; @hallazgo.CuantasCompras @(hallazgo.CuantasCompras == 1 ? "compra" : "compras")
+                &middot; @textos.CuantasCompras(hallazgo.CuantasCompras)
                 &middot; @hallazgo.TotalUnidades u
                 &middot; @Colones(hallazgo.TotalGastado)
             </p>
@@ -71,7 +72,7 @@ else
                             @onclick="() => VerDetalle(fila.Numero)">
                         <span class="recibo-dia">
                             <span class="recibo-numero-dia">@fila.Fecha.Day</span>
-                            <span class="recibo-mes">@Mes(fila.Fecha.Month)</span>
+                            <span class="recibo-mes">@textos[$"comun.mes.{fila.Fecha.Month}"]</span>
                         </span>
                         <span class="recibo-que">
                             @* BUSCANDO, LA FILA DICE POR QUÉ APARECIÓ: cuánto de lo buscado
@@ -81,12 +82,12 @@ else
                             {
                                 <strong>@fila.Unidades u &middot; @Colones(fila.Gasto)</strong>
                                 <span class="small text-body-secondary">
-                                    de @fila.Lineas @(fila.Lineas == 1 ? "producto" : "productos")
+                                    @textos.Con(fila.Lineas == 1 ? "recibos.deProducto.uno" : "recibos.deProducto.varios", ("cuantos", fila.Lineas.ToString()))
                                 </span>
                             }
                             else
                             {
-                                <strong>@fila.Lineas @(fila.Lineas == 1 ? "producto" : "productos")</strong>
+                                <strong>@textos.Con(fila.Lineas == 1 ? "recibos.producto.uno" : "recibos.producto.varios", ("cuantos", fila.Lineas.ToString()))</strong>
                                 @* EL DIA DE LA SEMANA Y LA HORA, no el numero del ticket.
                                    "T-90349" es como el super identifica ese papel en SU
                                    sistema; nadie recuerda una compra por ese numero. Lo que
@@ -114,17 +115,13 @@ else
         @if (termino.Length == 0 && compras.Count > RecibosQueSeMuestran)
         {
             <p class="small text-body-secondary">
-                Las @RecibosQueSeMuestran más recientes de @compras.Count.
-                Buscá arriba para encontrar una más vieja — y tu asistente las puede
-                consultar todas.
+                @textos.Con("recibos.masRecientes", ("cuantas", RecibosQueSeMuestran.ToString()), ("total", compras.Count.ToString()))
             </p>
         }
         else if (hallazgo is not null && hallazgo.CuantasCompras > ResultadosQueSeMuestran)
         {
             <p class="small text-body-secondary">
-                Las @ResultadosQueSeMuestran más recientes de @hallazgo.CuantasCompras.
-                Los totales de arriba sí son de todas — y tu asistente las puede consultar una
-                por una.
+                @textos.Con("recibos.resultadosRecientes", ("cuantas", ResultadosQueSeMuestran.ToString()), ("total", hallazgo.CuantasCompras.ToString()))
             </p>
         }
     }
@@ -203,8 +200,8 @@ else
     private IEnumerable<IGrouping<string, Fila>> PorFecha() =>
         Filas().GroupBy(f =>
             f.Fecha.Date == DateTime.Now.Date
-                ? "HOY"
-                : $"{Mes(f.Fecha.Month).ToUpperInvariant()} {f.Fecha.Year}");
+                ? textos["recibos.hoy"]
+                : $"{textos[$"comun.mes.{f.Fecha.Month}"].ToUpperInvariant()} {f.Fecha.Year}");
 
     private void VerDetalle(string numero) =>
         navegacion.NavigateTo($"compra/{Uri.EscapeDataString(numero)}");
@@ -225,32 +222,26 @@ else
     // EL DIA DE LA SEMANA, escrito a mano. En wasm la globalizacion viene recortada y
     // pedirle a la cultura los nombres de los dias devuelve los ingleses o vacio, que es el
     // mismo motivo por el que Plata arma el separador de miles sin cultura.
-    private static string Dia(DateTime cuando) => cuando.DayOfWeek switch
+    private string Dia(DateTime cuando) => textos["comun.dia." + cuando.DayOfWeek switch
     {
         DayOfWeek.Monday => "lunes",
         DayOfWeek.Tuesday => "martes",
-        DayOfWeek.Wednesday => "miércoles",
+        DayOfWeek.Wednesday => "miercoles",
         DayOfWeek.Thursday => "jueves",
         DayOfWeek.Friday => "viernes",
-        DayOfWeek.Saturday => "sábado",
+        DayOfWeek.Saturday => "sabado",
         _ => "domingo",
-    };
+    }];
 
     // "7:30 p.m." y no "19:30". El reloj de 24 horas es de horario de sistema; nadie dice
     // "fui al super a las diecinueve treinta".
-    private static string Hora(DateTime cuando)
+    private string Hora(DateTime cuando)
     {
         int hora = cuando.Hour % 12;
         if (hora == 0) hora = 12;
 
-        return $"{hora}:{cuando.Minute:00} {(cuando.Hour < 12 ? "a.m." : "p.m.")}";
+        return $"{hora}:{cuando.Minute:00} {textos[cuando.Hour < 12 ? "comun.am" : "comun.pm"]}";
     }
 
-    private static string Mes(int mes) => mes switch
-    {
-        1 => "ene", 2 => "feb", 3 => "mar", 4 => "abr", 5 => "may", 6 => "jun",
-        7 => "jul", 8 => "ago", 9 => "sep", 10 => "oct", 11 => "nov", _ => "dic",
-    };
-
-    private static string Colones(decimal monto) => Plata.Colones(monto);
+    private string Colones(decimal monto) => textos.Monto(monto);
 }

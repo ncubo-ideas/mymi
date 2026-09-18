@@ -140,8 +140,8 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.Evaluate(new DateTime(2026, 6, 1));
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("las unidades nunca se convierten"),
+				schedule.TheDueReasonFor(OperationKindCode.FluidChange).ClauseCodes,
+				Does.Contain(LimitClause.UnitMismatch),
 				"El limite esta en UnitA y el ancla nueva quedo en UnitB. Si la fachada hubiera "
 				+ "puesto UnitA por su cuenta, la sucesora mediria 200 unidades desde una lectura "
 				+ "que nadie tomo en esa escala.");

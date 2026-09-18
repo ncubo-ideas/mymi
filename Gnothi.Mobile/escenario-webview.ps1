@@ -46,8 +46,12 @@ $logs    = "$env:TEMP\gnothi-escenario"
 # armar-bundle.ps1: el manifiesto los lleva ADENTRO y el modulo no los puede cambiar despues.
 #
 # Y el directorio del concesionario ahora es Concesionario, no DealershipCar: master lo renombro
-# en 0110017. Cambio la RUTA, no la marca -- su Titulo sigue en ingles porque el modulo entero
-# esta en ingles, y sus tipos tambien (DealershipCarAPI). Si esto se vuelve a romper, es esto.
+# en 0110017. Cambio la RUTA, no la marca -- y sus tipos siguen diciendo DealershipCar a
+# proposito (DealershipCarAPI). Si esto se vuelve a romper, es esto.
+#
+# SU SUBTITULO ES EL TITULO QUE EL MODULO DECLARA, igual que en las otras cuatro filas. Decia
+# "Your maintenance", de cuando el modulo entero estaba en ingles: hoy habla los dos idiomas y
+# sigue al aparato, y el idioma de su registro es el espanol.
 #
 # El publicador de municipalidad es el 8121 y NO es una eleccion libre: es el mismo puerto que su
 # docker-compose publica, asi que los contenedores del modulo hay que bajarlos antes de correr
@@ -60,9 +64,9 @@ $catalogo = [ordered]@{
     'cargas'        = @{ Mock = "$raiz\Cargas\EndPointDeEventos";        Pub = 8111; Web = 8112
                          Titulo = 'Estaciones Faro';            Subtitulo = 'Tus cargas' }
     'dealership'    = @{ Mock = "$raiz\Concesionario\EndPointDeEventos"; Pub = 8092; Web = 8093
-                         Titulo = 'Sotaventos Motors';           Subtitulo = 'Your maintenance' }
+                         Titulo = 'Sotaventos Motors';           Subtitulo = 'Mi plan de mantenimiento' }
     'municipalidad' = @{ Mock = "$raiz\Municipalidad\EndPointDeEventos"; Pub = 8121; Web = 8122
-                         Titulo = 'Tu municipalidad';           Subtitulo = 'Mi cuenta municipal' }
+                         Titulo = 'Municipalidad de Monteverde'; Subtitulo = 'MONTEVERDE Municipal Services' }
 }
 
 if (-not (Test-Path $adb)) { throw "no encuentro adb en $adb. Pasa -Sdk con la ruta de tu SDK de Android." }
@@ -188,13 +192,36 @@ if (-not (Test-Path $apk)) {
 # INSTALL_FAILED_INSUFFICIENT_STORAGE ("Failed to override installation location") even with room
 # to spare; `pm uninstall -k` -keep data and cache- followed by a plain install gets the new build in
 # with the modules, journals and pins of the previous one untouched (measured 2026-09-09).
-$instalado = (& $adb install -r $apk 2>&1 | Select-Object -Last 1)
-if ("$instalado" -notmatch 'Success') {
-    Write-Host "    install -r no pudo ($instalado); reinstalando sin perder los datos..."
+#
+# Y SE MIRA EL CODIGO DE SALIDA, NO LA PALABRA «Success». Esto decia
+# `if ("$instalado" -notmatch 'Success')` sobre `Select-Object -Last 1`, y ahi estaba la
+# trampa: adb 36 SI imprime «Success», pero le agrega DESPUES una linea de tiempo --
+# «Install command complete in 4019 ms» --, y `-Last 1` se quedaba con esa. Un install -r
+# que funciono se leia como fallado y el guion caia SIEMPRE al desinstalar, que es justo lo
+# que el camino de abajo existe para evitar.
+#
+# [MEDIDO 2026-09-16] con el codigo de salida: `install -r` conservo los accesos fijados
+# -- `dumpsys shortcut` seguia nombrando modulo:examenes, modulo:compras y
+# modulo:municipalidad despues de instalar --.
+#
+# Y el precio no eran unos segundos: desinstalar el paquete le BORRA AL LANZADOR SUS ACCESOS
+# FIJADOS. `pm uninstall -k` conserva modulos y journals -- son datos de la app -- pero los
+# iconos de la pantalla de inicio no son datos de la app, son del lanzador, y se van con el
+# paquete. Medido el 2026-09-14: despues de una corrida, `dumpsys shortcut` ya no nombraba a
+# com.ncubo.gnothi.host.
+#
+# El comentario de arriba decia «con los pins de la anterior intactos (medido 2026-09-09)».
+# Era cierto cuando se midio, con un adb que decia Success.
+& $adb install -r $apk | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "    install -r no pudo (codigo $LASTEXITCODE); reinstalando sin perder los datos..."
+    Write-Host "    OJO: esto BORRA los accesos fijados en la pantalla de inicio; hay que volver a fijarlos."
     & $adb shell pm uninstall -k $paquete 2>&1 | Out-Null
     Start-Sleep -Seconds 3
-    $instalado = (& $adb install $apk 2>&1 | Select-Object -Last 1)
+    & $adb install $apk | Out-Null
+    $instalado = if ($LASTEXITCODE -eq 0) { "reinstalado (se perdieron los accesos fijados)" } else { "FALLO (codigo $LASTEXITCODE)" }
 }
+else { $instalado = "actualizado en el lugar; los accesos fijados siguen" }
 Write-Host "apk        : $instalado"
 
 # EL DOMINIO, APROBADO A MANO. Chrome solo le entrega un enlace https a una app cuando esa app

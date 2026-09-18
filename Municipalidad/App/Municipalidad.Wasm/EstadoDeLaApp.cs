@@ -1,6 +1,7 @@
 using Choreography.Theater;
 using Municipalidad.App;
 using Municipalidad.App.Events;
+using Municipalidad.App.Vistas;
 using Municipalidad.Wasm.Vistas;
 using Puppeteer;
 using Puppets.Portador;
@@ -407,7 +408,7 @@ namespace Municipalidad.Wasm
 		public LaVariacionDeCadaRubro LeerLaVariacionDeCadaRubro()
 		{
 			Exigir();
-			return LaVariacionDeCadaRubro.LeerPor(api, textos);
+			return LaVariacionDeCadaRubro.LeerPor(api, textos.Idioma);
 		}
 
 		/// <summary>
@@ -420,7 +421,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), textos);
+			return LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), textos.Idioma);
 		}
 
 		/// <summary>
@@ -433,7 +434,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), textos);
+			return LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), textos.Idioma);
 		}
 
 		/// <summary>
@@ -453,7 +454,7 @@ namespace Municipalidad.Wasm
 		public LoSinComprobante LeerLoSinComprobante()
 		{
 			Exigir();
-			return LoSinComprobante.LeerPor(api, textos);
+			return LoSinComprobante.LeerPor(api, textos.Idioma);
 		}
 
 		/// <summary>
@@ -468,7 +469,7 @@ namespace Municipalidad.Wasm
 
 			int elAnio = loEligioLaPersona ? anio : ElInstanteEnQueLaPantallaPregunta().Year;
 
-			return LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligioLaPersona, textos);
+			return LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligioLaPersona, textos.Idioma);
 		}
 
 		/// <summary>
@@ -481,7 +482,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LoQueEntroYLoQueFalta.LeerPor(api, alDia, ElDiaDe(alDia), textos);
+			return LoQueEntroYLoQueFalta.LeerPor(api, alDia, ElDiaDe(alDia));
 		}
 
 		/// <summary>

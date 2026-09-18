@@ -34,10 +34,10 @@ namespace Concesionario.Dominio
 			return new List<ACompletionRow>();
 		}
 
-		/// <summary>La ausencia en palabras, con la clase adentro.</summary>
-		internal override string Describe()
+		/// <summary>La ausencia con su propio codigo y con la clase adentro.</summary>
+		internal override ACompletionsClause TheClause()
 		{
-			return _kind.HowItIsSaid + ": no hay ninguna completación registrada para este vehículo.";
+			return ACompletionsClause.WithNoneOnRecord(_kind.Name);
 		}
 	}
 }

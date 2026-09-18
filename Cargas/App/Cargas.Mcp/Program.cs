@@ -90,7 +90,7 @@ static string Instrucciones(string carpeta) => $"""
     L/100km. Los dos dicen que el carro empeoro. Deci el que te llega con la palabra que
     te llega, y no rehagas la cuenta.
 
-    Si el veredicto es "dato sospechoso", el numero es implausible y casi seguro falta
+    Si el veredicto es "dato-sospechoso", el numero es implausible y casi seguro falta
     una carga por registrar: quedaron los kilometros de dos tanques con los litros de
     uno. Es un problema de datos, no del carro - sugeri registrar la carga que falto,
     NO alarmes.

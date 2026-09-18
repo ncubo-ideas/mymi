@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 
 namespace Concesionario.Dominio
 {
@@ -62,16 +61,13 @@ namespace Concesionario.Dominio
 
 		/// <summary>
 		/// La clausula que esta llanta aporta a la respuesta: la posicion, la medida, la presion con
-		/// su unidad y las clasificaciones. El numero se dice igual en toda maquina, para que la
-		/// respuesta que alguien guardo sea la misma que la que otro lee.
+		/// su unidad y las clasificaciones, como forma y valores. Elegir que va en ella es del
+		/// dominio; redactarla es de quien elige el idioma.
 		/// </summary>
-		internal string Describe()
+		internal ATyreClause TheClauseItComposes(string revisionCode)
 		{
-			return "Llanta " + _position.HowItIsSaid.ToLowerInvariant()
-				+ ": medida " + _size
-				+ ", presión en frío " + _coldPressure.ToString(CultureInfo.InvariantCulture)
-				+ " " + _pressureUnit.Name
-				+ ", clasificaciones " + _ratings + ".";
+			return ATyreClause.Published(
+				revisionCode, _position, _size, _coldPressure, _pressureUnit, _ratings);
 		}
 	}
 }

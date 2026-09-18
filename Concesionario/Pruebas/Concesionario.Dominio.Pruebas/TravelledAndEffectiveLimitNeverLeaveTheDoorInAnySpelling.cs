@@ -154,8 +154,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void BothOperandsAreRealRightNowAndReachTheCallerInsideTheSentence()
 		{
 			Assert.That(
-				journal.Api.ReadDueReason(TheKind),
-				Does.Contain("7353 de 41999 km"),
+				journal.Api.ReadDueReason(TheKind, TheLanguage.OfTheRecord),
+				Does.Contain("7.353 de 41.999 km"),
 				"Los dos operandos tienen que estar VIVOS para que no entregarlos signifique algo.");
 
 			// Y LO QUE SI SALE COMO NUMERO ES EL RESTO, que es la diferencia de esos dos y esta

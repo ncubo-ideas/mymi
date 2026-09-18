@@ -29,13 +29,25 @@ namespace Concesionario.Dominio
 			return true;
 		}
 
-		/// <summary>
-		/// La clausula del item y, en la misma frase, la revision que la publico: quien lea la
-		/// respuesta y no pregunte aparte por la procedencia igual la tiene delante.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Publicada.</summary>
+		internal override string TheShapeItHas()
 		{
-			return _clause + " Publicado en la revisión " + _revision.Code + ".";
+			return SpecificationPublication.Published;
+		}
+
+		/// <summary>
+		/// La clausula del item, sola. La revision que la publico viaja al lado y no dentro: quien
+		/// redacte pone las dos en la misma frase, que es donde la persona las necesita juntas.
+		/// </summary>
+		internal override string TheClauseItCarries()
+		{
+			return _clause;
+		}
+
+		/// <summary>Vacio: el sujeto ya esta dentro de la clausula del item.</summary>
+		internal override string TheSubjectItIsAbout()
+		{
+			return string.Empty;
 		}
 
 		/// <summary>El codigo de la revision que la publico.</summary>

@@ -98,7 +98,7 @@ namespace Concesionario.Dominio.Pruebas
 				"IsInsideTheShopAt sin ninguna estadia.");
 
 			Assert.That(
-				journal.Api.DescribeTheStayAt(TheInstantNoStayCovers),
+				journal.Api.DescribeTheStayAt(TheInstantNoStayCovers, TheLanguage.OfTheRecord),
 				Does.Contain("ninguna estadía").And.Contains("2026-05-01 00:00:00"),
 				"DescribeTheStayAt nombra el INSTANTE por el que se pregunto, con su hora.");
 
@@ -112,15 +112,17 @@ namespace Concesionario.Dominio.Pruebas
 				"DaysInTheShopCountBetween sin ninguna estadia.");
 
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo),
-				Does.Contain("2026-01-01").And.Contains("2026-12-31").And.Contains("ninguna estadía"),
+				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
+				Does.Contain(ADay("2026-01-01")).And.Contains(ADay("2026-12-31"))
+					.And.Contains("ninguna estadía"),
 				"DescribeDaysInTheShopBetween nombra LOS DOS DIAS del periodo: un cero no diria entre "
 				+ "cuando y cuando se pregunto.");
 
 			Assert.That(journal.Api.StayCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(0),
 				"StayCountBetween sin ninguna estadia.");
 
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(record.Branch, Is.Empty, "StaysBetween: la columna Branch, sin filas.");
 			Assert.That(record.Subject, Is.Empty);
@@ -145,12 +147,20 @@ namespace Concesionario.Dominio.Pruebas
 				"Y fuera de las tres, que es lo que separa esta lectura de 'hay alguna estadia'.");
 
 			Assert.That(
-				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay),
+				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay, TheLanguage.OfTheRecord),
 				Does.Contain(TheOctoberBranch).And.Contains(TheOctoberSubject),
 				"DescribeTheStayAt dice la estadia ABIERTA entera: donde y por que.");
+			// LA CERRADA VA POR VALOR Y NO POR CONTENIDO, y es una afirmacion DEL LADO DE LA PUERTA:
+			// el cableado de sus ocho parametros vive ahi y en ningun otro sitio. MEDIDO -- con los
+			// dos extremos cruzados en la lectura de vuelta, un Does.Contain de los dos instantes
+			// pasa igual porque los dos siguen en la frase, y el pin por valor del renderizador no lo
+			// ve: ese compone por su cuenta y nunca toca el cableado de la puerta.
 			Assert.That(
-				journal.Api.DescribeTheStayAt(MarchCollected),
-				Does.Contain(TheMarchBranch).And.Contains("2026-03-04"),
+				journal.Api.DescribeTheStayAt(MarchCollected, TheLanguage.OfTheRecord),
+				Is.EqualTo(
+					"Estuvo en Taller Escazú desde el 2026-03-02 07:00:00 hasta el "
+					+ "2026-03-04 17:00:00: 3 días en el taller -- 2 mar 2026, 3 mar 2026, "
+					+ "4 mar 2026. Entró por Frenos."),
 				"Y la cerrada de marzo cuando se pregunta por un instante que ELLA cubre.");
 
 			Assert.That(journal.Api.HasAnyStayBetween(TheYearFrom, TheYearTo), Is.True,
@@ -169,15 +179,17 @@ namespace Concesionario.Dominio.Pruebas
 				"DaysInTheShopCountBetween: CINCO dias.");
 
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo),
-				Does.Contain("5 días").And.Contains("2 estadías").And.Contains("2026-07-21"),
+				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
+				Does.Contain("5 días").And.Contains("2 estadías")
+					.And.Contains(AShortDay("2026-07-21")),
 				"DescribeDaysInTheShopBetween: los dias, en cuantas estadias, y cuales.");
 
 			Assert.That(journal.Api.StayCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(2),
 				"StayCountBetween: DOS estadias, y no cinco -- estadias y dias son dos cuentas "
 				+ "distintas, y cruzarlas cambia esta afirmacion y la de arriba.");
 
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(record.Branch, Is.EqualTo(new[] { TheMarchBranch, TheJulyBranch }),
 				"StaysBetween: las dos filas, en orden de ENTRADA.");
@@ -317,10 +329,10 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeDaysInTheShopBetween",
-					() => journal.Api.DescribeDaysInTheShopBetween(fromDay, toDay)
+					() => journal.Api.DescribeDaysInTheShopBetween(fromDay, toDay, TheLanguage.OfTheRecord)
 				},
 				{ "StayCountBetween", () => journal.Api.StayCountBetween(fromDay, toDay) },
-				{ "StaysBetween", () => journal.Api.StaysBetween(fromDay, toDay) },
+				{ "StaysBetween", () => journal.Api.StaysBetween(fromDay, toDay, TheLanguage.OfTheRecord) },
 			};
 		}
 
@@ -329,7 +341,8 @@ namespace Concesionario.Dominio.Pruebas
 		// que cambiara de contenido al reproducirse.
 		private Dictionary<string, string> TheEightAnswers()
 		{
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			return new Dictionary<string, string>
 			{
@@ -337,7 +350,8 @@ namespace Concesionario.Dominio.Pruebas
 					"IsInsideTheShopAt",
 					journal.Api.IsInsideTheShopAt(TheInstantInsideTheOpenStay).ToString()
 				},
-				{ "DescribeTheStayAt", journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay) },
+				{ "DescribeTheStayAt", journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay,
+					TheLanguage.OfTheRecord) },
 				{
 					"HasAnyStayBetween",
 					journal.Api.HasAnyStayBetween(TheYearFrom, TheYearTo).ToString()
@@ -352,7 +366,7 @@ namespace Concesionario.Dominio.Pruebas
 				},
 				{
 					"DescribeDaysInTheShopBetween",
-					journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo)
+					journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord)
 				},
 				{
 					"StayCountBetween",
@@ -380,6 +394,18 @@ namespace Concesionario.Dominio.Pruebas
 				TheJulyBranch, TheJulySubject, JulyEntered, JulyCollected, TheJulyDays);
 
 			journal.Api.RecordShopEntry(TheOctoberBranch, TheOctoberSubject, OctoberEntered);
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
+		}
+
+		private static string AShortDay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.AShortDayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

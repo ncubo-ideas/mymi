@@ -29,5 +29,12 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Compras.Wasm\wwwroot\texto\es-CR.json" Link="texto\es-CR.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Compras.Wasm\wwwroot\texto\en.json" Link="texto\en.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
 

@@ -6,26 +6,36 @@
     settings. The visible face is `view`; inside Modules, the open module's name is the whole
     sub-navigation -a string, not the Module object, because the catalog can be reloaded and the
     object replaced underneath.
+
+    AND A FOURTH, THE MODULE'S OWN SCREEN (Cara): while it is open it takes the whole window,
+    without Gnothi's header and tabs, like the phone. It is put on screen by the frame host
+    (FrameWebModuleHost) through the delegates wired in OnInitialized, so a face can be opened
+    from a button here, from the module's desktop icon (--modulo) or from a test (--abrir), and
+    all three end up in the same place.
 *@
 
-<header>
-    @* LA MARCA. «Mymi» es el nombre del producto de cara a la persona desde 051beb6; en el
-       codigo, los ensamblados y el protocolo sigue siendo Gnothi. No sale del catalogo de textos
-       -- un nombre propio no se traduce. *@
-    <span class="brand">Mymi</span>
-    <span class="path">@State.Root</span>
-</header>
-
-<nav class="tabs">
-    <button class="@Cls(View.Modules)" @onclick="() => view = View.Modules">@T("nav.instituciones")</button>
-    <button class="@Cls(View.Asistente)" @onclick="() => view = View.Asistente">@T("nav.asistente")</button>
-    <button class="@Cls(View.Ajustes)" @onclick="() => view = View.Ajustes">@T("nav.ajustes")</button>
-</nav>
-
-<main>
-    @switch (view)
-    {
-        case View.Modules:
+@if (view != View.Cara)
+{
+    <header>
+        @* LA MARCA. «Mymi» es el nombre del producto de cara a la persona desde 051beb6; en el
+           codigo, los ensamblados y el protocolo sigue siendo Gnothi. No sale del catalogo de textos
+           -- un nombre propio no se traduce. *@
+        <img class="cara" src="mymi.png" alt="" />
+        <span class="brand">Mymi</span>
+    </header>
+    <nav class="tabs">
+        <button class="@Cls(View.Modules)" @onclick="() => Go(View.Modules)">@T("nav.instituciones")</button>
+        <button class="@Cls(View.Asistente)" @onclick="() => Go(View.Asistente)">@T("nav.asistente")</button>
+        <button class="@Cls(View.Ajustes)" @onclick="() => Go(View.Ajustes)">@T("nav.ajustes")</button>
+    </nav>
+}
+@switch (view)
+{
+    case View.Cara:
+        <Cara Module="@caraModule" Url="@caraUrl" Back="CloseFace" />
+        break;
+    case View.Modules:
+        <main>
             @if (open is null)
             {
                 <ModuleList Open="@(name => open = name)" />
@@ -37,17 +47,15 @@
                 </p>
                 <ModuleScreen Name="@open" />
             }
-            break;
-
-        case View.Asistente:
-            <Asistente GoToSettings="() => view = View.Ajustes" />
-            break;
-
-        case View.Ajustes:
-            <Ajustes />
-            break;
-    }
-</main>
+        </main>
+        break;
+    case View.Asistente:
+        <main><Asistente GoToSettings="() => view = View.Ajustes" /></main>
+        break;
+    case View.Ajustes:
+        <main><Ajustes /></main>
+        break;
+}
 
 @code {
     // EL lang DEL DOCUMENTO, desde el idioma que ya resolvio C#. No se cablea en index.html:
@@ -65,10 +73,48 @@
         await modulo.InvokeVoidAsync("fijarIdioma", Textos.Idioma);
     }
 
-    private enum View { Modules, Asistente, Ajustes }
+    private enum View { Modules, Asistente, Ajustes, Cara }
 
     private View view = View.Modules;
+    private View before = View.Modules;
     private string? open;
+    private string caraModule = "";
+    private string caraUrl = "";
 
     private string Cls(View v) => v == view ? "active" : "";
+
+    private void Go(View v) => view = v;
+
+    protected override void OnInitialized()
+    {
+        if (State.Frames is not { } frames) return;
+
+        // The page's side of the frame bridge. Every delegate hops onto Blazor's dispatcher:
+        // the host calls from wherever the courier or the dispatcher happen to be.
+        frames.Show = (module, url) => InvokeAsync(() =>
+        {
+            if (view != View.Cara) before = view;
+            caraModule = module;
+            caraUrl = url;
+            view = View.Cara;
+            StateHasChanged();
+        });
+        frames.Hide = module => InvokeAsync(() =>
+        {
+            if (view != View.Cara || caraModule != module) return;
+            view = before;
+            open = module;   // back lands on the module's own screen, where "Abrir la pantalla" is
+            StateHasChanged();
+        });
+        frames.RunJs = (module, js) => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.toFrame", module, js).AsTask());
+        frames.EvalIn = (module, id, js) => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.evalIn", module, id, js).AsTask());
+    }
+
+    // "Volver a Gnothi": the face goes (the module is evicted, as when the phone's back closes
+    // it), and the frame host's Hide brings the previous view back.
+    private void CloseFace()
+    {
+        string module = caraModule;
+        _ = Task.Run(() => State.Faces.Close(module));
+    }
 }

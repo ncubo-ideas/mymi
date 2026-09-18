@@ -122,13 +122,15 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.DeclareUsageProfile(UsageProfileCode.SevereDuty, TheProfileTakesEffect);
 			schedule.Evaluate(AfterTheProfileTookEffect);
 
-			string reason = schedule.ReadDueReason(OperationKindCode.FluidChange);
+			ADueReason reason = schedule.TheDueReasonFor(OperationKindCode.FluidChange);
 
-			Assert.That(reason, Does.Contain("tiempo:"));
-			Assert.That(reason, Does.Contain("distancia:"),
+			Assert.That(reason.ClauseDimensions, Does.Contain(IntervalDimension.Time));
+			Assert.That(reason.ClauseDimensions, Does.Contain(IntervalDimension.Distance),
 				"Las dos dimensiones siguen ahi. Si SevereDuty hubiera tocado la base, esta "
 				+ "operacion habria dejado de ser TimeOrDistance sin que nadie lo pidiera.");
-			Assert.That(reason, Does.Contain("256"),
+			Assert.That(
+				reason.ClauseLimits[Array.IndexOf(reason.ClauseDimensions, IntervalDimension.Time)],
+				Is.EqualTo(256),
 				"Y el limite que se compara es el ESCALADO, no el declarado.");
 		}
 
@@ -149,8 +151,8 @@ namespace Concesionario.Dominio.Pruebas
 				+ "LowDistance la dimension de distancia no se evalua. Los 259 dias de 365 "
 				+ "tampoco alcanzan, porque este perfil deja el tiempo intacto.");
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("de poca distancia"),
+				schedule.TheDueReasonFor(OperationKindCode.FluidChange).ClauseUsageProfiles,
+				Does.Contain(UsageProfile.LowDistance.Name),
 				"Y lo dice: OHS-07 exige poder mostrar cual perfil aplico.");
 		}
 

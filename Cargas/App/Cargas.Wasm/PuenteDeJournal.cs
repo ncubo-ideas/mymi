@@ -307,7 +307,7 @@ public sealed class PuenteDeJournal : IDestinoDelJournal, IAsyncDisposable
 	{
 		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);
 		ArgumentNullException.ThrowIfNull(contenido);
-		if (!HayDestino) return "no hay carpeta donde guardar";
+		if (!HayDestino) return "sin-carpeta-donde-guardar";
 
 		ResultadoDeEscritura resultado = await destino.Escribir(ruta, Convert.ToBase64String(contenido));
 		return resultado.Ok ? "" : resultado.Motivo;

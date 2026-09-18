@@ -85,38 +85,30 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La lectura del odometro con su unidad, o la constancia en palabras de que el ancla no
-		/// tiene ninguna. TOTAL: nunca cero y nunca la celda vacia, que se leerian las dos como que
-		/// hubo medicion.
+		/// Si el ancla de la que sale esta fila tiene lectura, por su codigo. TOTAL, y es lo que
+		/// decide si el valor de abajo dice algo: una celda vacia y un cero se leerian las dos como
+		/// que hubo medicion.
 		/// </summary>
-		internal string TheReadingItWasDoneAt()
+		internal string TheShapeOfItsReading()
 		{
-			if (!_reading.Exists()) return "sin lectura registrada";
-
-			return _reading.Value + " " + _reading.Unit.Name;
+			return _reading.Exists()
+				? CompletionReadingShape.WithAReading
+				: CompletionReadingShape.WithNoReading;
 		}
 
 		/// <summary>
-		/// Como se hizo, sin nombrar la clase: el instante y la lectura o su ausencia. Es la mitad
-		/// que el juego entero reusa para hablar de la mas reciente sin repetir la clase.
+		/// Que leyo el odometro, o cero donde el ancla no tiene lectura. TOTAL, y cual de los dos es
+		/// lo dice la forma de arriba y nunca ese cero.
 		/// </summary>
-		internal string HowItWasDone()
+		internal int TheValueOfItsReading()
 		{
-			if (!_reading.Exists())
-				return "se hizo el " + TheInstantItWasDone()
-					+ ", sin lectura del odómetro registrada";
-
-			return "se hizo el " + TheInstantItWasDone() + " con el odómetro en "
-				+ TheReadingItWasDoneAt();
+			return _reading.Exists() ? _reading.Value : 0;
 		}
 
-		/// <summary>
-		/// La completacion en una frase, que es lo que hace la fila autodescriptiva: la clase como se
-		/// dice, cuando, y la lectura o su ausencia.
-		/// </summary>
-		internal string Describe()
+		/// <summary>La unidad de esa lectura, o vacia por lo mismo. TOTAL.</summary>
+		internal string TheUnitOfItsReading()
 		{
-			return _kind.HowItIsSaid + ": " + HowItWasDone() + ".";
+			return _reading.Exists() ? _reading.Unit.Name : "";
 		}
 	}
 }

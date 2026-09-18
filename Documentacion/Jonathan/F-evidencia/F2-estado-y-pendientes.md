@@ -541,3 +541,222 @@ leer una copia (A4) es latencia y disco, no naturaleza**.
 - La comprobación bajo concurrencia es cantidad + contenido de la última entrada, **no** integridad
   byte a byte de cada registro.
 - **Solo Windows.**
+
+---
+
+## P16 · El canal de la lámina 04 — abierto, con un bloqueo y un hallazgo · 2026-09-11
+
+**Para qué.** Defender o descartar la lámina 04 (*«la app es solo la cara»*) ante quien mantiene el
+motor, con una tabla **medida**, no leída. El razonamiento está en `B7`; la evidencia literal, en
+`F1`, «Los canales de la lámina 04».
+
+### El hallazgo, que reordena el frente
+
+**El ícono pelea con el canal.** Todo mecanismo que da pedido-y-respuesta de verdad exige **o un APK
+de la institución, o que Gnothi sea quien abra la página**. Una página con su propio ícono y sin APK
+**solo puede usar loopback** — y paga notificación permanente y ninguna identidad del llamador.
+
+Dos consecuencias que se desprenden solas:
+
+- **La puerta que la lámina 04 necesita ya existe y está medida** — `IpcService`, Messenger sobre
+  Binder, identidad por firma del APK, **sin notificación permanente**, **153 ms en caliente** en un
+  A54. Lo único que se lo impide a una PWA es que una página no tiene uid ni APK.
+- **La variante 04d —que Gnothi abra la página— ya está implementada: es el camino 01.** Y la
+  versión «la sirve la institución y Gnothi solo la abre» es estrictamente peor, porque pierde la
+  única garantía de red medida, que existe **porque Gnothi sirve la página**. No vale construirla.
+
+### Lo que está listo
+
+- `Spikes/Lab.SondaWeb/` — la sonda web, su versión inyectable, el cliente CDP y el README con la
+  tabla medida.
+- `Gnothi.Mobile/LoopbackSpikeService.cs` — la puerta de loopback, escrita y compilando. Es un
+  `Service` exportado que **no toca el producto**: nada en `MainActivity` lo llama, se arranca desde
+  adb. Espeja a `IpcService` a propósito —contesta con `Dispatcher.Serve` y reporta `catalogMs` y
+  `serveMs`— para que el número sea comparable con los 153 ms.
+- Y con el costo de 04a **escrito en el código, no en un párrafo**: `FOREGROUND_SERVICE`,
+  `FOREGROUND_SERVICE_SPECIAL_USE`, `ForegroundServiceType = TypeSpecialUse` y una notificación
+  `SetOngoing(true)`.
+
+### El bloqueo
+
+**Gnothi no completa el arranque en el emulador**: `ANR in com.ncubo.gnothi.host — failed to
+complete startup`, **en Debug y en Release**. Sin eso no se miden latencia, la reja de CORS ni el
+token. Dos causas candidatas, sin decidir:
+
+1. **El motor bajado a `3.0.0-beta.10029`.** El branch pide `3.0.0-beta.10044`; compila con 10029
+   pero puede colgarse al inicializar. Se descarta con credenciales del feed de Azure DevOps, que
+   hoy devuelve **403**.
+2. **El emulador.** Se descarta en el A54, que es donde hay que medir supervivencia igual.
+
+### Pendiente, en orden de lo que desbloquea
+
+| qué | qué lo bloquea |
+|---|---|
+| latencia del loopback, comparable con los 153 ms | el ANR |
+| la reja de CORS (`/gnothi/ping` contra `/gnothi/sincors`) | el ANR |
+| token e identidad del llamador | el ANR |
+| contenido mixto sobre `ws://`, y el cruce de espacios de direcciones | el origen de la WebAPK: hace falta reinstalarla desde `https://192.168.100.95:8453` |
+| el **prompt** de Local Network Access | **imposible en este aparato**: Chrome 133, y llega en 142 |
+| supervivencia del proceso (Doze, gestores de fabricante) | sin construir, y **el emulador no sirve**: requiere el A54 |
+| `DocumentsProvider` de Gnothi en el picker de Chrome | sin construir. **La única fila que podría abrir un camino nuevo**: está medido que el picker abre DocumentsUI (`F1`), y ese picker lista proveedores de terceros |
+| Web Share Target, e intents (ms del salto y ausencia de retorno) | sin correr; los intents están en `sonda.html`, son dos botones |
+| Binder desde la PWA, **por ausencia** | sin correr: `adb logcat -s GNOTHI` mientras la página intenta escapadas |
+
+### Deuda de método que quedó abierta
+
+**`F2` estaba desfasado de `F1`** cuando se abrió este frente: `F1` llegaba al 09-09 y `F2` se
+detenía el 09-08, con dos pasajes que las corridas del 09-09 ya habían contestado —el que dice que
+«el orden para atacar el puerto no empieza en el motor», y el que llama a A4 «el camino elegido».
+**Sigue sin reconciliarse**, y hay que marcar esos dos pasajes como superados en vez de borrarlos.
+
+---
+
+## P17 · La forma híbrida — construida y corriendo en un teléfono · 2026-09-11
+
+**Qué resuelve.** Que el motor no viaje en el módulo. La cara es solo UI, el dominio y la superficie
+van al lado en `dominio/*.dll`, y **Puppeteer lo presta Gnothi**. El diseño está en `C9`, los
+números en `F1`.
+
+**Estado: anda de punta a punta, y la cara es la del laboratorio.** Xiaomi con Android 16, build
+Release: el paquete pasa la aduana, carga el DLL por reflexión, el cartero trae 26 eventos, la
+superficie los asienta y la cara los pinta — con la portada, los chips, **las cinco formas de
+dibujo** y la cronología de visitas portadas de la app Blazor. **97 KB contra 12 594 KB.**
+
+> El primer número publicado fue 77 KB, con una cara que mostraba cuatro números y una tabla.
+> Portar la pantalla real la llevó a 97. **El segundo es el que compara**, porque es el primero que
+> pinta lo mismo.
+
+### Lo que esto desbloquea, y no es poco
+
+**Un solo motor sobre el journal**, que es el requisito que el arquitecto del motor viene pidiendo.
+Y sin ninguno de los problemas de canal de la lámina 04: el puente del WebView ya existía y es en
+proceso.
+
+**Y contesta la pregunta que `B7` dejó abierta**: en Android, `InProcessShell` con reflexión sobre
+un ensamblado ajeno **funciona**. No había ninguna corrida que lo demostrara.
+
+### Lo que NO resuelve
+
+**La objeción de tienda, entera.** Un DLL de la institución corriendo nativo es código que llega de
+afuera. El trilema de `B7` no se movió: el híbrido es cargo con pantalla — mejora el peso y el dueño
+único, no la política.
+
+### ~~Un actor, no dos~~ — ✅ **CERRADO el 2026-09-11**
+
+Las consultas rehidrataban un `ReadOnly` por llamada —un diseño que venía de A2/A3, donde una app
+externa escribía la carpeta— y eso ponía **dos actores sobre el journal a la vez**: el
+`FileNotFoundException: Temp file not found` que quedaba en la tabla.
+
+Se cerró con **un solo actor vivo** (`static` bajo `lock`, compartido por las tres puertas) más
+**`keepLoaded: true`** en el `InProcessShell` de la cáscara, porque el `Unload` es cooperativo y no
+completa si el anterior dejó referencias vivas.
+
+Y destapó el matiz que dio vuelta la conclusión: **la semilla es obligatoria**, porque es lo que
+crea los globales `expediente` y `bitacora` que el DSL direcciona. Sin ella el bucle muere pidiendo
+el cursor. El detalle está en `C9`.
+
+### Lo que se agregó después, y también está corriendo
+
+**Un icono de la institución en la pantalla de inicio** (`requestPinShortcut`), desde el detalle del
+módulo: logo y nombre de la institución, intent explícito, y al tocarlo —con Gnothi cerrada— levanta
+directo la cara del módulo. **No es exclusivo del híbrido**: sirve para cualquier módulo encendido.
+
+Dos previsiones salieron al revés en MIUI, y la segunda abre una decisión de producto: **no mostró
+diálogo de confirmación**, y **no estampa el badge de Gnothi**. Sin badge, en la pantalla de inicio
+nada distingue ese icono del de una app nativa de la institución. Los números en `F1`.
+
+### Pendiente, en orden
+
+| qué | por qué |
+|---|---|
+| **latencia de `consultar` contra los 153 ms** de la puerta Binder | es el número que la lámina 04 necesita, y el cronómetro tiene que ser el mismo |
+| **el badge que MIUI no pone** | decidir si se acepta o se compensa en otro lado — por ejemplo en la primera apertura desde el icono. **Es para el arquitecto**, no para la implementación |
+| **`--pack` no conoce la tercera forma** | el híbrido se arma con `Compress-Archive` y pierde la inspección temprana; la del alta sí corre |
+| **la guía para la institución habla de dos formas** | ahora son tres, con dos marcadores nuevos en el contrato (`[View]`, `[Deliver]`) y un verbo nuevo en el puente (`consultar`) — y los seis verbos actuales *«corren en cuatro bundles publicados»* |
+| **el feed de NuGet devuelve 403** | todo se arma con `-Motor 3.0.0-beta.10029`; la rama pide la `10044` |
+| **la pantalla de detalle por serie** | la cara no la tiene, y por eso sus tarjetas son `<article>` y no `<button>`, y el pedido del sexo es informativo y no editable |
+
+### Deuda de método, otra vez
+
+Cuatro de los defectos de este frente **solo aparecieron corriéndolo en el aparato** —`INTERNET` que
+no viaja en Release, la semilla que crea los globales, una carrera de cableado, y el orden de los
+argumentos—, y están en `F1` con su síntoma. Tres de los cuatro se leían como otra cosa: el de red
+parecía una restricción de MIUI, y no lo era.
+
+**Y una quinta, que es de comparación y no de aparato.** Se afirmó que la cara se parecía a la
+pantalla original **sin haberlas puesto lado a lado**: se habían copiado los tokens de color, y de
+ahí se dedujo el parecido. La estructura estaba inventada. **Copiar la paleta no es portar la
+pantalla**, y el chequeo que faltaba —abrir el `.razor`— costaba dos minutos.
+
+---
+
+## P18 · Gnothi se baja de la tienda, al teléfono de la persona — y eso reordena el tablero · 2026-09-16
+
+**La decisión, que faltaba y no estaba escrita en ningún lado:**
+
+> *«el teléfono de la persona, bajado de la tienda»*
+
+No es un detalle de despliegue. Es lo que decide **cuáles de las cuatro formas son viables**, porque
+sideload, MDM y escritorio no tienen reglas de tienda y la tienda de consumidor sí.
+
+Con los textos ya leídos y citados en [`B11`](../B-arquitectura/B11-lo-que-dicen-las-tiendas.md),
+esto es lo que la decisión implica.
+
+### El golpe, dicho sin rodeos
+
+**Lo que corre hoy en el teléfono no es publicable por su forma.** Cuatro módulos en forma híbrida y
+uno hospedado; la híbrida carga el DLL de la institución en el proceso de Gnothi, y eso da acceso
+**directo** a las APIs de Android — justo lo que la excepción de Google Play no cubre, porque pide
+acceso **indirecto**.
+
+| forma | ¿pasa el texto de Play? | dónde sigue siendo legítima |
+|---|---|---|
+| 1 · cargo | no | escritorio (MSI, sin tienda) |
+| 2 · hospedada | **sí** | teléfono y escritorio |
+| 3 · híbrida | no | escritorio |
+| 4 · Blazor en el Host (`F7`) | no | escritorio |
+| caja de wasm (`F5`) | **sí, palabra por palabra** | todo |
+
+**Las formas 1, 3 y 4 no se tiran: se mudan de plataforma.** En escritorio no hay tienda y la
+objeción no existe. Lo que cambia es que **dejan de ser el futuro del teléfono**, y `F7` —que cerró
+diciendo que la cuarta forma es *«la puerta más ancha de las cuatro»*— hay que leerlo con esto al
+lado: es la más ancha **en escritorio**.
+
+### Qué sube de prioridad
+
+**`P10` (el sustrato viaja adentro del bundle) deja de ser un hueco anotado.** Con la hospedada como
+única forma publicable en el teléfono, su costo —12,4 a 14,1 MB por módulo, de los cuales ~8 MB son
+las copias `.gz`/`.br` del mismo motor— pasa a ser **el costo del producto**, no de una forma entre
+varias.
+
+Y hay una salida que el tablero no tenía anotada: **`BundleServer` es nuestro.** Hoy sirve el bundle
+de cada módulo desde su propia carpeta; nada impide que sirva **un solo `_framework` compartido** y
+que el bundle del módulo traiga únicamente sus propios DLLs. Eso:
+
+- baja el disco de ~13 MB por módulo a la fracción que es el módulo (`examenes` mide 188 KB en
+  proceso, para dar la escala);
+- **le devuelve el sentido a `substrate.range`**, que hoy el manifiesto declara y nadie valida
+  justamente porque no hay sustrato compartido que negociar;
+- **no baja la memoria.** Cada WebView carga su propio runtime igual: los ~200 MB por módulo vivo
+  siguen ahí, y con ellos la regla de un módulo vivo a la vez.
+- **Riesgo conocido:** el trimming de Blazor es por app, así que la rebanada del BCL difiere entre
+  módulos. Un `_framework` compartido tiene que ser uniforme, y eso lo hace más grande que
+  cualquiera de los individuales. Hay que medirlo antes de prometerlo.
+
+**`P8` (el módulo como `.wasm`) pasa a ser el camino crítico**, y por una razón nueva: es la única
+arquitectura que baja la memoria **y** encaja en el texto de Google —*«a virtual machine or an
+interpreter … indirect access»*— con una sola decisión. Sigue bloqueado por `P1`, que no es código
+nuestro.
+
+### Lo que ninguna arquitectura arregla
+
+Dos cosas de `B11` le pegan a Gnothi **como producto**, no a la forma del módulo, y sobreviven a
+cualquier decisión técnica:
+
+- **Apple §4.7.2** — no exponer APIs nativas al software que no viene en el binario sin permiso
+  previo. El puente (`listar`, `leer`, `escribir`, `pull`) es exactamente eso, y le pega también a
+  la hospedada y a la caja de wasm.
+- **Apple §3.3.1(B)(c)** — no crear una tienda o escaparate para otras aplicaciones. El catálogo de
+  módulos con su hoja, su firma y su actualización se le parece.
+
+Esas dos sólo se contestan **preguntando**, no diseñando. Van a la sonda.

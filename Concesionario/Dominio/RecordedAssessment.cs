@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Concesionario.Dominio
 {
@@ -25,8 +25,8 @@ namespace Concesionario.Dominio
 			return new ARecordedAssessment(assessment);
 		}
 
-		/// <summary>El motivo compuesto. Total: la ausencia de evaluacion tambien se dice.</summary>
-		internal abstract string Describe();
+		/// <summary>El motivo. Total: la ausencia de evaluacion tambien tiene el suyo.</summary>
+		internal abstract ADueReason TheReason();
 
 		/// <summary>
 		/// Si la distancia quedo suspendida por unidades distintas. Total, y derivada de

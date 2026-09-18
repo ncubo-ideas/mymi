@@ -175,15 +175,19 @@ namespace Concesionario.Dominio.Pruebas
 				120.50m, "CRC", ValidFrom, ValidUntil);
 			specification.SealRevision(TheRevision);
 
-			string said = specification.DescribeServicePrice(
-				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce);
+			string said = TheSentenceTheDoorWouldCompose.TheServicePrice(
+				specification, OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
+				WhileItIsInForce, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡120.50"),
+			Assert.That(said, Does.Contain("₡120,50"),
 				"EL ANCLA, contra el literal y no contra la otra respuesta: dos consumidores de un "
 				+ "mismo miembro concuerdan por construccion, incluso cuando el miembro esta mal "
 				+ "(E49). El literal es lo unico que mide al miembro.");
 			Assert.That(
-				said, Does.Contain(new Money(120.50m, Currency.CRC).Expressed()),
+				said,
+				Does.Contain(App.Wording.TheWording.TheMoney(
+					App.Wording.Phrases.Of(TheLanguage.OfTheRecord), CurrencyShape.Named,
+					Currency.CRC.TheAmountAsSaid(120.50m), Currency.CRC.Code)),
 				"Y la mitad estructural: la frase del precio lleva la del dinero adentro, entera.");
 		}
 

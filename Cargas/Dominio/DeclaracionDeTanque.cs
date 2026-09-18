@@ -33,9 +33,11 @@ namespace Cargas.Dominio
 		/// cuenta. Total: sin declaracion, parcial o estimado dan false sin reventar.</summary>
 		internal abstract bool EsLlenoQueCuenta { get; }
 
-		/// <summary>Para la lista y el switch prellenado: "lleno (confirmado)",
-		/// "parcial (estimado)", o vacio si nadie dijo nada.</summary>
-		internal abstract string Expresada { get; }
+		/// <summary>
+		/// EL CODIGO DEL ESTADO declarado, para la lista y el switch prellenado, o vacio si
+		/// nadie dijo nada. Total: decide sin reventar, al reves que <c>EsLleno</c>.
+		/// </summary>
+		internal abstract string ClaveDelEstado { get; }
 
 		private sealed class SinDeclaracion : DeclaracionDeTanque
 		{
@@ -52,7 +54,7 @@ namespace Cargas.Dominio
 
 			internal override bool EsLlenoQueCuenta => false;
 
-			internal override string Expresada => "";
+			internal override string ClaveDelEstado => "";
 		}
 
 		private sealed class TanqueDeclarado : DeclaracionDeTanque
@@ -73,7 +75,7 @@ namespace Cargas.Dominio
 			internal override bool EsLleno => estado.EsLleno;
 			internal override OrigenDeLectura Origen => origen;
 			internal override bool EsLlenoQueCuenta => estado.EsLleno && origen.CuentaParaCalcular;
-			internal override string Expresada => $"{estado.Nombre} ({origen.Nombre})";
+			internal override string ClaveDelEstado => estado.Nombre;
 		}
 	}
 }

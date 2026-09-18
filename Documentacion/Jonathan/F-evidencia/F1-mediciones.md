@@ -1199,3 +1199,286 @@ Que pida por el API es una **convención, no una restricción**, y se ve en el i
 Eso no la vuelve inútil: da el **dueño único del journal** —un solo juego de semáforos— y adelgaza la
 app enormemente. Pero es un argumento de **arquitectura**, no de **garantía**. Presentado como
 garantía se cae solo.
+
+---
+
+## Los canales de la lámina 04 — 2026-09-11
+
+**Qué se fue a contestar.** La lámina 04 de `B6` dice que la app de la institución es solo la cara y
+le pregunta a Gnothi qué pintar. Eso es **una API en el camino caliente de la UI**, y la pregunta es
+por qué canal viaja cuando la cara es **contenido web dentro de un navegador**. El razonamiento y el
+cuadro están en `B7`; acá van los números y los textos literales.
+
+**Se midieron también los mecanismos que no sirven.** No es exhaustividad: un «no» medido —con el
+error exacto y el número de versión— no se discute, y una cita de documentación sí.
+
+**Instrumento.** Emulador `GnothiWeb` (`emulator-5554`), **Chrome 133.0.6943.137**, WebAPK
+`org.chromium.webapk.ac970f0088360685e_v2`, corriendo **dentro** de la PWA instalada
+(`display-mode: standalone`, verificado en la propia corrida). El spike es `Spikes/Lab.SondaWeb/`.
+
+| mecanismo | veredicto | la evidencia, literal |
+|---|---|---|
+| **sockets crudos** | **no existen** | `'TCPSocket' in self === false`, y lo mismo `UDPSocket` y `TCPServerSocket` |
+| **`content://`** | **no fetchable** | `Fetch API cannot load content://…  URL scheme "content" is not supported` |
+| **Shared Storage (W3C)** | **no es un canal** | existe con toda su superficie (`ctor=SharedStorage`, los 8 métodos), y aun así: `set` → `OperationError: sharedStorage is disabled`; `get` → `OperationError: Cannot call get() outside of a fenced frame`; y en consola `Attestation check for Shared Storage failed` |
+| **`targetAddressSpace`** | acepta `local`, `private`, `public`, `unknown` | `'loopback'` → `The provided value 'loopback' is not a valid enum value of type IPAddressSpace`. La escotilla existe, con el vocabulario de *Private Network Access*, no con el de LNA |
+| **`getInstalledRelatedApps`** | **lista vacía**, y **por setup** | `[]` — falta el `asset_statement` del lado del APK, y el `related_applications` del manifest declara `platform: "play"`, que un APK cargado de costado no satisface. Lo dice el propio comentario del manifest. **No es límite de plataforma** |
+| **HTTP a loopback** | **el navegador lo intentó** | `net::ERR_FAILED` a los 449 ms — tardó, o sea que salió a la red; no fue un bloqueo |
+| **WebSocket a loopback** | **el navegador lo intentó** | `net::ERR_CONNECTION_REFUSED` — explícito, nadie escuchando |
+| **arranque del foreground service desde adb** | **permitido**, y **levanta Gnothi sin ninguna Activity** | `Background started FGS: Allowed`, y `Start proc … for service {LoopbackSpikeService}` |
+
+### Las dos últimas filas NO valen como respuesta, y la razón es del experimento
+
+La WebAPK instalada fue minteada contra **`http://127.0.0.1:8096/app/`** — se lee en su propio
+manifest (`org.chromium.webapk.shell_apk.startUrl`). Ese origen **es** contexto seguro por la
+excepción de `localhost`, y por eso se eligió: ahí funcionan el service worker, la instalación y el
+picker. Pero para medir el canal lo invalida:
+
+- un `fetch` de `http://127.0.0.1` a `http://127.0.0.1` es **loopback → loopback**, y eso **no es un
+  cruce** en la taxonomía de Local Network Access;
+- la página es **`http`**, así que **contenido mixto no aplica** — que es justamente la regla que se
+  quería medir.
+
+Pasan, y pasan por razones que en producción no se sostienen, donde la PWA la sirve la institución
+desde `https://…`.
+
+**Y un segundo techo del aparato:** Chrome **133**. El prompt de Local Network Access aterriza en
+**142**, así que este emulador **no puede medirlo nunca**.
+
+Para que esas filas valgan hay que reinstalar la PWA desde un origen **https y no-loopback**. El
+certificado de `Examenes/PaginaDeDescarga/certs` **ya tiene el SAN necesario** (`DNS:localhost`,
+`IP:127.0.0.1`, `IP:192.168.100.95`): falta servir el `8453` e instalar la CA en el aparato. Eso mide
+el cruce `local → loopback`; el `public → loopback` de producción pediría un dominio de verdad.
+**Ojo: reinstalar cambia la WebAPK**, y con ella el paquete que estas mediciones citan.
+
+### Tres trampas del método, que valen para cualquier spike futuro
+
+**El service worker se come la sonda.** Su handler de `fetch` contesta **toda** navegación de su
+scope con el `index.html` cacheado, salvo que la URL esté en el manifiesto de assets. Abrir
+`/app/sonda.html` dentro de la WebAPK devolvió **el 404 del router de Blazor** con esa misma URL en
+la barra. Está advertido en `Examenes/PaginaDeDescarga/nginx.conf`, y aun así pasó.
+
+**Chrome de canal estable no manda la consola de la página a logcat.** `adb logcat -s chromium` dio
+**cero** líneas de la sonda. Y el motivo de un bloqueo **solo vive en la consola**: desde JS, un
+bloqueo por contenido mixto y un `connection refused` entregan el mismo `TypeError`. El instrumento
+terminó siendo un cliente CDP por `adb forward` (`Spikes/Lab.SondaWeb/cdp.ps1`), que además evalúa
+en la página **ya abierta** y así esquiva al service worker.
+
+**`strings` no existe en esta máquina.** Una búsqueda de rastros en los logs de una app devolvió
+«cero coincidencias» que no eran un hallazgo, eran un comando vacío; con `grep -a` había 31. Un
+instrumento que falla en silencio produce conclusiones al revés.
+
+---
+
+## La forma híbrida, de punta a punta en un teléfono — 2026-09-11
+
+**Qué se fue a contestar.** Que el motor no viaje en el módulo: que la cara sea solo UI y que
+Puppeteer lo preste Gnothi. El diseño y las siete costuras están en `C9`; acá van los números.
+
+**Instrumento.** Xiaomi `2407FPN8EG`, **Android 16**, APK en **Release**, motor
+`3.0.0-beta.10029`, módulo `examenes` en forma híbrida, publicador local por `adb reverse`.
+
+### Lo que pesa
+
+| | hospedada | híbrida |
+|---|---|---|
+| el `.gmod` | **12 594 KB** · 238 archivos | **97 KB** · 9 archivos |
+| motor adentro | 4 ensamblados en `web/_framework` | **cero** |
+| la cara | Blazor Wasm | **57 KB** (html + css + js) |
+| el dominio | en `.wasm` | **200 KB** en 3 `.dll` |
+
+**130 veces menos**, y el ahorro no es el motor: está medido que correr .NET en un navegador es el
+88,8 % de una hospedada y el motor el 8,6 %.
+
+> **La primera medición dio 77 KB, con una cara de 9,5 KB.** No era el mismo objeto: esa cara
+> mostraba cuatro números y una tabla. Portar la pantalla real —portada, chips, cinco formas de
+> dibujo, cronología— la llevó a 57 KB y el paquete a 97. **El número que sirve para comparar contra
+> la hospedada es el segundo**, porque es el primero que pinta lo mismo. La conclusión no cambia:
+> 130× en vez de 163×, y sigue siendo el runtime lo que se saca, no el dominio.
+
+### Lo que corrió
+
+```
+el cartero contestó en 517 ms:
+{"entregado":true,"resultado":"leidos=26 aplicados=26 descartados=0 rechazados=0
+ ultimoEvento=225 cuenta=migrated"}
+```
+
+Y la pantalla, pintada por `[View]` sobre la superficie en proceso: **26 exámenes registrados, 0
+analitos fuera de rango**.
+
+**`aplicados=26 descartados=0 rechazados=0`**: la frontera de entrada corrió y no descartó nada.
+
+### Lo que nunca se había medido, y quedó contestado
+
+**Mono carga un ensamblado ajeno en Android.** `InProcessShell` —`AssemblyLoadContext`,
+`GetTypes`, `GetMethods`, `GetProperties`— funciona en un teléfono físico, en Release. Verificado
+por el alta contra la superficie real, no por nosotros:
+
+```
+comprobación de examenes: {"matches":true,
+  "declared":["lista_de_examenes","resumen"], "actual":["lista_de_examenes","resumen"]}
+```
+
+Las **siete** `[View]` no aparecen ahí — son otro público.
+
+**Y una pantalla de institución completa, sin motor propio.** Con la cara portada (más abajo), lo
+que pinta sobre el motor prestado no es una demo de dos números: la portada con sus veredictos, los
+chips por analito, las **cinco formas de dibujo** y la cronología de visitas, todo con los datos
+reales del journal.
+
+### Cuatro defectos que SOLO aparecieron corriéndolo
+
+Ninguno se habría visto revisando el código, y los cuatro son del tipo que vale registrar.
+
+**1 · `INTERNET` no viaja en Release.** El SDK de .NET Android lo agrega **solo en Debug**, para el
+depurador. El manifiesto que se lee en `obj/Debug/…/AndroidManifest.xml` lo tiene, y eso induce a
+darlo por declarado. Síntoma: `HttpRequestException: Permission denied (127.0.0.1:8095)` —
+**loopback y todo, Android exige `INTERNET` para abrir cualquier socket**. Y se lee como una
+restricción del fabricante: `INTERNET` es un permiso normal, no sale en la pantalla de permisos de
+la app, y el único lugar donde se ve la verdad es `dumpsys package`.
+
+**2 · La semilla no es una entrada de bitácora: crea los globales.** Un actor escribible con
+`OnHydrated` vacío —puesto para no sembrar en cada entrega— deja al DSL sin `expediente` ni
+`bitacora`, y el bucle muere al pedir el cursor con `Unknown property or method 'UltimoEvento' on
+type 'Object'`. Ya estaba advertido en `ExamenesApp`: *«la vista de SoloLectura del MCP —que hidrata
+con OnHydrated vacío— rehidrataba y no encontraba el global»*. La guarda de `upgrade('semilla')` es
+una-vez-por-actor, así que no había nada que evitar.
+
+**3 · Una carrera que solo la forma híbrida crea.** El Host cableaba la superficie **después** de
+`Start`, y `Start` espera a que la página diga `listo()`. Una cara híbrida dice listo y **pregunta
+en el mismo tick**: no tiene actor que hidratar, nada la demora. Resultado: las primeras preguntas
+llegaban con el delegado en `null`. El cableado tiene que ir **entre `Create` y `Start`**.
+
+**4 · El orden de los argumentos de la cáscara.** Poner el dll en `Arguments[0]` —porque es lo que
+contesta— rompe a `WebModuleHost.Open`, que lee `[0]` como la carpeta del bundle para abrir la
+pantalla desde el catálogo: intentaría servir un `.dll` como carpeta, y fallaría lejos del cambio.
+Quedó `[web, endpoint, dll]`: **el consumidor nuevo se acomoda, no los que ya andaban**.
+
+### Y un método que vale para cualquier prueba en un teléfono
+
+**El log no sirve en un Xiaomi.** MIUI inunda `logcat` —31 721 líneas en el buffer— y las líneas
+propias se rotan antes de poder leerlas. Lo que destrabó el diagnóstico fue **hacer que la pantalla
+lo dijera**: una tarjeta con el resultado del refresco. Sin ella, *«no hay exámenes»*, *«el cartero
+no pudo»* y *«no hay puente»* se ven exactamente igual.
+
+Y el tiempo, por sí solo, señala dónde está el problema: el cartero pasó de **fallar a los 230 ms**
+—sin permiso, antes de tocar la red— a **fallar a los 1003 ms** —salió, volvió y reventó adentro— y
+por fin a **contestar en 517 ms**.
+
+---
+
+## Portar la pantalla del laboratorio a la cara híbrida — 2026-09-11
+
+**Qué se fue a contestar.** Si una cara sin motor puede pintar **la misma pantalla** que la app
+Blazor, no una parecida.
+
+**El error que hizo falta corregir, primero.** La primera cara tomó los tokens de
+`Examenes.Wasm/wwwroot/css/app.css` —el navy, el celeste, Georgia, la gota— y de ahí se afirmó que
+la pantalla se parecía a la original. **No se parecía**, y la comparación nunca se había hecho: la
+estructura estaba inventada. Vale como trampa de método, porque es fácil de repetir: **copiar la
+paleta no es portar la pantalla**. Una cara que reinventa los colores es otra institución para quien
+la mira; una que reinventa el layout es otra app, con los colores correctos.
+
+**Lo que había que traer, y estaba en dos archivos:**
+
+| pieza | de dónde |
+|---|---|
+| portada con veredictos, caritas y `Actualizar` **adentro** de la tarjeta | `Pages/MisExamenes.razor` |
+| tarjeta de serie: chip, relato, valor en serif, referencia en mono, lectura abajo | `Pages/MisExamenes.razor` |
+| cinco componentes de dibujo | `Formas/*.razor` |
+| historial como cronología de visitas | `Pages/MisExamenes.razor` |
+
+### Las cinco formas, y el defecto que ocultaba tenerlas colapsadas
+
+El dominio dice qué forma le toca a cada analito. La primera cara **las colapsó todas en un gráfico
+de línea genérico**, que es exactamente lo que el comentario del `.razor` advierte que no se haga:
+*dibujarlas igual sería la misma tabla que se rechazó en el dominio, un piso más arriba*.
+
+Y el defecto que eso produce es medible, no estético: **un binario no tiene puntos con número**, así
+que pedirle la serie devuelve ceros y sale **una línea plana en cero** donde debería decir «apareció
+en las 2 seguidas».
+
+El arreglo mueve la decisión a donde vive: `[View("tendencia")]` **pregunta por la forma antes que
+por los hechos** y devuelve un paquete distinto según cuál sea — `presencia`, `constancia`, o
+`puntos + referencias`.
+
+| forma | qué dibuja |
+|---|---|
+| `trayectoria con linea base` | la serie contra la banda del nivel de siempre |
+| `progreso hacia meta` | el eje es el **valor**, de la partida a la meta |
+| `posicion en banda` | dónde caés entre piso y techo |
+| `presencia en el tiempo` | la tira de pruebas, la racha final en grueso |
+| `categoria en el tiempo` | igual, con vocabulario de colores |
+
+### Tres defectos más de la cara, todos vistos en el teléfono
+
+**1 · Cada serie salía DOS veces, y no era el dominio.** La primera sospecha fue que
+`expediente.Analitos` devolvía nombres repetidos. No: la pantalla **se pinta dos veces** —lo que ya
+hay, y otra vez cuando vuelve el cartero— y las dos cadenas de `tendencia` seguían agregando sobre
+la lista recién limpiada. Se arregló con un contador de pasada. **Vale como recordatorio**: el
+duplicado en una lista asíncrona casi nunca está en el origen de los datos.
+
+**2 · El semáforo mandaba dos severidades al verde.** El vocabulario del dominio es cerrado
+—`informativo`, `vigilar`, `consulte pronto`, `urgente` (`Examenes/Dominio/Severidad.cs`)— y la cara
+lo adivinaba por prefijo, así que `consulte pronto` e `informativo` caían en el caso por omisión.
+Dos reglas que el dominio ya tenía escritas y la pantalla rompía: **el rojo es solo de `urgente`**, e
+**`informativo` no es verde** — el verde dice «esto está bien», y un dato que falta no está bien ni
+mal.
+
+**3 · Un solo punto no es una tendencia.** Dibujarlo igual daba un rectángulo de banda con un
+círculo al medio: ocupa lo mismo que un gráfico y no dice nada de lo que un gráfico dice. Y el
+dominio ya lo decía mejor con palabras: *«una sola medición: todavía no hay serie para decir para
+dónde viene»*.
+
+---
+
+## Un icono de la institución en la pantalla de inicio — 2026-09-11
+
+**Qué se fue a contestar.** Si al instalar un módulo se puede dejar un icono que parezca «la app de
+la institución» y por dentro sea Gnothi abriendo su módulo.
+
+**Sí, con `ShortcutManager.requestPinShortcut`** (API 26; el mínimo de Gnothi es 24, así que la
+guarda pasa de verdad). Verificado en el Xiaomi: el icono queda en la pantalla de inicio, con el
+logo y el nombre de la institución, y al tocarlo —**con Gnothi cerrada**— levanta directo la cara
+del módulo, sin pasar por la pantalla de Gnothi.
+
+```
+Pinned: modulo:examenes
+  intents=[Intent { act=VIEW cmp=com.ncubo.gnothi.host/…MainActivity }
+           /PersistableBundle[{gnothi.modulo=examenes}]]
+  bitmapPath=…/shortcut_service/bitmaps/com.ncubo.gnothi.host/…png
+```
+
+### Dos previsiones que salieron al revés
+
+Las dos estaban escritas antes de medir, y las dos fallaron. Quedan acá porque el valor está en que
+fallaron:
+
+| se predijo | MIUI hizo |
+|---|---|
+| Android 8+ **siempre** muestra un diálogo de confirmación | **ninguno**: puso el icono directo |
+| el launcher estampa un **badge de Gnothi** en la esquina | **no lo estampa** |
+
+La segunda importa más que la primera. El badge era el argumento de honestidad —*«dice quién corre
+el código»*— y sin él, **en la pantalla de inicio nada distingue ese icono del de una app nativa de
+la institución**. Es una decisión de producto abierta, no un bug.
+
+### Tres decisiones de implementación que la medición justificó
+
+- **Intent explícito, no el deep link.** `go.gnothi.app/abrir?modulo=…` ya existe, pero un `https`
+  sin `assetlinks.json` verificado saca el diálogo de «¿con qué app abro esto?», depende de DNS, y
+  cualquiera puede registrar un handler para ese dominio. Un intent contra la clase no sale del
+  teléfono.
+- **El icono se compone.** Un icono adaptativo recorta todo lo que queda fuera del 66 % central, así
+  que el logo a sangre pierde los bordes. Se dibuja sobre el color de marca, al 52 % de un lienzo de
+  432 px.
+- **El rótulo es el nombre, en los dos campos.** Empezó siendo el título del módulo —lo que uno
+  escribiría— y MIUI, que prefiere el rótulo largo, lo cortó a **«Tus examenes,…»**. Un icono lleva
+  un nombre, no un eslogan, y los dos campos tienen que poder leerse cortados.
+
+### Y una herramienta que no era obvia
+
+**`adb shell cmd shortcut clear-shortcuts <paquete>`** quita los accesos directos fijados **sin
+tocar los módulos ni el journal**. Desde adentro de la app no se puede: la API solo deja
+*deshabilitarlos* con un mensaje. Sirve para volver a correr la prueba desde cero sin desinstalar.

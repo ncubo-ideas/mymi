@@ -113,8 +113,6 @@ namespace Compras.Dominio
 			this.total = total;
 		}
 
-		internal string Titulo => Categoria.Titulo;
-
 		/// <summary>Que parte del gasto del mes fue. 1 es todo el mes.</summary>
 		internal decimal ProporcionDelTotal => total == 0m ? 0m : Math.Round(Monto / total, 4);
 	}

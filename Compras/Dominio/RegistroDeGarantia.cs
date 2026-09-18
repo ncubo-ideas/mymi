@@ -34,10 +34,11 @@ namespace Compras.Dominio
 
 		internal string NombreDeLaSeveridad => Severidad.Nombre;
 
-		internal string QueHacer => Severidad.QueHacer;
-
-		/// <summary>La linea, escrita por el dominio con SUS hechos.</summary>
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice este registro, por su nombre: `no-encontrada`, `vencida`, `por-vencer` o
+		/// `vigente`. Los dos escalones de la ventana los decide el dominio, no quien redacta.
+		/// </summary>
+		internal abstract string Clave { get; }
 
 		private RegistroDeGarantia(string textoBuscado)
 		{
@@ -73,8 +74,7 @@ namespace Compras.Dominio
 			internal override int DiasParaVencer => 0;
 			internal override Severidad Severidad => Severidad.Informativo;
 
-			internal override string ParaElAsistente =>
-				$"no hay ninguna compra con garantía que coincida con «{TextoBuscado}»";
+			internal override string Clave => "no-encontrada";
 		}
 
 		private sealed class Hallada : RegistroDeGarantia
@@ -117,22 +117,10 @@ namespace Compras.Dominio
 				}
 			}
 
-			internal override string ParaElAsistente
-			{
-				get
-				{
-					string producto = item.Descripcion;
-					if (!Vigente)
-						return $"la garantía de {producto} venció el {VenceEl:dd/MM/yyyy}";
-
-					if (DiasParaVencer <= DiasEnQueConvieneRevisar)
-						return $"a la garantía de {producto} le quedan {DiasParaVencer} días: "
-							+ $"vence el {VenceEl:dd/MM/yyyy}";
-
-					return $"{producto} tiene garantía hasta el {VenceEl:dd/MM/yyyy} "
-						+ $"(la compraste el {FechaDeCompra:dd/MM/yyyy})";
-				}
-			}
+			internal override string Clave =>
+				!Vigente ? "vencida"
+				: DiasParaVencer <= DiasEnQueConvieneRevisar ? "por-vencer"
+				: "vigente";
 		}
 
 		// Los dos escalones de la ventana. Un mes es "movete"; tres meses es "tenelo

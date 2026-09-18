@@ -118,8 +118,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
 
 			Assert.That(
-				journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 meses o 60000 mi"),
+				journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("36 meses o 60.000 mi"),
 				"La frase publicada trae las DOS mitades con su unidad. Es la unica manera de "
 				+ "llegar a los dos limites: la puerta no los da sueltos, porque una caratula que "
 				+ "arme '36 meses o 60000' con escalares se llevo la composicion fuera del dominio.");
@@ -320,7 +320,7 @@ namespace Concesionario.Dominio.Pruebas
 				.Append(one.Api.IsWarrantyEnvelopePublished());
 
 			said.Append("\nDescribePublishedWarrantyEnvelope=")
-				.Append(one.Api.DescribePublishedWarrantyEnvelope());
+				.Append(one.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord));
 
 			said.Append("\nReadEnvelopePublishedAt=")
 				.Append(OrRefused(() => one.Api.ReadEnvelopePublishedAt().ToString("O")));
@@ -381,7 +381,7 @@ namespace Concesionario.Dominio.Pruebas
 			return new Dictionary<string, string>
 			{
 				{ "IsWarrantyEnvelopePublished",       "Boolean/0" },
-				{ "DescribePublishedWarrantyEnvelope", "String/0" },
+				{ "DescribePublishedWarrantyEnvelope", "String/1" },
 				{ "ReadEnvelopePublishedAt",           "DateTime/0" },
 				{ "HasDeliveryBeenRecorded",           "Boolean/0" },
 				{ "ReadDeliveredAt",                   "DateTime/0" },

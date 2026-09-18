@@ -43,8 +43,11 @@ namespace Concesionario.Dominio.Pruebas
 				2.4m, PressureUnitCode.UnitA, "91V");
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Front), Is.EqualTo(
-				"Llanta delantera: medida 205/55R16, presión en frío 2.4 bar, clasificaciones 91V. "
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheTyre(
+					specification, TyrePositionCode.Front, TheLanguage.OfTheRecord),
+				Is.EqualTo(
+				"Llanta delantera: medida 205/55R16, presión en frío 2,4 bar, clasificaciones 91V. "
 				+ "Publicado en la revisión REV-2025-01."));
 		}
 
@@ -58,9 +61,10 @@ namespace Concesionario.Dominio.Pruebas
 				2.6m, PressureUnitCode.UnitB, "94W");
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeTyre(TyrePositionCode.Rear);
+			string answer = TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Rear, TheLanguage.OfTheRecord);
 
-			Assert.That(answer, Does.Contain("presión en frío 2.6 psi"));
+			Assert.That(answer, Does.Contain("presión en frío 2,6 psi"));
 			Assert.That(answer, Does.Not.Contain("bar"),
 				"Ley L8: la unidad publicada es la que sale. Si apareciera la otra, alguien "
 				+ "convirtio -- y una presion convertida es alguien inflando una llanta al numero "
@@ -80,11 +84,14 @@ namespace Concesionario.Dominio.Pruebas
 				4.2m, PressureUnitCode.UnitA, "97M");
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
-				Does.Contain("2.4 bar"));
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Spare),
-				Does.Contain("4.2 bar"));
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord),
+				Does.Contain("2,4 bar"));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Spare, TheLanguage.OfTheRecord),
+				Does.Contain("4,2 bar"));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord),
 				Does.Not.Contain("4.2"),
 				"La respuesta de una posicion no puede llevar el numero de otra.");
 		}
@@ -102,7 +109,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(specification.IsTyrePublished(TyrePositionCode.Rear), Is.False);
 			Assert.That(specification.ReadTyreRevision(TyrePositionCode.Rear), Is.EqualTo(""));
 
-			string answer = specification.DescribeTyre(TyrePositionCode.Rear);
+			string answer = TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Rear, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("trasera"));
 			Assert.That(answer, Does.Not.Contain("205/55R16"));
@@ -166,9 +174,11 @@ namespace Concesionario.Dominio.Pruebas
 				2.5m, PressureUnitCode.UnitA, "91V");
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
-				Does.Contain("2.5 bar"));
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord),
+				Does.Contain("2,5 bar"));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord),
 				Does.Not.Contain("2.4"));
 		}
 
@@ -181,7 +191,8 @@ namespace Concesionario.Dominio.Pruebas
 				2.4m, PressureUnitCode.UnitA, "91V");
 
 			Assert.That(specification.IsTyrePublished(TyrePositionCode.Front), Is.False);
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord),
 				Does.Not.Contain("205/55R16"));
 		}
 
@@ -207,8 +218,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(specification.ReadTyreRevision(TyrePositionCode.Front),
 				Is.EqualTo(TheNextRevision));
-			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
-				Does.Contain("2.5 bar"));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheTyre(
+				specification, TyrePositionCode.Front, TheLanguage.OfTheRecord),
+				Does.Contain("2,5 bar"));
 			Assert.That(specification.ReadTyreRevision(TyrePositionCode.Rear),
 				Is.EqualTo(TheRevision),
 				"La revision 2 no hablo de las de atras, asi que esas siguen contestando desde la "

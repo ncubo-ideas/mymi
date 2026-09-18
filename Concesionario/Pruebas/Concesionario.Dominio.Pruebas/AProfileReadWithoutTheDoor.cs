@@ -16,8 +16,9 @@ namespace Concesionario.Dominio.Pruebas
 	//                    es con la que se mide su AUSENCIA antes de la migracion.
 	//
 	// LO QUE SE FUE EN T6, Y POR QUE. DescribeWarrantyEnvelopeWithNoOdometer era una lectura
-	// COMPUESTA sin miembro en la puerta, y por eso vivia aqui. DescribeWarrantyEnvelope(asOf)
-	// contesta exactamente esa frase cuando el vehiculo no tiene ninguna lectura del odometro --
+	// COMPUESTA sin miembro en la puerta, y por eso vivia aqui. La lectura de la puerta
+	// DescribeWarrantyEnvelope(asOf, language) contesta exactamente esa frase cuando el vehiculo
+	// no tiene ninguna lectura del odometro --
 	// es la rama que su script elige -- asi que dejar el script crudo al lado habria sido una
 	// segunda superficie de lectura para lo mismo, que es lo que este archivo no puede ser.
 	//

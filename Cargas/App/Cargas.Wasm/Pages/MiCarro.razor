@@ -3,9 +3,9 @@
 @using Cargas.App
 @using Cargas.App.Vistas
 
-<PageTitle>Mi carro · Estaciones Faro</PageTitle>
+<PageTitle>@Texto["miCarro.titulo"] · @Textos.NombreDeLaMarca</PageTitle>
 
-<h1 class="solo-para-lectores">Mi carro</h1>
+<h1 class="solo-para-lectores">@Texto["miCarro.titulo"]</h1>
 
 @* LA PESTAÑA DE AJUSTES. Es del carro que se está mirando -el que elige el selector del
    capó- y no de todos: con la ficha de tres carros en la misma pantalla no se sabe cuál
@@ -23,13 +23,13 @@
 
 @if (enFoco is null)
 {
-    <p class="apunte">Todavía no entró ninguna carga, así que la app no conoce ningún carro.</p>
+    <p class="apunte">@Texto["miCarro.sinCarros"]</p>
 }
 else
 {
     @* LOS TÍTULOS DE SECCIÓN SON TÍTULOS. Todos eran .rotulo de 10.5 px, el mismo de un
        instrumento, y la pantalla no tenía ningún nivel entre la marca y los campos. *@
-    <h2 class="seccion-titulo">@(enFoco.TieneFicha ? "Tu carro" : "Ponele nombre a tu carro")</h2>
+    <h2 class="seccion-titulo">@Texto[enFoco.TieneFicha ? "miCarro.tuCarro" : "miCarro.poneleNombre"]</h2>
 
     @* LA FICHA. CompletarFicha existía desde el principio y ninguna pantalla lo llamaba,
        así que un segundo carro no se podía ni nombrar: la app lo mostraba por su placa
@@ -40,26 +40,24 @@ else
        trabajo por prolijidad nuestra. *@
     <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
         <label class="ficha-campo ficha-campo--ancho">
-            <span>Cómo le decís</span>
+            <span>@Texto["miCarro.comoLeDecis"]</span>
             <input class="campo campo--texto" @bind="alias" maxlength="40"
-                   placeholder="el Corolla, la camioneta…" />
+                   placeholder="@Texto["miCarro.aliasEjemplo"]" />
         </label>
 
         @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
         <div class="ficha-campo">
-            <span>Placa</span>
+            <span>@Texto["miCarro.placa"]</span>
             <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
         </div>
-        <p id="porque-la-placa" class="ficha-nota">
-            La placa la pone la estación con cada carga: no es tuya para cambiar.
-        </p>
+        <p id="porque-la-placa" class="ficha-nota">@Texto["miCarro.porqueLaPlaca"]</p>
 
         <label class="ficha-campo">
-            <span>Marca</span>
+            <span>@Texto["miCarro.marca"]</span>
             <input class="campo campo--texto" @bind="marca" maxlength="30" />
         </label>
         <label class="ficha-campo">
-            <span>Modelo</span>
+            <span>@Texto["miCarro.modelo"]</span>
             <input class="campo campo--texto" @bind="modelo" maxlength="30" />
         </label>
         @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
@@ -71,55 +69,50 @@ else
            alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
            de confundirlo con un valor. *@
         <label class="ficha-campo">
-            <span>Año</span>
+            <span>@Texto["miCarro.anio"]</span>
             <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
-                   placeholder="p. ej. 2019" />
+                   placeholder="@Texto.Con("miCarro.porEjemplo", ("valor", "2019"))" />
         </label>
         <label class="ficha-campo">
-            <span>Color</span>
+            <span>@Texto["miCarro.color"]</span>
             <input class="campo campo--texto" @bind="color" maxlength="20" />
         </label>
 
         <label class="ficha-campo ficha-campo--ancho">
-            <span>Rendimiento de fábrica</span>
+            <span>@Texto["miCarro.rendimientoDeFabrica"]</span>
             <input class="campo" type="number" step="0.1" inputmode="decimal"
                    @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
-                   placeholder="p. ej. 14.5" />
+                   placeholder="@Texto.Con("miCarro.porEjemplo", ("valor", "14.5"))" />
         </label>
         @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
            contra lo que el carro está dando de verdad. *@
-        <p id="porque-el-rendimiento" class="ficha-nota">
-            En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
-            que tu carro está dando. Dejalo vacío si no lo sabés.
-        </p>
+        <p id="porque-el-rendimiento" class="ficha-nota">@Texto["miCarro.porqueElRendimiento"]</p>
 
         <div class="fila ficha-campo--ancho">
             <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
-                @(enFoco.TieneFicha ? "Guardar los cambios" : "Ponerle nombre")
+                @Texto[enFoco.TieneFicha ? "miCarro.guardarCambios" : "miCarro.ponerleNombre"]
             </button>
         </div>
     </form>
 
     @if (otros.Count > 0)
     {
-        <h2 class="seccion-titulo">Tus otros carros</h2>
-        <p class="apunte">
-            Elegí cuál mirás con el selector de arriba.
-        </p>
+        <h2 class="seccion-titulo">@Texto["miCarro.otrosCarros"]</h2>
+        <p class="apunte">@Texto["miCarro.otrosCarrosApunte"]</p>
         <ul class="otros-carros">
             @foreach (VehiculoEnLista otro in otros)
             {
                 <li @key="@otro.Placa">
                     <span class="n">@otro.Placa</span>
-                    @(otro.TieneFicha ? $" · {otro.Nombre}" : " · todavía sin nombre")
-                    <span class="apunte"> · @otro.Cargas @(otro.Cargas == 1 ? "carga" : "cargas")</span>
+                    @(otro.TieneFicha ? $" · {otro.Nombre}" : " · " + Texto["miCarro.todaviaSinNombre"])
+                    <span class="apunte"> · @otro.Cargas @Texto[otro.Cargas == 1 ? "comun.carga" : "comun.cargas"]</span>
                 </li>
             }
         </ul>
     }
 }
 
-<h2 class="seccion-titulo">Cómo lo mirás</h2>
+<h2 class="seccion-titulo">@Texto["miCarro.comoLoMiras"]</h2>
 
 @* LAS UNIDADES VAN AL JOURNAL, no a este navegador. Es la única preferencia que lo hace,
    y la razón es que cambia lo que la app DICE y no solo lo que se ve: guardada en el
@@ -132,7 +125,7 @@ else
    gasto por moneda en vez de un selector. *@
 <div class="unidades">
     <fieldset class="unidad-grupo">
-        <legend>Rendimiento</legend>
+        <legend>@Texto["tablero.rendimiento"]</legend>
         @foreach ((string simbolo, string comoSeLee) in FormasDeMirarElRendimiento)
         {
             <button type="button" @key="@simbolo"
@@ -145,25 +138,22 @@ else
     </fieldset>
 
     <fieldset class="unidad-grupo">
-        <legend>Distancia</legend>
-        @foreach ((string simbolo, string comoSeLee) in FormasDeMirarLaDistancia)
+        <legend>@Texto["miCarro.distancia"]</legend>
+        @foreach (string simbolo in FormasDeMirarLaDistancia)
         {
             <button type="button" @key="@simbolo"
                     class="tecla tecla--contorno @(unidades.Distancia == simbolo ? "tecla--elegida" : "")"
                     aria-pressed="@(unidades.Distancia == simbolo)"
                     @onclick="() => ElegirDistancia(simbolo)">
-                @comoSeLee
+                @ComoSeLeeLaDistancia(simbolo)
             </button>
         }
     </fieldset>
 </div>
 
-<p class="apunte" style="margin-top:8px">
-    Cambiar la unidad cambia cómo se dice tu rendimiento, nunca el veredicto: si tu carro
-    empeoró, empeoró en las tres.
-</p>
+<p class="apunte" style="margin-top:8px">@Texto["miCarro.laUnidadNoMueveElVeredicto"]</p>
 
-<h2 class="seccion-titulo">Dónde vive tu bitácora</h2>
+<h2 class="seccion-titulo">@Texto["miCarro.dondeVive"]</h2>
 
 @* HOSPEDADA VA PRIMERO, y es la rama que faltaba. `HayCarpeta` es el handle del modo suelto y
    hospedada no hay ninguno, así que sin esto cae en el `else` y dice «en ningún lado, se pierde
@@ -172,36 +162,26 @@ else
    en MisCargas.razor, que master partió en cuatro. *@
 @if (Estado.Hospedada)
 {
-    <p class="apunte">
-        En una carpeta que Gnothi le dio a esta estación, en este mismo teléfono, y es tuya.
-        <b>Tu asistente la puede leer desde ahí.</b>
-    </p>
+    <p class="apunte">@((MarkupString)Texto["miCarro.viveHospedada"])</p>
 }
 else if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
 {
-    <p class="apunte">
-        En la carpeta &laquo;@Estado.NombreDeLaCarpeta&raquo;, y se guarda después de cada
-        cambio. <b>Es el único modo en el que tu asistente la puede leer.</b>
-    </p>
+    <p class="apunte">@((MarkupString)Texto.Con("miCarro.viveEnCarpeta",
+        ("carpeta", "&laquo;" + Estado.NombreDeLaCarpeta + "&raquo;")))</p>
 }
 else if (Estado.EnAlmacenamientoDelNavegador)
 {
-    <p class="apunte">
-        En este navegador. Sobrevive al cerrar, pero <b>tu asistente no la puede leer</b>:
-        para eso hace falta una carpeta tuya.
-    </p>
+    <p class="apunte">@((MarkupString)Texto["miCarro.viveEnElNavegador"])</p>
 }
 else
 {
-    <p class="apunte">
-        <strong>En ningún lado.</strong> La bitácora vive solo en memoria y se pierde al cerrar.
-    </p>
+    <p class="apunte">@((MarkupString)Texto["miCarro.noViveEnNingunLado"])</p>
 }
 
 @* HASTA DÓNDE LEYÓ. Antes iba en la cabeza de la Ruta, en mono, como si fuera del carro.
    Es de la app: dice hasta qué evento de la estación llegó la bitácora, y sirve para
    saber si un Actualizar trajo algo. Acá, al lado de dónde vive, es donde se entiende. *@
-<p class="apunte mono">leída hasta el evento @ultimoEvento de la estación</p>
+<p class="apunte mono">@Texto.Con("miCarro.leidaHasta", ("evento", ultimoEvento.ToString()))</p>
 
 @* IMPORTAR TAMBIÉN DESDE ACÁ. Exportar vivía en esta pantalla e importar solo en la de
    arranque, así que traer una bitácora con la app ya abierta obligaba a cerrarla. Pero
@@ -211,21 +191,16 @@ else
 @if (porImportar)
 {
     <div class="parte parte--atencion fila">
-        <div class="crece">
-            <strong>Importar reemplaza tu bitácora actual</strong> por la del archivo que elijas.
-            Lo que la estación publicó se vuelve a pedir al abrir; tus kilometrajes y
-            confirmaciones de hoy solo sobreviven si están en ese archivo. Exportá antes si
-            querés conservarlos.
-        </div>
-        <button class="tecla tecla--alerta" @onclick="Importar">Sí, elegir el archivo</button>
-        <button class="tecla tecla--contorno" @onclick="() => porImportar = false">Cancelar</button>
+        <div class="crece">@((MarkupString)Texto["miCarro.importarReemplaza"])</div>
+        <button class="tecla tecla--alerta" @onclick="Importar">@Texto["miCarro.siElegirArchivo"]</button>
+        <button class="tecla tecla--contorno" @onclick="() => porImportar = false">@Texto["comun.cancelar"]</button>
     </div>
 }
 
 <div class="fila" style="margin-top:12px">
-    <button class="tecla tecla--contorno" @onclick="Exportar">Exportar a un archivo</button>
+    <button class="tecla tecla--contorno" @onclick="Exportar">@Texto["miCarro.exportar"]</button>
     <button class="tecla tecla--texto" @onclick="() => porImportar = true" disabled="@porImportar">
-        Importar una bitácora
+        @Texto["arranque.importar"]
     </button>
 </div>
 
@@ -239,50 +214,42 @@ else
    Va por la hoja de compartir y no por el enlace porque no cabe: medido con el guion de
    28 cargas, el sobre pesa ~21 KB escapado para una URL. Las fotos se quedan: el journal
    tiene el nombre y el archivo vive en la carpeta; pasar el nombre sin el archivo mentiría. *@
-<h2 class="seccion-titulo">Pasar tus anotaciones a Gnothi</h2>
+<h2 class="seccion-titulo">@Texto["miCarro.pasarAGnothi"]</h2>
 
 @if (Estado.HayTraspasoPendiente)
 {
     <div class="parte parte--atencion">
-        <strong>Llegaron anotaciones de tu otra copia y están esperando a sus cargas.</strong>
-        Se asientan solas en cuanto la estación las publique acá.
+        @((MarkupString)Texto["miCarro.traspasoPendiente"])
     </div>
 }
 
 @if (traspaso.HayAlgoQuePasar)
 {
     <p class="apunte">
-        Lo que la estación publicó, Gnothi lo vuelve a pedir solo. Lo que anotaste vos no:
-        <b>@Piezas(traspaso)</b>. Esto se lo pasa a Gnothi de una vez, sin tu credencial, y
-        repetirlo no duplica nada.
+        @((MarkupString)Texto.Con("miCarro.queSePasa", ("piezas", "<b>" + Piezas(traspaso) + "</b>")))
         @if (traspaso.FotosQueSeQuedan > 0)
         {
-            <text> @(traspaso.FotosQueSeQuedan == 1 ? "La foto del tablero se queda" : $"Las {traspaso.FotosQueSeQuedan} fotos del tablero se quedan") en tu carpeta: no viaja@(traspaso.FotosQueSeQuedan == 1 ? "" : "n") con esto.</text>
+            <text> @Texto.Con(traspaso.FotosQueSeQuedan == 1 ? "miCarro.unaFotoSeQueda" : "miCarro.lasFotosSeQuedan",
+                ("cuantas", Entero(traspaso.FotosQueSeQuedan)))</text>
         }
     </p>
     <div class="fila">
         <button class="tecla" @onclick="CompartirConGnothi">
-            @(puedeCompartir == true ? "Pasar mis anotaciones a Gnothi" : "Guardar mis anotaciones para Gnothi")
+            @Texto[puedeCompartir == true ? "miCarro.pasarlas" : "miCarro.guardarlas"]
         </button>
         @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha por
            script se trata como pegar la URL en la barra y nunca abre la app; en Android,
            sin gesto Chrome se va derecho al fallback. *@
-        <a class="tecla tecla--texto" href="@enlaceAGnothi">Abrir Gnothi</a>
+        <a class="tecla tecla--texto" href="@enlaceAGnothi">@Texto["miCarro.abrirGnothi"]</a>
     </div>
     @if (puedeCompartir == false)
     {
-        <p class="apunte">
-            Este navegador no tiene hoja de compartir, así que el archivo se descarga: lo
-            abrís después desde Gnothi.
-        </p>
+        <p class="apunte">@Texto["miCarro.sinHojaDeCompartir"]</p>
     }
 }
 else
 {
-    <p class="apunte">
-        Todavía no anotaste nada que haya que pasar: los kilometrajes, los tanques y la
-        ficha aparecen acá cuando los cargues.
-    </p>
+    <p class="apunte">@Texto["miCarro.nadaQuePasar"]</p>
 }
 
 @code {
@@ -300,11 +267,13 @@ else
         ("mpg",     "mpg"),
     };
 
-    private static readonly (string simbolo, string comoSeLee)[] FormasDeMirarLaDistancia =
-    {
-        ("km", "kilómetros"),
-        ("mi", "millas"),
-    };
+    private string ComoSeLeeLaDistancia(string simbolo) =>
+        Texto[simbolo == "mi" ? "miCarro.millas" : "miCarro.kilometros"];
+
+    // LOS SIMBOLOS NO SE TRADUCEN -- son los del dominio y los que se journalizan -- pero
+    // como se LEE cada uno si: "kilometros" y "millas" son palabras. La clave del catalogo se
+    // arma con el simbolo, que es identidad.
+    private static readonly string[] FormasDeMirarLaDistancia = { "km", "mi" };
 
     private string alias = "", marca = "", modelo = "", color = "";
     private long ultimoEvento;
@@ -353,27 +322,27 @@ else
         }
     }
 
-    private Task Guardar() => Intentar("guardar la ficha", async () =>
+    private Task Guardar() => Intentar("guardar-la-ficha", async () =>
     {
         if (enFoco is null || alias.Trim().Length == 0) return;
 
         string rechazo = await Estado.CompletarFicha(enFoco.Placa, alias.Trim(), marca.Trim(),
             modelo.Trim(), anio ?? 0, color.Trim(), rendimientoDeFabrica ?? 0m);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
 
-        MostrarListo($"Listo: ahora le decimos «{alias.Trim()}».");
+        MostrarListo(Texto.Con("miCarro.listoNombre", ("alias", alias.Trim())));
     });
 
-    private Task ElegirRendimiento(string simbolo) => Intentar("elegir cómo mirás el rendimiento", async () =>
+    private Task ElegirRendimiento(string simbolo) => Intentar("elegir-como-mira-el-rendimiento", async () =>
     {
         string rechazo = await Estado.ElegirPresentacionDeRendimiento(simbolo);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
     });
 
-    private Task ElegirDistancia(string simbolo) => Intentar("elegir la unidad de distancia", async () =>
+    private Task ElegirDistancia(string simbolo) => Intentar("elegir-la-unidad-de-distancia", async () =>
     {
         string rechazo = await Estado.ElegirUnidadDeDistancia(simbolo);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
     });
 
     // El primer paso de importar: se muestra el aviso; el segundo llama a Estado.Importar.
@@ -392,47 +361,51 @@ else
         puedeCompartir = await Estado.PuedeCompartirArchivos();
     }
 
-    private static string Piezas(ResumenDeTraspaso resumen)
+    private string Piezas(ResumenDeTraspaso resumen)
     {
         var piezas = new List<string>();
         if (resumen.Kilometrajes > 0)
-            piezas.Add(resumen.Kilometrajes == 1 ? "1 kilometraje" : $"{resumen.Kilometrajes} kilometrajes");
+            piezas.Add(Texto.Con(resumen.Kilometrajes == 1 ? "miCarro.unKilometraje" : "miCarro.nKilometrajes",
+                ("cuantos", Entero(resumen.Kilometrajes))));
         if (resumen.Tanques > 0)
-            piezas.Add(resumen.Tanques == 1 ? "1 tanque confirmado" : $"{resumen.Tanques} tanques confirmados");
+            piezas.Add(Texto.Con(resumen.Tanques == 1 ? "miCarro.unTanque" : "miCarro.nTanques",
+                ("cuantos", Entero(resumen.Tanques))));
         if (resumen.Fichas > 0)
-            piezas.Add(resumen.Fichas == 1 ? "la ficha de tu carro" : $"las fichas de {resumen.Fichas} carros");
-        piezas.Add("y en qué unidades lo mirás");
-        return piezas.Count == 2 ? $"{piezas[0]} {piezas[1]}" : string.Join(", ", piezas.GetRange(0, piezas.Count - 1)) + " " + piezas[^1];
+            piezas.Add(Texto.Con(resumen.Fichas == 1 ? "miCarro.unaFicha" : "miCarro.nFichas",
+                ("cuantas", Entero(resumen.Fichas))));
+        piezas.Add(Texto["miCarro.yLasUnidades"]);
+        return piezas.Count == 2
+            ? $"{piezas[0]} {piezas[1]}"
+            : string.Join(", ", piezas.GetRange(0, piezas.Count - 1)) + " " + piezas[^1];
     }
 
-    private Task CompartirConGnothi() => Intentar("pasar tus anotaciones a Gnothi", async () =>
+    private Task CompartirConGnothi() => Intentar("pasar-las-anotaciones-a-gnothi", async () =>
     {
         ResultadoDeCompartir resultado = await Estado.CompartirConGnothi();
         if (resultado.Cancelado) return;
-        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+        if (!resultado.Ok) throw new RechazoDeLaApp(resultado.Motivo);
 
-        MostrarListo(resultado.Como == "compartido"
-            ? "Listo: tus anotaciones salieron hacia Gnothi. Si las volvés a pasar, no se duplican."
-            : "Guardado: el archivo con tus anotaciones se descargó. Abrilo desde Gnothi cuando lo tengas.");
+        MostrarListo(Texto[resultado.Como == "compartido"
+            ? "miCarro.listoCompartido" : "miCarro.listoDescargado"]);
     });
 
-    private Task Importar() => Intentar("importar una bitácora", async () =>
+    private Task Importar() => Intentar("importar-una-bitacora", async () =>
     {
         porImportar = false;
         string motivo = await Estado.Importar();
-        if (motivo.Length > 0) throw new InvalidOperationException(motivo);
-        MostrarListo("Listo: la bitácora importada ya está abierta.");
+        if (motivo.Length > 0) throw new RechazoDeLaApp(motivo);
+        MostrarListo(Texto["miCarro.listoImportada"]);
     });
 
-    private Task Exportar() => Intentar("exportar la bitácora", async () =>
+    private Task Exportar() => Intentar("exportar-la-bitacora", async () =>
     {
         ResultadoDeExportacion resultado = await Estado.Exportar();
-        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+        if (!resultado.Ok) throw new RechazoDeLaApp(resultado.Motivo);
 
         // Exportar bajaba un archivo y la pantalla no decía nada: la descarga la anuncia el
         // browser donde le parece, y en una PWA instalada a veces en ningún lado. Se nombra
         // el archivo para que se pueda encontrar después.
-        MostrarListo($"Exportado: «{resultado.Nombre}», {resultado.Archivos} "
-            + (resultado.Archivos == 1 ? "archivo." : "archivos."));
+        MostrarListo(Texto.Con(resultado.Archivos == 1 ? "miCarro.exportadoUno" : "miCarro.exportadoVarios",
+            ("archivo", resultado.Nombre), ("cuantos", Entero(resultado.Archivos))));
     });
 }

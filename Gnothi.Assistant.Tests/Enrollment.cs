@@ -2,7 +2,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using Gnothi.Host;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 
 namespace Gnothi.Tests;
 
@@ -39,10 +39,39 @@ internal static class Enrollment
 			!hostedOk.Rejected && hostedOk.Form == PackageForm.Hosted && hostedOk.EngineFiles == 2 && hostedOk.EngineBytes > 0,
 			Detail(hostedOk));
 
-		PackageInspection both = Inspect(Zip(
+		// THE HYBRID: a face in web/ and a surface in dominio/, with the engine lent by the
+		// Host. This used to be the refusal "a module is cargo or hosted, not both".
+		PackageInspection hybridOk = Inspect(Zip(
 			("manifest.json", ManifestJson("demo", load: "dominio/Demo.App.dll")),
-			("dominio/Demo.App.dll", "x"), ("web/index.html", "<html>")));
-		assert("cargo AND hosted in one package is refused", both.Rejected, Detail(both));
+			("dominio/Demo.App.dll", "x"), ("dominio/Demo.Dominio.dll", "x"), ("web/index.html", "<html>")));
+		assert("a face in web/ plus a surface in dominio/ passes as hybrid",
+			!hybridOk.Rejected && hybridOk.Form == PackageForm.Hybrid && hybridOk.EngineFiles == 0,
+			Detail(hybridOk));
+
+		// The promise of the form, and the only rule that is stricter than hosted: a hybrid does
+		// not carry the engine ANYWHERE -- not even inside web/, where hosted is allowed to.
+		PackageInspection hybridEngine = Inspect(Zip(
+			("manifest.json", ManifestJson("demo", load: "dominio/Demo.App.dll")),
+			("dominio/Demo.App.dll", "x"), ("web/index.html", "<html>"), ("web/_framework/Puppeteer.wasm", "engine")));
+		assert("a hybrid carrying the engine inside web/ is refused",
+			hybridEngine.Rejected && hybridEngine.Rejections.Any(r => r.Contains("engine")), Detail(hybridEngine));
+
+		// A hybrid loads from dominio/, and nowhere else outside web/.
+		PackageInspection hybridStray = Inspect(Zip(
+			("manifest.json", ManifestJson("demo", load: "dominio/Demo.App.dll")),
+			("dominio/Demo.App.dll", "x"), ("web/index.html", "<html>"), ("suelto/Otro.dll", "x")));
+		assert("a hybrid with a dll outside web/ and dominio/ is refused",
+			hybridStray.Rejected && hybridStray.Rejections.Any(r => r.Contains("hybrid module loads nothing")),
+			Detail(hybridStray));
+
+		// And a hybrid still has to satisfy BOTH halves: the two checks stopped being
+		// alternatives when the form stopped being a binary.
+		PackageInspection hybridNoIndex = Inspect(Zip(
+			("manifest.json", ManifestJson("demo", load: "dominio/Demo.App.dll")),
+			("dominio/Demo.App.dll", "x"), ("web/app.js", "//")));
+		assert("a hybrid whose web/ has no index.html is refused",
+			hybridNoIndex.Rejected && hybridNoIndex.Rejections.Any(r => r.Contains("index.html")),
+			Detail(hybridNoIndex));
 
 		PackageInspection neither = Inspect(Zip(("manifest.json", ManifestJson("demo")), ("readme.txt", "?")));
 		assert("a package with nothing to load is refused", neither.Rejected, Detail(neither));

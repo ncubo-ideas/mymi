@@ -68,7 +68,7 @@ namespace Cargas.Dominio
 					Carga anclaAnterior = llenosSinKilometraje.Count > 0
 						? llenosSinKilometraje[llenosSinKilometraje.Count - 1] : abridora;
 					tramos.Add(Tramo.Bloqueado(anclaAnterior.Fecha, carga.Fecha,
-						LitrosEntre(pendientes, anclaAnterior, carga), QueFalta(carga)));
+						LitrosEntre(pendientes, anclaAnterior, carga), carga.Fecha));
 					llenosSinKilometraje.Add(carga);
 					continue;
 				}
@@ -78,7 +78,7 @@ namespace Cargas.Dominio
 				{
 					Carga ultimoTrunco = llenosSinKilometraje[llenosSinKilometraje.Count - 1];
 					tramos.Add(Tramo.Bloqueado(ultimoTrunco.Fecha, carga.Fecha,
-						LitrosEntre(pendientes, ultimoTrunco, carga), QueFalta(ultimoTrunco)));
+						LitrosEntre(pendientes, ultimoTrunco, carga), ultimoTrunco.Fecha));
 				}
 
 				// ...y el tramo que SI se puede calcular, absorbiendo lo trunco (ley 4).
@@ -130,9 +130,6 @@ namespace Cargas.Dominio
 			return litros;
 		}
 
-		private static string QueFalta(Carga trunca) =>
-			$"el kilometraje de tu carga del {trunca.Fecha:dd/MM/yyyy}";
-
 		private static string InstrumentoUniforme(List<Carga> aportan)
 		{
 			Surtidor primero = aportan[0].Surtidor;
@@ -163,13 +160,13 @@ namespace Cargas.Dominio
 				if (!tramo.EstaCalculado) continue;
 
 				if (tramo.CombustibleDelTramo.Length == 0)
-					tramo.MarcarReserva("cambio de combustible dentro del tramo");
+					tramo.MarcarReserva("cambio-de-combustible-adentro");
 				else if (tramo.CombustibleDelTramo != combustibleDeReferencia)
-					tramo.MarcarReserva("otro combustible");
+					tramo.MarcarReserva("otro-combustible");
 				else if (tramo.InstrumentoDeLosLitros.Length == 0)
-					tramo.MarcarReserva("varios surtidores dentro del tramo");
+					tramo.MarcarReserva("varios-surtidores-adentro");
 				else if (tramo.InstrumentoDeLosLitros != instrumentoDeReferencia)
-					tramo.MarcarReserva("otro surtidor");
+					tramo.MarcarReserva("otro-surtidor");
 			}
 		}
 

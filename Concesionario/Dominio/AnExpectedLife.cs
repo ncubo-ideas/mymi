@@ -30,7 +30,19 @@ namespace Concesionario.Dominio
 			_months = months;
 		}
 
-		/// <summary>Como se dice la vida util en la frase que alguien lee.</summary>
+		/// <summary>
+		/// Cuantos meses dura, tal como llegaron. Es lo que cruza hacia quien redacta: cuantos
+		/// meses son es del registro, y decir "1 mes" o "2 meses" es del idioma.
+		/// </summary>
+		internal int TheMonthsItLasts()
+		{
+			return _months;
+		}
+
+		/// <summary>
+		/// Como se dice la vida util en un rechazo del dominio, que no pasa por ningun renderizador
+		/// y no elige ningun idioma.
+		/// </summary>
 		internal string HowItIsSaid()
 		{
 			return _months.ToString(CultureInfo.InvariantCulture) + (_months == 1 ? " mes" : " meses");

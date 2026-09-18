@@ -65,15 +65,35 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La clausula que este sistema aporta al resumen del alcance: su codigo y, si los tiene,
-		/// sus limites propios. Componerla es del dominio y no de la vista.
+		/// Si este sistema publico limites propios, por su codigo. TOTAL, y es la que hay que hacer
+		/// antes de leer cualquiera de las tres mitades de abajo.
 		/// </summary>
-		internal string Describe()
+		internal string TheShapeOfItsOwnLimits()
 		{
-			if (!_ownLimits.Exists()) return "'" + Code + "' está dentro del alcance publicado";
+			return _ownLimits.Exists() ? LimitsInForce.Named : LimitsInForce.None;
+		}
 
-			return "'" + Code + "' está dentro del alcance publicado, con límites propios de "
-				+ _ownLimits.Describe();
+		/// <summary>El plazo de sus limites propios, o cero donde no publico ninguno. TOTAL.</summary>
+		internal int TheMonthsItsOwnLimitsName()
+		{
+			return _ownLimits.Exists() ? _ownLimits.TheMonthsItLimits() : 0;
+		}
+
+		/// <summary>La distancia de sus limites propios, o cero por lo mismo. TOTAL.</summary>
+		internal int TheDistanceItsOwnLimitsName()
+		{
+			return _ownLimits.Exists() ? _ownLimits.TheDistanceItLimits() : 0;
+		}
+
+		/// <summary>
+		/// El nombre de la unidad de esa distancia, o vacio donde no publico limites propios o donde
+		/// los que publico no llevan mitad de distancia. TOTAL.
+		/// </summary>
+		internal string TheNameOfTheUnitItsOwnLimitsUse()
+		{
+			return _ownLimits.Exists()
+				? _ownLimits.TheNameOfTheUnitItsDistanceIsIn()
+				: string.Empty;
 		}
 	}
 }

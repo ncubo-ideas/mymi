@@ -24,6 +24,25 @@ con más cosas detrás.
 Calendario: iOS 27 se anunció el 8 de junio de 2026 (WWDC26), las betas siguen saliendo —la
 última del 31 de agosto— y el lanzamiento público se espera a mediados de septiembre.
 
+> **ACTUALIZACIÓN DEL 2026-09-17, y cambia el plan de medición.** iOS 27 salió y con él **Siri
+> AI, el 14 de septiembre**. Tres cosas que no se sabían cuando se escribió este archivo y que
+> hay que respetar antes de intentar medir nada de acá:
+>
+> - **Entra por lista de espera.** Ajustes › Siri › *Try Siri AI (beta)*. La espera va de minutos
+>   a días, y aceptar no alcanza: el aparato todavía descarga recursos después.
+> - **Beta solo en inglés**, y **exige el idioma del APARATO en inglés**. Francés, japonés,
+>   coreano, portugués y español llegan «el mes que viene». El español para Apple Intelligence en
+>   general sí está soportado desde antes: lo que es solo inglés es Siri AI.
+> - Para el spike eso tiene una consecuencia concreta: **sus frases están en español y el target
+>   declara `developmentRegion = es`**, así que con el aparato en inglés no entran al concurso
+>   (hallazgo de código 4 de `HALLAZGOS.md`). **Traducir las frases es requisito previo**, no un
+>   detalle de presentación.
+>
+> El 2026-09-17 se corrió el spike en un 17 Pro con Apple Intelligence — pero en **26.6.2 y en
+> español**, o sea con la Siri de siempre. Lo que midió y lo que no está en `HALLAZGOS.md` §11.
+> Fuentes: <https://www.apple.com/newsroom/2026/09/siri-ai-a-profoundly-more-capable-and-personal-assistant-is-here/>
+> y <https://www.macrumors.com/2026/09/15/ios-27-siri-ai-has-waitlist-how-to-join/>.
+
 ---
 
 ## Lo que se confirma, y por eso no hay que rehacer nada
@@ -141,8 +160,9 @@ entitlements o en la cláusula 2.5.2 — la ruta del intérprete de Mono queda c
 
 ## Qué re-medir, en orden
 
-1. **Conseguir un aparato con A17 Pro o superior.** Sin eso, la mitad de esto no es medible y
-   no tiene sentido empezar por otro lado.
+1. ~~**Conseguir un aparato con A17 Pro o superior.**~~ **Hecho el 2026-09-17** (17 Pro
+   prestado). Lo que hoy bloquea ya no es el aparato: es iOS 27 + la lista de espera de Siri AI +
+   el aparato en inglés + las frases del spike traducidas. Ver la actualización de arriba.
 2. **La pregunta semántica de Siri sobre las dos entidades** que ya tienen `indexingKey`. No es
    un cambio de código: es correr t6/t6b otra vez con Siri AI encendido.
 3. **Un tool dinámico con `GenerationSchema` armado desde `ToolIndex`**, para ver si la Puerta 2

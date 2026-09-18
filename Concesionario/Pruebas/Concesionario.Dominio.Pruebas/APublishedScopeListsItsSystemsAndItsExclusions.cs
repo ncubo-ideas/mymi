@@ -55,9 +55,15 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(specification.IsCoveragePublished(), Is.False);
 			Assert.That(specification.CoveredSystems(), Is.Empty);
-			Assert.That(specification.CoverageExclusions(), Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					specification, TheLanguage.OfTheRecord),
+				Is.Empty);
 			Assert.That(specification.ReadCoverageRevision(), Is.EqualTo(""));
-			Assert.That(specification.DescribeCoverageSummary(), Does.Not.Contain("ENG-BLOCK"),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+					specification, TheLanguage.OfTheRecord),
+				Does.Not.Contain("ENG-BLOCK"),
 				"Ley L12: una hoja a medio cargar no se puede citar, y el resumen del alcance es "
 				+ "una cita como cualquier otra.");
 		}
@@ -80,8 +86,14 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.CoverageExclusions().Length, Is.EqualTo(1));
-			Assert.That(specification.CoverageExclusions()[0], Does.Contain("paintwork"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					specification, TheLanguage.OfTheRecord).Length,
+				Is.EqualTo(1));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					specification, TheLanguage.OfTheRecord)[0],
+				Does.Contain("paintwork"));
 		}
 
 		// L1: el resumen nombra su revision en la frase Y tiene su lectura de procedencia.
@@ -90,9 +102,18 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeCoverageSummary(), Does.Contain("ENG-BLOCK"));
-			Assert.That(specification.DescribeCoverageSummary(), Does.Contain("paintwork"));
-			Assert.That(specification.DescribeCoverageSummary(), Does.Contain(TheRevision));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+					specification, TheLanguage.OfTheRecord),
+				Does.Contain("ENG-BLOCK"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+					specification, TheLanguage.OfTheRecord),
+				Does.Contain("paintwork"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+					specification, TheLanguage.OfTheRecord),
+				Does.Contain(TheRevision));
 			Assert.That(specification.ReadCoverageRevision(), Is.EqualTo(TheRevision));
 		}
 
@@ -104,9 +125,9 @@ namespace Concesionario.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(
-				specification.DescribeCoverage(
-					"ENG-BLOCK", 36, 100000, DistanceUnitCode.UnitA,
-					PublishedAt, 10, 12000, DistanceUnitCode.UnitA, LaterOn),
+				TheSentenceTheDoorWouldCompose.TheCoverage(
+					specification, "ENG-BLOCK", 36, 100000, DistanceUnitCode.UnitA,
+					PublishedAt, 10, 12000, DistanceUnitCode.UnitA, LaterOn, TheLanguage.OfTheRecord),
 				Does.Contain(TheRevision));
 		}
 
@@ -173,10 +194,17 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(empty.IsCoveragePublished(), Is.False);
 			Assert.That(empty.CoveredSystems(), Is.Empty);
-			Assert.That(empty.CoverageExclusions(), Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					empty, TheLanguage.OfTheRecord),
+				Is.Empty);
 			Assert.That(empty.ReadCoverageRevision(), Is.EqualTo(""));
-			Assert.That(empty.DescribeCoverageSummary(), Is.Not.Empty);
-			Assert.That(empty.DescribeCoverageSummary(), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(empty, TheLanguage.OfTheRecord),
+				Is.Not.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(empty, TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 		}
 
 		// Un alcance que solo publico exclusiones es un alcance: el catalogo lo conoce y el
@@ -193,7 +221,10 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(onlyExclusions.IsCoveragePublished(), Is.True);
 			Assert.That(onlyExclusions.CoveredSystems(), Is.Empty);
-			Assert.That(onlyExclusions.CoverageExclusions().Length, Is.EqualTo(1));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					onlyExclusions, TheLanguage.OfTheRecord).Length,
+				Is.EqualTo(1));
 		}
 
 		// Y publicar alcance le da CONTENIDO a la revision: sellar deja de estar prohibido, sin
@@ -220,8 +251,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(specification.CoveredSystems(),
 				Is.EqualTo(new[] { "ENG-BLOCK", "HV-BATTERY" }));
-			Assert.That(specification.DescribeCoverageSummary(), Does.Contain("120 meses"));
-			Assert.That(specification.DescribeCoverageSummary(), Does.Not.Contain("96 meses"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+					specification, TheLanguage.OfTheRecord),
+				Does.Contain("120 meses"));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageSummary(
+					specification, TheLanguage.OfTheRecord),
+				Does.Not.Contain("96 meses"));
 		}
 
 		// Publicar un sistema sin codigo, o una exclusion sin texto, es un defecto de quien

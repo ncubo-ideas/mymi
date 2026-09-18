@@ -128,7 +128,7 @@ responde lo mismo con `window.isSecureContext`, `!!window.crypto.subtle` y
 
 **Está aislado a propósito.** Lo único que cambiaría es `OriginFor` en
 [`IosWebModule.cs`](IosWebModule.cs) y quién sirve. La arquitectura —la CSP, el journal, el
-cursor, el puente— no se toca, porque vive en `Gnothi.Movil` y no sabe de esto.
+cursor, el puente— no se toca, porque vive en `Gnothi.MobileShared` y no sabe de esto.
 
 ---
 
@@ -265,7 +265,7 @@ ver la primera vez, y las dos están anotadas como no medidas en
 ## P5 · Contención: el módulo no puede salir a la red
 
 La CSP es **literalmente la misma cadena** que en Android, calculada por el mismo código
-(`Gnothi.Movil/BundleServer.cs`), con el hash de cada script en línea computado al servir. Lo
+(`Gnothi.MobileShared/BundleServer.cs`), con el hash de cada script en línea computado al servir. Lo
 que cambia es quién la pone: acá va en la respuesta del scheme handler.
 
 **La mitad se ejecuta sola, y es lo primero que tenés que mirar.** El PWA de Blazor intenta
@@ -297,7 +297,7 @@ violates the following Content Security Policy directive: "connect-src 'self'"
 ### La denegación ya no es muda: Gnothi la cuenta
 
 Desde el **2026-09-07** cada rechazo del motor le llega a Gnothi **como un hecho**. El vigía vive
-en `Gnothi.Movil/BundleServer.cs` y se inyecta en el documento que Gnothi sirve, así que **iOS y
+en `Gnothi.MobileShared/BundleServer.cs` y se inyecta en el documento que Gnothi sirve, así que **iOS y
 Android lo tienen del mismo código** — no hay una versión de cada uno que se pueda desincronizar.
 
 ```
@@ -485,7 +485,7 @@ abierta**. Lo que cambia es si la cara ya existe, y el enlace que llega antes qu
 
 ## P6b · El alta desde adentro de Gnothi: el enlace pegado, con la barra
 
-> **Escrito el 2026-09-09 en Windows, sin Mac.** Todo lo de P6b a P6e corre en `Gnothi.Movil` y en
+> **Escrito el 2026-09-09 en Windows, sin Mac.** Todo lo de P6b a P6e corre en `Gnothi.MobileShared` y en
 > `ui.html`, que iOS comparte tal cual con Android, más cuatro piezas propias de iOS escritas ese día
 > sin compilar: los recursos de la marca en el csproj, la cámara (`NSCameraUsageDescription` y
 > `RequestMediaCapturePermission` en el `Bridge`), el selector de documentos (`PickModuleFiles`) y
@@ -505,7 +505,7 @@ abierta**. Lo que cambia es si la cara ya existe, y el enlace que llega antes qu
 >
 > **Y la actualización de un módulo (nota 44, pasos 1 y 2, la misma noche)** tampoco tiene pieza propia de
 > iOS: el plan vive en `Gnothi.Host/UpdatePlan.cs`, la revisión del origen al arrancar (`Shell.ReviewOrigins`)
-> y la op `actualizar` en `Gnothi.Movil/Shell.cs`, y la hoja de «Actualizar» y la pastilla «Hay una versión
+> y la op `actualizar` en `Gnothi.MobileShared/Shell.cs`, y la hoja de «Actualizar» y la pastilla «Hay una versión
 > nueva» en `ui.html`. Se prueban con los pasos 9 y 10 de la guía de Android, tal cual, con la página de la
 > institución alcanzable desde el iPhone como en P6b.
 
@@ -588,7 +588,7 @@ archivos; 2 son módulos`. Si el botón dice *En este teléfono todavía no se p
 
 ## P6e · La firma, el pin y la revocación
 
-Idéntico a Android, porque es todo `Gnothi.Movil`: `Gnothi.Mobile/PRUEBAS-WEBVIEW.md` §P2d y §2b paso 7.
+Idéntico a Android, porque es todo `Gnothi.MobileShared`: `Gnothi.Mobile/PRUEBAS-WEBVIEW.md` §P2d y §2b paso 7.
 Lo que vale medir en iOS es que `installation.json` guarda `signer` y que la **marca de llave
 retirada** aparece en la tarjeta al relanzar la app tras un `--revoke` del lado del publicador (la
 comprobación corre al arrancar, en segundo plano, y repinta la pantalla sola).
@@ -648,7 +648,7 @@ esperado está en P6b a P6e.
 
 **El alta ya NO está duplicada, y el merge ya está arreglado.** Las dos cosas que esta sección
 decía quedaron hechas: el flujo (`Enroll`, `AcceptEnrollment`, `DiscardEnrollment`,
-`PushEnrollment`, `PushProposal`) vive en `Gnothi.Movil/Shell.cs`, que ya era dueño del
+`PushEnrollment`, `PushProposal`) vive en `Gnothi.MobileShared/Shell.cs`, que ya era dueño del
 catálogo, del push y del switch de `Handle`; y `MainActivity.cs` volvió a compilar. Medido:
 Android **0 errores**, iOS **0 errores**.
 

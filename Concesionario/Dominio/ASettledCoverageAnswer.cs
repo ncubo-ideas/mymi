@@ -4,37 +4,37 @@ namespace Concesionario.Dominio
 {
 	/// <summary>
 	/// La respuesta de cobertura que si se decidio: trae uno de los cinco
-	/// <see cref="CoverageStanding"/> y la clausula que explica contra que se midio, con las
-	/// exclusiones publicadas que haya y el recordatorio de que esto es alcance y no la
-	/// adjudicacion de un reclamo.
+	/// <see cref="CoverageStanding"/> y la clausula que dice contra que se midio, con las
+	/// exclusiones publicadas que haya y la revision de la que sale.
 	/// </summary>
 	internal sealed class ASettledCoverageAnswer : CoverageAnswer
 	{
-		private readonly string _subject;
+		private readonly string _systemCode;
 		private readonly CoverageStanding _standing;
-		private readonly string _clause;
 
 		/// <summary>
-		/// La compone <see cref="WarrantyCoverage"/>, que es quien conoce el alcance publicado.
-		/// Sin sujeto la frase no dice de que habla, y sin resultado no seria una respuesta
+		/// La compone <see cref="WarrantyCoverage"/>, que es quien conoce el alcance publicado. Sin
+		/// sistema la respuesta no dice de que habla, y sin resultado no seria una respuesta
 		/// decidida.
 		/// </summary>
-		internal ASettledCoverageAnswer(string subject, CoverageStanding standing, string clause)
+		internal ASettledCoverageAnswer(
+			string systemCode, CoverageStanding standing, ACoverageClause clause)
+			: base(clause)
 		{
-			if (string.IsNullOrWhiteSpace(subject))
+			if (systemCode == null)
 				throw new DomainException(
 					"Se compuso una respuesta de cobertura sin decir de que sistema habla. La misma "
-					+ "frase serviria para todos, que es como una respuesta termina leyendose como si "
-					+ "fuera de otra cosa.");
+					+ "respuesta serviria para todos, que es como una termina leyendose como si fuera "
+					+ "de otra cosa. Un codigo EN BLANCO si pasa: es un codigo que el catalogo del "
+					+ "fabricante no conoce, y eso es una respuesta.");
 
 			if (standing == null)
 				throw new DomainException(
-					$"Se compuso una respuesta decidida sobre {subject} sin ninguna de las respuestas "
-					+ "posibles. Decidida quiere decir que hay una.");
+					$"Se compuso una respuesta decidida sobre '{systemCode}' sin ninguna de las "
+					+ "respuestas posibles. Decidida quiere decir que hay una.");
 
-			_subject = subject;
+			_systemCode = systemCode;
 			_standing = standing;
-			_clause = clause;
 		}
 
 		/// <summary>Si.</summary>
@@ -49,12 +49,22 @@ namespace Concesionario.Dominio
 			return _standing;
 		}
 
-		/// <summary>
-		/// El sujeto, el resultado por su nombre, y la clausula que dice contra que se midio.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Decidida.</summary>
+		internal override string TheShapeItHas()
 		{
-			return _subject + ": " + _standing.HowItIsSaid + ". " + _clause;
+			return Settled;
+		}
+
+		/// <summary>El sistema por el que se pregunto, tal como llego.</summary>
+		internal override string TheSystemItIsAbout()
+		{
+			return _systemCode;
+		}
+
+		/// <summary>El resultado por el nombre del miembro, que es lo que cruza hacia afuera.</summary>
+		internal override string TheStandingItReached()
+		{
+			return _standing.Name;
 		}
 	}
 }

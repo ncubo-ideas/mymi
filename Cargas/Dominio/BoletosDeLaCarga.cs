@@ -15,6 +15,27 @@ namespace Cargas.Dominio
 	/// </summary>
 	internal sealed class BoletosDeLaCarga
 	{
+		/// <summary>No hay ningun sorteo cuya regla alcance a esta carga.</summary>
+		internal const string NoEntraEnNingunSorteo = "sin-sorteo";
+
+		/// <summary>Hay sorteos, pero esta carga cae fuera de las fechas de todos.</summary>
+		internal const string FueraDeLasFechas = "fuera-de-las-fechas";
+
+		/// <summary>El sorteo da boletos en una moneda y esta carga se pago en otra.</summary>
+		internal const string LaReglaEsEnOtraMoneda = "otra-moneda";
+
+		/// <summary>La regla y lo emitido no coinciden: probablemente falta un dato por llegar.</summary>
+		internal const string ProbablementeFaltaUnDatoPorLlegar = "falta-un-dato";
+
+		/// <summary>La carga no llego al monto del primer boleto.</summary>
+		internal const string NoAlcanzoParaUnBoleto = "no-alcanzo";
+
+		/// <summary>Dio boletos y no sobro nada.</summary>
+		internal const string DioBoletos = "dio-boletos";
+
+		/// <summary>Dio boletos y sobro un resto, que no se acumula.</summary>
+		internal const string DioBoletosYSobro = "dio-boletos-y-sobro";
+
 		internal DateTime FechaDeLaCarga { get; private set; }
 		internal string NumeroDeLaTransaccion { get; private set; }
 		internal string CodigoDelSorteo { get; private set; }
@@ -22,57 +43,56 @@ namespace Cargas.Dominio
 
 		/// <summary>Si hay un sorteo con regla aplicable a esta carga.</summary>
 		internal bool HayRegla { get; private set; }
-		internal string MotivoSinRegla { get; private set; }
+
+		/// <summary>EL CODIGO de por que no hay regla, o vacio cuando si la hay.</summary>
+		internal string ClaveSinRegla { get; private set; }
 
 		internal int BoletosQueDaLaRegla { get; private set; }
 		internal int BoletosEmitidos { get; private set; }
 		internal decimal Sobrante { get; private set; }
-		internal string SobranteExpresado { get; private set; }
+
+		/// <summary>La moneda en que se pago la carga, y la de la regla del sorteo. El dominio
+		/// no convierte dinero: cuando no son la misma, la regla no aplica y se dice.</summary>
+		internal string MonedaDeLaCarga { get; private set; }
+		internal string MonedaDeLaRegla { get; private set; }
 
 		internal bool LaCuentaCuadra => !HayRegla || BoletosQueDaLaRegla == BoletosEmitidos;
 		internal bool ProbablementeFaltaUnDato => HayRegla && !LaCuentaCuadra;
 
 		internal BoletosDeLaCarga(DateTime fecha, string transaccion, string codigo,
-			string nombre, bool hayRegla, string motivoSinRegla, int queDaLaRegla,
-			int emitidos, decimal sobrante, string sobranteExpresado)
+			string nombre, bool hayRegla, string claveSinRegla, int queDaLaRegla,
+			int emitidos, decimal sobrante, string monedaDeLaCarga, string monedaDeLaRegla)
 		{
 			FechaDeLaCarga = fecha;
 			NumeroDeLaTransaccion = transaccion ?? "";
 			CodigoDelSorteo = codigo ?? "";
 			NombreDelSorteo = nombre ?? "";
 			HayRegla = hayRegla;
-			MotivoSinRegla = motivoSinRegla ?? "";
+			ClaveSinRegla = claveSinRegla ?? "";
 			BoletosQueDaLaRegla = queDaLaRegla;
 			BoletosEmitidos = emitidos;
 			Sobrante = sobrante;
-			SobranteExpresado = sobranteExpresado ?? "";
+			MonedaDeLaCarga = monedaDeLaCarga ?? "";
+			MonedaDeLaRegla = monedaDeLaRegla ?? "";
 		}
 
-		/// <summary>La frase, en pasado. RETROSPECTIVA A PROPOSITO: "sobraron X que no se
-		/// acumulan" es un hecho de su registro; "carga X mas y te llevas otro boleto"
-		/// seria la estacion vendiendo por la boca de su propia app.</summary>
-		internal string ParaSonia
+		/// <summary>
+		/// LA CLAVE DE LA EXPLICACION, en pasado. RETROSPECTIVA A PROPOSITO: "sobraron X que no
+		/// se acumulan" es un hecho de su registro; "carga X mas y te llevas otro boleto" seria
+		/// la estacion vendiendo por la boca de su propia app.
+		/// </summary>
+		internal string ClaveDeLaExplicacion
 		{
 			get
 			{
 				if (!HayRegla)
-					return MotivoSinRegla.Length > 0
-						? MotivoSinRegla
-						: "esta carga no entra en ningún sorteo";
+					return ClaveSinRegla.Length > 0 ? ClaveSinRegla : NoEntraEnNingunSorteo;
 
-				if (ProbablementeFaltaUnDato)
-					return $"por esta carga veo {BoletosEmitidos} "
-						+ (BoletosEmitidos == 1 ? "boleto" : "boletos")
-						+ $" y la regla del sorteo da {BoletosQueDaLaRegla}: probablemente "
-						+ "falta un dato por llegar";
+				if (ProbablementeFaltaUnDato) return ProbablementeFaltaUnDatoPorLlegar;
 
-				if (BoletosEmitidos == 0)
-					return $"esta carga no alcanzó para un boleto: faltaron "
-						+ $"{SobranteExpresado} para el primero";
+				if (BoletosEmitidos == 0) return NoAlcanzoParaUnBoleto;
 
-				return $"esta carga dio {BoletosEmitidos} "
-					+ (BoletosEmitidos == 1 ? "boleto" : "boletos")
-					+ (Sobrante > 0m ? $"; sobraron {SobranteExpresado}, que no se acumulan" : "");
+				return Sobrante > 0m ? DioBoletosYSobro : DioBoletos;
 			}
 		}
 	}

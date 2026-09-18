@@ -40,7 +40,8 @@ namespace Concesionario.Dominio.Pruebas
 			ThePolicyEnters();
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServicingElsewhereRule(0, 0, 0);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+				specification, 0, 0, 0, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("\"" + TheRule + "\""));
 			Assert.That(answer, Does.Contain("\"" + WhatPreservesCover + "\""));
@@ -55,7 +56,8 @@ namespace Concesionario.Dominio.Pruebas
 			ThePolicyEnters();
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServicingElsewhereRule(2, 1, 0);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+				specification, 2, 1, 0, TheLanguage.OfTheRecord);
 
 			foreach (string promesa in new[]
 				{ "will be paid", "is covered", "guarantee", "entitled", "approved" })
@@ -87,7 +89,8 @@ namespace Concesionario.Dominio.Pruebas
 			ThePolicyEnters();
 
 			Assert.That(specification.IsServicingPolicyPublished(), Is.False);
-			Assert.That(specification.DescribeServicingElsewhereRule(0, 0, 0),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+				specification, 0, 0, 0, TheLanguage.OfTheRecord),
 				Does.Not.Contain(TheRule));
 		}
 
@@ -99,7 +102,8 @@ namespace Concesionario.Dominio.Pruebas
 				TheRevision, "Work must be done at an authorised workshop.", WhatPreservesCover);
 			specification.SealRevision(TheRevision);
 
-			string answer = specification.DescribeServicingElsewhereRule(0, 0, 0);
+			string answer = TheSentenceTheDoorWouldCompose.TheServicingElsewhereRule(
+				specification, 0, 0, 0, TheLanguage.OfTheRecord);
 
 			Assert.That(answer, Does.Contain("authorised workshop"));
 			Assert.That(answer, Does.Not.Contain("at any workshop"));

@@ -58,9 +58,11 @@ namespace Concesionario.Dominio.Pruebas
 			ASecondRevisionSealedWith(TheSecondGrade);
 			specification.SupersedeRevision(TheFirstRevision, TheSecondRevision);
 
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Contain(TheSecondGrade));
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Not.Contain(TheFirstGrade),
 				"El grado viejo no puede seguir apareciendo: la revision 2 lo corrigio.");
 			Assert.That(specification.ReadFluidRevision(FluidKindCode.EngineOil),
@@ -89,7 +91,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AnAnswerCapturedBeforeTheNextRevisionSealedStillNamesTheOneItCameFrom()
 		{
-			string held = specification.DescribeFluid(FluidKindCode.EngineOil);
+			string held = TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord);
 
 			ASecondRevisionSealedWith(TheSecondGrade);
 
@@ -97,7 +100,8 @@ namespace Concesionario.Dominio.Pruebas
 				"Ley L11: una revision no alcanza hacia atras. Lo que alguien recibio sigue "
 				+ "diciendo de donde salio.");
 			Assert.That(held, Does.Contain(TheFirstGrade));
-			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.EngineOil, TheLanguage.OfTheRecord),
 				Does.Contain(TheSecondRevision),
 				"Y una lectura NUEVA si trae la revision nueva: hacia adelante si alcanza.");
 		}
@@ -109,13 +113,15 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheAnswerObjectItselfIsAProjectionAndNotALiveView()
 		{
-			SpecificationAnswer captured =
+			AFluidClause captured =
 				specification.ARevisionAppliesForward(FluidKindCode.EngineOil);
 
 			ASecondRevisionSealedWith(TheSecondGrade);
 
-			Assert.That(captured.RevisionCode(), Is.EqualTo(TheFirstRevision));
-			Assert.That(captured.Describe(), Does.Contain(TheFirstGrade),
+			Assert.That(captured.TheRevisionItCameFrom(), Is.EqualTo(TheFirstRevision));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheFluid(captured, TheLanguage.OfTheRecord),
+				Does.Contain(TheFirstGrade),
 				"La respuesta se compuso con la revision que la dio y se quedo con ella. Una "
 				+ "respuesta que se re-resuelve cada vez que se lee no es una respuesta, es una "
 				+ "consulta.");

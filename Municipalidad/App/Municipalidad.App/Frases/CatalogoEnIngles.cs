@@ -146,6 +146,34 @@ namespace Municipalidad.App.Frases
 				["etiqueta.sin-consulta"] = "no enquiry",
 				["etiqueta.nada-sin-comprobante"] = "nothing without a receipt",
 				["etiqueta.hay-periodos-sin-comprobante"] = "periods without a receipt",
+
+				// Las seis que una Vista dice cuando no hay con que contestar. El porque de que vivan
+				// aca esta escrito en el catalogo en espanol, que es el del registro.
+				["sinComprobante.nuncaHuboConsulta"] =
+					"Your app has no enquiry to the portal on record, so there is nothing to check what it "
+					+ "did see paid against. This does NOT say everything is in order: it says the question "
+					+ "cannot be answered yet, and it will be as soon as an enquiry arrives.",
+
+				["cuantoApartar.sinUnPago"] =
+					"Your app has not seen a single receipt yet, so there is nothing to project this year's "
+					+ "payments from. As soon as the first payment arrives, this suggestion appears on its own.",
+				["cuantoApartar.sinReservaAdoptada"] =
+					"You have not adopted a reserve yet, so there is nothing to compare the suggestion "
+					+ "against. Adopting one is yours and not the municipality's: it is how much you decide "
+					+ "to set aside each month.",
+				["cuantoApartar.sinNingunaDeLasDos"] =
+					"With no payment to project from and no reserve adopted, there are no two halves to "
+					+ "compare. Both arrive on their own: the suggestion with the first receipt, the adopted "
+					+ "one when you enter it.",
+
+				["porQuePagoMas.sinNingunComprobante"] =
+					"Your app has not seen a single receipt for this charge, so there is nothing to compare. "
+					+ "That does not mean you are not paying it: it means your payments for this charge have "
+					+ "not reached here yet.",
+				["porQuePagoMas.conUnSoloComprobante"] =
+					"There is only one period with a receipt for this charge, and seeing a change takes two. "
+					+ "It is not that the charge has not moved: it is that there is nothing to compare it "
+					+ "against yet.",
 			};
 		}
 	}

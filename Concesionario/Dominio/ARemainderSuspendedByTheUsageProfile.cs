@@ -8,15 +8,15 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class ARemainderSuspendedByTheUsageProfile : ARemainder
 	{
-		private readonly string _said;
+		private readonly string _usageProfile;
 
 		/// <summary>
-		/// Se llega por <see cref="ARemainder.IgnoredByTheUsageProfile"/>, con la frase que la
-		/// dimension ya compone: es la que nombra el perfil que decidio.
+		/// Se llega por <see cref="ARemainder.IgnoredByTheUsageProfile"/>, con el perfil que
+		/// decidio, por su codigo.
 		/// </summary>
-		internal ARemainderSuspendedByTheUsageProfile(string said)
+		internal ARemainderSuspendedByTheUsageProfile(string usageProfile)
 		{
-			_said = said;
+			_usageProfile = usageProfile;
 		}
 
 		/// <summary>Si: la ley mide la dimension; lo que la ignora es el perfil.</summary>
@@ -37,10 +37,16 @@ namespace Concesionario.Dominio
 			return RemainderStanding.SuspendedByTheUsageProfile;
 		}
 
-		/// <summary>La frase de la dimension, tal como la compuso.</summary>
-		internal override string Describe()
+		/// <summary>La distancia, que es la dimension que un perfil puede ignorar.</summary>
+		internal override string TheDimensionItMeasures()
 		{
-			return _said;
+			return IntervalDimension.Distance;
+		}
+
+		/// <summary>El perfil que decidio ignorarla, por su codigo.</summary>
+		internal override string TheUsageProfileThatIgnoresIt()
+		{
+			return _usageProfile;
 		}
 	}
 }

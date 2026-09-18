@@ -1,6 +1,7 @@
 @page "/ritmo"
 @using Compras.App.Vistas
 @using Compras.App
+@inject Textos textos
 @inject EstadoDeLaApp estado
 
 @* TU RITMO DE SUPER: la pantalla propia a la que lleva "Ver tu ritmo →" desde "Tu mes en
@@ -17,44 +18,44 @@
    notado?": esa observacion en el mock no tiene una consulta que la respalde, y esta app
    señala lo que sabe y se calla en lo que no. *@
 
-<PageTitle>Tu ritmo de súper · La Guaria y vos</PageTitle>
+<PageTitle>@textos["ritmo.titulo"] · @Textos.TituloDelModulo</PageTitle>
 
 <Volver Respaldo="" />
 
-<h1>Tu ritmo de súper</h1>
+<h1>@textos["ritmo.titulo"]</h1>
 <p class="text-body-secondary mb-4">
-    Hay días y momentos que se repiten más de lo que parece.
+    @textos["ritmo.bajada"]
 </p>
 
 @if (!estado.EstaArriba)
 {
     <div class="aviso">
-        La app todavía no abrió en esta computadora.
-        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+        @textos["comun.sinAbrir"]
+        <a href="">@textos["comun.sinAbrirEnlace"]</a> @textos["comun.sinAbrirCola"]
     </div>
 }
 else if (ritmo is null || !ritmo.EsObservado)
 {
     <p class="text-body-secondary">
-        @(ritmo?.ParaElAsistente is { Length: > 0 } texto ? texto : "Todavía no hay compras suficientes para medir un ritmo.")
+        @(ritmo?.ParaElAsistente is { Length: > 0 } texto ? texto : textos["ritmo.sinRitmo"])
     </p>
 }
 else
 {
     <p class="ritmo-rotulo mb-3">
-        Mirando tus últimas @ritmo.ComprasMiradas compras.
+        @textos.Con("ritmo.mirando", ("compras", ritmo.ComprasMiradas.ToString()))
     </p>
 
     <div class="ritmo-cifras mb-4">
         <div class="ritmo-cifra">
-            <span class="ritmo-numero ritmo-numero-largo">Cada @ritmo.DiasEntreCompras días</span>
-            <span class="ritmo-rotulo">volvés al súper</span>
+            <span class="ritmo-numero ritmo-numero-largo">@textos.Con("ritmo.cada", ("dias", textos.Dias(ritmo.DiasEntreCompras)))</span>
+            <span class="ritmo-rotulo">@textos["ritmo.volves"]</span>
         </div>
         <div class="ritmo-cifra">
             <span class="ritmo-numero ritmo-palabra">@ritmo.DiaFavorito</span>
             <span class="ritmo-rotulo">
-                el día en que más comprás
-                (@ritmo.ComprasEnElDiaFavorito de @ritmo.ComprasMiradas)
+                @textos["ritmo.diaQueMasCompras"]
+                (@textos.Con("comun.deTotal", ("cuantos", ritmo.ComprasEnElDiaFavorito.ToString()), ("total", ritmo.ComprasMiradas.ToString())))
             </span>
         </div>
     </div>
@@ -65,7 +66,7 @@ else
         <div class="card-body">
             <div class="seccion-cabeza">
                 <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6.6"/><path d="M10 6.4V10l2.6 1.6"/></svg></span>
-                <h2 class="kicker">A qué hora solés ir</h2>
+                <h2 class="kicker">@textos["ritmo.aQueHora"]</h2>
             </div>
             <div class="momentos">
                 @foreach (var m in ritmo.PorMomento)
@@ -73,7 +74,7 @@ else
                     <div class="momento @(m.Momento == ritmo.MomentoFavorito ? "momento-favorito" : "")">
                         <div class="momento-nombre">@m.Momento</div>
                         <div class="momento-barra"><span style="width:@((int)(m.Proporcion * 100))%"></span></div>
-                        <div class="momento-cuantas">@m.Cuantas @(m.Cuantas == 1 ? "compra" : "compras")</div>
+                        <div class="momento-cuantas">@textos.CuantasCompras(m.Cuantas)</div>
                     </div>
                 }
             </div>

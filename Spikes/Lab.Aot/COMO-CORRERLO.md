@@ -47,6 +47,6 @@ prueba que pasa o falla, es una linea base que se vigila.
 
 **OJO CON EL ALCANCE.** Este proyecto tiene que compilar el MISMO glob que Gnothi.Mobile y
 Gnothi.iOS. Si a las apps se les agrega un origen de codigo y aca no, la medicion miente por
-omision -- ya paso una vez con Gnothi.Movil.
+omision -- ya paso una vez con Gnothi.MobileShared.
 
 Detalle completo y que significa cada cosa en iOS: NotasGnothiHost/32 y /33.

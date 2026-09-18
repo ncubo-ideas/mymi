@@ -18,22 +18,16 @@ namespace Concesionario.Dominio
 			_limitUnit = limitUnit;
 		}
 
-		/// <summary><c>distancia</c>.</summary>
-		protected override string Name
+		/// <summary>La distancia.</summary>
+		internal override string TheDimensionItMeasures()
 		{
-			get { return "distancia"; }
+			return IntervalDimension.Distance;
 		}
 
 		/// <summary>La unidad del limite, por su NOMBRE y nunca por su codigo.</summary>
 		protected override string UnitName
 		{
 			get { return _limitUnit.Name; }
-		}
-
-		/// <summary>La distancia se dice en la unidad de su limite, que no se pluraliza.</summary>
-		protected override string Amount(int quantity)
-		{
-			return quantity + " " + _limitUnit.Name;
 		}
 	}
 }

@@ -3,10 +3,10 @@ using Android.OS;
 using Android.Webkit;
 // EL CATALOGO DE TEXTOS, por alias y no importando el namespace entero: `Gnothi.Host`
 // tambien declara un `Shell` -- el bloque de installation.json -- y este archivo usa el
-// `Shell` de Gnothi.Movil diez veces. Importar los dos namespaces deja el nombre ambiguo
+// `Shell` de Gnothi.MobileShared diez veces. Importar los dos namespaces deja el nombre ambiguo
 // y el Android deja de compilar; el alias trae lo unico que hace falta de alli.
 using Textos = Gnothi.Host.Textos;
-using Gnothi.Movil;
+using Gnothi.MobileShared;
 using System.Text.Json;
 
 // QUE PUEDE HABLAR GNOTHI EN CLARO: solo el loopback, que es donde aterriza un tunel de
@@ -17,6 +17,19 @@ using System.Text.Json;
 // THE CAMERA, for reading the institution's code from inside Mymi. The page asks for it
 // through getUserMedia, and the WebView will not even ask the person unless the app declares
 // the permission. Not required: a phone without a camera pastes the link instead.
+// LA RED DEL HOST, DECLARADA A MANO, y hay que declararla aunque "ya funcionaba".
+//
+// El SDK de .NET Android agrega INTERNET SOLO EN DEBUG, para que el depurador pueda conectarse.
+// En Release no lo agrega, y entonces el cartero -- que es el unico que habla con publicadores --
+// se queda sin red en el build que de verdad se entrega.
+//
+// COMO SE VE CUANDO FALTA, medido el 2026-09-11 en un Xiaomi con Android 16: el pedido a
+// 127.0.0.1 muere con `HttpRequestException: Permission denied (127.0.0.1:8095)`. Loopback y
+// todo, Android exige INTERNET para abrir CUALQUIER socket. Y el mensaje se lee como una
+// restriccion del fabricante -- MIUI tiene fama de cortarle la red a las apps -- asi que se
+// buscan permisos de runtime que no existen: INTERNET es un permiso normal y no sale en la
+// pantalla de permisos de la app. El unico lugar donde se ve es `dumpsys package`.
+[assembly: Android.App.UsesPermission(Android.Manifest.Permission.Internet)]
 [assembly: Android.App.UsesPermission(Android.Manifest.Permission.Camera)]
 [assembly: Android.App.UsesFeature("android.hardware.camera", Required = false)]
 
@@ -33,7 +46,7 @@ namespace Gnothi.Mobile;
 // Y esa decision se pago sola el dia de iOS: como la cara es un HTML, es EL MISMO archivo alla.
 // Lo unico que cambia entre plataformas es quien monta el WebView y como se traduce
 // window.prompt(). Todo lo demas -el estado, el consentimiento, la llave, el proveedor, la
-// pregunta- vive en Gnothi.Movil/Shell.cs y se comparte tal cual.
+// pregunta- vive en Gnothi.MobileShared/Shell.cs y se comparte tal cual.
 //
 // WHAT THIS FILE OWNS: the screen and the lifecycle (installing what was downloaded). The
 // catalog, the consent and the dispatch are the Host's -- the same files the desktop runs.
@@ -103,6 +116,8 @@ public class MainActivity : Activity
 		// standalone app, read below.
 		archivoPendiente = LeerArchivoDeModulo(Intent, strict: true);
 		if (archivoPendiente is null) LeerTraspasoDe(Intent);
+		// Y el icono de la pantalla de inicio, que pide abrir un modulo por su nombre.
+		LeerAperturaDe(Intent);
 
 		web = new WebView(this);
 		web.Settings.JavaScriptEnabled = true;
@@ -173,7 +188,7 @@ public class MainActivity : Activity
 
 
 	// EL ARRANQUE. Lo que quedo aca despues de que el refactor de master mudara el nucleo a
-	// Gnothi.Movil/Shell.cs: alla viven instalar, descubrir, el dispatcher, el vigilante del
+	// Gnothi.MobileShared/Shell.cs: alla viven instalar, descubrir, el dispatcher, el vigilante del
 	// consentimiento y la comprobacion de los modulos nuevos. Aca solo lo que sabe de Android,
 	// y lo que tiene que pasar DESPUES de que el Host levante.
 	private async Task Start()
@@ -226,6 +241,15 @@ public class MainActivity : Activity
 			await EntregarTraspaso(t.Modulo, t.Aserciones, stop.Token);
 		}
 
+		// EL ICONO VA AL FINAL, y no es un detalle de orden: si en el mismo arranque llegó
+		// además un alta o un traspaso, primero tiene que quedar instalado y asentado lo que
+		// vino -- abrir la cara antes sería mostrarle a la persona el expediente viejo.
+		if (aperturaPendiente is { } cual)
+		{
+			aperturaPendiente = null;
+			AbrirModulo(cual);
+		}
+
 		await corriendo;
 	}
 
@@ -268,6 +292,14 @@ public class MainActivity : Activity
 		{
 			traspasoPendiente = null;
 			_ = EntregarTraspaso(t.Modulo, t.Aserciones, stop.Token);
+		}
+
+		// El icono con Gnothi ya abierta. Acá el catálogo YA está, así que se abre de una.
+		LeerAperturaDe(intento);
+		if (aperturaPendiente is { } cual)
+		{
+			aperturaPendiente = null;
+			AbrirModulo(cual);
 		}
 	}
 
@@ -622,6 +654,162 @@ public class MainActivity : Activity
 		return true;
 	}
 
+	// ── EL ACCESO DIRECTO EN LA PANTALLA DE INICIO ──────────────────────────────────────
+	//
+	// UN ICONO QUE PARECE LA APP DE LA INSTITUCIÓN Y ABRE GNOTHI. Es lo más cerca que se puede
+	// estar de «su app» sin que la institución publique una: el icono lleva su logo y su nombre,
+	// y al tocarlo Gnothi levanta su módulo. El proceso, la carpeta y el motor siguen siendo de
+	// Gnothi, y eso no se disimula -- el launcher le estampa el badge de Gnothi en la esquina y
+	// no hay forma de quitarlo. Está bien que esté: dice quién corre el código.
+	//
+	// NO ES UNA APP, Y LA DIFERENCIA IMPORTA: no aparece en el cajón de aplicaciones -- ahí solo
+	// van paquetes instalados --, no tiene proceso propio, no despierta, no notifica, y si Gnothi
+	// se desinstala el icono deja de servir. Es exactamente la contención que ya tiene el módulo,
+	// con una puerta más corta.
+	//
+	// EL INTENT ES EXPLÍCITO Y NO UN ENLACE. `go.gnothi.app/abrir?modulo=…` existe y sería lo
+	// natural, pero un https sin assetlinks.json verificado saca el diálogo de «¿con qué app
+	// abro esto?», depende de DNS, y cualquiera puede registrar un handler para ese dominio.
+	// Un intent contra esta clase no sale del teléfono ni pasa por el resolvedor.
+	internal const string ExtraModulo = "gnothi.modulo";
+
+	// El módulo que el icono pidió, esperando a que haya catálogo -- igual que el alta y el
+	// traspaso. Tocar el icono con Gnothi cerrado llega a OnCreate ANTES de que el Host esté
+	// arriba, y abrirlo ahí no encontraría nada que abrir.
+	private string? aperturaPendiente;
+
+	private void LeerAperturaDe(Android.Content.Intent? intento)
+	{
+		string? modulo = intento?.GetStringExtra(ExtraModulo);
+		if (modulo is { Length: > 0 }) aperturaPendiente = modulo;
+	}
+
+	// LO QUE LA PÁGINA PIDE. Contesta con `ok` y, cuando no se pudo, con la razón EN PALABRAS:
+	// un botón que no hace nada y no dice por qué es peor que no tener el botón.
+	private string FijarAcceso(string nombre)
+	{
+		Gnothi.Host.Module? m = shell?.Find(nombre);
+		if (m is null) return Respuesta(false, "no encuentro ese módulo");
+
+		// API 26, y la guarda se escribe con OperatingSystem y no con Build.VERSION.SdkInt: el
+		// analizador de compatibilidad entiende esta forma y no la otra, así que con la otra
+		// quedaba un CA1416 en cada línea de acá abajo. Por debajo de 26 existía el broadcast
+		// com.android.launcher.action.INSTALL_SHORTCUT, que Android 8 dejó de atender: no hay a
+		// qué caer. El mínimo de Gnothi es 24, así que esto pasa de verdad.
+		if (!OperatingSystem.IsAndroidVersionAtLeast(26))
+			return Respuesta(false, "este Android no sabe poner accesos directos");
+
+		var gestor = (Android.Content.PM.ShortcutManager?)GetSystemService(ShortcutService);
+		if (gestor is null) return Respuesta(false, "este teléfono no ofrece accesos directos");
+
+		// El launcher puede no saber recibirlos -- y en MIUI además hay un permiso propio, que
+		// esto NO puede pedir: si está apagado, el pin se acepta y el icono nunca aparece.
+		if (!gestor.IsRequestPinShortcutSupported)
+			return Respuesta(false, "la pantalla de inicio de este teléfono no acepta accesos directos");
+
+		try
+		{
+			var abrir = new Android.Content.Intent(this, typeof(MainActivity));
+			abrir.SetAction(Android.Content.Intent.ActionView);       // un shortcut SIN acción se rechaza
+			abrir.PutExtra(ExtraModulo, m.Name);
+			abrir.AddFlags(Android.Content.ActivityFlags.NewTask | Android.Content.ActivityFlags.SingleTop);
+
+			// EL RÓTULO ES EL NOMBRE DE LA INSTITUCIÓN, en los DOS campos. El largo empezó siendo
+			// el título del módulo -«Tus exámenes, al día»- que es lo que uno escribiría, y en el
+			// teléfono el icono salió diciendo «Tus examenes,…»: MIUI prefiere el largo y lo corta
+			// a la mitad. Un icono lleva un NOMBRE, no un eslogan, y los dos campos tienen que
+			// poder leerse cortados.
+			string rotulo = Primero(m.Manifest.Identity, m.Manifest.Institution, m.Manifest.Title, m.Name);
+
+			var info = new Android.Content.PM.ShortcutInfo.Builder(this, "modulo:" + m.Name)
+				.SetShortLabel(new Java.Lang.String(rotulo))!
+				.SetLongLabel(new Java.Lang.String(rotulo))!
+				.SetIntent(abrir)!;
+
+			if (IconoDe(m) is { } icono) info.SetIcon(icono);
+
+			Android.Content.PM.ShortcutInfo hecho = info.Build()!;
+
+			// PRIMERO ACTUALIZAR Y DESPUÉS PEDIR. Si ya está fijado, `RequestPinShortcut` no le
+			// cambia nada: el icono viejo se queda con el rótulo y el logo del día que se puso.
+			// `UpdateShortcuts` sí alcanza a los fijados, y es lo que hace que una institución que
+			// cambia de nombre o de logo en una versión nueva se vea en la pantalla de inicio. No
+			// hace nada si no había ninguno, así que no hace falta preguntar.
+			gestor.UpdateShortcuts([hecho]);
+
+			gestor.RequestPinShortcut(hecho, null);
+			Log($"acceso directo: pedido el pin de '{m.Name}' como «{rotulo}»");
+			return Respuesta(true, "");
+		}
+		catch (Exception ex)
+		{
+			Log($"acceso directo: {ex.GetType().Name}: {ex.Message}");
+			return Respuesta(false, "no se pudo: " + ex.Message);
+		}
+	}
+
+	private static string Primero(params string[] cuales)
+	{
+		foreach (string c in cuales) if (!string.IsNullOrWhiteSpace(c)) return c.Trim();
+		return "";
+	}
+
+	private static string Respuesta(bool ok, string razon) =>
+		JsonSerializer.Serialize(new { ok, razon });
+
+	// EL ICONO SE COMPONE, no se usa el logo tal cual. Un icono adaptativo recorta todo lo que
+	// queda fuera del 66% central -- círculo, cuadrado redondeado, lo que el launcher decida --
+	// así que un logo puesto a sangre pierde los bordes. Se dibuja sobre el color de la marca y
+	// al 52% del lienzo, que entra entero en cualquier máscara.
+	//
+	// Devuelve null -- y el launcher pone el icono de Gnothi -- cuando el logo es un SVG: Android
+	// no los decodifica, y la aduana del Host sí los admite.
+	private Android.Graphics.Drawables.Icon? IconoDe(Gnothi.Host.Module m)
+	{
+		if (!OperatingSystem.IsAndroidVersionAtLeast(26)) return null;
+
+		try
+		{
+			string uri = m.LogoDataUri();
+			int coma = uri.IndexOf(",", StringComparison.Ordinal);
+			if (coma < 0 || uri.Contains("svg", StringComparison.OrdinalIgnoreCase)) return null;
+
+			byte[] crudo = Convert.FromBase64String(uri[(coma + 1)..]);
+			Android.Graphics.Bitmap? logo = Android.Graphics.BitmapFactory.DecodeByteArray(crudo, 0, crudo.Length);
+			if (logo is null) return null;
+
+			const int lado = 432;   // 108dp a 4x, la medida que Android recomienda para el adaptativo
+			Android.Graphics.Bitmap lienzo = Android.Graphics.Bitmap.CreateBitmap(
+				lado, lado, Android.Graphics.Bitmap.Config.Argb8888!)!;
+			var pincel = new Android.Graphics.Canvas(lienzo);
+			pincel.DrawColor(ColorDeMarca(m));
+
+			int cabe = (int)(lado * 0.52);
+			float escala = Math.Min(cabe / (float)logo.Width, cabe / (float)logo.Height);
+			int ancho = Math.Max(1, (int)(logo.Width * escala)), alto = Math.Max(1, (int)(logo.Height * escala));
+			var donde = new Android.Graphics.Rect((lado - ancho) / 2, (lado - alto) / 2,
+				(lado + ancho) / 2, (lado + alto) / 2);
+			pincel.DrawBitmap(logo, null, donde, new Android.Graphics.Paint(Android.Graphics.PaintFlags.FilterBitmap));
+
+			return Android.Graphics.Drawables.Icon.CreateWithAdaptiveBitmap(lienzo);
+		}
+		catch (Exception ex)
+		{
+			Log($"acceso directo: no se pudo componer el icono: {ex.GetType().Name}: {ex.Message}");
+			return null;
+		}
+	}
+
+	// El color que la institución declaró, y el navy del Host cuando no declaró ninguno. El
+	// fondo del icono NO puede ser transparente: en una máscara circular se vería el recorte.
+	private static Android.Graphics.Color ColorDeMarca(Gnothi.Host.Module m)
+	{
+		string declarado = Gnothi.Host.Module.LookOf(m.Manifest, m.Directory, out _).Color;
+		try { if (declarado.Length > 0) return Android.Graphics.Color.ParseColor(declarado); }
+		catch (Exception) { /* un color que no parsea es como no haberlo declarado */ }
+		return Android.Graphics.Color.ParseColor("#241F3D");
+	}
+
 	// ── LA CÁMARA, PARA LEER EL CÓDIGO ──────────────────────────────────────────────────
 
 	// The page's pending camera request while Android asks the person. One at a time: a second
@@ -707,6 +895,10 @@ public class MainActivity : Activity
 				result.Confirm(op switch
 				{
 					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
+					// EL ICONO EN LA PANTALLA DE INICIO. Necesita esta Activity porque el intent
+					// que se fija apunta a ELLA, y porque el diálogo que Android muestra es del
+					// sistema y hay que estar en primer plano para verlo.
+					"fijar" => host.FijarAcceso(req.GetProperty("module").GetString() ?? ""),
 					// The document picker is the platform's: the page asks, the Activity opens it,
 					// and what she picks comes back through OnActivityResult into the enrollment.
 					"altaArchivo" => host.PickModuleFile(),
