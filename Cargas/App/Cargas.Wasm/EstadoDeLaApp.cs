@@ -35,6 +35,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private readonly HttpClient http;
 	private readonly ConfiguracionDelProveedor proveedor;
 	private readonly ConfiguracionDeGnothi gnothi;
+	private readonly Textos textos;
 
 	private CargasApp? app;
 	private CargasAPI? api;
@@ -48,8 +49,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// que resuelve el contenedor es una forma de que el contenedor elija el equivocado.
 	public EstadoDeLaApp(PuenteDeJournal puente, ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi,
 		AlmacenDeCredencial almacen, PuenteDeTraspaso puenteDeTraspaso, HttpClient http,
-		ConfiguracionDelProveedor proveedor, ConfiguracionDeGnothi gnothi)
+		ConfiguracionDelProveedor proveedor, ConfiguracionDeGnothi gnothi, Textos textos)
 	{
+		ArgumentNullException.ThrowIfNull(textos);
 		ArgumentNullException.ThrowIfNull(puente);
 		ArgumentNullException.ThrowIfNull(modo);
 		ArgumentNullException.ThrowIfNull(puenteDeGnothi);
@@ -67,6 +69,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		this.http = http;
 		this.proveedor = proveedor;
 		this.gnothi = gnothi;
+		this.textos = textos;
 	}
 
 	public bool EstaArriba => app is not null;
@@ -535,8 +538,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	// Los aportes son los UNICOS comandos que dispara la pantalla, y cada uno baja a
 	// disco al terminar: el flush es por comando, no por timer, igual que en el bucle
-	// de refresh. Devuelven el mensaje del Check ("" si entro): un kilometraje que
-	// retrocede se rechaza sin dejar entrada, y la pantalla lo dice.
+	// de refresh. Devuelven la CLAVE del Check ("" si entro): un kilometraje que retrocede
+	// se rechaza sin dejar entrada, y la pantalla lo dice en el idioma de la persona.
 
 	/// <summary>El kilometraje que ella leyo, EN LA UNIDAD EN QUE LO LEYO.
 	///
@@ -594,7 +597,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		if (!puente.HayDestino)
-			return "para guardar la foto hace falta una carpeta tuya";
+			return "sin-carpeta-para-la-foto";
 
 		string nombre = $"fotos/{transaccion}{extension}";
 		string motivo = await puente.GuardarArchivo(nombre, contenido);
@@ -726,15 +729,23 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	// ---------------------------------------------------------------- consultas
 
+	/// <summary>
+	/// EN QUE IDIOMA SE LE PIDEN LAS FRASES A LA PUERTA, y es el que la persona eligio en su
+	/// dispositivo. La caratula sigue a la PERSONA y no a la institucion: el bundle embarca los
+	/// dos catalogos porque el modulo no tiene red y el Host no le puede conseguir una
+	/// traduccion, asi que el idioma es material que la estacion publica, como el logo.
+	/// </summary>
+	private string ElIdioma => textos.Idioma;
+
 	public IReadOnlyList<VehiculoEnLista> Vehiculos() { Exigir(); return api!.Vehiculos(); }
 
-	public IReadOnlyList<CargaEnLista> Cargas(string placa) { Exigir(); return api!.Cargas(placa); }
+	public IReadOnlyList<CargaEnLista> Cargas(string placa) { Exigir(); return api!.Cargas(placa, ElIdioma); }
 
-	public IReadOnlyList<TramoEnLista> Tramos(string placa) { Exigir(); return api!.Tramos(placa); }
+	public IReadOnlyList<TramoEnLista> Tramos(string placa) { Exigir(); return api!.Tramos(placa, ElIdioma); }
 
 	// LA consulta que justifica la app: la lectura de la serie de tramos, con su
 	// veredicto semantico y su accion.
-	public RendimientoDelVehiculo Rendimiento(string placa) { Exigir(); return api!.Rendimiento(placa); }
+	public RendimientoDelVehiculo Rendimiento(string placa) { Exigir(); return api!.Rendimiento(placa, ElIdioma); }
 
 	public AutonomiaDelVehiculo Autonomia(string placa) { Exigir(); return api!.Autonomia(placa); }
 
@@ -742,24 +753,24 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public ProximaCargaDelVehiculo ProximaCarga(string placa, DateTime hoy)
 	{ Exigir(); return api!.ProximaCarga(placa, hoy); }
 
-	public CompletitudDelVehiculo Completitud(string placa) { Exigir(); return api!.Completitud(placa); }
+	public CompletitudDelVehiculo Completitud(string placa) { Exigir(); return api!.Completitud(placa, ElIdioma); }
 
-	public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) { Exigir(); return api!.Faltantes(placa); }
+	public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) { Exigir(); return api!.Faltantes(placa, ElIdioma); }
 
 	// El prellenado del formulario de kilometraje. El "hoy" lo pone ESTA caratula: el
 	// dominio no lee el reloj.
 	public OdometroPropuesto Odometro(string placa, DateTime hoy) { Exigir(); return api!.Odometro(placa, hoy); }
 
-	public IReadOnlyList<CostoEnLista> Costos(string placa) { Exigir(); return api!.Costos(placa); }
+	public IReadOnlyList<CostoEnLista> Costos(string placa) { Exigir(); return api!.Costos(placa, ElIdioma); }
 
 	public IReadOnlyList<PrecioEnLista> Precios(string placa) { Exigir(); return api!.Precios(placa); }
 
-	public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) { Exigir(); return api!.Gastos(anio, mes); }
+	public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) { Exigir(); return api!.Gastos(anio, mes, ElIdioma); }
 
 	/// <summary>El gasto de UN carro. El de la persona -Gastos(anio, mes)- sigue existiendo
 	/// para cuando la pregunta sea de la billetera; el tablero usa este.</summary>
 	public IReadOnlyList<GastoEnLista> Gastos(string placa, int anio, int mes)
-	{ Exigir(); return api!.GastosDe(placa, anio, mes); }
+	{ Exigir(); return api!.GastosDe(placa, anio, mes, ElIdioma); }
 
 	public EstadoDeLealtad Lealtad() { Exigir(); return api!.Lealtad(); }
 
@@ -769,10 +780,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	// LAS TOMBOLAS. El "hoy" lo pone esta caratula, como en Odometro y ProximaCarga.
 	public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy)
-	{ Exigir(); return api!.Sorteos(hoy); }
+	{ Exigir(); return api!.Sorteos(hoy, ElIdioma); }
 
 	public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa)
-	{ Exigir(); return api!.BoletosDeLasCargas(placa); }
+	{ Exigir(); return api!.BoletosDeLasCargas(placa, ElIdioma); }
 
 	/// <summary>Elegir en que se mira. Va al journal -cambia lo que la IA DICE, no solo lo
 	/// que se ve- y por eso baja a disco como cualquier otro aporte.</summary>
@@ -804,7 +815,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	private void Exigir()
 	{
-		if (api is null) throw new InvalidOperationException("La app todavia no arranco.");
+		if (api is null) throw new RechazoDeLaApp("app-no-arranco");
 	}
 
 	public async ValueTask DisposeAsync()

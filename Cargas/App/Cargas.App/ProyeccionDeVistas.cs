@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
 using Cargas.App.Vistas;
+using LaRedaccion = Cargas.App.Frases.LaRedaccion;
+using LasFrases = Cargas.App.Frases.Frases;
 
 namespace Cargas.App
 {
@@ -40,8 +42,9 @@ namespace Cargas.App
 			return vehiculos;
 		}
 
-		internal static IReadOnlyList<CargaEnLista> Cargas(string json)
+		internal static IReadOnlyList<CargaEnLista> Cargas(string json, string idioma)
 		{
+			LasFrases frases = LasFrases.De(idioma);
 			var cargas = new List<CargaEnLista>();
 			foreach (JsonElement elemento in Arreglo(json, "carga"))
 				cargas.Add(new CargaEnLista
@@ -51,15 +54,21 @@ namespace Cargas.App
 					Surtidor = Texto(elemento, "surtidor"),
 					Tipo = Texto(elemento, "tipo"),
 					Litros = Decimal(elemento, "litros"),
-					Volumen = Texto(elemento, "volumen"),
+					Volumen = frases.ConUnidad(Decimal(elemento, "volumenValor"),
+						Texto(elemento, "volumenUnidad")),
 					Precio = Decimal(elemento, "precio"),
 					Total = Decimal(elemento, "total"),
 					Moneda = Texto(elemento, "moneda"),
 					Corte = Texto(elemento, "corte"),
-					Kilometraje = Texto(elemento, "kilometraje"),
-					KilometrajeAnotado = Texto(elemento, "kilometrajeAnotado"),
+					Kilometraje = LaRedaccion.Kilometraje(frases, Decimal(elemento, "kilometros"),
+						Texto(elemento, "unidad"), Texto(elemento, "origenDelKilometraje")),
+					KilometrajeAnotado = Booleano(elemento, "tieneKilometraje")
+						? frases.ConUnidadEntera(Decimal(elemento, "kilometros"), Texto(elemento, "unidad"))
+						: "",
 					OrigenDelKilometraje = Texto(elemento, "origenDelKilometraje"),
-					Tanque = Texto(elemento, "tanque"),
+					Tanque = LaRedaccion.Tanque(frases, Texto(elemento, "claveDelTanque"),
+						Texto(elemento, "origenDelTanqueDicho")),
+					ClaveDelTanque = Texto(elemento, "claveDelTanque"),
 					Transaccion = Texto(elemento, "transaccion"),
 					CuentaParaCalcular = Booleano(elemento, "cuentaParaCalcular"),
 				TieneKilometraje = Booleano(elemento, "tieneKilometraje"),
@@ -74,8 +83,9 @@ namespace Cargas.App
 			return cargas;
 		}
 
-		internal static IReadOnlyList<TramoEnLista> Tramos(string json)
+		internal static IReadOnlyList<TramoEnLista> Tramos(string json, string idioma)
 		{
+			LasFrases frases = LasFrases.De(idioma);
 			var tramos = new List<TramoEnLista>();
 			foreach (JsonElement elemento in Arreglo(json, "tramo"))
 				tramos.Add(new TramoEnLista
@@ -87,10 +97,17 @@ namespace Cargas.App
 					Litros = Decimal(elemento, "litros"),
 					Rendimiento = Decimal(elemento, "rendimiento"),
 					EsComparable = Booleano(elemento, "esComparable"),
-					MotivoDeReserva = Texto(elemento, "motivoDeReserva"),
+					MotivoDeReserva = LaRedaccion.Reserva(frases,
+						Texto(elemento, "motivoDeReserva")),
 					EsSospechoso = Booleano(elemento, "esSospechoso"),
-					QueFalta = Texto(elemento, "queFalta"),
-					Expresado = Texto(elemento, "expresado"),
+					FechaDeLaCargaTrunca = Fecha(elemento, "fechaDeLaCargaTrunca"),
+					QueFalta = Booleano(elemento, "estaCalculado")
+						? ""
+						: frases.Diga("falta.kilometraje-de-una-carga",
+							("fecha", frases.Dia(Fecha(elemento, "fechaDeLaCargaTrunca")))),
+					Expresado = LaRedaccion.Tramo(frases, Booleano(elemento, "estaCalculado"),
+						Decimal(elemento, "kilometros"), Decimal(elemento, "litros"),
+						Decimal(elemento, "rendimiento"), Fecha(elemento, "fechaDeLaCargaTrunca")),
 					RendimientoComoSeVe = Decimal(elemento, "rendimientoComoSeVe"),
 					KilometrosComoSeVen = Decimal(elemento, "kilometrosComoSeVen"),
 					SimboloDelRendimiento = Texto(elemento, "simboloDelRendimiento"),
@@ -99,8 +116,9 @@ namespace Cargas.App
 			return tramos;
 		}
 
-		internal static IReadOnlyList<SorteoEnLista> Sorteos(string json)
+		internal static IReadOnlyList<SorteoEnLista> Sorteos(string json, string idioma)
 		{
+			LasFrases frases = LasFrases.De(idioma);
 			var sorteos = new List<SorteoEnLista>();
 			foreach (JsonElement elemento in Arreglo(json, "sorteo"))
 				sorteos.Add(new SorteoEnLista
@@ -113,14 +131,21 @@ namespace Cargas.App
 					Boletos = Entero(elemento, "boletos"),
 					EstaVencido = Booleano(elemento, "estaVencido"),
 					DiasParaElSorteo = Entero(elemento, "diasParaElSorteo"),
-					MontoPorBoleto = Texto(elemento, "montoPorBoleto"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					MontoPorBoleto = Booleano(elemento, "fueAnunciado")
+						? frases.Monto(Decimal(elemento, "montoPorBoleto"),
+							Texto(elemento, "monedaPorBoleto"))
+						: "",
+					ParaSonia = LaRedaccion.Sorteo(frases, Texto(elemento, "clave"),
+						Entero(elemento, "boletos"), Fecha(elemento, "fechaDelSorteo"),
+						Entero(elemento, "diasParaElSorteo")),
 				});
 			return sorteos;
 		}
 
-		internal static IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string json)
+		internal static IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string json,
+			string idioma)
 		{
+			LasFrases frases = LasFrases.De(idioma);
 			var filas = new List<BoletosDeLaCargaEnLista>();
 			foreach (JsonElement elemento in Arreglo(json, "explicacion"))
 				filas.Add(new BoletosDeLaCargaEnLista
@@ -132,10 +157,14 @@ namespace Cargas.App
 					HayRegla = Booleano(elemento, "hayRegla"),
 					QueDaLaRegla = Entero(elemento, "queDaLaRegla"),
 					Emitidos = Entero(elemento, "emitidos"),
-					Sobrante = Texto(elemento, "sobrante"),
+					Sobrante = frases.Monto(Decimal(elemento, "sobrante"),
+						Texto(elemento, "moneda")),
 					Cuadra = Booleano(elemento, "cuadra"),
 					ProbablementeFaltaUnDato = Booleano(elemento, "probablementeFaltaUnDato"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					ParaSonia = LaRedaccion.BoletosDeLaCarga(frases, Texto(elemento, "clave"),
+						Entero(elemento, "emitidos"), Entero(elemento, "queDaLaRegla"),
+						Decimal(elemento, "sobrante"), Texto(elemento, "moneda"),
+						Texto(elemento, "monedaDeLaRegla")),
 				});
 			return filas;
 		}
@@ -154,19 +183,27 @@ namespace Cargas.App
 			};
 		}
 
-		internal static RendimientoDelVehiculo Rendimiento(string json)
+		internal static RendimientoDelVehiculo Rendimiento(string json, string idioma)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RendimientoDelVehiculo();
 
+			LasFrases frases = LasFrases.De(idioma);
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
 			return new RendimientoDelVehiculo
 			{
 				Veredicto = Texto(raiz, "veredicto"),
+				VeredictoComoSeDice = LaRedaccion.Etiqueta(frases, Texto(raiz, "veredicto")),
 				Severidad = Texto(raiz, "severidad"),
-				ParaSonia = Texto(raiz, "paraSonia"),
-				Accion = Texto(raiz, "accion"),
+				ParaSonia = LaRedaccion.Lectura(frases, Texto(raiz, "veredicto"),
+					Texto(raiz, "simbolo"), Decimal(raiz, "actualComoSeVe"),
+					Decimal(raiz, "habitualComoSeVe"), Texto(raiz, "claveDeLoQueFalta"),
+					Fecha(raiz, "fechaDeLaCargaTrunca"), Fecha(raiz, "fechaDelTotalQueNoCuadra"),
+					Texto(raiz, "motivoDeReserva"), Texto(raiz, "claveDelCambio"),
+					Entero(raiz, "cambioPorcentualComoSeVe")),
+				Accion = LaRedaccion.Accion(frases, Texto(raiz, "claveDeLaAccion"),
+					Texto(raiz, "claveDelPlazo")),
 				PideAlgo = Booleano(raiz, "pideAlgo"),
 				Actual = Decimal(raiz, "actual"),
 				Habitual = Decimal(raiz, "habitual"),
@@ -175,8 +212,9 @@ namespace Cargas.App
 				TramosCalculados = Entero(raiz, "tramosCalculados"),
 				TramosBloqueados = Entero(raiz, "tramosBloqueados"),
 				HaySerie = Booleano(raiz, "haySerie"),
-				QueFalta = Texto(raiz, "queFalta"),
-				MotivoDeReserva = Texto(raiz, "motivoDeReserva"),
+				QueFalta = frases.Diga("falta." + Texto(raiz, "claveDeLoQueFalta"),
+					("fecha", frases.Dia(Fecha(raiz, "fechaDeLaCargaTrunca")))),
+				MotivoDeReserva = LaRedaccion.Reserva(frases, Texto(raiz, "motivoDeReserva")),
 				EstaMejorando = Booleano(raiz, "estaMejorando"),
 				EstaEmpeorando = Booleano(raiz, "estaEmpeorando"),
 				SugiereRegistrarLaCargaQueFalto = Booleano(raiz, "sugiereRegistrarLaCargaQueFalto"),
@@ -204,10 +242,11 @@ namespace Cargas.App
 			};
 		}
 
-		internal static CompletitudDelVehiculo Completitud(string json)
+		internal static CompletitudDelVehiculo Completitud(string json, string idioma)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new CompletitudDelVehiculo();
 
+			LasFrases frases = LasFrases.De(idioma);
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
@@ -217,23 +256,35 @@ namespace Cargas.App
 				TotalDeCargas = Entero(raiz, "totalDeCargas"),
 				TramosCalculados = Entero(raiz, "tramosCalculados"),
 				TramosBloqueados = Entero(raiz, "tramosBloqueados"),
-				Expresada = Texto(raiz, "expresada"),
+				Expresada = LaRedaccion.Completitud(frases, Entero(raiz, "cargasConKilometraje"),
+					Entero(raiz, "totalDeCargas"), Entero(raiz, "tramosCalculados")),
 			};
 		}
 
-		internal static IReadOnlyList<FaltanteEnLista> Faltantes(string json)
+		internal static IReadOnlyList<FaltanteEnLista> Faltantes(string json, string idioma)
 		{
+			LasFrases frases = LasFrases.De(idioma);
 			var faltantes = new List<FaltanteEnLista>();
 			foreach (JsonElement elemento in Arreglo(json, "faltante"))
 				faltantes.Add(new FaltanteEnLista
 				{
 					Fecha = Fecha(elemento, "fecha"),
 					Transaccion = Texto(elemento, "transaccion"),
-					QueFalta = Texto(elemento, "queFalta"),
-					QueDesbloquea = Texto(elemento, "queDesbloquea"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					QueFalta = frases.Diga("faltante.falta." + Texto(elemento, "claveDeLoQueFalta")),
+					ClaveDeLoQueFalta = Texto(elemento, "claveDeLoQueFalta"),
+					QueDesbloquea = frases.Diga(
+						"faltante.desbloquea." + Texto(elemento, "claveDeLoQueDesbloquea"),
+						("kilometros", frases.Entera(Decimal(elemento, "kilometrosDelTramo"))),
+						("desde", frases.Dia(Fecha(elemento, "desdeLaCarga"))),
+						("hasta", frases.Dia(Fecha(elemento, "hastaLaCarga")))),
+					ParaSonia = LaRedaccion.Faltante(frases, Texto(elemento, "claveDeLoQueFalta"),
+						Texto(elemento, "claveDeLoQueDesbloquea"), Fecha(elemento, "fecha"),
+						Decimal(elemento, "kilometrosDelTramo"), Fecha(elemento, "desdeLaCarga"),
+						Fecha(elemento, "hastaLaCarga"), Texto(elemento, "loQueSeSupone"),
+						Texto(elemento, "claveDelCorte")),
 					LoQueSeSupone = Texto(elemento, "loQueSeSupone"),
-					LaSuposicion = Texto(elemento, "laSuposicion"),
+					LaSuposicion = LaRedaccion.Suposicion(frases, Texto(elemento, "loQueSeSupone"),
+						Texto(elemento, "claveDelCorte")),
 					NaceDeUnaSuposicion = Booleano(elemento, "naceDeUnaSuposicion"),
 				});
 			return faltantes;
@@ -259,10 +310,11 @@ namespace Cargas.App
 			};
 		}
 
-		internal static RitmoDelVehiculo Ritmo(string json)
+		internal static RitmoDelVehiculo Ritmo(string json, string idioma)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RitmoDelVehiculo();
 
+			LasFrases frases = LasFrases.De(idioma);
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
@@ -271,7 +323,10 @@ namespace Cargas.App
 				HayVehiculo = true,
 				Situacion = Texto(raiz, "situacion"),
 				SePudoMedir = Booleano(raiz, "sePudoMedir"),
-				Expresada = Texto(raiz, "expresada"),
+				Expresada = LaRedaccion.Ritmo(frases, Texto(raiz, "situacion"),
+					Decimal(raiz, "porDiaComoSeVe"), Decimal(raiz, "kilometrosComoSeVen"),
+					Texto(raiz, "simboloDeLaDistancia"), Fecha(raiz, "desde"), Fecha(raiz, "hasta"),
+					Entero(raiz, "lecturas")),
 				KilometrosPorDia = Decimal(raiz, "kilometrosPorDia"),
 				Kilometros = Decimal(raiz, "kilometros"),
 				Dias = Entero(raiz, "dias"),
@@ -284,8 +339,9 @@ namespace Cargas.App
 			};
 		}
 
-		internal static IReadOnlyList<CostoEnLista> Costos(string json)
+		internal static IReadOnlyList<CostoEnLista> Costos(string json, string idioma)
 		{
+			LasFrases frases = LasFrases.De(idioma);
 			var costos = new List<CostoEnLista>();
 			foreach (JsonElement elemento in Arreglo(json, "costo"))
 				costos.Add(new CostoEnLista
@@ -293,7 +349,8 @@ namespace Cargas.App
 					Moneda = Texto(elemento, "moneda"),
 					MontoPorKilometro = Decimal(elemento, "montoPorKilometro"),
 					Kilometros = Decimal(elemento, "kilometros"),
-					Expresado = Texto(elemento, "expresado"),
+					Expresado = LaRedaccion.Costo(frases, Decimal(elemento, "montoPorKilometro"),
+						Texto(elemento, "moneda"), Decimal(elemento, "kilometros")),
 				});
 			return costos;
 		}
@@ -314,8 +371,10 @@ namespace Cargas.App
 
 		// LA LLAVE ES EL NOMBRE DE LA VARIABLE DEL foreach del DSL, no la primera columna,
 		// asi que dos consultas que devuelven la misma forma tienen que decir cual usan.
-		internal static IReadOnlyList<GastoEnLista> Gastos(string json, string llave = "gasto")
+		internal static IReadOnlyList<GastoEnLista> Gastos(string json, string idioma,
+			string llave = "gasto")
 		{
+			LasFrases frases = LasFrases.De(idioma);
 			var gastos = new List<GastoEnLista>();
 			foreach (JsonElement elemento in Arreglo(json, llave))
 				gastos.Add(new GastoEnLista
@@ -324,7 +383,8 @@ namespace Cargas.App
 					Monto = Decimal(elemento, "monto"),
 					Cargas = Entero(elemento, "cargas"),
 					Litros = Decimal(elemento, "litros"),
-					Expresado = Texto(elemento, "expresado"),
+					Expresado = LaRedaccion.Gasto(frases, Decimal(elemento, "monto"),
+						Texto(elemento, "moneda"), Entero(elemento, "cargas")),
 				});
 			return gastos;
 		}

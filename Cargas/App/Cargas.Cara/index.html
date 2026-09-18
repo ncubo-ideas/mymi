@@ -1,9 +1,19 @@
 <!DOCTYPE html>
-<html lang="es-CR">
+<!-- SIN lang ESCRITO A MANO: el bundle se sirve igual para los dos idiomas, asi que una etiqueta
+     fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de negociar con
+     el aparato, con la misma regla que usa la app suelta. -->
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tablero · Estaciones Faro</title>
+<!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
+     leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
+     repintarla en el otro. Pesan ~3 KB cada uno. Es el mismo criterio que la app suelta, que
+     negocia antes del primer render. -->
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
 <!-- LA HOJA DE LA INSTITUCION, TAL CUAL. No una copia curada: el archivo que sirve la app suelta.
      Entresacar bloques a mano era decidir como se ve Faro, y cada regla que no se copiaba era una
      diferencia silenciosa. -->
@@ -46,13 +56,15 @@
         </div>
 
         <span class="placa" id="placa-fija" hidden></span>
-        <select class="placa placa--selector" id="placa" aria-label="De qué vehículo es el tablero" hidden></select>
+        <select class="placa placa--selector" id="placa" data-texto-aria="capo.deQueVehiculo"
+                aria-label="Elegí de qué carro es el tablero" hidden></select>
 
         <!-- LA UNICA TECLA QUE VA A BUSCAR DATOS, y va en contorno y no en el naranja de accion:
              el tablero se pone al dia solo al abrir, asi que apretar esto es «volve a chequear
              AHORA». Aca ademas significa otra cosa que en la app suelta: no sale a la red -- no
              puede -- sino que le pide a GNOTHI que traiga lo nuevo. -->
-        <button class="tecla tecla--contorno" id="releer" style="margin-left:auto" aria-busy="false">Actualizar</button>
+        <button class="tecla tecla--contorno" id="releer" style="margin-left:auto" aria-busy="false"
+                data-texto="capo.actualizar">Actualizar</button>
     </div>
 </header>
 
@@ -64,7 +76,7 @@
     <div id="franja" class="franja franja--neutra">
         <span class="franja-luz"></span>
         <div class="franja-texto">
-            <p class="franja-frase">Preguntándole a Gnothi…</p>
+            <p class="franja-frase" data-texto="franja.preguntando">Preguntándole a Gnothi…</p>
         </div>
     </div>
 
@@ -72,12 +84,12 @@
          rindiendo, cuándo tengo que cargar, cuánto me cuesta andar. -->
     <div id="cuadro" class="cuadro"></div>
 
-    <h2 class="seccion-titulo">Lo que falta para poder calcular</h2>
+    <h2 class="seccion-titulo" data-texto="faltantes.titulo">Lo que falta para poder calcular</h2>
     <div id="faltantes"><p class="apunte">…</p></div>
 </main>
 
 <footer>
-    <p>El registro vive en este dispositivo. Esta pantalla no sale a la red:
+    <p data-texto="pie.explicacion">El registro vive en este dispositivo. Esta pantalla no sale a la red:
        le pregunta a Gnothi, y Gnothi responde con el motor que le presta.</p>
     <p class="mono" id="conexion">—</p>
 </footer>

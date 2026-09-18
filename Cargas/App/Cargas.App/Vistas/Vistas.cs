@@ -55,6 +55,11 @@ namespace Cargas.App.Vistas
 		public bool TanqueDeclarado { get; init; }
 		public string EstadoDelTanque { get; init; } = "";
 		public string OrigenDelTanque { get; init; } = "";
+
+		// EL CODIGO DEL ESTADO DEL TANQUE, incluida la inferencia de la estacion. Es identidad
+		// y con el se DECIDE -- que boton ofrecer, cual es el contrario --; `Tanque` es como se
+		// lee. Una pantalla que decidiera sobre la frase dejaria de decidir al cambiar de idioma.
+		public string ClaveDelTanque { get; init; } = "";
 	}
 
 	// UN TRAMO, calculado o bloqueado en la misma lista: el bloqueado no es la ausencia
@@ -70,6 +75,11 @@ namespace Cargas.App.Vistas
 		public bool EsComparable { get; init; }
 		public string MotivoDeReserva { get; init; } = "";
 		public bool EsSospechoso { get; init; }
+
+		// LA FECHA DE LA CARGA TRUNCA, cuando esta bloqueado. La pantalla la escribe con el
+		// mismo formato que el resto de la ruta, en vez de heredar el de una frase ajena.
+		public DateTime FechaDeLaCargaTrunca { get; init; }
+
 		public string QueFalta { get; init; } = "";
 		public string Expresado { get; init; } = "";
 
@@ -89,6 +99,12 @@ namespace Cargas.App.Vistas
 		// Semantico: "mejoro" / "empeoro", nunca subio o bajo. La flecha y el signo son
 		// de la presentacion, y se invierten con la unidad; esto no.
 		public string Veredicto { get; init; } = "";
+
+		// EL MISMO VEREDICTO, DICHO. El codigo de arriba sigue cruzando intacto porque es
+		// IDENTIDAD -- con el se decide el tono y el sello --, y esto es lo que se lee. Viaja
+		// dicho porque una cara que no sea Blazor no tiene como pedir la etiqueta: la carátula
+		// de la app suelta llama a Textos.ComoSeDice, y la cara hibrida es html y js pelados.
+		public string VeredictoComoSeDice { get; init; } = "";
 
 		public string Severidad { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
@@ -207,6 +223,10 @@ namespace Cargas.App.Vistas
 		public string QueFalta { get; init; } = "";
 		public string QueDesbloquea { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
+
+		// EL CODIGO DE QUE FALTA, de un conjunto cerrado de dos. Es con el que la pantalla
+		// decide que formulario dibujar; `QueFalta` es como se lee.
+		public string ClaveDeLoQueFalta { get; init; } = "";
 
 		// LA SUPOSICION, para poder enunciarla antes de preguntar y para que los botones
 		// digan que es "así". Vacias cuando el faltante no nace de una inferencia.

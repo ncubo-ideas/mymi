@@ -14,48 +14,46 @@
 {
     <div class="carnet">
         <div class="carnet-datos">
-            <span class="rotulo">Carnet de socia</span>
+            <span class="rotulo">@Texto["lealtad.carnet"]</span>
             @if (lealtad.NombreDelSocio.Length > 0)
             {
                 <div class="carnet-nombre">@lealtad.NombreDelSocio</div>
             }
             <div class="carnet-numero">@lealtad.NumeroDeSocio</div>
             <div class="cifra-pie">
-                socia desde @lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)
+                @Texto.Con("lealtad.sociaDesde",
+                    ("mes", lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)))
                 @if (lealtad.Nivel.Length > 0)
                 {
-                    <text> &middot; nivel <b>@lealtad.Nivel</b></text>
+                    <text> &middot; @Texto["lealtad.nivel"] <b>@Texto.ComoSeDice(lealtad.Nivel)</b></text>
                 }
             </div>
         </div>
 
         <div class="carnet-codigo">
             <svg viewBox="@ViewBox" role="img"
-                 aria-label="Código QR con el número de socia @lealtad.NumeroDeSocio">
+                 aria-label="@Texto.Con("lealtad.qr", ("numero", lealtad.NumeroDeSocio))">
                 <rect x="-2" y="-2" width="@(lado + 4)" height="@(lado + 4)" fill="#ffffff" />
                 <path d="@trazo" fill="#04171d" />
             </svg>
         </div>
     </div>
 
-    <p class="apunte carnet-apunte">
-        Se dibuja en tu teléfono, sin internet. Lleva tu número de socia y nada más: ni tu
-        historial, ni la llave que lo abre.
-    </p>
+    <p class="apunte carnet-apunte">@Texto["lealtad.carnetApunte"]</p>
 }
 else
 {
     <div class="carnet carnet--sin">
         <div class="carnet-datos">
-            <span class="rotulo">Carnet de socia</span>
-            <div class="cifra-pie" style="margin-top:6px">
-                Todavía no llegó tu número de socia. Lo emite la estación, no la app.
-            </div>
+            <span class="rotulo">@Texto["lealtad.carnet"]</span>
+            <div class="cifra-pie" style="margin-top:6px">@Texto["lealtad.sinCarnet"]</div>
         </div>
     </div>
 }
 
 @code {
+    [Inject] private Textos Texto { get; set; } = default!;
+
     [Parameter, EditorRequired] public EstadoDeLealtad lealtad { get; set; } = new();
 
     private string trazo = "";

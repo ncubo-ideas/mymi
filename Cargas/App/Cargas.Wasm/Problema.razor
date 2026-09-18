@@ -10,14 +10,16 @@
 @if (De.Hay)
 {
     <div class="parte parte--problema" role="alert">
-        <p>@De.Que</p>
+        <p>@De.Que(Texto)</p>
         <details class="problema-detalle">
-            <summary>Detalle técnico</summary>
+            <summary>@Texto["comun.detalleTecnico"]</summary>
             <pre>@De.Tecnico</pre>
         </details>
     </div>
 }
 
 @code {
+    [Inject] private Textos Texto { get; set; } = default!;
+
     [Parameter, EditorRequired] public Fallo De { get; set; } = Fallo.Ninguno;
 }

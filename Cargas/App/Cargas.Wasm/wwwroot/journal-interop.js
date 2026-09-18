@@ -278,7 +278,7 @@ async function recorrer(directorio, prefijo, salida) {
 // NotFoundError. Antes eso salia crudo como una JSException en la cara del usuario; es
 // una situacion normal de la vida de una carpeta y la app tiene que saber decirla.
 export async function listar() {
-    if (!carpeta) return { ok: false, rutas: [], motivo: 'no hay carpeta' };
+    if (!carpeta) return { ok: false, rutas: [], motivo: 'sin-carpeta' };
 
     try {
         const salida = [];
@@ -290,7 +290,7 @@ export async function listar() {
             ok: false,
             rutas: [],
             motivo: colgando
-                ? 'la carpeta ya no existe: fue movida, renombrada o borrada'
+                ? 'carpeta-colgando'
                 : `${e.name}: ${e.message}`,
         };
     }
@@ -309,7 +309,7 @@ async function directorioDe(ruta, crear) {
 // rehidratacion incompleta, o sea un total equivocado sin ningun aviso. Un journal a
 // medias es peor que no abrir.
 export async function leer(ruta) {
-    if (!carpeta) return { ok: false, contenido: '', motivo: 'no hay carpeta' };
+    if (!carpeta) return { ok: false, contenido: '', motivo: 'sin-carpeta' };
     try {
         const directorio = await directorioDe(ruta, false);
         const archivo = await (await directorio.getFileHandle(ruta.split('/').pop())).getFile();
@@ -320,7 +320,7 @@ export async function leer(ruta) {
 }
 
 export async function escribir(ruta, base64) {
-    if (!carpeta) return { ok: false, motivo: 'no hay carpeta' };
+    if (!carpeta) return { ok: false, motivo: 'sin-carpeta' };
     try {
         const directorio = await directorioDe(ruta, true);
         const handle = await directorio.getFileHandle(ruta.split('/').pop(), { create: true });
@@ -350,7 +350,7 @@ const FORMATO = 'cargas.journal.v1';
 export async function exportarJournal() {
     const listado = await listar();
     if (!listado.ok) return { ok: false, motivo: listado.motivo };
-    if (listado.rutas.length === 0) return { ok: false, motivo: 'todavia no hay nada que exportar' };
+    if (listado.rutas.length === 0) return { ok: false, motivo: 'nada-que-exportar' };
 
     try {
         const archivos = [];
@@ -390,12 +390,12 @@ export async function abrirJournalExportado() {
 
         entrada.onchange = async () => {
             const archivo = entrada.files && entrada.files[0];
-            if (!archivo) return resolver({ ok: false, motivo: 'no se eligio ningun archivo', archivos: [] });
+            if (!archivo) return resolver({ ok: false, motivo: 'sin-archivo-elegido', archivos: [] });
 
             try {
                 const sobre = JSON.parse(await archivo.text());
                 if (sobre.formato !== FORMATO)
-                    return resolver({ ok: false, motivo: 'ese archivo no es un expediente exportado por esta app', archivos: [] });
+                    return resolver({ ok: false, motivo: 'archivo-ajeno', archivos: [] });
 
                 resolver({ ok: true, motivo: '', archivos: sobre.archivos || [] });
             } catch (e) {
@@ -405,7 +405,7 @@ export async function abrirJournalExportado() {
 
         // Cancelar el dialogo no dispara onchange en todos los browsers, asi que la
         // promesa quedaria colgada para siempre. 'cancel' lo cubre donde existe.
-        entrada.oncancel = () => resolver({ ok: false, motivo: 'el usuario cancelo', archivos: [] });
+        entrada.oncancel = () => resolver({ ok: false, motivo: 'cancelado', archivos: [] });
 
         entrada.click();
     });
