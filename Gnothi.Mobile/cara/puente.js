@@ -33,6 +33,41 @@ window.Puente = (function () {
     var pendientes = {};
     var siguiente = 0;
 
+    // LO QUE ESTA LINEA DICE ES DEL IDIOMA DE QUIEN MIRA, no del Host.
+    //
+    // Estas seis frases estaban escritas en español acá adentro, y el pie de una cara en inglés
+    // terminaba con «al día, en 69 ms» debajo de una pantalla entera en inglés. Medido el
+    // 2026-09-18 en Monteverde y en La Guaria.
+    //
+    // El puente NO puede tener catálogo propio: lo pone el Host, es el mismo archivo en los cinco
+    // módulos, y hacerlo cargar textos lo volvería otra cosa. Así que lo dice LA CARA, que ya
+    // negoció el idioma y ya tiene sus dos catálogos: publica `window.TextoDelPuente` antes de
+    // que este archivo cargue, y acá se lee tarde -- en cada uso -- para no depender del orden.
+    //
+    // SIN ELLA SIGUE HABLANDO, en español, que es el idioma del registro de las cinco
+    // instituciones. Una cara vieja que no publique nada no se queda muda.
+    //
+    // EL NOMBRE DE LA LLAVE NO SE TRADUCE, ni siquiera en el módulo que está escrito en inglés:
+    // es el cable, como `window.gnothi` y `consultar`.
+    var respaldo = {
+        sinPuente:      'esta página solo corre dentro de Mymi, en la forma híbrida: ' +
+                        'no hay puente, y sin puente no tiene a quién preguntarle',
+        sinPuenteCorto: 'sin puente: esta pantalla no corre dentro de Mymi',
+        pidiendo:       'pidiéndole a Mymi que traiga lo nuevo…',
+        alDia:          'al día, en {ms} ms · {dicho}',
+        noSePudo:       'no se pudo traer lo nuevo ({ms} ms): {porque}',
+        tiro:           'pull tiró: {porque}'
+    };
+
+    function dice(clave, huecos) {
+        var suyas = window.TextoDelPuente || {};
+        var frase = typeof suyas[clave] === 'string' ? suyas[clave] : respaldo[clave];
+        for (var hueco in huecos)
+            if (Object.prototype.hasOwnProperty.call(huecos, hueco))
+                frase = frase.split('{' + hueco + '}').join(huecos[hueco]);
+        return frase;
+    }
+
     // El buzón donde el Host deja las respuestas. Es el MISMO nombre que usa la forma hospedada
     // -- el mecanismo no cambia, cambia quién pregunta.
     window.gnothi = window.gnothi || {};
@@ -46,9 +81,7 @@ window.Puente = (function () {
     function consultar(vista, argumentos) {
         return new Promise(function (resolver, rechazar) {
             if (!window.gnothiPuente || !window.gnothiPuente.consultar) {
-                rechazar(new Error(
-                    'esta página solo corre dentro de Mymi, en la forma híbrida: ' +
-                    'no hay puente, y sin puente no tiene a quién preguntarle'));
+                rechazar(new Error(dice('sinPuente')));
                 return;
             }
             var id = 'c' + (++siguiente);
@@ -76,10 +109,10 @@ window.Puente = (function () {
         decir = decir || function () {};
         return new Promise(function (resolver) {
             if (!window.gnothiPuente || !window.gnothiPuente.pull) {
-                decir('sin puente: esta pantalla no corre dentro de Mymi', true);
+                decir(dice('sinPuenteCorto'), true);
                 resolver(null); return;
             }
-            decir('pidiéndole a Mymi que traiga lo nuevo…');
+            decir(dice('pidiendo'));
 
             var id = 'p' + (++siguiente);
             var t0 = Date.now();
@@ -90,19 +123,18 @@ window.Puente = (function () {
                         var r = JSON.parse(json);
                         dicho = r && r.resultado ? r.resultado : json;
                     } catch (e) { /* se muestra crudo */ }
-                    decir('al día, en ' + (Date.now() - t0) + ' ms · ' + String(dicho).slice(0, 200));
+                    decir(dice('alDia', { ms: Date.now() - t0, dicho: String(dicho).slice(0, 200) }));
                     resolver(json);
                 },
                 rechazar: function (e) {
-                    decir('no se pudo traer lo nuevo (' + (Date.now() - t0) + ' ms): ' +
-                        (e && e.message ? e.message : e), true);
+                    decir(dice('noSePudo', { ms: Date.now() - t0, porque: e && e.message ? e.message : e }), true);
                     resolver(null);
                 }
             };
             try { window.gnothiPuente.pull(id, '0'); }
             catch (e) {
                 delete pendientes[id];
-                decir('pull tiró: ' + (e && e.message ? e.message : e), true);
+                decir(dice('tiro', { porque: e && e.message ? e.message : e }), true);
                 resolver(null);
             }
         });

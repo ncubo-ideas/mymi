@@ -137,5 +137,15 @@ window.TextoDeLaCara['en'] = {
     "solesCada": "usually every {dias}",
 
     "nadaPendiente": "Nothing pending: no list, no restocking, no warranty about to expire."
+  },
+
+  "puente": {
+    "//": "THE BRIDGE'S PHRASES. Same keys as the Spanish catalogue: they are the cable, not copy.",
+    "sinPuente": "this page only runs inside Mymi, in the hybrid form: there is no bridge, and without one it has no one to ask",
+    "sinPuenteCorto": "no bridge: this screen is not running inside Mymi",
+    "pidiendo": "asking Mymi to bring what is new…",
+    "alDia": "up to date, in {ms} ms · {dicho}",
+    "noSePudo": "could not bring what is new ({ms} ms): {porque}",
+    "tiro": "pull threw: {porque}"
   }
 };

@@ -97,6 +97,11 @@ window.Idioma = (function () {
             titulados[k].setAttribute('title', texto(titulados[k].getAttribute('data-texto-titulo')));
     }
 
+    // EL PUENTE TAMBIEN HABLA, y no tiene catalogo propio: lo pone el Host y es el mismo archivo
+    // en los cinco modulos. Se le pasan las frases ya elegidas; si no se las pasan, el cae al
+    // espanol. Va acá y no en cara.js porque este archivo corre en el <head>, antes que puente.js.
+    if (catalogo.puente) window.TextoDelPuente = catalogo.puente;
+
     return {
         etiqueta: etiqueta,
         lengua: lengua,
