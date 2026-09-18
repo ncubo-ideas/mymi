@@ -8,6 +8,12 @@ vuelva a pagar.
 Escrito el 2026-09-15 como traspaso para cuatro carátulas. **Puesto al día el 2026-09-18, cuando ya
 quedaba una.**
 
+> **Un negocio tiene DOS pantallas del mismo hecho.** Esta guía cubre la app suelta en Blazor; la
+> otra es la **cara híbrida**, la que corre adentro de Mymi, y va en
+> [`localizar-la-cara-hibrida.md`](localizar-la-cara-hibrida.md). Nada las ata, así que localizar una
+> y no la otra deja la mitad del trabajo hecha: pasó del 14 al 18 de setiembre y quedaron cuatro
+> caras en español debajo de apps bilingües.
+
 ---
 
 ## Índice
