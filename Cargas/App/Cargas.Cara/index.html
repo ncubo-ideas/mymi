@@ -56,7 +56,7 @@
         </div>
 
         <span class="placa" id="placa-fija" hidden></span>
-        <select class="placa placa--selector" id="placa" data-texto-aria="capo.deQueVehiculo"
+        <select class="placa placa--selector" id="placa" data-texto-aria="comun.elegiCarro"
                 aria-label="Elegí de qué carro es el tablero" hidden></select>
 
         <!-- LA UNICA TECLA QUE VA A BUSCAR DATOS, y va en contorno y no en el naranja de accion:
@@ -64,7 +64,7 @@
              AHORA». Aca ademas significa otra cosa que en la app suelta: no sale a la red -- no
              puede -- sino que le pide a GNOTHI que traiga lo nuevo. -->
         <button class="tecla tecla--contorno" id="releer" style="margin-left:auto" aria-busy="false"
-                data-texto="capo.actualizar">Actualizar</button>
+                data-texto="comun.actualizar">Actualizar</button>
     </div>
 </header>
 
@@ -76,7 +76,7 @@
     <div id="franja" class="franja franja--neutra">
         <span class="franja-luz"></span>
         <div class="franja-texto">
-            <p class="franja-frase" data-texto="franja.preguntando">Preguntándole a Mymi…</p>
+            <p class="franja-frase" data-texto="cara.preguntando">Preguntándole a Mymi…</p>
         </div>
     </div>
 
@@ -84,12 +84,12 @@
          rindiendo, cuándo tengo que cargar, cuánto me cuesta andar. -->
     <div id="cuadro" class="cuadro"></div>
 
-    <h2 class="seccion-titulo" data-texto="faltantes.titulo">Lo que falta para poder calcular</h2>
+    <h2 class="seccion-titulo" data-texto="cara.loQueFalta">Lo que falta para poder calcular</h2>
     <div id="faltantes"><p class="apunte">…</p></div>
 </main>
 
 <footer>
-    <p data-texto="pie.explicacion">El registro vive en este dispositivo. Esta pantalla no sale a la red:
+    <p data-texto="cara.explicacion">El registro vive en este dispositivo. Esta pantalla no sale a la red:
        le pregunta a Mymi, y Mymi responde con el motor que le presta.</p>
     <p class="mono" id="conexion">—</p>
 </footer>

@@ -1,76 +1,54 @@
 window.TextoDeLaCara = window.TextoDeLaCara || {};
-window.TextoDeLaCara['en'] = {
-  "//": "WHAT THIS FACE SAYS IN ITS OWN WORDS, in English. The sentences the domain composes are NOT here: those arrive already said from the surface, which takes the language tag as one more parameter of the view. Where a sentence also exists in the standalone app, the value is copied from Cargas.Wasm/wwwroot/texto so that both screens say the same thing.",
+window.TextoDeLaCara["en"] = {
+  "//": "WHAT THIS FACE SAYS, in English. The sentences the domain composes are NOT here: those arrive already said from the surface, which takes the language tag as one more parameter of the view. The `comun` and `tablero` sections are THE STANDALONE APP'S OWN PATHS and their values are copied from Cargas.Wasm/wwwroot/texto: under that path the guardian compares them one by one, and that is why they are named after it and not after the card they appear on.",
 
   "idioma": "en",
 
-  "capo": {
-    "titulo": "Dashboard",
-    "deQueVehiculo": "Choose which car the dashboard is for",
+  "comun": {
     "actualizar": "Update",
-    "actualizando": "Updating…"
+    "actualizando": "Updating…",
+    "elegiCarro": "Choose which car the dashboard is for",
+    "dia": "day",
+    "dias": "days"
   },
 
-  "franja": {
-    "preguntando": "Asking Mymi…",
+  "tablero": {
+    "titulo": "Dashboard",
     "buscando": "Looking for your fill-ups at the station…",
-    "sinCargas": "No fill-ups yet. Press {actualizar}."
-  },
-
-  "cuadro": {
-    "sinCargasAqui": "No fill-ups on this device yet."
-  },
-
-  "autonomia": {
-    "rotulo": "Range",
+    "sinCargas": "No fill-ups yet. Press {actualizar}.",
+    "autonomia": "Range",
     "medidorAria": "About {restan} kilometres left of the {lleno} of a full tank",
     "medidorLlenoAria": "With a full tank you get about {lleno} kilometres",
     "sinAutonomiaAria": "The range cannot be estimated yet",
     "sinAutonomia": "A leg closed between two full tanks is needed to know how far it goes, and the range comes from there.",
-    "pieLoQueQueda": "what is left, estimated · with a full tank that is {lleno}",
-    "pieTanqueLleno": "with a full tank · {litros} L at {rinde}"
-  },
-
-  "rendimiento": {
-    "rotulo": "Fuel economy",
-    "pieNivel": "your usual level: {habitual} · ",
+    "rendimiento": "Fuel economy",
     "sobreUnTramo": "over {cuantos} leg between full tanks",
     "sobreTramos": "over {cuantos} legs between full tanks",
     "sinCalcular": ", {cuantos} not computed",
-    "sinTramoCerrado": "There is no leg closed between two full tanks yet."
+    "sinTramoCerrado": "There is no leg closed between two full tanks yet.",
+    "proximaCarga": "Next fill-up",
+    "sinProximaCarga": "The range and your daily average are needed.",
+    "costoPorKilometro": "Cost per kilometre",
+    "sinCosto": "An odometer reading is needed to spread the spending.",
+    "odometro": "Odometer",
+    "odometroAria": "{kilometraje}, estimated for today",
+    "sinOdometro": "Nobody knows your car's odometer but you. Write it down on one of your fill-ups and this counter starts."
   },
 
-  "proxima": {
-    "rotulo": "Next fill-up",
-    "pie": "estimated · you have {restan} and you drive {porDia} per day",
-    "sinProxima": "The range and your daily average are needed."
-  },
+  "//cara": "WHAT THIS SCREEN SAYS AND THE STANDALONE APP DOES NOT: the card footers, which over there the razor builds out of pieces, and what only happens inside Mymi. They carry a key of their own so nobody mistakes them for a copy of the institution's catalogue, and that is why the guardian does not compare them: there is nothing to compare against.",
 
-  "costo": {
-    "rotulo": "Cost per kilometre",
-    "pie": "per kilometre · over {kilometros} with an odometer reading",
-    "sinCosto": "An odometer reading is needed to spread the spending."
-  },
-
-  "odometro": {
-    "rotulo": "Odometer",
-    "aria": "About {kilometraje} kilometres, estimated",
-    "pie": "estimated · {dias} since the last reading, at {porDia} per day",
-    "sinOdometro": "An odometer reading and your daily average are needed."
-  },
-
-  "faltantes": {
-    "titulo": "What is missing before anything can be worked out",
-    "nada": "Nothing: the dashboard has everything it needs to work things out."
-  },
-
-  "pie": {
+  "cara": {
+    "preguntando": "Asking Mymi…",
+    "sinCargasAqui": "No fill-ups on this device yet.",
+    "pieLoQueQueda": "what is left, estimated · with a full tank that is {lleno}",
+    "pieTanqueLleno": "with a full tank · {litros} L at {rinde}",
+    "pieNivel": "your usual level: {habitual} · ",
+    "pieProxima": "estimated · you have {restan} and you drive {porDia} per day",
+    "pieCosto": "per kilometre · over {kilometros} with an odometer reading",
+    "pieOdometro": "estimated · {dias} since the last reading, at {porDia} per day",
+    "loQueFalta": "What is missing before anything can be worked out",
+    "nadaFalta": "Nothing: the dashboard has everything it needs to work things out.",
     "explicacion": "The record lives on this device. This screen does not reach the network: it asks Mymi, and Mymi answers with the engine it lends."
-  },
-
-  "comun": {
-    "dia": "day",
-    "dias": "days"
   },
 
   "puente": {

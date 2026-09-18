@@ -226,10 +226,10 @@
         } else if (refrescando) {
             // MIENTRAS SE VA A BUSCAR, la franja lo dice. Antes decia «Apretá Actualizar» con la
             // tecla ya en «Actualizando…»: pedia una accion que estaba en curso.
-            cuerpo = '<p class="franja-frase">' + texto(I.texto('franja.buscando')) + '</p>';
+            cuerpo = '<p class="franja-frase">' + texto(I.texto('tablero.buscando')) + '</p>';
         } else {
-            cuerpo = '<p class="franja-frase">' + frase('franja.sinCargas', {
-                actualizar: '<em>' + texto(I.texto('capo.actualizar')) + '</em>'
+            cuerpo = '<p class="franja-frase">' + frase('tablero.sinCargas', {
+                actualizar: '<em>' + texto(I.texto('comun.actualizar')) + '</em>'
             }) + '</p>';
         }
 
@@ -251,33 +251,33 @@
         // --- autonomia
         if (a.hay) {
             var descMedidor = p.hay
-                ? I.con('autonomia.medidorAria', {
+                ? I.con('tablero.medidorAria', {
                       restan: entero(p.kilometrosRestantes), lleno: entero(a.kilometros) })
-                : I.con('autonomia.medidorLlenoAria', { lleno: entero(a.kilometros) });
+                : I.con('tablero.medidorLlenoAria', { lleno: entero(a.kilometros) });
 
             html += instrumento('instrumento--medidor',
-                '<span class="rotulo">' + texto(I.texto('autonomia.rotulo')) + '</span>' +
+                '<span class="rotulo">' + texto(I.texto('tablero.autonomia')) + '</span>' +
                 medidor(p.fraccionRestante, descMedidor, false) +
                 '<div class="cifra">~' + entero(p.hay ? p.kilometrosRestantes : a.kilometros) +
                 '<span class="unidad">km</span></div>' +
                 '<div class="cifra-pie">' + (p.hay
-                    ? frase('autonomia.pieLoQueQueda', {
+                    ? frase('cara.pieLoQueQueda', {
                           lleno: '<b class="mono">~' + entero(a.kilometros) + ' km</b>' })
-                    : frase('autonomia.pieTanqueLleno', {
+                    : frase('cara.pieTanqueLleno', {
                           litros: cifra(a.capacidadEnLitros),
                           rinde: '<b class="mono">' + cifra(r.habitualComoSeVe) + ' ' +
                                  texto(r.simbolo) + '</b>' })) + '</div>');
         } else {
             html += instrumento('instrumento--medidor',
-                '<span class="rotulo">' + texto(I.texto('autonomia.rotulo')) + '</span>' +
-                medidor(0, I.texto('autonomia.sinAutonomiaAria'), true) +
+                '<span class="rotulo">' + texto(I.texto('tablero.autonomia')) + '</span>' +
+                medidor(0, I.texto('tablero.sinAutonomiaAria'), true) +
                 '<div class="cifra">—</div>' +
-                '<div class="cifra-pie">' + texto(I.texto('autonomia.sinAutonomia')) + '</div>');
+                '<div class="cifra-pie">' + texto(I.texto('tablero.sinAutonomia')) + '</div>');
         }
 
         // --- rendimiento
         var dentro = '<div class="fila"><span class="rotulo crece">' +
-            texto(I.texto('rendimiento.rotulo')) + '</span>' +
+            texto(I.texto('tablero.rendimiento')) + '</span>' +
             // EL SELLO LLEVA EL VEREDICTO DICHO, no su codigo. `veredicto` es identidad y con el
             // se decide el tono; imprimirlo ponia «sin-tramo» crudo en una pantalla en ingles.
             (r.veredicto
@@ -303,38 +303,38 @@
 
             dentro += '<div class="cifra-pie">' +
                 (Number(r.habitual) > 0
-                    ? frase('rendimiento.pieNivel', {
+                    ? frase('cara.pieNivel', {
                           habitual: '<b class="mono">' + cifra(r.habitualComoSeVe) + ' ' +
                                     texto(r.simbolo) + '</b>' })
                     : '') +
-                frase(r.tramosCalculados === 1 ? 'rendimiento.sobreUnTramo' : 'rendimiento.sobreTramos',
+                frase(r.tramosCalculados === 1 ? 'tablero.sobreUnTramo' : 'tablero.sobreTramos',
                       { cuantos: r.tramosCalculados }) +
                 (r.tramosBloqueados > 0
-                    ? frase('rendimiento.sinCalcular', { cuantos: r.tramosBloqueados })
+                    ? frase('tablero.sinCalcular', { cuantos: r.tramosBloqueados })
                     : '') +
                 '</div>';
         } else {
             dentro += '<div class="cifra">—</div><div class="cifra-pie">' +
                 (r.queFalta ? texto(mayuscula(r.queFalta)) + '.'
-                            : texto(I.texto('rendimiento.sinTramoCerrado'))) + '</div>';
+                            : texto(I.texto('tablero.sinTramoCerrado'))) + '</div>';
         }
         html += instrumento('instrumento--ancho', dentro);
 
         // --- proxima carga
         html += instrumento(p.hay ? '' : 'instrumento--apagado',
-            '<span class="rotulo">' + texto(I.texto('proxima.rotulo')) + '</span>' + (p.hay
+            '<span class="rotulo">' + texto(I.texto('tablero.proximaCarga')) + '</span>' + (p.hay
                 // «~35 días» y no «en ~35 días»: el «en» en la tipografia de las cifras se leia
                 // como parte del numero, y el rotulo ya dice de que se trata.
                 ? '<div class="cifra cifra--chica">~' + p.diasEstimados +
                   '<span class="unidad">' +
                   texto(I.texto(plural(p.diasEstimados, 'comun.dia', 'comun.dias'))) +
                   '</span></div>' +
-                  '<div class="cifra-pie">' + frase('proxima.pie', {
+                  '<div class="cifra-pie">' + frase('cara.pieProxima', {
                       restan: '<b class="mono">~' + entero(p.kilometrosRestantes) + ' km</b>',
                       porDia: '<b class="mono">' + cifra(p.kilometrosPorDia) + ' km</b>'
                   }) + '</div>'
                 : '<div class="cifra cifra--chica">—</div>' +
-                  '<div class="cifra-pie">' + texto(I.texto('proxima.sinProxima')) + '</div>'));
+                  '<div class="cifra-pie">' + texto(I.texto('tablero.sinProximaCarga')) + '</div>'));
 
         // --- costo por kilometro, UNO POR MONEDA
         //
@@ -344,32 +344,34 @@
         if (costos.length) {
             costos.forEach(function (c) {
                 html += instrumento('',
-                    '<span class="rotulo">' + texto(I.texto('costo.rotulo')) + '</span>' +
+                    '<span class="rotulo">' + texto(I.texto('tablero.costoPorKilometro')) + '</span>' +
                     '<div class="cifra cifra--chica">' + simbolo(c.moneda) + cifra(c.montoPorKilometro) + '</div>' +
-                    '<div class="cifra-pie">' + frase('costo.pie', {
+                    '<div class="cifra-pie">' + frase('cara.pieCosto', {
                         kilometros: '<b class="mono">' + entero(c.kilometros) + ' km</b>'
                     }) + '</div>');
             });
         } else {
             html += instrumento('instrumento--apagado',
-                '<span class="rotulo">' + texto(I.texto('costo.rotulo')) + '</span>' +
+                '<span class="rotulo">' + texto(I.texto('tablero.costoPorKilometro')) + '</span>' +
                 '<div class="cifra cifra--chica">—</div>' +
-                '<div class="cifra-pie">' + texto(I.texto('costo.sinCosto')) + '</div>');
+                '<div class="cifra-pie">' + texto(I.texto('tablero.sinCosto')) + '</div>');
         }
 
         // --- odometro
         html += instrumento('instrumento--medio' + (o.hay ? '' : ' instrumento--apagado'),
-            '<span class="rotulo">' + texto(I.texto('odometro.rotulo')) + '</span>' + (o.hay
+            '<span class="rotulo">' + texto(I.texto('tablero.odometro')) + '</span>' + (o.hay
                 ? tira(o.kilometrosComoSeVen,
-                       I.con('odometro.aria', { kilometraje: entero(o.kilometrosComoSeVen) })) +
-                  '<div class="cifra-pie">' + frase('odometro.pie', {
+                       I.con('tablero.odometroAria', {
+                           kilometraje: entero(o.kilometrosComoSeVen) + ' ' + o.simboloDeLaDistancia
+                       })) +
+                  '<div class="cifra-pie">' + frase('cara.pieOdometro', {
                       dias: o.diasDesdeLaUltimaLectura + ' ' +
                             texto(I.texto(plural(o.diasDesdeLaUltimaLectura, 'comun.dia', 'comun.dias'))),
                       porDia: '<b class="mono">' + cifra(o.porDiaComoSeVe) + ' ' +
                               texto(o.simboloDeLaDistancia) + '</b>'
                   }) + '</div>'
                 : '<div class="cifra cifra--chica">—</div>' +
-                  '<div class="cifra-pie">' + texto(I.texto('odometro.sinOdometro')) + '</div>'));
+                  '<div class="cifra-pie">' + texto(I.texto('tablero.sinOdometro')) + '</div>'));
 
         caja.innerHTML = html;
     }
@@ -382,7 +384,7 @@
         var caja = $('faltantes');
         var lista = (r && r.faltantes) || [];
         if (!lista.length) {
-            P.apunte(caja, I.texto('faltantes.nada'));
+            P.apunte(caja, I.texto('cara.nadaFalta'));
             return;
         }
         // QUE FALTA y QUE DESBLOQUEA, juntos: sin lo segundo, el faltante es una tarea sin
@@ -422,7 +424,7 @@
             .then(function (c) {
                 if (c.hayDatos === false) {
                     pintarFranja(null, false);
-                    P.apunte($('cuadro'), I.texto('cuadro.sinCargasAqui'));
+                    P.apunte($('cuadro'), I.texto('cara.sinCargasAqui'));
                     return;
                 }
                 unidades = c.unidades || unidades;
@@ -455,14 +457,14 @@
         var b = $('releer');
         b.disabled = true;
         b.setAttribute('aria-busy', 'true');
-        b.textContent = I.texto('capo.actualizando');
+        b.textContent = I.texto('comun.actualizando');
         pintarFranja(null, true);
 
         P.refrescar(contar).then(function (r) {
             if (r) pintarTodo();
             b.disabled = false;
             b.setAttribute('aria-busy', 'false');
-            b.textContent = I.texto('capo.actualizar');
+            b.textContent = I.texto('comun.actualizar');
         });
     }
 

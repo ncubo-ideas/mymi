@@ -66,7 +66,7 @@ window.Idioma = (function () {
         for (var j = 0; j < etiquetados.length; j++)
             etiquetados[j].setAttribute('aria-label', texto(etiquetados[j].getAttribute('data-texto-aria')));
 
-        document.title = texto('capo.titulo') + ' · ' + 'Estaciones Faro';
+        document.title = texto('tablero.titulo') + ' · ' + 'Estaciones Faro';
     }
 
     // EL PUENTE TAMBIEN HABLA, y no tiene catalogo propio: lo pone el Host y es el mismo archivo
