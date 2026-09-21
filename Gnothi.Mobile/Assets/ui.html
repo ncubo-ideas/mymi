@@ -1147,6 +1147,26 @@ const gn = {
         : sirvio + peq(T('hoja.respaldo.no-verificado'))))
       + sello;
 
+    // LA MISMA REVISIÓN, DICHA SIN EL DATO TÉCNICO (Geaninna, 2026-09-21). Arriba, donde la
+    // persona decide en quién confía, una IP y un nombre de llave no ayudan: o no le dicen nada o
+    // la asustan. Lo que sí decide es QUIÉN publica, y eso es el dominio.
+    //
+    // NO ES UN TEXTO MÁS BLANDO: es el mismo, sin el host ni la llave adentro. Los estados que
+    // son advertencia -- sin publicación, no publicado, otro origen, llave nueva, llave cambiada
+    // -- siguen arriba con su redacción entera. Lo único que baja al pliegue es el DATO.
+    // Un archivo elegido a mano conserva su rama: ahí «{archivo}» es el nombre que ella eligió,
+    // no una IP, y decirlo la ayuda a reconocerlo.
+    const respaldoArriba = (pro.origen === 'archivo'
+      ? (archivoTexto[pro.respaldo] || llego + peq(T('hoja.archivo.sin-ninguno')))
+      : ({
+          'verificado': T('hoja.respaldo.verificado.dominio', { quien: nQuien }),
+          'sin-publicacion': T('hoja.respaldo.sin-publicacion'),
+          'no-publicado': T('hoja.respaldo.no-publicado'),
+          'sin-origen-declarado': T('hoja.respaldo.sin-origen'),
+          'otro-origen': T('hoja.respaldo.otro-origen', { quien: nQuien }),
+        }[pro.respaldo] || T('hoja.respaldo.no-verificado')));
+
+
     // THE SIGNATURE: whose key, and since when Mymi knows it. Continuity, not virtue.
     const desde = pro.firmaDesde ? dia(pro.firmaDesde) : '';
     const llave = esc(pro.firmante || '?');
@@ -1159,6 +1179,20 @@ const gn = {
       'rotada': T('hoja.firma.rotada', { llave: llave }) + peq(T('hoja.firma.rotada.detalle')),
       'desconocida': T('hoja.firma.desconocida', { llave: llave }),
       'cambiada': T('hoja.firma.cambiada', { llave: llave }),
+    }[pro.firma] || T('hoja.firma.sin-firma');
+
+    // LA MISMA FIRMA, SIN EL NOMBRE DE LA LLAVE, que se fue al pliegue. El ESTADO no se
+    // pliega: una llave nueva, una que su origen no publica y una que cambio siguen dichas
+    // arriba con todas las letras. Va aca y no mas arriba porque necesita `desde` y `llave`.
+    const firmaArriba = {
+      'sin-firma': T('hoja.firma.sin-firma'),
+      'publicada': desde
+        ? T('hoja.firma.publicada.desde', { desde: desde })
+        : T('hoja.firma.publicada.primera.sin-llave') + peq(T('hoja.firma.publicada.recordar')),
+      'conocida': T('hoja.firma.conocida', { desde: desde }) + peq(T('hoja.firma.conocida.detalle')),
+      'rotada': T('hoja.firma.rotada.sin-llave') + peq(T('hoja.firma.rotada.detalle')),
+      'desconocida': T('hoja.firma.desconocida.sin-llave'),
+      'cambiada': T('hoja.firma.cambiada.sin-llave'),
     }[pro.firma] || T('hoja.firma.sin-firma');
 
     // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
@@ -1229,21 +1263,29 @@ const gn = {
     })();
     if (!up) document.querySelector('#propuesta button.cta').textContent = T('propuesta.instalar');
 
+    // EL NOMBRE CON QUE SE LA LLAMA EN LA FRASE DE LA CARPETA, y es `identidad`: el nombre
+    // corto de la marca, que es como ella la conoce -- «Delfos», no «Laboratorio Clínico Delfos».
+    // La propuesta NO manda `brand.shortName`; manda `identidad`, que el Host ya resolvió.
+    const marcaCorta = p.identidad || p.institucion || p.titulo || '';
+
     const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
     const proc = (p.dominio || p.razonSocial)
       ? '<div class="proc ' + veredicto + '">'
         + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
         + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+        // QUIÉN PUBLICA, y nada más: nombre legal, cédula y dominio. La IP y el puerto se fueron
+        // al pliegue, y la versión también: ninguna de las tres ayuda a decidir si confiar, y la
+        // IP encima se lee como una advertencia cuando no lo es. Cuando el dominio y el host NO
+        // coinciden eso sigue siendo una ALERTA arriba -- la pinta `alerta`, no esta línea.
+        //
+        // SIN DOMINIO DECLARADO SE DICE CON PALABRAS. Antes caía al host, que es justo la IP que
+        // se saca; un paquete que llega como archivo puede no declarar ninguno, y en esa pantalla
+        // «no declara quién lo publica» es información, mientras una IP es ruido.
         + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
         + (p.cedula ? ', ' + esc(p.cedula) : '')
         + (p.dominio
-            ? '<br>' + (veredicto === 'ok'
-                ? T('hoja.proc.mismo-dominio', { servido: esc(p.servido) })
-                : veredicto === 'duda'
-                  ? T('hoja.proc.distinto', { dominio: esc(p.dominio), servido: esc(p.servido) })
-                  : T('hoja.proc.archivo', { dominio: esc(p.dominio) }))
-            : '')
-        + (p.version ? ' · v' + esc(p.version) : '')
+            ? '<br>' + esc(p.dominio)
+            : (p.razonSocial ? '<br>' : '') + peq(T('hoja.proc.sin-dominio')))
         + '</span></div>'
       : '';
 
@@ -1259,7 +1301,13 @@ const gn = {
       // LO QUE LA PANTALLA NO PODÍA CONTESTAR: ya decía DÓNDE va a vivir el registro, y no
       // cuánto va a pesar, cada cuánto se actualiza ni por cuánto tiempo lo guardan -- que es
       // lo que la persona pregunta antes de aceptar.
-      + '<p>' + fuerte(T('hoja.donde-vive')) + '<br><code>' + esc(p.journal) + '</code>'
+      // DÓNDE VIVE, PRIMERO EN LLANO. La ruta cruda era lo primero que se leía y no dice lo que
+      // la persona pregunta. Ahora arriba va la frase -- en este teléfono, en la carpeta de Mymi
+      // para ella --, después cuánto pesa, cada cuánto se actualiza y cuánto lo guardan, y la
+      // ruta completa queda debajo en letra chica. NO se esconde: tiene derecho a saber dónde
+      // está su registro, y por eso no va al pliegue.
+      + '<p>' + fuerte(T('hoja.donde-vive')) + '<br>'
+      + T('hoja.donde-vive.llano', { quien: esc(marcaCorta) })
       + (p.tamano || p.refresco || p.retencion
           ? '<br><small>' + [
               p.tamano ? T('hoja.journal.tamano', { tamano: esc(p.tamano) }) : '',
@@ -1267,12 +1315,40 @@ const gn = {
               p.retencion ? T('hoja.journal.retencion', { retencion: esc(p.retencion) }) : '',
             ].filter(Boolean).join(' ') + '</small>'
           : '')
+      + '<br><small><code>' + esc(p.journal) + '</code></small>'
       + '</p>'
-      + '<p>' + fuerte(T('hoja.con-quien')) + '<br><code>' + esc(p.publicador || T('hoja.sin-publicador')) + '</code><br>'
-      + peq(T('hoja.unica-red')) + '</p>'
+      // CON QUIÉN HABLA: EL DOMINIO, no la URL. El puerto y el recurso -- `/expediente/1` -- son
+      // de quien empaqueta, no de quien decide. La URL entera vive en el pliegue.
+      + '<p>' + fuerte(T('hoja.con-quien')) + '<br>'
+      + (p.dominio ? fuerte(esc(p.dominio)) : '<code>' + esc(p.publicador || T('hoja.sin-publicador')) + '</code>')
+      + '<br>' + peq(T('hoja.unica-red')) + '</p>'
+      // QUÉ COMPROBÓ MYMI, en cuatro líneas y una más de la forma. El sello dejó de ser una nota
+      // al pie del respaldo y pasó a ser su propia línea: que el paquete no cambió desde que se
+      // generó es un hecho aparte de quién lo respalda. Y las capacidades y los ejecutables van
+      // juntos, porque son la misma pregunta: qué se lleva adentro.
       + '<p>' + fuerte(T('hoja.reviso')) + '</p><ul class="pr-tools">'
-      + '<li>' + respaldo + '</li><li>' + firma + '</li><li>' + forma + '</li><li>' + caps + '</li>'
-      + '<li>' + T('hoja.sin-ejecutables') + '</li></ul>';
+      + '<li>' + respaldoArriba + '</li>'
+      + (pro.sello ? '<li>' + T('hoja.respaldo.sello') + '</li>' : '')
+      + '<li>' + firmaArriba + '</li>'
+      + '<li>' + forma + '</li>'
+      + '<li>' + caps + ' ' + T('hoja.sin-ejecutables') + '</li></ul>'
+      // EL PLIEGUE, al pie: el dato que no decide nada pero que alguien va a querer ver. El host
+      // solo cuando NO es el dominio declarado, porque cuando coincide la línea de arriba ya lo
+      // dijo. Y el aviso de conexión sin cifrar entra acá porque su propio texto dice que así
+      // solo sirve en desarrollo: sobre https no aparece nunca.
+      + (function () {
+          const filas = [
+            p.publicador ? [T('hoja.detalle.publicador'), p.publicador] : null,
+            pro.firmante ? [T('hoja.detalle.llave'), pro.firmante] : null,
+            p.version ? [T('hoja.detalle.version'), p.version] : null,
+            (pro.servido && pro.servido !== p.dominio) ? [T('hoja.detalle.servido'), pro.servido + (via || '')] : null,
+          ].filter(Boolean);
+          if (!filas.length && pro.seguro) return '';
+          return '<details class="trace"><summary>' + T('hoja.detalles') + '</summary>'
+            + filas.map(f => '<p>' + peq(f[0]) + '<br><code>' + esc(f[1]) + '</code></p>').join('')
+            + (pro.seguro ? '' : '<p>' + peq(T('hoja.respaldo.inseguro')) + '</p>')
+            + '</details>';
+        })();
 
     document.getElementById('propuesta').classList.add('on');
   },
