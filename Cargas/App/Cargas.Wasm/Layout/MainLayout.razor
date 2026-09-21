@@ -457,7 +457,7 @@
         if (estado.Hospedada)
         {
             try { await estado.Arrancar(); }
-            catch (Exception ex) { error = Fallo.Detalle("abrir la app", ex); }
+            catch (Exception ex) { error = Fallo.Detalle("abrir-la-app", ex); }
             finally { resolviendo = false; StateHasChanged(); }
             return;
         }
@@ -498,7 +498,7 @@
         {
             // Recuperar lo recordado fallo -carpeta movida, MEMFS ilegible-. Se dice arriba
             // y se cae al elegidor: es el caso "no se pudo", no un cartel de espera eterno.
-            error = Fallo.Detalle("abrir la app", ex);
+            error = Fallo.Detalle("abrir-la-app", ex);
         }
         finally
         {

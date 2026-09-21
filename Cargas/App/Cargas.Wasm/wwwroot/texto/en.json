@@ -6,6 +6,8 @@
     "actualizando": "Updating…",
     "yaNoSeActualiza": "No longer updating",
     "volverAIntentar": "Try again",
+    "errorInesperado": "Something went wrong.",
+    "recargar": "Reload",
     "cancelar": "Cancel",
     "detalleTecnico": "Technical detail",
     "si": "yes",
