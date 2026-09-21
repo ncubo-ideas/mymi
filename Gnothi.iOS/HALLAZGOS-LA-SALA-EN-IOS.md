@@ -369,3 +369,52 @@ corre en otro proceso y pide Instruments.
 - **Lo de Apple sigue abierto y no lo contesta un aparato.** `B11` deja sin saber si wasm o un IL
   corrido por el intérprete de Mono cuentan como *interpreted code*. Eso lo contesta una revisión,
   no una corrida. La prueba dice si funciona, no si pasa.
+
+---
+
+## 9 · Cuando traigas `master` a este branch — ensayado el 2026-09-21
+
+Se hizo el merge **en seco**, se resolvió, se compiló y se abortó. Nada de esto está commiteado;
+lo que sigue es para que la vez de verdad no cueste dos veces. Eran **101 commits** de master,
+casi todos la ola de localización.
+
+**Hay UN conflicto, y es trivial: la lista de exclusiones de `Gnothi.iOS.csproj`.**
+
+La resolución es la **unión**, no «gana el mío». En master alguien pegó con el mismo bug de los
+stubs y arregló la mitad que existía allá:
+
+```
+0031cd8 fix(ios): el glob no excluia el stub del hibrido, y master no compilaba
+```
+
+No podía excluir `SalaShellStub` porque **`master` no tiene ni `Gnothi.Host/SalaShellStub.cs` ni
+`Gnothi.MobileShared/SalaShell.cs`** — la sala vive solo acá. Comprobado: la línea de master es
+exactamente la de este branch menos esa entrada, y en el árbol fusionado existen los dos stubs,
+así que hacen falta las dos exclusiones. Quedarse con la de master deja iOS sin compilar, con el
+`CS0101` sobre `SalaShell`.
+
+**`master` NO toca `Localizar`.** Es lo primero que se revisó, porque `Gnothi.MobileShared/Shell.cs`
+sí aparece en el merge y es donde vive el arreglo de `89db2ae`. Git lo fusiona limpio y además es
+correcto: lo que master cambia ahí es la identidad del proveedor local y el encuadre localizado, en
+otras regiones del archivo. **Un merge limpio no es prueba de nada; esto sí se miró a mano.**
+
+**El guardián de CI nuevo pasa.** Master agrega `Herramientas/revisar-las-caras.mjs` como Guardián 3
+del pipeline —verifica que cada cara híbrida no se desvíe de su app suelta—. Corrido sobre el árbol
+fusionado: `TODO OK`, exit 0.
+
+**Lo que SÍ va a morder, y no lo dice el mensaje: hay que regenerar `libGnothiIntents.a`.** Master
+agrega la función nativa `gnothi_fm_razon` (`DllImport` en `BridgeProbe.cs`, `@_cdecl` en
+`Intents/Puente.swift`), y como `Intents/out/` está gitignoreado la librería no viaja con el commit
+que la necesita:
+
+```
+ld: Undefined symbols for architecture arm64:
+      "_gnothi_fm_razon", referenced from: <initial-undefines>
+```
+
+El C# compiló bien; es solo la `.a`. La receta está en `README.md` §3b. Con eso puesto, el merge
+compila: **`Build succeeded`**.
+
+**Y para volver a medir después del merge:** `armar-bundle.ps1` cambió (+22 líneas), así que los
+bundles híbridos de `examenes` y `compras` que produjeron los números de este reporte quedan
+viejos — no llevan la localización nueva. Rearmarlos antes de repetir el guion.
