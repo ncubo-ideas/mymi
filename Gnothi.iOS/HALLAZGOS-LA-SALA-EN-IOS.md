@@ -25,7 +25,7 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 | **un módulo real carga** | ✅ **[MEDIDO]** | `examenes`, 506 ms, motor prestado, 2 consultas y 7 vistas |
 | **la comprobación pasa** | ✅ **[MEDIDO]** | `matches:true`, y **en la primera instalación** (§3) |
 | **la frontera entre journals** | ✅ **[MEDIDO]** | `"vecinos":[]`, `"retenidos":0` |
-| **una consulta contesta con dato** | ⛔ **[NO MEDIDO]** | el dominio tiró por dato sembrado viejo (§3b) |
+| **la cara abre y pinta dato real** | ✅ **[MEDIDO]** | `vista`, `entregar` y `guardar` por la sala (§6) |
 | **el arranque entra en el tope** | ✅ **[MEDIDO]** | ~0,9 s contra 10 s. Con la Mac cargada, no (§4) |
 | **memoria** | ⛔ **[NO MEDIDO]** | pide Instruments y un iPhone de verdad (§5) |
 
@@ -214,12 +214,93 @@ síntoma caro de diagnosticar si no está escrito.
 
 ---
 
+## 6 · La cara abre, y con ella cayeron `vista`, `entregar` y `guardar`
+
+**[MEDIDO] el 2026-09-21**, tocando «Open» en la tarjeta de Delfos. Costó dos bugs de
+`Localizar` que se cuentan en el §7; con los dos puestos, la corrida entera:
+
+```
+11:29:04.824  examenes: the bundle declares its base at /
+11:29:06.868  examenes: P0 · secureContext=true crypto.subtle=true storage=true origin=gnothi-mod://examenes
+11:29:07.441  abrir: 'examenes' en pantalla
+11:29:11.641  examenes: the publisher rejected the credential; asking for another
+11:29:12.959  examenes: Gnothi obtained its credential from the publisher
+11:29:13.411  examenes: pull after=0 -> 4278 bytes
+11:29:13.854  sala-web: log: Starting Puppeteer.EventSourcing.ActorHandler's Actor
+11:29:14.318  sala/guardar examenes: examenes/meta.bin · 48 bytes
+11:29:14.348  sala/guardar examenes: examenes/journal/journal_000001.bin · 4520 bytes
+11:29:14.350  examenes: entrega a la superficie -> "leidos=18 aplicados=18 descartados=0 rechazados=0 ultimoEvento=217 cuenta=migrated"
+```
+
+Nueve segundos y medio de punta a punta, y casi todo es la credencial y la red — el trabajo de la
+sala son los ~500 ms del final.
+
+Cuatro cosas quedan medidas de un saque, y conviene separarlas:
+
+- **`vista`.** La pantalla pinta con dato: «17 de tus 18 valores están en su rango», colesterol
+  total 212 mg/dL con su `182 → 212`, cetonas negativo en 2 pruebas, y 9 analitos en «merece
+  atención». Eso sale de los `[View]` de la superficie, que corre adentro de la sala.
+- **`entregar`.** `leidos=18 aplicados=18 descartados=0 rechazados=0` — el sobre que el cartero
+  bajó entró por `SalaShell.Deliver` y la superficie lo asentó entero.
+- **`guardar`, o sea el viaje de vuelta.** Adentro de la sala no hay disco: el módulo escribió en
+  memoria y lo escrito volvió por la respuesta a la carpeta de la persona. 48 bytes de `meta.bin`
+  y 4.520 del primer segmento del journal, anclados por el anfitrión.
+- **El actor arranca DENTRO de la sala**, y se ve en el prefijo: `sala-web:` es la consola del
+  sustrato, no la del módulo hospedado.
+
+**Ojo con una diferencia de forma que confunde:** la CARA se sirve por `gnothi-mod://examenes` —la
+hospedada— y lo que corre por la sala es la SUPERFICIE. Son los dos WebView de la híbrida, y el
+log los distingue por el prefijo.
+
+**Un dato para Examenes, que no es de la sala:** la cara dice «17 de tus 18», que es lo que promete
+la landing. Hay una nota vieja que decía que el dominio daba 6 sobre el mismo guion sembrado; con
+este journal da 17, así que esa discrepancia conviene volver a mirarla antes de darla por viva.
+
+---
+
+## 7 · Los dos bugs de `Localizar`, que solo muerden en iOS
+
+`Localizar` reescribe las rutas absolutas del `installation.json` porque el contenedor de iOS lleva
+un GUID que cambia en cada instalación. Se escribió cuando había **dos** formas, y las que traen
+cara **y** dll llegaron después.
+
+**a) `bin/web`.** La condición preguntaba `Type == "webview"`, así que `hybrid` y `sala` caían en la
+rama de cargo:
+
+```
+examenes: 404 / -> .../Modulos/examenes/bin/web/index.html
+```
+
+Es la reincidencia exacta del arreglo de `HALLAZGOS-CORRIENDO-EL-GUION.md` §2a, que cubrió la forma
+que existía ese día. Ahora se enumeran las que guardan su cara al lado —`webview`, `hybrid`,
+`sala`—.
+
+> **Y no se escribió al revés.** El primer intento fue «todo lo que no sea cargo», y **la forma
+> cargo no se llama `"cargo"` en ese campo: se llama `"in-process"`**. Con la cadena equivocada la
+> condición se invierte en silencio y rompe justo la única que se quería dejar quieta.
+
+**b) `Arguments[2]` no se reescribía nunca.** El comentario justificaba pasar el resto tal cual
+porque el **segundo** es la URL del publicador —cierto—, pero el **tercero** es el dll, y en la
+híbrida y la sala vive en el contenedor igual que el `web/`:
+
+```
+arg0: .../Application/A2854ED3-.../Modulos/examenes/web              <- reescrito
+arg2: .../Application/F7787259-.../Modulos/examenes/dominio/...dll   <- contenedor ANTERIOR
+
+sala: 500 modulo/examenes/indice.json -- DirectoryNotFoundException
+sala/cargar examenes: {"ok":false,"motivo":"HttpRequestException: TypeError: Load failed"}
+```
+
+**Ninguno de los dos se arregla reinstalando.** `hoja` sale de `Path.GetFileName`, así que una vez
+compuesto `bin/web` vuelve a dar `"web"` y se recompone igual. El alta deja las rutas **bien** y
+este método las rompía en el arranque siguiente.
+
+---
+
 ## 5 · Lo que queda sin medir
 
-- **Una consulta que conteste con dato real** (§3b). Pide un journal sembrado que corresponda al
-  `.dll`, o dejar que el cartero traiga los eventos del mock.
-- **`vista`, `entregar`, `cursor` y `desalojar`** por la sala en iOS. Solo se ejercitaron `cargar`
-  y `repertorio`.
+- **`desalojar` y `cursor`** por la sala en iOS. `cargar`, `repertorio`, `vista`, `entregar` y
+  `guardar` ya están (§3 y §6); el desalojo solo se ejercita con un segundo módulo.
 - **El cruce entre dos módulos**, que es donde se paga el cambio de ranura (~200 a 450 ms medidos
   en Android). Hace falta un segundo bundle híbrido.
 - **Memoria.** En iOS el motor web corre en `com.apple.WebKit.WebContent`, o sea **otro proceso**:
