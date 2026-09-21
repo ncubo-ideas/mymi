@@ -54,10 +54,54 @@ window.Puente = (function () {
                         'no hay puente, y sin puente no tiene a quién preguntarle',
         sinPuenteCorto: 'sin puente: esta pantalla no corre dentro de Mymi',
         pidiendo:       'pidiéndole a Mymi que traiga lo nuevo…',
-        alDia:          'al día, en {ms} ms · {dicho}',
-        noSePudo:       'no se pudo traer lo nuevo ({ms} ms): {porque}',
-        tiro:           'pull tiró: {porque}'
+        alDia:          'al día',
+        alDiaCon:       'al día · {dicho}',
+        noAlcance:      'no se pudo llegar a tu institución: revisá tu conexión y volvé a intentar',
+        noSePudo:       'no se pudo traer lo nuevo: volvé a intentar en un momento'
     };
+
+    // POR QUE NO SE PUDO, EN DOS CASOS Y NO EN SIETE.
+    //
+    // Hasta el 2026-09-21 esta línea mostraba el texto de la excepción tal cual -- «no se pudo
+    // traer lo nuevo (1204 ms): HttpRequestException: Connection failure» --, que es jerga, está
+    // en inglés pase lo que pase, y en rojo parece que la app se rompió. Lo vio Geaninna en
+    // Delfos, y salía igual en las cinco caras: la frase de alrededor ya estaba traducida, el
+    // hueco no.
+    //
+    // DOS CASOS, PORQUE SON LOS DOS QUE CAMBIAN LO QUE ELLA PUEDE HACER: no se llegó a la
+    // institución -- y entonces esperar y volver a intentar sirve -- o falló otra cosa, y no hay
+    // nada que ella pueda hacer. Distinguir más pediría que el Host mandara un código, y eso es
+    // otro contrato.
+    //
+    // LEE UN TEXTO QUE COMPONE NUESTRO PROPIO HOST (WebModule.Attend, «Tipo: mensaje»), y aun así
+    // no depende de él: un tipo que no esté en la lista cae en la frase genérica. Esa es la
+    // propiedad que hace aceptable el acoplamiento -- si el formato cambia, lo peor que pasa es
+    // que la persona lea la frase de siempre, nunca que vuelva la jerga.
+    //
+    // Y LOS MILISEGUNDOS SE FUERON de la línea roja. En un fallo no le dicen nada a nadie; van a
+    // la consola, con el texto técnico, que es donde sirven.
+    var sinAlcance = [
+        'HttpRequestException',    // no hubo con quién hablar
+        'TaskCanceledException',   // el timeout de HttpClient llega así
+        'TimeoutException',
+        'SocketException',
+        'WebException'
+    ];
+
+    function porQue(e, cuanto) {
+        var crudo = e && e.message ? String(e.message) : String(e);
+
+        // LO QUE YA DIJO EL PUENTE NO SE VUELVE A DECIR. `sinPuente` es una frase llana y ya
+        // traducida; pasarla por acá la cambiaría por la genérica, que dice menos.
+        if (e && e.delPuente) return crudo;
+
+        // El log del Host ya lo tiene; esto es para quien abra devtools contra la cara.
+        if (window.console && console.warn)
+            console.warn('Mymi · no se pudo' + (cuanto ? ' (' + cuanto + ' ms)' : '') + ': ' + crudo);
+
+        var tipo = crudo.split(':')[0].trim();
+        return dice(sinAlcance.indexOf(tipo) >= 0 ? 'noAlcance' : 'noSePudo');
+    }
 
     function dice(clave, huecos) {
         var suyas = window.TextoDelPuente || {};
@@ -81,7 +125,9 @@ window.Puente = (function () {
     function consultar(vista, argumentos) {
         return new Promise(function (resolver, rechazar) {
             if (!window.gnothiPuente || !window.gnothiPuente.consultar) {
-                rechazar(new Error(dice('sinPuente')));
+                var sinEl = new Error(dice('sinPuente'));
+                sinEl.delPuente = true;     // ya está en llano: porQue() la deja pasar
+                rechazar(sinEl);
                 return;
             }
             var id = 'c' + (++siguiente);
@@ -118,23 +164,36 @@ window.Puente = (function () {
             var t0 = Date.now();
             pendientes[id] = {
                 resolver: function (json) {
-                    var dicho = json;
+                    // SOLO UNA FRASE DEL MODULO, Y SI NO HAY, NINGUNA.
+                    //
+                    // Antes, cuando la respuesta no traía `resultado`, se mostraba el JSON tal
+                    // cual: Monteverde decía «al día, en 19 ms · {"events":[],"last":0}» en la
+                    // pantalla de la persona. Un payload no es una frase, y los milisegundos
+                    // tampoco le dicen nada -- la misma razón por la que se fueron de la línea
+                    // roja. Los dos van a la consola.
+                    var dicho = null;
                     try {
                         var r = JSON.parse(json);
-                        dicho = r && r.resultado ? r.resultado : json;
-                    } catch (e) { /* se muestra crudo */ }
-                    decir(dice('alDia', { ms: Date.now() - t0, dicho: String(dicho).slice(0, 200) }));
+                        if (r && typeof r.resultado === 'string' && r.resultado) dicho = r.resultado;
+                    } catch (e) { /* no era JSON: menos todavía es una frase */ }
+
+                    if (window.console && console.log)
+                        console.log('Mymi · al día en ' + (Date.now() - t0) + ' ms: ' + String(json).slice(0, 400));
+
+                    decir(dicho ? dice('alDiaCon', { dicho: String(dicho).slice(0, 200) }) : dice('alDia'));
                     resolver(json);
                 },
                 rechazar: function (e) {
-                    decir(dice('noSePudo', { ms: Date.now() - t0, porque: e && e.message ? e.message : e }), true);
+                    decir(porQue(e, Date.now() - t0), true);
                     resolver(null);
                 }
             };
             try { window.gnothiPuente.pull(id, '0'); }
+            // Y SI `pull` TIRA DE UNA, lo mismo: para la persona es el mismo hecho -- no llegó lo
+            // nuevo --, y cuál de las dos formas falló se lee en la consola.
             catch (e) {
                 delete pendientes[id];
-                decir(dice('tiro', { porque: e && e.message ? e.message : e }), true);
+                decir(porQue(e, Date.now() - t0), true);
                 resolver(null);
             }
         });
@@ -168,6 +227,16 @@ window.Puente = (function () {
     return {
         listo: listo,
         refrescar: refrescar,
+
+        // QUE DECIRLE A LA PERSONA CUANDO UNA CONSULTA FALLA. Las caras imprimían `e.message`, y
+        // eso es el texto de una excepción de .NET: «LanguageException: Upgrade 'semilla' differs
+        // from the one previously applied to this actor…», con código adentro, en rojo y en
+        // inglés. Quince lugares en las cinco caras, y ninguna pantalla debería enseñar eso.
+        //
+        // LA FRASE LA DA EL PUENTE Y EL LUGAR LO ELIGE LA CARA, que por eso esto devuelve un
+        // string en vez de escribir en el DOM: una cara lo pone en su caja de lectura, otra en su
+        // contador, y esa decisión es de ella.
+        porQue: porQue,
 
         // Preguntar por una [View] y recibir el objeto ya parseado.
         pedir: function (vista, argumentos) {

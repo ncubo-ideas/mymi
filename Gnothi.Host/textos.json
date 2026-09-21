@@ -498,7 +498,10 @@
   "detalle.fijar.pedido":         { "es": "Listo, pedido", "en": "Done, requested" },
   "detalle.fijar.lugar":         { "es": "En tu pantalla de inicio", "en": "On your home screen" },
   "detalle.fijar.agregar":       { "es": "Agregar", "en": "Add" },
+  "detalle.fijar.pedimos":             { "es": "Se lo pedimos a tu pantalla de inicio.", "en": "We asked your home screen for it." },
   "detalle.fijar.si-no-aparece":  { "es": "Si no aparece, revisa que tu pantalla de inicio acepte accesos directos.", "en": "If it does not show up, check that your home screen accepts shortcuts." },
+  "detalle.fijar.ya":              { "es": "Ya está en tu pantalla de inicio.", "en": "It is already on your home screen." },
+  "detalle.fijar.otra-vez":        { "es": "Ponerlo de nuevo", "en": "Put it back" },
   "detalle.fijar.fallo":          { "es": "No se pudo poner el acceso directo.", "en": "The shortcut could not be placed." },
 
   "ajustes.servidor":             { "es": "Servidor", "en": "Server" },
