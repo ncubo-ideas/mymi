@@ -60,13 +60,14 @@ print mesa.Pulse <span class="s">'pulse'</span>;        <span class="c">// query
       <div class="h"><span class="mark">✕</span> No hagas</div>
       <p>No leas <code>DateTime.Now</code> (ni un aleatorio) dentro de un script. Al reproducir el diario mañana, ese “ahora” sería otro y el estado reconstruido no coincidiría. La hora se inyecta desde afuera y se guarda en el diario, de modo que el replay use exactamente la misma.</p>
     </div>
-    <p>El mismo principio explica un detalle que verás en las reacciones del bingo: el <code>once</code>. Cuando el organizador canta, una reacción emite un aviso (<em>tell</em>) a los jugadores, y le pone una identidad estable con <code>once</code> para que reproducir el diario no genere dos veces el mismo aviso ni descarte uno legítimo:</p>
+    <p>El mismo principio explica un detalle que verás en las reacciones del bingo: el <code>once</code>. No te detengas en la mecánica de la reacción de abajo —<code>Cue</code>, <code>Seek</code>, <code>OnMatch</code>…, que se explica completa en el Cap. 9—; <strong>fíjate solo en la línea resaltada</strong>. Cuando el organizador canta, una reacción emite un aviso (<em>tell</em>) a los jugadores; el <code>once</code> le da a ese aviso una identidad estable para que reproducir el diario no lo genere dos veces ni descarte uno legítimo:</p>
     <pre><span class="tag real">C# · real</span><code>live.Journal.Reactions.DefineReaction(<span class="s">"Cantar"</span>)
     .Cue().DirectorOnly().WithSharedHydration()
     .Seek(<span class="s">"Bolita"</span>).OnMatch(<span class="s">"[_:BingoGame].RegisterDraw($numero, $ronda)"</span>)
     .Causation.Continue(
         <span class="s">"tell Bolita with @numero, @ronda to &lt;rol-jugador&gt; "</span> +
-        <span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span>);</code></pre>
+        <span style="background:rgba(210,154,92,.28);border-radius:3px;padding:1px 3px"><span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span></span>);</code></pre>
+    <p>De todo ese bloque, lo único que ejemplifica el determinismo es ese <code>once</code>: fija la identidad del aviso a partir de <strong>sus propios datos</strong> (la ronda y el número), no del reloj ni del azar. Por eso, al reproducir el diario, el “7 de la ronda 2” es siempre el mismo aviso — ni se duplica ni se pierde.</p>
     <aside class="note">
       <div class="h">✎ Nota del diseñador</div>
       <p>Puppeteer te da la hora determinista servida: dentro de un script usas <code>@Now</code>, que el framework fija una sola vez al ejecutar el comando y guarda en el diario. En vivo es el reloj real; en el replay es el que quedó anotado. Así, <code>@Now</code> vale lo mismo en la ejecución original y en cada reproducción — el determinismo sin que tengas que pensarlo.</p>
