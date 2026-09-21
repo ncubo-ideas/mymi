@@ -39,7 +39,7 @@ actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();</
     <span class="k">private bool</span> _desbloqueado;
     <span class="k">private int</span> _pasos;
 
-    <span class="k">public void</span> Moneda()  { _desbloqueado = <span class="k">true</span>; }
+    <span class="k">public void</span> InsertarMoneda() { _desbloqueado = <span class="k">true</span>; }
 
     <span class="k">public void</span> Empujar()
     {
@@ -56,7 +56,7 @@ actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();</
 
     <p>Desde el DSL, lo construimos y lo dejamos en el estado raíz; luego llamamos sus verbos en comandos separados:</p>
     <pre><span class="tag">DSL</span><code>t = Torniquete();   <span class="c">// se queda en el estado raiz del actor</span>
-t.Moneda();
+t.InsertarMoneda();
 t.Empujar();</code></pre>
 
     <p>Y consultamos su estado con una query que emite dos valores:</p>
@@ -67,7 +67,7 @@ t.Empujar();</code></pre>
 
     <div class="call do">
       <div class="h"><span class="mark">✓</span> Haz</div>
-      <p>Expón el dominio como <strong>verbos que representan operaciones</strong> (<code>Moneda</code>, <code>Empujar</code>) y <strong>queries totales</strong> que siempre responden (<code>Pasos</code>). Deja que cada objeto proteja sus propias reglas.</p>
+      <p>Expón el dominio como <strong>verbos que representan operaciones</strong> (<code>InsertarMoneda</code>, <code>Empujar</code>) y <strong>queries totales</strong> que siempre responden (<code>Pasos</code>). Deja que cada objeto proteja sus propias reglas.</p>
     </div>
     <div class="call avoid">
       <div class="h"><span class="mark">!</span> Evita</div>
