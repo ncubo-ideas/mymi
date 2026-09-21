@@ -2,7 +2,9 @@
   "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Nada que haya salido del journal esta aca: el numero de una factura, su fecha, su SKU, su descripcion y sus montos se muestran tal como el proveedor los asento. El nombre del super y su lema tampoco estan aca -son voz de la institucion y viven en Textos.cs, donde quien traduzca no los ve-. El espanol de este archivo es de Costa Rica y es voseo -elegi, apreta, volves-: no lo pases a tuteo. {clave} es un hueco que el codigo llena.",
 
   "comun": {
-    "elegirCarpeta": "Elegir carpeta"
+    "elegirCarpeta": "Elegir carpeta",
+    "errorInesperado": "Algo salió mal.",
+    "recargar": "Recargar"
   },
 
   "noEncontrado": {
@@ -40,7 +42,7 @@
     },
 
     "refresh": {
-      "boton": "Refresh",
+      "boton": "Refrescar",
       "enCurso": "Refrescando…"
     },
 

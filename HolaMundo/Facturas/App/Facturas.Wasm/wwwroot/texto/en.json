@@ -2,7 +2,9 @@
   "//": "WHAT THIS SCREEN SAYS IN ITS OWN WORDS. Nothing that came out of the journal is here: an invoice's number, date, SKU, description and amounts are shown exactly as the provider recorded them. The store's name and its motto are not here either -- they are the institution's own voice and live in Textos.cs, where a translator does not see them. {clave} is a hole the code fills.",
 
   "comun": {
-    "elegirCarpeta": "Choose folder"
+    "elegirCarpeta": "Choose folder",
+    "errorInesperado": "Something went wrong.",
+    "recargar": "Reload"
   },
 
   "noEncontrado": {
