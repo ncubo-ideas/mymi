@@ -340,6 +340,7 @@
   "pantalla.cara.no-abrio":       { "es": "No se pudo abrir: {detalle}", "en": "Could not open it: {detalle}" },
   "pantalla.cara.icono-puesto":   { "es": "Listo: hay un icono de {quien} en tu escritorio ({archivo}). Abre esta pantalla directo.", "en": "Done: there is a {quien} icon on your desktop ({archivo}). It opens this screen directly." },
   "pantalla.cara.icono-fallo":    { "es": "No se pudo crear el icono: {detalle}", "en": "Could not create the icon: {detalle}" },
+  "pantalla.cara.icono-descripcion": { "es": "La pantalla de {quien}, dentro de Mymi", "en": "{quien}'s screen, inside Mymi" },
 
   "//pantalla.cara.franja": "LA FRANJA SOBRE LA CARA ABIERTA (Cara.razor), que es lo unico de Mymi que se ve mientras la institucion tiene la ventana. El telefono tiene su gemela y NO comparte estas dos claves: iOS dice ios.adentro-de y general.listo, y que el vocabulario de las dos caras se unifique o no todavia no esta decidido. La flecha del boton la pone el marcado: es decoracion del render y no de la frase.",
   "pantalla.cara.volver":         { "es": "Volver a Mymi", "en": "Back to Mymi" },
