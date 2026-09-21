@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Gnothi.Host;
 
 // THE DISPATCHER: the core of the Host. Catalog and Serve, and nothing else.
@@ -83,6 +85,33 @@ public sealed class Dispatcher
 
 		meter.Count(r.Module, r.Tool);
 
+		// UN VALOR FUERA DEL CONJUNTO DECLARADO SE RECHAZA ACA, con la lista entera, y no en
+		// el modulo. Medido el 2026-09-21 con el modelo de Apple en la ventana de escritorio
+		// (docs/16, hallazgo 2): llamo evaluar_tendencia con analito="colesterol", el enum pide
+		// ColesterolTotal o ColesterolLdl, y lo que le volvio fue el Enum.Parse crudo del
+		// modulo: «Requested value 'colesterol' was not found». Un modelo grande relee el
+		// esquema y reintenta; el chico no: se va a otra tool o inventa. Necesita que el error
+		// le diga los valores.
+		//
+		// POR QUE EN EL HOST Y NO EN CADA MODULO. Los valores validos ya son DATO del Host: el
+		// manifiesto los trae en `enum` y ToolIndex los publica en el esquema. Comprobar contra
+		// esa misma lista no le quita al modulo la propiedad de sus reglas -- la lista es suya,
+		// el Host no agrega ni quita un valor -- y cubre las cuatro cascaras de una vez: el
+		// in-process (Enum.Parse), el stdio (la union del SDK dentro del proceso hijo), y el
+		// WebView y el hibrido, donde el modulo es JavaScript y ni siquiera hay un enum. Hacerlo
+		// en cada modulo seria repetirlo por modulo Y por cascara, y el primero que lo olvide
+		// vuelve a mandarle al modelo un texto sin la lista.
+		//
+		// El motivo va en ingles como todos los demas (arriba). No traduce el nombre del valor
+		// -`ColesterolTotal` viaja como el modulo lo declaro-: que el esquema hable en nombres
+		// corrientes es una decision del modulo, no de esta compuerta.
+		//
+		// Un valor con otra CAJA pasa: el in-process ya lo aceptaba (Enum.Parse con ignoreCase)
+		// y cerrarlo aca seria endurecer una regla que no es nuestra. El valor sigue viajando
+		// como llego; el modulo decide.
+		string? outside = OutsideTheDeclaredSet(m.Manifest.Tools, r.Tool, r.Arguments);
+		if (outside is not null) return Response.Denied(outside);
+
 		try
 		{
 			object content = await m.Invoke(r.Tool, r.Arguments, Accepts, ct);
@@ -95,6 +124,39 @@ public sealed class Dispatcher
 			return Response.Denied($"the module '{r.Module}' failed: {e.GetType().Name}: {e.Message}");
 		}
 	}
+
+	// THE FIRST ARGUMENT THAT FALLS OUTSIDE ITS DECLARED ENUM, worded for the model, or null when
+	// every closed parameter carries a declared value. A tool the manifest does not declare, or
+	// a parameter it declares open, is not looked at: the module answers for those as before.
+	// Public so the suite can assert the exact text the model reads.
+	public static string? OutsideTheDeclaredSet(
+		IReadOnlyList<DeclaredTool> declared, string tool, IReadOnlyDictionary<string, object?>? arguments)
+	{
+		if (arguments is null) return null;
+
+		DeclaredTool? t = declared.FirstOrDefault(x => string.Equals(x.Name, tool, StringComparison.Ordinal));
+		if (t is null) return null;
+
+		foreach (DeclaredParameter p in t.Input)
+		{
+			if (p.Enum is not { Count: > 0 } values) continue;
+			if (!arguments.TryGetValue(p.Name, out object? raw) || raw is null) continue;
+
+			string text = ArgumentText(raw);
+			if (values.Any(v => string.Equals(v, text, StringComparison.OrdinalIgnoreCase))) continue;
+
+			return $"{p.Name} '{text}' is not one of: {string.Join(", ", values)}";
+		}
+
+		return null;
+	}
+
+	// The argument as the model wrote it. Gate 1 hands a JsonElement, Gate 2 a string; either
+	// way the enum compares against TEXT, same as InProcessShell.Bind reads it before parsing.
+	private static string ArgumentText(object raw) =>
+		raw is JsonElement je
+			? je.ValueKind == JsonValueKind.String ? je.GetString() ?? "" : je.GetRawText()
+			: raw.ToString() ?? "";
 }
 
 public sealed record Request(string Module, string Tool, IReadOnlyDictionary<string, object?>? Arguments);

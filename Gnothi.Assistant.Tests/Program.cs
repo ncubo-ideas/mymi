@@ -152,6 +152,12 @@ else
 	Console.WriteLine();
 	Console.WriteLine("=== UNA TOOL APAGADA NO SE CUELA POR NINGUNA PUERTA ===");
 	await Gnothi.Conformance.Conformance.Consentimiento(modulos, Assert);
+
+	// UN VALOR FUERA DEL ENUM VUELVE CON LA LISTA DE LOS VALIDOS. Tampoco necesita que los modulos
+	// arranquen: la compuerta corre antes de invocar. Ver Conformance.EnumFueraDelConjunto.
+	Console.WriteLine();
+	Console.WriteLine("=== UN ENUM FUERA DEL CONJUNTO VUELVE CON LOS VALORES VALIDOS ===");
+	await Gnothi.Conformance.Conformance.EnumFueraDelConjunto(modulos, Assert);
 }
 
 // ============================================================================================
