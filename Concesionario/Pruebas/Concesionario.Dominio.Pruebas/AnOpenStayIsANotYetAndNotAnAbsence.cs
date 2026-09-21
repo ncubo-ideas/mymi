@@ -47,7 +47,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheVehicleIsInsideAndTheOpenStaySaysSo()
 		{
 			Assert.That(stays.IsInsideTheShopAt(StillInside), Is.True);
-			Assert.That(stays.DescribeTheStayAt(StillInside), Does.Contain(TheBranch));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheStay(stays, StillInside,
+				TheLanguage.OfTheRecord), Does.Contain(TheBranch));
 		}
 
 		// NINGUNA SALIDA SE INVENTA. Ni una fecha centinela, ni el minimo, ni el maximo: la frase
@@ -55,7 +56,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void NoExitIsInventedAndNoSentinelDateAppears()
 		{
-			string said = stays.DescribeTheStayAt(StillInside);
+			string said = TheSentenceTheDoorWouldCompose.TheStay(stays, StillInside,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("sigue abierta"),
 				"L2: el todavia-no se dice con palabras.");
@@ -110,16 +112,26 @@ namespace Concesionario.Dominio.Pruebas
 				"L4 y G1: los dias llegan con la salida, asi que una abierta no tiene ninguno.");
 			Assert.That(stays.DaysInTheShopCountBetween(TheFirstOfJune, TheLastOfJune), Is.EqualTo(0));
 
-			string byDays = stays.DescribeDaysInTheShopBetween(TheFirstOfJune, TheLastOfJune);
+			string byDays = TheSentenceTheDoorWouldCompose.TheStayPeriod(
+				stays, TheFirstOfJune, TheLastOfJune, TheLanguage.OfTheRecord);
 
 			Assert.That(byDays, Does.Contain("días registrados"),
 				"E47 antipatron 3: la frase dice de que habla -- de dias REGISTRADOS -- para no "
 				+ "leerse como que el carro nunca estuvo adentro.");
-			Assert.That(byDays, Does.Contain(TheFirstOfJune));
-			Assert.That(byDays, Does.Contain(TheLastOfJune));
+
+			// LOS DOS LIMITES SON DIAS: el registro los lleva en yyyy-MM-dd y la frase los dice en
+			// palabras, asi que lo que se espera se compone con el mismo renderizador.
+			Assert.That(byDays, Does.Contain(ADay(TheFirstOfJune)));
+			Assert.That(byDays, Does.Contain(ADay(TheLastOfJune)));
 
 			Assert.That(stays.IsInsideTheShopAt(StillInside), Is.True,
 				"y la lectura acotada por INSTANTE si la ve. Las dos frases son verdad.");
+		}
+
+		private static string ADay(string yyyyMMdd)
+		{
+			return TheSentenceTheDoorWouldCompose.ADayAsTheSentenceSaysIt(
+				yyyyMMdd, TheLanguage.OfTheRecord);
 		}
 	}
 }

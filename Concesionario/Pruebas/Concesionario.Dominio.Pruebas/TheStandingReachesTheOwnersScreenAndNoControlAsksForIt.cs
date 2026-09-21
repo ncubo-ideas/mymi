@@ -120,7 +120,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (var past = AnotherVehicleWhoseOdometerReads(90000))
 			{
 				WhereThisVehicleStands mirror = WhereThisVehicleStands.ReadThrough(
-					past.Api, TheDayTheVehicleAsks);
+					past.Api, TheDayTheVehicleAsks, TheLanguage.OfTheRecord);
 
 				Assert.That(mirror.Standing, Is.EqualTo("Reached"));
 				Assert.That(mirror.Standing, Is.Not.EqualTo(stands.Standing),
@@ -143,12 +143,12 @@ namespace Concesionario.Dominio.Pruebas
 			WhereThisVehicleStands stands = WhatTheScreenIsHandedAt(TheDayTheVehicleAsks);
 
 			Assert.That(stands.Says,
-				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(TheDayTheVehicleAsks)));
+				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(TheDayTheVehicleAsks, TheLanguage.OfTheRecord)));
 			Assert.That(stands.PublishedSays,
-				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope()));
+				Is.EqualTo(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord)));
 			Assert.That(TheSystemRow(stands, TheSystemInside).Says,
 				Is.EqualTo(journal.Api.DescribeCoverageForThisVehicle(
-					TheSystemInside, TheDayTheVehicleAsks)));
+					TheSystemInside, TheDayTheVehicleAsks, TheLanguage.OfTheRecord)));
 		}
 
 		// LA UNIDAD CRUZA TAL CUAL Y LA PANTALLA NO OFRECE CON QUE CONVERTIRLA. El sobre se publico en
@@ -162,7 +162,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(stands.OdometerUnit, Is.EqualTo("mi"));
 			Assert.That(stands.DeliveryUnit, Is.EqualTo("mi"));
-			Assert.That(stands.Says, Does.Contain("60000 mi"));
+			Assert.That(stands.Says, Does.Contain("60.000 mi"));
 			Assert.That(stands.Says, Does.Not.Contain(" km"),
 				"Una sola aparicion de la otra unidad en esta frase quiere decir que se convirtio.");
 		}
@@ -201,7 +201,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (var bare = ABareVehicle("1FTFW1ET5DFA00001"))
 			{
 				WhereThisVehicleStands nothing = WhereThisVehicleStands.ReadThrough(
-					bare.Api, TheDayTheVehicleAsks);
+					bare.Api, TheDayTheVehicleAsks, TheLanguage.OfTheRecord);
 
 				Assert.That(nothing.Says, Does.Contain(nothing.PublishedSays),
 					"Sin sobre publicado tambien: la respuesta es NotPublished y su clausula ES la "
@@ -211,7 +211,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (AScheduleOnARealJournal broken = AVehicleWhoseOdometerWentBackwards())
 			{
 				WhereThisVehicleStands contradictory = WhereThisVehicleStands.ReadThrough(
-					broken.Api, TheDayTheVehicleAsks);
+					broken.Api, TheDayTheVehicleAsks, TheLanguage.OfTheRecord);
 
 				Assert.That(contradictory.Says, Is.Empty);
 				Assert.That(contradictory.PublishedSays, Is.Not.Empty,
@@ -410,7 +410,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			// EL CONTROL: la puerta SI compone la frase CON los conteos cuando se los mandan, asi que
 			// el barrido de arriba esta mirando una diferencia real y no una imposibilidad.
-			string whole = journal.Api.DescribeServicingElsewhereRule(2, 1, 0);
+			string whole = journal.Api.DescribeServicingElsewhereRule(
+				2, 1, 0, TheLanguage.OfTheRecord);
 
 			Assert.That(whole, Does.Contain(TheRuleAsPublished));
 			Assert.That(whole, Does.Contain("servicios externos con comprobante 2"));
@@ -441,7 +442,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (var bare = ABareVehicle("1FTFW1ET5DFA00001"))
 			{
 				WhatTheManufacturerPublished sheet =
-					WhatTheManufacturerPublished.ReadThrough(bare.Api);
+					WhatTheManufacturerPublished.ReadThrough(bare.Api, TheLanguage.OfTheRecord);
 
 				Assert.That(sheet.ServicingRule.Published, Is.False);
 				Assert.That(sheet.ServicingRule.Revision, Is.Empty);
@@ -521,19 +522,19 @@ namespace Concesionario.Dominio.Pruebas
 					+ "ahi, y es falsa desde que la agencia los manda por comando y por feed.");
 
 			Assert.That(
-				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet),
 				Does.Contain("el sobre de garantía mismo, el día en que se entregó el carro, o una "
 					+ "lectura del odómetro tomada hoy o antes"),
 				"Los tres hechos, dichos enteros. Con solo la palabra 'odometer' adentro, una frase "
 				+ "que dijera que el odometro no hace falta pasaria igual.");
 			Assert.That(
-				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet),
 				Does.Contain("no hay nada que tengas que llenar"),
 				"Y que no hay nada que la persona ponga, dicho entero: es la mitad que un formulario "
 				+ "contradice, y es la que se pierde si esto solo comprobara que aparece la palabra "
 				+ "'dealership'.");
 			Assert.That(
-				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet),
 				Does.Contain("no es lo mismo que un carro sin garantía"),
 				"Y la lectura equivocada mas cara de todas, dicha en voz alta.");
 
@@ -541,13 +542,13 @@ namespace Concesionario.Dominio.Pruebas
 			// la persona, y que solo la agencia los corrige. Sin la primera mitad, la pantalla le pide
 			// a la persona que arregle algo que no rompio.
 			Assert.That(
-				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue),
 				Does.Contain("Ninguno de los dos hechos vino de vos"));
 			Assert.That(
-				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue),
 				Does.Contain("Solo tu concesionario puede corregirlos"));
 			Assert.That(
-				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue),
 				Does.Contain("nada de lo de arriba es una estimación de eso"),
 				"Y que lo que se muestra no es una estimacion de la postura, que es la unica forma de "
 				+ "fallar aca que le cuesta dinero a la persona.");
@@ -555,20 +556,20 @@ namespace Concesionario.Dominio.Pruebas
 			// LA REGLA DE SERVICIO EN OTRO TALLER NO SE MOVIO: le sigue faltando la POSICION, y la
 			// pantalla lo sigue diciendo con los tres conteos nombrados enteros.
 			Assert.That(
-				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord),
 				Does.Contain("no dónde está parado tu carro frente a ella"));
 			Assert.That(
-				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord),
 				Does.Contain("cuántos servicios ha tenido este carro en otro lado, cuántos de esos "
 					+ "tienen comprobante, y cuánto mantenimiento programado se dejó de hacer"));
 			Assert.That(
-				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord),
 				Does.Contain("Quien los pone aquí es tu concesionario"));
 
 			// Y QUE UN SISTEMA QUE LA LISTA NO NOMBRA NO ES UNO QUE EL ALCANCE DEJE AFUERA. En una
 			// pantalla sin buscador esa distincion no la puede hacer un control: solo la frase.
 			Assert.That(
-				TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut),
 				Does.Contain("no quedó descartado aquí"));
 		}
 
@@ -588,9 +589,12 @@ namespace Concesionario.Dominio.Pruebas
 				+ "con su fila por sistema.");
 
 			Assert.That(words, Has.Some.Contains("EngineOil"), "No entro a la lista de fluidos.");
-			Assert.That(words, Has.Some.Contains("Llanta de repuesto"), "No entro a la lista de llantas.");
-			Assert.That(words, Has.Some.Contains(TheSystemInside), "No entro al arreglo de sistemas.");
-			Assert.That(words, Has.Some.Contains("wear parts"), "No entro al arreglo de exclusiones.");
+			Assert.That(
+				words, Has.Some.Contains("Llanta de repuesto"), "No entro a la lista de llantas.");
+			Assert.That(
+				words, Has.Some.Contains(TheSystemInside), "No entro al arreglo de sistemas.");
+			Assert.That(
+				words, Has.Some.Contains("wear parts"), "No entro al arreglo de exclusiones.");
 			Assert.That(words, Has.Some.Contains(TheRevision), "No leyo ninguna procedencia.");
 			Assert.That(words, Has.Some.Contains("CoveredWithExclusion"),
 				"No entro a la lista de sistemas de la mitad del vehiculo, que es la que T10 agrego.");
@@ -609,12 +613,12 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhatTheManufacturerPublished TheSheetTheScreenShows()
 		{
-			return WhatTheManufacturerPublished.ReadThrough(journal.Api);
+			return WhatTheManufacturerPublished.ReadThrough(journal.Api, TheLanguage.OfTheRecord);
 		}
 
 		private WhereThisVehicleStands WhatTheScreenIsHandedAt(DateTime asOf)
 		{
-			return WhereThisVehicleStands.ReadThrough(journal.Api, asOf);
+			return WhereThisVehicleStands.ReadThrough(journal.Api, asOf, TheLanguage.OfTheRecord);
 		}
 
 		private static CoverageStandingForThisVehicle TheSystemRow(

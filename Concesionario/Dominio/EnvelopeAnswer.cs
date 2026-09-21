@@ -8,28 +8,44 @@ namespace Concesionario.Dominio
 	/// nombrando en su propio tipo por que. Ninguno de los tres quiere decir "no lo se", y
 	/// devolver el benigno para una entrada inevaluable es como una app termina repitiendo rio
 	/// abajo, como si fuera un hecho, algo que nunca se midio.
+	/// <para>
+	/// Sale como FORMA mas valores ya tipados y nunca como una frase: la redaccion vive donde se
+	/// elige el idioma, y el dominio no elige uno. La clausula que dice CONTRA QUE se midio la
+	/// llevan las cuatro variantes y se compone una sola vez.
+	/// </para>
 	/// </summary>
 	internal abstract class EnvelopeAnswer
 	{
-		/// <summary>
-		/// Como se nombra esta pregunta. Sale de aca para que la respuesta decidida y las
-		/// suspendidas hablen del mismo sujeto con las mismas palabras.
-		/// </summary>
-		internal static string TheEnvelopeQuestion()
-		{
-			return "El sobre de garantía de este vehículo";
-		}
+		/// <summary>La agencia no publico ningun sobre, que el registro sabe con certeza.</summary>
+		internal const string NothingWasPublished = "NotPublished";
+
+		/// <summary>Se decidio donde esta parado el vehiculo.</summary>
+		internal const string Settled = "Settled";
+
+		/// <summary>Nadie registro la entrega, que es el ancla desde donde se mide todo.</summary>
+		internal const string NoDelivery = "NoDelivery";
+
+		/// <summary>No hay ninguna lectura del odometro al instante preguntado ni antes.</summary>
+		internal const string NoReading = "NoReading";
+
+		/// <summary>El limite publicado y el odometro estan en unidades distintas.</summary>
+		internal const string UnitMismatch = "UnitMismatch";
+
+		private readonly AnEnvelopeClause _clause;
 
 		/// <summary>
-		/// La clausula que toda respuesta de sobre lleva: esto dice donde esta parado el vehiculo,
-		/// y como se resuelva un reclamo concreto lo dice el fabricante. Va en la frase para que la
-		/// ley se diga a si misma y no se pierda en la primera capa que reformule la respuesta.
+		/// Toda respuesta de sobre lleva su clausula: la ley se dice a si misma en la respuesta y no
+		/// se pierde en la primera capa que la reformule.
 		/// </summary>
-		internal static string TheStandingIsNotAnAdjudication()
+		protected EnvelopeAnswer(AnEnvelopeClause clause)
 		{
-			return "Solo posición: esto dice dónde está parado este vehículo frente al sobre que "
-				+ "publicó el concesionario, y nada sobre si un reclamo se pagaría -- eso lo decide el "
-				+ "fabricante, no este registro.";
+			if (clause == null)
+				throw new DomainException(
+					"Se compuso una respuesta sobre el sobre de garantia sin la clausula que dice "
+					+ "contra que se midio. Una respuesta sin contra que se midio es una afirmacion que "
+					+ "nadie puede comprobar.");
+
+			_clause = clause;
 		}
 
 		/// <summary>
@@ -84,23 +100,163 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La respuesta en una frase. TOTAL: lo que no se pudo evaluar tambien se dice con
-		/// palabras, y diciendo por que.
+		/// Que forma tiene esta respuesta, por su codigo: la decidida, la que dice que nadie publico
+		/// nada, o cual de las tres ausencias la suspendio. TOTAL.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract string TheShapeItHas();
 
 		/// <summary>
-		/// Arma la frase de una variante: el sujeto, lo que esa variante tiene para decir, lo que
-		/// haya aportado quien compone, y la clausula de que esto no es una adjudicacion. La
-		/// clausula la pone la frase y no el que compone, para que no dependa de que se acuerde.
+		/// Donde quedo parado el vehiculo, por el nombre del miembro, o vacio donde no se pudo
+		/// decidir. TOTAL, a diferencia de <see cref="Standing"/>, que es la lectura guardada.
 		/// </summary>
-		protected static string TheAnswerSaying(string reason, string clause)
+		internal virtual string TheStandingItReached()
 		{
-			string said = TheEnvelopeQuestion() + ": " + reason;
+			return "";
+		}
 
-			if (!string.IsNullOrWhiteSpace(clause)) said = said + " " + clause.Trim();
+		/// <summary>
+		/// La unidad del odometro que no coincidio con la del limite publicado, por su nombre, o
+		/// vacia donde coincidieron. TOTAL.
+		/// </summary>
+		internal virtual string TheUnitThatDidNotMatch()
+		{
+			return "";
+		}
 
-			return said + " " + TheStandingIsNotAnAdjudication();
+		/// <summary>Cuanta clausula hay que decir, por su codigo. TOTAL.</summary>
+		internal string TheClauseShape()
+		{
+			return _clause.TheShapeItHas();
+		}
+
+		/// <summary>Que forma tiene lo que la agencia publico, por su codigo. TOTAL.</summary>
+		internal string ThePublishedShape()
+		{
+			return _clause.ThePublishedShape();
+		}
+
+		/// <summary>El plazo publicado. TOTAL.</summary>
+		internal int TheMonthsPublished()
+		{
+			return _clause.TheMonthsPublished();
+		}
+
+		/// <summary>La distancia publicada. TOTAL.</summary>
+		internal int TheDistancePublished()
+		{
+			return _clause.TheDistancePublished();
+		}
+
+		/// <summary>La unidad en que se publico esa distancia, por su nombre. TOTAL.</summary>
+		internal string TheUnitTheDistanceIsPublishedIn()
+		{
+			return _clause.TheUnitTheDistanceIsPublishedIn();
+		}
+
+		/// <summary>El dia en que la agencia publico el sobre. TOTAL.</summary>
+		internal string TheDayTheEnvelopeWasPublished()
+		{
+			return _clause.TheDayTheEnvelopeWasPublished();
+		}
+
+		/// <summary>Los meses que le quedan al plazo. TOTAL.</summary>
+		internal int TheMonthsLeft()
+		{
+			return _clause.TheMonthsLeft();
+		}
+
+		/// <summary>El plazo contra el que se midieron. TOTAL.</summary>
+		internal int TheMonthsLimit()
+		{
+			return _clause.TheMonthsLimit();
+		}
+
+		/// <summary>Que forma tiene la mitad de distancia, por su codigo. TOTAL.</summary>
+		internal string TheDistanceHalfShape()
+		{
+			return _clause.TheDistanceHalfShape();
+		}
+
+		/// <summary>Lo que le queda a la mitad de distancia, en una fila o en ninguna. TOTAL.</summary>
+		internal int[] TheDistanceLeftCounted()
+		{
+			return _clause.TheDistanceLeftCounted();
+		}
+
+		/// <summary>El limite contra el que se midio, en una fila o en ninguna. TOTAL.</summary>
+		internal int[] TheDistanceLimitCounted()
+		{
+			return _clause.TheDistanceLimitCounted();
+		}
+
+		/// <summary>La unidad en que esta dicha esa mitad, por su nombre. TOTAL.</summary>
+		internal string TheUnitTheDistanceIsSaidIn()
+		{
+			return _clause.TheUnitTheDistanceIsSaidIn();
+		}
+
+		/// <summary>
+		/// La unidad de la distancia del registro que no calzo con la del limite, por su nombre.
+		/// TOTAL, y no es la misma pregunta que <see cref="TheUnitThatDidNotMatch"/>: aquella es la
+		/// de la respuesta suspendida y esta la de la mitad que no se pudo medir.
+		/// </summary>
+		internal string TheUnitTheOtherDistanceIsIn()
+		{
+			return _clause.TheUnitThatDidNotMatch();
+		}
+
+		/// <summary>Cual de las dos distancias del registro no calzo, por su codigo. TOTAL.</summary>
+		internal string WhoseDistanceDidNotMatch()
+		{
+			return _clause.WhoseDistanceDidNotMatch();
+		}
+
+		/// <summary>Cual de las dos mitades llego primero, por su codigo. TOTAL.</summary>
+		internal string WhichHalfArrivedFirst()
+		{
+			return _clause.WhichHalfArrivedFirst();
+		}
+
+		/// <summary>Que forma tiene la clausula del odometro, por su codigo. TOTAL.</summary>
+		internal string TheOdometerShape()
+		{
+			return _clause.TheOdometerShape();
+		}
+
+		/// <summary>La lectura contra la que se midio. TOTAL.</summary>
+		internal int TheReading()
+		{
+			return _clause.TheReading();
+		}
+
+		/// <summary>La unidad de esa lectura, por su nombre. TOTAL.</summary>
+		internal string TheUnitTheReadingIsIn()
+		{
+			return _clause.TheUnitTheReadingIsIn();
+		}
+
+		/// <summary>El dia en que se observo esa lectura. TOTAL.</summary>
+		internal string TheDayTheReadingWasObserved()
+		{
+			return _clause.TheDayTheReadingWasObserved();
+		}
+
+		/// <summary>La lectura registrada en la entrega, desde la que se cuenta. TOTAL.</summary>
+		internal int TheDeliveryReading()
+		{
+			return _clause.TheDeliveryReading();
+		}
+
+		/// <summary>La unidad de la lectura de la entrega, por su nombre. TOTAL.</summary>
+		internal string TheUnitTheDeliveryReadingIsIn()
+		{
+			return _clause.TheUnitTheDeliveryReadingIsIn();
+		}
+
+		/// <summary>El dia en que el vehiculo se entrego. TOTAL.</summary>
+		internal string TheDayItWasDelivered()
+		{
+			return _clause.TheDayItWasDelivered();
 		}
 	}
 }

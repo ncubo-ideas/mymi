@@ -31,11 +31,11 @@ namespace Examenes.Dominio
 
 		// Todas las pruebas dieron negativas. Es una respuesta, no un vacio: "en las
 		// cuatro veces que te lo hicieron nunca apareció" es informacion.
-		internal static readonly Presencia NuncaAparecio = new Presencia("nunca apareció");
+		internal static readonly Presencia NuncaAparecio = new Presencia("nunca-aparecio");
 
 		// La ultima dio positiva y la anterior no. Todavia NADIE lo confirmo, y por eso
 		// lo primero que pide es repetirse.
-		internal static readonly Presencia Aparecio = new Presencia("apareció");
+		internal static readonly Presencia Aparecio = new Presencia("aparecio");
 
 		// Dos o mas positivas SEGUIDAS al final de la serie. Ya se repitio y volvio a
 		// salir: dejo de ser un dato suelto. Es el inhabitante que justifica que los
@@ -44,14 +44,18 @@ namespace Examenes.Dominio
 
 		// Hubo UN positivo aislado y la prueba siguiente dio negativa. El hallazgo NO
 		// ERA, y eso es buena noticia — el par binario de PicoNoConfirmado.
-		internal static readonly Presencia NoConfirmado = new Presencia("no confirmado");
+		internal static readonly Presencia NoConfirmado = new Presencia("no-confirmado");
 
 		// Estuvo presente de verdad -dos o mas veces- y despues dejo de estarlo. NO es lo
 		// mismo que NoConfirmado: ahi nunca se confirmo nada, aca se confirmo y cedio.
 		// Son dos por la misma razon que ProbableErrorDeMedicion y PicoNoConfirmado son
 		// dos veredictos: la persona lee cosas distintas.
-		internal static readonly Presencia Cedio = new Presencia("cedió");
+		internal static readonly Presencia Cedio = new Presencia("cedio");
 
+		/// <summary>
+		/// EL CODIGO de esta presencia: identidad, y lo unico que cruza el wire. Como se dice lo busca con este
+		/// codigo la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
 
 		private Presencia(string nombre)

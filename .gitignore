@@ -63,6 +63,19 @@ Gnothi.Mobile/paquete.zip
 # escenario se los lleva, y 136 MB en un repo compartido no se sacan con un commit.
 Gnothi.Mobile/bundles/
 
+# La forma hospedada de compras que la pagina de La Guaria ofrece al telefono en
+# /descargas/movil/. Mismo motivo: 15 MB y el origen adentro. La arma armar-bundle.ps1
+# con -Origen, ver Compras/README.md. La forma cargo (descargas/compras.gmod) si va.
+Compras/PaginaDeDescarga/descarga/descargas/movil/
+
+# Las otras cuatro paginas ofrecen los mismos descargables (Gnothi para Windows, la forma
+# cargo y la hospedada del modulo) y ninguno va al repo: se arman antes de levantar URL1,
+# ver el nginx.conf de cada una.
+Examenes/PaginaDeDescarga/descarga/descargas/
+Municipalidad/PaginaDeDescarga/descarga/descargas/
+Concesionario/PaginaDeDescarga/descarga/descargas/
+Cargas/PaginaDeDescarga/descarga/descargas/
+
 # Xcode: estado de UI por persona, no del proyecto. El .xcodeproj y el esquema
 # compartido si van, para no rearmar el target a mano en cada clon.
 xcuserdata/
@@ -71,6 +84,10 @@ xcuserdata/
 # Lo que armar-intents.sh compila del Swift: la .a, el modulo y los const values. Es salida
 # de build y la regenera el script; el .swiftconstvalues cambia en cada corrida.
 Gnothi.iOS/Intents/out/
+
+# La dylib del puente a Apple Intelligence para la ventana de escritorio: salida de build, la
+# arma Gnothi.Desktop/armar-modelo.sh del MISMO Puente.swift de iOS, y solo existe en una Mac.
+Gnothi.Desktop/native/
 
 # Lo que deja xcodebuild al compilar Lab.Siri por linea de comandos. Xcode lo crea al lado del
 # .xcodeproj aunque se le pase CONFIGURATION_BUILD_DIR a otra parte.
@@ -88,8 +105,12 @@ Spikes/Lab.Siri/build/
 Spikes/Lab.Agente/out/
 Spikes/Lab.Sonda/out/
 
-# El banco de pruebas del Host en ESTA maquina: un root de modulos paralelo a Modulos/, con
-# installation.json apuntando a los dll construidos aca y a los journals de la persona. Los de
-# Modulos/ estan versionados y traen las rutas de la maquina donde se armo el POC, asi que
-# en cualquier otra publican el catalogo y fallan al llamar. Lo arma Modulos.local/armar.sh.
+# Un banco de pruebas del Host propio de ESTA maquina: un root de modulos paralelo a Modulos/,
+# con installation.json apuntando a los journals reales de la persona. Ya no hace falta para
+# arrancar: los installation.json de Modulos/ apuntan RELATIVO a su carpeta al bin/Debug de cada
+# modulo, asi que el banco versionado arranca donde sea que se hayan compilado. Este queda para
+# quien quiera correr la suite contra sus datos: dotnet run --project Gnothi.Assistant.Tests -- Modulos.local
 Modulos.local/
+
+# Configuracion local del panel de Claude Code (launch.json apunta a rutas de esta maquina).
+.claude/

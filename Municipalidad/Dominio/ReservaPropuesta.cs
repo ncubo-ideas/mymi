@@ -25,18 +25,5 @@ namespace Municipalidad.Dominio
 		}
 
 		internal decimal MontoMensual { get { return Math.Round(ProyeccionDelAnio / 12m, 2); } }
-
-		/// <summary>
-		/// La frase que una persona lee sobre esta propuesta: para que anio, la proyeccion de la que
-		/// sale, y lo que propone apartar por mes. Dice que es una PROPUESTA de la app y no un monto
-		/// que la municipalidad haya puesto al cobro, que es la mitad que se pierde si sale sola.
-		/// </summary>
-		internal string Dice()
-		{
-			return "Para " + Anio + " esta app proyecta " + Dichos.Monto(ProyeccionDelAnio)
-				+ " en el año, así que propone apartar " + Dichos.Monto(MontoMensual)
-				+ " por mes. Es una proyección de esta app sobre lo que ya pagaste, no un monto que la "
-				+ "municipalidad haya puesto al cobro.";
-		}
 	}
 }

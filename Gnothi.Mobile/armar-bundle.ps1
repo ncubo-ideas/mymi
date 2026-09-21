@@ -93,10 +93,11 @@ $raiz = Split-Path -Parent $PSScriptRoot
 # forma. El concesionario tambien va en espanol: Kenneth paso su PWA a espanol el 2026-09-08 y la
 # tarjeta lo sigue (2026-09-09).
 #
-# LA MUNICIPALIDAD NO SE NOMBRA, y no es una casilla pendiente: es la respuesta. El concesionario
-# inventa una marca y no pasa nada; toda municipalidad plausible es una que existe, con vecinos que
-# le pagan, asi que su modulo usa el sustantivo comun y su dominio es el TLD reservado para
-# ejemplos. El nombre real llega el dia que una municipalidad de verdad adopte el modulo.
+# LA MUNICIPALIDAD SE NOMBRA, por pedido expreso: su Titulo, su Institucion, su Marca y su
+# RazonSocial. EL DOMINIO NO LA SIGUE y se queda en el TLD reservado para ejemplos, que es donde
+# estaba el riesgo: la razon por la que nada la nombraba se deja escrita, porque en esa parte no ha
+# dejado de valer. El concesionario inventa una marca y no pasa nada, pero toda municipalidad
+# plausible es una que existe, con vecinos que le pagan, y un dominio plausible seria el suyo.
 $catalogo = @{
     'examenes' = @{
         Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
@@ -108,6 +109,7 @@ $catalogo = @{
         Rubro       = 'laboratorio'
         Descripcion = 'Tus resultados de laboratorio, con su historia y que te toca repetir.'
         NoHace      = 'No interpreta resultados ni reemplaza a tu medico.'
+        Idioma      = 'es-CR'
         Dominio     = 'delfos.cr'
         RazonSocial = 'Laboratorio Clínico Delfos S.A.'
         Cedula      = '3-101-123456'
@@ -136,6 +138,7 @@ $catalogo = @{
         Rubro       = 'supermercado'
         Descripcion = 'Tu historial de compras, con tus garantias y lo que sueles llevar.'
         NoHace      = 'No te dice que comer ni juzga tu canasta.'
+        Idioma      = 'es-CR'
         Dominio     = 'laguaria.cr'
         RazonSocial = 'Supermercado La Guaria S.A.'
         Cedula      = '3-101-654321'
@@ -164,6 +167,7 @@ $catalogo = @{
         Rubro       = 'combustible'
         Descripcion = 'Tus cargas de combustible y el rendimiento de cada vehiculo.'
         NoHace      = ''
+        Idioma      = 'es-CR'
         Dominio     = 'faro.cr'
         RazonSocial = 'Estaciones Faro S.A.'
         Cedula      = '3-101-777888'
@@ -184,16 +188,17 @@ $catalogo = @{
     'dealership' = @{
         Proyecto    = "$raiz/Concesionario/App/Concesionario.Wasm/Concesionario.Wasm.csproj"
         Titulo      = 'Mi plan de mantenimiento'
-        Institucion = 'Sotavento Motors'
-        Marca       = 'Sotavento Motors'
+        Institucion = 'Sotaventos Motors'
+        Marca       = 'Sotaventos Motors'
         Slogan      = 'Tu carro, siempre listo'
         Color       = '#1f3a5f'
         Fuente      = @{ family = 'Sora'; file = 'web/brand/Sora-600.woff2' }
         Rubro       = 'taller'
         Descripcion = 'El plan de mantenimiento de tu vehiculo y lo que le toca.'
         NoHace      = ''
+        Idioma      = 'es-CR'
         Dominio     = 'sotavento.com'
-        RazonSocial = 'Sotavento Motors Inc.'
+        RazonSocial = 'Sotaventos Motors Inc.'
         Cedula      = ''
         Version     = '3.1.0'
         Retencion   = '10 anos'
@@ -211,16 +216,17 @@ $catalogo = @{
     }
     'municipalidad' = @{
         Proyecto    = "$raiz/Municipalidad/App/Municipalidad.Wasm/Municipalidad.Wasm.csproj"
-        Titulo      = 'Mi cuenta municipal'
-        Institucion = 'Tu municipalidad'
-        Marca       = 'Tu municipalidad'
+        Titulo      = 'MONTEVERDE Municipal Services'
+        Institucion = 'Municipalidad de Monteverde'
+        Marca       = 'Monteverde'
         Slogan      = 'Lo que el portal no te dice'
         Color       = '#2C306C'
         Rubro       = 'gobierno'
         Descripcion = 'Tus cobros municipales: por qué te subieron, qué se te vence y cuánto apartar.'
         NoHace      = 'No dice cuánto debés hoy: eso lo dice el portal de tu municipalidad.'
-        Dominio     = 'municipalidad.example'
-        RazonSocial = 'Municipalidad del POC'
+        Idioma      = 'es-CR'
+        Dominio     = 'monteverde.example'
+        RazonSocial = 'Municipalidad de Monteverde'
         Cedula      = ''
         Version     = '1.0.0'
         Retencion   = '5 anos'
@@ -350,6 +356,20 @@ if ($SoloManifiesto) {
         New-Item -ItemType Directory -Path "$armado/web" -Force | Out-Null
         Copy-Item -Recurse "$caraHibrida/*" "$armado/web/"
 
+        # LA MARCA VIVE EN LA APP SUELTA (2026-09-18). La foto y la tipografia que la institucion
+        # publica en <X>.Wasm/wwwroot/brand/ son las mismas para sus tres formas: la hospedada las
+        # recibe con el publish, y la hibrida no tenia de donde, asi que Monteverde salia con
+        # banner "" y la tarjeta se pintaba de color liso mientras la app suelta ya traia la foto
+        # del edificio. Se completa lo que la cara NO trae: si ella tiene su propio brand/ (La
+        # Guaria, que la referencia desde su css), ese gana, archivo por archivo.
+        $marcaDeLaApp = "$carpetaDeApp/$raizDelModulo.Wasm/wwwroot/brand"
+        if (Test-Path $marcaDeLaApp) {
+            New-Item -ItemType Directory -Path "$armado/web/brand" -Force | Out-Null
+            Get-ChildItem -File $marcaDeLaApp | ForEach-Object {
+                if (-not (Test-Path "$armado/web/brand/$($_.Name)")) { Copy-Item $_.FullName "$armado/web/brand/" }
+            }
+        }
+
         # EL PUENTE LO PONE EL HOST, no la institucion, y es el unico archivo de web/ que no
         # escribio ella. El protocolo -- que la respuesta vuelve por callback y no por retorno,
         # que `consultar` no lleva el nombre del modulo -- es de Gnothi: pedirle a cada
@@ -438,7 +458,14 @@ $manifiesto = [ordered]@{
         # archivo que no viaja: la aduana del Host lo dejaria pasar sin banner, pero el
         # manifiesto habria dicho algo falso. Los cuatro primeros mocks si lo traen.
         banner    = if (Test-Path "$armado/web/brand/banner.jpg") { 'web/brand/banner.jpg' } else { '' }
-        font      = if ($m.Fuente) { [ordered]@{ family = $m.Fuente.family; file = $m.Fuente.file } } else { $null }
+        # LA TIPOGRAFIA SE DECLARA SOLO SI VIAJA, por la misma razon que el banner: la fila la
+        # nombra, pero si el archivo no quedo en web/ la aduana del Host lo anota como problema
+        # y la marca sale sin letra. Antes esto se declaraba a ciegas y la forma hibrida de Faro
+        # y Sotaventos nombraba una fuente que no llevaba.
+        font      = if ($m.Fuente -and $traeCara -and -not (Test-Path "$armado/$($m.Fuente.file)")) {
+                        Write-Warning "la fila declara la tipografia $($m.Fuente.file) y no esta en el paquete: sale sin ella"
+                        $null
+                    } elseif ($m.Fuente) { [ordered]@{ family = $m.Fuente.family; file = $m.Fuente.file } } else { $null }
     }
     '//publisher' = 'DE DONDE VIENE Y QUE VERSION ES. El dominio es el unico campo CONTRASTABLE: Gnothi ya sabe de que host bajo el bundle y compara.'
     publisher     = [ordered]@{
@@ -453,7 +480,11 @@ $manifiesto = [ordered]@{
         category    = $m.Rubro
         description = $m.Descripcion
         doesNotDo   = $m.NoHace
-        locale      = if ($Modulo -eq 'dealership') { 'en-US' } else { 'es-CR' }
+        # EL IDIOMA DEL REGISTRO de la institucion, y es lo que se le dice al modelo para que le
+        # pase sus valores de texto libre en ese idioma. Sale de la FILA, como todo lo demas de
+        # este bloque: vivio en un `if` sobre el nombre del modulo, el concesionario paso a espanol
+        # el 2026-09-08, y la linea se quedo diciendo en-US hasta que alguien la leyo.
+        locale      = $m.Idioma
     }
     '//journal'   = 'LO QUE LA INSTITUCION PROMETE SOBRE EL REGISTRO. La pantalla del alta ya decia DONDE va a vivir; esto es cuanto, cada cuanto y por cuanto tiempo.'
     journal       = [ordered]@{

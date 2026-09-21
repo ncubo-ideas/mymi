@@ -51,7 +51,7 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void APeriodWithNoEntryAnswersWithWordsAndNamesThePeriod()
 		{
-			string said = ledger.DescribeSpendBetween(TheStart, TheEnd);
+			string said = TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("2026-01-01"),
 				"El periodo nombrado: sin el, todos los periodos vacios dirian la misma frase.");
@@ -64,12 +64,13 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndNeverZeroInAnyOfTheAnswers()
 		{
-			Assert.That(ledger.DescribeSpendBetween(TheStart, TheEnd),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
 				Does.Not.Contain("₡0").And.Not.Contain("0.00"));
-			Assert.That(ledger.DescribeSpendPerCurrencyBetween(TheStart, TheEnd),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpendPerCurrency(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
 				Does.Not.Contain("₡0").And.Not.Contain("0.00"));
 			Assert.That(
-				ledger.DescribeTwoPeriodsOfSpendCompared(TheStart, TheEnd, TheStart, TheEnd),
+				TheSentenceTheDoorWouldCompose.TheTwoPeriodsOfSpendCompared(
+				ledger, TheStart, TheEnd, TheStart, TheEnd, TheLanguage.OfTheRecord),
 				Does.Not.Contain("₡0").And.Not.Contain("0.00"));
 		}
 
@@ -84,8 +85,10 @@ namespace Concesionario.Dominio.Pruebas
 				+ "Contestar que si seria dar por respuesta un miembro benigno del conjunto de "
 				+ "salida, que es la tercera antipatron de E47.");
 			Assert.That(ledger.CostEntryCountBetween(TheStart, TheEnd), Is.EqualTo(0));
-			Assert.That(ledger.CostEntryMoniesBetween(TheStart, TheEnd), Is.Empty);
-			Assert.That(ledger.DescribeEachCostEntryBetween(TheStart, TheEnd), Is.Empty);
+			Assert.That(TheSentenceTheDoorWouldCompose.EachCostEntryMoney(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord), Is.Empty);
+			Assert.That(TheSentenceTheDoorWouldCompose.EachCostEntry(
+				ledger, TheStart, TheEnd, TheLanguage.OfTheRecord), Is.Empty);
 		}
 
 		// Y LA FRASE DE POR MONEDA DICE POR QUE NO HAY NINGUNA, en vez de devolver la lista vacia de
@@ -93,7 +96,7 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AndThePerCurrencyAnswerSaysWhyThereIsNoCurrencyToSayItIn()
 		{
-			Assert.That(ledger.DescribeSpendPerCurrencyBetween(TheStart, TheEnd),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpendPerCurrency(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
 				Does.Contain("no hay ningún gasto registrado").And.Contain("ninguna moneda"));
 		}
 
@@ -110,7 +113,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(ledger.HasAnyCostBetween(TheStart, TheEnd), Is.True,
 				"Hay gasto: lo que no hay es un total entre dos monedas, y eso es un estado y no "
 				+ "una ausencia.");
-			Assert.That(ledger.DescribeSpendBetween(TheStart, TheEnd),
+			Assert.That(TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord),
 				Does.Not.Contain("no hay ningún gasto registrado"));
 		}
 

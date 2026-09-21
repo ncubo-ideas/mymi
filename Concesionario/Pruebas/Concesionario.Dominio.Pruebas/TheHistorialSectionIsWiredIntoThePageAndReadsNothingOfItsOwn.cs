@@ -32,7 +32,7 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			string page = ThePageAsItIsWritten();
 
-			Assert.That(page, Does.Contain("state.ReadTheStaysOfThisVehicle()"),
+			Assert.That(page, Does.Contain("state.ReadTheStaysOfThisVehicle(texts.Language)"),
 				"La pagina dejo de leer las estadias, asi que la seccion recibe null y no pinta nada "
 				+ "-- sin ningun error y sin ningun aviso.");
 

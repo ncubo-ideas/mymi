@@ -44,11 +44,16 @@ namespace Municipalidad.Dominio
 		internal abstract string Etiqueta { get; }
 
 		/// <summary>
-		/// La frase que una persona lee sobre el avaluo de este salto. TOTAL: las cuatro hojas dicen la
-		/// suya, y las tres que no pueden decirlo dicen razones distintas — callarlas dejaria el salto
-		/// pareciendo inexplicable cuando lo que falta tiene nombre y tiene quien lo mande.
+		/// EL NUMERO DE FINCA DEL QUE HABLA ESTA HOJA, o vacio donde no hay una de la cual hablar. Es un
+		/// valor para el hueco de la frase, no una respuesta: cual hoja es lo dice <c>Etiqueta</c>.
 		/// </summary>
-		internal abstract string Dice();
+		internal virtual string NumeroDeLaFinca { get { return ""; } }
+
+		/// <summary>
+		/// CUANTAS FINCAS TIENE LA CUENTA, donde eso es lo que impide leer un avaluo, y cero donde la
+		/// pregunta no es esa. Mismo papel que el de arriba: llena un hueco de una frase.
+		/// </summary>
+		internal virtual int CuantasFincas { get { return 0; } }
 
 		/// <summary>
 		/// El avaluo con que se cobro el periodo anterior. GUARDADO: preguntar SePuedeDecir antes.
@@ -114,13 +119,6 @@ namespace Municipalidad.Dominio
 
 		internal override bool SePuedeDecir { get { return false; } }
 		internal override string Etiqueta { get { return "sin-finca"; } }
-
-		internal override string Dice()
-		{
-			return "Esta cuenta no tiene ninguna finca incorporada, así que no hay sobre cuál leer el "
-				+ "avalúo: la municipalidad manda la finca cuando la incorpora a tu cuenta, y su avalúo "
-				+ "cuando lo fija. Esta app dice el salto y no de cuánto a cuánto pasó el avalúo.";
-		}
 	}
 
 	/// <summary>
@@ -130,24 +128,19 @@ namespace Municipalidad.Dominio
 	internal sealed class ElReciboNoDiceDeCualFinca : EstadoDelAvaluo
 	{
 		/// <summary>Cuantas fincas tiene la cuenta, que es lo que la frase cuenta.</summary>
-		internal int CuantasFincas { get; }
+		internal override int CuantasFincas { get { return cuantasFincas; } }
+
+		private readonly int cuantasFincas;
 
 		internal ElReciboNoDiceDeCualFinca(
 			Periodo periodoAnterior, Periodo periodoActual, int cuantasFincas)
 			: base(periodoAnterior, periodoActual)
 		{
-			CuantasFincas = cuantasFincas;
+			this.cuantasFincas = cuantasFincas;
 		}
 
 		internal override bool SePuedeDecir { get { return false; } }
 		internal override string Etiqueta { get { return "varias-fincas"; } }
-
-		internal override string Dice()
-		{
-			return "Esta cuenta tiene " + CuantasFincas + " fincas y la línea del recibo no dice de cuál "
-				+ "de ellas es, porque el portal consolida por cédula. Esta app no elige una por vos: "
-				+ "dice el salto y no de cuánto a cuánto pasó el avalúo.";
-		}
 	}
 
 	/// <summary>
@@ -157,25 +150,19 @@ namespace Municipalidad.Dominio
 	internal sealed class LaMunicipalidadNoPublicoElAvaluo : EstadoDelAvaluo
 	{
 		/// <summary>El numero de la finca de la que se habla, que es el SUJETO de la frase.</summary>
-		internal string NumeroDeFinca { get; }
+		internal override string NumeroDeLaFinca { get { return numeroDeFinca; } }
+
+		private readonly string numeroDeFinca;
 
 		internal LaMunicipalidadNoPublicoElAvaluo(
 			Periodo periodoAnterior, Periodo periodoActual, string numeroDeFinca)
 			: base(periodoAnterior, periodoActual)
 		{
-			NumeroDeFinca = numeroDeFinca;
+			this.numeroDeFinca = numeroDeFinca;
 		}
 
 		internal override bool SePuedeDecir { get { return false; } }
 		internal override string Etiqueta { get { return "sin-avaluo-publicado"; } }
-
-		internal override string Dice()
-		{
-			return "La municipalidad no publicó un avalúo de la finca " + NumeroDeFinca + " que cubra "
-				+ EtiquetaDelPeriodoAnterior + " y " + EtiquetaDelPeriodoActual + ", así que esta app "
-				+ "dice el salto y no de cuánto a cuánto pasó el avalúo. Lo que vos hayás declarado es "
-				+ "tuyo y no es el valor con que te cobraron.";
-		}
 	}
 
 	/// <summary>
@@ -185,8 +172,9 @@ namespace Municipalidad.Dominio
 	internal sealed class ElAvaluoExplicaElSalto : EstadoDelAvaluo
 	{
 		/// <summary>El numero de la finca de la que se habla, que es el SUJETO de la frase.</summary>
-		internal string NumeroDeFinca { get; }
+		internal override string NumeroDeLaFinca { get { return numeroDeFinca; } }
 
+		private readonly string numeroDeFinca;
 		private readonly decimal avaluoAnterior;
 		private readonly decimal avaluoActual;
 
@@ -195,7 +183,7 @@ namespace Municipalidad.Dominio
 			decimal avaluoAnterior, decimal avaluoActual)
 			: base(periodoAnterior, periodoActual)
 		{
-			NumeroDeFinca = numeroDeFinca;
+			this.numeroDeFinca = numeroDeFinca;
 			this.avaluoAnterior = avaluoAnterior;
 			this.avaluoActual = avaluoActual;
 		}
@@ -205,12 +193,5 @@ namespace Municipalidad.Dominio
 
 		internal override decimal AvaluoAnterior { get { return avaluoAnterior; } }
 		internal override decimal AvaluoActual { get { return avaluoActual; } }
-
-		internal override string Dice()
-		{
-			return "El avalúo con que la municipalidad cobró la finca " + NumeroDeFinca + " pasó de "
-				+ Dichos.Monto(avaluoAnterior) + " en " + EtiquetaDelPeriodoAnterior + " a "
-				+ Dichos.Monto(avaluoActual) + " en " + EtiquetaDelPeriodoActual + ".";
-		}
 	}
 }

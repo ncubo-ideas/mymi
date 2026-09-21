@@ -15,6 +15,13 @@ namespace Concesionario.Mcp.Tools
 	[McpServerToolType]
 	internal sealed class CostLedgerTools
 	{
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTE SERVIDOR PIDE LAS FRASES, que es el del REGISTRO y no el de quien
+		/// pregunta: la caratula MCP es voz de la institucion hablandole al modelo.
+		/// </summary>
+		private const string TheVoiceOfTheDealership =
+			Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
 		private readonly JournalReader reader;
 
 		public CostLedgerTools(JournalReader reader)
@@ -138,7 +145,8 @@ namespace Concesionario.Mcp.Tools
 						TheAssistantIsTold.MoreThanOneVehicle(reader)),
 				};
 
-			CostLedgerRecord record = api.CostEntriesBetween(asked.Start, asked.End);
+			CostLedgerRecord record = api.CostEntriesBetween(
+				asked.Start, asked.End, TheVoiceOfTheDealership);
 
 			var rows = new List<CostEntryRow>();
 
@@ -168,13 +176,16 @@ namespace Concesionario.Mcp.Tools
 				WholeRecord = asked.WholeRecord,
 				AnyCost = api.HasAnyCostBetween(asked.Start, asked.End),
 				SaidInOneCurrency = oneCurrency,
-				Says = api.DescribeSpendBetween(asked.Start, asked.End),
-				PerCurrencySays = api.DescribeSpendPerCurrencyBetween(asked.Start, asked.End),
+				Says = api.DescribeSpendBetween(
+					asked.Start, asked.End, TheVoiceOfTheDealership),
+				PerCurrencySays = api.DescribeSpendPerCurrencyBetween(
+					asked.Start, asked.End, TheVoiceOfTheDealership),
 				BothPeriodsSay = api.DescribeTwoPeriodsOfSpendCompared(
-					asked.Start, asked.End, asked.EarlierStart, asked.EarlierEnd),
+					asked.Start, asked.End, asked.EarlierStart, asked.EarlierEnd,
+					TheVoiceOfTheDealership),
 				CostPerDistanceCanBeSaid = perDistance,
-				CostPerDistanceSays =
-					api.DescribeCostPerDistanceBetween(asked.Start, asked.End),
+				CostPerDistanceSays = api.DescribeCostPerDistanceBetween(
+					asked.Start, asked.End, TheVoiceOfTheDealership),
 				EntryCount = api.CostEntryCountBetween(asked.Start, asked.End),
 				Entries = rows,
 				Folder = reader.Folder,

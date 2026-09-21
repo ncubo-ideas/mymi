@@ -1,4 +1,5 @@
 @inject Pantalla pantalla
+@inject Textos textos
 
 @* EL VOLVER DE LAS PANTALLAS DE PROFUNDIDAD, uno solo para las tres. Existe porque Juan
    quedo varado: adentro de una seccion no habia ningun camino de vuelta visible salvo la
@@ -7,7 +8,7 @@
    VUELVE A DONDE SE ESTABA (history.back), no a un destino fijo: el detalle de una compra
    se abre desde recibos, desde la portada y desde la ficha de un producto, y un boton con
    destino escrito acierta en uno de los tres. El respaldo es para la entrada en frio. *@
-<button class="btn btn-link p-0 mb-3 volver" @onclick="Atras">&larr; Volver</button>
+<button class="btn btn-link p-0 mb-3 volver" @onclick="Atras">&larr; @textos["comun.volver"]</button>
 
 @code {
     /// <summary>A dónde ir cuando no hay historia: un enlace compartido, un bookmark.</summary>

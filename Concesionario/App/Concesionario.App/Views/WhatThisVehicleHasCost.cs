@@ -80,10 +80,11 @@ namespace Concesionario.App.Views
 		/// caratula, que es la unica que puede.
 		/// </summary>
 		public static WhatThisVehicleHasCost ReadThrough(
-			DealershipCarAPI api, DateTime from, DateTime to, DateTime from2, DateTime to2)
+			DealershipCarAPI api, DateTime from, DateTime to, DateTime from2, DateTime to2,
+			string language)
 		{
 			ArgumentNullException.ThrowIfNull(api);
-			CostLedgerRecord record = api.CostEntriesBetween(from, to);
+			CostLedgerRecord record = api.CostEntriesBetween(from, to, language);
 			var rows = new List<ACostOnTheRecord>();
 			foreach (int row in Enumerable.Range(0, record.Says.Length))
 				rows.Add(new ACostOnTheRecord
@@ -103,11 +104,12 @@ namespace Concesionario.App.Views
 				EarlierTo = TheMoment(to2),
 				AnyCost = api.HasAnyCostBetween(from, to),
 				SaidInOneCurrency = api.IsSpendSaidInOneCurrencyBetween(from, to),
-				Says = api.DescribeSpendBetween(from, to),
-				PerCurrencySays = api.DescribeSpendPerCurrencyBetween(from, to),
-				BothPeriodsSay = api.DescribeTwoPeriodsOfSpendCompared(from, to, from2, to2),
+				Says = api.DescribeSpendBetween(from, to, language),
+				PerCurrencySays = api.DescribeSpendPerCurrencyBetween(from, to, language),
+				BothPeriodsSay =
+					api.DescribeTwoPeriodsOfSpendCompared(from, to, from2, to2, language),
 				CostPerDistanceCanBeSaid = api.CanCostPerDistanceBeSaid(from, to),
-				CostPerDistanceSays = api.DescribeCostPerDistanceBetween(from, to),
+				CostPerDistanceSays = api.DescribeCostPerDistanceBetween(from, to, language),
 				EntryCount = api.CostEntryCountBetween(from, to),
 				Rows = rows,
 			};

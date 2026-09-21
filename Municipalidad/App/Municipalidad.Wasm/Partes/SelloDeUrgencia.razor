@@ -1,6 +1,8 @@
+@inject Textos textos
+
 @if (Urgencia.Length > 0 && Urgencia != "ninguna")
 {
-    <span class="sello sello--@Urgencia">@Urgencia</span>
+    <span class="sello sello--@Urgencia">@textos.ComoSeDice(Urgencia)</span>
 }
 
 @code {

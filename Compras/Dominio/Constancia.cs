@@ -20,18 +20,14 @@ namespace Compras.Dominio
 	// no tiene nada de malo.
 	internal sealed class Constancia
 	{
-		internal static readonly Constancia NuncaFalla =
-			new Constancia("nunca falla", "nunca falla", 1.0m, 4);
+		internal static readonly Constancia NuncaFalla = new Constancia("nunca-falla", 1.0m, 4);
 
-		internal static readonly Constancia CasiNuncaFalta =
-			new Constancia("casi nunca falta", "casi nunca falta", 0.75m, 3);
+		internal static readonly Constancia CasiNuncaFalta = new Constancia("casi-nunca-falta", 0.75m, 3);
 
-		internal static readonly Constancia VaYViene =
-			new Constancia("va y viene", "va y viene", 0.4m, 2);
+		internal static readonly Constancia VaYViene = new Constancia("va-y-viene", 0.4m, 2);
 
 		// El ultimo del conjunto: cualquier proporcion mas baja cae aca.
-		internal static readonly Constancia DeVezEnCuando =
-			new Constancia("de vez en cuando", "de vez en cuando", 0m, 1);
+		internal static readonly Constancia DeVezEnCuando = new Constancia("de-vez-en-cuando", 0m, 1);
 
 		// De mas constante a menos: el orden en que se recorren para resolver.
 		internal static readonly Constancia[] Todas =
@@ -39,21 +35,20 @@ namespace Compras.Dominio
 			NuncaFalla, CasiNuncaFalta, VaYViene, DeVezEnCuando,
 		};
 
-		/// <summary>La etiqueta interna, para comparar y serializar.</summary>
-		internal string Nombre { get; private set; }
-
-		/// <summary>Como se le dice a la persona: "casi nunca falta".</summary>
-		internal string ParaMostrar { get; private set; }
+		/// <summary>
+		/// EL CODIGO de esta constancia: identidad, para comparar y serializar. Es lo unico que cruza el
+		/// wire, y con el una capa de presentacion busca como se dice en el idioma que le pidieron.
+		/// </summary>
+		internal string Clave { get; private set; }
 
 		/// <summary>La proporción mínima que hace falta para llegar a esta constancia.</summary>
 		internal decimal DesdeLaProporcion { get; private set; }
 
 		private readonly int peso;
 
-		private Constancia(string nombre, string paraMostrar, decimal desdeLaProporcion, int peso)
+		private Constancia(string clave, decimal desdeLaProporcion, int peso)
 		{
-			Nombre = nombre;
-			ParaMostrar = paraMostrar;
+			Clave = clave;
 			DesdeLaProporcion = desdeLaProporcion;
 			this.peso = peso;
 		}
@@ -82,6 +77,6 @@ namespace Compras.Dominio
 			return peso > otra.peso;
 		}
 
-		public override string ToString() => Nombre;
+		public override string ToString() => Clave;
 	}
 }

@@ -99,70 +99,12 @@ namespace Compras.Dominio
 		internal bool HayAlgoQueLoExplique => LasQueExplican.Count > 0;
 
 		/// <summary>
-		/// La lectura en una linea, escrita por el dominio con SUS hechos: cuanto y de
-		/// donde. Lo que se haga con eso no lo decide un supermercado.
+		/// QUE FRASE dice esta comparacion, por su nombre: `sin-comparacion`, `repartida` o
+		/// `explicada`. Los pasillos que la explican ya se publican en Diferencias, cada uno con su
+		/// Subio y su EsNuevo, asi que esta lectura no los repite.
 		/// </summary>
-		internal string ParaElAsistente
-		{
-			get
-			{
-				if (!HayComparacion)
-					return "todavía no hay dos meses con compras para comparar";
-
-				string totales = $"en {Despues.MesExpresado} lleva {Colones(GastoDespues)} y "
-					+ $"en {Antes.MesExpresado} fueron {Colones(GastoAntes)}";
-
-				if (!HayAlgoQueLoExplique)
-					return $"{totales}: la diferencia está repartida, sin un pasillo que la explique";
-
-				var subieron = new List<DiferenciaDeDepartamento>();
-				var bajaron = new List<DiferenciaDeDepartamento>();
-				foreach (DiferenciaDeDepartamento diferencia in LasQueExplican)
-				{
-					if (diferencia.Subio) subieron.Add(diferencia);
-					else bajaron.Add(diferencia);
-				}
-
-				var partes = new List<string> { totales };
-
-				// Al pasillo que ENTRO se le marca ahi mismo, en vez de volver a nombrarlo
-				// en una frase aparte: repetirlo hacia que la linea dijera dos veces lo
-				// mismo.
-				if (subieron.Count > 0)
-					partes.Add($"la diferencia se explica sobre todo por {Titulos(subieron, marcarLosNuevos: true)}");
-
-				if (bajaron.Count > 0)
-					partes.Add($"en cambio {Titulos(bajaron, marcarLosNuevos: false)} "
-						+ (bajaron.Count == 1 ? "bajó" : "bajaron"));
-
-				return string.Join("; ", partes);
-			}
-		}
-
-		private static string Titulos(IReadOnlyList<DiferenciaDeDepartamento> diferencias, bool marcarLosNuevos)
-		{
-			var titulos = new List<string>();
-			foreach (DiferenciaDeDepartamento diferencia in diferencias)
-				titulos.Add(marcarLosNuevos && diferencia.EsNuevo
-					? $"{diferencia.Titulo} (que no aparecía el otro mes)"
-					: diferencia.Titulo);
-
-			return Lista(titulos);
-		}
-
-		// Tres alcanzan para explicar un cambio; mas que eso ya no explica, enumera.
-		private static string Lista(List<string> nombres)
-		{
-			int cuantos = Math.Min(3, nombres.Count);
-			var recortados = nombres.GetRange(0, cuantos);
-
-			return cuantos == 1
-				? recortados[0]
-				: string.Join(", ", recortados.GetRange(0, cuantos - 1)) + " y " + recortados[cuantos - 1];
-		}
-
-		private static string Colones(decimal monto) =>
-			Plata.Colones(monto);
+		internal string Clave =>
+			!HayComparacion ? "sin-comparacion" : !HayAlgoQueLoExplique ? "repartida" : "explicada";
 	}
 
 	/// <summary>
@@ -187,8 +129,6 @@ namespace Compras.Dominio
 			MontoDespues = montoDespues;
 			this.movimientoTotal = movimientoTotal;
 		}
-
-		internal string Titulo => Categoria.Titulo;
 
 		/// <summary>Con signo: positivo si en el mes de despues entro mas de este pasillo.</summary>
 		internal decimal Cambio => MontoDespues - MontoAntes;

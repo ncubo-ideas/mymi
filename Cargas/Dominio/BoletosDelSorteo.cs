@@ -8,6 +8,18 @@ namespace Cargas.Dominio
 	/// </summary>
 	internal sealed class BoletosDelSorteo
 	{
+		/// <summary>La estacion todavia no publico el anuncio de este sorteo.</summary>
+		internal const string TodaviaNoSeAnuncio = "sin-anunciar";
+
+		/// <summary>La fecha ya paso: se rifo.</summary>
+		internal const string YaSeRifo = "ya-se-rifo";
+
+		/// <summary>Se rifa hoy mismo.</summary>
+		internal const string EsHoy = "es-hoy";
+
+		/// <summary>Falta, y cuantos dias faltan es un valor de la frase.</summary>
+		internal const string Faltan = "faltan-dias";
+
 		internal string Codigo { get; private set; }
 		internal string Nombre { get; private set; }
 		internal string Premio { get; private set; }
@@ -16,7 +28,11 @@ namespace Cargas.Dominio
 		internal int CantidadDeBoletos { get; private set; }
 		internal bool EstaVencido { get; private set; }
 		internal int DiasParaElSorteo { get; private set; }
-		internal string MontoPorBoletoExpresado { get; private set; }
+
+		/// <summary>El monto de la regla y su moneda, por separado: la cifra la escribe quien
+		/// redacta, porque el separador de miles es una decision del idioma.</summary>
+		internal decimal MontoPorBoleto { get; private set; }
+		internal string MonedaPorBoleto { get; private set; }
 
 		internal BoletosDelSorteo(Sorteo sorteo, DateTime hoy)
 		{
@@ -28,7 +44,8 @@ namespace Cargas.Dominio
 			FueAnunciado = sorteo.FueAnunciado;
 			FechaDelSorteo = sorteo.FechaDelSorteo;
 			CantidadDeBoletos = sorteo.CantidadDeBoletos;
-			MontoPorBoletoExpresado = sorteo.MontoPorBoletoExpresado;
+			MontoPorBoleto = sorteo.MontoPorBoleto;
+			MonedaPorBoleto = sorteo.MonedaPorBoleto;
 			EstaVencido = sorteo.Detalle.EstaVencidoAl(hoy);
 
 			DiasParaElSorteo = FueAnunciado && !EstaVencido
@@ -36,20 +53,14 @@ namespace Cargas.Dominio
 				: 0;
 		}
 
-		internal string ParaSonia
+		/// <summary>LA CLAVE DE LA EXPLICACION: en cual de las cuatro situaciones esta.</summary>
+		internal string ClaveDeLaExplicacion
 		{
 			get
 			{
-				string cuantos = CantidadDeBoletos == 1 ? "1 boleto" : $"{CantidadDeBoletos} boletos";
-
-				if (!FueAnunciado)
-					return $"{cuantos} de un sorteo que la estación todavía no anunció";
-
-				if (EstaVencido)
-					return $"{cuantos} para el sorteo del {FechaDelSorteo:dd/MM/yyyy}, que ya se rifó";
-
-				return $"{cuantos} para el sorteo del {FechaDelSorteo:dd/MM/yyyy}"
-					+ (DiasParaElSorteo > 0 ? $", en {DiasParaElSorteo} días" : ", hoy");
+				if (!FueAnunciado) return TodaviaNoSeAnuncio;
+				if (EstaVencido) return YaSeRifo;
+				return DiasParaElSorteo > 0 ? Faltan : EsHoy;
 			}
 		}
 	}

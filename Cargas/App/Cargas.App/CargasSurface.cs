@@ -40,6 +40,19 @@ namespace Cargas.App
 	{
 		private const string ActorName = "cargas";
 
+		/// <summary>
+		/// EN QUE IDIOMA SE DICE UNA VISTA, y lo dice QUIEN LA PIDE. Esta clase no tiene navegador
+		/// -- corre en proceso adentro de Gnothi, en la caja de wasm -- pero la cara que la consulta
+		/// SI lo es, y ya leyo la eleccion del aparato. Preguntarsela al dispositivo desde aca
+		/// ataria el paquete al navegador, que es lo que la forma hibrida existe para no hacer.
+		/// <para>
+		/// Una etiqueta vacia o que este modulo no habla cae al idioma del registro de la estacion,
+		/// que es la misma caida que hace la app suelta cuando no puede leer la eleccion.
+		/// </para>
+		/// </summary>
+		private static string Elegido(string idioma) =>
+			Frases.Frases.EsUnaEtiquetaConocida(idioma) ? idioma : Frases.Frases.IdiomaDelRegistro;
+
 		private readonly string folder;
 
 		public CargasSurface(string grantedFolder)
@@ -90,10 +103,12 @@ namespace Cargas.App
 		// proxima carga se calculan CONTRA UNA FECHA, y dejar que la pagina la mande seria dejar
 		// que la pantalla mueva el resultado.
 		[View("tablero")]
-		public object Tablero(string placa)
+		public object Tablero(string placa, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(placa)) throw new ArgumentException("falta la placa", nameof(placa));
 			if (!HasJournal) return NoData();
+
+			string dicho = Elegido(idioma);
 
 			return Read(api =>
 			{
@@ -101,11 +116,11 @@ namespace Cargas.App
 				return (object)new
 				{
 					placa,
-					rendimiento = api.Rendimiento(placa),
+					rendimiento = api.Rendimiento(placa, dicho),
 					autonomia = api.Autonomia(placa),
 					proxima = api.ProximaCarga(placa, hoy),
-					tramos = api.Tramos(placa),
-					costos = api.Costos(placa),
+					tramos = api.Tramos(placa, dicho),
+					costos = api.Costos(placa, dicho),
 					odometro = api.Odometro(placa, hoy),
 				};
 			});
@@ -115,27 +130,31 @@ namespace Cargas.App
 		// el dominio sabe la respuesta: le falta un tramo cerrado entre dos tanques llenos, o el
 		// kilometraje anotado. Es lo que convierte un guion en una instruccion.
 		[View("faltantes")]
-		public object Faltantes(string placa)
+		public object Faltantes(string placa, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(placa)) throw new ArgumentException("falta la placa", nameof(placa));
 			if (!HasJournal) return NoData();
 
+			string dicho = Elegido(idioma);
+
 			return Read(api => (object)new
 			{
 				placa,
-				faltantes = api.Faltantes(placa),
-				completitud = api.Completitud(placa),
+				faltantes = api.Faltantes(placa, dicho),
+				completitud = api.Completitud(placa, dicho),
 			});
 		}
 
 		// LA LISTA DE CARGAS de un vehiculo: el historial, que es lo que el tablero no da.
 		[View("cargas")]
-		public object Cargas(string placa)
+		public object Cargas(string placa, string idioma = "")
 		{
 			if (string.IsNullOrWhiteSpace(placa)) throw new ArgumentException("falta la placa", nameof(placa));
 			if (!HasJournal) return NoData();
 
-			return Read(api => (object)new { placa, cargas = api.Cargas(placa) });
+			string dicho = Elegido(idioma);
+
+			return Read(api => (object)new { placa, cargas = api.Cargas(placa, dicho) });
 		}
 
 		// ------------------------------------------------------------ lo que el cartero deja

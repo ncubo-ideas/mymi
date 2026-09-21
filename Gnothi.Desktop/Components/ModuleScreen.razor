@@ -17,12 +17,37 @@
 
 @if (module is null)
 {
-    <div class="empty">No module called <code>@Name</code>.</div>
+    <div class="empty">@T("pantalla.no-existe", ("nombre", Name))</div>
 }
 else
 {
     <h1>@HostState.Icon(module.Manifest) @module.Manifest.Identity</h1>
     <p class="sub">@module.Manifest.Title</p>
+    @if (module.Installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase))
+    {
+        @* LA PANTALLA DE LA INSTITUCION, en la forma hibrida. La cara corre en su propio origen
+           -un marco dentro de esta ventana, o su propia ventana con `--cara ventana`- y pregunta
+           por `consultar` a la misma superficie en proceso que contesta abajo. Abrirla es lo que
+           dispara el pull del cartero y la entrega a [Deliver]. *@
+        <div class="query">
+            <div class="title">@T("pantalla.cara.titulo", ("quien", module.Manifest.Identity))</div>
+            <div class="desc">@T("pantalla.cara.desc")</div>
+            <div style="margin-top:10px">
+                <button class="small" disabled="@faceBusy" @onclick="OpenFace">@(faceBusy ? T("pantalla.cara.abriendo") : T("pantalla.cara.abrir"))</button>
+                @* Only where it works: the icon is a Windows .lnk (DesktopShortcut). On macOS and
+                   Linux there is nothing to offer yet, so the button is not shown rather than
+                   shown and failing. *@
+                @if (OperatingSystem.IsWindows())
+                {
+                    <button class="small ghost" disabled="@faceBusy" @onclick="Pin">@T("pantalla.cara.fijar")</button>
+                }
+            </div>
+            @if (faceMessage is not null)
+            {
+                <div class="notice">@faceMessage</div>
+            }
+        </div>
+    }
 
     @foreach (DeclaredTool tool in module.EnabledTools())
     {
@@ -43,7 +68,7 @@ else
 
             <div style="margin-top:10px">
                 <button class="small" disabled="@ui.Busy" @onclick="() => Run(tool, ui)">
-                    @(ui.Busy ? "asking…" : "Run")
+                    @(ui.Busy ? T("pantalla.consultando") : T("pantalla.consultar"))
                 </button>
             </div>
 
@@ -77,6 +102,42 @@ else
     [Parameter] public string Name { get; set; } = "";
 
     private Module? module;
+    private bool faceBusy;
+    private string? faceMessage;
+
+    private async Task OpenFace()
+    {
+        if (module is null) return;
+        faceBusy = true;
+        faceMessage = null;
+        try
+        {
+            Module m = module;
+            await Task.Run(() => State.Faces.OpenFace(m, CancellationToken.None));
+            faceMessage = T("pantalla.cara.abierta");
+        }
+        catch (Exception e)
+        {
+            faceMessage = T("pantalla.cara.no-abrio", ("detalle", $"{e.GetType().Name}: {e.Message}"));
+        }
+        finally { faceBusy = false; }
+    }
+
+    // THE ICON ON THE DESKTOP: the phone's pinned shortcut. It opens Gnothi straight into this
+    // module's face; the label is the institution's, the process is Gnothi's.
+    private void Pin()
+    {
+        if (module is null) return;
+        try
+        {
+            string link = State.Faces.PinToDesktop(module, State.Root, State.JournalsRoot);
+            faceMessage = T("pantalla.cara.icono-puesto", ("quien", module.Manifest.Identity), ("archivo", Path.GetFileName(link)));
+        }
+        catch (Exception e)
+        {
+            faceMessage = T("pantalla.cara.icono-fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
+        }
+    }
     private readonly Dictionary<string, ToolUi> uis = new(StringComparer.Ordinal);
 
     protected override void OnParametersSet()

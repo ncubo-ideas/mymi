@@ -52,7 +52,9 @@ namespace Concesionario.Dominio.Pruebas
 			ARevisionPublishingTheOil("R2", TheSecondPublication, TheSecondGrade);
 			journal.Api.SupersedeRevision("R1", "R2");
 
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain(TheSecondGrade));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain(TheSecondGrade));
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo("R2"));
 			Assert.That(journal.Api.ReadRevisionState("R1"), Is.EqualTo("Superseded"));
 			Assert.That(journal.Api.ReadRevisionState("R2"), Is.EqualTo("Sealed"));
@@ -68,14 +70,16 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			ARevisionPublishingTheOil("R1", TheFirstPublication, TheFirstGrade);
 
-			string given = journal.Api.DescribeFluid("EngineOil");
+			string given = journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord);
 
 			ARevisionPublishingTheOil("R2", TheSecondPublication, TheSecondGrade);
 
 			Assert.That(given, Does.Contain("revisión R1"),
 				"Lo que la persona recibio sigue diciendo de donde salio. Una revision no llega para "
 				+ "atras a cambiarlo.");
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("revisión R2"),
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain("revisión R2"),
 				"Y preguntar de nuevo si contesta desde la nueva: aplica desde su instante HACIA "
 				+ "ADELANTE, que es la otra mitad de la ley.");
 		}

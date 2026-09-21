@@ -44,8 +44,12 @@ namespace Concesionario.Dominio.Pruebas
 			ADraftWithContent();
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.False);
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("no se ha publicado nada"));
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Not.Contain(TheGrade),
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Not.Contain(TheGrade),
 				"Y la frase no deja escapar el grado que ya esta adentro del borrador. Una ausencia "
 				+ "que igual dice el dato es la hoja citada por otro camino.");
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(""));
@@ -84,7 +88,7 @@ namespace Concesionario.Dominio.Pruebas
 			ADraftWithContent();
 			journal.Api.SealRevision(TheRevision);
 
-			string fluid = journal.Api.DescribeFluid("EngineOil");
+			string fluid = journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord);
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.True);
 			Assert.That(fluid, Does.Contain(TheGrade));
@@ -100,7 +104,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			journal.CloseAndReopenFromTheJournal();
 
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Is.EqualTo(fluid));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord), Is.EqualTo(fluid));
 			Assert.That(journal.Api.ReadCurrentRevisionCode(), Is.EqualTo(TheRevision));
 		}
 
@@ -122,7 +127,9 @@ namespace Concesionario.Dominio.Pruebas
 				"La vigente es la sellada mas nueva, no la mas nueva. R2 se esta armando.");
 			Assert.That(
 				journal.Api.ReadCurrentRevisionPublishedAt(), Is.EqualTo(Published));
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Not.Contain("0W-20"));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Not.Contain("0W-20"));
 		}
 
 		// LAS LECTURAS DE LISTA SON LA FILTRACION MAS FACIL DE PASAR POR ALTO. Una frase que se

@@ -11,7 +11,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Gnothi</title>
+<title>Mymi</title>
 <style>
   :root{
     --paper:#F5F3FB; --card:#FFFFFF; --ink:#241F3D; --muted:#6F6B85; --line:#E7E4F2;
@@ -55,7 +55,7 @@
   .logo.mark{background:none;overflow:hidden;border-radius:10px}
   .logo.mark img{width:34px;height:34px;display:block}
   .top b{font-size:21px;font-weight:800;letter-spacing:-.02em;flex:1}
-  /* THE HIERARCHY (review 2026-09-08): Gnothi + its promise, «Tus instituciones · N conectadas», the
+  /* THE HIERARCHY (review 2026-09-08): Mymi + its promise, «Tus instituciones · N conectadas», the
      cards. The greeting is gone: the space belongs to the modules, and the Assistant has its tab. */
   .top .tt{flex:1;min-width:0}
   .top .tt b{display:block;line-height:1.15}
@@ -67,10 +67,24 @@
   .chev{color:var(--muted);font-size:20px;flex:none}
 
   /* «HOLA, SONIA» + «AGREGAR MÓDULO» (mockup 2026-09-09): the greeting is the section head, and the
-     action that grows Gnothi sits next to it, in the Host's violet -- and STAYS on screen while the
+     action that grows Mymi sits next to it, in the Host's violet -- and STAYS on screen while the
      list scrolls, whether Sonia has five modules or thirty. The connect card left the grid. */
   .hola{display:flex;align-items:flex-end;gap:12px;margin:0 -16px 4px;padding:2px 18px 6px;
-       position:sticky;top:0;z-index:5;background:var(--paper)}
+       position:sticky;top:0;z-index:5;background:var(--paper);
+       /* Y SU FONDO SIGUE HASTA EL BORDE DE ARRIBA. `.scroll` tiene 12 px de relleno superior, y
+          `top:0` de una pegajosa se mide DESPUES de ese relleno: la cabecera se clavaba en y=12 y
+          por esos 12 px de aire asomaban los techos de las tarjetas que subian. Se veia una franja
+          suelta arriba del titulo, como si la cabecera flotara separada de la pantalla.
+          Medido en el Honor y en el emulador el 2026-09-21.
+
+          La sombra es un fondo, no una sombra: mismo color, sin difuminado, corrida 12 px hacia
+          arriba, asi que pinta exactamente la banda del relleno. NO se le quita el relleno a
+          `.scroll` porque son CINCO vistas colgando de esa misma clase, y NO se usa un
+          pseudo-elemento porque esto no agrega una caja ni cambia el alto: es pintura.
+
+          El color es `--paper`, el de la pantalla, no blanco puro: blanco dejaria una costura
+          visible contra el fondo de la pagina, que es justo lo que se estaba tratando de sacar. */
+       box-shadow:0 -12px 0 var(--paper)}
   .hola .t{flex:1;min-width:0}
   .hola{align-items:center}
   .hola b{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
@@ -110,7 +124,7 @@
   /* THE TYPOGRAPHY (Geaninna, 2026-09-09): Manrope for everything; the institution's typeface ONLY
      on its brand name, and moderate. «LABORATORIO CLÍNICO» small caps 10-11 px; the name 20-21 px,
      26 on the hero; the slogan 12-13 px in Manrope. The brand is the protagonist, the slogan is
-     secondary, and the chip and «Abrir» are Gnothi's -- identical on every card. */
+     secondary, and the chip and «Abrir» are Mymi's -- identical on every card. */
   .mod.photo .nm .pre{display:block;font-size:10px;font-weight:500;opacity:.85;letter-spacing:.08em;
        text-transform:uppercase;line-height:1.3}
   .mod.photo .nm b{display:block;font-family:var(--font,inherit);font-size:21px;font-weight:700;line-height:1.05;
@@ -203,7 +217,7 @@
   .chip.no{color:var(--off)}
 
   /* the ghost card: adding a module is part of the product, so the grid says so */
-  /* CONNECTING AN INSTITUTION is the action that grows Gnothi: a card unlike the brand ones (dashed
+  /* CONNECTING AN INSTITUTION is the action that grows Mymi: a card unlike the brand ones (dashed
      accent border, soft background, no stripe). */
   .mod.add{background:linear-gradient(160deg,#F1ECFF,#E6E0FA);box-shadow:none;border:1.5px dashed #C4B7F2;border-top-width:1.5px;
        color:var(--muted);align-items:center;text-align:center;justify-content:center;gap:8px;--brand:var(--accent);min-height:196px}
@@ -252,7 +266,7 @@
   .osheet.on{display:flex}
   .osheet .card{background:var(--card);border-radius:22px 22px 0 0;padding:24px 22px 30px;
        width:100%;max-height:78vh;overflow-y:auto}
-  /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Gnothi fija. */
+  /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Mymi fija. */
   .pr-hero{margin-bottom:16px}
   /* LA FRANJA DE PROCEDENCIA. Verde cuando el dominio que la institución declara se
      corresponde con el host del que bajó el bundle, ámbar cuando no, y neutra cuando no hay
@@ -315,6 +329,10 @@
   .master{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
        padding:14px;display:flex;align-items:center;gap:10px;margin:16px 0 4px}
   .master span{flex:1;font-weight:600;font-size:14.5px}
+  /* THE CHEVRON IS NOT A COLUMN. `.master span` above reaches <span class="chev"> too, and beats
+     .chev{flex:none} on specificity, so text and arrow split the row in halves: the arrow landed
+     mid-line with «adentro de Mymi» wrapping under it (measured on the 13 Pro, 2026-09-11). */
+  .master .chev{flex:none;font-weight:400}
 
   h3.cap{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
        color:var(--muted);margin:18px 4px 8px}
@@ -478,6 +496,107 @@
   .kv div{display:flex;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
   .kv div:last-child{border-bottom:none}
   .kv span{color:var(--muted);flex:1}
+  /* EL INICIO VACIO. La ilustracion manda y el resto se cuelga de ella. Todo junto tiene que
+     entrar sin scroll en un telefono corto, asi que la ilustracion se mide en unidades de
+     pantalla y no en pixeles. */
+  .nada{display:flex;flex-direction:column;align-items:center;text-align:center;padding:2vh 22px 28px}
+  .nada[hidden]{display:none}
+  .nada-art{position:relative;width:min(84vw,330px);aspect-ratio:340/210;max-height:28vh;margin-bottom:4px}
+
+  /* CADA UNO EN SU PROPIO BRAZO, anclado en el centro: girar el brazo mueve a su icono por un
+     arco alrededor de Mymi sin tocar a los demas, y por eso cada cual trae su angulo y su
+     velocidad. El icono gira al reves adentro para no quedar de lado a mitad de camino. */
+  .brazo{position:absolute;inset:0;transform-origin:50% 50%;pointer-events:none}
+  .brazo .orb{pointer-events:auto}
+  .halo{position:absolute;left:50%;top:50%;width:62%;aspect-ratio:1;opacity:0;pointer-events:none;
+        transform:translate(-50%,-50%);border-radius:50%;
+        background:radial-gradient(circle,rgba(126,146,223,.55),rgba(126,146,223,0) 68%)}
+  .red{position:absolute;inset:0;width:100%;height:100%}
+  .red .hilos path{fill:none;stroke:var(--accent);stroke-width:1;opacity:.22;
+                   stroke-linecap:round;stroke-dasharray:3 5}
+  .red .nodos circle{fill:var(--accent);opacity:.5}
+  .nada-mymi{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+             width:50%;filter:drop-shadow(0 12px 26px rgba(108,75,217,.20))}
+  .nada-art::before{content:'';position:absolute;left:50%;top:50%;width:52%;aspect-ratio:1;
+             transform:translate(-50%,-50%);border-radius:50%;
+             background:radial-gradient(circle,rgba(126,146,223,.20),rgba(126,146,223,0) 70%)}
+  .orb{position:absolute;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:14px;
+       background:var(--card);display:grid;place-items:center;
+       box-shadow:0 6px 18px rgba(36,31,61,.10)}
+  .orb svg{width:21px;height:21px;fill:none;stroke:var(--accent);stroke-width:1.7;
+           stroke-linecap:round;stroke-linejoin:round}
+  .orb.o1{left:15.3%;top:16.2%;--dx:-18.3px;--dy:-11.0px}
+  .orb.o2{left:84.7%;top:16.2%;--dx:18.3px;--dy:-11.0px}
+  .orb.o3{left:7.6%;top:53.3%;--dx:-22.4px;--dy:1.1px}
+  .orb.o4{left:92.4%;top:53.3%;--dx:22.4px;--dy:1.1px}
+  .orb.o5{left:19.4%;top:86.7%;--dx:-16.2px;--dy:12.0px}
+  .orb.o6{left:80.6%;top:86.7%;--dx:16.2px;--dy:12.0px}
+  .nada h2{margin:10px 0 0;font-size:22px;letter-spacing:-.02em}
+  /* NO ES LETRA CHICA: es la promesa del producto, asi que se lee como texto. */
+  .nada p{margin:12px 0 0;color:#4C4766;font-size:15px;line-height:1.5;max-width:320px}
+  .nada .cta{margin-top:20px;display:inline-flex;align-items:center;gap:8px;border:0;
+             background:var(--accent);color:#fff;font-size:15px;font-weight:600;
+             padding:14px 26px;border-radius:999px;box-shadow:0 8px 22px rgba(108,75,217,.28)}
+  .nada .cta span:first-child{font-size:18px;line-height:1}
+  .nada .lema{margin-top:24px;color:#3A3457;font-size:13px;letter-spacing:.03em}
+  .hola .addbtn[hidden]{display:none}
+
+  /* LA ENTRADA, UNA SOLA VEZ: llega Mymi, los seis vienen cada uno de su lado, despues se
+     dibujan los hilos, y al final la pantalla queda EXACTAMENTE como la estatica. */
+  .nada.entra .nada-mymi{animation:mymi-llega .55s cubic-bezier(.22,.7,.3,1) both}
+  .nada.entra .hilos path{animation:hilo-dibuja .75s ease-out both}
+  .nada.entra .nodos circle{animation:nodo-llega .5s ease-out 2.35s both}
+  .nada.entra .halo{animation:halo .95s ease-out 2.1s both}
+  .nada.entra .brazo.b1{animation:arco1 1.15s cubic-bezier(.19,.82,.25,1) 0.3s both}
+  .nada.entra .brazo.b1 .orb{animation:llega1 1.15s cubic-bezier(.19,.82,.25,1) 0.3s both}
+  .nada.entra .hilos .h1{animation-delay:1.10s}
+  .nada.entra .brazo.b2{animation:arco2 1.05s cubic-bezier(.19,.82,.25,1) 0.4s both}
+  .nada.entra .brazo.b2 .orb{animation:llega2 1.05s cubic-bezier(.19,.82,.25,1) 0.4s both}
+  .nada.entra .hilos .h2{animation-delay:1.20s}
+  .nada.entra .brazo.b3{animation:arco3 1.25s cubic-bezier(.19,.82,.25,1) 0.5s both}
+  .nada.entra .brazo.b3 .orb{animation:llega3 1.25s cubic-bezier(.19,.82,.25,1) 0.5s both}
+  .nada.entra .hilos .h3{animation-delay:1.30s}
+  .nada.entra .brazo.b4{animation:arco4 1.1s cubic-bezier(.19,.82,.25,1) 0.6s both}
+  .nada.entra .brazo.b4 .orb{animation:llega4 1.1s cubic-bezier(.19,.82,.25,1) 0.6s both}
+  .nada.entra .hilos .h4{animation-delay:1.40s}
+  .nada.entra .brazo.b5{animation:arco5 1.2s cubic-bezier(.19,.82,.25,1) 0.7s both}
+  .nada.entra .brazo.b5 .orb{animation:llega5 1.2s cubic-bezier(.19,.82,.25,1) 0.7s both}
+  .nada.entra .hilos .h5{animation-delay:1.50s}
+  .nada.entra .brazo.b6{animation:arco6 1.0s cubic-bezier(.19,.82,.25,1) 0.8s both}
+  .nada.entra .brazo.b6 .orb{animation:llega6 1.0s cubic-bezier(.19,.82,.25,1) 0.8s both}
+  .nada.entra .hilos .h6{animation-delay:1.60s}
+  @keyframes mymi-llega{from{opacity:0;transform:translate(-50%,-50%) scale(.96)}
+                        to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  @keyframes hilo-dibuja{from{opacity:0;stroke-dashoffset:26}to{opacity:.22;stroke-dashoffset:0}}
+  @keyframes nodo-llega{from{opacity:0}to{opacity:.5}}
+  @keyframes halo{0%{opacity:0}45%{opacity:1}100%{opacity:0}}
+  @keyframes arco1{from{transform:rotate(-64deg)}to{transform:rotate(0)}}
+  @keyframes llega1{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(64deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco2{from{transform:rotate(58deg)}to{transform:rotate(0)}}
+  @keyframes llega2{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(-58deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco3{from{transform:rotate(-76deg)}to{transform:rotate(0)}}
+  @keyframes llega3{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(76deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco4{from{transform:rotate(68deg)}to{transform:rotate(0)}}
+  @keyframes llega4{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(-68deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco5{from{transform:rotate(-54deg)}to{transform:rotate(0)}}
+  @keyframes llega5{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(54deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco6{from{transform:rotate(62deg)}to{transform:rotate(0)}}
+  @keyframes llega6{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(-62deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  /* Quien pidio menos movimiento recibe la pantalla armada, con un desvanecido corto. */
+  @media (prefers-reduced-motion:reduce){
+    .nada.entra .nada-mymi,.nada.entra .hilos path,.nada.entra .nodos circle,
+    .nada.entra .brazo,.nada.entra .brazo .orb{animation:none}
+    .nada.entra .halo{animation:none;opacity:0}
+    .nada.entra{animation:aparece .3s ease-out both}
+  }
+  @keyframes aparece{from{opacity:0}to{opacity:1}}
+
   .kv b{font-weight:600;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
@@ -490,20 +609,45 @@
       <!-- THE MARK (identidad visual v1.0, 2025): four petals around a four-point star -- your
            institutions around you, your information in the centre. Rebuilt as geometry from the
            brand board until the designer's vector arrives. -->
-      <div class="logo mark"><img alt="Gnothi" src="img/gnothi-mark.png"></div>
-      <div class="tt"><b>Gnothi</b></div>
+      <div class="logo mark"><img alt="Mymi" src="img/gnothi-mark.png"></div>
+      <div class="tt"><b>Mymi</b></div>
       <div class="ava">S</div>
     </div>
 
-    <!-- EL ALTA, MIENTRAS PASA. Es lo primero que Sonia ve hacer a Gnothi por ella: tocó un
+    <!-- EL ALTA, MIENTRAS PASA. Es lo primero que Sonia ve hacer a Mymi por ella: tocó un
          botón en la página de su institución y volvió acá. Sin esto son 12 MB de silencio. -->
     <div id="alta"></div>
 
     <div class="hola">
-      <div class="t"><b>Tus instituciones</b><small id="home-sub"></small></div>
-      <button class="addbtn" onclick="gn.sheet(true)"><span>+</span>Agregar</button>
+      <div class="t"><b data-i18n="inicio.titulo">Mis conexiones</b><small id="home-sub"></small></div>
+      <button class="addbtn" onclick="gn.sheet(true)"><span>+</span><span data-i18n="inicio.conectar">Conectar</span></button>
     </div>
     <div class="grid" id="mods"></div>
+
+    <!-- EL INICIO SIN NADA TODAVIA. Ilustracion, mensaje y boton: nada mas compitiendo con
+         ellos. Mymi va al centro y las organizaciones alrededor, porque eso es lo que hace:
+         no es una mas de la rueda, es el centro. Los seis rubros son los que este ecosistema
+         tiene de verdad; dibujar un birrete prometeria uno que no existe. -->
+    <div class="nada" id="home-empty" hidden>
+      <div class="nada-art">
+        <svg class="red" viewBox="0 0 340 210" aria-hidden="true">
+          <g class="hilos"><path class="h1" d="M170 105 Q95 60 52 34"/><path class="h2" d="M170 105 Q245 60 288 34"/><path class="h3" d="M170 105 Q84 100 26 112"/><path class="h4" d="M170 105 Q256 100 314 112"/><path class="h5" d="M170 105 Q132 135 66 182"/><path class="h6" d="M170 105 Q208 135 274 182"/></g>
+          <g class="nodos"><circle cx="83" cy="52" r="2.4"/><circle cx="257" cy="52" r="2.4"/><circle cx="63" cy="110" r="2.4"/><circle cx="277" cy="110" r="2.4"/><circle cx="93" cy="162" r="2.4"/><circle cx="247" cy="162" r="2.4"/></g>
+        </svg>
+        <div class="brazo b1"><div class="orb o1"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10l6-4 6 4v10M10 20v-5h4v5"/></svg></div></div>
+        <div class="brazo b2"><div class="orb o2"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 5 6.2 5 9a5 5 0 0 1-10 0c0-2.8 2-5 5-9z"/></svg></div></div>
+        <div class="brazo b3"><div class="orb o3"><svg viewBox="0 0 24 24"><path d="M4 5h2l2.2 9.2A2 2 0 0 0 10.1 16h6.6a2 2 0 0 0 2-1.6L20 8H7M10 20a1 1 0 1 0 2 0 1 1 0 0 0-2 0M16 20a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/></svg></div></div>
+        <div class="brazo b4"><div class="orb o4"><svg viewBox="0 0 24 24"><path d="M5 20V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v14M4 20h11M16 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5M7 9h4"/></svg></div></div>
+        <div class="brazo b5"><div class="orb o5"><svg viewBox="0 0 24 24"><path d="M4 16v-3l1.8-4.2A2 2 0 0 1 7.6 7.5h8.8a2 2 0 0 1 1.8 1.3L20 13v3M4 16h16M7 16v2H5v-2M19 16v2h-2v-2M7.5 13h2M14.5 13h2"/></svg></div></div>
+        <div class="brazo b6"><div class="orb o6"><svg viewBox="0 0 24 24"><path d="M4 8h16v11H4zM9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></div></div>
+        <div class="halo" aria-hidden="true"></div>
+        <img class="nada-mymi" src="img/mymi-hub.png" alt="">
+      </div>
+      <h2 data-i18n="inicio.vacio.titulo">Todo lo tuyo, en un solo lugar</h2>
+      <p data-i18n="inicio.vacio.cuerpo">Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.</p>
+      <button class="cta" onclick="gn.sheet(true)"><span>+</span><span data-i18n="inicio.conectar">Conectar</span></button>
+      <small class="lema" data-i18n="inicio.lema">Your world, together</small>
+    </div>
     <style id="brand-fonts"></style>
   </div>
 </div>
@@ -511,7 +655,7 @@
 <!-- ═══ DETALLE ═══ -->
 <div class="view" id="v-detail">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('home')">‹ Inicio</div>
+    <div class="back" onclick="gn.nav('home')">‹ <span data-i18n="nav.inicio">Inicio</span></div>
     <div id="detail"></div>
   </div>
 </div>
@@ -520,12 +664,12 @@
 <div class="view" id="v-chat">
   <div class="chat-head">
     <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v2M5.6 5.6l1.4 1.4M18.4 5.6L17 7M12 7a5 5 0 0 1 5 5v4a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-4a5 5 0 0 1 5-5z"/><circle cx="10" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="14" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></div>
-    <div><b>Asistente</b><small>tus módulos responden; el modelo redacta</small></div>
+    <div><b data-i18n="asistente.titulo">Asistente</b><small data-i18n="asistente.sub">tus módulos responden; el modelo redacta</small></div>
   </div>
-  <div id="msgs"><div class="empty" id="chat-empty">Preguntale a tus módulos.<br>
-    <i>«¿cómo vienen mis exámenes?»<br>«mirá mis exámenes y mis compras juntos»</i></div></div>
+  <div id="msgs"><div class="empty" id="chat-empty"><span data-i18n="asistente.vacio">Preguntale a tus módulos.</span><br>
+    <i><span data-i18n="chat.ejemplo1">«¿cómo vienen mis exámenes?»</span><br><span data-i18n="chat.ejemplo2">«mirá mis exámenes y mis compras juntos»</span></i></div></div>
   <div class="inbar">
-    <input id="q" type="text" placeholder="Escribí tu pregunta…" autocomplete="off">
+    <input id="q" type="text" placeholder="Escribí tu pregunta…" data-i18n="asistente.placeholder" data-i18n-attr="placeholder" autocomplete="off">
     <button id="send" onclick="gn.ask()">➤</button>
   </div>
 </div>
@@ -533,13 +677,13 @@
 <!-- ═══ JOURNAL ═══ -->
 <div class="view" id="v-journal">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Datos de tus instituciones</h2>
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="journal.titulo">Datos de tus instituciones</h2>
     <!-- «Información que Gnothi mantiene en este dispositivo» era el título otra vez. Y la
          segunda mitad -- lo que viaja al asistente -- estaba TAMBIÉN en la pantalla del
          proveedor, palabra por palabra. Cada promesa se hace una vez, en la pantalla donde
          importa: acá el registro es de ella; allá es donde hay un tercero. -->
-    <p class="qlead">Nadie más las lee.</p>
+    <p class="qlead" data-i18n="journal.lead">Nadie más las lee.</p>
     <div id="journal"></div>
   </div>
 </div>
@@ -547,53 +691,55 @@
 <!-- ═══ AJUSTES ═══ -->
 <div class="view" id="v-set">
   <div class="scroll">
-    <div class="top"><div class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></div><b>Ajustes</b></div>
+    <div class="top"><div class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></div><b data-i18n="ajustes.titulo">Ajustes</b></div>
 
-    <h3 class="cap">Datos en este teléfono</h3>
+    <h3 class="cap" data-i18n="ajustes.cap.datos">Datos en este teléfono</h3>
     <div class="srow" onclick="gn.nav('journal')">
       <div class="ico"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
-      <div class="t"><b>Datos de tus instituciones</b><small id="set-datos-sub"></small></div><span class="chev">›</span>
+      <div class="t"><b data-i18n="journal.titulo">Datos de tus instituciones</b><small id="set-datos-sub"></small></div><span class="chev">›</span>
     </div>
 
-    <h3 class="cap">Asistente</h3>
+    <h3 class="cap" data-i18n="asistente.titulo">Asistente</h3>
     <div class="srow tall" onclick="gn.nav('prov')">
       <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/></svg></div>
-      <div class="t"><b>Proveedor de IA</b>
+      <div class="t"><b data-i18n="ajustes.proveedor-ia">Proveedor de IA</b>
         <small id="set-prov-sub"></small><small id="set-key-sub"></small></div>
       <span class="chev">›</span>
     </div>
 
-    <h3 class="cap">Información técnica</h3>
+    <h3 class="cap" data-i18n="ajustes.cap.tecnica">Información técnica</h3>
     <div class="kv tech" id="set-host"></div>
 
-    <p class="hint" style="margin-top:22px">Tus datos permanecen en este dispositivo.</p>
+    <p class="hint" style="margin-top:22px" data-i18n="ajustes.permanecen">Tus datos permanecen en este dispositivo.</p>
   </div>
 </div>
 
 <!-- ═══ PROVEEDOR DE IA ═══ -->
 <div class="view" id="v-prov">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Proveedor de IA</h2>
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="ajustes.proveedor-ia">Proveedor de IA</h2>
     <!-- «Todos hablan el mismo formato» se fue: es verdad cuando se ELIGE proveedor, y eso pasa
          en la otra hoja, donde también estaba escrito. Acá ya hay uno puesto. Queda lo único que
          esta pantalla tiene que decir, que es qué sale del teléfono. -->
-    <p class="qlead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
+    <p class="qlead" data-i18n="prov.lead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
     <div class="kv" id="set-model"></div>
 
-    <h3 class="cap">Acceso</h3>
+    <h3 class="cap" data-i18n="prov.cap.acceso">Acceso</h3>
     <!-- The key card: state and actions, and an editor that NEVER echoes the stored value. -->
     <div class="key" id="set-key"></div>
     <!-- «Gratuita o de pago» vive en la hoja donde se elige proveedor, que es donde ella se
-         pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver. -->
-    <p class="hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
+         pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver.
+         El id es para poder OCULTARLO: con el modelo del aparato no hay proveedor al que
+         viajarle, así que la frase deja de ser cierta. Ver paint(). -->
+    <p class="hint" id="prov-hint" data-i18n="prov.hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
 
-    <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)">Cambiar proveedor</button>
+    <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)" data-i18n="prov.cambiar">Cambiar proveedor</button>
   </div>
 </div>
 
 <!-- ═══ EL ALTA: LO QUE LA INSTITUCIÓN PROPONE ═══
-     Instalar un módulo es el acto más grande que Sonia hace en Gnothi: le da a una
+     Instalar un módulo es el acto más grande que Sonia hace en Mymi: le da a una
      institución una carpeta suya y un endpoint registrado. Hasta el 2026-09-04 pasaba sola,
      como efecto de tocar un enlace. Acá se le muestra QUÉ trae y QUÉ va a poder hacer, y
      recién si acepta el módulo ocupa un lugar. Cancelar no deja nada. -->
@@ -601,15 +747,32 @@
   <div class="card">
     <div id="pr-h" class="hero pr-hero"></div>
     <div id="pr-cuerpo"></div>
-    <button class="cta" onclick="gn.altaAceptar()">Instalar en mi teléfono</button>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()">Ahora no</button>
+    <button class="cta" onclick="gn.altaAceptar()" data-i18n="propuesta.instalar">Instalar en mi teléfono</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()" data-i18n="propuesta.ahora-no">Ahora no</button>
+  </div>
+</div>
+
+<!-- ═══ QUITAR UN MÓDULO ═══
+     Hasta 2026-09-11 no había forma: la persona podía apagar un módulo, pero no sacarlo del
+     teléfono, y «volver a instalar» era borrar Mymi entera. La app de la institución y la
+     bitácora son dos cosas: la app se va siempre; la bitácora es de la persona y se queda salvo
+     que ella marque lo contrario, y si el manifiesto dice que no se puede reconstruir, acá se
+     le dice con todas las letras antes de que lo marque. -->
+<div id="quitar" class="osheet" onclick="if(event.target===this)gn.quitarCerrar()">
+  <div class="card">
+    <h4 id="q-titulo" data-i18n="quitar.titulo">Quitar</h4>
+    <p id="q-cuerpo"></p>
+    <label class="chk"><input id="q-journal" type="checkbox"> <span data-i18n="quitar.borrar-bitacora">Borrar también mi bitácora de este teléfono</span></label>
+    <p id="q-aviso" class="hint"></p>
+    <button class="cta" onclick="gn.quitarConfirmar()" data-i18n="quitar.titulo">Quitar</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.quitarCerrar()" data-i18n="general.cancelar">Cancelar</button>
   </div>
 </div>
 
 <!-- ═══ THE CODE READER ═══
      The institution's page shows a QR with the SAME link as its button, for the person who reads
-     the page on a computer and has Gnothi on her phone. Here it is read with the phone's camera,
-     inside Gnothi. Decoding is jsQR (jsqr.js next to this file, Apache-2.0): pure JavaScript that
+     the page on a computer and has Mymi on her phone. Here it is read with the phone's camera,
+     inside Mymi. Decoding is jsQR (jsqr.js next to this file, Apache-2.0): pure JavaScript that
      ships with the page, so it reads the same on every phone and nothing leaves it. The WebView's
      own BarcodeDetector is only a fallback: the emulator offered it and Play Services never
      downloaded the barcode module behind it, so detect() returned nothing, forever, silently.
@@ -619,49 +782,49 @@
   <video id="cam" autoplay playsinline muted></video>
   <div class="scan-ui">
     <div class="scan-box"></div>
-    <p id="scan-msg">Apuntá al código de tu institución</p>
-    <button onclick="gn.scan.stop()">Cancelar</button>
+    <p id="scan-msg" data-i18n="scan.apunta">Apuntá al código de tu institución</p>
+    <button onclick="gn.scan.stop()" data-i18n="general.cancelar">Cancelar</button>
   </div>
 </div>
 
 <!-- ═══ ADDING A MODULE: THE WAYS IN ═══
      Until 2026-09-08 this sheet only explained and closed with "Entendido": every enrollment
-     began OUTSIDE, on the institution's link. Now the person can paste that link here. Gnothi
+     began OUTSIDE, on the institution's link. Now the person can paste that link here. Mymi
      downloads it, inspects it and shows what it carries before installing anything -- the same
      "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
-    <h4>Tus instituciones, siempre contigo.</h4>
+    <h4 data-i18n="agregar.titulo">Tus instituciones, siempre contigo.</h4>
     <!-- UNA SOLA FRASE, y es la que ella no puede adivinar. Eran tres: la primera repetía el
          título con otras palabras, la segunda repetía «llevá con vos» que el título ya dice, y
          la tercera -la única con información- quedaba al final. Las tres vías de abajo dicen qué
          hacer; esto dice lo que pasa después de tocarlas. -->
-    <p>Gnothi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
+    <p data-i18n="agregar.lead">Mymi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
     <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
          row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
     <div class="vias">
       <button class="via" id="alta-scan" onclick="gn.scan.start()">
         <span class="vi"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M17 20h3M14 20h.5"/></svg></span>
-        <span class="vt"><b>Escanear su código</b><small>el QR de su página, o el de tu hoja de resultados</small></span>
+        <span class="vt"><b data-i18n="agregar.escanear">Escanear su código</b><small data-i18n="agregar.escanear.sub">el QR de su página, o el de tu hoja de resultados</small></span>
         <span class="chev">›</span>
       </button>
       <button class="via" id="alta-link" onclick="gn.altaMostrarEnlace()">
         <span class="vi"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
-        <span class="vt"><b>Pegar su enlace</b><small>el que te llegó por correo o por WhatsApp</small></span>
+        <span class="vt"><b data-i18n="agregar.pegar">Pegar su enlace</b><small data-i18n="agregar.pegar.sub">el que te llegó por correo o por WhatsApp</small></span>
         <span class="chev">›</span>
       </button>
       <div id="alta-enlace" class="enlace">
         <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
-        <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
+        <button class="cta" onclick="gn.altaDesdeEnlace()" data-i18n="inicio.conectar">Conectar</button>
       </div>
       <button class="via" id="alta-file" onclick="gn.altaArchivo()">
         <span class="vi"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></span>
-        <span class="vt"><b>Elegir archivos en mi teléfono</b><small>se abre en Descargas; podés elegir varios</small></span>
+        <span class="vt"><b data-i18n="agregar.archivos">Elegir archivos en mi teléfono</b><small data-i18n="agregar.archivos.sub">se abre en Descargas; podés elegir varios</small></span>
         <span class="chev">›</span>
       </button>
     </div>
     <div id="alta-hint" style="min-height:18px;margin:8px 4px 0;font-size:13px;color:#8E2A1F"></div>
-    <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Gnothi:
+    <p id="alta-noscan" style="display:none"><small data-i18n="agregar.sin-lector">Este teléfono no puede leer códigos desde Mymi:
     pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
     <!-- SE FUE la cuarta vía en letra chica: «si estás en la página de tu institución, su botón
          hace lo mismo». Es cierta y no sirve acá -- quien está leyendo esto ya eligió venir por
@@ -670,44 +833,44 @@
   </div>
 </div>
 
-<!-- ═══ WHAT SHE PICKED: the modules Gnothi found among the files, to choose from ═══
+<!-- ═══ WHAT SHE PICKED: the modules Mymi found among the files, to choose from ═══
      Several files come from the picker; each got a quick look (manifest, inspection, signed or not)
      and nothing else. Tapping one runs the whole examination and opens its proposal; when that ends
      the list comes back with the row marked, so she goes on with the next. -->
 <div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
   <div class="card">
-    <h4>Esto encontré en lo que elegiste</h4>
+    <h4 data-i18n="hallazgos.titulo">Esto encontré en lo que elegiste</h4>
     <!-- SIN PÁRRAFO. Decía «tocá el módulo que querés agregar» -- sobre una lista de módulos --,
          «Gnothi te muestra qué trae antes de instalarlo» -- ya dicho en la hoja anterior -- y
          «podés seguir con el siguiente», que se descubre cuando vuelve la lista con la fila
          marcada. Tres frases y ninguna aportaba. -->
     <div id="ha-lista"></div>
-    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()">Listo</button>
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()" data-i18n="general.listo">Listo</button>
   </div>
 </div>
 
 <!-- the provider picker: choose, then just paste that provider's key -->
 <div id="psheet" class="osheet" onclick="if(event.target===this)gn.psheet(false)">
   <div class="card">
-    <h4>Elegí el proveedor del modelo</h4>
+    <h4 data-i18n="prov.elegir.titulo">Elegí el proveedor del modelo</h4>
     <!-- «Elegí uno» sobre una lista, bajo un título que dice «elegí el proveedor», sobraba. -->
-    <p>Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
+    <p data-i18n="prov.elegir.lead">Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
     <div id="plist"></div>
     <div id="pcustom" style="display:none">
       <input id="cu-url" autocomplete="off" spellcheck="false" placeholder="https://servidor/v1">
-      <input id="cu-model" autocomplete="off" spellcheck="false" placeholder="nombre-del-modelo">
-      <button class="cta" onclick="gn.saveCustom()">Usar este</button>
+      <input id="cu-model" autocomplete="off" spellcheck="false" placeholder="nombre-del-modelo" data-i18n="prov.nombre-del-modelo" data-i18n-attr="placeholder">
+      <button class="cta" onclick="gn.saveCustom()" data-i18n="prov.usar-este">Usar este</button>
     </div>
   </div>
 </div>
 
 <nav>
   <button id="n-home" class="on" onclick="gn.nav('home')">
-    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>Inicio</button>
+    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg><span data-i18n="nav.inicio">Inicio</span></button>
   <button id="n-chat" onclick="gn.nav('chat')">
-    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L3 20l1.1-4.1a8 8 0 0 1-1.1-4.4A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>Asistente</button>
+    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L3 20l1.1-4.1a8 8 0 0 1-1.1-4.4A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg><span data-i18n="asistente.titulo">Asistente</span></button>
   <button id="n-set" onclick="gn.nav('set')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Ajustes</button>
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg><span data-i18n="nav.ajustes">Ajustes</span></button>
 </nav>
 
 <script>
@@ -715,7 +878,7 @@
 
 // THE BRAND COMES FROM THE BUNDLE (2026-09-08). Until now the icon was the Host's: a small map keyed
 // by module name, and the institution went in grey small print under «Mis exámenes». Institutions
-// put their module in Gnothi so Sonia sees THEIR brand, so the icon and the color come from the
+// put their module in Mymi so Sonia sees THEIR brand, so the icon and the color come from the
 // manifest.webmanifest they publish inside the bundle (BrandAssets.cs reads it and it travels in
 // the state as `brand`). The map below stays as a FALLBACK: a module without a brand falls to its
 // glyph, and an unknown one to the indigo box.
@@ -757,7 +920,7 @@ function tint(hex, a) {
 const nameOf    = m => m.shortName || m.institution || m.title;
 // THE NAME IN TWO TIERS, as the mockup reads it: «Laboratorio Clínico» small over «Delfos» big. The
 // big one is brand.shortName; the small one is what the institution's full name has before it. When
-// there is no shortName the split is at the first word -«Sotavento» / «Motors»-, and a one-word
+// there is no shortName the split is at the first word -«Sotaventos» / «Motors»-, and a one-word
 // name goes big alone.
 function tiers(m) {
   const full = (m.institution || m.title || '').trim(), short = (m.shortName || '').trim();
@@ -797,7 +960,7 @@ function legible(hex) {
   }
   return 'var(--ink)';
 }
-// El color de este módulo ya corregido, o el acento de Gnothi si no declaró ninguno. Las
+// El color de este módulo ya corregido, o el acento de Mymi si no declaró ninguno. Las
 // pantallas piden esto y no `m.brand.color`: así ninguna se olvida de la corrección.
 //
 // El fondo sale del `tint(hex, a)` de más arriba, que ya estaba y es más general que el que
@@ -823,7 +986,7 @@ const sobre = c => {
 const gn = {
   state: null, open: null, busy: false, seq: 0,
 
-  // ABRIR EL MODULO: la app de la institucion se dibuja a si misma, adentro de Gnothi
+  // ABRIR EL MODULO: la app de la institucion se dibuja a si misma, adentro de Mymi
   // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
   abrir(name) { gn.call('abrir', { module: name }); },
 
@@ -847,13 +1010,38 @@ const gn = {
       if (dicho) dicho.textContent = 'Se lo pedimos a tu pantalla de inicio. Si no aparece, fijate que acepte accesos directos.';
       return;
     }
-    if (dicho) dicho.textContent = r.razon || 'No se pudo poner el acceso directo.';
+    if (dicho) dicho.textContent = r.razon || T('detalle.fijar.fallo');
   },
 
   // «HAY UNA VERSIÓN NUEVA» (NotasGnothiHost/44 §4): the package the institution publishes is
   // fetched and examined like a link that landed; the update sheet follows, and only her yes
   // there installs it.
   actualizar(name) { gn.call('actualizar', { module: name }); },
+
+  // QUITAR: pedir, confirmar, cerrar. El nombre corto de la institución en el título, para que
+  // la persona lea «Quitar Faro» y no «Quitar cargas», que es la llave técnica.
+  quitarPedir(name) {
+    const m = gn.state.modules.find(x => x.name === name);
+    if (!m) return;
+    gn.quitando = name;
+    const quien = m.shortName || m.institution || m.title;
+    const dia = m.diary || {};
+    document.getElementById('q-titulo').textContent = T('quitar.de', { quien: quien });
+    document.getElementById('q-cuerpo').textContent = T('quitar.cuerpo', { quien: quien });
+    document.getElementById('q-journal').checked = false;
+    document.getElementById('q-aviso').textContent = dia.reconstruible === false
+      ? T('quitar.irrecuperable')
+      : '';
+    document.getElementById('quitar').classList.add('on');
+  },
+  quitarCerrar() { document.getElementById('quitar').classList.remove('on'); gn.quitando = null; },
+  quitarConfirmar() {
+    const name = gn.quitando, journal = document.getElementById('q-journal').checked;
+    gn.quitarCerrar();
+    if (!name) return;
+    const s = gn.call('quitar', { module: name, journal });
+    if (s) { gn.state = s; gn.nav('home'); gn.paint(); }
+  },
 
   sheet(on) {
     document.getElementById('sheet').classList.toggle('on', on);
@@ -870,6 +1058,7 @@ const gn = {
   // home it answers false so Android does its own thing (the app steps aside).
   back() {
     if (document.getElementById('sheet').classList.contains('on')) { gn.sheet(false); return true; }
+    if (document.getElementById('quitar').classList.contains('on')) { gn.quitarCerrar(); return true; }
     for (const sub of ['journal', 'prov'])
       if (document.getElementById('v-' + sub).classList.contains('on')) { gn.nav('set'); return true; }
     if (!document.getElementById('v-home').classList.contains('on')) { gn.nav('home'); return true; }
@@ -889,7 +1078,7 @@ const gn = {
     if (kind === 'state')  { gn.state = JSON.parse(payload); gn.paint(); return; }
     if (kind === 'trace')  { gn.traceLine(payload); return; }
     if (kind === 'answer') { gn.answer(payload, false); return; }
-    if (kind === 'fail')   { gn.answer('No pude contestar: ' + payload, true); return; }
+    if (kind === 'fail')   { gn.answer(T('chat.no-pude', { detalle: payload }), true); return; }
     if (kind === 'alta')   { if (JSON.parse(payload).estado === 'nada') { document.getElementById('alta').innerHTML = ''; return; } gn.alta(JSON.parse(payload)); return; }
     if (kind === 'propuesta') { gn.verPropuesta(JSON.parse(payload)); return; }
     if (kind === 'hallazgos') { gn.hallazgos(JSON.parse(payload)); return; }
@@ -898,7 +1087,7 @@ const gn = {
   // EL ALTA, MIENTRAS PASA. "listo" se va solo a los 6 segundos porque ya se ve la tarjeta
   // nueva abajo; "error" SE QUEDA, porque si no la persona vuelve a quedarse sin saber por qué.
   // LO QUE LA INSTITUCIÓN PROPONE, antes de que exista nada. Se le muestra a Sonia lo que el
-  // manifiesto DECLARA -quién es, qué consultas ofrece- y las dos cosas que decide Gnothi y
+  // manifiesto DECLARA -quién es, qué consultas ofrece- y las dos cosas que decide Mymi y
   // ella tiene derecho a saber: dónde va a vivir el registro y contra qué endpoint va a hablar.
   propuesta: null,
   verPropuesta(p) {
@@ -911,92 +1100,123 @@ const gn = {
       // The shell sends the proposal's brand as `marca`; the state uses `brand`. Take either.
       iconOf({ name: p.modulo, brand: p.brand || p.marca })
       + '<div><b>' + esc(p.institucion || p.titulo) + '</b>'
-      + '<small>' + esc((p.actualizacion && p.actualizacion.tipo === 'actualizacion' ? 'Actualizar '
-                         : p.actualizacion && p.actualizacion.tipo === 'anterior' ? 'Volver a una versión anterior de '
-                         : p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo) + '</small></div>';
+      + '<small>' + T(p.actualizacion && p.actualizacion.tipo === 'actualizacion' ? 'hoja.cabecera.actualizar'
+                       : p.actualizacion && p.actualizacion.tipo === 'anterior' ? 'hoja.cabecera.anterior'
+                       : p.yaEstaba ? 'hoja.cabecera.reinstalar' : 'hoja.cabecera.agregar',
+                       { titulo: esc(p.titulo) }) + '</small></div>';
 
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
 
     // WHAT GNOTHI CHECKED before showing anything. It comes from the package inspection and the
-    // provenance: facts Gnothi found out by itself, not what the institution declares. And it
+    // provenance: facts Mymi found out by itself, not what the institution declares. And it
     // says what is NOT checked yet -- that the host that served the package is the institution's.
     const rev = p.revision || {}, pro = p.procedencia || {};
-    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
-    const via = pro.origen === 'qr' ? ', del código que escaneaste'
-              : pro.origen === 'pegado' ? ', del enlace que pegaste' : '';
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
+    const via = pro.origen === 'qr' ? T('hoja.via.qr')
+              : pro.origen === 'pegado' ? T('hoja.via.pegado') : '';
     const host = esc(pro.servido || p.servido || '?');
-    const sello = pro.sello ? '<small>El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.</small>' : '';
+    const sello = pro.sello ? peq(T('hoja.respaldo.sello')) : '';
+    const inseguro = pro.seguro ? '' : peq(T('hoja.respaldo.inseguro'));
 
     // A FILE came from no origin; but the package claims one, and that origin was asked whether
     // it publishes exactly this package. `host` is the file's name here.
     const quien = esc((pro.origenDeclarado || '').replace(/^https?:\/\//, '') || '?');
+    const nHost = fuerte(host), nQuien = fuerte(quien);
+    const llego = T('hoja.archivo.llego', { archivo: nHost });
     const archivoTexto = {
-      'verificado': 'Llegó como el archivo <b>' + host + '</b>, y <b>' + quien + '</b> lo respalda: publica exactamente este paquete.'
-        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
-      'sin-publicacion': 'Llegó como el archivo <b>' + host + '</b>.'
-        + '<small>Dice ser de <b>' + quien + '</b>, pero ese origen no publica cuáles módulos son suyos: no se pudo verificar.</small>',
-      'no-publicado': 'Llegó como el archivo <b>' + host + '</b>.'
-        + '<small>Dice ser de <b>' + quien + '</b>, y ese origen <b>no publica este paquete</b> (o publica otra versión).</small>',
-      'sin-origen-declarado': 'Llegó como el archivo <b>' + host + '</b>.'
-        + '<small>No declara de qué origen es: nadie responde por él.</small>',
+      'verificado': T('hoja.archivo.verificado', { archivo: nHost, quien: nQuien }) + inseguro,
+      'sin-publicacion': llego + peq(T('hoja.archivo.sin-publicacion', { quien: nQuien })),
+      'no-publicado': llego + peq(T('hoja.archivo.no-publicado', { quien: nQuien })),
+      'sin-origen-declarado': llego + peq(T('hoja.archivo.sin-origen')),
     };
 
     // THE ORIGIN CHECK, in the person's words: the origin that served the package was asked
     // whether the package is its own, and the package was asked which origin it claims.
+    const sirvio = T('hoja.respaldo.sirvio', { host: nHost, via: via });
     const respaldoTexto = pro.origen === 'archivo' ? archivoTexto : {
-      'verificado': 'Lo respalda <b>' + host + '</b>' + via + ': ese origen publica este módulo y el paquete dice ser suyo.'
-        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
-      'sin-publicacion': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Ese origen no publica cuáles módulos son suyos, así que Gnothi no pudo verificarlo: fijate que lo reconozcas.</small>',
-      'no-publicado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Ese origen publica sus módulos y <b>este no está entre ellos</b>.</small>',
-      'sin-origen-declarado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Ese origen lo publica, pero el paquete no declara de qué origen es: no queda atado del todo.</small>',
-      'otro-origen': 'Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>El paquete dice ser de <b>' + esc(pro.origenDeclarado || '?') + '</b>, y no lo sirvió ese origen.</small>',
+      'verificado': T('hoja.respaldo.verificado', { host: nHost, via: via }) + inseguro,
+      'sin-publicacion': sirvio + peq(T('hoja.respaldo.sin-publicacion')),
+      'no-publicado': sirvio + peq(T('hoja.respaldo.no-publicado')),
+      'sin-origen-declarado': sirvio + peq(T('hoja.respaldo.sin-origen')),
+      'otro-origen': sirvio + peq(T('hoja.respaldo.otro-origen', { quien: fuerte(esc(pro.origenDeclarado || '?')) })),
     };
     const respaldo = (respaldoTexto[pro.respaldo]
       || (pro.origen === 'archivo'
-        ? 'Llegó como el archivo <b>' + host + '</b>.<small>No viene de ningún origen: nadie responde por él.</small>'
-        : 'Lo sirvió <b>' + host + '</b>' + via + '.<small>Gnothi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>'))
+        ? llego + peq(T('hoja.archivo.sin-ninguno'))
+        : sirvio + peq(T('hoja.respaldo.no-verificado'))))
       + sello;
 
-    // THE SIGNATURE: whose key, and since when Gnothi knows it. Continuity, not virtue.
-    const desde = pro.firmaDesde ? new Date(pro.firmaDesde).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    // LA MISMA REVISIÓN, DICHA SIN EL DATO TÉCNICO (Geaninna, 2026-09-21). Arriba, donde la
+    // persona decide en quién confía, una IP y un nombre de llave no ayudan: o no le dicen nada o
+    // la asustan. Lo que sí decide es QUIÉN publica, y eso es el dominio.
+    //
+    // NO ES UN TEXTO MÁS BLANDO: es el mismo, sin el host ni la llave adentro. Los estados que
+    // son advertencia -- sin publicación, no publicado, otro origen, llave nueva, llave cambiada
+    // -- siguen arriba con su redacción entera. Lo único que baja al pliegue es el DATO.
+    // Un archivo elegido a mano conserva su rama: ahí «{archivo}» es el nombre que ella eligió,
+    // no una IP, y decirlo la ayuda a reconocerlo.
+    const respaldoArriba = (pro.origen === 'archivo'
+      ? (archivoTexto[pro.respaldo] || llego + peq(T('hoja.archivo.sin-ninguno')))
+      : ({
+          'verificado': T('hoja.respaldo.verificado.dominio', { quien: nQuien }),
+          'sin-publicacion': T('hoja.respaldo.sin-publicacion'),
+          'no-publicado': T('hoja.respaldo.no-publicado'),
+          'sin-origen-declarado': T('hoja.respaldo.sin-origen'),
+          'otro-origen': T('hoja.respaldo.otro-origen', { quien: nQuien }),
+        }[pro.respaldo] || T('hoja.respaldo.no-verificado')));
+
+
+    // THE SIGNATURE: whose key, and since when Mymi knows it. Continuity, not virtue.
+    const desde = pro.firmaDesde ? dia(pro.firmaDesde) : '';
     const llave = esc(pro.firmante || '?');
     const firma = {
-      'sin-firma': 'El paquete no viene firmado.',
+      'sin-firma': T('hoja.firma.sin-firma'),
       'publicada': desde
-        ? 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + '), y su origen la publica.'
-        : 'Firmado por la llave «' + llave + '», que su origen publica.<small>Gnothi la va a recordar para la próxima vez.</small>',
-      'conocida': 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + ').<small>Su origen no contestó, pero la llave ya la conocías.</small>',
-      'rotada': 'Firmado con una <b>llave nueva</b> («' + llave + '»), que su origen publica.<small>No es la de la vez pasada. Gnothi va a recordar esta.</small>',
-      'desconocida': 'Firmado por una llave («' + llave + '») que su origen <b>no publica</b> y que Gnothi no conocía.',
-      'cambiada': '<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva («' + llave + '»).',
-    }[pro.firma] || 'El paquete no viene firmado.';
+        ? T('hoja.firma.publicada.desde', { desde: desde })
+        : T('hoja.firma.publicada.primera', { llave: llave }) + peq(T('hoja.firma.publicada.recordar')),
+      'conocida': T('hoja.firma.conocida', { desde: desde }) + peq(T('hoja.firma.conocida.detalle')),
+      'rotada': T('hoja.firma.rotada', { llave: llave }) + peq(T('hoja.firma.rotada.detalle')),
+      'desconocida': T('hoja.firma.desconocida', { llave: llave }),
+      'cambiada': T('hoja.firma.cambiada', { llave: llave }),
+    }[pro.firma] || T('hoja.firma.sin-firma');
+
+    // LA MISMA FIRMA, SIN EL NOMBRE DE LA LLAVE, que se fue al pliegue. El ESTADO no se
+    // pliega: una llave nueva, una que su origen no publica y una que cambio siguen dichas
+    // arriba con todas las letras. Va aca y no mas arriba porque necesita `desde` y `llave`.
+    const firmaArriba = {
+      'sin-firma': T('hoja.firma.sin-firma'),
+      'publicada': desde
+        ? T('hoja.firma.publicada.desde', { desde: desde })
+        : T('hoja.firma.publicada.primera.sin-llave') + peq(T('hoja.firma.publicada.recordar')),
+      'conocida': T('hoja.firma.conocida', { desde: desde }) + peq(T('hoja.firma.conocida.detalle')),
+      'rotada': T('hoja.firma.rotada.sin-llave') + peq(T('hoja.firma.rotada.detalle')),
+      'desconocida': T('hoja.firma.desconocida.sin-llave'),
+      'cambiada': T('hoja.firma.cambiada.sin-llave'),
+    }[pro.firma] || T('hoja.firma.sin-firma');
 
     // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
     // footnote: the warning goes first, and says how bad it is. A changed key is the loudest.
-    const desconfiar = pro.firma === 'cambiada' ? 'Viene firmado con otra llave que la vez pasada, y su origen no publica la nueva.'
-      : pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.'
-      : pro.respaldo === 'no-publicado' ? (pro.origen === 'archivo' ? 'El origen que dice ser suyo no publica este paquete.' : 'El origen que lo sirvió no lo reconoce como suyo.')
+    const desconfiar = pro.firma === 'cambiada' ? T('hoja.alerta.cambiada')
+      : pro.respaldo === 'otro-origen' ? T('hoja.alerta.otro-origen')
+      : pro.respaldo === 'no-publicado' ? T(pro.origen === 'archivo' ? 'hoja.alerta.no-publicado.archivo' : 'hoja.alerta.no-publicado.servido')
       : null;
+    const ojo = t => '<p class="ojo">' + t + '</p>';
     const alerta = desconfiar
-      ? '<p class="ojo"><b>Desconfiá de este módulo.</b> ' + desconfiar + ' Si no lo esperabas, «Ahora no».</p>'
+      ? ojo(T('hoja.alerta.desconfia', { motivo: desconfiar }))
       : pro.respaldo === 'verificado' && pro.firma !== 'desconocida' ? ''
       : pro.respaldo === 'verificado'
-        ? '<p class="ojo">Su origen lo publica, pero viene firmado por una llave que ese origen <b>no publica</b>. Abajo dice más.</p>'
-        : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Gnothi no pudo confirmar que '
-          + (pro.origen === 'archivo' ? 'alguien responda por este archivo' : host + ' publique este módulo') + '. Abajo dice por qué.</p>';
+        ? ojo(T('hoja.alerta.llave-no-publicada'))
+        : ojo(pro.origen === 'archivo'
+            ? T('hoja.alerta.sin-respaldo.archivo')
+            : T('hoja.alerta.sin-respaldo.host', { host: host }));
     const forma = rev.forma === 'hospedado'
-      ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
-        + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
-      : 'Trae solo su dominio, sin motor propio.<small>El motor se lo presta Gnothi.</small>';
+      ? T('hoja.forma.hospedado', { archivos: (rev.archivos || 0), peso: mb(rev.bytes) })
+        + peq(T('hoja.forma.motor', { peso: mb(rev.motorBytes) }))
+      : T('hoja.forma.cargo') + peq(T('hoja.forma.cargo.detalle'));
     const caps = (rev.excesos && rev.excesos.length)
-      ? 'Pide más de lo que un módulo de datos necesita: <b>' + esc(rev.excesos.join(', ')) + '</b>.'
-        + '<small>Se instala apagado. Vos decidís si lo encendés.</small>'
-      : 'No pide red, ni micrófono, ni parlante.';
+      ? T('hoja.caps.pide-mas', { lista: esc(rev.excesos.join(', ')) }) + peq(T('hoja.caps.apagado'))
+      : T('hoja.caps.no-pide');
 
     // THE PUBLISHER'S IDENTITY, from the brand line: legal name, tax id, version, and the domain it
     // DECLARES next to the host that served it. Three states, like the detail: coincide, no
@@ -1007,50 +1227,65 @@ const gn = {
     // switches. The publisher's endpoint only moves with her own yes, the checkbox below.
     const up = p.actualizacion;
     const cambio = !up ? '' : (() => {
-      const versiones = up.versionada ? ' de <b>' + esc(up.versionInstalada) + '</b> a <b>' + esc(up.versionNueva) + '</b>' : '';
+      // LOS CASOS ESTAN ENUMERADOS, no pegados de pedazos: cada uno es una frase entera con sus
+      // valores. Antes la version se concatenaba en medio de la oracion y el ingles no puede
+      // ponerla en el mismo lugar.
+      const nueva = esc(up.versionNueva), instalada = esc(up.versionInstalada);
       const cabecera = up.tipo === 'misma'
-          ? '<p class="ojo">Ya tenés <b>exactamente este paquete</b>. Reinstalarlo solo repara la app; tu registro y tus interruptores quedan como están.</p>'
+          ? ojo(T('hoja.cambio.misma'))
         : up.tipo === 'anterior'
-          ? '<p class="ojo"><b>Es más viejo que el que tenés</b>' + (up.versionada ? ': es la ' + esc(up.versionNueva) + ' y tenés la ' + esc(up.versionInstalada) : '') + '. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».</p>'
+          ? ojo(up.versionada ? T('hoja.cambio.anterior.versionada', { nueva: nueva, instalada: instalada }) : T('hoja.cambio.anterior'))
         : up.tipo === 'otro-contenido'
-          ? '<p class="ojo"><b>Misma versión, contenido distinto.</b> La institución cambió el paquete sin subir la versión' + (up.versionada ? ' (' + esc(up.versionNueva) + ')' : '') + '. Abajo dice qué cambia.</p>'
-          : '<p class="ojo suave"><b>Actualización</b>' + versiones + (up.versionada ? '' : '. La institución no versiona sus paquetes; Gnothi compara el contenido') + '. Tu registro y tus interruptores quedan como están.</p>';
+          ? ojo(up.versionada ? T('hoja.cambio.otro-contenido.versionada', { version: nueva }) : T('hoja.cambio.otro-contenido'))
+          : '<p class="ojo suave">' + (up.versionada
+              ? T('hoja.cambio.actualizacion', { instalada: instalada, nueva: nueva })
+              : T('hoja.cambio.actualizacion.sin-version')) + '</p>';
       const nombres = ts => ts.map(t => esc(t.titulo || t.nombre)).join(', ');
       const items = [];
-      if (up.consultasNuevas.length)  items.push('<b>Consultas nuevas:</b> ' + nombres(up.consultasNuevas) + '.<small>Entran encendidas: las estás aceptando con esta hoja.</small>');
-      if (up.consultasQuitadas.length) items.push('<b>Consultas que ya no están:</b> ' + nombres(up.consultasQuitadas) + '.');
-      if (up.capacidadesNuevas.length) items.push('<b>Ahora pide más:</b> ' + esc(up.capacidadesNuevas.join(', ')) + '.<small>Se instala apagado. Vos decidís si lo encendés.</small>');
-      if (up.publicadorCambia) items.push('<b>Cambia a dónde habla:</b> de <code>' + esc(up.publicadorInstalado || '(nada)') + '</code> a <code>' + esc(up.publicadorNuevo || '(nada)') + '</code>.'
-        + '<small>Gnothi conserva la dirección de antes salvo que aceptés la nueva.</small>'
-        + '<label class="chk"><input type="checkbox" id="pr-publicador"> Aceptar la dirección nueva</label>');
-      if (up.origenCambia) items.push('<b>Cambia el origen que declara:</b> de ' + esc(up.origenInstalado || '(ninguno)') + ' a ' + esc(up.origenNuevo || '(ninguno)') + '.');
-      if (up.registroCambia) items.push('<b>Cambia lo que promete sobre tu registro</b> (retención, tamaño o frecuencia): abajo está lo nuevo.');
-      if (up.sustratoCambia) items.push('<b>Pide otro sustrato:</b> ' + esc(up.sustratoNuevo || '(ninguno)') + '.');
+      const nada = () => T('general.nada'), ninguno = () => T('general.ninguno');
+      if (up.consultasNuevas.length)  items.push(T('hoja.cambio.consultas-nuevas', { lista: nombres(up.consultasNuevas) }) + peq(T('hoja.cambio.consultas-nuevas.detalle')));
+      if (up.consultasQuitadas.length) items.push(T('hoja.cambio.consultas-quitadas', { lista: nombres(up.consultasQuitadas) }));
+      if (up.capacidadesNuevas.length) items.push(T('hoja.cambio.pide-mas', { lista: esc(up.capacidadesNuevas.join(', ')) }) + peq(T('hoja.caps.apagado')));
+      if (up.publicadorCambia) items.push(T('hoja.cambio.publicador', { antes: esc(up.publicadorInstalado || nada()), ahora: esc(up.publicadorNuevo || nada()) })
+        + peq(T('hoja.cambio.publicador.detalle'))
+        + '<label class="chk"><input type="checkbox" id="pr-publicador"> ' + T('hoja.cambio.publicador.aceptar') + '</label>');
+      if (up.origenCambia) items.push(T('hoja.cambio.origen', { antes: esc(up.origenInstalado || ninguno()), ahora: esc(up.origenNuevo || ninguno()) }));
+      if (up.registroCambia) items.push(T('hoja.cambio.registro'));
+      if (up.sustratoCambia) items.push(T('hoja.cambio.sustrato', { sustrato: esc(up.sustratoNuevo || ninguno()) }));
+      const queCambia = '<p>' + fuerte(T('hoja.cambio.que-cambia')) + '</p>';
       const lista = items.length
-        ? '<p><b>Qué cambia</b></p><ul class="pr-tools">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
-        : up.tipo === 'misma' ? '' : '<p><b>Qué cambia</b><br><small>Nada de lo que Gnothi compara: consultas, capacidades, publicador, origen, registro. Cambia la app adentro.</small></p>';
+        ? queCambia + '<ul class="pr-tools">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
+        : up.tipo === 'misma' ? '' : '<p>' + fuerte(T('hoja.cambio.que-cambia')) + '<br>' + peq(T('hoja.cambio.nada')) + '</p>';
       // The button says what it does.
-      document.querySelector('#propuesta button.cta').textContent =
-        up.tipo === 'actualizacion' ? 'Actualizar' : up.tipo === 'anterior' ? 'Volver a esa versión' : 'Reinstalar';
+      document.querySelector('#propuesta button.cta').textContent = T(
+        up.tipo === 'actualizacion' ? 'hoja.boton.actualizar' : up.tipo === 'anterior' ? 'hoja.boton.volver' : 'hoja.boton.reinstalar');
       return cabecera + lista;
     })();
-    if (!up) document.querySelector('#propuesta button.cta').textContent = 'Instalar en mi teléfono';
+    if (!up) document.querySelector('#propuesta button.cta').textContent = T('propuesta.instalar');
+
+    // EL NOMBRE CON QUE SE LA LLAMA EN LA FRASE DE LA CARPETA, y es `identidad`: el nombre
+    // corto de la marca, que es como ella la conoce -- «Delfos», no «Laboratorio Clínico Delfos».
+    // La propuesta NO manda `brand.shortName`; manda `identidad`, que el Host ya resolvió.
+    const marcaCorta = p.identidad || p.institucion || p.titulo || '';
 
     const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
     const proc = (p.dominio || p.razonSocial)
       ? '<div class="proc ' + veredicto + '">'
         + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
         + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+        // QUIÉN PUBLICA, y nada más: nombre legal, cédula y dominio. La IP y el puerto se fueron
+        // al pliegue, y la versión también: ninguna de las tres ayuda a decidir si confiar, y la
+        // IP encima se lee como una advertencia cuando no lo es. Cuando el dominio y el host NO
+        // coinciden eso sigue siendo una ALERTA arriba -- la pinta `alerta`, no esta línea.
+        //
+        // SIN DOMINIO DECLARADO SE DICE CON PALABRAS. Antes caía al host, que es justo la IP que
+        // se saca; un paquete que llega como archivo puede no declarar ninguno, y en esa pantalla
+        // «no declara quién lo publica» es información, mientras una IP es ruido.
         + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
         + (p.cedula ? ', ' + esc(p.cedula) : '')
         + (p.dominio
-            ? '<br>' + (veredicto === 'ok'
-                ? 'Lo sirvió ' + esc(p.servido) + ', el mismo dominio que declara'
-                : veredicto === 'duda'
-                  ? 'Declara <b>' + esc(p.dominio) + '</b> y lo sirvió <b>' + esc(p.servido) + '</b>'
-                  : 'Declara ' + esc(p.dominio) + ' · llegó como archivo')
-            : '')
-        + (p.version ? ' · v' + esc(p.version) : '')
+            ? '<br>' + esc(p.dominio)
+            : (p.razonSocial ? '<br>' : '') + peq(T('hoja.proc.sin-dominio')))
         + '</span></div>'
       : '';
 
@@ -1062,28 +1297,64 @@ const gn = {
           ? '<p class="desc" style="margin:10px 0">' + esc(p.descripcion)
             + (p.noHace ? ' <span class="noHace">' + esc(p.noHace) + '</span>' : '') + '</p>'
           : '')
-      + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
+      + '<p>' + fuerte(T('hoja.que-contesta')) + '</p><ul class="pr-tools">' + tools + '</ul>'
       // LO QUE LA PANTALLA NO PODÍA CONTESTAR: ya decía DÓNDE va a vivir el registro, y no
       // cuánto va a pesar, cada cuánto se actualiza ni por cuánto tiempo lo guardan -- que es
       // lo que la persona pregunta antes de aceptar.
-      + '<p><b>Dónde va a vivir tu registro</b><br><code>' + esc(p.journal) + '</code>'
+      // DÓNDE VIVE, PRIMERO EN LLANO. La ruta cruda era lo primero que se leía y no dice lo que
+      // la persona pregunta. Ahora arriba va la frase -- en este teléfono, en la carpeta de Mymi
+      // para ella --, después cuánto pesa, cada cuánto se actualiza y cuánto lo guardan, y la
+      // ruta completa queda debajo en letra chica. NO se esconde: tiene derecho a saber dónde
+      // está su registro, y por eso no va al pliegue.
+      + '<p>' + fuerte(T('hoja.donde-vive')) + '<br>'
+      + T('hoja.donde-vive.llano', { quien: esc(marcaCorta) })
       + (p.tamano || p.refresco || p.retencion
-          ? '<br><small>' + (p.tamano ? 'Unos ' + esc(p.tamano) + '. ' : '')
-            + (p.refresco ? 'Se actualiza ' + esc(p.refresco) + '. ' : '')
-            + (p.retencion ? 'La institución lo guarda ' + esc(p.retencion) + '.' : '') + '</small>'
+          ? '<br><small>' + [
+              p.tamano ? T('hoja.journal.tamano', { tamano: esc(p.tamano) }) : '',
+              p.refresco ? T('hoja.journal.refresco', { refresco: esc(p.refresco) }) : '',
+              p.retencion ? T('hoja.journal.retencion', { retencion: esc(p.retencion) }) : '',
+            ].filter(Boolean).join(' ') + '</small>'
           : '')
+      + '<br><small><code>' + esc(p.journal) + '</code></small>'
       + '</p>'
-      + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
-      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>'
-      + '<p><b>Lo que Gnothi revisó</b></p><ul class="pr-tools">'
-      + '<li>' + respaldo + '</li><li>' + firma + '</li><li>' + forma + '</li><li>' + caps + '</li>'
-      + '<li>Sin ejecutables ni datos de muestra adentro.</li></ul>';
+      // CON QUIÉN HABLA: EL DOMINIO, no la URL. El puerto y el recurso -- `/expediente/1` -- son
+      // de quien empaqueta, no de quien decide. La URL entera vive en el pliegue.
+      + '<p>' + fuerte(T('hoja.con-quien')) + '<br>'
+      + (p.dominio ? fuerte(esc(p.dominio)) : '<code>' + esc(p.publicador || T('hoja.sin-publicador')) + '</code>')
+      + '<br>' + peq(T('hoja.unica-red')) + '</p>'
+      // QUÉ COMPROBÓ MYMI, en cuatro líneas y una más de la forma. El sello dejó de ser una nota
+      // al pie del respaldo y pasó a ser su propia línea: que el paquete no cambió desde que se
+      // generó es un hecho aparte de quién lo respalda. Y las capacidades y los ejecutables van
+      // juntos, porque son la misma pregunta: qué se lleva adentro.
+      + '<p>' + fuerte(T('hoja.reviso')) + '</p><ul class="pr-tools">'
+      + '<li>' + respaldoArriba + '</li>'
+      + (pro.sello ? '<li>' + T('hoja.respaldo.sello') + '</li>' : '')
+      + '<li>' + firmaArriba + '</li>'
+      + '<li>' + forma + '</li>'
+      + '<li>' + caps + ' ' + T('hoja.sin-ejecutables') + '</li></ul>'
+      // EL PLIEGUE, al pie: el dato que no decide nada pero que alguien va a querer ver. El host
+      // solo cuando NO es el dominio declarado, porque cuando coincide la línea de arriba ya lo
+      // dijo. Y el aviso de conexión sin cifrar entra acá porque su propio texto dice que así
+      // solo sirve en desarrollo: sobre https no aparece nunca.
+      + (function () {
+          const filas = [
+            p.publicador ? [T('hoja.detalle.publicador'), p.publicador] : null,
+            pro.firmante ? [T('hoja.detalle.llave'), pro.firmante] : null,
+            p.version ? [T('hoja.detalle.version'), p.version] : null,
+            (pro.servido && pro.servido !== p.dominio) ? [T('hoja.detalle.servido'), pro.servido + (via || '')] : null,
+          ].filter(Boolean);
+          if (!filas.length && pro.seguro) return '';
+          return '<details class="trace"><summary>' + T('hoja.detalles') + '</summary>'
+            + filas.map(f => '<p>' + peq(f[0]) + '<br><code>' + esc(f[1]) + '</code></p>').join('')
+            + (pro.seguro ? '' : '<p>' + peq(T('hoja.respaldo.inseguro')) + '</p>')
+            + '</details>';
+        })();
 
     document.getElementById('propuesta').classList.add('on');
   },
 
   // On an update that moved the publisher's endpoint, the checkbox on the sheet is her yes to the
-  // move; without it Gnothi keeps the endpoint it fixed the first time.
+  // move; without it Mymi keeps the endpoint it fixed the first time.
   altaAceptar()   {
     const publicadorNuevo = !!(document.getElementById('pr-publicador') || {}).checked;
     document.getElementById('propuesta').classList.remove('on');
@@ -1097,7 +1368,7 @@ const gn = {
   altaDesdeEnlace() {
     const inp = document.getElementById('alta-url'), hint = document.getElementById('alta-hint');
     const url = (inp.value || '').trim();
-    if (!url) { hint.textContent = 'Pegá el enlace primero.'; inp.focus(); return; }
+    if (!url) { hint.textContent = T('alta.pega-primero'); inp.focus(); return; }
     hint.textContent = '';
     gn.sheet(false);
     inp.value = '';
@@ -1111,7 +1382,7 @@ const gn = {
   // it is a module, the file's name when it is not, and a tag for what happened to it. A row that
   // is a module she does not have yet is the only one that can be tapped.
   hallazgos(h) {
-    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
     gn.sheet(false);
     document.getElementById('propuesta').classList.remove('on');
     const rows = (h.archivos || []).map(a => {
@@ -1119,11 +1390,11 @@ const gn = {
       const nombre = esModulo ? (a.nombreCorto || a.institucion || a.titulo) : a.archivo;
       const linea = esModulo
         ? ((a.institucion && a.nombreCorto && a.institucion !== a.nombreCorto) ? a.institucion + ' · ' : '')
-          + a.archivo + ' · ' + mb(a.bytes) + (a.firmado ? ' · firmado' : '')
+          + a.archivo + ' · ' + mb(a.bytes) + (a.firmado ? ' · ' + T('alta.firmado') : '')
         : a.archivo + ' · ' + mb(a.bytes);
-      const tag = a.instalado ? '<span class="tag ok">instalado</span>'
-        : a.problema ? '<span class="tag no">no entra</span>'
-        : a.yaEstaba ? '<span class="tag">ya lo tenés</span>'
+      const tag = a.instalado ? '<span class="tag ok">' + T('alta.tag.instalado') + '</span>'
+        : a.problema ? '<span class="tag no">' + T('alta.tag.no-entra') + '</span>'
+        : a.yaEstaba ? '<span class="tag">' + T('alta.tag.ya-lo-tienes') + '</span>'
         : '<span class="chev">›</span>';
       const bloqueado = !!a.problema || a.instalado;
       return '<button class="hallazgo' + (a.problema ? ' mal' : '') + '"'
@@ -1132,7 +1403,7 @@ const gn = {
         + '<div class="ht"><b>' + esc(nombre) + '</b><small>' + esc(a.problema || linea) + '</small></div>'
         + tag + '</button>';
     }).join('');
-    document.getElementById('ha-lista').innerHTML = rows || '<p>No encontré ningún módulo en lo que elegiste.</p>';
+    document.getElementById('ha-lista').innerHTML = rows || '<p>' + T('alta.nada-encontrado') + '</p>';
     document.getElementById('hallazgos').classList.add('on');
   },
   altaElegido(i) { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaElegido', { indice: i }); },
@@ -1141,7 +1412,7 @@ const gn = {
   altaArchivo() {
     const hint = document.getElementById('alta-hint');
     const r = gn.call('altaArchivo');
-    if (!r || r.ok !== true) { hint.textContent = 'En este teléfono todavía no se puede elegir un archivo: pegá el enlace.'; return; }
+    if (!r || r.ok !== true) { hint.textContent = T('alta.sin-selector'); return; }
     hint.textContent = '';
     gn.sheet(false);
   },
@@ -1172,7 +1443,7 @@ const gn = {
 
     async start() {
       const hint = document.getElementById('alta-hint');
-      if (!gn.scan.supported()) { hint.textContent = 'Este teléfono no puede leer códigos desde Gnothi.'; return; }
+      if (!gn.scan.supported()) { hint.textContent = T('scan.sin-lector'); return; }
       hint.textContent = '';
 
       // The platform grants or denies the camera here (Android asks the person the first time).
@@ -1182,14 +1453,14 @@ const gn = {
         gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
       } catch (e) {
         hint.textContent = e && e.name === 'NotAllowedError'
-          ? 'Gnothi no tiene permiso para usar la cámara.'
-          : 'No se pudo abrir la cámara: ' + (e && e.message || e);
+          ? T('scan.sin-permiso')
+          : T('scan.no-abre', { detalle: (e && e.message || e) });
         return;
       }
 
       gn.sheet(false);
       const video = document.getElementById('cam'), msg = document.getElementById('scan-msg');
-      msg.textContent = 'Apuntá al código de tu institución';
+      msg.textContent = T('scan.apunta');
       video.srcObject = gn.scan.stream;
       document.getElementById('scan').classList.add('on');
 
@@ -1203,7 +1474,7 @@ const gn = {
           const scale = Math.min(1, 960 / video.videoWidth);
           const text = await gn.scan.decode(video, Math.round(video.videoWidth * scale), Math.round(video.videoHeight * scale));
           if (text) gn.scan.found(text);
-        } catch (e) { msg.textContent = 'No se pudo leer: ' + (e && e.message || e); }
+        } catch (e) { msg.textContent = T('scan.no-se-pudo-leer', { detalle: (e && e.message || e) }); }
         busy = false;
       }, 250);
     },
@@ -1233,10 +1504,10 @@ const gn = {
 
     // While a bundle downloads the strip grows into a card with a bar and the megabytes: the
     // shell sends how far it got (progreso, bytes, total) about every quarter megabyte.
-    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
     const pct = a.progreso == null ? null : Math.round(Math.min(1, a.progreso) * 100);
     const cuerpo = a.estado === 'trabajando' && pct != null
-      ? '<span class="txt"><b>' + esc(a.detalle) + '</b><small>' + mb(a.bytes) + ' de ' + mb(a.total) + ' · ' + pct + ' %</small></span>'
+      ? '<span class="txt"><b>' + esc(a.detalle) + '</b>' + peq(T('alta.progreso', { hechos: mb(a.bytes), total: mb(a.total), pct: pct })) + '</span>'
         + '<div class="bar"><i style="width:' + pct + '%"></i></div>'
       : '<span>' + esc(a.detalle) + '</span>';
     caja.innerHTML = '<div class="alta ' + a.estado + '">' + adorno + cuerpo + '</div>';
@@ -1262,7 +1533,7 @@ const gn = {
   // context; inside the app the page is file:// and it may be missing, so the old textarea trick
   // stays as the fallback.
   copy(btn, text) {
-    const done = () => { const was = btn.textContent; btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = was, 1400); };
+    const done = () => { const was = btn.textContent; btn.textContent = T('general.copiado'); setTimeout(() => btn.textContent = was, 1400); };
     const legacy = () => {
       const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
       ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
@@ -1291,7 +1562,25 @@ const gn = {
     // La Guaria is the big card. The Host says when each one arrived (installedAt, ISO UTC).
     const ms = [...gn.state.modules].sort((a, b) => String(b.installedAt || '').localeCompare(String(a.installedAt || '')));
 
-    document.getElementById('home-sub').textContent = ms.length + (ms.length === 1 ? ' conectada' : ' conectadas');
+    document.getElementById('home-sub').textContent =
+      ms.length === 0 ? T('inicio.sin-ninguna')
+      : ms.length === 1 ? T('inicio.una')
+      : T('inicio.varias', { n: ms.length });
+
+    const vacio = document.getElementById('home-empty');
+    vacio.hidden = ms.length > 0;
+    // Un solo llamado a la accion mientras no haya nada: el de abajo. El de arriba vuelve
+    // cuando ya hay tarjetas y deja de competir con el.
+    document.querySelector('.hola .addbtn').hidden = ms.length === 0;
+    // LA ENTRADA SE VE UNA VEZ. `paint()` corre con cada cambio de estado, asi que la clase se
+    // pone una sola vez por carga, y queda anotada en la sesion: quien sale al asistente y
+    // vuelve no la ve de nuevo. Si cierra y abre la app, volverla a ver esta bien.
+    if (!vacio.hidden && !vacio.dataset.entrada) {
+      vacio.dataset.entrada = '1';
+      let vista = false;
+      try { vista = sessionStorage.getItem('mymi.vacio') === '1'; sessionStorage.setItem('mymi.vacio', '1'); } catch (e) {}
+      if (!vista) vacio.classList.add('entra');
+    }
 
     // THE INSTITUTIONS' TYPEFACES, one @font-face per module that declared one, under a name the
     // Host chooses (gn-<module>): the institution brings the file, never the CSS.
@@ -1310,7 +1599,7 @@ const gn = {
     }
     grid.innerHTML = ms.map((m, i) => {
       const c = colorOf(m), b = m.brand || {};
-      // Enabled: touching the card opens the institution's app inside Gnothi. Disabled: nothing to
+      // Enabled: touching the card opens the institution's app inside Mymi. Disabled: nothing to
       // open, so it goes to the detail, which is where it gets switched on.
       const onTap = m.enabled ? "gn.abrir('" + m.name + "')" : "gn.detail('" + m.name + "')";
       const nm = tiers(m), on = (m.tools || []).filter(t => t.enabled).length;
@@ -1323,15 +1612,47 @@ const gn = {
         + (nm.pre ? '<span class="pre">' + esc(nm.pre) + '</span>' : '') + '<b' + (b.font && b.font.regular ? '' : ' class="mf"') + '>' + esc(nm.big) + '</b></div></div>'
         + '<small>' + esc(taglineOf(m)) + '</small>'
         + '<div class="acts">'
-        + (m.signerRevokedAt ? '<span class="off-tag">Llave retirada por la institución</span>' : '')
-        + (m.updateAvailable ? '<button class="perm nueva" onclick="event.stopPropagation();gn.actualizar(\'' + m.name + '\')">Hay una versión nueva</button>' : '')
+        + (m.signerRevokedAt ? '<span class="off-tag">' + T('inicio.llave-retirada') + '</span>' : '')
+        + (m.updateAvailable ? '<button class="perm nueva" onclick="event.stopPropagation();gn.actualizar(\'' + m.name + '\')">' + T('inicio.version-nueva') + '</button>' : '')
         + '<button class="perm" onclick="event.stopPropagation();gn.detail(\'' + m.name + '\')">'
         + '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
-        + on + (on === 1 ? ' permiso activo' : ' permisos activos') + '</button>'
-        + (m.enabled ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">Abrir <span>→</span></button>'
-                     : '<span class="off-tag">Apagado</span>')
+        + (on === 1 ? T('detalle.permiso.uno') : T('detalle.permiso.varios', { n: on })) + '</button>'
+        + (m.enabled ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">' + T('instituciones.abrir') + ' <span>→</span></button>'
+                     : '<span class="off-tag">' + T('inicio.apagado') + '</span>')
         + '</div></div>';
     }).join('');
+
+    // EL NOMBRE DE MARCA CABE EN SU TARJETA (Geaninna, 2026-09-18; medido y corregido el 09-21).
+    //
+    // «Monteverde» a 21 px pide 106 px y la caja del nombre topa en 102: se perdía la última
+    // letra. NO la recorta el `overflow:hidden` de la tarjeta -- el nombre termina en 186 y la
+    // tarjeta llega a 200, o sea adentro --: la recorta SU PROPIA CAJA, que es un item flex con
+    // `min-width:0` al lado del icono de 44. Importa saberlo: tocar el overflow de la tarjeta no
+    // arregla nada. «La Guaria» no baja ni un píxel, y «Sotaventos Motors» tampoco: ése parte en
+    // dos líneas y nunca desbordó.
+    //
+    // El tamaño baja de a un píxel hasta que la palabra más larga entra, nunca por debajo de 15.
+    // Medido, no silabeado: un nombre de marca no se parte al medio.
+    //
+    // VA CUANDO LA LETRA DE LA INSTITUCIÓN YA ESTÁ. Unas líneas más arriba se inyectan sus
+    // `@font-face`, y medir en el mismo tick mide con Manrope: el tamaño elegido no sería el de
+    // la letra que se va a ver. Por eso corre dos veces -- ahora, para que no haya un salto
+    // visible, y otra vez cuando `fonts.ready` dice que llegaron.
+    const queQuepaElNombre = () => grid.querySelectorAll('.nm b').forEach(b => {
+      b.style.fontSize = ''; b.style.overflowWrap = '';
+      let size = parseFloat(getComputedStyle(b).fontSize);
+      while (b.scrollWidth > b.clientWidth && size > 15) { size -= 1; b.style.fontSize = size + 'px'; }
+
+      // Y SI NI A 15 PX ENTRA, SE PARTE. Es el último recurso, y es lo honesto: a esa altura la
+      // opción es perder letras o partir la palabra, y una palabra a la que le falta la última
+      // letra se lee como un error de dedo, no como un nombre que no cabía. Sin esto el bucle
+      // se rendía en silencio: «Municipalidadísima» se queda en 126 px contra 102 y sigue
+      // recortada. El tope de 28 caracteres del manifiesto no alcanza, porque lo que no cabe
+      // es el ancho de UNA palabra, no el largo del nombre.
+      if (b.scrollWidth > b.clientWidth) b.style.overflowWrap = 'anywhere';
+    });
+    queQuepaElNombre();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queQuepaElNombre);
 
     if (gn.open) {
       const m = ms.find(x => x.name === gn.open);
@@ -1373,7 +1694,7 @@ const gn = {
               // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
               // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
               // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
-              + '<b>En tu pantalla de inicio</b>'
+              + '<b>' + esc(T('detalle.fijar.lugar')) + '</b>'
               // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
               // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
               // pantalla sí.
@@ -1381,7 +1702,7 @@ const gn = {
               + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
               + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
               + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
-              + '<span>Agregar</span></button>'
+              + '<span>' + esc(T('detalle.fijar.agregar')) + '</span></button>'
               + '<p class="fijar-dicho" id="fijar-dicho"></p>'
               + '</div></div>'
             : '')
@@ -1389,31 +1710,30 @@ const gn = {
         // The institution retired the key this module was accepted with. Said here, once, and
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
         + (m.signerRevokedAt
-            ? '<p class="ojo"><b>Tu institución retiró la llave</b> con la que firmó este módulo'
-              + ' (Gnothi lo supo el ' + new Date(m.signerRevokedAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) + ').'
-              + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Gnothi va a recordar la llave nueva.</p>'
+            ? ojoDetalle(T('detalle.llave-retirada', { dia: dia(m.signerRevokedAt) }))
             : '')
 
         // The origin publishes a newer package than the one she has (NotasGnothiHost/44 §4). A note
         // and a door: nothing downloads until she taps, and the update sheet says what changes.
         + (m.updateAvailable
-            ? '<div class="ojo suave"><b>Hay una versión nueva.</b> ' + esc(m.shortName || m.institution || m.title) + ' publicó '
-              + (m.updateAvailable.version ? 'la ' + esc(m.updateAvailable.version) : 'otro paquete')
-              + (m.publisher && m.publisher.version ? '; tenés la ' + esc(m.publisher.version) : '') + '.'
-              + ' Nada se instala solo: primero vas a ver qué cambia.'
-              + '<button class="btn" style="width:100%;margin-top:10px" onclick="gn.actualizar(\'' + m.name + '\')">Ver qué cambia</button></div>'
+            ? '<div class="ojo suave">' + T('detalle.hay-version', {
+                quien: esc(m.shortName || m.institution || m.title),
+                que: m.updateAvailable.version ? T('detalle.version.numero', { version: esc(m.updateAvailable.version) }) : T('detalle.version.otro-paquete'),
+                tienes: m.publisher && m.publisher.version ? T('detalle.version.tienes', { version: esc(m.publisher.version) }) : '',
+              })
+              + '<button class="btn" style="width:100%;margin-top:10px" onclick="gn.actualizar(\'' + m.name + '\')">' + T('detalle.ver-que-cambia') + '</button></div>'
             : '')
 
         // WHAT THE CARD PROMISED: the queries, first. This is the point of entry to what the
         // institution exposes to the AI, and the person's switches live here.
-        + '<h2 class="qtitle">Consultas de ' + esc(m.shortName || m.institution || m.title) + '</h2>'
-        + '<p class="qlead">Podés preguntarle a tu asistente sobre:</p>'
+        + '<h2 class="qtitle">' + T('detalle.consultas.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</h2>'
+        + '<p class="qlead">' + T('detalle.consultas.lead') + '</p>'
         + m.tools.map(t =>
             '<div class="tool' + (m.enabled && t.enabled ? '' : ' dim') + '">'
             + '<div class="t"><b>' + esc(t.title || t.name) + '</b><p>' + esc(t.description) + '</p></div>'
             + sw(t.enabled, "gn.setTool('" + m.name + "','" + t.name + "',this.checked)")
             + '</div>').join('')
-        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>'
+        + '<p class="hint">' + T('detalle.consultas.apagada') + '</p>'
 
         + (m.description
             ? '<p class="desc">' + esc(m.description)
@@ -1421,7 +1741,7 @@ const gn = {
             : '')
 
         // LA PROCEDENCIA: lo que la institución DECLARA -- su dominio -- al lado de lo que
-        // Gnothi OBSERVÓ al dar el alta, y guardó. Es la única cosa de toda la marca que el
+        // Mymi OBSERVÓ al dar el alta, y guardó. Es la única cosa de toda la marca que el
         // Host puede comprobar solo, y por eso es la que le da sentido al logo: sin esto, un
         // logo es un dibujo que cualquiera copia.
         //
@@ -1438,20 +1758,20 @@ const gn = {
               + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
               + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
               + (veredicto === 'ok'
-                  ? '<br>lo bajaste de ' + esc(org.servedBy) + ', el dominio que declara'
+                  ? '<br>' + T('detalle.proc.mismo-dominio', { servido: esc(org.servedBy) })
                   : veredicto === 'duda'
-                    ? '<br>declara <b>' + esc(proc.domain) + '</b> y lo bajaste de <b>' + esc(org.servedBy) + '</b>'
-                    : proc.domain ? '<br>declara ' + esc(proc.domain) + ' · lo importaste de un archivo' : '')
+                    ? '<br>' + T('detalle.proc.distinto', { dominio: esc(proc.domain), servido: esc(org.servedBy) })
+                    : proc.domain ? '<br>' + T('detalle.proc.archivo', { dominio: esc(proc.domain) }) : '')
               + (org.version ? ' · v' + esc(org.version) : proc.version ? ' · v' + esc(proc.version) : '')
               + '</span></div>'
             : '')
 
-        + '<div class="master"><span>Módulo encendido</span>'
+        + '<div class="master"><span>' + T('detalle.modulo-encendido') + '</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
 
         + (m.enabled
-            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>Abrir ' + esc(m.shortName || m.institution || m.title) + '</b><br>'
-              + '<small>la app de tu institución, adentro de Gnothi</small></span><span class="chev">›</span></div>'
+            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>' + T('detalle.abrir.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</b><br>'
+              + '<small>' + T('detalle.abrir.sub') + '</small></span><span class="chev">›</span></div>'
             : '')
 
 
@@ -1460,11 +1780,18 @@ const gn = {
         // `reconstruible: false` es el dato que pesa: ese diario lleva aportes de la persona y
         // borrarlo pierde datos.
         + (dia.retention || dia.updates || dia.reconstruible === false
-            ? '<p class="hint">' + (dia.retention ? 'Lo guarda ' + esc(dia.retention) + '. ' : '')
-              + (dia.updates ? 'Se actualiza ' + esc(dia.updates) + '. ' : '')
-              + (dia.reconstruible === false ? 'Lleva cosas que pusiste vos: si se borra, se pierden.' : '')
-              + '</p>'
-            : '');
+            ? '<p class="hint">' + [
+                dia.retention ? T('detalle.journal.guarda', { retencion: esc(dia.retention) }) : '',
+                dia.updates ? T('detalle.journal.actualiza', { refresco: esc(dia.updates) }) : '',
+                dia.reconstruible === false ? T('detalle.journal.irrecuperable') : '',
+              ].filter(Boolean).join(' ') + '</p>'
+            : '')
+
+        // QUITAR, al final y con el mismo aspecto que «Abrir»: es una acción sobre el módulo, no
+        // un ajuste. La confirmación es un sheet propio y no confirm(): en el WebView del Host
+        // confirm() no tiene quién lo atienda y contesta false sin mostrar nada.
+        + '<div class="master" onclick="gn.quitarPedir(\'' + m.name + '\')"><span><b>' + T('quitar.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</b><br>'
+          + '<small>' + T('detalle.quitar.sub') + '</small></span><span class="chev">›</span></div>';
     }
 
     // DATOS EN ESTE TELÉFONO: one row per institution, with its logo, what its record weighs and how
@@ -1472,40 +1799,60 @@ const gn = {
     document.getElementById('journal').innerHTML = ms.map(m => {
       return '<div class="row" onclick="gn.detail(\'' + m.name + '\')">'
         + iconOf(m)
-        + '<div class="t"><b>' + esc(nameOf(m)) + '</b><small>' + kb(m.journalBytes) + ' · ' + m.journalFiles + (m.journalFiles === 1 ? ' archivo' : ' archivos') + '</small></div>'
+        + '<div class="t"><b>' + esc(nameOf(m)) + '</b><small>' + kb(m.journalBytes) + ' · ' + (m.journalFiles === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: m.journalFiles })) + '</small></div>'
         + '<span class="chev">›</span>'
         + '</div>';
     }).join('');
     const files = ms.reduce((a, m) => a + (m.journalFiles || 0), 0);
     document.getElementById('set-datos-sub').textContent =
-      ms.length + (ms.length === 1 ? ' módulo' : ' módulos') + ' · ' + files + (files === 1 ? ' archivo' : ' archivos');
+      (ms.length === 1 ? T('journal.modulo.uno') : T('journal.modulo.varios', { n: ms.length }))
+      + ' · ' + (files === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: files }));
 
     const s = gn.state.settings || {};
+    // EL NOMBRE DEL PROVEEDOR LOCAL SE TRADUCE; EL DE LOS DEMAS NO. «Groq» es el nombre de una
+    // empresa y se dice igual en los dos idiomas; «En este teléfono» es texto NUESTRO, o sea UI
+    // del Host, que por la regla 1 sigue a la persona. Lo que viaja en `s.name` es la IDENTIDAD
+    // que se guarda en model.cfg y no se toca: acá solo se elige como mostrarla.
+    const nombreProv = s.local ? T('ajustes.proveedor.local') : (s.name || s.provider);
+    const nombreServ = s.local ? T('ajustes.servidor.local')  : s.provider;
     document.getElementById('set-model').innerHTML =
-        '<div><span>Proveedor</span><b>' + esc(s.name || s.provider) + '</b></div>'
-      + '<div><span>Servidor</span><b>' + esc(s.provider) + '</b></div>'
-      + '<div><span>Modelo</span><b>' + esc(s.model) + '</b></div>';
-    document.getElementById('set-prov-sub').textContent = (s.name || s.provider || '—') + (s.model ? ' · ' + s.model : '');
-    document.getElementById('set-key-sub').innerHTML = s.keyPresent
-      ? '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1E9E6A;margin-right:6px"></i>Clave configurada'
-      : '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--off);margin-right:6px"></i>Falta la clave — el asistente no puede contestar';
+        '<div><span>' + T('ajustes.proveedor') + '</span><b>' + esc(nombreProv) + '</b></div>'
+      + '<div><span>' + T('ajustes.servidor') + '</span><b>' + esc(nombreServ) + '</b></div>'
+      + '<div><span>' + T('ajustes.modelo') + '</span><b>' + esc(s.model) + '</b></div>';
+    document.getElementById('set-prov-sub').textContent = (nombreProv || '—') + (s.model ? ' · ' + s.model : '');
+    // EL PUNTO ROJO NO VA DONDE NO HAY NADA QUE FALTAR. El Host manda `local` desde que existe el
+    // proveedor del aparato -Shell.cs, «para que la pagina no pida llave donde no hace falta»- y
+    // esta pagina no lo leia: mostraba «No key — the assistant cannot answer» sobre el unico
+    // proveedor que no lleva llave, y que estaba contestando igual. Visto en un iPhone 17 Pro el
+    // 2026-09-17.
+    const punto = (c) => '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + c + ';margin-right:6px"></i>';
+    document.getElementById('set-key-sub').innerHTML = s.local
+      ? punto('#1E9E6A') + T('ajustes.clave.no-hace-falta')
+      : s.keyPresent ? punto('#1E9E6A') + T('ajustes.clave.puesta')
+                     : punto('var(--off)') + T('ajustes.clave.falta');
 
     // The stored key is NEVER echoed back into the page: the editor opens empty, always.
-    document.getElementById('set-key').innerHTML = gn.keyEdit
-      ? '<div class="st"><b>Pegá la clave nueva</b></div>'
-        + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="pegala acá — se guarda solo en este teléfono">'
-        + '<div class="btns"><button class="btn" onclick="gn.saveKey()">Guardar</button>'
-        + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">Cancelar</button></div>'
+    // Y EL PIE TAMBIEN: hablarle de llaves gratuitas o de pago a quien no necesita ninguna es
+    // ofrecerle un problema que no tiene. Se OCULTA, no se vacia: el repintado de data-i18n
+    // recorre el marcado y le volveria a poner el texto.
+    document.getElementById('prov-hint').hidden = !!s.local;
+    document.getElementById('set-key').innerHTML = s.local
+      ? '<div class="st"><i class="dot ok"></i><b>' + T('ajustes.local.telefono') + '</b></div>'
+      : gn.keyEdit
+      ? '<div class="st"><b>' + T('ajustes.clave.pega-nueva') + '</b></div>'
+        + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(T('ajustes.clave.placeholder')) + '">'
+        + '<div class="btns"><button class="btn" onclick="gn.saveKey()">' + T('ajustes.llave.guardar') + '</button>'
+        + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">' + T('general.cancelar') + '</button></div>'
       : (s.keyPresent
-        ? '<div class="st"><i class="dot ok"></i><div><b>Clave configurada</b><br><small style="color:var(--muted)">Guardada en este teléfono.</small></div></div>'
-          + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">Cambiar clave</button>'
-          + '<button class="btn danger" onclick="gn.clearKey()">Borrar</button></div>'
-        : '<div class="st"><i class="dot no"></i><b>Falta la clave — el asistente no puede contestar</b></div>'
-          + '<div class="btns"><button class="btn" onclick="gn.keyEdit=true;gn.paint()">Pegar clave</button></div>');
+        ? '<div class="st"><i class="dot ok"></i><div><b>' + T('ajustes.clave.puesta') + '</b><br><small style="color:var(--muted)">' + T('ajustes.clave.guardada-aqui') + '</small></div></div>'
+          + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">' + T('ajustes.clave.cambiar') + '</button>'
+          + '<button class="btn danger" onclick="gn.clearKey()">' + T('ajustes.llave.borrar') + '</button></div>'
+        : '<div class="st"><i class="dot no"></i><b>' + T('ajustes.clave.falta') + '</b></div>'
+          + '<div class="btns"><button class="btn" onclick="gn.keyEdit=true;gn.paint()">' + T('ajustes.clave.pegar') + '</button></div>');
     document.getElementById('set-host').innerHTML =
-        '<div><span>Módulos instalados</span><b>' + ms.length + '</b></div>'
-      + '<div class="path"><span>Carpeta</span><code>' + esc(s.root) + '</code>'
-      + '<button class="copy" onclick="gn.copy(this, ' + JSON.stringify(String(s.root || '')).replace(/"/g, '&quot;') + ')">Copiar</button></div>';
+        '<div><span>' + T('ajustes.modulos-instalados') + '</span><b>' + ms.length + '</b></div>'
+      + '<div class="path"><span>' + T('ajustes.carpeta') + '</span><code>' + esc(s.root) + '</code>'
+      + '<button class="copy" onclick="gn.copy(this, ' + JSON.stringify(String(s.root || '')).replace(/"/g, '&quot;') + ')">' + T('ajustes.copiar') + '</button></div>';
   },
 
   setTool(mod, tool, on)  { const s = gn.call('setTool',  {module: mod, tool: tool, enabled: on}); if (s) { gn.state = s; gn.paint(); } },
@@ -1514,20 +1861,32 @@ const gn = {
   // ── the provider: pick one, then just paste ITS key ─────────────────────
   // Every entry speaks the OpenAI shape, which is the one wire format the app implements.
   // 'Otro' covers anything else that speaks it too -- LM Studio on the LAN included.
+  // LA LISTA DEL SELECTOR, CON EL APARATO ADELANTE CUANDO LO HAY. El Host manda la terna entera
+  // en settings.proveedorLocal, asi que la pagina no se sabe ni el nombre ni el modelo: los
+  // recibe. Va PRIMERO a proposito -- es el unico donde el dato no sale del telefono --, y su
+  // nombre se muestra traducido aunque lo que se guarde sea la identidad que vino.
+  provList() {
+    const s = (gn.state && gn.state.settings) || {};
+    const local = s.proveedorLocal
+      ? [{ name: s.proveedorLocal.name, url: s.proveedorLocal.url, model: s.proveedorLocal.model,
+           nota: 'prov.nota.local', local: true }]
+      : [];
+    return local.concat(PROV);
+  },
   psheet(on) {
     if (on) {
       const cur = (gn.state && gn.state.settings) ? gn.state.settings.name : '';
-      document.getElementById('plist').innerHTML = PROV.map((p, i) =>
+      document.getElementById('plist').innerHTML = gn.provList().map((p, i) =>
         '<div class="prow" onclick="gn.pickProvider(' + i + ')">'
-        + '<div class="t"><b>' + esc(p.name) + '</b><small>' + esc(p.note) + '</small></div>'
+        + '<div class="t"><b>' + esc(p.local ? T('ajustes.proveedor.local') : p.name) + '</b>' + peq(T(p.nota)) + '</div>'
         + (cur === p.name ? '<span class="cur">✓</span>' : '') + '</div>').join('')
         + '<div class="prow" onclick="document.getElementById(\'pcustom\').style.display=\'block\'">'
-        + '<div class="t"><b>Otro</b><small>URL propia — LM Studio en tu red, etc.</small></div></div>';
+        + '<div class="t"><b>' + T('prov.otro') + '</b>' + peq(T('prov.otro.nota')) + '</div></div>';
       document.getElementById('pcustom').style.display = 'none';
     }
     document.getElementById('psheet').classList.toggle('on', on);
   },
-  pickProvider(i) { gn.useProvider(PROV[i]); },
+  pickProvider(i) { gn.useProvider(gn.provList()[i]); },
   saveCustom() {
     const url = document.getElementById('cu-url').value.trim();
     const model = document.getElementById('cu-model').value.trim();
@@ -1540,7 +1899,9 @@ const gn = {
     if (s) {
       gn.state = s;
       // no key for this provider yet -> open the editor right away: pick, paste, done.
-      gn.keyEdit = !s.settings.keyPresent;
+      // Salvo el del aparato, que no lleva llave: ahi abrir el editor seria pedir lo que no hace
+      // falta, que es el mismo error que la tarjeta de acceso ya tenia.
+      gn.keyEdit = !s.settings.local && !s.settings.keyPresent;
       gn.paint();
     }
   },
@@ -1586,7 +1947,7 @@ const gn = {
     if (think) think.remove();
     const tr = document.getElementById('r' + gn.seq);
     if (tr) tr.outerHTML =
-      '<details class="trace"><summary>qué pasó por debajo</summary>' + tr.innerHTML + '</details>';
+      '<details class="trace"><summary>' + T('asistente.traza') + '</summary>' + tr.innerHTML + '</details>';
     add('<div class="b bot"><div class="md">' + (failed ? esc(text) : md(text)) + '</div></div>');
     gn.busy = false;
     document.getElementById('send').disabled = false;
@@ -1599,6 +1960,63 @@ function sw(on, fn) {
   return '<label class="sw"><input type="checkbox"' + (on ? ' checked' : '')
        + ' onchange="' + fn + '"><i></i></label>';
 }
+// ── LO QUE ESTA PANTALLA DICE, EN EL IDIOMA DE LA PERSONA ─────────────────────────────
+//
+// El catalogo es el mismo que usa el C# del Host: Gnothi.Host/textos.json, servido por el
+// puente con el op 'textos'. Se PIDE al arrancar y no se espera un push, porque el puente es
+// sincrono: asi no hay un instante en que la pantalla este pintada en el idioma equivocado.
+// Y no se puede ir a buscar el archivo -- esta pagina se carga como file:// y un fetch a otro
+// file:// lo rechaza el navegador en las dos plataformas.
+//
+// LOS VALORES VIAJAN CON NOMBRE, nunca por posicion: el orden de las palabras cambia entre los
+// dos idiomas y un {0} que se mueve compila, corre y miente.
+//
+// EL TEXTO QUE ESTA ESCRITO EN EL HTML ES EL RESPALDO, no la fuente. La autoridad es el
+// catalogo; lo de adentro del marcado existe para que mock() -- la maqueta que se itera en un
+// monitor, sin telefono -- siga mostrando algo legible. La suite afirma que toda clave
+// data-i18n existe en el catalogo.
+let TEXTOS = {};
+
+// EL IDIOMA EN CURSO, para lo que NO es una frase: como se escribe un numero y una fecha. Lo
+// dice el catalogo con una clave suya en vez de adivinarlo, asi que no hay dos verdades.
+// Estaba cableado a 'es' en siete sitios -- toLocaleDateString('es') y .replace('.', ',') --,
+// que es la regla 8: el formato viaja con el render.
+let IDIOMA = 'es';
+
+// LA MARCA QUE ENVUELVE UN VALOR DENTRO DE UNA FRASE. Van aca y no adentro del catalogo para
+// que quien traduzca no tenga que cuidar etiquetas alrededor de un hueco; el enfasis que la
+// frase misma necesita -«la llave CAMBIO»- si viaja en la frase, porque partirla para sacarlo
+// seria volver a los fragmentos que la regla 7 prohibe.
+function fuerte(t) { return '<b>' + t + '</b>'; }
+
+// UN NUMERO CON UN DECIMAL, EN EL IDIOMA EN CURSO. Estaba escrito tres veces como el mismo
+// lambda con `.replace('.', ',')` adentro: la coma decimal del espanol, cableada, en una funcion
+// que se copio y pego. En ingles ese numero se escribe con punto.
+function nDecimal(n) { return Number(n).toLocaleString(IDIOMA, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+function dia(iso) { return new Date(iso).toLocaleDateString(IDIOMA, { day: 'numeric', month: 'short', year: 'numeric' }); }
+function peq(t) { return '<small>' + t + '</small>'; }
+function ojoDetalle(t) { return '<p class="ojo">' + t + '</p>'; }
+
+function T(clave, valores) {
+  let frase = TEXTOS[clave];
+  if (frase === undefined) return clave;
+  if (valores) for (const nombre in valores) frase = frase.split('{' + nombre + '}').join(valores[nombre]);
+  return frase;
+}
+
+// Repinta lo que esta escrito en el marcado. Un nodo lleva data-i18n con su clave; si ademas
+// lleva data-i18n-attr, lo que se cambia es ese atributo y no el texto.
+function pintarTextos() {
+  document.documentElement.lang = IDIOMA;
+  for (const el of document.querySelectorAll('[data-i18n]')) {
+    const clave = el.getAttribute('data-i18n');
+    if (!(clave in TEXTOS)) continue;
+    const attr = el.getAttribute('data-i18n-attr');
+    if (attr) el.setAttribute(attr, TEXTOS[clave]);
+    else el.textContent = TEXTOS[clave];
+  }
+}
+
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -1607,8 +2025,8 @@ function esc(s) {
 function attr(s) { return esc(s).replace(/["']/g, ''); }
 function kb(b) {
   if (!b) return '0 KB';
-  return b < 1024*1024 ? (b/1024).toFixed(1).replace('.',',') + ' KB'
-                       : (b/1048576).toFixed(1).replace('.',',') + ' MB';
+  return b < 1024*1024 ? nDecimal(b/1024) + ' KB'
+                       : nDecimal(b/1048576) + ' MB';
 }
 
 // A small markdown renderer — enough for what the model writes: tables, bold, lists,
@@ -1652,12 +2070,12 @@ function inline(s) {
 
 // THE PROVIDERS ON OFFER. Adding one is adding a line; all speak the OpenAI shape.
 const PROV = [
-  { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', note:'gratis · sin tarjeta · rápido' },
-  { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         note:'la llave de tu cuenta de OpenAI' },
-  { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     note:'la llave de tu Console' },
-  { name:'Cerebras',          url:'https://api.cerebras.ai/v1',      model:'llama-3.3-70b',       note:'gratis · 1M tokens por día' },
-  { name:'Gemini (Google)',   url:'https://generativelanguage.googleapis.com/v1beta/openai', model:'gemini-2.0-flash', note:'gratis · sin tarjeta' },
-  { name:'OpenRouter',        url:'https://openrouter.ai/api/v1',    model:'meta-llama/llama-3.3-70b-instruct:free', note:'muchos modelos gratis con una llave' },
+  { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', nota:'prov.nota.groq' },
+  { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         nota:'prov.nota.openai' },
+  { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     nota:'prov.nota.claude' },
+  { name:'Cerebras',          url:'https://api.cerebras.ai/v1',      model:'llama-3.3-70b',       nota:'prov.nota.cerebras' },
+  { name:'Gemini (Google)',   url:'https://generativelanguage.googleapis.com/v1beta/openai', model:'gemini-2.0-flash', nota:'prov.nota.gemini' },
+  { name:'OpenRouter',        url:'https://openrouter.ai/api/v1',    model:'meta-llama/llama-3.3-70b-instruct:free', nota:'prov.nota.openrouter' },
 ];
 
 // THE DESKTOP MOCK. Never reached inside the app: there, prompt() always answers. It mirrors
@@ -1699,7 +2117,7 @@ const MOCK = { modules: [
     updateAvailable:{ version:'2.5.0', seenAt:'2026-09-09T12:00:00Z' },
     enabled:true, journalBytes:1210, journalFiles:3, tools:[
     { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
-  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'Mi plan de mantenimiento', institution:'Sotavento Motors',
+  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'Mi plan de mantenimiento', institution:'Sotaventos Motors',
     slogan:'Tu carro, siempre listo', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png', banner:'../bundles/dealership/web/brand/banner.jpg', font:{ family:'Sora', regular:'../bundles/dealership/web/brand/Sora-600.woff2', bold:'' } },
     enabled:true, journalBytes:980, journalFiles:3, tools:[
     { name:'resumen', title:'Cómo va mi carro', enabled:true, description:'Cómo está el vehículo ahora mismo.' }]},
@@ -1728,6 +2146,18 @@ function mock(op, x) {
   // En el monitor no hay pantalla de inicio donde poner nada, y decirlo es mejor que fingir
   // que se pudo: el botón queda probable en su camino de error, que es el que más se ve.
   if (op === 'fijar') return { ok: false, razon: 'Acá no hay pantalla de inicio: esto solo funciona en el teléfono.' };
+
+  // LA MAQUETA NO TIENE CATALOGO, y devuelve uno vacio a proposito en vez de inventar uno.
+  //
+  // Consecuencia, y conviene saberla antes de abrir esto en un monitor: lo que esta escrito en
+  // el MARCADO se sigue viendo -- es el respaldo -- y lo que arma el JavaScript sale como su
+  // clave, «alta.paso.revisando» en vez de la frase. La maqueta existe para iterar CSS y
+  // disposicion, y eso sigue sirviendo; para leer copy hay que abrirla en el telefono.
+  //
+  // La alternativa era repetir el espanol aca, y dos copias del mismo texto es exactamente lo
+  // que el catalogo existe para evitar.
+  if (op === 'textos') return {};
+
   if (op === 'altaArchivo') {
     // The mock "picks" three files: two modules -one she already has- and a zip that is not one.
     setTimeout(() => gn.push('hallazgos', '', JSON.stringify({ archivos: [
@@ -1736,7 +2166,7 @@ function mock(op, x) {
       { indice: 1, archivo: 'examenes.gmod', bytes: 13027208, modulo: 'examenes', titulo: 'Tus examenes, al dia', institucion: 'Laboratorio Clínico Delfos',
         nombreCorto: 'Delfos', eslogan: 'Tu salud, en tus manos', color: '#0e2f55', categoria: 'laboratorio', firmado: true, problema: '', instalado: false, yaEstaba: true },
       { indice: 2, archivo: 'fotos-vacaciones.zip', bytes: 40210000, modulo: '', titulo: '', institucion: '', nombreCorto: '', eslogan: '', color: '', categoria: '',
-        firmado: false, problema: 'No es un módulo de Gnothi: no trae un manifiesto legible.', instalado: false, yaEstaba: false },
+        firmado: false, problema: 'No es un módulo de Mymi: no trae un manifiesto legible.', instalado: false, yaEstaba: false },
     ] })), 400);
     return { ok: true };
   }
@@ -1784,6 +2214,7 @@ function mock(op, x) {
   if (op === 'setTool')   { const m = MOCK.modules.find(m => m.name === x.module);
                             const t = m.tools.find(t => t.name === x.tool); t.enabled = x.enabled; return MOCK; }
   if (op === 'setModule') { MOCK.modules.find(m => m.name === x.module).enabled = x.enabled; return MOCK; }
+  if (op === 'quitar')    { MOCK.modules = MOCK.modules.filter(m => m.name !== x.module); return MOCK; }
   if (op === 'setProvider') { MOCK.settings.name = x.name; MOCK.settings.model = x.model;
                               MOCK.settings.provider = x.url.split('//').pop().split('/')[0];
                               MOCK.settings.keyPresent = false; return MOCK; }
@@ -1806,12 +2237,23 @@ function mock(op, x) {
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') gn.ask(); });
 document.getElementById('alta-url').addEventListener('keydown', e => { if (e.key === 'Enter') gn.altaDesdeEnlace(); });
 
-// A phone that cannot read codes from inside Gnothi (no BarcodeDetector, no camera API) is told
+// A phone that cannot read codes from inside Mymi (no BarcodeDetector, no camera API) is told
 // so, instead of being shown a button that does nothing.
 if (!gn.scan.supported()) {
   document.getElementById('alta-scan').style.display = 'none';
   document.getElementById('alta-noscan').style.display = '';
 }
+
+// EL IDIOMA PRIMERO, Y DESPUES EL ESTADO. Las dos llamadas son sincronas, asi que para cuando
+// se pinta la primera tarjeta la pantalla ya esta en el idioma del aparato.
+//
+// ACA HUBO DOS LECTORES POR UNAS HORAS. Geaninna escribio `t()`/`data-t`/`MYMI_T` para la
+// pantalla de inicio vacio el mismo dia que esta rama escribia `T()`/`data-i18n`/`TEXTOS` para
+// la pagina entera; los dos leian este mismo catalogo por este mismo puente. Queda uno -- el que
+// cubre las 124 llamadas -- y las seis etiquetas de ella entraron a el sin tocar su pantalla.
+TEXTOS = gn.call('textos') || {};
+IDIOMA = TEXTOS['idioma'] || 'es';
+pintarTextos();
 
 const first = gn.call('modules');
 if (first && !first.loading) { gn.state = first; gn.paint(); }

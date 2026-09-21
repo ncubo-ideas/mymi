@@ -58,12 +58,17 @@ dotnet Gnothi.Host/bin/Debug/net9.0/Gnothi.Host.dll <carpeta-de-modulos> < /dev/
 ```
 
 ```
-warning: malo: brand.shortName tiene 49 caracteres y el tope es 28
-warning: malo: brand.logo es '.svg' y solo se aceptan png, jpg y webp -- un svg ejecuta
-warning: malo: about.category 'farmacia' no esta en la lista que el Host conoce
+warning: malo: brand.shortName is 49 characters and the cap is 28
+warning: malo: brand.logo is '.svg' and only png, jpg and webp are accepted -- an svg executes
+warning: malo: about.category 'farmacia' is not in the list the Host knows, so it falls to the generic icon
 ```
 
 El ejemplo de este directorio no produce ninguno.
+
+> **Estos avisos van en inglés a propósito**, y no entran en el catálogo de textos: hablan de
+> `brand.shortName` y de `about.category`, así que son diagnóstico para quien **empaqueta** el
+> módulo, no copy para quien lo usa. Estaban en español dentro de una lista cuyo resto era inglés.
+> Ver [las reglas de localización](../Metodologia/Guias/reglas-de-localizacion.md).
 
 ## `sincronizar-manifiesto.mjs` — el manifiesto, proyectado desde el módulo
 
@@ -92,9 +97,72 @@ entrar mezclado, y `--check` lo hace visible antes de mergear.
 
 **Requisitos:** el DLL del módulo compilado (si su `.cs` es más nuevo, recompilar primero) y
 `node`. No lee el journal, solo enumera tools, así que corre con una carpeta de datos vacía.
+Dónde está el DLL lo lee de `Modulos/<x>/installation.json` —`shell.arguments[0]`, relativo a la
+carpeta del módulo si no es absoluto, la misma regla que aplica el Host—, así que no hay una segunda
+lista que mantener. Si ese `bin/Debug` está tomado por un proceso —los MCP de una sesión abierta— y
+compilaste a otra carpeta, `node Herramientas/sincronizar-manifiesto.mjs compras --dll=<ruta>` usa
+ese dll y escribe igual el manifiesto de `Modulos/compras`.
 
 **Idempotente:** correrlo dos veces seguidas no produce un segundo diff. Bueno para un hook de
 pre-commit o un paso de CI con `--check`.
 
-Deja a `Gnothi.Assistant.Tests/GuardianDeManifiestos` como la red: esto mantiene sincronizado,
-el guardián avisa si alguien igual editó a mano y se desvió.
+Deja al guardián de la suite —`Gnothi.Assistant.Tests/Conformance.cs`, que arranca cada módulo y
+cruza su manifiesto contra su `tools/list` real— como la red: esto mantiene sincronizado, el guardián
+avisa si alguien igual editó a mano y se desvió.
+
+## `revisar-las-caras.mjs` — que la cara híbrida siga diciendo lo que dice su app
+
+Cada negocio tiene **dos pantallas del mismo hecho**: la app suelta en Blazor (`<X>.Wasm`, que es la
+fuente del diseño) y la cara híbrida (`<X>.Cara`, html y js planos que corren dentro de Mymi). Nada
+las ata. Se escribieron a mano el 2026-09-14, las apps se localizaron el 16 y el 17, y el 18 **sólo
+una de las cinco hablaba inglés adentro de Mymi**. Cuatro días bastaron.
+
+```bash
+node Herramientas/revisar-las-caras.mjs              # las cinco
+node Herramientas/revisar-las-caras.mjs compras      # una o varias
+node Herramientas/revisar-las-caras.mjs --silencio   # sólo los hallazgos
+```
+
+Sale con código 1 si encuentra algo, para que sirva de compuerta.
+
+### Qué revisa, y son las tres formas en que se desincronizaron de verdad
+
+| | qué compara | por qué duele |
+|---|---|---|
+| **la hoja** | que `css/app.css` de la cara sea idéntica a la de su app, y que el html la enlace | ahí viven el color, la tipografía y el layout de la institución; entresacar reglas a mano es decidir cómo se ve ella |
+| **las clases** | que toda clase que la cara escribe tenga regla en alguna hoja que viaja | es el modo mudo de verse mal: el bloque sale sin caja, sin color o sin espacio, **sin un solo error en consola** |
+| **los catálogos** | que los dos idiomas tengan las mismas claves, que ninguna que la cara pide falte, y que lo compartido con la app diga **exactamente** lo mismo | una cara con su propia redacción es una segunda institución |
+
+Lo de las clases no es teórico: `inicio-atencion-detalle` dejaba la caja de lectura de Delfos pelada,
+y `apunte` —que escribe el puente del Host en las **cinco** caras— no estaba en tres hojas, así que
+un fallo se veía igual que una nota.
+
+### Qué no puede revisar
+
+**Si la cara lee un campo que la superficie no serializa.** Eso sólo se ve corriendo: `h.stays.stays`,
+`h.plate.plate` y `x.cuando` pintaban vacío para siempre. Al tocar una cara, leer el record de
+`Vistas/`, no lo que parece razonable.
+
+Tampoco juzga el diseño. Dice si la cara se desvió de su app, no si las dos se ven bien.
+
+## `replicar-seccion-gnothi.mjs` — el paso a paso «Se usa con Gnothi», en cada página
+
+Cada página de institución (`<Negocio>/PaginaDeDescarga/descarga/index.html`) trae la misma
+sección `#gnothi`: primero Gnothi (una vez, de la tienda o de la descarga para Windows), después
+la institución (un toque), en tres paneles elegidos por el aparato de la persona. La estrenó La
+Guaria a mano; las otras cuatro salen de este molde, con la **voz** de cada página (usted, vos,
+inglés) y su **paleta** mapeada a variables propias, para que la sección vista la marca de cada una.
+
+```bash
+node Herramientas/replicar-seccion-gnothi.mjs
+```
+
+Empalma la sección en cada página que **todavía no la tiene** y ajusta el llamado a la acción de
+la portada; una página que ya la trae no se toca. Si el flujo cambia —un rótulo del alta, un paso
+nuevo—, cambia en el molde, se quita la sección vieja de las páginas y se vuelve a correr; la de
+La Guaria se edita a mano y le sirve de referencia visual.
+
+Los tres descargables que la sección ofrece (`descargas/gnothi/Gnothi.Host.zip`,
+`descargas/<modulo>.gmod` y `descargas/movil/<modulo>.gmod`) **no van al repo**: se arman con
+`Gnothi.Mobile/armar-bundle.ps1` antes de levantar URL1, y el `nginx.conf` de cada página dice
+cuál es cuál. La forma hospedada lleva el origen adentro y tiene que ser el que sirve la página.

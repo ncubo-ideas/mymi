@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puppeteer · Cómo se usa</title>
+<meta name="description" content="Guía para entender y usar el paradigma Puppeteer. Borrador para revisión de pares.">
+<style>
+  :root{
+    --bg:#f6f2e9; --panel:#fffdf8; --ink:#241f1a; --ink-soft:#5b5348;
+    --rule:#e4dccb; --accent:#8a5a2b; --accent-soft:#b98a4e;
+    --code-bg:#2b2620; --code-ink:#f3ece0; --code-kw:#e0a458; --code-str:#9fc08a; --code-com:#8c8577;
+    --do:#2f7d4f; --do-bg:#e9f4ec; --consider:#9a7d18; --consider-bg:#f6f0d9;
+    --avoid:#b5641b; --avoid-bg:#f7ebdd; --dont:#b23b34; --dont-bg:#f7e6e4;
+    --note:#3b5b86; --note-bg:#eaf0f8; --try:#5a4a86; --try-bg:#efecf8;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#17140f; --panel:#201c16; --ink:#ece4d6; --ink-soft:#a89f8f;
+      --rule:#332c22; --accent:#d29a5c; --accent-soft:#a87e4c;
+      --code-bg:#100e0a; --code-ink:#ece4d6;
+      --do:#6cc48a; --do-bg:#16241a; --consider:#d6bd5a; --consider-bg:#25210f;
+      --avoid:#e0975a; --avoid-bg:#271a0f; --dont:#e07a72; --dont-bg:#271311;
+      --note:#8fb0dd; --note-bg:#131a25; --try:#b6a6e6; --try-bg:#191527;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17140f; --panel:#201c16; --ink:#ece4d6; --ink-soft:#a89f8f;
+    --rule:#332c22; --accent:#d29a5c; --accent-soft:#a87e4c;
+    --code-bg:#100e0a; --code-ink:#ece4d6;
+    --do:#6cc48a; --do-bg:#16241a; --consider:#d6bd5a; --consider-bg:#25210f;
+    --avoid:#e0975a; --avoid-bg:#271a0f; --dont:#e07a72; --dont-bg:#271311;
+    --note:#8fb0dd; --note-bg:#131a25; --try:#b6a6e6; --try-bg:#191527;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+
+  .wrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:0;max-width:1200px;margin:0 auto}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;border-right:1px solid var(--rule);padding:28px 22px 60px;background:var(--panel)}
+  main{padding:0 44px 120px;min-width:0}
+  @media (max-width:880px){
+    .wrap{grid-template-columns:1fr}
+    nav.toc{position:fixed;z-index:40;width:86%;max-width:320px;transform:translateX(-100%);transition:transform .22s ease;box-shadow:0 0 40px rgba(0,0,0,.25)}
+    nav.toc.open{transform:translateX(0)}
+    main{padding:0 16px 100px}
+    .menu-btn{display:inline-flex!important}
+  }
+
+  .brand{font-family:var(--serif);font-size:20px;font-weight:700;margin:0 0 2px}
+  .brand small{display:block;font-family:var(--sans);font-weight:400;font-size:12.5px;color:var(--ink-soft);margin-top:4px}
+  .toc h4{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin:24px 0 8px}
+  .toc ol{list-style:none;margin:0;padding:0}
+  .toc li{margin:1px 0}
+  .toc a{display:block;padding:5px 10px;border-radius:7px;color:var(--ink-soft);font-size:14px}
+  .toc a:hover{background:var(--bg);text-decoration:none;color:var(--ink)}
+  .toc a.active{background:var(--accent);color:#fff;font-weight:600}
+  .toc a.soon{opacity:.5;pointer-events:none}
+  .toc a.soon::after{content:"pronto";float:right;font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;background:var(--rule);color:var(--ink-soft);border-radius:20px;padding:1px 7px;margin-top:3px}
+
+  .menu-btn{display:none;position:fixed;top:14px;left:14px;z-index:50;align-items:center;gap:7px;background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 13px;font-size:14px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+  .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:35}
+  .scrim.on{display:block}
+
+  .cover{border-bottom:2px solid var(--rule);padding:60px 0 34px;margin-bottom:8px}
+  .kicker{font-size:12.5px;text-transform:uppercase;letter-spacing:.18em;color:var(--accent);font-weight:700}
+  .cover h1{font-family:var(--serif);font-size:clamp(34px,6vw,52px);line-height:1.05;margin:14px 0 10px;letter-spacing:-.5px}
+  .cover .lead{font-size:20px;color:var(--ink-soft);max-width:640px;margin:0}
+  .badge-draft{display:inline-block;margin-top:20px;background:var(--consider-bg);color:var(--consider);border:1px solid var(--consider);border-radius:20px;padding:4px 12px;font-size:12.5px;font-weight:600}
+
+  .part{font-family:var(--serif);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-soft);margin:56px 0 0;padding-top:24px;border-top:1px solid var(--rule)}
+  h2{font-family:var(--serif);font-size:30px;line-height:1.15;margin:8px 0 6px;letter-spacing:-.3px}
+  h3{font-family:var(--serif);font-size:22px;margin:38px 0 6px}
+  h4.sub{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin:26px 0 4px}
+  p{margin:14px 0}
+  .chapter-meta{color:var(--ink-soft);font-size:14.5px;font-style:italic;margin-top:0}
+  em.term{font-style:normal;font-weight:600;color:var(--accent)}
+
+  ul.body,ol.body{margin:14px 0;padding-left:22px}
+  ul.body li,ol.body li{margin:7px 0}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:14px;line-height:1.55;margin:16px 0;position:relative;border:1px solid rgba(255,255,255,.06)}
+  pre .tag{position:absolute;top:0;right:0;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.09);color:#e9dfce;border-bottom-left-radius:8px;padding:3px 10px;font-family:var(--sans)}
+  pre .tag.real{background:#5a3a1e;color:#f2d9b8}
+  code{font-family:var(--mono);font-size:.92em;background:var(--rule);padding:1px 6px;border-radius:5px}
+  pre code{background:none;padding:0;font-size:14px}
+  .k{color:var(--code-kw)} .s{color:var(--code-str)} .c{color:var(--code-com);font-style:italic}
+  .out{--code-bg:#1d2a20;color:#d8ead9} .out .tag{background:rgba(150,220,160,.16)}
+
+  table{border-collapse:collapse;width:100%;margin:20px 0;font-size:15px}
+  th,td{border:1px solid var(--rule);padding:9px 13px;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:700;color:var(--accent);font-size:13.5px;letter-spacing:.02em}
+  tbody tr:nth-child(even){background:var(--panel)}
+  caption{caption-side:bottom;color:var(--ink-soft);font-size:13px;font-style:italic;margin-top:8px;text-align:left}
+
+  .call{border-left:4px solid var(--rule);border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0;background:var(--panel)}
+  .call .h{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .call p{margin:6px 0 0;font-size:15.5px}
+  .call .mark{font-size:15px;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:900}
+  .do{border-color:var(--do);background:var(--do-bg)} .do .h{color:var(--do)} .do .mark{background:var(--do)}
+  .consider{border-color:var(--consider);background:var(--consider-bg)} .consider .h{color:var(--consider)} .consider .mark{background:var(--consider)}
+  .avoid{border-color:var(--avoid);background:var(--avoid-bg)} .avoid .h{color:var(--avoid)} .avoid .mark{background:var(--avoid)}
+  .dont{border-color:var(--dont);background:var(--dont-bg)} .dont .h{color:var(--dont)} .dont .mark{background:var(--dont)}
+
+  aside.note{background:var(--note-bg);border:1px solid var(--note);border-left-width:4px;border-radius:0 10px 10px 0;padding:14px 18px;margin:22px 0;font-size:15px}
+  aside.note .h{font-weight:700;color:var(--note);font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:flex;gap:8px;align-items:center}
+  aside.note p{margin:6px 0 0}
+
+  .tryit{background:var(--try-bg);border:1px solid var(--try);border-radius:12px;padding:14px 18px;margin:20px 0}
+  .tryit .h{font-weight:700;color:var(--try);font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+  .tryit pre{margin:8px 0 0}
+
+  .legend{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:8px 20px 16px;margin:22px 0}
+  .legend .row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--rule)}
+  .legend .row:last-child{border-bottom:0}
+  .legend .pill{flex:0 0 auto;font-size:12px;font-weight:800;color:#fff;border-radius:6px;padding:2px 9px;margin-top:2px}
+  .legend .row span.txt{font-size:15px}
+
+  figure.diagram{margin:26px 0;text-align:center}
+  figure.diagram figcaption{color:var(--ink-soft);font-size:13.5px;margin-top:8px;font-style:italic}
+
+  blockquote{margin:18px 0;padding:2px 20px;border-left:4px solid var(--accent-soft);color:var(--ink-soft);font-style:italic;font-family:var(--serif);font-size:18px}
+  .callback{color:var(--ink-soft);font-size:14px;border-top:1px solid var(--rule);margin-top:80px;padding-top:20px}
+  .anchor{scroll-margin-top:20px}
+
+  @media print{
+    :root{--bg:#fff;--panel:#faf7f0;--ink:#1a1712;--ink-soft:#5b5348;--rule:#d9d0bf;--code-bg:#2b2620;--code-ink:#f3ece0}
+    @page{margin:18mm 16mm}
+    body{font-size:11.5pt;line-height:1.5;background:#fff}
+    .menu-btn,.scrim,nav.toc{display:none!important}
+    .wrap{display:block;max-width:none;margin:0} main{padding:0}
+    .cover{padding-top:0} .cover h1{font-size:30pt} h2{font-size:20pt} h3{font-size:15pt}
+    a,a[href^="#"]{color:var(--ink);text-decoration:none}
+    #prefacio,#intro,#cap1,#cap2,#cap3,#cap4,#cap5,#cap6,#cap7,#cap8,#cap9,#cap10,#cap11,#cap12,#cap13,#cap14,#cap15,#anexoA,#anexoB,#anexoC,#anexoD,.part{break-before:page}
+    #inicio{break-before:auto}
+    pre,.call,aside.note,.tryit,.legend,figure.diagram,table{break-inside:avoid}
+    h2,h3,h4.sub{break-after:avoid}
+    pre{font-size:9pt;border:1px solid #444}
+    .callback{display:none}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Índice">☰ Índice</button>
+<div class="scrim" id="scrim"></div>
+<div class="wrap">
+
+<nav class="toc" id="toc">
+  <div class="brand">Puppeteer<small>Cómo se usa · guía técnica</small></div>
+
+  <h4>Preliminares</h4>
+  <ol>
+    <li><a href="#inicio">Portada</a></li>
+    <li><a href="#prefacio">Prefacio</a></li>
+    <li><a href="#intro">Introducción · ¿Qué es Puppeteer?</a></li>
+  </ol>
+
+  <h4>Parte I · Primeros pasos</h4>
+  <ol>
+    <li><a href="#cap1">1 · Fundamentos: el modelo mental en 30 min</a></li>
+    <li><a href="#cap2">2 · Tu primer actor</a></li>
+    <li><a href="#cap3">3 · El DSL a fondo</a></li>
+    <li><a href="#cap4">4 · Parámetros y contratos</a></li>
+    <li><a href="#cap5">5 · Control de flujo y guardas</a></li>
+    <li><a href="#cap6">6 · El dominio C# del actor</a></li>
+    <li><a href="#cap7">7 · Journal, persistencia y replay</a></li>
+    <li><a href="#cap8">8 · Salida y hosting</a></li>
+  </ol>
+
+  <h4>Parte II · Cruce de fronteras</h4>
+  <ol>
+    <li><a href="#cap9">9 · Reacciones y tell</a></li>
+    <li><a href="#cap10">10 · Consumir y despachar</a></li>
+    <li><a href="#cap11">11 · Sagas</a></li>
+    <li><a href="#cap12">12 · Topologías y formaciones</a></li>
+  </ol>
+
+  <h4>Parte III · Patrones y recetas</h4>
+  <ol>
+    <li><a href="#cap13">13 · Patrones que usa Puppeteer</a></li>
+    <li><a href="#cap14">14 · Patrones fáciles de sumar</a></li>
+    <li><a href="#cap15">15 · Recetas: ¿cómo hago para…?</a></li>
+  </ol>
+
+  <h4>Anexos</h4>
+  <ol>
+    <li><a href="#anexoA">A · Correr los ejemplos</a></li>
+    <li><a href="#anexoB">B · Glosario</a></li>
+    <li><a href="#anexoC">C · Convenciones del DSL</a></li>
+    <li><a href="#anexoD">D · Referencia DO / DON'T</a></li>
+  </ol>
+</nav>
+
+<main>
+    <!-- PORTADA -->
+  <header class="cover anchor" id="inicio">
+    <div class="kicker">Guía técnica</div>
+    <h1>Puppeteer:<br>cómo se usa</h1>
+    <p class="lead">Entender el paradigma, escribir tu primer actor y descubrir por qué modificar una aplicación ya en marcha resulta sorprendentemente fácil.</p>
+    <span class="badge-draft">Borrador para revisión de pares · Prefacio, Introducción y Partes I–III (Caps. 1–15)</span>
+  </header>
+
+  <!-- PREFACIO -->
+  <div class="part">Preliminares</div>
+  <section class="anchor" id="prefacio">
+    <h2>Prefacio</h2>
+
+    <p>Durante décadas construimos software de la misma manera: el estado vive en una base de datos, la aplicación lo lee, lo modifica y lo vuelve a escribir, y confiamos en que nadie más lo tocó mientras tanto. Funciona —hasta que deja de funcionar—: condiciones de carrera, auditorías que hay que “agregar” después, migraciones que dan miedo, y la misma lógica de negocio reescrita una y otra vez para cada canal y cada dispositivo.</p>
+
+    <p>Puppeteer parte de una premisa distinta, que nCubo resume en cuatro palabras: <strong>«State is local. Continuity is not.»</strong> —el estado es local; la continuidad no—. Cada pieza de lógica vive como un <em class="term">actor</em> dueño de su estado, y todo lo que ocurre queda escrito, en orden, en un <em class="term">diario causal</em> que es la única fuente de verdad. Desde ahí, la continuidad —entre sesiones, servicios, dispositivos y versiones— se reconstruye sola. nCubo lo describe como <em>«un sustrato de sistemas distribuidos para experiencias que ocurren juntas»</em>.</p>
+
+    <p>Esta guía enseña a <strong>usar</strong> ese paradigma. Pero antes de la primera línea de código conviene entender por qué vale la pena mirarlo.</p>
+
+    <h3>Por qué Puppeteer merece tu atención</h3>
+    <p>No es una idea de laboratorio. Puppeteer está <strong>en producción desde 2018</strong>, sostiene aplicaciones reales con miles de operaciones, está respaldado por <strong>diez artículos con DOI</strong> y se publica como <strong>código abierto bajo Apache 2.0</strong>. Cinco propiedades explican por qué quienes lo adoptan tienden a no volver atrás:</p>
+    <table>
+      <thead><tr><th>Propiedad</th><th>Qué significa en la práctica</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Una sola fuente de verdad</strong></td><td>El diario causal registra <em>todo</em> lo que pasó, en orden. La auditoría y la trazabilidad no se “agregan”: son el sustrato mismo.</td></tr>
+        <tr><td><strong>Rendimiento en memoria</strong></td><td>El estado vive en RAM, detrás de tu API. Las lecturas son inmediatas; no hay ida y vuelta a la base de datos en cada request.</td></tr>
+        <tr><td><strong>Desplegar es reproducir</strong></td><td>El estado se reconstruye reproduciendo el diario. Reiniciar, mover o redesplegar deja de ser un evento de riesgo.</td></tr>
+        <tr><td><strong>Un dominio, muchas topologías</strong></td><td>«Un dominio puede presentarse en distintos clientes, runtimes y topologías sin convertirse en otro sistema»: la misma lógica en web, móvil, CLI o distribuida.</td></tr>
+        <tr><td><strong>Cambios baratos</strong></td><td>Agregar una operación de negocio suele ser <em>un método de dominio y una línea de DSL</em>. Lo verás en acción a lo largo de esta guía.</td></tr>
+      </tbody>
+      <caption>Tabla 1. Las cinco propiedades que definen el valor de Puppeteer.</caption>
+    </table>
+
+    <h3>Cómo está organizada</h3>
+    <table>
+      <thead><tr><th>Sección</th><th>Qué encontrarás</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Introducción</strong></td><td>El paradigma en pocas páginas: qué es un actor, un comando y por qué el diario lo cambia todo.</td></tr>
+        <tr><td><strong>Parte I · Primeros pasos</strong></td><td>Del modelo mental a un actor que corre, y de ahí al DSL, los parámetros, las guardas, el dominio, la persistencia y el hosting.</td></tr>
+        <tr><td><strong>Parte II · Cruce de fronteras</strong></td><td>Cuando un actor debe provocar trabajo en otro: reacciones, <em>tell</em>, despacho de mensajes, sagas y topologías.</td></tr>
+        <tr><td><strong>Parte III · Patrones y recetas</strong></td><td>Los patrones que Puppeteer usa, otros fáciles de sumar, y recetas concretas: agregar una base de datos, migrar un sistema legado.</td></tr>
+        <tr><td><strong>Anexos</strong></td><td>Cómo correr los ejemplos, glosario, convenciones del DSL y la referencia consolidada de recomendaciones.</td></tr>
+      </tbody>
+      <caption>Tabla 2. Mapa del documento.</caption>
+    </table>
+
+    <h3>Convenciones</h3>
+    <p>A lo largo de la guía usamos cuatro tipos de recomendación. Son directas a propósito: te dicen qué hacer, no solo qué es posible.</p>
+    <div class="legend">
+      <div class="row"><span class="pill" style="background:var(--do)">HAZ</span><span class="txt">Prácticas que conviene seguir casi siempre. Son el camino principal.</span></div>
+      <div class="row"><span class="pill" style="background:var(--consider)">CONSIDERA</span><span class="txt">Buenas ideas en general; aplícalas con criterio según tu caso.</span></div>
+      <div class="row"><span class="pill" style="background:var(--avoid)">EVITA</span><span class="txt">Generalmente no es buena idea, aunque existan excepciones.</span></div>
+      <div class="row"><span class="pill" style="background:var(--dont)">NO HAGAS</span><span class="txt">Prácticas que casi siempre traen problemas. Mejor no.</span></div>
+    </div>
+    <p>También verás recuadros <strong style="color:var(--note)">Nota del diseñador</strong> con el porqué de una decisión del framework, y recuadros <strong style="color:var(--try)">Pruébalo</strong> con el comando exacto para correr un ejemplo. Los bloques de código llevan una etiqueta con su lenguaje —<code>C#</code>, <code>DSL</code>, <code>Salida</code>— y los que provienen de una aplicación real llevan además la marca <strong>real</strong>.</p>
+
+    <aside class="note">
+      <div class="h">✎ Sobre los ejemplos</div>
+      <p>Conviven dos clases. Los <strong>ejemplos de juguete</strong> son minúsculos y neutrales, escritos a la medida de cada concepto; <strong>todos compilan y se ejecutan</strong>, y las salidas que ves son reales (Anexo A). Los <strong>fragmentos marcados “real”</strong> provienen de <em>Velada</em>, una aplicación de bingo construida sobre Puppeteer y en uso real: muestran cómo se ve el framework en producción, no son código para copiar.</p>
+    </aside>
+  </section>
+
+  <!-- INTRODUCCIÓN -->
+  <section class="anchor" id="intro">
+    <h2>Introducción · ¿Qué es Puppeteer?</h2>
+    <p class="chapter-meta">El modelo mental en pocas páginas: qué es un actor, qué es un comando y por qué el diario lo cambia todo.</p>
+
+    <p>Imagina que cada pieza de lógica de negocio de tu sistema fuera un pequeño ser vivo que <strong>guarda su propio estado en memoria</strong> y es el <strong>único</strong> autorizado a cambiarlo. No le pides que exponga sus datos para que tú los modifiques desde afuera: le <strong>envías una instrucción</strong> y él la ejecuta contra sí mismo. Eso es un <em class="term">actor</em> de Puppeteer, y trabajar así es más simple y más seguro de lo que suena.</p>
+
+    <p>Puppeteer es un framework de <strong>event sourcing</strong> con <strong>actores</strong> y un pequeño <strong>lenguaje (DSL)</strong> para darles órdenes. Corre <em>detrás</em> de tu servidor: en cada request de tu API, la lógica de negocio se ejecuta sobre un actor que vive en memoria —como una base de datos en memoria— y por eso es rápido.</p>
+
+    <blockquote>«State is local. Continuity is not.» — El estado es local; la continuidad no. Puppeteer conserva el resultado local de cada actor y, a la vez, reconstruye la continuidad entre sesiones, servicios y dispositivos.</blockquote>
+
+    <h3>Los cinco elementos</h3>
+    <p>Todo lo que hace Puppeteer se organiza alrededor de cinco elementos. Vale la pena tenerlos a mano, porque el resto de la guía no hace más que profundizar en ellos:</p>
+    <table>
+      <thead><tr><th>Elemento</th><th>Qué es</th><th>En el bingo <em>Velada</em></th></tr></thead>
+      <tbody>
+        <tr><td><strong>Participantes</strong></td><td>Personas que actúan desde cualquier dispositivo.</td><td>El organizador, las vendedoras, los jugadores.</td></tr>
+        <tr><td><strong>Acciones</strong></td><td>Decisiones registradas como operaciones.</td><td>Vender un cartón, cantar una bolita, reclamar bingo.</td></tr>
+        <tr><td><strong>Reglas</strong></td><td>La lógica que interpreta el significado de cada acción.</td><td>Cuándo una figura se da por ganada; si un cartón puede salir de juego.</td></tr>
+        <tr><td><strong>Diario causal</strong></td><td>El registro append-only de lo que sucedió.</td><td>El diario de la velada: cada venta, cada bolita, en orden.</td></tr>
+        <tr><td><strong>Manifestaciones</strong></td><td>La presentación, personalizada por participante.</td><td>La pantalla del organizador, la de la vendedora, la del jugador.</td></tr>
+      </tbody>
+      <caption>Tabla 3. Los cinco elementos de Puppeteer, aterrizados en un caso real.</caption>
+    </table>
+
+    <h3>Tres ideas y ya lo entendiste</h3>
+
+    <h4 class="sub">1. El actor es dueño de su estado</h4>
+    <p>El estado no vive en una tabla que cualquiera edita: vive <strong>dentro del actor</strong>. Nadie lo muta desde afuera. Se le manda un <em class="term">script</em> —un comando escrito en el DSL— y el actor lo corre contra su propio estado. Esto elimina de raíz una categoría entera de errores: no hay dos partes del código peleando por el mismo dato.</p>
+
+    <h4 class="sub">2. Hablas con él en un DSL diminuto</h4>
+    <p>No manipulas objetos a mano ni escribes SQL. Escribes una frase corta y clara. Así se le ordena a un actor real —la mesa del bingo— que ponga un cartón en juego y cante un número:</p>
+    <pre><span class="tag real">DSL · real</span><code>mesa.PutCardInPlay(1001);
+mesa.RegisterDraw(@numero, @ronda);</code></pre>
+    <p>El DSL <strong>orquesta</strong> tu dominio en C#: construye tus objetos y llama sus verbos. Tú programas la lógica rica en C#; el DSL solo dice <em>qué</em> hacer, no <em>cómo</em>.</p>
+
+    <h4 class="sub">3. Todo queda escrito en un diario (y ahí está la magia)</h4>
+    <p>Cada comando que cambia el estado se anota en un <em class="term">diario causal</em>: una lista append-only de todo lo que pasó. El estado actual del actor no es más que <strong>el resultado de haber ejecutado el diario de principio a fin</strong>.</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 190" width="100%" style="max-width:600px" role="img" aria-label="Un comando entra al actor, que ejecuta el script contra su estado en memoria y anota el hecho en el diario. Reproducir el diario reconstruye el estado.">
+        <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="13" fill="var(--ink)">
+          <rect x="6" y="66" width="120" height="54" rx="10" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="66" y="90" text-anchor="middle" font-weight="700">Comando</text>
+          <text x="66" y="107" text-anchor="middle" fill="var(--ink-soft)" font-size="11">script DSL</text>
+          <circle cx="300" cy="93" r="58" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="300" y="88" text-anchor="middle" font-weight="700">Actor</text>
+          <text x="300" y="106" text-anchor="middle" fill="var(--ink-soft)" font-size="11">estado en memoria</text>
+          <rect x="486" y="50" width="148" height="86" rx="10" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="560" y="74" text-anchor="middle" font-weight="700">Diario</text>
+          <text x="560" y="93" text-anchor="middle" fill="var(--ink-soft)" font-size="11">append-only</text>
+          <text x="560" y="112" text-anchor="middle" fill="var(--ink-soft)" font-size="11">la verdad</text>
+          <line x1="128" y1="93" x2="238" y2="93" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+          <line x1="360" y1="93" x2="482" y2="93" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+          <path d="M486,120 C400,175 200,175 300,153" fill="none" stroke="var(--accent-soft)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+          <text x="300" y="184" text-anchor="middle" fill="var(--accent-soft)" font-size="11">reproducir el diario reconstruye el estado</text>
+        </g>
+      </svg>
+      <figcaption>Figura 1. Un comando cambia el estado y se anota en el diario. El estado siempre se puede reconstruir reproduciéndolo.</figcaption>
+    </figure>
+
+    <p>Si reproduces el diario, <strong>obtienes exactamente el mismo estado</strong>. Reiniciar un proceso, mover el actor a otra máquina o volver a desplegar el sistema no es un evento traumático: es, simplemente, <strong>reproducir el diario otra vez</strong>. En Puppeteer se dice que <em>desplegar es reproducir</em>.</p>
+
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>El diario guarda el <strong>texto del comando</strong>, no el efecto que tuvo. Por eso el actor puede renacer en cualquier momento re-ejecutando lo que se le dijo. Es también la razón por la que los comandos deben ser <strong>deterministas</strong>: la fecha y hora, por ejemplo, no se leen del reloj del sistema dentro del script, sino que el framework las inyecta y las guarda en el diario, para que una reproducción dé siempre el mismo resultado.</p>
+    </aside>
+
+    <h3>¿Y esto para qué me sirve?</h3>
+    <ul class="body">
+      <li><strong>Auditoría total, gratis.</strong> El diario <em>es</em> la historia completa: cada cambio, en orden, con su momento. No hay que “agregar logging”.</li>
+      <li><strong>Rendimiento de base de datos en memoria.</strong> El estado vive en RAM; las lecturas son inmediatas.</li>
+      <li><strong>Cambios baratos.</strong> Agregar una operación nueva suele ser <em>un método en tu dominio + una línea de DSL</em> — una propiedad que veremos en acción a lo largo de la Parte I.</li>
+      <li><strong>El mismo dominio en muchas topologías.</strong> Un actor puede reaccionar a lo que otro escribió y avisarle (un <em>tell</em>), y así se arman sistemas distribuidos completos sin acoplar sus partes.</li>
+    </ul>
+
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Piensa en cada capacidad de negocio como un actor que <strong>protege su estado</strong> y ofrece <strong>verbos</strong> (operaciones), no campos editables. Es la unidad natural de diseño en Puppeteer.</p>
+    </div>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No trates al actor como una bolsa de datos para leer y escribir desde afuera. Si te descubres “sacando” el estado para modificarlo y “metiéndolo” de vuelta, estás peleando contra el paradigma.</p>
+    </div>
+
+    <p>Con estas tres ideas —<strong>estado propio</strong>, <strong>DSL que orquesta</strong>, <strong>diario como verdad</strong>— ya tienes el mapa. Con él en mano, fijemos ahora el modelo mental completo.</p>
+  </section>
+
+  <!-- PARTE I -->
+  <div class="part">Parte I · Primeros pasos</div>
+
+  <!-- CAP 1 · FUNDAMENTOS -->
+  <section class="anchor" id="cap1">
+    <h2>1 · Fundamentos: el modelo mental en 30 minutos</h2>
+    <p class="chapter-meta">Cuatro ideas que explican todo lo demás — recorridas con una app de bingo real como guía.</p>
+
+    <p>Antes de escribir una sola línea, dediquemos media hora a fijar el <strong>modelo mental completo</strong>. Cabe en cuatro ideas: <strong>comando vs. query</strong>, <strong>persistencia automática</strong>, <strong>replay = redeploy</strong> y <strong>determinismo</strong>. Para que cada una aterrice en algo concreto, las recorremos con <em>Velada</em>, una aplicación de <strong>bingo comunitario</strong> en uso real, construida sobre Puppeteer.</p>
+
+    <p>En <em>Velada</em>, un organizador abre la velada, unas colaboradoras venden cartones en la puerta y los jugadores siguen el juego desde su teléfono mientras se cantan las bolitas. Es justo la clase de sistema para el que Puppeteer fue diseñado: <strong>varios participantes, varios dispositivos, todo a la vez</strong>. Cada velada es su propio actor —su propio diario— y los papeles se reparten así:</p>
+    <table>
+      <thead><tr><th>Actor</th><th>Papel</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Organizador</strong></td><td>Director</td><td>Dueño del diario de la velada: abre el bingo, pone cartones en venta, anuncia rondas, canta bolitas.</td></tr>
+        <tr><td><strong>Colaborador</strong></td><td>Réplica (Cast)</td><td>Vende y entrega cartones; mantiene una copia local para trabajar aunque se caiga la red.</td></tr>
+        <tr><td><strong>Jugador</strong></td><td>Suscriptor</td><td>Sigue el juego: recibe cada bolita y marca su cartón en su propio teléfono.</td></tr>
+      </tbody>
+      <caption>Tabla 4. Los tres actores de <em>Velada</em>. Un mismo dominio, en tres papeles — <em>«un dominio presentado en distintas topologías sin convertirse en otro sistema»</em>.</caption>
+    </table>
+    <p>No necesitas retener esta app: úsala como escenario mientras recorremos las cuatro ideas. Fíjate en las <em>formas</em>, no en los detalles.</p>
+
+    <h3>1.1 · Comando vs. query</h3>
+    <p>Toda interacción con un actor es una de dos cosas. Un <strong>comando</strong> cambia el estado y queda anotado; una <strong>query</strong> solo lee y no deja rastro. En <em>Velada</em>, poner cartones a la venta o cantar una bolita son <em>comandos</em>…</p>
+    <pre><span class="tag real">DSL · real</span><code>elder.PutUpForSale(festival, @cartones);   <span class="c">// comando: cambia el estado</span>
+mesa.RegisterDraw(@numero, @ronda);        <span class="c">// comando: registra la bolita</span></code></pre>
+    <p>…mientras que preguntar cuántas bolitas van, o pedir el “pulso” de la mesa para repintar la pantalla, son <em>queries</em>:</p>
+    <pre><span class="tag real">DSL · real</span><code>print mesa.DrawnCount <span class="s">'draws'</span>;   <span class="c">// query: solo lee</span>
+print mesa.Pulse <span class="s">'pulse'</span>;        <span class="c">// query barata que resume todo lo pintable</span></code></pre>
+    <p>El <code>Pulse</code> es un buen ejemplo del oficio: una sola consulta barata que resume todo lo que puede haber cambiado en pantalla, para no tener que traerse las bolitas una por una entre canto y canto.</p>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Ten clara, en cada interacción, si es comando o query. Un comando expresa un <strong>hecho</strong> que ocurrió y merece quedar en el diario; una query es una <strong>pregunta</strong> que no cambia nada. Mezclarlas —una “consulta” que de paso modifica— es la fuente de sorpresas más común.</p>
+    </div>
+
+    <h3>1.2 · Persistencia automática: no existe “guardar”</h3>
+    <p>Aquí está la primera sorpresa agradable. <strong>Nunca llamas a un <code>save</code>.</strong> Cuando un comando cambia el estado, el framework anota ese hecho en el diario por ti. Lo único que decides es <em>dónde</em> vive el diario, con <code>ConfigureStorage</code>: en memoria, en el sistema de archivos o en una base de datos.</p>
+    <pre><span class="tag real">C# · real</span><code>_stage.ConfigureStorage(kind, <span class="s">"path="</span> + _dir);   <span class="c">// aqui: sistema de archivos, un diario por bingo</span></code></pre>
+    <p>Por eso, en <em>Velada</em>, todo lo que debe sobrevivir a un reinicio —el precio de la noche, los cartones vendidos— entra al diario simplemente <strong>siendo el efecto de un comando</strong>. Nada que “sobreviva” puede quedarse solo en RAM; y no hay que hacer nada especial para que sobreviva, más que ejecutarlo como comando.</p>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Lo que el diario guarda es el <strong>texto del comando</strong>, no el efecto que produjo. “Vendé estos cartones” se anota como esa instrucción, no como el nuevo saldo resultante. Esa decisión —guardar la causa, no la consecuencia— es la que habilita las dos ideas que siguen.</p>
+    </aside>
+
+    <h3>1.3 · Replay = redeploy</h3>
+    <p>Si el diario guarda las causas en orden, entonces el estado actual del actor <strong>no es más que el resultado de reproducir el diario de principio a fin</strong> (vuelve a la Figura 1). Esto tiene una consecuencia liberadora: reiniciar el proceso, mover el actor a otra máquina o volver a desplegar el sistema es, simplemente, <strong>reproducir el diario otra vez</strong>. Desplegar <em>es</em> reproducir.</p>
+    <p>En <em>Velada</em> se ve con el bloque <code>upgrade</code>, que corre <strong>una sola vez por actor</strong> y sirve, con el mismo código, tanto para <em>nacer</em> como para <em>rehidratar</em>:</p>
+    <pre><span class="tag real">DSL · real</span><code>upgrade('festival') {
+    elder    = Elder('Bartolo');
+    dia      = CalendarDay(2026, 9, 17);
+    festival = elder.CreateFestival('MiBingo', dia, hoy);
+    mesa     = BingoGame();
+}</code></pre>
+    <p>La primera vez, el <code>upgrade</code> crea la velada. Cuando el teléfono se reinicia y el actor vuelve a la vida, ese mismo <code>upgrade</code> ya está en el diario: al reproducirlo, la velada <strong>renace idéntica a como estaba</strong>, leída de su propio diario. Las variables de nivel superior (<code>elder</code>, <code>festival</code>, <code>mesa</code>) son el <strong>estado raíz</strong> del actor: objetos de dominio ricos que todos los comandos siguientes reutilizan.</p>
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Deja de pensar en “migraciones de datos” y “estados corruptos tras un despliegue”. Si el diario es la verdad y el estado se reconstruye reproduciéndolo, un despliegue nuevo arranca reproduciendo lo mismo. La pregunta deja de ser “¿cómo migro el estado?” y pasa a ser “¿mi diario reproduce igual?”.</p>
+    </div>
+
+    <h3>1.4 · Determinismo: por qué el replay funciona</h3>
+    <p>Reproducir el diario significa <strong>volver a ejecutar el texto de cada comando</strong>. Para que el resultado sea siempre el mismo, esos comandos deben ser <strong>deterministas</strong>: la misma entrada tiene que producir el mismo efecto, hoy y dentro de un año. De ahí sale la única regla que hay que interiorizar: <strong>no metas azar ni “ahoras” del reloj dentro de un comando</strong>.</p>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No leas <code>DateTime.Now</code> (ni un aleatorio) dentro de un script. Al reproducir el diario mañana, ese “ahora” sería otro y el estado reconstruido no coincidiría. La hora se inyecta desde afuera y se guarda en el diario, de modo que el replay use exactamente la misma.</p>
+    </div>
+    <p>El mismo principio explica un detalle que verás en las reacciones del bingo: el <code>once</code>. Cuando el organizador canta, una reacción emite un aviso (<em>tell</em>) a los jugadores, y le pone una identidad estable con <code>once</code> para que reproducir el diario no genere dos veces el mismo aviso ni descarte uno legítimo:</p>
+    <pre><span class="tag real">C# · real</span><code>live.Journal.Reactions.DefineReaction(<span class="s">"Cantar"</span>)
+    .Cue().DirectorOnly().WithSharedHydration()
+    .Seek(<span class="s">"Bolita"</span>).OnMatch(<span class="s">"[_:BingoGame].RegisterDraw($numero, $ronda)"</span>)
+    .Causation.Continue(
+        <span class="s">"tell Bolita with @numero, @ronda to &lt;rol-jugador&gt; "</span> +
+        <span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span>);</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Puppeteer te da la hora determinista servida: dentro de un script usas <code>@Now</code>, que el framework fija una sola vez al ejecutar el comando y guarda en el diario. En vivo es el reloj real; en el replay es el que quedó anotado. Así, <code>@Now</code> vale lo mismo en la ejecución original y en cada reproducción — el determinismo sin que tengas que pensarlo.</p>
+    </aside>
+
+    <h3>El modelo mental, ya completo</h3>
+    <p>Esas cuatro ideas son todo el andamiaje. Nota cómo cada una habilita a la siguiente:</p>
+    <table>
+      <thead><tr><th>Idea</th><th>En una frase</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Comando vs. query</strong></td><td>Un hecho que se anota, o una pregunta que no cambia nada.</td></tr>
+        <tr><td><strong>Persistencia automática</strong></td><td>No hay “guardar”: el hecho del comando entra solo al diario.</td></tr>
+        <tr><td><strong>Replay = redeploy</strong></td><td>El estado es el diario reproducido; desplegar es reproducir.</td></tr>
+        <tr><td><strong>Determinismo</strong></td><td>Comandos repetibles: por eso el replay da siempre lo mismo.</td></tr>
+      </tbody>
+      <caption>Tabla 5. Los cuatro fundamentos, y cómo cada uno habilita al siguiente.</caption>
+    </table>
+    <p>El <code>tell</code> que asomó arriba —un actor que le avisa a otro sin conocerlo— es la puerta a los sistemas de varios actores, y la abriremos en la Parte II. Pero primero, manos a la obra: en el próximo capítulo escribes —y corres— tu primer actor.</p>
+  </section>
+
+  <!-- CAP 2 · PRIMER ACTOR -->
+  <section class="anchor" id="cap2">
+    <h2>2 · Tu primer actor</h2>
+    <p class="chapter-meta">De cero a un actor que guarda estado, ejecuta comandos y responde queries — con código que compila y corre.</p>
+
+    <p>Con el modelo mental fresco, construyamos dos actores minúsculos. El primero es lo más simple posible: un contador. El segundo introduce un <strong>objeto de dominio con verbos</strong>. Los fragmentos de esta sección son recortes; cómo correrlos y su código está en el <a href="#anexoA">Anexo A</a>.</p>
+
+    <h3>2.1 · El actor más simple</h3>
+    <p>Crear un actor son dos líneas: darle un nombre y decirle dónde guarda su diario (aquí, en memoria).</p>
+    <pre><span class="tag">C#</span><code><span class="k">var</span> actor = <span class="k">new</span> ActorV2(<span class="s">"contador"</span>, <span class="k">typeof</span>(PrimerActor).Assembly);
+actor.ConfigureStorage(DatabaseType.IN_MEMORY, <span class="s">"contador"</span>);</code></pre>
+
+    <p>Ahora le mandamos <strong>comandos</strong>. Un comando cambia el estado y se persiste solo. Fíjate en que cada comando ve lo que dejó el anterior: <strong>el estado persiste entre comandos</strong>.</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"counter = 0;"</span>).PerformCommand();
+actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();
+actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();</code></pre>
+
+    <p>Para leer sin cambiar nada, usamos una <strong>query</strong>. El verbo <code>print</code> del DSL emite un valor con una etiqueta, y la query devuelve esa salida como JSON:</p>
+    <pre><span class="tag">C#</span><code><span class="k">string</span> salida = actor.Using(<span class="s">"print counter 'valor';"</span>).PerformQuery();</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"valor":2}</code></pre>
+
+    <p>Eso es todo: un actor que nace, recibe órdenes, guarda su estado y lo reporta. No escribimos SQL, no abrimos conexiones, no serializamos nada a mano. Ya viste en el capítulo anterior <em>por qué</em> funciona; esta es la mecánica.</p>
+
+    <table>
+      <thead><tr><th>Llamada</th><th>¿Cambia el estado?</th><th>¿Se persiste en el diario?</th><th>Devuelve</th></tr></thead>
+      <tbody>
+        <tr><td><code>PerformCommand()</code></td><td>Sí</td><td>Sí</td><td>La salida de <code>print</code>, si la hubo</td></tr>
+        <tr><td><code>PerformQuery()</code></td><td>No (solo lee)</td><td>No</td><td>La salida de <code>print</code> como JSON</td></tr>
+      </tbody>
+      <caption>Tabla 6. Comando vs. query: la distinción central al hablarle a un actor.</caption>
+    </table>
+
+    <h3>2.2 · Un objeto de dominio con verbos</h3>
+    <p>Un contador es útil para arrancar, pero la lógica real vive en tus <strong>clases de dominio</strong> en C#. El DSL las construye y llama sus verbos. Modelemos un <strong>torniquete</strong>: empieza bloqueado, una moneda lo desbloquea, y al empujar deja pasar una vez y vuelve a bloquearse.</p>
+
+    <p>Lo esencial del dominio: el estado es privado y solo cambia a través de <strong>verbos</strong>. El objeto es <strong>dueño de su invariante</strong> —no se puede pasar sin moneda—:</p>
+    <pre><span class="tag">C# · dominio</span><code><span class="k">public class</span> Torniquete
+{
+    <span class="k">private bool</span> _desbloqueado;
+    <span class="k">private int</span> _pasos;
+
+    <span class="k">public void</span> Moneda()  { _desbloqueado = <span class="k">true</span>; }
+
+    <span class="k">public void</span> Empujar()
+    {
+        <span class="k">if</span> (!_desbloqueado)
+            <span class="k">throw new</span> LanguageException(<span class="s">"El torniquete esta bloqueado: inserte una moneda."</span>);
+        _pasos = _pasos + 1;
+        _desbloqueado = <span class="k">false</span>;
+    }
+
+    <span class="c">// Queries totales: nunca lanzan, siempre tienen respuesta.</span>
+    <span class="k">public bool</span> Desbloqueado => _desbloqueado;
+    <span class="k">public int</span>  Pasos       => _pasos;
+}</code></pre>
+
+    <p>Desde el DSL, lo construimos y lo dejamos en el estado raíz; luego llamamos sus verbos en comandos separados:</p>
+    <pre><span class="tag">DSL</span><code>t = Torniquete();   <span class="c">// se queda en el estado raiz del actor</span>
+t.Moneda();
+t.Empujar();</code></pre>
+
+    <p>Y consultamos su estado con una query que emite dos valores:</p>
+    <pre><span class="tag">DSL</span><code>{ print t.Desbloqueado <span class="s">'desbloqueado'</span>; print t.Pasos <span class="s">'pasos'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"desbloqueado":false,"pasos":1}</code></pre>
+
+    <p>Insertamos una moneda y empujamos una vez: el torniquete quedó de nuevo bloqueado (<code>false</code>) y registró un paso. El invariante se respetó sin que nosotros lo verificáramos desde afuera: vive dentro del objeto.</p>
+
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Expón el dominio como <strong>verbos que representan operaciones</strong> (<code>Moneda</code>, <code>Empujar</code>) y <strong>queries totales</strong> que siempre responden (<code>Pasos</code>). Deja que cada objeto proteja sus propias reglas.</p>
+    </div>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita <em>setters</em> públicos que dejen fijar el estado desde afuera (<code>t.Desbloqueado = true</code>). Rompen el invariante y convierten al objeto en una bolsa de datos. Un cambio de estado siempre debería pasar por un verbo con sentido de negocio.</p>
+    </div>
+
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Este estilo —verbos que cambian el estado, propiedades que solo leen— es exactamente el del dominio del bingo que viste en el capítulo anterior: su clase <code>BingoGame</code>, con verbos como <code>PutCardInPlay</code> o <code>RegisterDraw</code> y queries totales como <code>DrawnCount</code>. El torniquete es ese mismo patrón, en miniatura.</p>
+    </aside>
+
+    <div class="tryit">
+      <div class="h">▶ Pruébalo</div>
+      <p>El proyecto de ejemplos vive junto a esta guía. Para correr los dos actores de este capítulo:</p>
+      <pre><span class="tag">bash</span><code>cd ejemplos
+dotnet run -- cap2.1      <span class="c"># el contador</span>
+dotnet run -- cap2.2      <span class="c"># el torniquete</span></code></pre>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Un actor se crea con un nombre y un almacenamiento; le hablas con <code>Using(script)</code> y <code>PerformCommand()</code> / <code>PerformQuery()</code>.</li>
+      <li>Los <strong>comandos</strong> cambian el estado (y se persisten); las <strong>queries</strong> solo leen.</li>
+      <li>El estado <strong>persiste entre comandos</strong>; los identificadores de nivel superior son el estado raíz.</li>
+      <li>Tu <strong>dominio en C#</strong> lleva la lógica y los invariantes; el DSL lo <strong>orquesta</strong>.</li>
+    </ul>
+    <p>Con esto ya escribes y consultas actores, y entiendes el modelo que hay debajo. A partir del próximo capítulo entramos de lleno al DSL —literales, expresiones, <code>@Now</code>, variables locales y el bloque <code>upgrade</code>— y luego a los parámetros, las guardas y el dominio.</p>
+  </section>
+
+  <!-- CAP 3 · EL DSL A FONDO -->
+  <section class="anchor" id="cap3">
+    <h2>3 · El DSL a fondo</h2>
+    <p class="chapter-meta">Todo el lenguaje con el que le hablas a un actor: literales, expresiones, <code>print</code>, ámbito, <code>@Now</code> y <code>upgrade</code>.</p>
+
+    <p>El DSL de Puppeteer es <strong>diminuto a propósito</strong>. No es un lenguaje de propósito general: su trabajo es <strong>orquestar</strong> tu dominio en C# —construir objetos y llamar sus verbos— y dejar el hecho anotado en el diario. En este capítulo lo recorremos completo. Es corto: en una sentada lo tienes. Todos los fragmentos con salida provienen de ejemplos que <strong>compilan y corren</strong> (<a href="#anexoA">Anexo A</a>).</p>
+
+    <h3>3.1 · El cuerpo de un script</h3>
+    <p>Un script es una secuencia de sentencias terminadas en <code>;</code>. Las cadenas van entre <strong>comillas simples</strong>. Puedes agrupar varias sentencias como una unidad con un bloque <code>{ … }</code>, y comentar con <code>//</code> o <code>/* … */</code>.</p>
+    <pre><span class="tag">DSL</span><code>saldo = 0;                 <span class="c">// asignacion; termina en ;</span>
+saldo = saldo + 100;       <span class="c">/* los comentarios no afectan nada */</span>
+nota = <span class="s">'primer abono'</span>;     <span class="c">// texto entre comillas simples</span>
+{ a = 1; b = 2; }          <span class="c">// un bloque agrupa sentencias</span></code></pre>
+
+    <h3>3.2 · Literales y tipos</h3>
+    <p>El DSL es fuertemente tipado. Estos son los literales que escribirás a diario:</p>
+    <table>
+      <thead><tr><th>Tipo</th><th>Cómo se escribe</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td><code>int</code></td><td>número entero, sin sufijo</td><td><code>1</code></td></tr>
+        <tr><td><code>long</code></td><td>sufijo <code>L</code> (enteros grandes)</td><td><code>9000000000L</code></td></tr>
+        <tr><td><code>double</code></td><td>con punto decimal o sufijo <code>d</code></td><td><code>1.0</code>, <code>2d</code></td></tr>
+        <tr><td><code>decimal</code></td><td>sufijo <code>m</code></td><td><code>2.25m</code></td></tr>
+        <tr><td><code>datetime</code></td><td>formato <code>M/d/yyyy</code> (con hora opcional)</td><td><code>03/31/2018</code></td></tr>
+        <tr><td>lista</td><td>llaves, elementos homogéneos</td><td><code>{1, 2, 3}</code></td></tr>
+        <tr><td>texto</td><td>comillas simples</td><td><code>'manzana'</code></td></tr>
+      </tbody>
+      <caption>Tabla 7. Los literales del DSL.</caption>
+    </table>
+    <p>La aritmética <strong>promueve al tipo más ancho</strong>: <code>decimal</code> &gt; <code>double</code> &gt; <code>long</code> &gt; <code>int</code>. Así, mezclar un entero con un decimal da decimal, y sumar dos enteros que se salen del rango de <code>int</code> no desborda si usas <code>long</code>:</p>
+    <pre><span class="tag">DSL</span><code>{ x = 1 * 2.25m; y = 2000000000L + 2000000000; print x <span class="s">'x'</span>, y <span class="s">'y'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"x":2.25,"y":4000000000}</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Hay una sola excepción a la promoción: <code>int / int</code> da <code>double</code>, nunca división entera truncada. Es una decisión deliberada — el resultado “natural” de dividir dos enteros casi nunca es el cociente entero, y esconder esa sorpresa evita errores silenciosos.</p>
+    </aside>
+
+    <h3>3.3 · Expresiones y operadores</h3>
+    <p>Tienes aritmética (<code>+ - * /</code> y el unario <code>-</code>), el operador ternario y concatenación de texto:</p>
+    <pre><span class="tag">DSL</span><code>x = a * 2 + -b;                 <span class="c">// aritmetica y unario</span>
+etiqueta = n &gt; 0 ? <span class="s">'positivo'</span> : <span class="s">'no positivo'</span>;   <span class="c">// ternario</span>
+saludo = <span class="s">'total = '</span> + 5;         <span class="c">// concatenacion: texto a la IZQUIERDA</span></code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No pongas el número a la izquierda de una concatenación (<code>5 + 'x'</code>). Ahí <code>+</code> es ambiguo entre sumar y concatenar, y el comportamiento puede divergir. Pon siempre el <strong>texto a la izquierda</strong>: <code>'x' + 5</code>.</p>
+    </div>
+    <p>Así se ve en el bingo real: para darle una identidad única a cada aviso, se concatena texto con valores — nota que la expresión <strong>arranca con texto</strong>:</p>
+    <pre><span class="tag real">DSL · real</span><code>once <span class="s">'bolita-'</span> + @ronda + <span class="s">'-'</span> + @numero;</code></pre>
+
+    <h3>3.4 · <code>print</code> a fondo</h3>
+    <p>Ya usaste <code>print &lt;expr&gt; '&lt;etiqueta&gt;';</code>. Además, una sola sentencia puede emitir <strong>varios valores</strong> separados por coma, y la etiqueta se puede escribir con o sin comillas (las comillas solo hacen falta si la etiqueta lleva espacios):</p>
+    <pre><span class="tag">DSL</span><code>print total * 2 grandTotal, contador <span class="s">'live count'</span>;</code></pre>
+    <p>Un detalle útil: al imprimir un valor de enumeración, <code>print</code> emite el <strong>nombre</strong> del miembro como texto, no su número — igual en JSON y en el resto de formatos. Es lo que hace legible el resultado sin que tengas que traducir códigos.</p>
+    <p>Así lo usa el bingo real. Para leer una lista, un <code>foreach</code> imprime cada elemento con la misma etiqueta; y para traerse varios campos de una ronda en una sola ida al actor, se agrupan varios <code>print</code> en un bloque:</p>
+    <pre><span class="tag real">DSL · real</span><code><span class="c">// una lista: cada numero disponible sale bajo la etiqueta 'c'</span>
+foreach (n in festival.NumbersUpForSale()) { print n <span class="s">'c'</span>; }
+
+<span class="c">// varios campos de una ronda, en una sola query</span>
+{ print festival.RoundAt(1).Playing f;
+  print festival.RoundAt(1).HowItStands s;
+  print festival.RoundAt(1).PromiseCount q; }</code></pre>
+
+    <h3>3.5 · Estado raíz vs. variables locales</h3>
+    <p>Dónde colocas una asignación decide qué es. Esta es la regla completa:</p>
+    <table>
+      <thead><tr><th>Dónde asignas</th><th>Qué es</th><th>¿Persiste / se journaliza?</th></tr></thead>
+      <tbody>
+        <tr><td>Identificador suelto en el nivel superior del comando</td><td><strong>global</strong> = estado raíz del actor</td><td>Sí, entre comandos</td></tr>
+        <tr><td>Dentro de un bloque <code>{ }</code> (o cuerpo de <code>if</code> / <code>foreach</code>)</td><td><strong>local</strong></td><td>No — muere con el bloque</td></tr>
+        <tr><td>Dentro de un cuerpo <code>upgrade { }</code></td><td><strong>global</strong> (excepción; ver 3.7)</td><td>Sí</td></tr>
+      </tbody>
+      <caption>Tabla 8. La regla de ámbito: el lugar de la asignación decide su alcance.</caption>
+    </table>
+    <p>Veámoslo: <code>total</code> es raíz (persiste); <code>doble</code> vive solo dentro de su bloque:</p>
+    <pre><span class="tag">DSL</span><code>total = 5;                              <span class="c">// comando 1: raiz</span>
+{ doble = total * 2; print doble <span class="s">'doble'</span>; }   <span class="c">// query: 'doble' es local</span>
+print total <span class="s">'total'</span>;                     <span class="c">// query: 'total' sigue ahi</span></code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"doble":10}
+{"total":5}</code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Encierra las variables de trabajo en un bloque <code>{ }</code> para que sean locales y no ensucien el estado raíz. Promueve a global (nivel superior) <strong>solo</strong> lo que debe persistir. El estado raíz es memoria que se journaliza: manténlo mínimo e intencional.</p>
+    </div>
+
+    <h3>3.6 · <code>@Now</code>: el tiempo determinista</h3>
+    <p>Dentro de un script nunca lees el reloj del sistema. Usas <code>@Now</code>, un <code>DateTime</code> real que el framework <strong>inyecta</strong> y fija una sola vez por invocación. No hay que declararlo:</p>
+    <pre><span class="tag">DSL</span><code>print @Now.Year <span class="s">'anio'</span>;
+agenda.Programar(@Now.AddDays(1));   <span class="c">// es un DateTime real: opera con sus miembros</span></code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"anio":2026}</code></pre>
+    <p>Como vimos en el Capítulo 1, esto es lo que hace posible el replay: en vivo, <code>@Now</code> es el reloj real y queda anotado en el diario; al reproducir, se reinyecta ese mismo instante. La hora original y cada reproducción coinciden, siempre.</p>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Todos los <code>@Now</code> de una misma invocación valen exactamente lo mismo: se muestrea una vez, en el borde de la invocación. Y para <code>ActorV2</code>, <code>@Now</code> es el único “ahora” correcto — el mecanismo antiguo <code>ExecutionContext.Current.Now</code> lanza si lo usas en V2.</p>
+    </aside>
+
+    <h3>3.7 · <code>upgrade</code>: inicializar una sola vez</h3>
+    <p>El bloque <code>upgrade('&lt;nombre&gt;') { … }</code> corre <strong>exactamente una vez por actor</strong>, identificado por su nombre. Es la herramienta para sembrar o migrar estado que no debe re-ejecutarse. A diferencia de un bloque normal, sus asignaciones de nivel superior <strong>sí</strong> quedan como estado raíz —esa es justamente su razón de ser—:</p>
+    <pre><span class="tag">DSL</span><code>upgrade('seed') { saldo = 100; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"saldo":100}</code></pre>
+    <p>Re-emitir el mismo <code>upgrade('seed')</code> no hace nada: ya se aplicó. Así, la <strong>misma llamada sirve para nacer y para rehidratar</strong> — es exactamente el patrón que viste en el bingo real, donde <code>upgrade('festival')</code> crea la velada la primera vez y la reconstruye en cada arranque posterior.</p>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No edites el cuerpo de un <code>upgrade</code> ya aplicado: el framework lo rechaza (los diarios viejos deben rehidratar su versión original). Para cambiar algo, <strong>publica un nombre nuevo</strong> — <code>upgrade('seed_v2') { … }</code> —. Cada <code>upgrade</code> es una “liberación” con nombre, y su historia queda auditable en el diario.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p><code>upgrade</code> solo es válido en comandos: en una query o en una guarda lanza al analizar, porque crea estado que se journaliza. Y si su cuerpo falla, la marca de “aplicado” no se pone y nada persiste: un cuerpo corregido corre en el siguiente intento. La inicialización, así, es segura ante fallos.</p>
+    </aside>
+
+    <div class="tryit">
+      <div class="h">▶ Pruébalo</div>
+      <pre><span class="tag">bash</span><code>cd ejemplos
+dotnet run -- cap3        <span class="c"># literales, ambito, @Now y upgrade</span></code></pre>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El DSL <strong>orquesta</strong> el dominio: sentencias con <code>;</code>, texto con comillas simples, bloques con <code>{ }</code>.</li>
+      <li>Literales tipados y <strong>promoción</strong> <code>decimal &gt; double &gt; long &gt; int</code>; concatenación con el <strong>texto a la izquierda</strong>.</li>
+      <li><code>print</code> emite uno o varios valores etiquetados; los enums salen por su nombre.</li>
+      <li>La <strong>regla de ámbito</strong>: nivel superior = estado raíz que persiste; bloque = local efímero.</li>
+      <li><code>@Now</code> da tiempo <strong>determinista</strong>; <code>upgrade</code> inicializa <strong>una sola vez</strong> y evoluciona por nombres nuevos.</li>
+    </ul>
+    <p>Ya dominas el lenguaje base. En el próximo capítulo veremos cómo <strong>pasarle valores desde afuera</strong> con parámetros (<code>@</code>) y leer resultados tipados de vuelta — el puente entre tu API y el actor.</p>
+  </section>
+
+  <!-- CAP 4 · PARÁMETROS -->
+  <section class="anchor" id="cap4">
+    <h2>4 · Parámetros y contratos</h2>
+    <p class="chapter-meta">El puente entre tu API y el actor: pasar valores desde afuera, leer resultados tipados y derivar valores del estado.</p>
+
+    <p>Hasta ahora los scripts llevaban valores fijos. En la vida real, esos valores llegan de fuera —del request que atiende tu API—. Los <strong>parámetros</strong> son ese puente, y forman un pequeño <strong>contrato tipado</strong> entre quien llama y el actor.</p>
+
+    <h3>4.1 · Pasar valores con <code>@</code></h3>
+    <p>Declaras cada parámetro con su nombre y tipo, y lo referencias en el cuerpo con <code>@nombre</code>:</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"emitidos = emitidos + @cuantos;"</span>)
+    .WithParameters(p => p[<span class="s">"cuantos"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = 3)
+    .PerformCommand();</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"emitidos":3}</code></pre>
+    <p>Así se ve en el bingo real, poniendo cartones a la venta (fíjate que el valor —la lista de cartones— viaja como parámetro, no interpolado en el texto):</p>
+    <pre><span class="tag real">C# · real</span><code>journal.Using(<span class="s">"elder.PutUpForSale(festival, @cartones);"</span>)
+    .WithParameters(p =>
+        p.UserParameter&lt;IEnumerable&lt;<span class="k">long</span>&gt;&gt;(<span class="s">"cartones"</span>, DelUnoAl(howManyCards)))
+    .PerformCommand();</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Verás dos formas de declarar parámetros. Sobre un <code>ActorV2</code> directo se usa el indexador <code>p["nombre", typeof(T)] = valor</code>; sobre un <code>Stage</code> (como el diario del bingo) hay además el atajo tipado <code>p.UserParameter&lt;T&gt;("nombre", valor)</code>. Son equivalentes: el mismo contrato, distinta ergonomía.</p>
+    </aside>
+
+    <h3>4.2 · El contrato: qué tipos viajan</h3>
+    <p>El canal de parámetros habla <strong>valores de dominio</strong>, no tipos de tu capa de C#. Estos son los que acepta:</p>
+    <table>
+      <thead><tr><th>Categoría</th><th>Cómo se declara</th></tr></thead>
+      <tbody>
+        <tr><td>Primitivos</td><td><code>typeof(int)</code>, <code>typeof(long)</code>, <code>typeof(decimal)</code>, <code>typeof(string)</code>, <code>typeof(bool)</code>, <code>typeof(DateTime)</code></td></tr>
+        <tr><td>Colecciones</td><td><code>typeof(int[])</code>, <code>typeof(string[])</code>… (pasa una proyección LINQ)</td></tr>
+        <tr><td>Opcionales / nulos</td><td><code>typeof(int?)</code> permite pasar <code>null</code> y comparar <code>@x == null</code> en el cuerpo</td></tr>
+        <tr><td>Enumeraciones</td><td><code>typeof(Enum)</code> pasando el <strong>nombre</strong> del miembro como texto (nunca el tipo del enum de dominio)</td></tr>
+      </tbody>
+      <caption>Tabla 9. Lo que viaja por el canal de parámetros.</caption>
+    </table>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita meter tipos de tu capa de interfaz (un <code>Guid</code>, un <code>DateTimeOffset</code>, un DTO) por el canal de parámetros. Conviértelos a un primitivo <strong>en el borde</strong>: <code>orderId.ToString()</code> declarado <code>typeof(string)</code>. El canal es una frontera anticorrupción entre tu C# y el dominio.</p>
+    </div>
+
+    <h3>4.3 · Leer un valor de vuelta: <code>Out</code></h3>
+    <p>Cuando el controlador necesita un valor <strong>tipado</strong> que el actor calculó —para una rama o para pasarlo a otra llamada—, se usa un parámetro <code>Out</code>. Requiere rentar el juego de parámetros para poder leerlo antes de que se libere:</p>
+    <pre><span class="tag">C#</span><code><span class="k">int</span> turno;
+<span class="k">using</span> (<span class="k">var</span> rented = actor.RentedParameters())
+{
+    actor.Using(<span class="s">"emitidos = emitidos + 1; @turno = emitidos;"</span>)
+        .WithParameters(rented, p => p[Parameter.Out, <span class="s">"turno"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="k">default</span>)
+        .PerformCommand();
+    turno = rented[<span class="s">"turno"</span>].GetValue&lt;<span class="k">int</span>&gt;();
+}</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>turno numero 4</code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No parsees la salida de <code>print</code> para recuperar un valor tipado (<code>int.Parse(actor.Using("print next 'x';").PerformQuery())</code>). Esa salida es texto de presentación, de formato no garantizado. Para un valor tipado, usa <code>Out</code>.</p>
+    </div>
+
+    <h3>4.4 · <code>Eval</code>: derivar del estado, congelar para el replay</h3>
+    <p>A veces el valor no lo tiene el que llama: hay que calcularlo <strong>en el actor</strong>, a partir de su estado. Un parámetro <code>Eval</code> lleva una expresión que el actor evalúa al cargar los argumentos, y su resultado <strong>queda congelado en el diario</strong> — así el replay reusa el mismo valor en vez de recalcularlo:</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"ultimo = @sig;"</span>)
+    .WithParameters(p => p[Parameter.Eval, <span class="s">"sig"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="s">"emitidos + 1"</span>)
+    .PerformCommand();</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"ultimo":5}</code></pre>
+    <p>El bingo lo usa para clavar la ronda en la que sale cada bolita: la ronda la dice la mesa, no el método, y queda congelada en el asiento para que al releerlo diga la misma que aquella noche:</p>
+    <pre><span class="tag real">C# · real</span><code>live.Journal.Using(<span class="s">"mesa.RegisterDraw(@numero, @ronda);"</span>)
+    .WithParameters(p =>
+    {
+        p.UserParameter&lt;<span class="k">int</span>&gt;(<span class="s">"numero"</span>, number);
+        p[Parameter.Eval, <span class="s">"ronda"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="s">"mesa.RoundNumber"</span>;
+    })
+    .PerformCommand();</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Esta es la razón de ser de <code>Eval</code>: un valor derivado del estado o no determinista, calculado en el cuerpo, se recalcularía distinto en el replay y divergiría. <code>Eval</code> lo congela una sola vez. Por lo mismo, nunca leas <code>DateTime.Now</code> en el dominio: usa <code>@Now</code> (Cap. 3).</p>
+    </aside>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><strong>Entrada:</strong> declara <code>p["n", typeof(T)] = v</code> y usa <code>@n</code> en el cuerpo.</li>
+      <li><strong>Contrato:</strong> viajan primitivos, colecciones, opcionales y enums (por nombre) — nunca tipos de tu capa de interfaz.</li>
+      <li><strong>Salida tipada:</strong> <code>Out</code> con el patrón <em>rent-lease</em>; no parsees <code>print</code>.</li>
+      <li><strong>Derivado del estado:</strong> <code>Eval</code> lo calcula en el actor y lo congela para el replay.</li>
+    </ul>
+    <p>Con valores entrando y saliendo, falta decidir <em>cuándo</em> corre cada cosa. Vamos al control de flujo y las guardas.</p>
+  </section>
+
+  <!-- CAP 5 · CONTROL DE FLUJO -->
+  <section class="anchor" id="cap5">
+    <h2>5 · Control de flujo y guardas</h2>
+    <p class="chapter-meta">Ramas y bucles dentro del cuerpo, y la guarda <code>Check</code> que rechaza un comando sin dejar rastro.</p>
+
+    <p>Una regla de oro guía todo este capítulo: <strong>una decisión = un comando</strong>. La lógica de qué hacer vive <em>dentro</em> del script, no repartida entre varios <code>Perform</code> en tu C#. Así, el comando persistido captura la decisión completa.</p>
+
+    <h3>5.1 · <code>if</code> / <code>else</code> en el cuerpo</h3>
+    <p>Ramifica dentro del script. Cualquier sentencia compone dentro de un <code>if</code>, también una llamada a verbo:</p>
+    <pre><span class="tag">DSL</span><code>if (aforo.Cabe(@n)) { aforo.Tomar(@n); }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"t":2}</code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No partas la decisión en tu C# (<code>if (x) actor.Using(A) else actor.Using(B)</code>). El camino “no hace nada” deja un comando vacío o ausente en el diario, y la decisión queda fuera del actor. Pon la rama <strong>dentro de un solo cuerpo</strong>.</p>
+    </div>
+
+    <h3>5.2 · <code>foreach</code></h3>
+    <p>Itera una colección dentro del mismo comando — toda la iteración es <strong>un solo hecho</strong> en el diario:</p>
+    <pre><span class="tag">DSL</span><code>foreach (x in @nums) { if (aforo.Cabe(x)) { aforo.Tomar(x); } }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"t":4}</code></pre>
+    <p>El bingo lo usa al vender: por cada cartón vendido, lo pone en juego, todo en el mismo comando:</p>
+    <pre><span class="tag real">DSL · real</span><code>foreach (numero in @cartones) { mesa.PutCardInPlay(numero); }</code></pre>
+
+    <h3>5.3 · <code>Check</code>: la guarda transaccional</h3>
+    <p>Cuando un comando debe correr <strong>solo si</strong> una condición se cumple, y quien llama necesita <em>enterarse</em> del rechazo, se usa una guarda <code>Check</code> con la variante de dos cuerpos (guarda + comando) y <code>PerformCheckThenCommand()</code>:</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"Check(aforo.Cabe(@n)) Error 'sin cupo';"</span>, <span class="s">"aforo.Tomar(@n);"</span>)
+     .WithParameters(p => p[<span class="s">"n"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = 1)
+     .PerformCheckThenCommand();</code></pre>
+    <p>El <strong>contrato de retorno</strong>: vacío = aceptado (el comando corrió y se persistió); no vacío = rechazado, y trae los motivos. Al rechazar, <strong>nada se persiste</strong>:</p>
+    <pre class="out"><span class="tag">Salida real</span><code>Check acepta -> return=""          (vacio = aceptado)
+Check rechaza -> return="{"EWI":[{"Error":"sin cupo"}]}"</code></pre>
+    <p>Corre en dos fases: primero bajo un candado de <em>lectura</em> (si falla, devuelve el motivo y no persiste nada); si pasa, vuelve a comprobar bajo el candado de <em>escritura</em> y recién ahí corre y persiste el comando. Solo una severidad de <strong>falla</strong> bloquea:</p>
+    <table>
+      <thead><tr><th>Severidad</th><th>¿Bloquea el comando?</th></tr></thead>
+      <tbody>
+        <tr><td><code>Error</code>, <code>Warning</code></td><td>Sí — no persiste nada, devuelve el motivo</td></tr>
+        <tr><td><code>Information</code>, <code>Message</code></td><td>No — es informativa, el comando corre igual</td></tr>
+      </tbody>
+      <caption>Tabla 10. Severidades de <code>Check</code>: solo las de falla detienen el comando.</caption>
+    </table>
+    <p>Así encadena el bingo varias guardas antes de vender, cada una con su mensaje:</p>
+    <pre><span class="tag real">DSL · real</span><code>Check(festival.ErrandLetsThemDo(@marca, @quien, @oficio))
+    Error 'ese papelito no es tuyo o ya no esta vigente';
+Check(festival.MerchantCanSellThem(@marca, @cartones))
+    Error 'esos cartones ya no los tenes en la mano';</code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No pongas efectos secundarios en una guarda: debe ser un predicado <strong>puro</strong> (lee para decidir, no muta). Recuerda que el cuerpo de <code>Check</code> puede correr <strong>dos veces</strong> (pre-check y re-check); un efecto colateral se dispararía dos veces.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>¿Cuándo <code>Check</code> y cuándo un <code>if</code> simple? Usa <code>Check</code> cuando un intento <strong>rechazado no debe dejar entrada en el diario</strong> (un <code>if</code> que no hace nada igual persiste un comando), o cuando quieres el pre-chequeo optimista bajo candado de lectura. Para lo demás, un <code>if</code> basta.</p>
+    </aside>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><strong>Una decisión = un comando:</strong> la rama vive en el cuerpo, no en tu C#.</li>
+      <li><code>if</code>/<code>else</code> y <code>foreach</code> componen cualquier sentencia, incluidas llamadas a verbos.</li>
+      <li><code>Check</code> rechaza sin dejar rastro; retorno vacío = aceptado, no vacío = motivos.</li>
+      <li>Solo severidades <code>Error</code>/<code>Warning</code> bloquean; la guarda debe ser pura.</li>
+    </ul>
+    <p>Todo esto llama verbos y lee queries de <em>tu dominio</em>. Toca ver cómo se escribe ese dominio.</p>
+  </section>
+
+  <!-- CAP 6 · DOMINIO -->
+  <section class="anchor" id="cap6">
+    <h2>6 · El dominio C# del actor</h2>
+    <p class="chapter-meta">El DSL orquesta, pero la lógica vive en tus clases de C#. Cómo escribir ese dominio.</p>
+
+    <p>El DSL no programa sistemas: <strong>orquesta</strong> tu dominio. La riqueza —las reglas, los invariantes— vive en clases de C# normales, sin dependencia del framework. Hay un estilo que hace que ese dominio encaje de forma natural con Puppeteer.</p>
+
+    <h3>6.1 · Operaciones sobre el estado, no <em>setters</em></h3>
+    <p>El estado es privado y solo cambia a través de <strong>verbos</strong> con sentido de negocio. Cada verbo protege sus invariantes antes de tocar nada. Así valida el organizador del bingo, real, cada operación antes de delegarla:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">public void</span> PutUpForSale(Festival festival, IEnumerable&lt;<span class="k">long</span>&gt; numbersTheGameGaveUs)
+{
+    <span class="k">if</span> (festival == <span class="k">null</span>) <span class="k">throw new</span> ArgumentNullException(nameof(festival));
+
+    MustGovern(festival);                    <span class="c">// invariante: este elder gobierna esa velada</span>
+    festival.PutUpForSale(numbersTheGameGaveUs);
+}</code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Modela <strong>entidades de identidad</strong> (objetos con vida propia, que cambian por operaciones), no bolsas de datos con getters y setters. Un cambio de estado siempre pasa por un verbo que puede hacer valer una regla.</p>
+    </div>
+
+    <h3>6.2 · Queries totales</h3>
+    <p>Las lecturas <strong>siempre responden</strong>: nunca lanzan, nunca devuelven <code>null</code>. Si no hay datos aún, devuelven el caso vacío razonable. La mesa del bingo responde su estado incluso sin ronda:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">public string</span> State     => _round <span class="k">is null</span> ? GameState.Waiting.ToString() : _round.State.ToString();
+<span class="k">public int</span>    DrawnCount => _round <span class="k">is null</span> ? 0 : _round.DrawnCount;</code></pre>
+    <p>Un caso particular muy útil son las guardas de tipo <em>“¿se puede AHORA?”</em>, pensadas para correr en un <code>Check</code> (Cap. 5) antes de mutar — contestan donde el verbo lanzaría:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">public bool</span> CanRegisterDraw(<span class="k">int</span> number)
+{
+    <span class="k">if</span> (!IsRunning) <span class="k">return false</span>;
+    <span class="k">if</span> (number &lt; Cardface.LowestBall || number &gt; Cardface.HighestBall) <span class="k">return false</span>;
+    <span class="k">foreach</span> (Ball ball <span class="k">in</span> _round.Drawn)
+        <span class="k">if</span> (ball.Number == number) <span class="k">return false</span>;
+    <span class="k">return true</span>;
+}</code></pre>
+
+    <h3>6.3 · Conjuntos cerrados como tipos</h3>
+    <p>Cuando algo solo puede tomar un conjunto fijo de valores, modélalo como un <strong>enum de dominio</strong>, no como <em>strings</em> sueltos. Nuestro semáforo de juguete lo hace, y al imprimirlo el DSL emite el <strong>nombre</strong> del miembro:</p>
+    <pre><span class="tag">C# · dominio</span><code><span class="k">public class</span> Semaforo
+{
+    <span class="k">public enum</span> Luz { Rojo, Verde, Amarillo }   <span class="c">// conjunto cerrado</span>
+    <span class="k">private</span> Luz _luz = Luz.Rojo;
+
+    <span class="k">public void</span> Cambiar()  { <span class="c">/* Rojo -&gt; Verde -&gt; Amarillo -&gt; Rojo */</span> }
+    <span class="k">public</span> Luz Actual => _luz;                 <span class="c">// query total</span>
+}</code></pre>
+    <pre><span class="tag">DSL</span><code>s = Semaforo(); s.Cambiar(); print s.Actual <span class="s">'luz'</span>;</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"luz":"Verde"}</code></pre>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El dominio es <strong>C# puro</strong>; el DSL solo lo orquesta.</li>
+      <li>Cambios de estado por <strong>verbos</strong> que hacen valer invariantes, nunca por <em>setters</em>.</li>
+      <li>Queries <strong>totales</strong> (nunca <code>null</code>, nunca lanzan); guardas <em>“¿se puede ahora?”</em> para los <code>Check</code>.</li>
+      <li>Conjuntos cerrados como <strong>enums</strong> de dominio; salen por su nombre.</li>
+    </ul>
+    <p>Ya tienes actor, DSL, parámetros, guardas y dominio. ¿Dónde queda todo esto guardado, y cómo sobrevive a un reinicio? El diario.</p>
+  </section>
+
+  <!-- CAP 7 · JOURNAL -->
+  <section class="anchor" id="cap7">
+    <h2>7 · Journal, persistencia y replay</h2>
+    <p class="chapter-meta">El diario como fuente de verdad: dónde vive, cómo persiste solo, y por qué desplegar es reproducir.</p>
+
+    <p>Ya lo adelantamos en los fundamentos; ahora lo vemos funcionando. El <strong>diario</strong> es una bitácora append-only que guarda el <em>texto de cada comando</em>, en orden. El estado del actor es, literalmente, el resultado de reproducirlo.</p>
+
+    <h3>7.1 · Dónde vive el diario: <code>ConfigureStorage</code></h3>
+    <p>No escribes código de guardado: eliges un <strong>backend</strong> y el framework anota los hechos por ti.</p>
+    <table>
+      <thead><tr><th>Backend (<code>DatabaseType</code>)</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td><code>IN_MEMORY</code></td><td>Pruebas y ejemplos; el diario vive en RAM y se va con el proceso.</td></tr>
+        <tr><td><code>FileSystem</code></td><td>Un diario en disco (una carpeta). Ideal para apps locales / por instancia.</td></tr>
+        <tr><td><code>SQLServer</code>, <code>MySQL</code></td><td>El diario en una base de datos relacional.</td></tr>
+        <tr><td><code>PlainText</code></td><td>Diario en texto plano, legible/editable por herramientas.</td></tr>
+      </tbody>
+      <caption>Tabla 11. Backends de almacenamiento. Cambiar de uno a otro no toca la lógica.</caption>
+    </table>
+    <pre><span class="tag real">C# · real</span><code>_stage.ConfigureStorage(kind, <span class="s">"path="</span> + _dir);   <span class="c">// el bingo: un diario por velada en disco</span></code></pre>
+
+    <h3>7.2 · Replay = redeploy</h3>
+    <p>Aquí está la demostración que lo vuelve tangible. Un actor escribe su diario en disco. Una <strong>instancia nueva</strong>, sobre el <strong>mismo diario</strong>, reconstruye el estado reproduciéndolo — sin que hagamos nada especial:</p>
+    <pre><span class="tag">C#</span><code><span class="c">// actor original: escribe su diario en disco</span>
+<span class="k">var</span> original = <span class="k">new</span> ActorV2(<span class="s">"libro"</span>, dominio);
+original.ConfigureStorage(DatabaseType.FileSystem, <span class="s">"path="</span> + dir);
+original.Using(<span class="s">"upgrade('seed') { saldo = 0; }"</span>).PerformCommand();
+original.Using(<span class="s">"saldo = saldo + 100;"</span>).PerformCommand();
+original.Using(<span class="s">"saldo = saldo + 50;"</span>).PerformCommand();
+
+<span class="c">// instancia NUEVA sobre el MISMO diario: estado reconstruido por replay</span>
+<span class="k">var</span> renacido = <span class="k">new</span> ActorV2(<span class="s">"libro"</span>, dominio);
+renacido.ConfigureStorage(DatabaseType.FileSystem, <span class="s">"path="</span> + dir);</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>original -> {"saldo":150}
+renacido -> {"saldo":150}</code></pre>
+    <figure class="diagram">
+      <svg viewBox="0 0 620 170" width="100%" style="max-width:560px" role="img" aria-label="Un mismo diario en disco alimenta a dos instancias del actor; la instancia renacida reconstruye el mismo estado reproduciendo el diario.">
+        <defs><marker id="ah3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="12.5" fill="var(--ink)">
+          <rect x="230" y="60" width="160" height="50" rx="10" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="310" y="80" text-anchor="middle" font-weight="700">Diario en disco</text>
+          <text x="310" y="98" text-anchor="middle" fill="var(--ink-soft)" font-size="11">seed · +100 · +50</text>
+          <rect x="24" y="20" width="140" height="44" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="94" y="40" text-anchor="middle" font-weight="700" font-size="12">original</text>
+          <text x="94" y="55" text-anchor="middle" fill="var(--ink-soft)" font-size="10">escribe</text>
+          <rect x="24" y="108" width="140" height="44" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="94" y="128" text-anchor="middle" font-weight="700" font-size="12">renacido</text>
+          <text x="94" y="143" text-anchor="middle" fill="var(--ink-soft)" font-size="10">reproduce</text>
+          <line x1="164" y1="42" x2="228" y2="72" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#ah3)"/>
+          <line x1="228" y1="98" x2="164" y2="128" stroke="var(--accent-soft)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#ah3)"/>
+          <rect x="452" y="64" width="150" height="44" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="527" y="84" text-anchor="middle" font-weight="700" font-size="12">saldo = 150</text>
+          <text x="527" y="99" text-anchor="middle" fill="var(--ink-soft)" font-size="10">mismo estado</text>
+          <line x1="390" y1="86" x2="450" y2="86" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah3)"/>
+        </g>
+      </svg>
+      <figcaption>Figura 2. El diario es la verdad; cualquier instancia que lo reproduzca obtiene el mismo estado. Desplegar es reproducir.</figcaption>
+    </figure>
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>El <code>upgrade('seed')</code> idempotente es la pieza que hace esto seguro: corre una vez al nacer y, en cada arranque posterior, ya está en el diario y se reproduce sin volver a “sembrar”. La misma llamada sirve para nacer y para rehidratar.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El diario guarda el <strong>texto de los comandos</strong>, en orden; el estado es su reproducción.</li>
+      <li><code>ConfigureStorage</code> elige el backend (memoria, archivos, SQL, texto) sin tocar la lógica.</li>
+      <li>Una instancia nueva sobre el mismo diario <strong>renace idéntica</strong>: replay = redeploy.</li>
+    </ul>
+    <p>Falta cerrar el círculo: cómo sale la información hacia tu API y cómo se hospeda todo esto.</p>
+  </section>
+
+  <!-- CAP 8 · SALIDA Y HOSTING -->
+  <section class="anchor" id="cap8">
+    <h2>8 · Salida y hosting</h2>
+    <p class="chapter-meta">Cómo sale la información del actor hacia tu API, y cómo vive el actor detrás de tu servidor.</p>
+
+    <p>El actor corre <strong>detrás</strong> de tu servidor: en cada request que invoca lógica de negocio, tu endpoint le habla a un actor y devuelve lo que responde. Veamos las dos caras: la salida y el hospedaje.</p>
+
+    <h3>8.1 · La salida: JSON listo para servir</h3>
+    <p>Una query devuelve la salida de <code>print</code> ya como <strong>JSON</strong>; tu endpoint puede devolverla tal cual. Varios valores etiquetados en una sola query salen como un objeto:</p>
+    <pre><span class="tag">DSL</span><code>{ print total <span class="s">'total'</span>, total * 0.13m <span class="s">'iva'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"total":250,"iva":32.5}</code></pre>
+    <p>Para un valor <strong>tipado</strong> que tu C# va a usar (no a serializar), recuerda usar <code>Out</code> (Cap. 4), no parsear este texto.</p>
+
+    <h3>8.2 · El hosting: una fachada estable sobre el sustrato</h3>
+    <p>Hospedar un actor es crearlo, decirle dónde persiste y ponerlo a atender. En el bingo real, una fachada (<code>FestivalJournal</code>) envuelve el sustrato (<code>StageV2</code>) para que los cientos de sitios que le hablan al diario no dependan de sus detalles:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">new</span> StageV2(WhoAmI(), actorName, libraries);   <span class="c">// el sustrato hospeda al actor</span>
+_stage.ConfigureStorage(kind, <span class="s">"path="</span> + _dir);   <span class="c">// donde persiste</span>
+_stage.PromoteToDirector(force: <span class="k">true</span>);          <span class="c">// listo para escribir</span></code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Envuelve el acceso al actor en una <strong>fachada fluida</strong> propia (como <code>FestivalJournal</code>). Es lo que permite que la plataforma cambie por debajo sin tocar los cientos de llamadas <code>Using(...).PerformCommand()</code> de tu app. La forma de hablarle al actor es un contrato estable.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>El bingo le “presta voz” al diario con un <em>logger</em> propio (<code>JournalVoice</code>, que implementa <code>IPuppeteerLogger</code>): enruta los mensajes del sustrato hacia la interfaz de usuario. Es el patrón general para observar lo que hace el actor sin acoplarte a sus internos.</p>
+    </aside>
+
+    <h3>8.3 · Un dominio, muchos anfitriones</h3>
+    <p>El mismo actor puede vivir detrás de una API REST, dentro de una app móvil o en una CLI, sin cambiar su lógica. Es la promesa de nCubo hecha práctica: <em>«un dominio puede presentarse en distintos clientes, runtimes y topologías sin convertirse en otro sistema»</em>. En el bingo, el <em>mismo</em> dominio es organizador (Director), colaborador (réplica) y jugador (suscriptor) — tres anfitriones, un sistema.</p>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Una query devuelve <strong>JSON</strong> listo para servir; para valores tipados, <code>Out</code>.</li>
+      <li>Hospedar = crear el actor + <code>ConfigureStorage</code> + atender; envuélvelo en una <strong>fachada estable</strong>.</li>
+      <li>Un <em>logger</em> (<code>IPuppeteerLogger</code>) te da observabilidad sin acoplarte al sustrato.</li>
+      <li>El mismo dominio sirve a <strong>muchos anfitriones</strong> sin volverse otro sistema.</li>
+    </ul>
+    <p>Con esto cierras la Parte I: sabes escribir, consultar, guardar y hospedar un actor. La <strong>Parte II</strong> abre la puerta a los sistemas de varios actores — reacciones, <code>tell</code>, despacho de mensajes y sagas — donde un actor provoca trabajo en otro sin acoplarse a él.</p>
+  </section>
+
+  <!-- PARTE II -->
+  <div class="part">Parte II · Cruce de fronteras</div>
+
+  <!-- CAP 9 · REACCIONES Y TELL -->
+  <section class="anchor" id="cap9">
+    <h2>9 · Reacciones y <code>tell</code></h2>
+    <p class="chapter-meta">Cuando un hecho en un actor debe provocar trabajo en otro — sin que uno conozca al otro.</p>
+
+    <p>Toda la Parte I fue un actor consigo mismo. La Parte II empieza aquí: cómo un hecho que quedó en el diario de un actor causa trabajo en <strong>otro</strong> actor. La pieza clave es una regla que conviene grabar:</p>
+    <blockquote>El comando registra un hecho. La reacción, después, habla sobre él.</blockquote>
+
+    <h3>9.1 · La regla de oro: <code>tell</code> es solo de reacciones</h3>
+    <p>Un <em class="term">tell</em> —un aviso de un actor a otro— <strong>no</strong> se puede emitir desde un <code>PerformCommand</code>. Solo es legal dentro del cuerpo de una <strong>reacción</strong>. Así que el flujo del emisor tiene dos etapas:</p>
+    <ol class="body">
+      <li>Un comando normal <strong>registra</strong> el hecho (p. ej. el organizador canta una bolita → se journaliza <code>RegisterDraw</code>).</li>
+      <li>Una <strong>reacción</strong> sobre ese diario ve el hecho y su cuerpo emite el <code>tell</code>.</li>
+    </ol>
+
+    <h3>9.2 · Anatomía de una reacción</h3>
+    <p>Esta es la reacción real del bingo que reparte cada bolita a los jugadores:</p>
+    <pre><span class="tag real">C# · real</span><code>live.Journal.Reactions.DefineReaction(<span class="s">"Cantar"</span>)
+    .Cue().DirectorOnly().WithSharedHydration()
+    .Seek(<span class="s">"Bolita"</span>).OnMatch(<span class="s">"[_:BingoGame].RegisterDraw($numero, $ronda)"</span>)
+    .Causation.Continue(
+        <span class="s">"tell Bolita with @numero, @ronda to &lt;rol-jugador&gt; "</span> +
+        <span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span>);</code></pre>
+    <p>Cada parte dice algo:</p>
+    <ul class="body">
+      <li><strong><code>.Cue()</code> vs <code>.Job()</code></strong> — es la latencia. <code>Cue</code> dispara en cuanto el comando hace commit (tiempo casi real: el jugador ve la bolita ya). <code>Job</code> corre una sola pasada cuando alguien lo dispara (trabajo diferido/batch).</li>
+      <li><strong><code>.DirectorOnly()</code> / <code>.Company()</code></strong> — el alcance. En un actor replicado (varios nodos), <code>DirectorOnly</code> evita que cada réplica emita el mismo aviso.</li>
+      <li><strong><code>.Seek(...).OnMatch("[_:Clase].Verbo($a, $b)")</code></strong> — el patrón a buscar en el diario. <code>$numero</code> <strong>captura</strong> el valor de la entrada.</li>
+      <li><strong><code>.Causation.Continue("...")</code></strong> — el cuerpo que corre tras el commit. Aquí <code>@numero</code> <strong>referencia</strong> lo capturado (mismo nombre, dos prefijos: <code>$</code> captura, <code>@</code> referencia).</li>
+      <li><strong><code>once</code></strong> — la identidad idempotente del aviso, para que el replay no genere dos veces la misma bolita ni descarte una legítima (Cap. 4, determinismo).</li>
+    </ul>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 210" width="100%" style="max-width:600px" role="img" aria-label="El organizador registra una bolita en su diario; una reaccion emite un tell que el sustrato reparte a los telefonos de los jugadores.">
+        <defs><marker id="ah9" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="12.5" fill="var(--ink)">
+          <circle cx="120" cy="70" r="52" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="120" y="66" text-anchor="middle" font-weight="700">Organizador</text>
+          <text x="120" y="83" text-anchor="middle" fill="var(--ink-soft)" font-size="11">Director</text>
+          <rect x="60" y="150" width="120" height="42" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="120" y="170" text-anchor="middle" font-weight="700" font-size="12">Diario</text>
+          <text x="120" y="185" text-anchor="middle" fill="var(--ink-soft)" font-size="10">reacción “Cantar”</text>
+          <line x1="120" y1="122" x2="120" y2="148" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#ah9)"/>
+          <text x="150" y="140" fill="var(--ink-soft)" font-size="10">registra</text>
+          <circle cx="470" cy="45" r="34" fill="var(--panel)" stroke="var(--accent-soft)"/><text x="470" y="49" text-anchor="middle" font-size="11">Jugador</text>
+          <circle cx="540" cy="105" r="34" fill="var(--panel)" stroke="var(--accent-soft)"/><text x="540" y="109" text-anchor="middle" font-size="11">Jugador</text>
+          <circle cx="470" cy="165" r="34" fill="var(--panel)" stroke="var(--accent-soft)"/><text x="470" y="169" text-anchor="middle" font-size="11">Jugador</text>
+          <line x1="180" y1="165" x2="436" y2="55" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah9)"/>
+          <line x1="180" y1="168" x2="506" y2="108" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah9)"/>
+          <line x1="182" y1="172" x2="436" y2="165" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah9)"/>
+          <text x="330" y="205" text-anchor="middle" fill="var(--accent-soft)" font-size="11">tell “Bolita” — el sustrato lo reparte por rol</text>
+        </g>
+      </svg>
+      <figcaption>Figura 3. Una reacción sobre el diario emite un <code>tell</code>; el sustrato lo entrega a cada jugador. El emisor no conoce a los receptores.</figcaption>
+    </figure>
+
+    <h3>9.3 · Reacciones que no emiten <code>tell</code></h3>
+    <p>No todo lo posterior a un hecho es un aviso a otro actor. Una reacción tiene varios planos según lo que produzca:</p>
+    <table>
+      <thead><tr><th>Plano</th><th>Qué hace</th><th>Garantía</th></tr></thead>
+      <tbody>
+        <tr><td><code>.Causation.Continue("tell …")</code></td><td>Aviso a otro actor (speech act cross-actor).</td><td>Sobre + transporte + ack; auditable en el diario.</td></tr>
+        <tr><td><code>.Program.Emit("print …")</code></td><td>Señal derivada del mismo actor, solo lectura, empujada a un <em>sink</em>.</td><td>Efímera (fire-and-forget): puede perderse o duplicarse.</td></tr>
+        <tr><td><code>.Outbox.Emit("destino", "payload")</code></td><td>Materialización durable (p. ej. a un almacén BI).</td><td>Nada se pierde; orden; al-menos-una-vez.</td></tr>
+      </tbody>
+      <caption>Tabla 12. Los planos de una reacción: elige según si el efecto cruza a otro actor, es una vista efímera, o debe ser durable.</caption>
+    </table>
+
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No concatenes el texto del <code>tell</code> con los valores (<code>tell Sold with 'A123', 4 …</code>). Cada llamada generaría texto distinto → una identidad nueva por llamada, y el diario deja de ser denso. Pasa <code>@params</code>: <code>tell Sold with @sku, @qty …</code>.</p>
+    </div>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>En un actor replicado (<code>StageV2</code>), marca <code>.DirectorOnly()</code> la reacción que emite un <code>tell</code>. Bajo <code>.Company()</code> cada réplica emitiría el mismo aviso → duplicados.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El comando <strong>registra</strong> un hecho; la reacción, después, <strong>habla</strong> sobre él. El <code>tell</code> vive solo en reacciones.</li>
+      <li>Una reacción es <code>DefineReaction · Cue/Job · scope · Seek/OnMatch · Causation/Program/Outbox</code>.</li>
+      <li><code>$</code> captura en el patrón; <code>@</code> referencia en el cuerpo; <code>once</code> da identidad idempotente.</li>
+      <li>El emisor no conoce a los receptores: publica un hecho y su consecuencia.</li>
+    </ul>
+    <p>Emitir el aviso es media historia. La otra media es el receptor: cómo un actor <strong>consume</strong> ese aviso y lo convierte en un comando propio.</p>
+  </section>
+
+  <!-- CAP 10 · CONSUMIR Y DESPACHAR -->
+  <section class="anchor" id="cap10">
+    <h2>10 · Consumir y despachar</h2>
+    <p class="chapter-meta">El lado receptor: convertir un mensaje que llega en un comando propio, sin un <code>switch</code> gigante.</p>
+
+    <p>Un actor recibe mensajes —el <code>tell</code> de otro actor, o algo que llega por un broker—. La tarea del receptor es siempre la misma: <strong>traducir el mensaje a un comando de su propio vocabulario</strong>. Hay dos formas de escribir ese lado, ambas reales en el bingo.</p>
+
+    <h3>10.1 · Uptake declarativo: <code>ListenAs</code> / <code>Told</code></h3>
+    <p>El receptor declara qué mensajes escucha y, por cada uno, el comando propio que ejecuta. Así escucha el jugador del bingo las bolitas, correcciones y cambios de ronda:</p>
+    <pre><span class="tag real">C# · real</span><code>journal.ListenAs(rolJugador, bindings, phone)
+    .Told(<span class="s">"Bolita"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"numero"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"ronda"</span>)
+        .Command(<span class="s">"if (miRonda == @ronda) { juego.RegisterDraw(@numero); } else { bolitaTardia = @numero; }"</span>)
+    .Told(<span class="s">"Correccion"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"malo"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"bueno"</span>)
+        .Command(<span class="s">"juego.CorrectDraw(@malo, @bueno);"</span>)
+    .Told(<span class="s">"Ronda"</span>).With&lt;<span class="k">string</span>&gt;(<span class="s">"figuras"</span>)
+        .Command(<span class="s">"juego.MoveOnToRound(@figuras, 'OnClaim');"</span>)
+    .Start();</code></pre>
+    <p>Puntos clave:</p>
+    <ul class="body">
+      <li>Cada tell recibido corre <strong>exactamente un <code>PerformCommand</code></strong> con los valores del mensaje. Uno por aviso.</li>
+      <li>El orden de <code>.With&lt;T&gt;(...)</code> <strong>debe coincidir</strong> con el orden del <code>with</code> del emisor: por el cable solo viajan valores ordenados; los nombres son etiquetas locales.</li>
+      <li><strong>Idempotencia</strong> por identidad del sobre: un duplicado se vuelve a acusar (ack) pero no se re-ejecuta.</li>
+      <li>El comando usa el <strong>vocabulario del receptor</strong> (<code>juego.RegisterDraw</code>), no el del emisor.</li>
+    </ul>
+
+    <h3>10.2 · Despacho por handlers, sin <code>switch</code></h3>
+    <p>Cuando llegan varios tipos de mensaje por un mismo canal, se registran <strong>handlers</strong> —uno por tipo de mensaje—, y cada uno traduce a su comando. Así arma el organizador su teléfono:</p>
+    <pre><span class="tag real">C# · real</span><code>_phone.OnEnlist = Enlist;
+_phone.OnSale = AcceptSale;
+_phone.OnCall = AcceptCall;
+_phone.OnBingoClaim = AcceptBingoClaim;
+_phone.OnWhoIs = AnswerWhoIs;
+_phone.Listen();</code></pre>
+    <p>Cada handler (<code>AcceptSale</code>, etc.) deserializa el mensaje, valida, y hace un <code>Using(...).PerformCommand()</code> sobre el diario. No hay un <code>switch</code> gigante: el ruteo mensaje→handler lo lleva la tabla de <em>bindings</em>. En el marco general esto es <code>Dispatch.On&lt;T&gt;(...)</code> + <code>ConsumeFrom(source, routing)</code>: cada tipo de mensaje enruta a un comando que el receptor posee.</p>
+
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Acusa (ack) el mensaje <strong>después</strong> del commit del comando. Así, si el proceso muere entre recibir y procesar, el mensaje se reentrega y no se pierde el hecho.</p>
+    </div>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita acusar un mensaje <strong>no mapeado</strong> (sin handler). Dejarlo sin ack mantiene la brecha visible en lugar de tragarse silenciosamente un mensaje que nadie atendió.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El receptor <strong>traduce</strong> el mensaje a un comando de su propio vocabulario.</li>
+      <li><code>ListenAs/Told</code> declara mensaje→comando; el orden de <code>.With&lt;T&gt;</code> sigue al del emisor.</li>
+      <li>Varios mensajes → <strong>handlers por tipo</strong> (<code>Dispatch.On&lt;T&gt;</code>), sin <code>switch</code>.</li>
+      <li>Ack después del commit; idempotencia por identidad del sobre.</li>
+    </ul>
+    <p>Cuando esos mensajes no son sueltos sino <strong>pasos ordenados de un mismo flujo</strong>, entra en juego la saga.</p>
+  </section>
+
+  <!-- CAP 11 · SAGAS -->
+  <section class="anchor" id="cap11">
+    <h2>11 · Sagas</h2>
+    <p class="chapter-meta">Un flujo de pasos ordenados agrupados por una clave de instancia, que no deben correr concurrentemente.</p>
+
+    <p>A veces los mensajes no son sueltos: son <strong>pasos de un mismo flujo</strong> —una reserva, luego su confirmación— que pertenecen a una misma “instancia” y deben ejecutarse en orden, sin pisarse. Para eso está la <em class="term">saga</em>.</p>
+
+    <table>
+      <thead><tr><th>Situación</th><th>Herramienta</th></tr></thead>
+      <tbody>
+        <tr><td>Un tipo de mensaje → un comando</td><td><code>Dispatch.On&lt;T&gt;(...)</code> (Cap. 10)</td></tr>
+        <tr><td>Varios tipos, cada uno un comando independiente</td><td>varios <code>Dispatch.On&lt;T&gt;(...)</code></td></tr>
+        <tr><td><strong>Pasos ordenados agrupados por clave, uno a la vez por clave</strong></td><td><strong>Saga</strong></td></tr>
+      </tbody>
+      <caption>Tabla 13. Cuándo alcanza un despacho simple y cuándo se necesita una saga.</caption>
+    </table>
+
+    <h3>11.1 · La API</h3>
+    <p><code>CreateDispatch()</code> va primero; <code>DefineSaga</code> se construye encima. Cada <code>On&lt;Msg&gt;</code> extrae la <strong>clave de instancia</strong> que agrupa un flujo, y cada <code>.Task</code> es un paso:</p>
+    <pre><span class="tag">C#</span><code>performance.CreateDispatch();                          <span class="c">// requerido primero</span>
+performance.DefineSaga(<span class="s">"Provision"</span>)
+    .On&lt;Reserve&gt;(m => m.InstanceId)                    <span class="c">// la clave agrupa un flujo</span>
+        .Task(<span class="s">"reserve"</span>, (actor, m) =>
+            actor.Using(<span class="s">"inventory.Reserve(@sku, @qty);"</span>)
+                 .WithParameters(p => { p.UserParameter&lt;<span class="k">string</span>&gt;(<span class="s">"sku"</span>, m.Sku);
+                                        p.UserParameter&lt;<span class="k">int</span>&gt;(<span class="s">"qty"</span>, m.Qty); })
+                 .PerformCommand())
+    .On&lt;Confirm&gt;(m => m.InstanceId)
+        .Task(<span class="s">"confirm"</span>, (actor, m) =>
+            actor.Using(<span class="s">"inventory.Confirm(@sku);"</span>)
+                 .WithParameters(p => p.UserParameter&lt;<span class="k">string</span>&gt;(<span class="s">"sku"</span>, m.Sku))
+                 .PerformCommand());</code></pre>
+
+    <h3>11.2 · Las dos garantías</h3>
+    <ul class="body">
+      <li><strong>Serialización por clave de instancia:</strong> los pasos de una misma clave corren en serie; claves distintas corren en paralelo. El paso B no adelanta al A del mismo flujo.</li>
+      <li><strong>Idempotencia de paso (en proceso):</strong> un paso ya completado para <code>(saga, clave, paso)</code> se salta. Un paso que <strong>lanza</strong> no se marca completo → se reintenta.</li>
+    </ul>
+
+    <h3>11.3 · Cuidado al reiniciar el proceso</h3>
+    <p>El registro de pasos completados vive <strong>en memoria</strong>: tras un reinicio está vacío, y un mensaje reentregado re-ejecutaría el paso. La guarda de verdad no va en el despachador, va en el <strong>diario del actor</strong> con un <code>Check</code>:</p>
+    <pre><span class="tag">C#</span><code>.Task(<span class="s">"reserve"</span>, (actor, m) =>
+    actor.Using(<span class="s">"Check(!inventory.Reserved) Error 'already reserved';"</span>,
+                <span class="s">"inventory.Reserve(@sku, @qty);"</span>)
+         .WithParameters(p => { p.UserParameter&lt;<span class="k">string</span>&gt;(<span class="s">"sku"</span>, m.Sku);
+                                p.UserParameter&lt;<span class="k">int</span>&gt;(<span class="s">"qty"</span>, m.Qty); })
+         .PerformCheckThenCommand());</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Regla: el registro de pasos de la saga es un <strong>atajo rápido</strong>; la guarda real es el <code>Check</code> contra el estado replayable del actor. Tras un reinicio, el re-intento <em>falla el Check</em> (no re-aplica) en vez de duplicar el efecto.</p>
+    </aside>
+
+    <h3>11.4 · No hay compensación automática</h3>
+    <p>Una saga da serialización e idempotencia; <strong>no</strong> hace rollback. Si el paso 2 falla tras el paso 1, el efecto del 1 permanece. La compensación es un patrón que <strong>tú escribes</strong>: un mensaje de compensación con su propio <code>.Task</code>.</p>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No esperes que el framework deshaga los pasos previos cuando uno posterior lanza. El <code>reserve</code> ya comprometido no se revierte; el paso que falló simplemente se re-ejecuta al reentregarse. Modela un paso <code>release</code> explícito y emite su mensaje al detectar la falla.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Una saga agrupa pasos por <strong>clave de instancia</strong> y los serializa; claves distintas van en paralelo.</li>
+      <li><code>CreateDispatch()</code> primero; luego <code>DefineSaga(...).On&lt;T&gt;(clave).Task(nombre, handler)</code>.</li>
+      <li>La idempotencia en memoria es un atajo; la <strong>guarda real</strong> es un <code>Check</code> en el diario del actor.</li>
+      <li>No hay rollback automático: la <strong>compensación se modela</strong> como un paso más.</li>
+    </ul>
+    <p>Todo esto asume que los actores viven y se comunican en alguna parte. El último capítulo de la parte mira el mapa: cómo se replican y se unen a través de máquinas.</p>
+  </section>
+
+  <!-- CAP 12 · TOPOLOGÍAS Y FORMACIONES -->
+  <section class="anchor" id="cap12">
+    <h2>12 · Topologías y formaciones</h2>
+    <p class="chapter-meta">La capa multi-nodo: cómo un actor se replica entre máquinas y cómo actores distintos se unen.</p>
+
+    <p>Las reacciones y el <code>tell</code> ya cruzan de un actor a otro. Este capítulo mira el mapa completo: cómo <strong>un</strong> actor existe en varias máquinas, y cómo actores <strong>distintos</strong> en máquinas distintas se comunican. Son dos mecanismos separados; conviene no confundirlos.</p>
+
+    <h3>12.1 · <code>StageV2</code>: un actor replicado</h3>
+    <p>Un <code>StageV2</code> es <strong>un</strong> actor lógico replicado: <strong>un Director y N Casts del mismo actor</strong>. No es un puente entre dos actores — es un actor que existe en más de un lugar. Se apoya en dos grafos:</p>
+    <ul class="body">
+      <li><strong>Estrella de datos</strong> (Director↔Cast): replicación del diario + comandos.</li>
+      <li><strong>Bus de coordinación</strong> (todos↔todos): membresía y elección, ligero.</li>
+    </ul>
+    <p>Un comando corre en el Director y se journaliza; un Cast <strong>reenvía</strong> al Director y el registro replica de vuelta. En el bingo, el organizador es el Director de la velada y el colaborador es un Cast (una réplica local que le deja vender aunque se caiga la red).</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 600 200" width="100%" style="max-width:540px" role="img" aria-label="Un Director y dos Casts del mismo actor; los Casts reenvian comandos al Director y este replica el diario de vuelta.">
+        <defs><marker id="ah12" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="12.5" fill="var(--ink)">
+          <circle cx="300" cy="52" r="44" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="300" y="48" text-anchor="middle" font-weight="700">Director</text>
+          <text x="300" y="65" text-anchor="middle" fill="var(--ink-soft)" font-size="10">dueño del diario</text>
+          <circle cx="140" cy="158" r="40" fill="var(--panel)" stroke="var(--accent-soft)"/>
+          <text x="140" y="156" text-anchor="middle" font-size="12">Cast</text>
+          <text x="140" y="172" text-anchor="middle" fill="var(--ink-soft)" font-size="10">réplica</text>
+          <circle cx="460" cy="158" r="40" fill="var(--panel)" stroke="var(--accent-soft)"/>
+          <text x="460" y="156" text-anchor="middle" font-size="12">Cast</text>
+          <text x="460" y="172" text-anchor="middle" fill="var(--ink-soft)" font-size="10">réplica</text>
+          <line x1="168" y1="130" x2="270" y2="78" stroke="var(--accent-soft)" stroke-width="1.6" marker-end="url(#ah12)"/>
+          <line x1="285" y1="92" x2="160" y2="132" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah12)"/>
+          <line x1="432" y1="130" x2="330" y2="78" stroke="var(--accent-soft)" stroke-width="1.6" marker-end="url(#ah12)"/>
+          <line x1="315" y1="92" x2="440" y2="132" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah12)"/>
+          <text x="300" y="196" text-anchor="middle" fill="var(--ink-soft)" font-size="10">Cast → comando; Director → diario replicado (- - -)</text>
+        </g>
+      </svg>
+      <figcaption>Figura 4. Un <code>StageV2</code> es un actor en varios lugares: los Casts reenvían comandos, el Director replica el diario.</figcaption>
+    </figure>
+
+    <h3>12.2 · Unir actores distintos: la capa <code>tell</code></h3>
+    <p>Dos actores <strong>distintos</strong> en máquinas distintas no se unen con un <code>StageV2</code>, sino con la capa <code>tell</code>, que tiene tres partes:</p>
+    <table>
+      <thead><tr><th>Pieza</th><th>Rol</th></tr></thead>
+      <tbody>
+        <tr><td><code>tell</code></td><td>El aviso; su destinatario es un <strong>rol lógico</strong>. El DSL nunca nombra el transporte.</td></tr>
+        <tr><td>Tabla de <em>bindings</em></td><td>Mapea rol→ruta en tiempo de ejecución (tipo DNS, la más específica primero).</td></tr>
+        <tr><td>Transporte de broker</td><td>Envía + ack de vuelta; el consumidor mapea el mensaje a un comando propio y acusa tras el commit.</td></tr>
+      </tbody>
+      <caption>Tabla 14. La unión entre actores distintos: el DSL dice el rol, el runtime resuelve la ruta.</caption>
+    </table>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Si el actor que hereda el aviso es un <code>StageV2</code> replicado, la reacción que emite el <code>tell</code> debe ser <code>.DirectorOnly()</code>. Bajo <code>.Company()</code> cada réplica lo emitiría → N duplicados.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador — el <em>communicator</em></div>
+      <p>Un patrón elegante: un <code>StageV2</code> que abarca varias máquinas y cuyos endpoints son <strong>asertivos</strong> (relata un hecho: “hay una nueva X”), no imperativos. Actores <em>Performance</em> aislados en cada máquina reciben ese hecho y cada uno lo mapea a <strong>su</strong> comando local. Así se coordinan sin un enlace directo entre ellos: el <em>communicator</em> relata, cada quien actúa.</p>
+    </aside>
+
+    <h3>12.3 · Formaciones: la forma del espacio de direcciones</h3>
+    <p>Una <em class="term">formación</em> es la <strong>forma</strong> en que nombras y particionas tus actores. La decisión más común es la granularidad: <strong>un actor (un diario) por instancia clave</strong> — una velada por bingo, un vuelo como su propio actor —. Elegir bien la unidad es lo que mantiene los diarios acotados y auditables, y hace que un ciclo cerrado pueda, algún día, compactarse por completo. Sobre esa base, el espacio de direcciones puede tener distintas formas (plana, en cubo/NCube, en árbol, en grafo) según cómo se relacionen las instancias — pero el punto de partida siempre es la misma pregunta: <em>¿cuál es la entidad que merece su propio diario?</em></p>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><code>StageV2</code> replica <strong>un</strong> actor (un Director, N Casts); no es un puente entre dos.</li>
+      <li>Actores <strong>distintos</strong> se unen por la capa <code>tell</code>: rol → <em>bindings</em> → broker.</li>
+      <li>En un actor replicado, el <code>tell</code> se emite <code>.DirectorOnly()</code>.</li>
+      <li>Una <strong>formación</strong> empieza por elegir la entidad que merece su propio diario.</li>
+    </ul>
+    <p>Con esto cierras la Parte II: sabes cómo un hecho cruza de un actor a otro, cómo se consume, cómo se orquesta un flujo por pasos y cómo todo se distribuye. La <strong>Parte III</strong> recoge esto como <em>patrones</em> —los que Puppeteer usa y otros fáciles de sumar— y baja a recetas concretas: agregar una base de datos, migrar un sistema legado.</p>
+  </section>
+
+  <!-- PARTE III -->
+  <div class="part">Parte III · Patrones y recetas</div>
+
+  <!-- CAP 13 · PATRONES QUE USA PUPPETEER -->
+  <section class="anchor" id="cap13">
+    <h2>13 · Patrones que usa Puppeteer</h2>
+    <p class="chapter-meta">Puppeteer no inventó estos patrones; los hace nativos. Reconocerlos conecta tu experiencia previa con lo que ya viste.</p>
+
+    <p>Si vienes de sistemas distribuidos, muchas de las ideas de esta guía tienen nombre propio en la literatura. La diferencia es que en Puppeteer <strong>no son librerías que agregas</strong>: son el sustrato mismo. Este es el mapa:</p>
+    <table>
+      <thead><tr><th>Patrón</th><th>Cómo lo da Puppeteer</th><th>Dónde lo viste</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Event Sourcing</strong></td><td>El diario append-only <em>es</em> la verdad; el estado es su reproducción.</td><td>Cap. 7</td></tr>
+        <tr><td><strong>Modelo de actores</strong></td><td>Un actor dueño de su estado, único escritor; nadie lo muta desde afuera.</td><td>Caps. 1–2</td></tr>
+        <tr><td><strong>CQRS</strong></td><td>Comando (cambia y persiste) vs. query (solo lee). Distinción de primera clase.</td><td>Caps. 1, 5</td></tr>
+        <tr><td><strong>Vistas materializadas / read models</strong></td><td>Réplicas (Cast) y proyecciones por reacción hacia un <em>sink</em> u outbox.</td><td>Caps. 9, 12</td></tr>
+        <tr><td><strong>Outbox</strong></td><td><code>Outbox.Emit</code> durable, atómico con el avance del cursor de la reacción.</td><td>Cap. 9</td></tr>
+        <tr><td><strong>Coreografía (event-driven)</strong></td><td>Reacciones + <code>tell</code>: cada actor reacciona a hechos, sin orquestador central.</td><td>Caps. 9–10</td></tr>
+        <tr><td><strong>Saga</strong></td><td><code>DefineSaga</code>: pasos por clave de instancia, serializados.</td><td>Cap. 11</td></tr>
+        <tr><td><strong>Replay / despliegue (red-black)</strong></td><td>Desplegar es reproducir el diario; reiniciar/mover deja de ser un evento de riesgo.</td><td>Cap. 7</td></tr>
+        <tr><td><strong>Consumidor pasivo / backup</strong></td><td>Un lector que solo reproduce el diario para respaldar o materializar, sin escribir.</td><td>Caps. 7, 12</td></tr>
+      </tbody>
+      <caption>Tabla 15. Patrones clásicos que Puppeteer ofrece de forma nativa.</caption>
+    </table>
+
+    <p>Vale la pena detenerse en tres, porque son los que más cambian la forma de pensar:</p>
+    <ul class="body">
+      <li><strong>Event sourcing sin ceremonia.</strong> En la mayoría de stacks, hacer event sourcing es una decisión de arquitectura costosa (event store, proyecciones, versionado). Aquí es el punto de partida: escribes comandos y el diario ya es la fuente de verdad.</li>
+      <li><strong>CQRS que no tienes que “montar”.</strong> No hay dos modelos que sincronizar a mano: el comando muta el actor y el diario; la query lee. La separación es de la plataforma, no un andamiaje tuyo.</li>
+      <li><strong>Coreografía en vez de orquestación.</strong> No hay un “orquestador” que conozca todos los pasos. Cada actor publica hechos (<code>tell</code>) y reacciona a los ajenos. El acoplamiento baja y el sistema crece por adición.</li>
+    </ul>
+
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Si un patrón que conoces (por ejemplo, un <em>event store</em> a mano, o un bus con orquestador central) ya está resuelto por el sustrato, resistir la tentación de reimplementarlo encima. Casi siempre ya lo tienes en una primitiva de Puppeteer.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Event sourcing, actores, CQRS, outbox, coreografía, saga y replay son <strong>nativos</strong>, no librerías que agregas.</li>
+      <li>Reconocerlos te deja mapear tu experiencia previa a las primitivas que ya viste en la guía.</li>
+    </ul>
+    <p>Y si un patrón <em>no</em> viene con nombre propio, muchas veces se arma con las mismas primitivas. Eso es el próximo capítulo.</p>
+  </section>
+
+  <!-- CAP 14 · PATRONES FÁCILES DE SUMAR -->
+  <section class="anchor" id="cap14">
+    <h2>14 · Patrones fáciles de sumar</h2>
+    <p class="chapter-meta">Otros patrones que Puppeteer no trae con nombre propio, pero que se construyen con las primitivas que ya tienes.</p>
+
+    <p>Las primitivas de la guía —comando/query, diario, reacciones, <code>tell</code>, <code>Outbox</code>, <code>expose</code>/elide— son combinables. Muchos patrones que en otros stacks requieren infraestructura extra, aquí se arman con lo que ya sabes. No vienen “de fábrica” como una API con nombre; los <strong>compones</strong>.</p>
+
+    <table>
+      <thead><tr><th>Quiero…</th><th>Se arma con…</th></tr></thead>
+      <tbody>
+        <tr><td>Proyectar a un read-model externo (BI/SQL) sin perder filas</td><td>Reacción → <code>Outbox.Emit("MySql", …)</code> + un <em>relay</em> a la tabla (durable, ordenado, al-menos-una-vez).</td></tr>
+        <tr><td>Notificaciones/actualizaciones en vivo a una UI</td><td>Reacción <code>.Program.Emit("print …")</code> → un <em>sink</em> efímero (Kafka/SignalR).</td></tr>
+        <tr><td>Rehidratación rápida en diarios largos (snapshot)</td><td><code>expose</code> del agregado en un asiento + elide de los ciclos cerrados que resume.</td></tr>
+        <tr><td>“¿Quién recibió esto?” en un conjunto abierto de receptores</td><td><code>tell</code> dirigido por instancia + los <em>acks</em> acumulados en el diario como constancia.</td></tr>
+        <tr><td>Cola de no entregados / reintentos</td><td>Un mensaje no mapeado no se acusa (la brecha queda visible); el outbox reintenta al-menos-una-vez.</td></tr>
+      </tbody>
+      <caption>Tabla 16. Patrones que compones sobre las primitivas existentes.</caption>
+    </table>
+
+    <p>Dos ejemplos merecen una línea más:</p>
+    <ul class="body">
+      <li><strong>Vista materializada a una base BI.</strong> Una reacción que, por cada hecho relevante, hace <code>Outbox.Emit("MySql", fila)</code>. La fila se escribe atómicamente con el avance del cursor, se entrega en orden y no se pierde ante una caída — exactamente lo que una tabla de BI necesita. La materialización es una <em>consecuencia declarada</em> del hecho, no código regado por la app.</li>
+      <li><strong>Compactar para rehidratar rápido.</strong> Cuando un ciclo cierra (una ronda termina, una orden se paga), <code>expose</code> el agregado autoritativo en el asiento de cierre y elide los cientos de eventos granulares que lo alimentaron. El diario sigue siendo la verdad; la rehidratación salta lo compactado.</li>
+    </ul>
+
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Antes de sumar infraestructura externa (una cola, un cache, un orquestador), pregúntate si el patrón no se arma ya con reacciones + outbox + <code>tell</code>. La mayoría de las veces sí, y con menos piezas móviles.</p>
+    </div>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita esconder un <strong>envío</strong> cross-actor dentro de un <em>sink</em> de salida: el push no journaliza nada, así que no queda constancia auditable de que el envío ocurrió. Un envío es un <code>tell</code> (auditable); un <em>sink</em> es para <strong>salida</strong> (reportes/proyecciones).</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Muchos patrones se <strong>componen</strong> con las primitivas: outbox para BI, <code>Program.Emit</code> para vivo, <code>expose</code>/elide para snapshot, <code>tell</code> dirigido para “quién recibió”.</li>
+      <li>Primero intenta construir sobre lo que ya hay; suma infraestructura solo cuando de verdad falte.</li>
+    </ul>
+    <p>Con el mapa de patrones en mano, bajemos a lo concreto: las preguntas que todo equipo hace al adoptar Puppeteer.</p>
+  </section>
+
+  <!-- CAP 15 · RECETAS -->
+  <section class="anchor" id="cap15">
+    <h2>15 · Recetas: ¿cómo hago para…?</h2>
+    <p class="chapter-meta">Las preguntas concretas que todo equipo hace al adoptar Puppeteer, resueltas paso a paso.</p>
+
+    <h3>15.1 · Modificar una app que ya funciona</h3>
+    <p>Este es el titular de la guía, y conviene verlo con código real. Supón una app que ya lleva las existencias de una bodega: sabe <code>Ingresar</code> y <code>Retirar</code>. Nos piden registrar <strong>devoluciones</strong>. La modificación completa es <strong>un método nuevo en el dominio + una línea de DSL</strong>:</p>
+    <pre><span class="tag">C# · dominio (diff)</span><code>  <span class="k">public void</span> Retirar(<span class="k">int</span> cantidad) { <span class="c">/* … ya existía … */</span> }
+
+<span class="s">+ public void Devolver(int cantidad)</span>
+<span class="s">+ {</span>
+<span class="s">+     if (cantidad &lt;= 0) throw new LanguageException("la cantidad debe ser positiva");</span>
+<span class="s">+     _existencias = _existencias + cantidad;</span>
+<span class="s">+ }</span></code></pre>
+    <p>Y en el punto donde se necesita, una sola línea de DSL:</p>
+    <pre><span class="tag">DSL (diff)</span><code><span class="s">+ b.Devolver(@n);</span></code></pre>
+    <p>Eso es todo. No hubo que tocar migraciones, ni sincronizar un read-model, ni coordinar con las decenas de otros comandos: cada comando es un hecho independiente en el diario. La app corriendo, con la devolución ya integrada:</p>
+    <pre class="out"><span class="tag">Salida real</span><code>b.Ingresar(100); b.Retirar(30); b.Devolver(5);
+existencias -> {"existencias":75}</code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Al pensar una funcionalidad nueva, pregúntate primero <em>¿qué verbo de dominio expresa este hecho?</em> Si el verbo captura el hecho, la integración suele ser esa única línea de DSL. Modelar el hecho —no el flujo de pantallas— es lo que mantiene el cambio barato.</p>
+    </div>
+
+    <h3>15.2 · Agregar una base de datos a la arquitectura</h3>
+    <p>Dónde vive el diario es una decisión de <strong>configuración</strong>, no de arquitectura. La lógica de negocio no cambia ni una línea. Pasar de memoria a disco es cambiar el <em>backend</em> en <code>ConfigureStorage</code>:</p>
+    <pre><span class="tag">C# (diff)</span><code><span class="s">- actor.ConfigureStorage(DatabaseType.IN_MEMORY, "bodega");</span>
+<span class="s">+ actor.ConfigureStorage(DatabaseType.FileSystem, "path=C:\\datos\\bodega");</span></code></pre>
+    <p>Y de disco a una base relacional es el mismo gesto, apuntando al backend SQL (a través del adapter <code>Ncubo.Puppeteer.Adapters.Sql</code>):</p>
+    <pre><span class="tag">C#</span><code>actor.ConfigureStorage(DatabaseType.SQLServer, <span class="s">"&lt;connection string&gt;"</span>);</code></pre>
+    <p>Los mismos comandos, el mismo dominio, el mismo diario — solo cambia dónde se persiste. Es exactamente lo que verificamos en el Cap. 7: el actor “renacido” sobre el diario en disco reconstruye el estado idéntico. Elige el backend según tu necesidad:</p>
+    <table>
+      <thead><tr><th>Backend</th><th>Cuándo</th></tr></thead>
+      <tbody>
+        <tr><td><code>IN_MEMORY</code></td><td>Pruebas, ejemplos, cachés efímeros.</td></tr>
+        <tr><td><code>FileSystem</code></td><td>Apps locales / por instancia; un diario por carpeta.</td></tr>
+        <tr><td><code>SQLServer</code> · <code>MySQL</code></td><td>Persistencia relacional centralizada.</td></tr>
+        <tr><td><code>PlainText</code></td><td>Diario legible/editable por herramientas.</td></tr>
+      </tbody>
+      <caption>Tabla 17. El “dónde persiste” es configuración; la lógica no se entera.</caption>
+    </table>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Para <strong>leer</strong> desde una base BI (una tabla que no puede perder filas) no cambies el backend del diario: agrega una <strong>reacción con <code>Outbox.Emit</code></strong> hacia esa base (Cap. 9, 14). El diario sigue siendo la verdad; la tabla BI es una proyección durable alimentada por reacciones.</p>
+    </aside>
+
+    <h3>15.3 · Migrar un sistema legado a Puppeteer</h3>
+    <p>No se migra de un salto; se <strong>estrangula</strong> el legado poco a poco, dejando que el diario se vuelva la verdad de forma incremental:</p>
+    <ol class="body">
+      <li><strong>Envuelve la capacidad tras un actor.</strong> Pon una fachada (como el <code>FestivalJournal</code> del bingo) delante de la capacidad legada; toda operación entra ahora como un comando al actor.</li>
+      <li><strong>Journaliza cada operación como comando.</strong> Aunque al principio el comando solo delegue al código viejo, el diario ya empieza a registrar los hechos en orden — ganas auditoría y replay desde el día uno.</li>
+      <li><strong>Mueve la lógica al dominio C#, verbo por verbo.</strong> Reemplaza la delegación al legado por lógica de dominio propia, una operación a la vez. El contrato (el comando) no cambia para quien llama.</li>
+      <li><strong>Convierte las lecturas en queries y proyecciones.</strong> Las consultas pasan a <code>PerformQuery</code>/<code>print</code>; los read-models que el legado mantenía a mano pasan a reacciones (<code>Outbox</code>/<code>Program.Emit</code>).</li>
+      <li><strong>Apaga el legado</strong> cuando el actor cubre todas las operaciones. El diario ya es la fuente de verdad completa.</li>
+    </ol>
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Durante la transición puedes correr ambos en paralelo y <strong>comparar</strong>: el diario del actor te da una traza objetiva de cada hecho, ideal para validar que el nuevo dominio reproduce el comportamiento del legado antes de apagarlo.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><strong>Modificar</strong> una app viva ≈ un verbo de dominio + una línea de DSL; cada comando es un hecho independiente.</li>
+      <li><strong>Agregar una base de datos</strong> es cambiar el backend en <code>ConfigureStorage</code>; la lógica no cambia. Para BI, una reacción con <code>Outbox</code>.</li>
+      <li><strong>Migrar un legado</strong> se hace estrangulando: fachada → journalizar → mover lógica → proyectar lecturas → apagar.</li>
+    </ul>
+    <p>Con esto cierra el borrador de la guía: entendiste el paradigma, escribiste actores, cruzaste fronteras entre ellos y bajaste a patrones y recetas. Los anexos (glosario, convenciones del DSL y la referencia consolidada de recomendaciones) se desarrollarán tras esta ronda de revisión.</p>
+  </section>
+
+  <!-- ANEXO A -->
+  <div class="part">Anexos</div>
+  <section class="anchor" id="anexoA">
+    <h2>A · Correr los ejemplos</h2>
+    <p class="chapter-meta">Lo mínimo para compilar y ejecutar los ejemplos de juguete de la guía. Verificado con .NET 9.</p>
+
+    <p>Los ejemplos de juguete viven en el proyecto <code>ejemplos/</code>, junto a este documento. Referencia el proyecto <code>Puppeteer</code> y no necesita nada más. Cada ejemplo es autocontenido:</p>
+    <pre><span class="tag">bash</span><code>cd ejemplos
+dotnet run              <span class="c"># todos</span>
+dotnet run -- cap2.1    <span class="c"># contador          </span>  dotnet run -- cap5   <span class="c"># control de flujo</span>
+dotnet run -- cap2.2    <span class="c"># torniquete        </span>  dotnet run -- cap6   <span class="c"># dominio C#</span>
+dotnet run -- cap3      <span class="c"># DSL a fondo       </span>  dotnet run -- cap7   <span class="c"># replay</span>
+dotnet run -- cap4      <span class="c"># parametros        </span>  dotnet run -- cap8   <span class="c"># salida</span>
+dotnet run -- cap15     <span class="c"># modificar una app viva (receta del Cap. 15)</span></code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>== Cap. 2.1 - El actor mas simple ==
+Query -> {"valor":2}
+
+== Cap. 2.2 - Un objeto de dominio con verbos ==
+Estado -> {"desbloqueado":false,"pasos":1}
+
+== Cap. 3 - El DSL a fondo ==
+A. literales/promocion -> {"x":2.25,"y":4000000000}
+B. local en bloque -> {"doble":10}
+B. raiz persiste -> {"total":5}
+C. @Now -> {"anio":2026}
+D. upgrade una vez -> {"saldo":100}
+
+== Cap. 4 - Parametros y contratos ==
+A. @param -> {"emitidos":3}
+B. Out -> turno numero 4
+C. Eval -> {"ultimo":5}
+
+== Cap. 5 - Control de flujo y guardas ==
+if -> {"t":2}
+foreach -> {"t":4}
+Check acepta -> return="" (vacio = aceptado); {"t":5}
+Check rechaza -> return="{"EWI":[{"Error":"sin cupo"}]}"; {"t":5}
+
+== Cap. 6 - El dominio C# del actor ==
+Semaforo -> {"luz":"Verde"}
+
+== Cap. 7 - Journal, persistencia y replay ==
+original -> {"saldo":150}
+renacido -> {"saldo":150}
+
+== Cap. 8 - Salida y hosting ==
+JSON para el API -> {"total":250,"iva":32.5}
+
+== Cap. 15 - Modificar una app viva ==
+existencias -> {"existencias":75}</code></pre>
+
+    <p>El “andamiaje” es una sola utilidad que crea el actor listo para usar (en el proyecto, además, silencia la línea de arranque que el framework imprime para que la salida quede limpia):</p>
+    <pre><span class="tag">C#</span><code><span class="k">public static</span> ActorV2 NuevoActor(<span class="k">string</span> nombre, Assembly dominio)
+{
+    <span class="k">var</span> actor = <span class="k">new</span> ActorV2(nombre, dominio);
+    actor.ConfigureStorage(DatabaseType.IN_MEMORY, nombre);
+    <span class="k">return</span> actor;
+}</code></pre>
+
+    <p>El código completo de cada ejemplo está en el proyecto <code>ejemplos/</code> (una carpeta por capítulo); aquí mostramos solo los fragmentos que ilustran cada idea. Los ejemplos de juguete cubren las Partes I y III (mecánica del actor, DSL, parámetros, guardas, dominio, replay, salida y la receta de modificar una app). Los fragmentos marcados <strong>real</strong> a lo largo de la guía provienen de la aplicación <em>Velada</em> y no forman parte de este proyecto ejecutable; la Parte II se ilustra con esos fragmentos reales por depender de transportes y varios nodos.</p>
+  </section>
+
+  <div class="callback">
+    <p>Puppeteer · Cómo se usa — borrador para revisión de pares (Prefacio, Introducción y Partes I–III, Capítulos 1–15). Los anexos B–D se desarrollarán tras esta ronda. Los ejemplos de juguete se compilan y ejecutan con .NET 9; los fragmentos <strong>real</strong> provienen de la app <em>Velada</em> (bingo sobre Puppeteer).</p>
+  </div>
+
+  <!-- ANEXO B · GLOSARIO -->
+  <section class="anchor" id="anexoB">
+    <h2>B · Glosario</h2>
+    <p class="chapter-meta">Los términos del paradigma y del DSL usados en la guía. Como el código es inglés, se indica el nombre real entre paréntesis.</p>
+
+    <table>
+      <thead><tr><th>Término</th><th>Qué es</th><th>Cap.</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Actor</strong> (<code>ActorV2</code>)</td><td>Unidad que es dueña de su estado en memoria y la única que puede cambiarlo; se le habla con scripts.</td><td><a href="#cap1">1</a></td></tr>
+        <tr><td><strong>Comando</strong> (<code>PerformCommand</code>)</td><td>Script que cambia el estado del actor y se persiste en el diario.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><strong>Query</strong> (<code>PerformQuery</code>)</td><td>Script que solo lee; devuelve la salida de <code>print</code> como JSON; no deja rastro.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><strong>DSL</strong></td><td>El lenguaje diminuto con el que se orquesta el dominio (construir objetos, llamar verbos).</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong>Diario</strong> (journal)</td><td>Bitácora append-only que guarda el texto de cada comando; es la fuente de verdad.</td><td><a href="#cap7">7</a></td></tr>
+        <tr><td><strong>Reproducir</strong> (replay)</td><td>Re-ejecutar el diario para reconstruir el estado; “desplegar es reproducir”.</td><td><a href="#cap7">7</a></td></tr>
+        <tr><td><strong>Verbo</strong></td><td>Método del dominio que representa una operación con sentido de negocio; único camino para cambiar el estado.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><strong>Query total</strong></td><td>Lectura del dominio que siempre responde: nunca lanza, nunca devuelve <code>null</code>.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><strong>Estado raíz</strong></td><td>Los identificadores de nivel superior de un comando; persisten entre comandos.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong><code>upgrade</code></strong></td><td>Bloque que corre una sola vez por actor; sirve para nacer y para rehidratar.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong><code>@Now</code></strong></td><td>Fecha/hora determinista inyectada por el framework; igual en la ejecución y en el replay.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong>Parámetro</strong> (<code>@</code>)</td><td>Valor que entra al script desde afuera; se declara con tipo y se referencia con <code>@nombre</code>.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><strong><code>Out</code></strong></td><td>Parámetro para leer de vuelta a C# un valor tipado que el actor calculó.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><strong><code>Eval</code></strong></td><td>Parámetro derivado del estado, resuelto en el actor y congelado en el diario para el replay.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><strong>Guarda</strong> (<code>Check</code>)</td><td>Predicado puro que puede rechazar un comando sin dejar rastro; retorno vacío = aceptado.</td><td><a href="#cap5">5</a></td></tr>
+        <tr><td><strong>Reacción</strong> (<code>Reactions</code>)</td><td>Regla que observa el diario del actor tras el commit y ejecuta un efecto posterior.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Cue</code> / <code>Job</code></strong></td><td>Latencia de una reacción: <code>Cue</code> dispara al instante (push continuo); <code>Job</code> corre en pasadas.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Seek</code> / <code>OnMatch</code></strong></td><td>El patrón que una reacción busca en el diario; <code>$var</code> captura valores de la entrada.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Causation.Continue</code></strong></td><td>El cuerpo de una reacción que corre tras el commit; el único lugar donde vive un <code>tell</code>.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>tell</code></strong></td><td>Aviso de un actor a otro (rol lógico); el DSL nunca nombra el transporte.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>once</code></strong></td><td>Identidad idempotente de un <code>tell</code>, para que el replay no duplique ni descarte.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Outbox.Emit</code></strong></td><td>Salida durable de una reacción (p. ej. a BI): ordenada, no se pierde, al-menos-una-vez.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Program.Emit</code> / <em>sink</em></strong></td><td>Salida efímera (fire-and-forget) de una reacción a un destino (<code>IOutputSink</code>).</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>expose</code> / elide</strong></td><td>Capturar un agregado en un asiento y saltar los eventos que resume al rehidratar (snapshot).</td><td><a href="#cap14">14</a></td></tr>
+        <tr><td><strong>Saga</strong> (<code>DefineSaga</code>)</td><td>Flujo de pasos por clave de instancia, serializados; distintas claves en paralelo.</td><td><a href="#cap11">11</a></td></tr>
+        <tr><td><strong>Despacho</strong> (<code>Dispatch</code>)</td><td>Ruteo de mensajes entrantes a comandos propios, sin un <code>switch</code> gigante.</td><td><a href="#cap10">10</a></td></tr>
+        <tr><td><strong><code>StageV2</code> · Director · Cast</strong></td><td>Un actor replicado: un Director (dueño del diario) y N Casts (réplicas).</td><td><a href="#cap12">12</a></td></tr>
+        <tr><td><strong>Formación</strong></td><td>La forma del espacio de direcciones: qué entidad merece su propio actor/diario.</td><td><a href="#cap12">12</a></td></tr>
+        <tr><td><strong>Manifestación</strong></td><td>La presentación de un dominio, personalizada por participante/cliente.</td><td><a href="#intro">Intro</a></td></tr>
+        <tr><td><strong><code>ConfigureStorage</code></strong></td><td>Elige el backend del diario (memoria, archivos, SQL, texto) sin tocar la lógica.</td><td><a href="#cap7">7</a></td></tr>
+      </tbody>
+      <caption>Tabla 18. Glosario: término (nombre en código) · definición · capítulo.</caption>
+    </table>
+    <aside class="note">
+      <div class="h">✎ Vocabulario oficial de nCubo</div>
+      <p>La documentación del framework usa términos de teatro para el sustrato: <strong>Stage</strong> (el actor replicado y su hospedaje), <strong>Performer</strong> (la identidad de red), <strong>Performance</strong> (el host que corre un actor), <strong>Director</strong> / <strong>Cast</strong> (los papeles en la replicación) y <strong>Reaction</strong>. Esta guía usa los términos en español de la tabla anterior; aquí queda el puente por si lees el código o los papers.</p>
+    </aside>
+  </section>
+
+  <!-- ANEXO C · CONVENCIONES DEL DSL -->
+  <section class="anchor" id="anexoC">
+    <h2>C · Convenciones del DSL</h2>
+    <p class="chapter-meta">La sintaxis del DSL en un solo lugar, para tener abierta al lado mientras escribes. Detalle en los Caps. 3–5.</p>
+
+    <h3>Cuerpo del script</h3>
+    <pre><span class="tag">DSL</span><code>saldo = 0;                 <span class="c">// sentencias terminan en ;</span>
+nota = <span class="s">'texto'</span>;            <span class="c">// cadenas: comillas SIMPLES</span>
+{ a = 1; b = 2; }          <span class="c">// bloque: agrupa sentencias</span>
+/* comentario de bloque */ <span class="c">// // y /* */ no afectan nada</span></code></pre>
+
+    <h3>Literales y promoción</h3>
+    <table>
+      <thead><tr><th>Tipo</th><th>Escritura</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td><code>int</code></td><td>entero sin sufijo</td><td><code>1</code></td></tr>
+        <tr><td><code>long</code></td><td>sufijo <code>L</code></td><td><code>9000000000L</code></td></tr>
+        <tr><td><code>double</code></td><td>punto o sufijo <code>d</code></td><td><code>1.0</code>, <code>2d</code></td></tr>
+        <tr><td><code>decimal</code></td><td>sufijo <code>m</code></td><td><code>2.25m</code></td></tr>
+        <tr><td><code>datetime</code></td><td><code>M/d/yyyy</code></td><td><code>03/31/2018</code></td></tr>
+        <tr><td>lista</td><td>llaves, homogénea</td><td><code>{1, 2, 3}</code></td></tr>
+        <tr><td>texto</td><td>comillas simples</td><td><code>'manzana'</code></td></tr>
+      </tbody>
+      <caption>Tabla 19. Literales. Promoción: <code>decimal &gt; double &gt; long &gt; int</code> (excepción: <code>int / int</code> → <code>double</code>).</caption>
+    </table>
+
+    <h3>Expresiones, <code>print</code> y ámbito</h3>
+    <pre><span class="tag">DSL</span><code>x = a * 2 + -b;                       <span class="c">// aritmetica y unario</span>
+et = n &gt; 0 ? <span class="s">'pos'</span> : <span class="s">'no'</span>;             <span class="c">// ternario</span>
+s = <span class="s">'total = '</span> + 5;                    <span class="c">// concat: TEXTO a la izquierda</span>
+print total <span class="s">'total'</span>, iva <span class="s">'iva'</span>;       <span class="c">// varios valores en una sentencia</span></code></pre>
+    <table>
+      <thead><tr><th>Dónde asignas</th><th>Alcance</th><th>¿Persiste?</th></tr></thead>
+      <tbody>
+        <tr><td>Nivel superior del comando</td><td>global (estado raíz)</td><td>Sí</td></tr>
+        <tr><td>Dentro de un bloque / <code>if</code> / <code>foreach</code></td><td>local</td><td>No</td></tr>
+        <tr><td>Dentro de <code>upgrade { }</code></td><td>global (excepción)</td><td>Sí</td></tr>
+      </tbody>
+      <caption>Tabla 20. Regla de ámbito: el lugar de la asignación decide su alcance.</caption>
+    </table>
+
+    <h3>Tiempo e inicialización</h3>
+    <pre><span class="tag">DSL</span><code>print @Now.Year <span class="s">'anio'</span>;                <span class="c">// @Now: DateTime determinista</span>
+
+upgrade('seed') { saldo = 100; }        <span class="c">// una sola vez por actor</span></code></pre>
+
+    <h3>Control de flujo y guarda</h3>
+    <pre><span class="tag">DSL</span><code>if (aforo.Cabe(@n)) { aforo.Tomar(@n); }        <span class="c">// una decision = un comando</span>
+foreach (x in @nums) { total = total + x; }     <span class="c">// no hay for; solo foreach</span>
+Check(aforo.Cabe(@n)) Error 'sin cupo';         <span class="c">// guarda (con PerformCheckThenCommand)</span></code></pre>
+
+    <h3>Parámetros (lado C#)</h3>
+    <pre><span class="tag">C#</span><code>.WithParameters(p =>
+{
+    p[<span class="s">"sku"</span>, <span class="k">typeof</span>(<span class="k">string</span>)] = sku;          <span class="c">// entrada @sku</span>
+    p[<span class="s">"dias"</span>, <span class="k">typeof</span>(<span class="k">int</span>[])] = items;         <span class="c">// coleccion</span>
+    p[<span class="s">"dia"</span>, <span class="k">typeof</span>(Enum)] = <span class="s">"Monday"</span>;         <span class="c">// enum por NOMBRE</span>
+    p[Parameter.Out,  <span class="s">"turno"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="k">default</span>;    <span class="c">// leer de vuelta</span>
+    p[Parameter.Eval, <span class="s">"id"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="s">"lastId + 1"</span>; <span class="c">// derivado del estado</span>
+})</code></pre>
+
+    <h3>Formato de la llamada <code>Perform</code></h3>
+    <ul class="body">
+      <li>Encadena en el orden: <code>actor.Using(<em>script</em>)</code> → <code>.WithParameters(...)</code> → <code>.PerformCommand()</code> / <code>.PerformQuery()</code> / <code>.PerformCheckThenCommand()</code>.</li>
+      <li>Para un cuerpo de varias líneas, usa una cadena literal (<code>@"..."</code>) con una sentencia por línea.</li>
+      <li>Un parámetro por línea en <code>.WithParameters</code>, en el mismo orden en que aparecen en el script.</li>
+      <li>Pasa valores como <code>@params</code>; <strong>nunca</strong> los interpoles en el texto del script (rompe la densidad del diario).</li>
+    </ul>
+  </section>
+
+  <!-- ANEXO D · REFERENCIA DO / DON'T -->
+  <section class="anchor" id="anexoD">
+    <h2>D · Referencia DO / DON'T</h2>
+    <p class="chapter-meta">Todas las recomendaciones de la guía, reunidas. La chuleta para revisar o recordar de un vistazo.</p>
+
+    <table>
+      <thead><tr><th style="width:120px">Tipo</th><th>Recomendación</th><th style="width:60px">Cap.</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Piensa en cada capacidad de negocio como un actor que protege su estado y ofrece verbos, no campos editables.</td><td><a href="#intro">Intro</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No trates al actor como una bolsa de datos para leer y escribir desde afuera.</td><td><a href="#intro">Intro</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No leas <code>DateTime.Now</code> (ni azar) dentro de un script; usa <code>@Now</code>.</td><td><a href="#cap1">1</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>Deja de pensar en “migraciones” y “estados corruptos”; la pregunta pasa a ser “¿mi diario reproduce igual?”.</td><td><a href="#cap1">1</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Expón el dominio como verbos (operaciones) y queries totales; deja que cada objeto proteja sus reglas.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita <em>setters</em> públicos que dejen fijar el estado desde afuera.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No pongas el número a la izquierda de una concatenación; el texto va a la izquierda.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Encierra las variables de trabajo en un bloque <code>{ }</code>; promueve a global solo lo que debe persistir.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No edites el cuerpo de un <code>upgrade</code> ya aplicado; publica un nombre nuevo.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita meter tipos de tu capa de interfaz (Guid, DTO) por el canal de parámetros; convierte en el borde.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No parsees la salida de <code>print</code> para un valor tipado; usa <code>Out</code>.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No partas la decisión en tu C#; la rama vive dentro de un solo cuerpo (una decisión = un comando).</td><td><a href="#cap5">5</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No pongas efectos secundarios en una guarda <code>Check</code>: es un predicado puro (corre hasta dos veces).</td><td><a href="#cap5">5</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Modela entidades de identidad con operaciones; cambios de estado siempre por un verbo.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Escribe queries totales: que respondan el caso vacío en vez de lanzar o devolver <code>null</code>.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>El <code>upgrade</code> idempotente hace seguro el replay: la misma llamada sirve para nacer y rehidratar.</td><td><a href="#cap7">7</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Envuelve el acceso al actor en una fachada fluida estable, que aísle a la app de cambios del sustrato.</td><td><a href="#cap8">8</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No concatenes el texto del <code>tell</code> con los valores; pasa <code>@params</code>.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>En un actor replicado (<code>StageV2</code>), marca <code>.DirectorOnly()</code> la reacción que emite un <code>tell</code>.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Acusa (ack) el mensaje después del commit del comando.</td><td><a href="#cap10">10</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita acusar un mensaje no mapeado; dejarlo sin ack mantiene la brecha visible.</td><td><a href="#cap10">10</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No esperes rollback automático en una saga; modela la compensación como un paso más.</td><td><a href="#cap11">11</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>No trates un <code>StageV2</code> como puente entre dos actores: es un actor en varios lugares. La unión entre actores distintos es la capa <code>tell</code>.</td><td><a href="#cap12">12</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>Si un patrón ya lo da el sustrato (event store, orquestador), no lo reimplementes encima.</td><td><a href="#cap13">13</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>Antes de sumar infraestructura externa, mira si el patrón se arma con reacciones + outbox + <code>tell</code>.</td><td><a href="#cap14">14</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita esconder un envío cross-actor dentro de un <em>sink</em>: no deja constancia auditable.</td><td><a href="#cap14">14</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Al pensar una funcionalidad nueva, pregúntate qué verbo de dominio expresa el hecho; suele ser una línea de DSL.</td><td><a href="#cap15">15</a></td></tr>
+      </tbody>
+      <caption>Tabla 21. Referencia consolidada de recomendaciones, en orden de aparición.</caption>
+    </table>
+  </section>
+  </main>
+</div>
+
+<script>
+  const btn=document.getElementById('menuBtn'), toc=document.getElementById('toc'), scrim=document.getElementById('scrim');
+  function close(){toc.classList.remove('open');scrim.classList.remove('on');}
+  btn.addEventListener('click',()=>{toc.classList.toggle('open');scrim.classList.toggle('on');});
+  scrim.addEventListener('click',close);
+  toc.addEventListener('click',e=>{if(e.target.tagName==='A'&&!e.target.classList.contains('soon'))close();});
+  const links=[...document.querySelectorAll('nav.toc a[href^="#"]')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){links.forEach(a=>a.classList.remove('active'));const a=map.get(en.target.id);if(a)a.classList.add('active');}});},{rootMargin:'-15% 0px -75% 0px'});
+  document.querySelectorAll('.anchor').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

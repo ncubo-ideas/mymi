@@ -33,13 +33,14 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private readonly AlmacenDeCredencial almacen;
 	private readonly HttpClient http;
 	private readonly ConfiguracionDelProveedor proveedor;
+	private readonly Textos textos;
 
 	private ComprasApp? app;
 	private ComprasAPI? api;
 	private BucleDeRefresh? bucle;
 
 	public EstadoDeLaApp(PuenteDeJournal puente, ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi,
-		AlmacenDeCredencial almacen, HttpClient http, ConfiguracionDelProveedor proveedor)
+		AlmacenDeCredencial almacen, HttpClient http, ConfiguracionDelProveedor proveedor, Textos textos)
 	{
 		ArgumentNullException.ThrowIfNull(puente);
 		ArgumentNullException.ThrowIfNull(modo);
@@ -47,6 +48,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		ArgumentNullException.ThrowIfNull(almacen);
 		ArgumentNullException.ThrowIfNull(http);
 		ArgumentNullException.ThrowIfNull(proveedor);
+		ArgumentNullException.ThrowIfNull(textos);
 
 		this.puente = puente;
 		this.modo = modo;
@@ -54,7 +56,14 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		this.almacen = almacen;
 		this.http = http;
 		this.proveedor = proveedor;
+		this.textos = textos;
 	}
+
+	/// <summary>
+	/// EL IDIOMA CON QUE ESTA CARATULA LE PIDE SUS FRASES AL DOMINIO: el de la persona, negociado al
+	/// arrancar. No es el del registro: la caratula la lee ella, no el supermercado.
+	/// </summary>
+	private string ElIdioma => textos.Idioma;
 
 	public bool EstaArriba => app is not null;
 
@@ -171,7 +180,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		bucle = new BucleDeRefresh(api, fuente, RutaDeCompras.Rutear, BajarADisco);
 
 		UltimoMensaje = modo.Hospedada
-			? $"arriba, hospedada en Gnothi. {precargados} archivos precargados"
+			? $"arriba, hospedada en Mymi. {precargados} archivos precargados"
 			: puente.HayDestino
 				? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
 				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
@@ -212,7 +221,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// es el destino, no el origen.
 	public bool Migrada => !modo.Hospedada && Cuenta is { Migrada: true };
 
-	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Gnothi";
+	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Mymi";
 
 	public bool Hospedada => modo.Hospedada;
 
@@ -245,7 +254,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			BajarADisco);
 
 		ResultadoDeRefresh resultado = await unaVez.Ejecutar(ct);
-		UltimoMensaje = $"entrega de Gnothi: {resultado}";
+		UltimoMensaje = $"entrega de Mymi: {resultado}";
 		return resultado;
 	}
 	// El unico camino por el que la app baja a disco. Recuerda si fallo, para que la
@@ -377,21 +386,21 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public IReadOnlyList<CompraEnLista> Compras() { Exigir(); return api!.Compras(); }
 
-	public CompraDetallada Detalle(string numero) { Exigir(); return api!.Detalle(numero); }
+	public CompraDetallada Detalle(string numero) { Exigir(); return api!.Detalle(numero, ElIdioma); }
 
 	// LA consulta que justifica la app: como cambio la canasta entre dos meses.
 	public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues)
-	{ Exigir(); return api!.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues); }
+	{ Exigir(); return api!.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues, ElIdioma); }
 
 	// La lectura por defecto. QUE DOS MESES se comparan lo elige el dominio, no esta
 	// pantalla: elegir es parte de la pregunta, no de como se dibuja.
-	public CanastasComparadas ComparacionPorDefecto() { Exigir(); return api!.ComparacionConElAnioAnterior(); }
+	public CanastasComparadas ComparacionPorDefecto() { Exigir(); return api!.ComparacionConElAnioAnterior(ElIdioma); }
 
-	public CanastaDelMesVista Canasta(int anio, int mes) { Exigir(); return api!.Canasta(anio, mes); }
+	public CanastaDelMesVista Canasta(int anio, int mes) { Exigir(); return api!.Canasta(anio, mes, ElIdioma); }
 
 	// LAS DOS LECTURAS DE LA PORTADA. Cuantas compras se miran para reconocer la firma lo
 	// decide la app (ComprasAPI), no esta caratula: es parte de la pregunta.
-	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(); }
+	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(ElIdioma); }
 
 	// DESDE CUANDO HASTA CUANDO hay compras. La pantalla lo usa para decir "87 compras desde
 	// enero de 2025" en vez de un numero suelto.
@@ -407,29 +416,29 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 		// El rango lo entrega como aaaa-mm, que es la forma en que viaja: se parte aca.
 		string[] partes = rango.UltimoMes.Split('-');
-		return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]));
+		return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), ElIdioma);
 	}
 
 	// EL PRODUCTO SE NOMBRA. El dominio resuelve el texto igual que para la tool del MCP.
 	public ConsumoEnElTiempo ConsumoDe(string producto)
-	{ Exigir(); return api!.Consumo(producto); }
+	{ Exigir(); return api!.Consumo(producto, ElIdioma); }
 
 	// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. El "hoy" lo pone la caratula porque involucra
 	// el RELOJ, y el dominio no lo lee: si lo leyera, esta lectura daria distinto en cada
 	// replay del journal y dejaria de ser reproducible.
 	public ListaDeLaProximaCompra Lista()
-	{ Exigir(); return api!.Lista(DateTime.Now); }
+	{ Exigir(); return api!.Lista(DateTime.Now, ElIdioma); }
 
 	// LAS PROMOCIONES VIGENTES. El "hoy" lo pone la caratula: vigente-o-no depende de
 	// cuando se mira, y el dominio no lee el reloj.
 	public IReadOnlyList<PromocionVista> Promociones()
-	{ Exigir(); return api!.Promociones(DateTime.Now); }
+	{ Exigir(); return api!.Promociones(DateTime.Now, ElIdioma); }
 
 	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
 	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
 	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.
 	public ComprasHalladas Halladas(string termino)
-	{ Exigir(); return api!.Halladas(termino); }
+	{ Exigir(); return api!.Halladas(termino, ElIdioma); }
 
 	// EL QUIEBRE LO ENCUENTRA EL DOMINIO, y esta pantalla ya no elige una fecha.
 	//
@@ -442,7 +451,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// que vive en una caratula no lo audita nadie. Ahora la pantalla pide "el cambio" y el
 	// dominio dice cual y desde cuando.
 	public CambioDeLaCanasta CambioDelUltimoAnio()
-	{ Exigir(); return api!.CambioDelQuiebre(); }
+	{ Exigir(); return api!.CambioDelQuiebre(ElIdioma); }
 
 	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. EL MISMO quiebre
 	// que la tarjeta de arriba, y ahora lo garantiza el dominio: las dos cuentan el mismo
@@ -452,35 +461,35 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// conoce su propio rango: esta pantalla no sabe cual es el ultimo mes con compras, y la
 	// aritmetica de "el mes anterior" se resuelve mal en enero.
 	public CanastasComparadas ComparacionConElMesAnterior()
-	{ Exigir(); return api!.ComparacionConElMesAnterior(); }
+	{ Exigir(); return api!.ComparacionConElMesAnterior(ElIdioma); }
 
 	// SU PROPIA INFLACION, solo de los productos que si lleva.
-	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(); }
+	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(ElIdioma); }
 
 	// LA CANASTA FRENTE A HACE UNOS MESES. El "hoy" lo pone la caratula, y la ventana la
 	// pone el dominio (3 meses): la pantalla no inventa la suya.
 	public CanastaFrenteAlPasadoVista FrenteAlPasado()
-	{ Exigir(); return api!.FrenteAlPasado(DateTime.Now); }
+	{ Exigir(); return api!.FrenteAlPasado(DateTime.Now, ElIdioma); }
 
-	public RebajaVista Rebaja(string numero) { Exigir(); return api!.Rebaja(numero); }
+	public RebajaVista Rebaja(string numero) { Exigir(); return api!.Rebaja(numero, ElIdioma); }
 
 	// EN QUE SUCURSALES COMPRA. La portada lo pinta plegado en una fila; el detalle
 	// entero es del asistente (donde_compro).
-	public RecorridoDeSucursalesVista Recorrido() { Exigir(); return api!.Recorrido(); }
+	public RecorridoDeSucursalesVista Recorrido() { Exigir(); return api!.Recorrido(ElIdioma); }
 
 	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
 	// mide sobre todo el historial, y no hay reloj de por medio.
-	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }
+	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(ElIdioma); }
 
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron()
-	{ Exigir(); return api!.RitmosDelQuiebre(); }
+	{ Exigir(); return api!.RitmosDelQuiebre(ElIdioma); }
 
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
-	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
+	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now, ElIdioma); }
 
 	// LO QUE NO ESTA: lo unico que esta pantalla no podria calcular sola.
 	public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes()
-	{ Exigir(); return api!.AbastecimientosPendientes(DateTime.Now); }
+	{ Exigir(); return api!.AbastecimientosPendientes(DateTime.Now, ElIdioma); }
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeCompras(); }
 

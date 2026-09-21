@@ -133,21 +133,21 @@ namespace Concesionario.Dominio.Pruebas
 			"ReadDistanceRemaining/2",
 			"ReadDistanceRemainingUnit/2",
 			"ReadDistanceRemainderStanding/2",
-			"DescribeDistanceRemaining/2",
+			"DescribeDistanceRemaining/3",
 			"CanDaysRemainingBeSaid/2",
 			"ReadDaysRemaining/2",
 			"ReadTimeRemainderStanding/2",
-			"DescribeDaysRemaining/2",
-			"DescribeCountdown/2",
+			"DescribeDaysRemaining/3",
+			"DescribeCountdown/3",
 			"HasAnyCompletion/1",
 			"CompletionCount/1",
-			"DescribeCompletions/1",
-			"CompletionsOf/1",
-			"CompletionsOfEveryKind/0",
+			"DescribeCompletions/2",
+			"CompletionsOf/2",
+			"CompletionsOfEveryKind/1",
 			"HasAnyPublishedServicePrice/0",
 			"PublishedServicePriceCount/0",
-			"PublishedServicePricesAsOf/1",
-			"DescribePublishedServicePrice/3",
+			"PublishedServicePricesAsOf/2",
+			"DescribePublishedServicePrice/4",
 		};
 
 		// LAS NUEVE DEL LIBRO DE COSTOS, Y ESTAR AQUI ES OTRA COSA QUE ESTAR EN LA LISTA DE ARRIBA.
@@ -177,14 +177,14 @@ namespace Concesionario.Dominio.Pruebas
 		private static readonly string[] TheNineTheCostLedgerAdded =
 		{
 			"HasAnyCostBetween/2",
-			"DescribeSpendBetween/2",
+			"DescribeSpendBetween/3",
 			"IsSpendSaidInOneCurrencyBetween/2",
-			"DescribeSpendPerCurrencyBetween/2",
-			"DescribeTwoPeriodsOfSpendCompared/4",
-			"CostEntriesBetween/2",
+			"DescribeSpendPerCurrencyBetween/3",
+			"DescribeTwoPeriodsOfSpendCompared/5",
+			"CostEntriesBetween/3",
 			"CostEntryCountBetween/2",
 			"CanCostPerDistanceBeSaid/2",
-			"DescribeCostPerDistanceBetween/2",
+			"DescribeCostPerDistanceBetween/3",
 		};
 
 		// LOS DOS MIEMBROS PUBLICOS QUE DEVUELVEN ALGO Y ESCRIBEN. No son lecturas y el barrido no los
@@ -348,7 +348,8 @@ namespace Concesionario.Dominio.Pruebas
 					+ "contesta la de la persona, y en un journal viejo tambien.");
 				Assert.That(api.ReadDistanceRemainderStanding(TheKindThatMeasuresDistance, TheDayItIsAsked),
 					Is.EqualTo("StillAhead"));
-				Assert.That(api.DescribeDistanceRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeDistanceRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("distancia: te faltan"));
 
 				Assert.That(api.CanDaysRemainingBeSaid(TheKindThatMeasuresDistance, TheDayItIsAsked),
@@ -357,29 +358,35 @@ namespace Concesionario.Dominio.Pruebas
 					Is.EqualTo(TheTimeLimitInDays - (int)(TheDayItIsAsked - TheSecondCompletion).TotalDays));
 				Assert.That(api.ReadTimeRemainderStanding(TheKindThatMeasuresDistance, TheDayItIsAsked),
 					Is.EqualTo("StillAhead"));
-				Assert.That(api.DescribeDaysRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeDaysRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("tiempo: te faltan"));
-				Assert.That(api.DescribeCountdown(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeCountdown(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("distancia:").And.Contain("tiempo:"),
 					"G1 en el journal viejo: dice las dos mitades y no escoge.");
 
 				Assert.That(api.HasAnyCompletion(TheKindThatMeasuresDistance), Is.True);
 				Assert.That(api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(2),
 					"Las dos completaciones que escribio la app de antes, caminadas de la cadena.");
-				Assert.That(api.DescribeCompletions(TheKindThatMeasuresDistance),
-					Does.Contain("se hizo el").And.Contain("27300"));
-				Assert.That(api.CompletionsOf(TheKindThatMeasuresDistance).CompletedAt,
+				Assert.That(api.DescribeCompletions(
+					TheKindThatMeasuresDistance, TheLanguage.OfTheRecord),
+					Does.Contain("se hizo el").And.Contain("27.300"));
+				Assert.That(api.CompletionsOf(
+					TheKindThatMeasuresDistance, TheLanguage.OfTheRecord).CompletedAt,
 					Has.Length.EqualTo(2));
-				Assert.That(api.CompletionsOfEveryKind().Kind, Has.Length.EqualTo(3),
+				Assert.That(api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Kind, Has.Length.EqualTo(3),
 					"Tres filas: dos de la clase que mide distancia y una de la que solo mide tiempo.");
 
 				Assert.That(api.HasAnyPublishedServicePrice(), Is.True);
 				Assert.That(api.PublishedServicePriceCount(), Is.EqualTo(1));
-				Assert.That(api.PublishedServicePricesAsOf(TheDayItIsAsked).Revision,
+				Assert.That(api.PublishedServicePricesAsOf(
+					TheDayItIsAsked, TheLanguage.OfTheRecord).Revision,
 					Is.EqualTo(new[] { TheRevision }),
 					"L9 en el journal viejo: la fila nombra la revision de la que salio.");
-				Assert.That(api.DescribePublishedServicePrice("Inspection", 10000, TheUnitEverythingIsIn),
-					Does.Contain("120.5"));
+				Assert.That(api.DescribePublishedServicePrice(
+					"Inspection", 10000, TheUnitEverythingIsIn, TheLanguage.OfTheRecord),
+					Does.Contain("₡120,50"));
 			}
 			finally
 			{

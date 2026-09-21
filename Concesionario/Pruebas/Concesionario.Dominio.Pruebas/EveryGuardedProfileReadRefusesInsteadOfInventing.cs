@@ -91,7 +91,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasAnOdometerReading(TheInstantAsked), Is.False);
 
 			Assert.That(
-				journal.Api.DescribePublishedWarrantyEnvelope(),
+				journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
 				Does.Contain("no ha publicado"),
 				"Y la mitad publicada contesta CON PALABRAS. Es la lectura que puede citar quien no "
 				+ "tiene ni un dato de ningun carro, y que no la haya haria que faltar el odometro de "

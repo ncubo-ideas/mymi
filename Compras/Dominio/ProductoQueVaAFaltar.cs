@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Compras.Dominio
 {
@@ -50,8 +51,11 @@ namespace Compras.Dominio
 			Cadencia = Cadencia.Para(diasTipicos);
 		}
 
-		/// <summary>Como aaaa-mm-dd, que es la forma en que la fecha viaja.</summary>
-		internal string UltimaVezExpresada => UltimaVez.ToString("yyyy-MM-dd");
+		/// <summary>
+		/// Como aaaa-mm-dd, que es la forma en que la fecha viaja. INVARIANTE y no de la maquina: sin
+		/// cultura fija, un calendario no gregoriano escribe otro año en el mismo instante.
+		/// </summary>
+		internal string UltimaVezExpresada => UltimaVez.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
 		/// <summary>Ya pasó su tiempo: si va al súper hoy, probablemente lo lleve.</summary>
 		internal bool Toca => DiasDesdeLaUltima >= DiasTipicos;
@@ -65,13 +69,16 @@ namespace Compras.Dominio
 		// obliga a preguntar Toca antes de leer cualquiera de las dos.
 		internal int DiasDeMas => DiasDesdeLaUltima - DiasTipicos;
 
-		/// <summary>La línea de la pantalla. Dice el hecho y se calla.</summary>
-		// NO DICE "COMPRA LECHE". Dice cada cuanto vuelve y cuanto hace que no entra, y la
-		// decision es de quien lee: puede tener dos litros en la heladera y esta app no lo
-		// sabe. Una lista que ordena en vez de informar se equivoca seguido y molesta siempre.
-		internal string ParaElAsistente =>
-			Toca
-				? $"{Descripcion}: suele volver {Cadencia.ParaMostrar} y hace {DiasDesdeLaUltima} días que no entra"
-				: $"{Descripcion}: suele volver {Cadencia.ParaMostrar}, le faltan {-DiasDeMas} días";
+		/// <summary>
+		/// QUE FRASE dice esta fila, por su nombre: `toca` o `no-toca`. Ninguna de las dos ORDENA
+		/// comprar: dicen cada cuanto vuelve y cuanto hace que no entra, y la decision es de quien lee.
+		/// </summary>
+		internal string Clave => Toca ? "toca" : "no-toca";
+
+		/// <summary>El codigo de la cadencia, aplanado para que el print lo alcance en un solo nivel.</summary>
+		internal string ClaveDeLaCadencia => Cadencia.Clave;
+
+		/// <summary>Cuantos dias faltan para que toque. Cero o menos cuando ya paso: lectura total.</summary>
+		internal int DiasQueFaltan => -DiasDeMas;
 	}
 }

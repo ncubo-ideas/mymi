@@ -1,12 +1,13 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+﻿@inject Textos Texto
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
-        <PageTitle>No encontrado</PageTitle>
+        <PageTitle>@Texto["comun.noEncontradoTitulo"]</PageTitle>
         <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert" class="parte parte--neutro">No hay nada en esta dirección.</p>
+            <p role="alert" class="parte parte--neutro">@Texto["comun.noEncontrado"]</p>
         </LayoutView>
     </NotFound>
 </Router>

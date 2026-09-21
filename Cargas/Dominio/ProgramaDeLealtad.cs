@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Cargas.Dominio
 {
@@ -112,8 +113,9 @@ namespace Cargas.Dominio
 
 		internal Sorteo SorteoQueCubre(DateTime fecha) =>
 			BuscarQueCubra(fecha) ?? throw new ErrorDeDominio(
-				$"Ningun sorteo anunciado cubre el {fecha:dd/MM/yyyy}: consultar antes "
-				+ "HaySorteoQueCubra.");
+				"Ningun sorteo anunciado cubre el "
+				+ fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+				+ ": consultar antes HaySorteoQueCubra.");
 
 		private Sorteo BuscarQueCubra(DateTime fecha)
 		{

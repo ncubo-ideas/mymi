@@ -6,6 +6,7 @@
 //   node Herramientas/sincronizar-manifiesto.mjs            <- todos los modulos conocidos
 //   node Herramientas/sincronizar-manifiesto.mjs examenes   <- uno
 //   node Herramientas/sincronizar-manifiesto.mjs --check     <- NO escribe: falla si algo cambiaria
+//   node Herramientas/sincronizar-manifiesto.mjs compras --dll=<ruta>  <- con un dll compilado aparte
 //
 // QUE SINCRONIZA (viene del modulo, es estructura, no se discute):
 //   - el conjunto de tools: agrega las nuevas, quita los fantasmas
@@ -18,35 +19,54 @@
 //   - la description y el title de cada tool que YA existia en el manifiesto
 //   - la description de cada parametro que ya existia
 //
-// Por que preservar la descripcion: examenes la tiene curada en INGLES en el manifiesto y en
-// espanol en el codigo. Pisarla con la del codigo borraria el trabajo del dueno. Para una tool
-// NUEVA no hay nada que preservar, asi que se toma la del modulo como punto de partida y el
-// dueno la pule. Ese es el unico lugar donde el idioma puede entrar mezclado, y --check lo hace
-// visible.
+// Por que preservar la descripcion: puede estar curada en el manifiesto y no en el codigo, y el
+// generador no sabe cual de las dos es la buena. Para una tool NUEVA no hay nada que preservar,
+// asi que se toma la del modulo. UNA DESCRIPCION VACIA CUENTA COMO NUEVA: ese es el modo de
+// volver a tomarla del codigo -- se borra en el manifiesto y se sincroniza --, y es lo que se hizo
+// con examenes el 2026-09-18 para devolverlas al idioma del modulo.
+//
+// OJO CON EL IDIOMA: el titulo y la descripcion de una tool son VOZ DE LA INSTITUCION y siguen el
+// idioma del modulo, no el de quien pregunta -- ver Metodologia/Guias/reglas-de-localizacion.md.
+// Un manifiesto con los titulos en un idioma y las descripciones en otro es la mitad de la voz
+// traducida por el Host, y cuando el manifiesto se firme, un texto traducido queda fuera de la
+// firma. Preservar deja que eso pase sin avisar, asi que --check es el lugar donde se ve.
 //
 // El guardian de la suite sigue siendo la red: esto MANTIENE sincronizado, el guardian AVISA si
 // alguien igual edito a mano y se desvio.
 
 import { spawn } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, isAbsolute } from "node:path";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const modulosRoot = join(repo, "Modulos");
 
-// Los modulos conocidos y donde vive el DLL de cada uno. Es la misma lista que arma
-// armar-paquete.ps1; si aparece un negocio nuevo, se agrega aca una linea. La carpeta de journal
-// es opcional: tools/list no lee el journal, solo enumera, asi que una carpeta vacia alcanza.
-const MODULOS = {
-  compras:  { dll: "Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll" },
-  examenes: { dll: "Examenes/App/Examenes.Mcp/bin/Debug/net9.0/Examenes.Mcp.dll" },
-  facturas: { dll: "HolaMundo/Facturas/App/Facturas.Mcp/bin/Debug/net9.0/Facturas.Mcp.dll" },
-};
+// DONDE VIVE EL DLL DE CADA MODULO LO DICE SU installation.json, no una lista aca. Antes habia
+// una copia de esas rutas en este archivo, y una copia se desincroniza igual que el manifiesto
+// que este generador existe para no copiar. shell.arguments[0] es el dll; si no es absoluta va
+// relativa a la carpeta del modulo, que es la misma regla que aplica el Host (Installation.Read).
+// Solo cuentan los modulos que corren con dotnet: un webview no tiene tools/list que pedir.
+// La carpeta de journal no hace falta: tools/list no lee el journal, solo enumera.
+function descubrirModulos() {
+  const modulos = {};
+  for (const nombre of readdirSync(modulosRoot, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name)) {
+    const carpeta = join(modulosRoot, nombre);
+    const instalacion = join(carpeta, "installation.json");
+    if (!existsSync(instalacion)) continue;
+    const shell = (JSON.parse(readFileSync(instalacion, "utf8")).shell) || {};
+    if (shell.command !== "dotnet" || !Array.isArray(shell.arguments) || !shell.arguments.length) continue;
+    const primero = shell.arguments[0];
+    modulos[nombre] = { dll: isAbsolute(primero) ? primero : resolve(carpeta, primero) };
+  }
+  return modulos;
+}
+const MODULOS = descubrirModulos();
 
 // ── cliente MCP por stdio ────────────────────────────────────────────────────────────────────
 function pedirToolsList(dll) {
   return new Promise((res, rej) => {
-    const p = spawn("dotnet", [join(repo, dll)], { stdio: ["pipe", "pipe", "ignore"] });
+    const p = spawn("dotnet", [dll], { stdio: ["pipe", "pipe", "ignore"] });
     let buf = "";
     const pend = new Map();
     let id = 1;
@@ -142,10 +162,10 @@ function proyectarTools(toolsDelModulo, manifiestoActual) {
   });
 }
 
-function sincronizarUno(nombre, { escribir }) {
-  const cfg = MODULOS[nombre];
-  const manifestPath = join(repo, "Modulos", nombre, "manifest.json");
-  if (!existsSync(join(repo, cfg.dll)))
+function sincronizarUno(nombre, { escribir, dll }) {
+  const cfg = dll ? { dll: resolve(dll) } : MODULOS[nombre];
+  const manifestPath = join(modulosRoot, nombre, "manifest.json");
+  if (!existsSync(cfg.dll))
     throw new Error(`no existe el DLL de ${nombre} (${cfg.dll}). Compilalo primero.`);
   if (!existsSync(manifestPath))
     throw new Error(`no existe ${manifestPath}. Este generador sincroniza el bloque tools de un manifiesto existente; el encabezado lo escribe el dueno.`);
@@ -171,14 +191,19 @@ function sincronizarUno(nombre, { escribir }) {
 // ── main ─────────────────────────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
 const check = args.includes("--check");
+// --dll=<ruta>: usar ESE dll en vez del que nombra installation.json. Para cuando el bin/Debug
+// del modulo esta tomado por un proceso -los MCP de una sesion abierta- y se compilo a otra
+// carpeta. Solo tiene sentido con un modulo nombrado.
+const dllOverride = (args.find(a => a.startsWith("--dll=")) || "").slice("--dll=".length) || null;
 const cuales = args.filter(a => !a.startsWith("--"));
 const objetivo = cuales.length ? cuales : Object.keys(MODULOS);
+if (dllOverride && cuales.length !== 1) { console.log("--dll= pide exactamente un modulo"); process.exit(1); }
 
 let huboCambios = false;
 for (const nombre of objetivo) {
-  if (!MODULOS[nombre]) { console.log(`  ${nombre}: desconocido (agregalo a MODULOS)`); continue; }
+  if (!MODULOS[nombre]) { console.log(`  ${nombre}: desconocido (no hay Modulos/${nombre}/installation.json con command dotnet)`); continue; }
   try {
-    const r = await sincronizarUno(nombre, { escribir: !check });
+    const r = await sincronizarUno(nombre, { escribir: !check, dll: dllOverride });
     const marca = r.cambio ? (check ? "CAMBIARIA" : "actualizado") : "al dia";
     let detalle = "";
     if (r.agregadas.length) detalle += ` +[${r.agregadas.join(", ")}]`;

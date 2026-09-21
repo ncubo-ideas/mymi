@@ -31,12 +31,12 @@ namespace Examenes.Dominio
 		// Hubo cambio, pero no llego al umbral que este analito considera significativo.
 		internal static readonly Tendencia Estable = new Tendencia("estable");
 
-		internal static readonly Tendencia EnAscenso = new Tendencia("en ascenso");
-		internal static readonly Tendencia EnDescenso = new Tendencia("en descenso");
+		internal static readonly Tendencia EnAscenso = new Tendencia("en-ascenso");
+		internal static readonly Tendencia EnDescenso = new Tendencia("en-descenso");
 
 		// El cambio es demasiado grande para el tiempo transcurrido: biologicamente no
 		// pasa. Lo que corresponde no es alarmarse, es repetir el examen.
-		internal static readonly Tendencia SaltoInverosimil = new Tendencia("salto inverosimil");
+		internal static readonly Tendencia SaltoInverosimil = new Tendencia("salto-inverosimil");
 
 		// ESTE ANALITO NO ASCIENDE NI DESCIENDE. Es la respuesta para un binario: los
 		// nitritos no vienen subiendo, aparecen o no aparecen, y eso lo dice Presencia.
@@ -45,8 +45,12 @@ namespace Examenes.Dominio
 		// midiendo; esta significa que la pregunta no le corresponde a este analito, y no
 		// se arregla con nada. Confundirlas le diria a la persona que le falta un examen
 		// que no existe.
-		internal static readonly Tendencia NoAplica = new Tendencia("no aplica");
+		internal static readonly Tendencia NoAplica = new Tendencia("no-aplica");
 
+		/// <summary>
+		/// EL CODIGO de esta tendencia: identidad, y lo unico que cruza el wire. Como se dice lo busca con este
+		/// codigo la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
 
 		private Tendencia(string nombre)

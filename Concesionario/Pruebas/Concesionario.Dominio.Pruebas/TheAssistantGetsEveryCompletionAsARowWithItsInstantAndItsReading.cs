@@ -122,17 +122,17 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(TheColumn(history, each => each.Reading), Is.EqualTo(new[]
 			{
-				"33100 km", "24700 km", "sin lectura registrada", "18200 km",
+				"33.100 km", "24.700 km", "sin lectura registrada", "18.200 km",
 			}));
 
 			// LA FORMA FUERTE: cada frase lleva su conectiva, asi que una fila armada con el instante
 			// de una y la lectura de otra se ve. Dos valores sueltos que se contienen no lo verian.
 			Assert.That(TheColumn(history, each => each.Says), Is.EqualTo(new[]
 			{
-				"Cambio de fluido: se hizo el 2026-03-03 11:20:00 con el odómetro en 33100 km.",
-				"Cambio de fluido: se hizo el 2025-07-09 14:40:00 con el odómetro en 24700 km.",
+				"Cambio de fluido: se hizo el 2026-03-03 11:20:00 con el odómetro en 33.100 km.",
+				"Cambio de fluido: se hizo el 2025-07-09 14:40:00 con el odómetro en 24.700 km.",
 				"Componente por tiempo: se hizo el 2025-05-21 06:30:00, sin lectura del odómetro registrada.",
-				"Cambio de fluido: se hizo el 2025-02-18 08:15:00 con el odómetro en 18200 km.",
+				"Cambio de fluido: se hizo el 2025-02-18 08:15:00 con el odómetro en 18.200 km.",
 			}));
 		}
 
@@ -156,7 +156,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			// Y LA AUSENCIA NO ES GENERAL: en la misma respuesta, la clase que si mide distancia sigue
 			// trayendo su lectura.
-			Assert.That(TheRowOf(TheKindThatMeasuresDistance).Reading, Is.EqualTo("33100 km"));
+			Assert.That(TheRowOf(TheKindThatMeasuresDistance).Reading, Is.EqualTo("33.100 km"));
 		}
 
 		// ===== LAS DOS AUSENCIAS DE L7, Y NO SON LA MISMA ================================
@@ -203,7 +203,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(fluid.Count, Is.EqualTo(3));
 			Assert.That(
 				fluid.Says,
-				Does.Contain("La más reciente se hizo el 2026-03-03 11:20:00 con el odómetro en 33100 km"),
+				Does.Contain("La más reciente se hizo el 2026-03-03 11:20:00 con el odómetro en 33.100 km"),
 				"La frase del juego nombra la MISMA completacion que la primera fila: si el camino se "
 				+ "corriera un eslabon, las dos se corren juntas y ninguna lo delata sola.");
 
@@ -300,11 +300,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				TheSourceOfTheAssistantsTools(), Does.Not.Contain("CompletionsOf("),
 				"La caratula del asistente llamo CompletionsOf(kind). Sus filas son las mismas que ya "
-				+ "trae CompletionsOfEveryKind(), filtradas y sin la columna Kind: dos formas del "
+				+ "trae CompletionsOfEveryKind, filtradas y sin la columna Kind: dos formas del "
 				+ "mismo hecho en una superficie. Si la decision cambio, se escribe y se dice por que.");
 
 			Assert.That(
-				TheSourceOfTheAssistantsTools(), Does.Contain("CompletionsOfEveryKind()"),
+				TheSourceOfTheAssistantsTools(), Does.Contain("CompletionsOfEveryKind("),
 				"EL CONTROL: la que si se llama tiene que estar. Sin esto, un barrido que dejo de leer "
 				+ "la fuente cumpliria el renglon de arriba.");
 

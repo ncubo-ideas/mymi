@@ -1,0 +1,85 @@
+<!-- CAP 9 · REACCIONES Y TELL -->
+  <section class="anchor" id="cap9">
+    <h2>9 · Reacciones y <code>tell</code></h2>
+    <p class="chapter-meta">Cuando un hecho en un actor debe provocar trabajo en otro — sin que uno conozca al otro.</p>
+
+    <p>Toda la Parte I fue un actor consigo mismo. La Parte II empieza aquí: cómo un hecho que quedó en el diario de un actor causa trabajo en <strong>otro</strong> actor. La pieza clave es una regla que conviene grabar:</p>
+    <blockquote>El comando registra un hecho. La reacción, después, habla sobre él.</blockquote>
+
+    <h3>9.1 · La regla de oro: <code>tell</code> es solo de reacciones</h3>
+    <p>Un <em class="term">tell</em> —un aviso de un actor a otro— <strong>no</strong> se puede emitir desde un <code>PerformCommand</code>. Solo es legal dentro del cuerpo de una <strong>reacción</strong>. Así que el flujo del emisor tiene dos etapas:</p>
+    <ol class="body">
+      <li>Un comando normal <strong>registra</strong> el hecho (p. ej. el organizador canta una bolita → se journaliza <code>RegisterDraw</code>).</li>
+      <li>Una <strong>reacción</strong> sobre ese diario ve el hecho y su cuerpo emite el <code>tell</code>.</li>
+    </ol>
+
+    <h3>9.2 · Anatomía de una reacción</h3>
+    <p>Esta es la reacción real del bingo que reparte cada bolita a los jugadores:</p>
+    <pre><span class="tag real">C# · real</span><code>live.Journal.Reactions.DefineReaction(<span class="s">"Cantar"</span>)
+    .Cue().DirectorOnly().WithSharedHydration()
+    .Seek(<span class="s">"Bolita"</span>).OnMatch(<span class="s">"[_:BingoGame].RegisterDraw($numero, $ronda)"</span>)
+    .Causation.Continue(
+        <span class="s">"tell Bolita with @numero, @ronda to &lt;rol-jugador&gt; "</span> +
+        <span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span>);</code></pre>
+    <p>Cada parte dice algo:</p>
+    <ul class="body">
+      <li><strong><code>.Cue()</code> vs <code>.Job()</code></strong> — es la latencia. <code>Cue</code> dispara en cuanto el comando hace commit (tiempo casi real: el jugador ve la bolita ya). <code>Job</code> corre una sola pasada cuando alguien lo dispara (trabajo diferido/batch).</li>
+      <li><strong><code>.DirectorOnly()</code> / <code>.Company()</code></strong> — el alcance. En un actor replicado (varios nodos), <code>DirectorOnly</code> evita que cada réplica emita el mismo aviso.</li>
+      <li><strong><code>.Seek(...).OnMatch("[_:Clase].Verbo($a, $b)")</code></strong> — el patrón a buscar en el diario. <code>$numero</code> <strong>captura</strong> el valor de la entrada.</li>
+      <li><strong><code>.Causation.Continue("...")</code></strong> — el cuerpo que corre tras el commit. Aquí <code>@numero</code> <strong>referencia</strong> lo capturado (mismo nombre, dos prefijos: <code>$</code> captura, <code>@</code> referencia).</li>
+      <li><strong><code>once</code></strong> — la identidad idempotente del aviso, para que el replay no genere dos veces la misma bolita ni descarte una legítima (Cap. 4, determinismo).</li>
+    </ul>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 210" width="100%" style="max-width:600px" role="img" aria-label="El organizador registra una bolita en su diario; una reaccion emite un tell que el sustrato reparte a los telefonos de los jugadores.">
+        <defs><marker id="ah9" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="12.5" fill="var(--ink)">
+          <circle cx="120" cy="70" r="52" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="120" y="66" text-anchor="middle" font-weight="700">Organizador</text>
+          <text x="120" y="83" text-anchor="middle" fill="var(--ink-soft)" font-size="11">Director</text>
+          <rect x="60" y="150" width="120" height="42" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="120" y="170" text-anchor="middle" font-weight="700" font-size="12">Diario</text>
+          <text x="120" y="185" text-anchor="middle" fill="var(--ink-soft)" font-size="10">reacción “Cantar”</text>
+          <line x1="120" y1="122" x2="120" y2="148" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#ah9)"/>
+          <text x="150" y="140" fill="var(--ink-soft)" font-size="10">registra</text>
+          <circle cx="470" cy="45" r="34" fill="var(--panel)" stroke="var(--accent-soft)"/><text x="470" y="49" text-anchor="middle" font-size="11">Jugador</text>
+          <circle cx="540" cy="105" r="34" fill="var(--panel)" stroke="var(--accent-soft)"/><text x="540" y="109" text-anchor="middle" font-size="11">Jugador</text>
+          <circle cx="470" cy="165" r="34" fill="var(--panel)" stroke="var(--accent-soft)"/><text x="470" y="169" text-anchor="middle" font-size="11">Jugador</text>
+          <line x1="180" y1="165" x2="436" y2="55" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah9)"/>
+          <line x1="180" y1="168" x2="506" y2="108" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah9)"/>
+          <line x1="182" y1="172" x2="436" y2="165" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah9)"/>
+          <text x="330" y="205" text-anchor="middle" fill="var(--accent-soft)" font-size="11">tell “Bolita” — el sustrato lo reparte por rol</text>
+        </g>
+      </svg>
+      <figcaption>Figura 3. Una reacción sobre el diario emite un <code>tell</code>; el sustrato lo entrega a cada jugador. El emisor no conoce a los receptores.</figcaption>
+    </figure>
+
+    <h3>9.3 · Reacciones que no emiten <code>tell</code></h3>
+    <p>No todo lo posterior a un hecho es un aviso a otro actor. Una reacción tiene varios planos según lo que produzca:</p>
+    <table>
+      <thead><tr><th>Plano</th><th>Qué hace</th><th>Garantía</th></tr></thead>
+      <tbody>
+        <tr><td><code>.Causation.Continue("tell …")</code></td><td>Aviso a otro actor (speech act cross-actor).</td><td>Sobre + transporte + ack; auditable en el diario.</td></tr>
+        <tr><td><code>.Program.Emit("print …")</code></td><td>Señal derivada del mismo actor, solo lectura, empujada a un <em>sink</em>.</td><td>Efímera (fire-and-forget): puede perderse o duplicarse.</td></tr>
+        <tr><td><code>.Outbox.Emit("destino", "payload")</code></td><td>Materialización durable (p. ej. a un almacén BI).</td><td>Nada se pierde; orden; al-menos-una-vez.</td></tr>
+      </tbody>
+      <caption>Tabla 12. Los planos de una reacción: elige según si el efecto cruza a otro actor, es una vista efímera, o debe ser durable.</caption>
+    </table>
+
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No concatenes el texto del <code>tell</code> con los valores (<code>tell Sold with 'A123', 4 …</code>). Cada llamada generaría texto distinto → una identidad nueva por llamada, y el diario deja de ser denso. Pasa <code>@params</code>: <code>tell Sold with @sku, @qty …</code>.</p>
+    </div>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>En un actor replicado (<code>StageV2</code>), marca <code>.DirectorOnly()</code> la reacción que emite un <code>tell</code>. Bajo <code>.Company()</code> cada réplica emitiría el mismo aviso → duplicados.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El comando <strong>registra</strong> un hecho; la reacción, después, <strong>habla</strong> sobre él. El <code>tell</code> vive solo en reacciones.</li>
+      <li>Una reacción es <code>DefineReaction · Cue/Job · scope · Seek/OnMatch · Causation/Program/Outbox</code>.</li>
+      <li><code>$</code> captura en el patrón; <code>@</code> referencia en el cuerpo; <code>once</code> da identidad idempotente.</li>
+      <li>El emisor no conoce a los receptores: publica un hecho y su consecuencia.</li>
+    </ul>
+    <p>Emitir el aviso es media historia. La otra media es el receptor: cómo un actor <strong>consume</strong> ese aviso y lo convierte en un comando propio.</p>
+  </section>

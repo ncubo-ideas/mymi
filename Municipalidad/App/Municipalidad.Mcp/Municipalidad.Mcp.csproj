@@ -7,7 +7,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>Municipalidad.Mcp</RootNamespace>
     <AssemblyName>Municipalidad.Mcp</AssemblyName>
-    <AssemblyTitle>Mi cuenta municipal MCP server</AssemblyTitle>
+    <AssemblyTitle>MONTEVERDE Municipal Services MCP server</AssemblyTitle>
     <Description>Servidor MCP de solo lectura que contesta desde la carpeta propia del contribuyente. Nunca escribe.</Description>
   </PropertyGroup>
 

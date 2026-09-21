@@ -10,7 +10,8 @@ namespace Municipalidad.Dominio
 	/// </para>
 	/// <para>
 	/// Conjunto cerrado, comparado por nombre, con Etiqueta como hoja para el actor: la superficie
-	/// decide que imprime y el tipo expone el nombre.
+	/// decide que imprime y el tipo expone el nombre. Cada miembro es UNA instancia compartida que su
+	/// metodo entrega sin volver a armarla.
 	/// </para>
 	/// </summary>
 	internal sealed class Urgencia
@@ -24,9 +25,13 @@ namespace Municipalidad.Dominio
 			this.nivel = nivel;
 		}
 
-		internal static Urgencia Ninguna() { return new Urgencia("ninguna", 0); }
-		internal static Urgencia Aviso() { return new Urgencia("aviso", 1); }
-		internal static Urgencia Urgente() { return new Urgencia("urgente", 2); }
+		private static readonly Urgencia ninguna = new Urgencia("ninguna", 0);
+		private static readonly Urgencia aviso = new Urgencia("aviso", 1);
+		private static readonly Urgencia urgente = new Urgencia("urgente", 2);
+
+		internal static Urgencia Ninguna() { return ninguna; }
+		internal static Urgencia Aviso() { return aviso; }
+		internal static Urgencia Urgente() { return urgente; }
 
 		internal static Urgencia PorNombre(string nombre)
 		{

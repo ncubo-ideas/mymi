@@ -120,6 +120,17 @@ MSBuildEnableWorkloadResolver=false dotnet publish Cargas/App/Cargas.Wasm -c Rel
 cd Cargas && ./PaginaDeDescarga/generar-certificado.sh && docker compose up -d
 ```
 
+La página trae el **paso a paso para usar Faro con Gnothi**, por ambiente (Android, iPhone,
+computadora), y sus descargables **no van al repo**: se arman antes de levantar URL1, con el
+origen desde el que se va a servir la página (la forma hospedada lo lleva adentro).
+
+```powershell
+pwsh Gnothi.Mobile/armar-bundle.ps1 -Modulo cargas -Forma hospedada -Origen http://localhost:8110 -Salida Cargas/PaginaDeDescarga/descarga/descargas/movil
+pwsh Gnothi.Mobile/armar-bundle.ps1 -Modulo cargas -Forma cargo -Salida Cargas/PaginaDeDescarga/descarga/descargas
+```
+
+Y `descargas/gnothi/Gnothi.Host.zip`, Gnothi para Windows (`PRUEBA-MANUAL-DESKTOP.md`).
+
 Puertos de este negocio (⚠️ propuesta, pendiente de acuerdo de equipo):
 
 | Servicio | Puerto |

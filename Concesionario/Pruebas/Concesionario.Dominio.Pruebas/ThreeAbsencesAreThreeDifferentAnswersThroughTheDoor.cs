@@ -55,7 +55,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.Throws<InvalidOperationException>(
 					() => journal.Api.ReadEnvelopeStanding(TheDayItIsAsked));
 
-				string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					TheDayItIsAsked, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Contain("ninguna lectura del odómetro"));
 				Assert.That(said, Does.Contain("Tiempo: quedan 28 meses de 36 meses."),
@@ -85,7 +86,7 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(
 					journal.Api.ReadEnvelopeStanding(TheDayItIsAsked), Is.EqualTo("NotPublished"));
 				Assert.That(
-					journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
+					journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked, TheLanguage.OfTheRecord),
 					Does.Contain("no ha publicado"));
 			}
 		}
@@ -102,10 +103,11 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.Throws<InvalidOperationException>(
 					() => journal.Api.ReadEnvelopeStanding(TheDayItIsAsked));
 
-				string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					TheDayItIsAsked, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Contain("ninguna entrega"));
-				Assert.That(said, Does.Contain("36 meses o 15000 mi"),
+				Assert.That(said, Does.Contain("36 meses o 15.000 mi"),
 					"Y LO PUBLICADO SE SIGUE CITANDO. Faltar un hecho personal no vuelve incitable lo "
 					+ "que la agencia publico.");
 				Assert.That(said, Does.Not.Contain("Tiempo:"),
@@ -128,10 +130,14 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				string[] four =
 				{
-					noEnvelope.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-					noDelivery.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-					noReading.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-					everything.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
+					noEnvelope.Api.DescribeWarrantyEnvelope(
+						TheDayItIsAsked, TheLanguage.OfTheRecord),
+					noDelivery.Api.DescribeWarrantyEnvelope(
+						TheDayItIsAsked, TheLanguage.OfTheRecord),
+					noReading.Api.DescribeWarrantyEnvelope(
+						TheDayItIsAsked, TheLanguage.OfTheRecord),
+					everything.Api.DescribeWarrantyEnvelope(
+						TheDayItIsAsked, TheLanguage.OfTheRecord),
 				};
 
 				Assert.That(four, Is.Unique);
@@ -164,14 +170,16 @@ namespace Concesionario.Dominio.Pruebas
 							TheSystem, TheDayItIsAsked));
 
 					Assert.Throws<InvalidOperationException>(
-						() => journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked));
+						() => journal.Api.DescribeCoverageForThisVehicle(
+							TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord));
 
 					// Y LAS DOS MITADES SIGUEN CONTESTANDO. El alcance publicado, sin ningun hecho de
 					// ningun vehiculo; y cual hecho falta, con palabras.
 					Assert.That(
-						journal.Api.DescribeCoverageSummary(), Does.Contain(TheSystem));
+						journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord), Does.Contain(TheSystem));
 					Assert.That(
-						journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked), Is.Not.Empty);
+						journal.Api.DescribeWarrantyEnvelope(
+							TheDayItIsAsked, TheLanguage.OfTheRecord), Is.Not.Empty);
 				}
 			}
 		}
@@ -190,7 +198,8 @@ namespace Concesionario.Dominio.Pruebas
 					journal.Api.ReadCoverageStandingForThisVehicle(TheSystem, TheDayItIsAsked),
 					Is.EqualTo("Covered"));
 				Assert.That(
-					journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked),
+					journal.Api.DescribeCoverageForThisVehicle(
+						TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord),
 					Does.Contain("Cubierto"));
 			}
 		}
@@ -214,7 +223,7 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(journal.Api.HasAnOdometerReading(TheDayItIsAsked), Is.False);
 
 				Assert.That(
-					journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
+					journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked, TheLanguage.OfTheRecord),
 					Does.Contain("ninguna lectura del odómetro"));
 
 				Assert.Throws<InvalidOperationException>(
@@ -222,7 +231,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.Throws<InvalidOperationException>(
 					() => journal.Api.ReadCoverageStandingForThisVehicle(TheSystem, TheDayItIsAsked));
 				Assert.Throws<InvalidOperationException>(
-					() => journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked),
+					() => journal.Api.DescribeCoverageForThisVehicle(
+						TheSystem, TheDayItIsAsked, TheLanguage.OfTheRecord),
 					"Y EL TIPO IMPORTA: la excepcion del dominio es interna y ninguna caratula la "
 					+ "puede nombrar, asi que dejarla salir le daria a quien lee un rechazo que solo "
 					+ "puede atrapar como Exception pelada -- junto con el fallo del motor, el del "

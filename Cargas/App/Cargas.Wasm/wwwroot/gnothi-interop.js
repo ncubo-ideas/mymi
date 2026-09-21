@@ -53,7 +53,7 @@ export function escribir(ruta, contenidoBase64) {
 
 // ---------------------------------------------------------------- Gnothi -> modulo
 
-// La superficie que el nativo invoca con evaluateJavascript. Los tres verbos entran a C#
+// La superficie que el nativo invoca con evaluateJavascript. Los cuatro verbos entran a C#
 // por DotNet.invokeMethodAsync, que es lo que Blazor expone para metodos [JSInvokable].
 //
 // Devuelven JSON como texto SIEMPRE, tambien los errores: quien llama es codigo nativo que
@@ -91,6 +91,12 @@ export function listo() {
 
     window.gnothiPuente.listo();
 }
+
+// El traspaso que trajo Gnothi de la hoja de compartir: las anotaciones de la persona en la
+// app suelta, no eventos de la estacion. El sobre lo arma Cargas.App.Traspaso del otro lado.
+window.gnothi.traspasar = function (sobreJson) {
+    return DotNet.invokeMethodAsync(ASSEMBLY, 'Traspasar', sobreJson || '');
+};
 
 window.gnothi.respuesta = function (id, json, error) {
     const p = pendientes.get(String(id));

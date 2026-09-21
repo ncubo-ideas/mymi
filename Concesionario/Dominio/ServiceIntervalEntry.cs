@@ -35,22 +35,25 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La clausula que este intervalo aporta a la respuesta: la operacion y cada cuanto se hace,
-		/// con las mitades que se publicaron y sin inventar la que falta.
+		/// La clausula que este intervalo aporta a la respuesta, como forma y valores: la operacion y
+		/// cada cuanto se hace, con las mitades que se publicaron y sin inventar la que falta.
 		/// </summary>
-		internal string Describe()
+		internal AServiceIntervalClause TheClauseItComposes(string revisionCode)
 		{
-			return _kind.HowItIsSaid + ": se hace " + _interval.Describe() + ".";
+			return AServiceIntervalClause.Published(revisionCode, _kind, _interval);
 		}
 
 		/// <summary>
-		/// La mitad RECIBIDA de la respuesta: donde esta parado este vehiculo contra el intervalo,
-		/// con la distancia que le queda tal como llego. Nada se guarda: entra por parametro y sale
-		/// con la frase. Si las unidades no coinciden, el intervalo lo dice y no convierte.
+		/// La misma clausula CON la mitad recibida: donde esta parado este vehiculo contra el
+		/// intervalo, con la distancia que le queda tal como llego. Nada se guarda: entra por
+		/// parametro y sale con la respuesta. Si las unidades no coinciden, el intervalo lo dice y no
+		/// convierte.
 		/// </summary>
-		internal string DescribeAgainst(int distanceRemaining, DistanceUnit remainingUnit)
+		internal AServiceIntervalClause TheClauseItComposesAgainst(
+			string revisionCode, int distanceRemaining, DistanceUnit remainingUnit)
 		{
-			return _interval.UnitsAreNeverConverted(distanceRemaining, remainingUnit);
+			return TheClauseItComposes(revisionCode)
+				.PairedWith(_interval, distanceRemaining, remainingUnit);
 		}
 	}
 }

@@ -34,12 +34,13 @@ namespace Concesionario.Dominio
 			return new List<ACompletionRow>();
 		}
 
-		/// <summary>La ausencia en palabras, diciendo que lo que falta es la operacion.</summary>
-		internal override string Describe()
+		/// <summary>
+		/// La ausencia con su propio codigo, que es lo que deja decir que lo que falta es la
+		/// operacion.
+		/// </summary>
+		internal override ACompletionsClause TheClause()
 		{
-			return "Este vehículo no tiene agendada ninguna operación de "
-				+ _kind.HowItIsSaid.ToLowerInvariant()
-				+ ", así que no hay ninguna completación que registrar.";
+			return ACompletionsClause.OfAKindThatIsNotOnTheSchedule(_kind.Name);
 		}
 	}
 }

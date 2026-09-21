@@ -69,39 +69,29 @@ namespace Compras.Dominio
 
 		internal bool SeMueve => Sucursales.Count > 1;
 
-		internal string ParaElAsistente
+		/// <summary>
+		/// QUE FRASE dice este recorrido, por su nombre: `sin-datos`, `una-sola` o `se-mueve`. Los
+		/// nombres de las sucursales son del registro del super y ya se publican en Sucursales, asi que
+		/// esta lectura no los repite.
+		/// </summary>
+		internal string Clave => !HayDatos ? "sin-datos" : !SeMueve ? "una-sola" : "se-mueve";
+
+		/// <summary>Cuantas compras SI dicen sucursal. Cero cuando ninguna lo dice: lectura total.</summary>
+		internal int ComprasConSucursal
 		{
 			get
 			{
-				if (!HayDatos)
-					return ComprasSinSucursal > 0
-						? $"ninguna de las {ComprasSinSucursal} compras dice en qué sucursal fue: "
-							+ "los tiquetes de ese entonces no traían el dato"
-						: "no hay compras en el historial";
-
-				string sinDato = ComprasSinSucursal > 0
-					? $" ({ComprasSinSucursal} compras más viejas no dicen sucursal)"
-					: "";
-
-				if (!SeMueve)
-					return $"todas sus compras con sucursal ({LaDeSiempre.Compras}) fueron en "
-						+ $"{LaDeSiempre.Nombre}{sinDato}";
-
-				var otras = new List<string>();
-				for (int i = 1; i < Sucursales.Count; i++) otras.Add(Sucursales[i].Nombre);
-
-				return $"compra sobre todo en {LaDeSiempre.Nombre} ({LaDeSiempre.Compras} de "
-					+ $"{ComprasConSucursal()}); desde {SeMueveDesdeExpresado} aparece también en "
-					+ $"{string.Join(" y ", otras)}{sinDato}";
+				int total = 0;
+				foreach (SucursalFrecuentada sucursal in Sucursales) total += sucursal.Compras;
+				return total;
 			}
 		}
 
-		private int ComprasConSucursal()
-		{
-			int total = 0;
-			foreach (SucursalFrecuentada sucursal in Sucursales) total += sucursal.Compras;
-			return total;
-		}
+		/// <summary>El nombre de la de siempre. Vacio cuando ninguna compra dice sucursal: lectura total.</summary>
+		internal string NombreDeLaDeSiempre => HayDatos ? Sucursales[0].Nombre : "";
+
+		/// <summary>Cuantas compras fueron en la de siempre. Cero cuando no hay ninguna: lectura total.</summary>
+		internal int ComprasEnLaDeSiempre => HayDatos ? Sucursales[0].Compras : 0;
 	}
 
 	/// <summary>Una sucursal y su rastro: cuántas compras, la primera y la última vez.</summary>

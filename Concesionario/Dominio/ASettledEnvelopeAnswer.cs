@@ -11,13 +11,13 @@ namespace Concesionario.Dominio
 	internal sealed class ASettledEnvelopeAnswer : EnvelopeAnswer
 	{
 		private readonly EnvelopeStanding _standing;
-		private readonly string _clause;
 
 		/// <summary>
 		/// La compone quien conoce el sobre y la entrega. Sin resultado no seria una respuesta
 		/// decidida.
 		/// </summary>
-		internal ASettledEnvelopeAnswer(EnvelopeStanding standing, string clause)
+		internal ASettledEnvelopeAnswer(EnvelopeStanding standing, AnEnvelopeClause clause)
+			: base(clause)
 		{
 			if (standing == null)
 				throw new DomainException(
@@ -25,7 +25,6 @@ namespace Concesionario.Dominio
 					+ "respuestas posibles. Decidida quiere decir que hay una.");
 
 			_standing = standing;
-			_clause = clause;
 		}
 
 		/// <summary>Si.</summary>
@@ -40,10 +39,19 @@ namespace Concesionario.Dominio
 			return _standing;
 		}
 
-		/// <summary>El resultado por su nombre y la clausula que dice contra que se midio.</summary>
-		internal override string Describe()
+		/// <summary>
+		/// La decidida, salvo que lo decidido sea que nadie publico nada: esa se dice sin citar
+		/// ningun limite, porque no hay ninguno que citar.
+		/// </summary>
+		internal override string TheShapeItHas()
 		{
-			return TheAnswerSaying(_standing.HowItIsSaid + ".", _clause);
+			return _standing == EnvelopeStanding.NotPublished ? NothingWasPublished : Settled;
+		}
+
+		/// <summary>El resultado por el nombre de su miembro.</summary>
+		internal override string TheStandingItReached()
+		{
+			return _standing.Name;
 		}
 	}
 }

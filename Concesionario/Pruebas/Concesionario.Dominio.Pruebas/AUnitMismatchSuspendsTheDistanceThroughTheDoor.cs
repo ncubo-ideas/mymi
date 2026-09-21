@@ -61,7 +61,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.Throws<InvalidOperationException>(
 					() => journal.Api.ReadEnvelopeStanding(InsideTheTimeHalf));
 
-				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
 				Assert.That(
 					said,
@@ -83,7 +84,8 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(journal.Api.CanTheEnvelopeBeEvaluated(PastTheTimeHalf), Is.True);
 				Assert.That(journal.Api.ReadEnvelopeStanding(PastTheTimeHalf), Is.EqualTo("Reached"));
 
-				string said = journal.Api.DescribeWarrantyEnvelope(PastTheTimeHalf);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					PastTheTimeHalf, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Contain("Tiempo: 7 meses pasados de un límite de 36 meses."));
 				Assert.That(said, Does.Contain("las unidades nunca se convierten"));
@@ -100,7 +102,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			using (AScheduleOnARealJournal journal = AVehicleWhoseOdometerIsInTheOtherUnit())
 			{
-				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
+				string said = journal.Api.DescribeWarrantyEnvelope(
+					InsideTheTimeHalf, TheLanguage.OfTheRecord);
 
 				Assert.That(said, Does.Not.Contain("left of 15000"));
 				Assert.That(said, Does.Not.Contain("pasados de un límite de 15000"));
@@ -118,8 +121,9 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(
 					journal.Api.ReadEnvelopeStanding(InsideTheTimeHalf), Is.EqualTo("Inside"));
 				Assert.That(
-					journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf),
-					Does.Contain("Distancia: quedan 10000 mi de 15000 mi."));
+					journal.Api.DescribeWarrantyEnvelope(
+						InsideTheTimeHalf, TheLanguage.OfTheRecord),
+					Does.Contain("Distancia: quedan 10.000 mi de 15.000 mi."));
 			}
 		}
 

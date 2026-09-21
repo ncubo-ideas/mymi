@@ -51,6 +51,18 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				CostLedger ledger = TheLedgerIn(state);
 
+				foreach (string row in TheSentenceTheDoorWouldCompose.EachCostEntry(
+					ledger, TheStart, TheEnd, TheLanguage.OfTheRecord))
+				{
+					swept.Add(state + " / cada fila");
+
+					foreach (string word in TheWordsOfAVerdict)
+						Assert.That(row.ToLowerInvariant(), Does.Not.Contain(word),
+							"En el estado '" + state + "', la frase de una fila dijo '" + word
+							+ "'. L12: el dominio dice las cifras y la distincion que las hace "
+							+ "legibles; el juicio es de la persona.");
+				}
+
 				foreach (MethodInfo read in TheSentenceReadsOf(typeof(CostLedger)))
 				{
 					foreach (string said in TheAnswersOf(read, ledger))
@@ -66,13 +78,13 @@ namespace Concesionario.Dominio.Pruebas
 				}
 			}
 
-			Assert.That(swept, Has.Count.GreaterThanOrEqualTo(36),
-				"El censo barrio " + swept.Count + " frases. ONCE lecturas de frase sobre tres "
-				+ "estados: el estado vacio contesta solo las CINCO frases enteras -- sus columnas "
-				+ "vienen vacias -- y los otros dos contestan cinco frases mas seis columnas por "
-				+ "fila. Si el numero baja, o el censo dejo de ver una lectura o el agregado dejo "
-				+ "de contestarla. EL PISO SUBIO 30 -> 36 EN BuildOrder/CL-6, por lo que esa tarea "
-				+ "agrego -- dos lecturas de frase sobre tres estados -- y no hasta donde llega.");
+			Assert.That(swept, Has.Count.GreaterThanOrEqualTo(50),
+				"El censo barrio " + swept.Count + " textos. Si el numero baja, o el censo dejo de "
+				+ "ver una lectura o el agregado dejo de contestarla. EL PISO SUBIO 36 -> 50 CON LA "
+				+ "MONEDA: el libro dejo de redactar, asi que lo que se barre ahora son las frases "
+				+ "REDACTADAS -- las cinco respuestas compuestas por los tres estados, la frase de "
+				+ "cada fila, y las celdas de las columnas -- y no los strings que el agregado "
+				+ "componia. El piso dice lo que esta vuelta agrego y no hasta donde llega.");
 
 			TestContext.Out.WriteLine(
 				"LAS FRASES BARRIDAS (" + swept.Count + ") -- " + string.Join("; ", swept));
@@ -85,9 +97,9 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			CostLedger ledger = TheLedgerIn("one currency");
 
-			string said = ledger.DescribeSpendBetween(TheStart, TheEnd);
+			string said = TheSentenceTheDoorWouldCompose.TheSpend(ledger, TheStart, TheEnd, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡265000.00"), "La caja.");
+			Assert.That(said, Does.Contain("₡265.000,00"), "La caja.");
 			Assert.That(said, Does.Contain("consumió"), "Y la distincion, dicha con la palabra.");
 			Assert.That(said, Does.Contain("línea recta"),
 				"Y la regla con que se reparte lo duradero, que es lo que hace la cifra revisable "
@@ -97,6 +109,9 @@ namespace Concesionario.Dominio.Pruebas
 		// NINGUN MIEMBRO SE LLAMA COMO UN VEREDICTO TAMPOCO. La otra mitad del censo: una lectura
 		// llamada IsItWorthRepairing que contestara un bool no diria ninguna de las palabras de
 		// arriba.
+		[TestCase(typeof(ASpendClause))]
+		[TestCase(typeof(ASummaryClause))]
+		[TestCase(typeof(ACostPerDistanceClause))]
 		[TestCase(typeof(CostLedger))]
 		[TestCase(typeof(ASpendSummary))]
 		[TestCase(typeof(ASpendComparison))]
@@ -146,7 +161,9 @@ namespace Concesionario.Dominio.Pruebas
 				| BindingFlags.DeclaredOnly))
 			{
 				if (!(member.IsPublic || member.IsAssembly) || member.IsSpecialName) continue;
-				if (member.ReturnType != typeof(string) && member.ReturnType != typeof(string[]))
+				if (member.ReturnType != typeof(string) && member.ReturnType != typeof(string[])
+					&& member.ReturnType != typeof(ASpendClause)
+					&& member.ReturnType != typeof(ACostPerDistanceClause))
 					continue;
 				if (member.GetParameters().Length == 0) continue;
 
@@ -170,6 +187,23 @@ namespace Concesionario.Dominio.Pruebas
 			object[] given = TheArgumentsFor(slots.Length);
 
 			object answer = read.Invoke(ledger, given);
+
+			ASpendClause spend = answer as ASpendClause;
+
+			if (spend != null)
+				return new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheSpend(spend, TheLanguage.OfTheRecord),
+				};
+
+			ACostPerDistanceClause perDistance = answer as ACostPerDistanceClause;
+
+			if (perDistance != null)
+				return new[]
+				{
+					TheSentenceTheDoorWouldCompose.TheCostPerDistance(
+						perDistance, TheLanguage.OfTheRecord),
+				};
 
 			string one = answer as string;
 

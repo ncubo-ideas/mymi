@@ -64,18 +64,17 @@ namespace Compras.Dominio
 		/// <summary>Si ahora lo compra más seguido que antes. Preguntar Cambio primero.</summary>
 		internal abstract bool EsMasSeguido { get; }
 
-		internal abstract string ParaElAsistente { get; }
+		/// <summary>
+		/// QUE FRASE dice este cambio, por su nombre: `sin-ritmo`, `cambio` o `sigue`. La redaccion la
+		/// escribe una capa de presentacion con esta clave y las dos cadencias.
+		/// </summary>
+		internal abstract string Clave { get; }
 
-		// LAS DOS CADENCIAS, en la forma corta y SIN GUARDA: vacias cuando no hay ritmo
-		// medido. Existen para la frontera, que proyecta plano y no puede preguntar antes:
-		// un lector guardado no revienta el campo, revienta la consulta entera.
-		//
-		// Es el mismo par que RegistroDeGarantia -la lectura tipada para el codigo, la
-		// total para el wire-, y la razon de que no sea una sola: quien tiene el objeto en
-		// la mano debe recibir un Cadencia, no un string, o el conjunto cerrado no sirve
-		// de nada.
-		internal abstract string AntesCompacto { get; }
-		internal abstract string AhoraCompacto { get; }
+		/// <summary>La clave de la cadencia de antes. Vacia cuando no hay ritmo medido: lectura total.</summary>
+		internal abstract string ClaveDeAntes { get; }
+
+		/// <summary>La clave de la cadencia de ahora. Vacia cuando no hay ritmo medido: lectura total.</summary>
+		internal abstract string ClaveDeAhora { get; }
 
 		private sealed class SinRitmo : CambioDeRitmo
 		{
@@ -96,12 +95,9 @@ namespace Compras.Dominio
 					$"No hay ritmo medido para '{Descripcion}', asi que no hay nada que sea "
 					+ "mas seguido. Preguntar HayConQueComparar antes.");
 
-			internal override string AntesCompacto => "";
-			internal override string AhoraCompacto => "";
-
-			internal override string ParaElAsistente =>
-				$"todavía no hay suficientes compras de {Descripcion} de los dos lados "
-				+ "como para decir si cambió el ritmo";
+			internal override string Clave => "sin-ritmo";
+			internal override string ClaveDeAntes => "";
+			internal override string ClaveDeAhora => "";
 		}
 
 		private sealed class Medido : CambioDeRitmo
@@ -134,12 +130,9 @@ namespace Compras.Dominio
 
 			internal override bool EsMasSeguido => ahora.EsMasSeguidaQue(antes);
 
-			internal override string AntesCompacto => antes.Compacta;
-			internal override string AhoraCompacto => ahora.Compacta;
-
-			internal override string ParaElAsistente => Cambio
-				? $"{Descripcion} pasó de {antes.ParaMostrar} a {ahora.ParaMostrar}"
-				: $"{Descripcion} sigue {ahora.ParaMostrar}";
+			internal override string Clave => Cambio ? "cambio" : "sigue";
+			internal override string ClaveDeAntes => antes.Clave;
+			internal override string ClaveDeAhora => ahora.Clave;
 
 			// La MEDIANA, igual que RitmoDeCompra y por la misma razon: una compra de
 			// reserva corre el promedio y no mueve la mediana. Un habito se describe mejor

@@ -257,12 +257,12 @@ namespace Concesionario.Dominio.Pruebas
 		public void BothLimitsReachTheCallerInsideTheSentence()
 		{
 			Assert.That(
-				journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("37 meses o 61111 mi"));
+				journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("37 meses o 61.111 mi"));
 
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-				Does.Contain("37 meses o 61111 mi"));
+				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked, TheLanguage.OfTheRecord),
+				Does.Contain("37 meses o 61.111 mi"));
 		}
 
 		// Y LO QUE LE QUEDA A CADA MITAD DEL SOBRE, TAMBIEN DENTRO DE LA FRASE Y EN NINGUN OTRO LADO.
@@ -282,10 +282,11 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void WhatIsLeftOfTheEnvelopesTwoHalvesReachesTheCallerInsideTheSentenceAndNowhereElse()
 		{
-			string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
+			string said = journal.Api.DescribeWarrantyEnvelope(
+				TheDayItIsAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("Tiempo: quedan 29 meses de 37 meses."));
-			Assert.That(said, Does.Contain("Distancia: quedan 56111 mi de 61111 mi."));
+			Assert.That(said, Does.Contain("Distancia: quedan 56.111 mi de 61.111 mi."));
 
 			foreach (KeyValuePair<string, long> answered in EveryNumberAnsweredRightNow())
 			{

@@ -127,8 +127,7 @@ namespace Municipalidad.Wasm
 			{
 				if (ElDestinoEsElNavegador) await OlvidarCarpetaAsync();
 				throw new CarpetaNoDisponibleException(
-					$"No se pudo leer '{destino.Nombre}': {listado.Motivo}. Elija una carpeta otra "
-					+ "vez.");
+					$"no se pudo listar '{destino.Nombre}': {listado.Motivo}");
 			}
 
 			int copiados = 0;
@@ -138,8 +137,7 @@ namespace Municipalidad.Wasm
 
 				if (!leido.Ok)
 					throw new CarpetaNoDisponibleException(
-						$"No se pudo leer '{ruta}' de '{destino.Nombre}': {leido.Motivo}. Abrir con "
-						+ "medio journal daria una cuenta equivocada.");
+						$"no se pudo leer '{ruta}' de '{destino.Nombre}': {leido.Motivo}");
 
 				string destinoEnMemfs = Path.Combine(RaizEnMemfs, ruta.Replace('/', Path.DirectorySeparatorChar));
 				string directorio = Path.GetDirectoryName(destinoEnMemfs);
@@ -159,9 +157,8 @@ namespace Municipalidad.Wasm
 		{
 			if (ElDestinoEsElNavegador && FaltaReotorgarPermiso)
 				throw new EscrituraRechazadaException(
-					$"No hay permiso de escritura sobre '{NombreDeLaCarpeta}'. El navegador lo da aparte "
-					+ "del de elegir la carpeta, y se lo quita cuando la app se vuelve a abrir. Volver a "
-					+ "darlo lo recupera; hasta entonces nada de lo que ve se está guardando.");
+					$"no hay permiso de escritura sobre '{NombreDeLaCarpeta}'",
+					Apunte.De("arranque.sinRespaldo.faltaPermiso", ("carpeta", NombreDeLaCarpeta)));
 
 			if (!destino.Disponible || !Directory.Exists(RaizEnMemfs)) return 0;
 
@@ -180,8 +177,16 @@ namespace Municipalidad.Wasm
 
 			if (fallaron.Count > 0)
 				throw new EscrituraRechazadaException(
-					$"No se pudo guardar en '{destino.Nombre}': fallaron {fallaron.Count} de "
-					+ $"{fallaron.Count + escritos} archivos. {string.Join("; ", fallaron)}");
+					$"no se pudo guardar en '{destino.Nombre}': fallaron {fallaron.Count} de "
+					+ $"{fallaron.Count + escritos} archivos",
+					Apunte.De(
+						fallaron.Count == 1
+							? "arranque.sinRespaldo.fallaronArchivos.uno"
+							: "arranque.sinRespaldo.fallaronArchivos.varios",
+						("carpeta", destino.Nombre),
+						("fallaron", fallaron.Count.ToString()),
+						("total", (fallaron.Count + escritos).ToString()),
+						("detalle", string.Join("; ", fallaron))));
 
 			return escritos;
 		}
@@ -269,10 +274,20 @@ namespace Municipalidad.Wasm
 		[JsonPropertyName("motivo")]    public string Motivo { get; set; } = "";
 	}
 
-	/// <summary>La carpeta rechazo una escritura: lo que la pantalla muestra dejo de estar respaldado.</summary>
+	/// <summary>
+	/// La carpeta rechazo una escritura: lo que la pantalla muestra dejo de estar respaldado. El
+	/// <see cref="Mensaje"/> nombra la falla para quien la diagnostique; el <see cref="Apunte"/> es lo
+	/// que la persona lee, y son dos textos porque solo el segundo se dice en su idioma.
+	/// </summary>
 	public sealed class EscrituraRechazadaException : Exception
 	{
-		public EscrituraRechazadaException(string mensaje) : base(mensaje) { }
+		public EscrituraRechazadaException(string mensaje, Apunte apunte) : base(mensaje)
+		{
+			Apunte = apunte;
+		}
+
+		/// <summary>La frase que la pantalla dice en el idioma de la persona.</summary>
+		public Apunte Apunte { get; }
 	}
 
 	/// <summary>La carpeta guardada ya no se puede leer: fue movida, renombrada o borrada.</summary>

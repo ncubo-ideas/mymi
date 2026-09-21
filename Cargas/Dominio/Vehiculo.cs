@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Cargas.Dominio
 {
@@ -101,9 +102,12 @@ namespace Cargas.Dominio
 		{
 			if (!EsKilometrajeCoherente(cargaDestino, enKilometros))
 				throw new ErrorDeDominio(
-					$"Un kilometraje de {enKilometros:0} km en la carga del "
-					+ $"{cargaDestino.Fecha:dd/MM/yyyy} no es coherente con la serie: el "
-					+ "odometro es monotono creciente. Puede ser un error de captura.");
+					"Un kilometraje de "
+					+ enKilometros.ToString("0", CultureInfo.InvariantCulture)
+					+ " km en la carga del "
+					+ cargaDestino.Fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+					+ " no es coherente con la serie: el odometro es monotono creciente. "
+					+ "Puede ser un error de captura.");
 		}
 
 		// -------------------------------------------------------------------- la serie
@@ -131,10 +135,11 @@ namespace Cargas.Dominio
 			EvaluacionDeRendimiento Evaluacion(VeredictoDeRendimiento veredicto,
 				Severidad severidad, Accion accion, decimal actual, decimal habitual,
 				decimal cambio, int calculados, int bloqueados, bool haySerie,
-				string paraSonia, string queFalta, string motivo) =>
+				string queFalta, DateTime fechaDeLaCargaTrunca,
+				DateTime fechaDelTotalQueNoCuadra, string motivo) =>
 				new EvaluacionDeRendimiento(veredicto, severidad, accion, actual, habitual,
-					cambio, calculados, bloqueados, haySerie, paraSonia, queFalta, motivo,
-					mirada);
+					cambio, calculados, bloqueados, haySerie, queFalta, fechaDeLaCargaTrunca,
+					fechaDelTotalQueNoCuadra, motivo, mirada);
 
 			SerieDeTramos serie = Serie();
 			var calculados = new List<Tramo>();
@@ -154,16 +159,22 @@ namespace Cargas.Dominio
 				return Evaluacion(VeredictoDeRendimiento.TotalNoCuadra, Severidad.Vigilar,
 					Accion.MostrarleEstoATuEstacion(Plazo.EsteMes), 0m, habitual, 0m,
 					calculados.Count, bloqueados, haySerie,
-					$"el total de tu carga del {cargas[cargas.Count - 1].Fecha:dd/MM/yyyy} "
-					+ "no cuadra con precio por volumen", "", "");
+					"", default, cargas[cargas.Count - 1].Fecha, "");
 
 			if (calculados.Count == 0)
 			{
-				string queFalta = PrimerFaltante(serie);
-				return Evaluacion(VeredictoDeRendimiento.SinTramo, Severidad.Informativo,
-					null, 0m, habitual, 0m, 0, bloqueados, haySerie,
-					$"todavía no puedo calcular tu rendimiento: falta {queFalta}",
-					queFalta, "");
+				Tramo primerBloqueado = PrimerBloqueado(serie);
+				return primerBloqueado == null
+					? Evaluacion(VeredictoDeRendimiento.SinTramo, Severidad.Informativo,
+						null, 0m, habitual, 0m, 0, bloqueados, haySerie,
+						cargas.Count < 2
+							? EvaluacionDeRendimiento.FaltaUnaSegundaCarga
+							: EvaluacionDeRendimiento.FaltaUnSegundoLleno,
+						default, default, "")
+					: Evaluacion(VeredictoDeRendimiento.SinTramo, Severidad.Informativo,
+						null, 0m, habitual, 0m, 0, bloqueados, haySerie,
+						EvaluacionDeRendimiento.FaltaElKilometrajeDeUnaCarga,
+						primerBloqueado.FechaDeLaCargaTrunca, default, "");
 			}
 
 			Tramo ultimo = calculados[calculados.Count - 1];
@@ -172,22 +183,17 @@ namespace Cargas.Dominio
 			if (ultimo.EsSospechoso)
 				return Evaluacion(VeredictoDeRendimiento.DatoSospechoso, Severidad.Vigilar,
 					Accion.RegistrarLaCargaQueFalto(Plazo.EstaSemana), actual, habitual,
-					0m, calculados.Count, bloqueados, haySerie,
-					$"un tramo dio {mirada.Rendimiento.Formatear(ultimo.Rendimiento)} contra tu "
-					+ $"nivel de siempre de {mirada.Rendimiento.Formatear(serie.LineaBase.Rendimiento)}: "
-					+ "casi seguro cargaste y no quedó registrada", "", "");
+					0m, calculados.Count, bloqueados, haySerie, "", default, default, "");
 
 			if (!ultimo.EsComparable)
 				return Evaluacion(VeredictoDeRendimiento.NoComparable, Severidad.Informativo,
 					null, actual, habitual, 0m, calculados.Count, bloqueados, haySerie,
-					$"tu último tramo se midió con {ultimo.MotivoDeReserva}: no te lo "
-					+ "puedo comparar con los anteriores", "", ultimo.MotivoDeReserva);
+					"", default, default, ultimo.MotivoDeReserva);
 
 			if (!haySerie)
 				return Evaluacion(VeredictoDeRendimiento.Indeterminado, Severidad.Informativo,
 					null, actual, 0m, 0m, calculados.Count, bloqueados, false,
-					$"un solo tramo calculado ({mirada.Rendimiento.Formatear(ultimo.Rendimiento)}): "
-					+ "todavía no hay serie para comparar", "", "");
+					"", default, default, "");
 
 			decimal cambio = ultimo.Rendimiento
 				.CambioProporcionalDesde(serie.LineaBase.Rendimiento);
@@ -195,36 +201,28 @@ namespace Cargas.Dominio
 			if (Math.Abs(cambio) < UmbralesDeRendimiento.CambioMinimoSignificativo)
 				return Evaluacion(VeredictoDeRendimiento.Estable, Severidad.Informativo,
 					null, actual, habitual, cambio, calculados.Count, bloqueados, true,
-					$"tu carro rinde {mirada.Rendimiento.Formatear(ultimo.Rendimiento)}, "
-					+ "tu nivel de siempre", "", "");
+					"", default, default, "");
 
-			// LA FRASE SE ARMA CON LO QUE SE VE, el veredicto con lo canonico. En km/L
-			// 12.6 -> 9.4 es un 25% menos; los mismos dos tramos en L/100km son 7.9 -> 10.6,
-			// que es un 33% MAS. El carro empeoro en los dos casos.
-			decimal comoSeVe = mirada.Rendimiento.CambioComoSeVe(
-				serie.LineaBase.Rendimiento, ultimo.Rendimiento);
-			string frase = $"venías rindiendo {mirada.Rendimiento.Formatear(serie.LineaBase.Rendimiento)}"
-				+ $" y el último tramo dio {mirada.Rendimiento.Convertir(ultimo.Rendimiento):0.#}: "
-				+ $"un {Math.Round(Math.Abs(comoSeVe) * 100m):0}% {(comoSeVe > 0m ? "más" : "menos")}";
-
+			// LA DIRECCION DE LA FRASE SALE DE LO QUE SE VE y el veredicto de lo canonico. En
+			// km/L 12.6 -> 9.4 es un 25% menos; los mismos dos tramos en L/100km son 7.9 ->
+			// 10.6, que es un 33% MAS. El carro empeoro en los dos casos, y quien redacta lee
+			// esa direccion de la evaluacion, que la deriva de la mirada.
 			if (cambio > 0m)
 				return Evaluacion(VeredictoDeRendimiento.Mejoro, Severidad.Informativo,
 					null, actual, habitual, cambio, calculados.Count, bloqueados, true,
-					frase, "", "");
+					"", default, default, "");
 
 			return Evaluacion(VeredictoDeRendimiento.Empeoro, Severidad.Vigilar,
 				Accion.RevisarloConTuTaller(Plazo.EsteMes), actual, habitual, cambio,
-				calculados.Count, bloqueados, true, frase, "", "");
+				calculados.Count, bloqueados, true, "", default, default, "");
 		}
 
-		private string PrimerFaltante(SerieDeTramos serie)
+		private static Tramo PrimerBloqueado(SerieDeTramos serie)
 		{
 			foreach (Tramo tramo in serie.Tramos)
-				if (!tramo.EstaCalculado) return tramo.QueFalta;
+				if (!tramo.EstaCalculado) return tramo;
 
-			return cargas.Count < 2
-				? "una segunda carga con tanque lleno y kilometraje"
-				: "un segundo tanque lleno con kilometraje";
+			return null;
 		}
 
 		// ---------------------------------------------------------------- lo derivado
@@ -370,9 +368,7 @@ namespace Cargas.Dominio
 			var faltantes = new List<FaltanteDeDato>();
 			foreach (Carga carga in cargas)
 			{
-				if (!carga.Odometro.Existe)
-					faltantes.Add(new FaltanteDeDato(carga.Fecha, carga.Transaccion.Texto,
-						"el kilometraje", DesbloqueoDelKilometraje(carga)));
+				if (!carga.Odometro.Existe) faltantes.Add(ElKilometrajeQueFalta(carga));
 
 				// LA SUPOSICION VIAJA CON EL FALTANTE. Sin ella la pantalla pedia
 				// confirmar algo que no enunciaba, y "el tramo que esta carga abre o
@@ -380,14 +376,21 @@ namespace Cargas.Dominio
 				// no haya leido este codigo sabe que es un tramo.
 				if (carga.TieneInferenciaSinConfirmar)
 					faltantes.Add(new FaltanteDeDato(carga.Fecha, carga.Transaccion.Texto,
-						"la confirmación del tanque",
-						"cuánto rindió tu carro entre esta carga y la siguiente",
-						carga.EstadoQueSeSupone, carga.ComoSeDetuvoElSurtidor));
+						FaltanteDeDato.LaConfirmacionDelTanque,
+						FaltanteDeDato.ElRendimientoHastaLaSiguiente,
+						loQueSeSupone: carga.EstadoQueSeSupone,
+						claveDelCorte: carga.ClaveDeComoSeDetuvoElSurtidor));
 			}
 			return faltantes;
 		}
 
-		private string DesbloqueoDelKilometraje(Carga trunca)
+		/// <summary>
+		/// EL FALTANTE DE UN KILOMETRAJE, con las dos anclas que lo rodean cuando las hay: los
+		/// kilometros que YA se saben salen de los odometros que Sonia si puso, y el trabajo a
+		/// medio hacer motiva mas que un formulario en blanco. Sin dos anclas no hay tramo que
+		/// nombrar, y se dice eso en vez de inventar una cifra.
+		/// </summary>
+		private FaltanteDeDato ElKilometrajeQueFalta(Carga trunca)
 		{
 			Carga anterior = null, posterior = null;
 			foreach (Carga carga in cargas)
@@ -398,12 +401,13 @@ namespace Cargas.Dominio
 			}
 
 			if (anterior == null || posterior == null)
-				return "el tramo que quedó abierto";
+				return new FaltanteDeDato(trunca.Fecha, trunca.Transaccion.Texto,
+					FaltanteDeDato.ElKilometraje, FaltanteDeDato.ElTramoQueQuedoAbierto);
 
-			decimal kilometros = posterior.Odometro.Kilometraje
-				.KilometrosDesde(anterior.Odometro.Kilometraje);
-			return $"cuánto rindió tu carro en estos {kilometros:0} km entre el "
-				+ $"{anterior.Fecha:dd/MM} y el {posterior.Fecha:dd/MM}";
+			return new FaltanteDeDato(trunca.Fecha, trunca.Transaccion.Texto,
+				FaltanteDeDato.ElKilometraje, FaltanteDeDato.ElRendimientoDelTramo,
+				posterior.Odometro.Kilometraje.KilometrosDesde(anterior.Odometro.Kilometraje),
+				anterior.Fecha, posterior.Fecha);
 		}
 
 		// ------------------------------------------------------------------ la billetera

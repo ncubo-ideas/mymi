@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 
 namespace Concesionario.Dominio
 {
@@ -57,17 +56,13 @@ namespace Concesionario.Dominio
 
 		/// <summary>
 		/// La clausula que este fluido aporta a la respuesta: la clase, el grado, la capacidad con
-		/// su unidad y el intervalo. Componerla es del dominio y no de la vista. El numero se dice
-		/// igual en toda maquina, para que la respuesta que alguien guardo sea la misma que la que
-		/// otro lee.
+		/// su unidad y el intervalo, como forma y valores. Elegir que va en ella es del dominio;
+		/// redactarla es de quien elige el idioma.
 		/// </summary>
-		internal string Describe()
+		internal AFluidClause TheClauseItComposes(string revisionCode)
 		{
-			return _kind.HowItIsSaid
-				+ ": grado " + _grade
-				+ ", capacidad " + _capacity.ToString(CultureInfo.InvariantCulture)
-				+ " " + _capacityUnit.Name
-				+ ", se cambia " + _changeInterval.Describe() + ".";
+			return AFluidClause.Published(
+				revisionCode, _kind, _grade, _capacity, _capacityUnit, _changeInterval);
 		}
 	}
 }

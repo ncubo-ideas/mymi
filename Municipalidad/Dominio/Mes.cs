@@ -29,6 +29,18 @@ namespace Municipalidad.Dominio
 			return Numero == 1 ? new Mes(Anio - 1, 12) : new Mes(Anio, Numero - 1);
 		}
 
-		internal override string Etiqueta { get { return Anio + "-" + Numero.ToString("00"); } }
+		/// <summary>
+		/// El periodo dicho como lo escribe el recibo. La cultura es invariante y no la de la maquina:
+		/// este dominio no lee ninguna, y un formato de numero ajeno escribiria otra etiqueta para el
+		/// mismo mes.
+		/// </summary>
+		internal override string Etiqueta
+		{
+			get
+			{
+				return Anio.ToString(System.Globalization.CultureInfo.InvariantCulture)
+					+ "-" + Numero.ToString("00", System.Globalization.CultureInfo.InvariantCulture);
+			}
+		}
 	}
 }

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Gnothi Host</string>
+	<string>Mymi</string>
 
 	<key>UIDeviceFamily</key>
 	<array>
@@ -20,6 +20,38 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+
+	<!-- EL CICLO DE VIDA DE UIScene, Y ES OBLIGATORIO DESDE iOS 27.
+	     Sin esta clave la app NO ARRANCA: UIKit la mata a proposito con EXC_BREAKPOINT en
+	     __UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption, antes de que corra una
+	     linea nuestra. Medido el 2026-09-15 en el iPhone 13 Pro y en un simulador de iOS 27.0;
+	     el MISMO binario en un simulador de iOS 26.5 arrancaba bien.
+
+	     El requisito se aplica segun EL SDK CONTRA EL QUE SE ENLAZA la app, no segun la version
+	     del telefono: el build hecho con Xcode 26.6 declaraba `sdk 26.5` y corria en ese mismo
+	     iPhone con iOS 27. Xcode se auto-actualizo a 27 con macOS y se perdio la excepcion.
+
+	     UNA SOLA ESCENA a proposito: Mymi es una ventana. Y el delegado se nombra aca y no se
+	     resuelve en codigo, para que se vea sin compilar. Ver Gnothi.iOS/SceneDelegate.cs, donde
+	     ademas viven ahora el enlace y el archivo: con scenes, UIKit ya no llama OpenUrl ni
+	     ContinueUserActivity en el AppDelegate. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 
 	<!-- Sin esto la app corre en una ventana chica con marcos negros y parece rota. Un dict
 	     vacio alcanza desde iOS 14: el sistema pinta el color de fondo y ya. -->
@@ -91,7 +123,21 @@
 	     el que iOS muestra en su dialogo, asi que habla en la voz de la persona. Escrito el
 	     2026-09-09 en Windows, sin compilar: lo mide quien tenga la Mac. -->
 	<key>NSCameraUsageDescription</key>
-	<string>Gnothi usa la cámara solo para leer el código que te da tu institución y agregar su módulo. No guarda fotos ni video.</string>
+	<string>Mymi usa la cámara solo para leer el código que te da tu institución y agregar su módulo. No guarda fotos ni video.</string>
+
+	<!-- LA FOTOTECA, para la foto del odometro que Cargas adjunta a una carga
+	     (Cargas.Wasm/Pages/Ruta.razor, un <input type=file accept="image/*">). El modulo corre
+	     dentro del WKWebView del Host, asi que quien le pide Fotos al sistema es Gnothi.Host, no
+	     Cargas. Sin esta clave, en la Mac el dialogo sale con la frase generica de Apple y en un
+	     iPhone tocar la fototeca puede matar la app en vez de preguntar.
+
+	     HOY ES PREVENTIVA. Medido en el 13 Pro el 2026-09-11 con Cargas dado de alta: hospedado
+	     el boton NO se dibuja, porque Ruta.razor lo condiciona a Estado.HayCarpeta, que es el
+	     handle del modo suelto, y GuardarArchivo escribe por journal-interop.js y no por el
+	     destino de Gnothi. El dia que la foto hospedada exista -HayDestino en vez de HayCarpeta
+	     y fotos/ por DestinoPorPuente-, esta clave ya esta puesta y el dialogo dice lo de arriba. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mymi abre tus fotos solo cuando elegís adjuntar una, como la del odómetro en una carga. No las recorre ni las sube a ningún lado.</string>
 
 	<!-- EL PAQUETE COMO DOCUMENTO: un .gmod que llega por Archivos, por AirDrop o por un chat
 	     ofrece «Copiar en Gnothi», igual que «Abrir con» en Android. Dos tipos a proposito, como
@@ -103,7 +149,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>Módulo de Gnothi</string>
+			<string>Módulo de Mymi</string>
 			<key>LSHandlerRank</key>
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
@@ -132,7 +178,7 @@
 			<key>UTTypeIdentifier</key>
 			<string>app.gnothi.module</string>
 			<key>UTTypeDescription</key>
-			<string>Módulo de Gnothi</string>
+			<string>Módulo de Mymi</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.zip-archive</string>

@@ -1,0 +1,41 @@
+<!-- CAP 14 · PATRONES FÁCILES DE SUMAR -->
+  <section class="anchor" id="cap14">
+    <h2>14 · Patrones fáciles de sumar</h2>
+    <p class="chapter-meta">Otros patrones que Puppeteer no trae con nombre propio, pero que se construyen con las primitivas que ya tienes.</p>
+
+    <p>Las primitivas de la guía —comando/query, diario, reacciones, <code>tell</code>, <code>Outbox</code>, <code>expose</code>/elide— son combinables. Muchos patrones que en otros stacks requieren infraestructura extra, aquí se arman con lo que ya sabes. No vienen “de fábrica” como una API con nombre; los <strong>compones</strong>.</p>
+
+    <table>
+      <thead><tr><th>Quiero…</th><th>Se arma con…</th></tr></thead>
+      <tbody>
+        <tr><td>Proyectar a un read-model externo (BI/SQL) sin perder filas</td><td>Reacción → <code>Outbox.Emit("MySql", …)</code> + un <em>relay</em> a la tabla (durable, ordenado, al-menos-una-vez).</td></tr>
+        <tr><td>Notificaciones/actualizaciones en vivo a una UI</td><td>Reacción <code>.Program.Emit("print …")</code> → un <em>sink</em> efímero (Kafka/SignalR).</td></tr>
+        <tr><td>Rehidratación rápida en diarios largos (snapshot)</td><td><code>expose</code> del agregado en un asiento + elide de los ciclos cerrados que resume.</td></tr>
+        <tr><td>“¿Quién recibió esto?” en un conjunto abierto de receptores</td><td><code>tell</code> dirigido por instancia + los <em>acks</em> acumulados en el diario como constancia.</td></tr>
+        <tr><td>Cola de no entregados / reintentos</td><td>Un mensaje no mapeado no se acusa (la brecha queda visible); el outbox reintenta al-menos-una-vez.</td></tr>
+      </tbody>
+      <caption>Tabla 16. Patrones que compones sobre las primitivas existentes.</caption>
+    </table>
+
+    <p>Dos ejemplos merecen una línea más:</p>
+    <ul class="body">
+      <li><strong>Vista materializada a una base BI.</strong> Una reacción que, por cada hecho relevante, hace <code>Outbox.Emit("MySql", fila)</code>. La fila se escribe atómicamente con el avance del cursor, se entrega en orden y no se pierde ante una caída — exactamente lo que una tabla de BI necesita. La materialización es una <em>consecuencia declarada</em> del hecho, no código regado por la app.</li>
+      <li><strong>Compactar para rehidratar rápido.</strong> Cuando un ciclo cierra (una ronda termina, una orden se paga), <code>expose</code> el agregado autoritativo en el asiento de cierre y elide los cientos de eventos granulares que lo alimentaron. El diario sigue siendo la verdad; la rehidratación salta lo compactado.</li>
+    </ul>
+
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Antes de sumar infraestructura externa (una cola, un cache, un orquestador), pregúntate si el patrón no se arma ya con reacciones + outbox + <code>tell</code>. La mayoría de las veces sí, y con menos piezas móviles.</p>
+    </div>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita esconder un <strong>envío</strong> cross-actor dentro de un <em>sink</em> de salida: el push no journaliza nada, así que no queda constancia auditable de que el envío ocurrió. Un envío es un <code>tell</code> (auditable); un <em>sink</em> es para <strong>salida</strong> (reportes/proyecciones).</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Muchos patrones se <strong>componen</strong> con las primitivas: outbox para BI, <code>Program.Emit</code> para vivo, <code>expose</code>/elide para snapshot, <code>tell</code> dirigido para “quién recibió”.</li>
+      <li>Primero intenta construir sobre lo que ya hay; suma infraestructura solo cuando de verdad falte.</li>
+    </ul>
+    <p>Con el mapa de patrones en mano, bajemos a lo concreto: las preguntas que todo equipo hace al adoptar Puppeteer.</p>
+  </section>

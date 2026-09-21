@@ -74,6 +74,16 @@
 
        Gnothi.iOS incluye este MISMO glob. Si algo se agrega aca, aparece en los dos. -->
   <Compile Include="..\Gnothi.MobileShared\*.cs" />
+
+  <!-- LOS TEXTOS DEL HOST EN SUS DOS IDIOMAS, y no entran por Assets\ a proposito.
+       Assets\**\* ya viaja solo por el glob del SDK de Android, pero desde ahi solo lo alcanza
+       la pagina; el texto que Textos.cs sirve nace en C# -los pasos del alta, InPlainWords, los
+       motivos de denegacion que llegan hasta Siri- y eso necesita un recurso del ensamblado.
+
+       EL LogicalName TIENE QUE SER EXACTAMENTE ESTE: es el mismo que declaran
+       Gnothi.Host.csproj y Gnothi.iOS.csproj, y es lo que permite que Textos.cs lo busque con
+       una sola linea en las tres caras. Ver el comentario largo en Gnothi.Host.csproj. -->
+  <EmbeddedResource Include="..\Gnothi.Host\textos.json" LogicalName="gnothi.textos.json" />
 </ItemGroup>
 <ItemGroup>
   <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />

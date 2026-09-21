@@ -1,19 +1,23 @@
 <!doctype html>
-<html lang="en">
+<!-- El lang NO se cablea: lo pone Root.razor desde el idioma que resolvio C#, que es el mismo
+     que usa el catalogo de textos. Estaba en "en" con tres de las cinco pantallas en espanol. -->
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gnothi</title>
+<title>Mymi</title>
 <style>
   :root {
-    --ink:#1a2028; --soft:#5b6672; --line:#e2e6ea; --bg:#fff; --panel:#f6f8f9;
-    --brand:#4a4ae0; --brand-dark:#3838c4; --warn:#8a6d1f; --warn-bg:#fdf8e7;
+    /* LA MISMA PALETA DE LA PANTALLA DEL TELEFONO. No una parecida: es el mismo producto,
+       y dos violetas casi iguales se leen como un error de imprenta. */
+    --ink:#241F3D; --soft:#6F6B85; --line:#E7E4F2; --bg:#fff; --panel:#F8F6FD;
+    --brand:#6C4BD9; --brand-dark:#4A2FB0; --warn:#8a6d1f; --warn-bg:#fdf8e7;
     --danger:#b4232a;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --ink:#e8ecef; --soft:#9aa5b1; --line:#2b333c; --bg:#14181d; --panel:#1b2127;
-      --brand:#8f8fff; --brand-dark:#a5a5ff; --warn:#d9bc6a; --warn-bg:#262015;
+      --ink:#EDEAF6; --soft:#A29DBA; --line:#312B47; --bg:#171422; --panel:#211C33;
+      --brand:#A98CFF; --brand-dark:#C0AAFF; --warn:#d9bc6a; --warn-bg:#262015;
       --danger:#ef8f95;
     }
   }
@@ -21,23 +25,39 @@
   body{margin:0;background:var(--bg);color:var(--ink);
     font:15px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   header{border-bottom:1px solid var(--line);padding:14px 22px;display:flex;
-    align-items:baseline;gap:12px;flex-wrap:wrap}
-  header .brand{font-weight:700;font-size:17px;letter-spacing:-.2px}
-  header .path{color:var(--soft);font-size:12px;font-family:ui-monospace,Consolas,monospace}
+    align-items:center;gap:12px;flex-wrap:wrap}
+  /* LA MASCOTA, SIN CAJA. En la ventana el papel ya es blanco, asi que el mosaico lila
+     sobraba: se leia como un icono pegado y no como la cara del producto. Suelta necesita
+     mas tamano para tener la misma presencia. */
+  header .cara{width:56px;height:56px;display:block}
+  header .brand{font-weight:700;font-size:22px;letter-spacing:-.4px}
   main{padding:22px;max-width:900px}
   h1{font-size:22px;margin:0 0 4px;letter-spacing:-.3px}
   h2{font-size:17px;margin:0 0 10px}
   p.sub{color:var(--soft);margin:0 0 20px}
+  /* LA FRANJA ES DE LA INSTITUCION. `--marca` la pone cada tarjeta con el color que la
+     institucion declaro; cuando no declaro ninguno cae al de Mymi y la tarjeta se ve como
+     antes. Es lo unico que la institucion decide de esta pantalla: el resto es de Mymi. */
   .card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;
-    background:var(--panel);margin-bottom:12px}
+    background:var(--panel);margin-bottom:12px;
+    border-left:4px solid var(--marca,var(--brand))}
+  .quien{display:flex;align-items:center;gap:14px;min-width:0}
+  /* EL LOGO VA SUELTO, SIN TEJA. Con `background:#fff` y sombra, un logo transparente vuelve a
+     quedar sobre el cuadrito blanco que las dos caras venian mostrando -- y que en realidad
+     estaba pintado dentro de los archivos. `contain` en vez de `cover` porque un logo no se
+     recorta: si no es cuadrado, se le respeta la forma. */
+  .marca{width:42px;height:42px;flex:none;object-fit:contain}
+  .marca.sinlogo{display:grid;place-items:center;font-size:24px;background:var(--panel)}
+  .lema{color:var(--soft);font-size:13px;margin-top:1px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
   .title{font-weight:600}
   .meta{color:var(--soft);font-size:13px}
   .off{opacity:.55}
-  button{font:inherit;font-weight:600;font-size:14px;border-radius:7px;cursor:pointer;
-    padding:8px 16px;border:1px solid transparent;background:var(--brand);color:#fff}
+  button{font:inherit;font-weight:600;font-size:14px;border-radius:999px;cursor:pointer;
+    padding:9px 18px;border:1px solid transparent;background:var(--brand);color:#fff;
+    box-shadow:0 4px 12px rgba(108,75,217,.22)}
   button:hover{background:var(--brand-dark)}
-  button.ghost{background:transparent;color:var(--brand);border-color:var(--brand)}
+  button.ghost{background:transparent;color:var(--brand);border-color:var(--brand);box-shadow:none}
   button.small{padding:5px 11px;font-size:13px}
   button:disabled{opacity:.5;cursor:default}
   input[type=text]{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);
@@ -60,10 +80,16 @@
   .query{border:1px solid var(--line);border-radius:9px;padding:14px 16px;margin-bottom:12px}
   .query .desc{color:var(--soft);font-size:13px;margin:2px 0 8px}
 
+  /* --- the module's own screen, inside the window (Cara.razor) --- */
+  .carabar{display:flex;gap:14px;align-items:center;padding:9px 18px;border-bottom:1px solid var(--line);
+    background:var(--panel)}
+  .carabar .meta{margin-left:auto}
+  iframe.cara{display:block;width:100%;height:calc(100vh - 44px);border:0;background:#fff}
+
   /* --- tabs: Modulos / Asistente / Ajustes --- */
   nav.tabs{display:flex;gap:4px;padding:0 22px;border-bottom:1px solid var(--line)}
   nav.tabs button{background:none;border:none;border-bottom:2px solid transparent;color:var(--soft);
-    border-radius:0;padding:11px 14px;font-weight:600}
+    border-radius:0;padding:11px 14px;font-weight:600;box-shadow:none}
   nav.tabs button:hover{background:none;color:var(--ink)}
   nav.tabs button.active{color:var(--brand);border-bottom-color:var(--brand)}
 
@@ -83,7 +109,16 @@
     word-wrap:break-word}
   .bubble.me{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
   .bubble.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line);
-    border-bottom-left-radius:4px}
+    border-bottom-left-radius:4px;white-space:normal}
+  /* the bot bubble is rendered markdown: tame the block margins so it reads as a bubble */
+  .bubble.bot p{margin:0 0 8px}
+  .bubble.bot p:last-child,.bubble.bot ul:last-child,.bubble.bot ol:last-child{margin-bottom:0}
+  .bubble.bot ul,.bubble.bot ol{margin:4px 0 8px;padding-left:20px}
+  .bubble.bot li{margin:2px 0}
+  .bubble.bot h1,.bubble.bot h2,.bubble.bot h3{font-size:15px;margin:6px 0 4px}
+  .bubble.bot code{font:12px ui-monospace,Consolas,monospace;background:var(--bg);
+    border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .bubble.bot table{margin:6px 0}
   .bubble.bot.pending{color:var(--soft);font-style:italic}
   .bubble.bot.fail{border-left:3px solid var(--danger);color:var(--danger)}
   .trace-label{align-self:flex-start;color:var(--soft);font-size:11px;text-transform:uppercase;
@@ -98,5 +133,6 @@
 <body>
   <div id="app"></div>
   <script src="_framework/blazor.webview.js"></script>
+  <script src="frames.js"></script>
 </body>
 </html>

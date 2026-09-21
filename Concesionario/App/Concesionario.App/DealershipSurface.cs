@@ -56,6 +56,20 @@ namespace Concesionario.App
 		private const string TheModelAtDelivery = "YARIS-2019";
 		private const string TheVinAtDelivery = "1HGCM82633A004352";
 
+		// WHICH LANGUAGE A VIEW IS SAID IN, and it is said by WHOEVER ASKS FOR IT. This class has no
+		// browser -it runs in process inside Gnothi- but the face that queries it IS one, and has
+		// already read the device's choice; it sends the tag as one more argument of the view.
+		// Asking the device from here would tie the package to a browser, which is the very thing
+		// the hybrid form exists not to do.
+		//
+		// An empty tag, or one this module does not speak, falls to the language the dealership
+		// keeps its record in -- the same fall the standalone app makes when it cannot read the
+		// choice. Same shape as CargasSurface.Elegido.
+		private const string TheLanguageOfTheRecord = Wording.Phrases.LanguageOfTheRecord;
+
+		private static string Chosen(string language) =>
+			Wording.Phrases.IsALanguageThisModuleSpeaks(language) ? language : TheLanguageOfTheRecord;
+
 		private readonly string folder;
 
 		public DealershipSurface(string grantedFolder)
@@ -109,19 +123,30 @@ namespace Concesionario.App
 		// THE HEADER: whose car this is, what the manufacturer published for it, and the four
 		// counts the screen leads with.
 		[View("header")]
-		public object Header() => !HasJournal ? NoData() : Read(api => (object)new
+		public object Header(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
-			hasData = true,
-			vin = api.ReadVin(),
-			plate = ThePlateOfThisVehicle.ReadThrough(api, Now()),
-			specification = WhatTheManufacturerPublished.ReadThrough(api),
-			due = api.CountDue(),
-			overdue = api.CountOverdue(),
-			scheduled = api.CountScheduled(),
-			upToDate = api.CountUpToDate(),
-			missed = api.MissedCount(),
-			nextDueKind = api.ReadNextDueKind(),
-			lastEventApplied = api.LastEventApplied(),
+			string said = Chosen(language);
+
+			return (object)new
+			{
+				hasData = true,
+				vin = api.ReadVin(),
+				plate = ThePlateOfThisVehicle.ReadThrough(api, Now(), said),
+				specification = WhatTheManufacturerPublished.ReadThrough(api, said),
+				due = api.CountDue(),
+				overdue = api.CountOverdue(),
+				scheduled = api.CountScheduled(),
+				upToDate = api.CountUpToDate(),
+				missed = api.MissedCount(),
+
+				// ASK BEFORE READING IT. `ReadNextDueKind` THROWS when nothing is due -- it says so
+				// itself: "pregunte HasAnythingDue antes" -- so a car that is up to date took the
+				// whole header down, and with it the screen, which is the one moment there was
+				// nothing wrong to report. AppState.NextDueKind already guarded it this way.
+				nextDueKind = api.HasAnythingDue() ? api.ReadNextDueKind() : "",
+
+				lastEventApplied = api.LastEventApplied(),
+			};
 		});
 
 		// WHERE THE VEHICLE STANDS, and where each of the nine operations stands. They travel
@@ -132,9 +157,10 @@ namespace Concesionario.App
 		// view is computed AGAINST AN INSTANT, and letting the page send it would let the screen
 		// move the answer.
 		[View("standing")]
-		public object Standing() => !HasJournal ? NoData() : Read(api =>
+		public object Standing(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
 			DateTime asOf = Now();
+			string said = Chosen(language);
 
 			// THE DUE STATE PER KIND, and it has to be asked for separately. `HowOneOperationStands`
 			// carries a DistanceStanding and a TimeStanding -- two countdowns, because an operation
@@ -150,8 +176,9 @@ namespace Concesionario.App
 
 			return (object)new
 			{
-				vehicle = WhereThisVehicleStands.ReadThrough(api, asOf),
-				operations = WhereEachOperationStands.ReadThrough(api, asOf),
+				vehicle = WhereThisVehicleStands.ReadThrough(api, asOf, said),
+				operations =
+					WhereEachOperationStands.ReadThrough(api, asOf, said),
 				dueStates,
 			};
 		});
@@ -159,12 +186,13 @@ namespace Concesionario.App
 		// THE STAYS AT THE SHOP, this year. The window is the same one the standalone app uses:
 		// from the first day of the current year to today.
 		[View("history")]
-		public object History() => !HasJournal ? NoData() : Read(api =>
+		public object History(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
 			DateTime asOf = Now();
 			return (object)new
 			{
-				stays = TheStaysOfThisVehicle.ReadThrough(api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf),
+				stays = TheStaysOfThisVehicle.ReadThrough(
+					api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf, Chosen(language)),
 			};
 		});
 
@@ -172,16 +200,19 @@ namespace Concesionario.App
 		// before that. Two windows, because both readings are comparisons and a single window
 		// would only give half of each.
 		[View("costs")]
-		public object Costs() => !HasJournal ? NoData() : Read(api =>
+		public object Costs(string language = "") => !HasJournal ? NoData() : Read(api =>
 		{
 			DateTime asOf = Now();
 			DateTime aYearBack = asOf.AddYears(-1), twoYearsBack = asOf.AddYears(-2);
+			string said = Chosen(language);
 
 			return (object)new
 			{
-				spent = WhatThisVehicleHasCost.ReadThrough(api, aYearBack, asOf, twoYearsBack, aYearBack),
-				driven = HowThisVehicleIsDriven.ReadThrough(api, aYearBack, asOf, twoYearsBack, aYearBack),
-				services = WhatTheServicesCost.ReadThrough(api, asOf),
+				spent = WhatThisVehicleHasCost.ReadThrough(
+					api, aYearBack, asOf, twoYearsBack, aYearBack, said),
+				driven = HowThisVehicleIsDriven.ReadThrough(
+					api, aYearBack, asOf, twoYearsBack, aYearBack, said),
+				services = WhatTheServicesCost.ReadThrough(api, asOf, said),
 			};
 		});
 

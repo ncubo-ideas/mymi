@@ -59,10 +59,22 @@ builder.Services.AddSingleton<AlmacenDeCredencial>(sp => new AlmacenDeCredencial
 builder.Services.AddSingleton<PuenteDeGnothi>(sp => new PuenteDeGnothi(sp.GetRequiredService<IJSRuntime>()));
 builder.Services.AddSingleton<EstadoDeLaApp>();
 
+// LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS, en el idioma que la persona eligio en su
+// dispositivo. Singleton por la misma razon que el resto: el catalogo se negocia una vez, al
+// arrancar, y no por pantalla.
+builder.Services.AddSingleton<Textos>();
+
 // EL SINGLETON VIVO, al alcance de la superficie que Gnothi llama. DotNet.invokeMethodAsync
 // solo alcanza metodos estaticos, asi que la superficie necesita esta referencia; no hay
 // otra manera de que el nativo llegue al actor sin abrir un segundo.
 var host = builder.Build();
+
+// EL IDIOMA SE NEGOCIA ANTES DEL RENDER, igual que el hospedaje: una pantalla que se pinta y
+// despues cambia de idioma es un parpadeo que nadie pidio. El HttpClient es OTRO que el del
+// proveedor -este apunta al origen que sirvio la app, que es donde vive wwwroot/texto-.
+await host.Services.GetRequiredService<Textos>().NegociarAsync(
+	host.Services.GetRequiredService<IJSRuntime>(),
+	new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 // EN QUE HOSPEDAJE CORRE, decidido ANTES del render: el contenedor construye el puente del
 // journal con el destino ya puesto, y despues seria tarde. Se pregunta por la presencia del

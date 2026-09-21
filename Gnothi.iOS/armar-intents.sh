@@ -234,20 +234,20 @@ rm -f "$LOG"
 # ── 6 · a mano ─────────────────────────────────────────────────────────────────────────────
 say "6 · AHORA SE MIDE A MANO"
 cat <<'EOF'
-  a) Atajos → + → buscar «Gnothi Host». ¿Aparece «Lo que Gnothi tiene»?
+  a) Atajos → + → buscar «Mymi». ¿Aparece «Lo que Mymi tiene»?
 
         SI → la metadata inyectada FUNCIONA dentro de Gnothi.iOS.
         NO → esta pero no la lee. Reportar extract.actionsdata de arriba.
              Y correr Spikes/Lab.IntentsDesdeNet para separar "el mecanismo
              no anda" de "algo de Gnothi interfiere".
 
-  b) Agregarla a un atajo y CORRERLA (o decirle a Siri «Qué tiene Gnothi Host»).
+  b) Agregarla a un atajo y CORRERLA (o decirle a Siri «Qué tiene Mymi»).
      ¿Dice el encuadre Y el json con las facturas/examenes REALES y la fecha?
 
         SI → UNA SOLA APP. El Host de .NET bajo Mono, con carga dinamica, y
              los App Intents en Swift adentro leyendo lo que el Host escribe.
              Lab.Siri y el App Group dejan de hacer falta.
-        «Gnothi todavia no dejo ninguna foto» → la intent corre pero no ve
+        «Mymi todavia no dejo ninguna foto» → la intent corre pero no ve
              la carpeta del C#. Reportar la ruta que dice y la linea
              'instantanea: ... -> ...' del log: una es donde busco Swift, la
              otra donde escribio C#.

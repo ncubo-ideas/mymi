@@ -9,15 +9,15 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class ARemainderWithNoOperationScheduled : ARemainder
 	{
-		private readonly string _kindName;
+		private readonly string _kind;
 
 		/// <summary>
-		/// Se llega por <see cref="ARemainder.WithNoOperationScheduled"/>, con la clase nombrada:
-		/// sin el nombre las clases no agendadas dirian todas la misma frase.
+		/// Se llega por <see cref="ARemainder.WithNoOperationScheduled"/>, con la clase nombrada por
+		/// su codigo: sin el nombre las clases no agendadas dirian todas la misma clausula.
 		/// </summary>
-		internal ARemainderWithNoOperationScheduled(string kindName)
+		internal ARemainderWithNoOperationScheduled(string kind)
 		{
-			_kindName = kindName;
+			_kind = kind;
 		}
 
 		/// <summary>No: no hay ley evaluada de la que esta dimension pueda ser parte.</summary>
@@ -38,10 +38,10 @@ namespace Concesionario.Dominio
 			return RemainderStanding.NoOperationScheduled;
 		}
 
-		/// <summary>Nombra la clase que no esta agendada.</summary>
-		internal override string Describe()
+		/// <summary>La clase que no esta agendada, por su codigo.</summary>
+		internal override string TheKindWithNoOperationScheduled()
 		{
-			return "no hay ninguna operación de " + _kindName + " agendada para este vehículo";
+			return _kind;
 		}
 	}
 }

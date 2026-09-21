@@ -2,6 +2,7 @@ using System.Text.Json;
 using Gnothi.Assistant;
 using Gnothi.Host;
 using Gnothi.MobileShared;   // Snapshot: la foto que lee la App Intent de Siri
+using Gnothi.Assistant.Tests;   // Preguntas: el banco con que se mide la seleccion de tools
 
 namespace Gnothi.Conformance;
 
@@ -71,10 +72,10 @@ internal static class Conformance
 			}
 			catch (Exception ex)
 			{
-				// NOT A DEFECT OF THE MODULE, and it must not be reported as one: this is the
-				// documented open limitation -- installation.json carries ABSOLUTE paths from
-				// the machine where the POC was assembled, so on any other machine the shell
-				// cannot be started. See Metodologia/Guias/el-manifiesto-y-la-instalacion.md §8.
+				// NOT A DEFECT OF THE MODULE, and it must not be reported as one: the shell could
+				// not be started. Since the bench went relative (installation.json anchors
+				// shell.arguments[0] to its own folder) the usual cause is that the module's dll
+				// is not BUILT on this machine -- the path points at bin/Debug of its project.
 				//
 				// It is listed instead of asserted, because a red line here would train people
 				// to ignore the suite for a reason that has nothing to do with drift. What IS
@@ -111,9 +112,10 @@ internal static class Conformance
 		assert("al menos un modulo se pudo verificar contra su superficie real",
 			verificados > 0,
 			$"ninguno de {catalog.Modules.Count} se pudo arrancar: [{string.Join("  ·  ", sinVerificar)}]. "
-			+ "Casi siempre es installation.json con rutas de otra maquina (limitacion abierta, "
-			+ "ver Metodologia/Guias/el-manifiesto-y-la-instalacion.md seccion 8): apuntar "
-			+ "shell.arguments[0] al dll construido en ESTA maquina y repetir.");
+			+ "Casi siempre falta compilar los modulos: shell.arguments[0] de cada installation.json "
+			+ "apunta, relativo a su carpeta, al bin/Debug del proyecto Mcp del modulo. Correr "
+			+ "dotnet build sobre Compras/App/Compras.Mcp, Examenes/App/Examenes.Mcp y "
+			+ "HolaMundo/Facturas/App/Facturas.Mcp, y repetir.");
 
 		if (verificados > 0 && sinVerificar.Count > 0)
 			Console.WriteLine($"  ({verificados} modulos verificados, {sinVerificar.Count} sin verificar)");
@@ -136,6 +138,47 @@ internal static class Conformance
 			assert("hay al menos una tool publicada para comparar", false,
 				$"el catalogo de {modulesRoot} salio vacio");
 			return 1;
+		}
+
+		// EL BANCO DE PREGUNTAS NO SE QUEDO VIEJO.
+		//
+		// Preguntas.cs nombra, por cada pregunta de Sonia, que tool TENDRIA que contestarla. Es un
+		// instrumento de medicion, no una prueba de comportamiento: sirve para medir seleccion de
+		// tools contra un modelo, y para eso tiene que nombrar tools que existan. Un modulo que
+		// renombra una consulta deja el banco midiendo contra un nombre muerto, y eso no se nota
+		// -- el banco no se compila contra nada, son strings.
+		//
+		// SOLO SE EXIGEN LAS TOOLS DE LOS MODULOS QUE ESTE BANCO TIENE. El banco local de esta Mac
+		// no siempre trae los cinco modulos, y una asercion que exigiera todos fallaria por lo que
+		// falta instalar y no por lo que esta mal escrito.
+		{
+			HashSet<string> publicadas = [.. published1];
+			HashSet<string> modulosDelBanco =
+				[.. ToolIndex.Of(one).All.Select(e => e.ModuleName)];
+
+			string[] muertas = [.. Preguntas.DeSonia
+				.Where(p => modulosDelBanco.Contains(p.Modulo))
+				.SelectMany(p => p.Esperadas.Concat(p.Tolerables))
+				.Distinct()
+				.Where(nombre => !publicadas.Contains(nombre))
+				.Order()];
+
+			assert("el banco de preguntas nombra tools que existen",
+				muertas.Length == 0,
+				$"nombres que ya no publica ningun modulo: {string.Join(", ", muertas)}");
+
+			// Y QUE ESTE ENTERO EN LOS DOS IDIOMAS. El idioma es la variable mas pesada que se
+			// midio sobre el tool calling -- el 2026-09-17 fue la diferencia entre 4 de 4 y 0 de
+			// 8 -- asi que una pregunta a la que le falte un lado deja ese lado sin medir, y no
+			// se nota: es un string vacio, no un error.
+			string[] mancas = [.. Preguntas.DeSonia
+				.Where(p => string.IsNullOrWhiteSpace(p.Es) || string.IsNullOrWhiteSpace(p.En))
+				.Select(p => p.Es.Length > 0 ? p.Es : p.En)
+				.Order()];
+
+			assert("el banco de preguntas esta entero en los dos idiomas",
+				mancas.Length == 0,
+				$"preguntas a las que les falta un idioma: {string.Join(" | ", mancas)}");
 		}
 
 		int compared = 0;

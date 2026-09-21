@@ -30,7 +30,11 @@ namespace Gnothi.Assistant;
 // anterior -caer en reflexion- funcionaba en escritorio y fallaba en el iPhone en silencio,
 // con un campo vacio y sin error. Preferimos enterarnos en la primera corrida y con el nombre
 // del tipo escrito.
-internal static class Json
+// PUBLICO Y NO INTERNO desde que ModelFoundation.cs -el IModel del modelo de Apple- se compila
+// tambien en Gnothi.Desktop, que es otro ensamblado. En el telefono no se notaba porque iOS y
+// Android compilan este archivo por glob. Un IModel de afuera tiene el mismo derecho a escribir
+// json que los de adentro.
+public static class Json
 {
 	/// Un JsonElement desde texto, SIN reflexion.
 	///

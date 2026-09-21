@@ -1,6 +1,11 @@
 using Android.App;
 using Android.OS;
 using Android.Webkit;
+// EL CATALOGO DE TEXTOS, por alias y no importando el namespace entero: `Gnothi.Host`
+// tambien declara un `Shell` -- el bloque de installation.json -- y este archivo usa el
+// `Shell` de Gnothi.MobileShared diez veces. Importar los dos namespaces deja el nombre ambiguo
+// y el Android deja de compilar; el alias trae lo unico que hace falta de alli.
+using Textos = Gnothi.Host.Textos;
 using Gnothi.MobileShared;
 using System.Text.Json;
 
@@ -9,7 +14,7 @@ using System.Text.Json;
 // complies with. See Resources/xml/network_security_config.xml.
 [assembly: Android.App.Application(NetworkSecurityConfig = "@xml/network_security_config")]
 
-// THE CAMERA, for reading the institution's code from inside Gnothi. The page asks for it
+// THE CAMERA, for reading the institution's code from inside Mymi. The page asks for it
 // through getUserMedia, and the WebView will not even ask the person unless the app declares
 // the permission. Not required: a phone without a camera pastes the link instead.
 // THE HOST'S NETWORK, DECLARED BY HAND, and it has to be declared even though "it already worked".
@@ -76,9 +81,9 @@ namespace Gnothi.Mobile;
 // A MODULE PACKAGE ARRIVING AS A FILE: "open with" from Files or Downloads, or the share sheet
 // from another app. Two mimes, on purpose: the institution's page serves the .gmod as
 // application/vnd.gnothi.module, but a file that travelled through chat or mail usually arrives
-// as plain application/zip -- the inspection tells a module from any other zip, so Gnothi offers
+// as plain application/zip -- the inspection tells a module from any other zip, so Mymi offers
 // itself for both. The mime is what is matched, not the extension: for content:// files the path
-// is opaque. A file that shows up as anything else is reached from inside Gnothi, with the picker.
+// is opaque. A file that shows up as anything else is reached from inside Mymi, with the picker.
 [IntentFilter(new[] { Android.Content.Intent.ActionView },
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataSchemes = new[] { "content", "file" },
@@ -87,7 +92,7 @@ namespace Gnothi.Mobile;
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
 [Activity(Label = "Gnothi", MainLauncher = true, Icon = "@mipmap/ic_launcher", Theme = "@android:style/Theme.Material.Light.NoActionBar")]
-public partial class MainActivity : Activity
+public class MainActivity : Activity
 {
 	private WebView? web;
 
@@ -103,9 +108,8 @@ public partial class MainActivity : Activity
 	{
 		base.OnCreate(savedInstanceState);
 
-		// If Gnothi was opened BY an enrolment link, the WHOLE link goes to the shell -- with its seal,
-		// if it carries one -- and the shell takes it apart. It used to travel as just ?bundle=, and the
-		// seal was lost.
+		// Si Gnothi se abrio POR un enlace de alta, el enlace ENTERO va a la cascara -con su
+		// sello, si trae- y ella lo desarma. Antes viajaba solo ?bundle=, y el sello se perdia.
 		altaPendiente = Intent?.Data?.GetQueryParameter("bundle") is { Length: > 0 } ? Intent!.Data!.ToString() : null;
 		// Or by a file -opened, shared- which is read now and enrolled once the Host is up. A
 		// share of text is the other thing a share can be: the handoff from the institution's
@@ -156,15 +160,8 @@ public partial class MainActivity : Activity
 
 		web.LoadUrl("file:///android_asset/ui.html");
 
-		// EL CONTADOR DEL BORDE DE LA HIBRIDA, enganchado SIEMPRE y no dentro de PrepareTheBox: la
-		// mitad que hace falta para comparar es justamente la de la caja APAGADA, y ahí ese método
-		// se sale en la primera línea. Ver el comentario en HybridShell.Counting.
-		Gnothi.Host.HybridShell.Log = Log;
-
-		PrepareTheBox();
-
-		// THE TWO FOLDERS ARE CHOSEN BY THE PLATFORM, not by the shell. adb cannot write into the private
-		// area, and that is right: nobody from outside installs a module.
+		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, no la cascara. adb no puede escribir en el
+		// area privada, y eso es correcto: nadie de afuera instala un modulo.
 		shell = new Shell(
 			new Shell.Paths(
 				Files: FilesDir!.AbsolutePath,
@@ -265,23 +262,22 @@ public partial class MainActivity : Activity
 	//
 	// OnBackPressed is the deprecated path, and it is chosen on purpose: the modern
 	// OnBackInvokedCallback only takes over when the manifest opts in, which this app does not.
-	// BACK: first the module on screen, then Gnothi's page. The order matters: if the module is
-	// covering everything, the button has to take IT away, not navigate underneath it.
-	// The enrolment link with the app ALREADY open.
+	// ATRAS: primero el modulo en pantalla, despues la pagina de Gnothi. El orden importa:
+	// si el modulo esta tapando todo, el boton tiene que sacarlo a el, no navegar por debajo.
+	// El enlace de alta con la app YA abierta.
 	protected override void OnNewIntent(Android.Content.Intent? intento)
 	{
 		base.OnNewIntent(intento);
 
-		// THE NEW INTENT IS THE ONE THAT COUNTS. Without this, `Intent` keeps returning the one that
-		// opened the activity, and a second link -- another institution, with Gnothi already open -- is
-		// lost.
+		// EL INTENT NUEVO ES EL QUE MANDA. Sin esto, `Intent` sigue devolviendo el que abrió la
+		// actividad, y un segundo enlace -otra institución, con Gnothi ya abierto- se pierde.
 		if (intento is not null) Intent = intento;
 
 		string? bundle = intento?.Data?.GetQueryParameter("bundle");
 		Log($"nuevo enlace: {intento?.Data?.ToString() ?? "(sin datos)"}");
 		if (bundle is { Length: > 0 }) _ = shell?.Enroll(intento!.Data!.ToString()!, stop.Token);
 
-		// A file, with Gnothi already open: the same reader as at launch.
+		// A file, with Mymi already open: the same reader as at launch.
 		if (LeerArchivoDeModulo(intento, strict: true) is { } archivo)
 		{
 			_ = shell?.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
@@ -489,7 +485,7 @@ public partial class MainActivity : Activity
 		catch (Exception ex)
 		{
 			Log($"alta: no se pudo leer el archivo '{name}': {ex.GetType().Name}: {ex.Message}");
-			shell?.ReportEnrollmentError($"No se pudo leer el archivo {name}.");
+			shell?.ReportUnreadableFile(name);
 			return null;
 		}
 	}
@@ -529,7 +525,7 @@ public partial class MainActivity : Activity
 	}
 
 	// "ELEGIR EL ARCHIVO EN MI TELÉFONO", from the page. The system's document picker: no storage
-	// permission, no walk over the disk -- the system finds, the person chooses, Gnothi receives
+	// permission, no walk over the disk -- the system finds, the person chooses, Mymi receives
 	// exactly that one file. This is the phone-side of the "buscador" the plan turned down:
 	// scanning Downloads would have asked the app whose thesis is that the data is hers for
 	// permission over all of it.
@@ -545,7 +541,7 @@ public partial class MainActivity : Activity
 		// OPEN IN DOWNLOADS, where a .gmod that came through the browser or a chat lands, instead of
 		// "Recent" and a drawer to find the folder. The picker's own filter is by MIME and cannot be
 		// tighter than this: a .gmod has no registered type on the phone and shows up as
-		// application/octet-stream, so the list Gnothi shows afterwards is what tells a module from
+		// application/octet-stream, so the list Mymi shows afterwards is what tells a module from
 		// any other file.
 		pick.PutExtra(Android.Provider.DocumentsContract.ExtraInitialUri,
 			Android.Net.Uri.Parse("content://com.android.externalstorage.documents/document/primary%3ADownload"));
@@ -591,9 +587,9 @@ public partial class MainActivity : Activity
 
 	// ── THE MODULE ON SCREEN ─────────────────────────────────────────────────────────────
 
-	// THE INSTITUTION'S PWA DRAWS ITSELF (specification 11 §8). Sonia opens the module and sees the
-	// laboratory's dashboard: its branding, its Blazor, its charts. Gnothi neither describes it nor
-	// paints it.
+	// LA PWA DE LA INSTITUCIÓN SE DIBUJA A SÍ MISMA (especificación 11 §8). Sonia abre el
+	// módulo y ve el tablero del laboratorio: su marca, su Blazor, sus gráficos. Gnothi no lo
+	// describe ni lo pinta.
 	//
 	// AND IT IS THE SAME WebView that answers the assistant's questions. There are not two: just one,
 	// which is sometimes on screen and sometimes only answering. That is why opening it is fast if it
@@ -602,9 +598,9 @@ public partial class MainActivity : Activity
 	// THE RULE THAT CHANGES WHEN IT IS SHOWN: while it is on screen it CANNOT be evicted, even at its
 	// 200 MB. That is the only concession; the moment she leaves, it becomes evictable again.
 	//
-	// What does NOT change is the containment: it still has no network, no service worker and no
-	// process of its own, and it stops existing when Gnothi evicts it. "It does not wake, it does not
-	// notify, it does not interrupt" holds by incapacity, not because the module behaves.
+	// Lo que NO cambia es la contención: sigue sin red, sin service worker y sin proceso
+	// propio, y deja de existir cuando Gnothi lo desaloja. "No despierta, no notifica, no
+	// interrumpe" se sostiene por incapacidad, no porque el módulo se porte bien.
 	private string AbrirModulo(string nombre)
 	{
 		Gnothi.Host.Module? m = shell?.Find(nombre);
@@ -626,8 +622,8 @@ public partial class MainActivity : Activity
 		return "{\"ok\":true}";
 	}
 
-	// The module's WebView goes ON TOP of Gnothi's, covering it. The view is not replaced: Gnothi's
-	// stays alive behind it, with its state and its conversation intact.
+	// El WebView del módulo entra ARRIBA del de Gnothi, tapándolo. No se reemplaza la vista:
+	// la de Gnothi sigue viva detrás, con su estado y su conversación intactos.
 	private void Mostrar(AndroidWebModule vivo)
 	{
 		Android.Views.View? vista = vivo.View;

@@ -63,8 +63,10 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.Throws<DomainException>(() =>
 				stays.RecordEntry(TheSecondBranch, TheOtherSubject, EnteredAgain));
 
-			Assert.That(stays.DescribeTheStayAt(EnteredAgain), Does.Contain(TheFirstBranch));
-			Assert.That(stays.DescribeTheStayAt(EnteredAgain), Does.Not.Contain(TheSecondBranch));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheStay(stays, EnteredAgain,
+				TheLanguage.OfTheRecord), Does.Contain(TheFirstBranch));
+			Assert.That(TheSentenceTheDoorWouldCompose.TheStay(stays, EnteredAgain,
+				TheLanguage.OfTheRecord), Does.Not.Contain(TheSecondBranch));
 
 			stays.RecordCollection(Collected, new[] { "2026-06-10", "2026-06-11", "2026-06-12" });
 
@@ -82,7 +84,9 @@ namespace Concesionario.Dominio.Pruebas
 			stays.RecordEntry(TheSecondBranch, TheOtherSubject, new DateTime(2026, 6, 20, 7, 0, 0));
 
 			Assert.That(stays.IsInsideTheShopAt(new DateTime(2026, 6, 21, 7, 0, 0)), Is.True);
-			Assert.That(stays.DescribeTheStayAt(new DateTime(2026, 6, 21, 7, 0, 0)),
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheStay(
+					stays, new DateTime(2026, 6, 21, 7, 0, 0), TheLanguage.OfTheRecord),
 				Does.Contain(TheSecondBranch));
 		}
 

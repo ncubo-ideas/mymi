@@ -68,11 +68,17 @@ namespace Concesionario.Dominio.Pruebas
 				"El tiempo lleva 228 de 365 dias: no decide nada todavia. Si decide, la ley se "
 				+ "escribio como 'vence por tiempo y de paso miro la distancia'.");
 
-			Assert.That(vencimiento.Describe(), Does.Contain("decidido por distancia"));
-			Assert.That(vencimiento.Describe(), Does.Not.Contain("decidido por tiempo"));
-			Assert.That(vencimiento.Describe(), Does.Contain("9000"),
-				"OUS-07: el motivo tiene que decir la DIMENSION y el MONTO, no solo que vence.");
-			Assert.That(vencimiento.Describe(), Does.Contain("de 10000 km"));
+			ADueReason motivo = vencimiento.TheReason();
+
+			Assert.That(motivo.WhoDecided, Is.EqualTo(IntervalDimension.Distance));
+			Assert.That(motivo.WhoDecided, Is.Not.EqualTo(IntervalDimension.Time));
+
+			// OUS-07: el motivo tiene que decir la DIMENSION y el MONTO, no solo que vence. La
+			// clausula que decide va primero, y sus dos operandos son los que la frase dice.
+			Assert.That(motivo.ClauseDimensions[0], Is.EqualTo(IntervalDimension.Distance));
+			Assert.That(motivo.ClauseAmounts[0], Is.EqualTo(9000));
+			Assert.That(motivo.ClauseLimits[0], Is.EqualTo(10000));
+			Assert.That(motivo.ClauseUnits[0], Is.EqualTo(DistanceUnit.UnitA.Name));
 		}
 
 		// PRUEBA 2 de §9. Lectura 33000 el 2026-05-02.
@@ -90,9 +96,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(vencimiento.DecidedByTime, Is.True);
 			Assert.That(vencimiento.DecidedByDistance, Is.False);
 
-			Assert.That(vencimiento.Describe(), Does.Contain("decidido por tiempo"));
-			Assert.That(vencimiento.Describe(), Does.Contain("335"));
-			Assert.That(vencimiento.Describe(), Does.Contain("días"));
+			ADueReason motivo = vencimiento.TheReason();
+
+			Assert.That(motivo.WhoDecided, Is.EqualTo(IntervalDimension.Time));
+			Assert.That(motivo.ClauseDimensions[0], Is.EqualTo(IntervalDimension.Time));
+			Assert.That(motivo.ClauseAmounts[0], Is.EqualTo(335));
 		}
 
 		// PRUEBA 3 de §9. Lectura 40000 el 2026-01-20 -> Due.
@@ -148,7 +156,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(vencimiento.State, Is.SameAs(DueState.Due));
 			Assert.That(vencimiento.DecidedByTime, Is.True);
 			Assert.That(vencimiento.DecidedByDistance, Is.True);
-			Assert.That(vencimiento.Describe(), Does.Contain("decidido por tiempo y distancia"));
+			Assert.That(
+				vencimiento.TheReason().WhoDecided, Is.EqualTo(ADueReason.TimeAndDistance));
 		}
 
 		// CADA CLAUSULA SE NOMBRA A SI MISMA, y hasta aqui nadie lo defendia: una etiqueta
@@ -161,17 +170,20 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EachClauseOfTheReasonNamesItsOwnDimension()
 		{
-			string motivo = regla.Assess(
+			ADueReason motivo = regla.Assess(
 				desde, new DateTime(2026, 6, 1), Lectura(40000, DistanceUnit.UnitA), sinEscalar)
-				.Describe();
+				.TheReason();
 
-			Assert.That(motivo, Does.Contain("tiempo: "),
+			Assert.That(motivo.ClauseDimensions, Has.Length.EqualTo(2),
+				"Las dos dimensiones aportan clausula cuando la ley mide las dos.");
+			Assert.That(motivo.ClauseDimensions[0], Is.EqualTo(IntervalDimension.Time),
 				"La clausula del tiempo tiene que decir que es del tiempo.");
-			Assert.That(motivo, Does.Contain("distancia: "),
+			Assert.That(motivo.ClauseDimensions[1], Is.EqualTo(IntervalDimension.Distance),
 				"Y la de la distancia, que es de la distancia.");
-			Assert.That(motivo, Does.Contain("días"), "Los días van en la clausula del tiempo.");
-			Assert.That(motivo, Does.Contain(" km"),
-				"Y la unidad del limite en la de la distancia.");
+			Assert.That(motivo.ClauseUnits[0], Is.Empty,
+				"El dia no tiene nombre de unidad que proyectar: su dimension ya dice cual es.");
+			Assert.That(motivo.ClauseUnits[1], Is.EqualTo(DistanceUnit.UnitA.Name),
+				"Y la unidad del limite va en la de la distancia.");
 		}
 
 		// PRUEBA 6 de §9, ley L10. La evaluacion que habria puesto DueSoon encuentra el limite
@@ -229,7 +241,11 @@ namespace Concesionario.Dominio.Pruebas
 				desde, new DateTime(2026, 1, 15), Lectura(39000, DistanceUnit.UnitA), sinEscalar);
 
 			Assert.That(segunda.State, Is.SameAs(primera.State));
-			Assert.That(segunda.Describe(), Is.EqualTo(primera.Describe()));
+			Assert.That(
+				segunda.TheReason().ClauseAmounts,
+				Is.EqualTo(primera.TheReason().ClauseAmounts));
+			Assert.That(
+				segunda.TheReason().WhoDecided, Is.EqualTo(primera.TheReason().WhoDecided));
 		}
 
 		// Evaluar ANTES del punto base es un defecto de quien llama: no se evalua el pasado de

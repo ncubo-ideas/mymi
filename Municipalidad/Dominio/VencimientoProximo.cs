@@ -44,33 +44,6 @@ namespace Municipalidad.Dominio
 		}
 
 		/// <summary>
-		/// La frase que una persona lee sobre esto que todavia no vence: de que periodo y de que rubro,
-		/// que dia vence, cuanto, y cuanto apura a esa fecha con esos dias de aviso.
-		/// </summary>
-		internal string Dice(DateTime fecha, int diasDeAviso)
-		{
-			return "El período " + EtiquetaDelPeriodo + " de " + NombreDelRubro + " vence el "
-				+ Dichos.Dia(Vence) + ": " + Dichos.Monto(Monto) + ". " + CuantoApura(fecha, diasDeAviso);
-		}
-
-		/// <summary>La clausula de urgencia, que la decide la clase y nunca el monto.</summary>
-		private string CuantoApura(DateTime fecha, int diasDeAviso)
-		{
-			Dominio.Urgencia urgencia = Urgencia(fecha, diasDeAviso);
-
-			if (urgencia.EsUrgente())
-				return "Al " + Dichos.Dia(fecha) + " vence ese mismo día.";
-
-			if (urgencia.Avisa())
-				return "Al " + Dichos.Dia(fecha) + " faltan " + DiasQueFaltan(fecha) + " días, dentro de "
-					+ "los " + diasDeAviso + " de aviso con que se preguntó: es un recordatorio y no una "
-					+ "parada obligatoria.";
-
-			return "Al " + Dichos.Dia(fecha) + " faltan " + DiasQueFaltan(fecha) + " días, más de los "
-				+ diasDeAviso + " de aviso con que se preguntó, así que todavía no apura.";
-		}
-
-		/// <summary>
 		/// Cuanto apura a esa fecha: aviso dentro de la ventana de dias con que se pregunte, y urgente el
 		/// dia en que vence. Quien lo decide es la clase y no el monto.
 		/// </summary>

@@ -29,7 +29,12 @@ namespace Examenes.Dominio
 
 		// Como se llama este examen para el paciente. Lo define cada subclase: es su
 		// identidad en la lista.
-		internal abstract string Nombre { get; }
+		/// <summary>
+		/// EL CODIGO CON QUE SE LLAMA A ESTE EXAMEN. Para uno de sangre es el del analito que mide;
+		/// para el urianalisis y el de heces, el suyo propio. Como se dice lo busca con el la capa
+		/// que redacta, en el idioma que le pidieron.
+		/// </summary>
+		internal abstract string Clave { get; }
 
 		// Si este examen ENTERO es un punto de una serie CON NUMEROS. Los de sangre si; la
 		// orina y las heces no, porque ni un color ni un positivo tienen valor que graficar.
@@ -40,14 +45,6 @@ namespace Examenes.Dominio
 		// es la que ordena las filas del cuadro, y la otra la contesta cada serie con su
 		// FormaDeLectura.
 		internal abstract bool AportaSerieContinua { get; }
-
-		// Lo que se le muestra al paciente como resultado, ya expresado. Un numero con
-		// unidad para los de sangre, un color para la orina.
-		//
-		// Sigue existiendo porque hay lugares que quieren UNA linea por examen -la lista
-		// de la caratula de consola-, pero no es lo que describe al examen: para eso estan
-		// las Lecturas.
-		internal abstract string ResultadoExpresado { get; }
 
 		// QUE COSAS MIDIO ESTE EXAMEN, una por analito.
 		//

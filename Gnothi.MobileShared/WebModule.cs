@@ -508,7 +508,13 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 	internal async Task<TModule> Open(Gnothi.Host.Module m, CancellationToken ct)
 	{
 		IReadOnlyList<string> args = m.Installation.Shell.Arguments;
-		string bundle = args.Count > 0 ? args[0] : "";
+		// NORMALISED, the same way WebViewShell already does it. BundleServer.Resolve compares
+		// every requested file against Path.GetFullPath, which on Windows answers with
+		// backslashes: a bundle written with forward slashes in installation.json made every
+		// file "outside the module" and the face died at HostNameNotResolved, with nothing
+		// naming the cause. Measured on the desktop 2026-09-14; on Android the two forms never
+		// differed, which is why it took a third platform to see it.
+		string bundle = args.Count > 0 ? Path.GetFullPath(args[0]) : "";
 		string publisher = args.Count > 1 ? args[1] : "";
 
 		// THE FACE ASKS IN BOTH FORMS THAT CARRY NO ENGINE: the hybrid and the box. The only thing that

@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
+// EL RENDERIZADOR DE FRASES, con alias porque la clase y su espacio de nombres se llaman igual y sin
+// esto la referencia queda ambigua. Es el mismo con que el dominio compone las suyas: las frases de
+// esta Vista y las de la puerta se escriben en un solo lugar.
+using LasFrases = Municipalidad.App.Frases.Frases;
+
 namespace Municipalidad.App.Vistas
 {
 	/// <summary>
@@ -30,21 +35,23 @@ namespace Municipalidad.App.Vistas
 			new List<UnPeriodoSinRecibo>();
 
 		/// <summary>El cotejo, detras de su par: sin consulta no se pregunta por la consulta.</summary>
-		public static LoSinComprobante LeerPor(MunicipalidadAPI api)
+		public static LoSinComprobante LeerPor(MunicipalidadAPI api, string idioma)
 		{
 			ArgumentNullException.ThrowIfNull(api);
+
+			LasFrases frases = LasFrases.De(idioma);
 
 			if (!api.HayAlgunaConsulta())
 				return new LoSinComprobante
 				{
 					HayAlgunaConsulta = false,
 					Estado = "sin-consulta",
-					Dice = NuncaSeHaRegistradoUnaConsulta,
+					Dice = frases.Diga("sinComprobante.nuncaHuboConsulta"),
 				};
 
 			DateTime laConsulta = api.ConsultaMasReciente();
 
-			RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(laConsulta);
+			RegistroDePeriodosSinComprobante cotejo = api.PeriodosPagadosSinComprobante(laConsulta, idioma);
 
 			var filas = new List<UnPeriodoSinRecibo>();
 
@@ -70,10 +77,6 @@ namespace Municipalidad.App.Vistas
 		private static string ElDiaDe(DateTime instante) =>
 			instante.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
-		private const string NuncaSeHaRegistradoUnaConsulta =
-			"Tu app no tiene ninguna consulta al portal registrada, así que no hay con qué cotejar lo que "
-			+ "sí vio pagar. Esto NO dice que todo esté en orden: dice que la pregunta todavía no se "
-			+ "puede contestar, y se va a poder en cuanto entre una consulta.";
 	}
 
 	/// <summary>Un periodo que el portal da por saldado y del que aqui no hay recibo.</summary>

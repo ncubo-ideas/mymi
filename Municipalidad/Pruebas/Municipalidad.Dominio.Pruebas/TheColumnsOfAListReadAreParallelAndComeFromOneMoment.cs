@@ -109,7 +109,7 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void TheSeriesOfARubroAnswersSixParallelColumns()
 		{
-			RegistroDelHistorial serie = api.HistorialDe("recoleccion-de-basura");
+			RegistroDelHistorial serie = api.HistorialDe("recoleccion-de-basura", "es");
 
 			Assert.Multiple(() =>
 			{
@@ -148,7 +148,7 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void WhatHasNotFallenDueYetAnswersSixParallelColumns()
 		{
-			RegistroDeVencimientos loQueVence = api.VencimientosAl(LaFechaDeCorte, LosDiasDeAviso);
+			RegistroDeVencimientos loQueVence = api.VencimientosAl(LaFechaDeCorte, LosDiasDeAviso, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -194,7 +194,7 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void WhatHasAlreadyFallenDueAnswersSevenParallelColumns()
 		{
-			RegistroDeAtrasos atrasos = api.AtrasosAl(LaFechaDeCorte, LaTasaAnual);
+			RegistroDeAtrasos atrasos = api.AtrasosAl(LaFechaDeCorte, LaTasaAnual, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -244,7 +244,7 @@ namespace Municipalidad.Dominio.Pruebas
 		public void WhatWasPaidWithNoReceiptAnswersTwoParallelColumns()
 		{
 			RegistroDePeriodosSinComprobante sinComprobante =
-				api.PeriodosPagadosSinComprobante(LaFechaDeLaConsulta);
+				api.PeriodosPagadosSinComprobante(LaFechaDeLaConsulta, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -269,8 +269,8 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void ADayColumnIsSaidByTheDomainAsACalendarDayAndNeverAsAMonthFirstDate()
 		{
-			RegistroDeVencimientos loQueVence = api.VencimientosAl(LaFechaDeCorte, LosDiasDeAviso);
-			RegistroDeAtrasos atrasos = api.AtrasosAl(LaFechaDeCorte, LaTasaAnual);
+			RegistroDeVencimientos loQueVence = api.VencimientosAl(LaFechaDeCorte, LosDiasDeAviso, "es");
+			RegistroDeAtrasos atrasos = api.AtrasosAl(LaFechaDeCorte, LaTasaAnual, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -299,10 +299,10 @@ namespace Municipalidad.Dominio.Pruebas
 		[Test]
 		public void AnEmptyAnswerIsStillAFullSetOfParallelColumns()
 		{
-			RegistroDelHistorial rubroQueNoExiste = api.HistorialDe("cementerio");
-			RegistroDelHistorial rubroSinHistoria = api.HistorialDe("parques-y-zonas-verdes");
+			RegistroDelHistorial rubroQueNoExiste = api.HistorialDe("cementerio", "es");
+			RegistroDelHistorial rubroSinHistoria = api.HistorialDe("parques-y-zonas-verdes", "es");
 			RegistroDePeriodosSinComprobante sinConsulta =
-				api.PeriodosPagadosSinComprobante(new DateTime(2025, 1, 1));
+				api.PeriodosPagadosSinComprobante(new DateTime(2025, 1, 1), "es");
 
 			Assert.Multiple(() =>
 			{

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Cargas.Dominio;
+using LaRedaccion = Cargas.App.Frases.LaRedaccion;
+using LasFrases = Cargas.App.Frases.Frases;
 
 namespace Cargas.Consola
 {
@@ -17,6 +19,11 @@ namespace Cargas.Consola
 		private static int corridas;
 
 		private static readonly DateTime Hoy = new DateTime(2026, 8, 25);
+
+		// LAS DOS REDACCIONES. El dominio entrega clave mas valores y estas las dicen; toda
+		// afirmacion sobre una frase pasa por aca, que es el mismo camino que usa la puerta.
+		private static readonly LasFrases EnEspanol = LasFrases.De(LasFrases.IdiomaDelRegistro);
+		private static readonly LasFrases EnIngles = LasFrases.De(LasFrases.ElOtroIdioma);
 
 		internal static int Correr()
 		{
@@ -64,6 +71,8 @@ namespace Cargas.Consola
 			LaTransaccionDuplicadaEsUnDefectoDelEmisor();
 			TodoConsejoConPlazoYElRojoReservado();
 			LaFichaLeDaNombreAlVehiculo();
+			LosDosCatalogosDicenLasMismasClaves();
+			CadaFraseSeDiceEnLosDosIdiomas();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -110,8 +119,9 @@ namespace Cargas.Consola
 			// CON SEPARADOR DE MILES y con el punto decimal fijo: la frase la lee tambien
 			// el MCP, y un "0.##" pelado la escribiria distinto segun la cultura del
 			// proceso que la genere.
-			Igual("sumar en la misma moneda si", "\u20a11\u202f500",
-				colones.Mas(new Dinero(500m, Moneda.Colon)).Expresado);
+			Dinero sumados = colones.Mas(new Dinero(500m, Moneda.Colon));
+			Igual("sumar en la misma moneda si", "\u20a11.500",
+				EnEspanol.Monto(sumados.Monto, sumados.CodigoDeMoneda));
 		}
 
 		private static void LosPuntosNoSonDinero()
@@ -283,10 +293,8 @@ namespace Cargas.Consola
 			// LA FRASE SE COMPRUEBA, no solo el numero: la lee el MCP y la repite tal cual,
 			// asi que "en 1 cargas" saldria por la boca de la IA. Y la plata va agrupada
 			// aunque la arme el dominio, para no discrepar con lo que escribe la caratula.
-			Igual("dos cargas se dicen en plural", "\u20a142\u202f000 en 2 cargas",
-				deLaPersona[0].Expresado);
-			Igual("y una sola, en singular", "\u20a124\u202f000 en 1 carga",
-				delPrimero[0].Expresado);
+			Igual("dos cargas se dicen en plural", "\u20a142.000 en 2 cargas", Dice(deLaPersona[0]));
+			Igual("y una sola, en singular", "\u20a124.000 en 1 carga", Dice(delPrimero[0]));
 
 			// La misma acumulacion para los dos: si se calcularan por separado, un dia
 			// darian distinto y nadie sabria cual creer.
@@ -369,9 +377,9 @@ namespace Cargas.Consola
 			EvaluacionDeRendimiento enKmPorLitro = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("en km/L el veredicto es empeoro", "empeoro", enKmPorLitro.NombreDelVeredicto);
 			Igual("y la frase dice MENOS", "True",
-				enKmPorLitro.ParaSonia.Contains("% menos").ToString());
+				Dice(enKmPorLitro).Contains("% menos").ToString());
 			Igual("con el 25 del guion", "True",
-				enKmPorLitro.ParaSonia.Contains("25%").ToString());
+				Dice(enKmPorLitro).Contains("25%").ToString());
 
 			bitacora.ElegirPresentacionDeRendimiento("L/100km");
 			EvaluacionDeRendimiento enLitros = bitacora.EvaluarRendimientoDe("BQR-482");
@@ -386,8 +394,8 @@ namespace Cargas.Consola
 			// LO QUE SI SE MUEVE: la palabra y la magnitud. La inversa no es lineal, asi
 			// que 25% menos en km/L son 34% MAS en L/100km. Decir "25% menos" al lado de
 			// 7.9 y 10.6 seria una contradiccion que la persona ve sola.
-			Igual("ahora la frase dice MAS", "True", enLitros.ParaSonia.Contains("% más").ToString());
-			Igual("y ya no dice menos", "False", enLitros.ParaSonia.Contains("% menos").ToString());
+			Igual("ahora la frase dice MAS", "True", Dice(enLitros).Contains("% más").ToString());
+			Igual("y ya no dice menos", "False", Dice(enLitros).Contains("% menos").ToString());
 			Igual("el porcentaje como se ve cambia", "34",
 				enLitros.CambioPorcentualComoSeVe.ToString());
 			Igual("y el de km/L era negativo", "-25",
@@ -399,7 +407,7 @@ namespace Cargas.Consola
 			bitacora.ElegirPresentacionDeRendimiento("mpg");
 			EvaluacionDeRendimiento enMpg = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("en mpg el veredicto tampoco se mueve", "empeoro", enMpg.NombreDelVeredicto);
-			Igual("y vuelve a decir menos", "True", enMpg.ParaSonia.Contains("% menos").ToString());
+			Igual("y vuelve a decir menos", "True", Dice(enMpg).Contains("% menos").ToString());
 			Igual("con el mismo 25, porque mpg es proporcional a km/L", "-25",
 				enMpg.CambioPorcentualComoSeVe.ToString());
 
@@ -442,7 +450,7 @@ namespace Cargas.Consola
 			Igual("y avisa que probablemente falta un dato", "True",
 				sinEmitir.ProbablementeFaltaUnDato.ToString());
 			Igual("sin decir que la estacion le debe algo", "False",
-				sinEmitir.ParaSonia.Contains("deb").ToString());
+				Dice(sinEmitir).Contains("deb").ToString());
 
 			bitacora.EmitirBoleto("B-000205", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209");
 			bitacora.EmitirBoleto("B-000206", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209");
@@ -450,15 +458,15 @@ namespace Cargas.Consola
 			BoletosDeLaCarga cuadrada = bitacora.BoletosPorCargaDe("BQR-482")[0];
 			Igual("con los dos emitidos, la cuenta cuadra", "True",
 				cuadrada.LaCuentaCuadra.ToString());
-			Igual("dice los dos boletos", "True", cuadrada.ParaSonia.Contains("2 boletos").ToString());
+			Igual("dice los dos boletos", "True", Dice(cuadrada).Contains("2 boletos").ToString());
 
 			// EL SOBRANTE SE DICE, y en pasado: "sobraron X que no se acumulan" es un hecho
 			// de su registro. "Carga X mas y te llevas otro" seria la estacion vendiendo por
 			// la boca de su propia app.
 			Igual("y el sobrante que se pierde", "True",
-				cuadrada.ParaSonia.Contains("\u20a19\u202f392").ToString());
+				Dice(cuadrada).Contains("\u20a19.392").ToString());
 			Igual("con la palabra que lo explica", "True",
-				cuadrada.ParaSonia.Contains("no se acumulan").ToString());
+				Dice(cuadrada).Contains("no se acumulan").ToString());
 
 			// EL RESTO NO SE ACUMULA. El falsificador: acumulando los sobrantes entre
 			// compras, dos cargas de 9 000 darian un boleto; por compra no dan ninguno.
@@ -481,8 +489,9 @@ namespace Cargas.Consola
 				if (fila.NumeroDeLaTransaccion == "T-3") enDolares = fila;
 
 			Igual("una carga en otra moneda no tiene regla", "False", enDolares.HayRegla.ToString());
+			Igual("la clave nombra el choque de monedas", "otra-moneda", enDolares.ClaveSinRegla);
 			Igual("y lo dice en vez de inventar un tipo de cambio", "True",
-				enDolares.MotivoSinRegla.Contains("USD").ToString());
+				Dice(enDolares).Contains("USD").ToString());
 		}
 
 		// EL DESORDEN DE LLEGADA ES REAL: los eventos vienen en el orden en que la estacion
@@ -503,7 +512,7 @@ namespace Cargas.Consola
 			Igual("pero sin anunciar", "False", antes[0].FueAnunciado.ToString());
 			Igual("y sin anunciar no puede estar vencido", "False", antes[0].EstaVencido.ToString());
 			Igual("y lo dice con palabras", "True",
-				antes[0].ParaSonia.Contains("todavía no anunció").ToString());
+				Dice(antes[0]).Contains("todavía no anunció").ToString());
 
 			// El anuncio lo COMPLETA, sin perder el boleto.
 			bitacora.AnunciarSorteo("SORTEO-2026-12", "Fin de año", "un Yaris",
@@ -521,7 +530,7 @@ namespace Cargas.Consola
 			IReadOnlyList<BoletosDelSorteo> pasado = bitacora.BoletosPorSorteo(new DateTime(2027, 1, 10));
 			Igual("pasada la fecha esta vencido", "True", pasado[0].EstaVencido.ToString());
 			Igual("y el boleto SIGUE contado", "1", pasado[0].CantidadDeBoletos.ToString());
-			Igual("y se dice que ya se rifo", "True", pasado[0].ParaSonia.Contains("ya se rifó").ToString());
+			Igual("y se dice que ya se rifo", "True", Dice(pasado[0]).Contains("ya se rifó").ToString());
 
 			// Dos anuncios o dos boletos con la misma identidad son un defecto del emisor.
 			Revienta<ErrorDeDominio>("dos anuncios del mismo sorteo revientan",
@@ -601,7 +610,7 @@ namespace Cargas.Consola
 			FaltanteDeDato delLleno = null, delParcial = null;
 			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("BQR-482"))
 			{
-				if (faltante.QueFalta != "la confirmación del tanque") continue;
+				if (faltante.ClaveDeLoQueFalta != FaltanteDeDato.LaConfirmacionDelTanque) continue;
 				if (faltante.NumeroDeLaTransaccion == "T-9001") delLleno = faltante;
 				if (faltante.NumeroDeLaTransaccion == "T-9002") delParcial = faltante;
 			}
@@ -612,7 +621,7 @@ namespace Cargas.Consola
 			Igual("y dice QUE se supone", "lleno", delLleno.LoQueSeSupone);
 			Igual("y POR QUE lo supone",
 				"el surtidor cortó solo, así que suponemos que el tanque quedó lleno",
-				delLleno.LaSuposicion);
+				Supone(delLleno));
 
 			// La simetrica: el mismo mecanismo tiene que decir lo contrario, o los dos
 			// botones de la pantalla vuelven a ser genericos.
@@ -620,22 +629,23 @@ namespace Cargas.Consola
 				delParcial.LoQueSeSupone);
 			Igual("y lo dice con sus palabras",
 				"cargaste un monto fijo, así que suponemos que el tanque no quedó lleno",
-				delParcial.LaSuposicion);
+				Supone(delParcial));
 
 			// "tramo" es vocabulario del modelo y no tiene por que llegar a la pantalla.
 			Igual("la frase no le habla de tramos", "False",
-				delLleno.ParaSonia.Contains("tramo").ToString());
+				Dice(delLleno).Contains("tramo").ToString());
 
 			// El kilometraje NO se infiere de nada: no hay suposicion que enunciar, y su
 			// frase sigue siendo el pedido de siempre.
 			FaltanteDeDato delKilometraje = null;
 			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("BQR-482"))
-				if (faltante.QueFalta == "el kilometraje") { delKilometraje = faltante; break; }
+				if (faltante.ClaveDeLoQueFalta == FaltanteDeDato.ElKilometraje)
+					{ delKilometraje = faltante; break; }
 
 			Igual("el kilometraje no nace de una suposicion", "False",
 				delKilometraje.NaceDeUnaSuposicion.ToString());
 			Igual("y su frase sigue siendo el pedido", "True",
-				delKilometraje.ParaSonia.StartsWith("necesito el kilometraje").ToString());
+				Dice(delKilometraje).StartsWith("necesito el kilometraje").ToString());
 		}
 
 		private static void UnKilometrajeFaltanteRompeDosTramosYDejaElLargo()
@@ -650,8 +660,8 @@ namespace Cargas.Consola
 
 			Igual("dos tramos finos bloqueados", "2", bloqueados.Count.ToString());
 			Igual("los dos nombran la carga trunca", "True",
-				(bloqueados[0].QueFalta.Contains("17/08/2026")
-					&& bloqueados[1].QueFalta.Contains("17/08/2026")).ToString());
+				(bloqueados[0].FechaDeLaCargaTrunca == new DateTime(2026, 8, 17)
+					&& bloqueados[1].FechaDeLaCargaTrunca == new DateTime(2026, 8, 17)).ToString());
 
 			IReadOnlyList<Tramo> calculados = Calculados(tramos);
 			Tramo largo = calculados[calculados.Count - 1];
@@ -673,7 +683,9 @@ namespace Cargas.Consola
 
 			Igual("el tramo medido por B-1 no es comparable", "False",
 				enB1.EsComparable.ToString());
-			Igual("  y dice por que", "otro surtidor", enB1.MotivoDeReserva);
+			Igual("  y dice por que con un codigo", "otro-surtidor", enB1.MotivoDeReserva);
+			Igual("  que se lee en palabras", "otro surtidor",
+				LaRedaccion.Reserva(EnEspanol, enB1.MotivoDeReserva));
 			Igual("  aunque por dentro sea consistente", "12.8",
 				Formato(enB1.RendimientoEnKmPorLitro, "0.#"));
 		}
@@ -692,8 +704,7 @@ namespace Cargas.Consola
 			Igual("un 25% menos: el titular del dashboard", "-25",
 				evaluacion.CambioPorcentual.ToString());
 			Igual("es semantico, no una flecha", "True", evaluacion.EstaEmpeorando.ToString());
-			Igual("y pide algo con plazo", "revisalo con tu taller este mes",
-				evaluacion.AccionLegible);
+			Igual("y pide algo con plazo", "revisalo con tu taller este mes", Pide(evaluacion));
 		}
 
 		private static void CambiarLaUnidadInvierteLaFlechaPeroNoElVeredicto()
@@ -708,10 +719,10 @@ namespace Cargas.Consola
 			Igual("en L/100km, MENOS es mejor: la misma realidad al reves", "menos es mejor",
 				PresentacionDeRendimiento.LitrosPorCienKilometros.Direccion.Nombre);
 
-			Igual("9.4 km/L son 10.6 L/100km", "10.6 L/100km",
-				PresentacionDeRendimiento.LitrosPorCienKilometros.Formatear(actual));
-			Igual("y 29.6 mpg", "29.6 mpg",
-				PresentacionDeRendimiento.MillasPorGalonUS.Formatear(
+			Igual("9.4 km/L son 10,6 L/100km", "10,6 L/100km",
+				ConUnidad(PresentacionDeRendimiento.LitrosPorCienKilometros, actual));
+			Igual("y 29,6 mpg", "29,6 mpg",
+				ConUnidad(PresentacionDeRendimiento.MillasPorGalonUS,
 					Rendimiento.DeFabrica(evaluacion.HabitualKmPorLitro)));
 
 			// La flecha se invierte: el mismo deterioro es "sube" en L/100km.
@@ -741,8 +752,7 @@ namespace Cargas.Consola
 			BitacoraDeCargas bitacora = SerieSintetica(10000m, 10400m, 10800m, 11208m);
 			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("veredicto", "estable", evaluacion.NombreDelVeredicto);
-			Igual("sin accion: decir algo aca es entrenar a ignorar avisos", "",
-				evaluacion.AccionLegible);
+			Igual("sin accion: decir algo aca es entrenar a ignorar avisos", "", Pide(evaluacion));
 		}
 
 		private static void UnSoloTramoEsIndeterminado()
@@ -764,9 +774,9 @@ namespace Cargas.Consola
 			bitacora.ConfirmarTanque("T-1");
 
 			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
-			Igual("veredicto", "sin tramo", evaluacion.NombreDelVeredicto);
-			Igual("la primera carga nunca da rendimiento, y esta bien decirlo", "True",
-				evaluacion.QueFalta.Contains("segunda carga").ToString());
+			Igual("veredicto", "sin-tramo", evaluacion.NombreDelVeredicto);
+			Igual("la primera carga nunca da rendimiento, y esta bien decirlo",
+				EvaluacionDeRendimiento.FaltaUnaSegundaCarga, evaluacion.ClaveDeLoQueFalta);
 		}
 
 		private static void ElRendimientoImplausibleEsDatoSospechoso()
@@ -778,11 +788,10 @@ namespace Cargas.Consola
 			BitacoraDeCargas bitacora = SerieSintetica(10000m, 10400m, 10800m, 11600m);
 			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
 
-			Igual("veredicto", "dato sospechoso", evaluacion.NombreDelVeredicto);
+			Igual("veredicto", "dato-sospechoso", evaluacion.NombreDelVeredicto);
 			Igual("sugiere registrar la carga que falto, NO alarma", "True",
 				evaluacion.SugiereRegistrarLaCargaQueFalto.ToString());
-			Igual("la accion lo dice", "registrá la carga que faltó esta semana",
-				evaluacion.AccionLegible);
+			Igual("la accion lo dice", "registrá la carga que faltó esta semana", Pide(evaluacion));
 		}
 
 		private static void CambiarDeCombustibleNoEsComparable()
@@ -796,9 +805,11 @@ namespace Cargas.Consola
 			bitacora.ConfirmarTanque("T-4");
 
 			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
-			Igual("veredicto", "no comparable", evaluacion.NombreDelVeredicto);
-			Igual("y dice por que", "cambio de combustible dentro del tramo",
+			Igual("veredicto", "no-comparable", evaluacion.NombreDelVeredicto);
+			Igual("y dice por que con un codigo", "cambio-de-combustible-adentro",
 				evaluacion.MotivoDeReserva);
+			Igual("que se lee en palabras", "cambio de combustible dentro del tramo",
+				LaRedaccion.Reserva(EnEspanol, evaluacion.MotivoDeReserva));
 		}
 
 		private static void ElTotalQueNoCuadraSeReporta()
@@ -812,7 +823,7 @@ namespace Cargas.Consola
 
 			Igual("la carga lo sabe", "False",
 				bitacora.CargaDe("T-2").ElTotalCuadra.ToString());
-			Igual("y el veredicto lo dice antes que cualquier lectura", "total no cuadra",
+			Igual("y el veredicto lo dice antes que cualquier lectura", "total-no-cuadra",
 				bitacora.EvaluarRendimientoDe("BQR-482").NombreDelVeredicto);
 
 			// El redondeo del surtidor NO dispara el reporte: la tolerancia existe.
@@ -853,20 +864,20 @@ namespace Cargas.Consola
 			var sinNada = new BitacoraDeCargas();
 			AgregarCarga(sinNada, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
 			LecturaDeRitmo ninguna = sinNada.RitmoDe("BQR-482");
-			Igual("sin lecturas, la situacion lo dice", "sin lecturas", ninguna.Situacion.Nombre);
+			Igual("sin lecturas, la situacion lo dice", "sin-lecturas", ninguna.Situacion.Nombre);
 			Igual("  y no se pudo medir", "False", ninguna.SePudoMedir.ToString());
 			Igual("  y la frase dice que hacer", "True",
-				ninguna.Expresada.Contains("no anotaste ningun kilometraje").ToString());
+				Dice(ninguna).Contains("no anotaste ningún kilometraje").ToString());
 
 			// 2. UNA SOLA. El caso de quien acaba de empezar a anotar.
 			var unaSola = new BitacoraDeCargas();
 			AgregarCarga(unaSola, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
 			unaSola.AnotarOdometro("T-1", 42000m, "km", "observado");
 			LecturaDeRitmo sola = unaSola.RitmoDe("BQR-482");
-			Igual("una sola lectura, la situacion lo dice", "una sola lectura",
+			Igual("una sola lectura, la situacion lo dice", "una-sola-lectura",
 				sola.Situacion.Nombre);
 			Igual("  y dice que hacen falta dos", "True",
-				sola.Expresada.Contains("un ritmo necesita dos").ToString());
+				Dice(sola).Contains("un ritmo necesita dos").ToString());
 
 			// 3. LAS DOS EL MISMO DIA. Dividir entre cero dias no da infinito: da que no
 			// se puede, y por una razon que tiene nombre.
@@ -876,10 +887,10 @@ namespace Cargas.Consola
 			mismoDia.AnotarOdometro("T-1", 42000m, "km", "observado");
 			mismoDia.AnotarOdometro("T-2", 42150m, "km", "observado");
 			LecturaDeRitmo enUnDia = mismoDia.RitmoDe("BQR-482");
-			Igual("las dos el mismo dia, la situacion lo dice", "lecturas del mismo dia",
+			Igual("las dos el mismo dia, la situacion lo dice", "lecturas-del-mismo-dia",
 				enUnDia.Situacion.Nombre);
 			Igual("  y el porque distingue el caso de los otros dos", "True",
-				enUnDia.Expresada.Contains("dos dias distintos").ToString());
+				Dice(enUnDia).Contains("dos días distintos").ToString());
 
 			// 4. MEDIDO. 1 140 km en 30 dias = 38 km/dia.
 			var medido = new BitacoraDeCargas();
@@ -892,12 +903,12 @@ namespace Cargas.Consola
 			Igual("  38 km por dia", "38", Formato(ritmo.KilometrosPorDia, "0.#"));
 			Igual("  sobre 30 dias", "30", ritmo.Dias.ToString());
 			Igual("  y 2 lecturas", "2", ritmo.Lecturas.ToString());
-			// La cifra se arma con Cifras y no a mano: el separador de miles del dominio es
-			// un espacio FINO, y con uno normal esta comprobacion falla mostrando dos
-			// cadenas que se ven identicas.
-			Igual("  la frase la compone el dominio, con las dos puntas",
-				$"38 km por dia: {Cifras.Entera(1140m)} km entre el 03/06/2026 y el "
-				+ "03/07/2026, sobre 2 kilometrajes que anotaste vos", ritmo.Expresada);
+			// La cifra se escribe con el mismo renderizador que la escribe en pantalla: el
+			// separador de miles del espanol es el punto, y armarla a mano aca dejaria esta
+			// comprobacion verde contra una frase que la persona ve distinta.
+			Igual("  la frase la compone la redaccion, con las dos puntas",
+				$"38 km por día: {EnEspanol.Entera(1140m)} km entre el 2026-06-03 y el "
+				+ "2026-07-03, sobre 2 kilometrajes que anotaste vos", Dice(ritmo));
 
 			// UN RITMO MEDIDO NUNCA ES CERO, y no porque este calculo lo evite: porque el
 			// odometro es ESTRICTAMENTE creciente y el dominio no deja registrar dos
@@ -941,7 +952,7 @@ namespace Cargas.Consola
 			bitacora.AnotarOdometro("T-2", 43140m, "km", "estimado");
 
 			LecturaDeRitmo conEstimado = bitacora.RitmoDe("BQR-482");
-			Igual("con una observada y una estimada, cuenta UNA", "una sola lectura",
+			Igual("con una observada y una estimada, cuenta UNA", "una-sola-lectura",
 				conEstimado.Situacion.Nombre);
 			Igual("  y por eso no hay ritmo", "False", conEstimado.SePudoMedir.ToString());
 
@@ -1006,14 +1017,16 @@ namespace Cargas.Consola
 
 			BitacoraDeCargas bitacora = ElGuion();
 
+			CompletitudDeDatos completitud = bitacora.CompletitudDe("BQR-482");
 			Igual("la linea discreta", "27 de 28 cargas con kilometraje · 25 tramos calculables",
-				bitacora.CompletitudDe("BQR-482").Expresada);
+				LaRedaccion.Completitud(EnEspanol, completitud.CargasConKilometraje,
+					completitud.TotalDeCargas, completitud.TramosCalculados));
 
 			IReadOnlyList<FaltanteDeDato> faltantes = bitacora.FaltantesDe("BQR-482");
 			Igual("un solo faltante", "1", faltantes.Count.ToString());
 			Igual("nombra la carga y lo que se desbloquea", "True",
-				(faltantes[0].ParaSonia.Contains("17/08/2026")
-					&& faltantes[0].ParaSonia.Contains("743 km")).ToString());
+				(Dice(faltantes[0]).Contains("2026-08-17")
+					&& Dice(faltantes[0]).Contains("743 km")).ToString());
 
 			// EL KILOMETRAJE ANOTADO, con miles y con su procedencia aparte. La frase entera
 			// es para quien lee la bitacora (el MCP); la caratula muestra el numero solo. El
@@ -1021,14 +1034,15 @@ namespace Cargas.Consola
 			Carga? ultima = null;
 			foreach (Carga carga in bitacora.CargasDe("BQR-482"))
 				if (carga.NumeroDeLaTransaccion == "T-0228") ultima = carga;
-			Igual("el numero con miles", "60\u202f962 km", ultima!.KilometrajeAnotado);
+			Igual("el numero con miles", "60.962 km",
+				EnEspanol.ConUnidadEntera(ultima!.KilometrosAnotados, ultima.UnidadDelKilometraje));
 			Igual("la procedencia aparte", "observado", ultima.OrigenDelKilometraje);
-			Igual("la frase entera sigue", "60\u202f962 km (observado)", ultima.KilometrajeExpresado);
+			Igual("la frase entera sigue", "60.962 km (observado)", Dice(ultima));
 
 			Carga? trunca = null;
 			foreach (Carga carga in bitacora.CargasDe("BQR-482"))
 				if (carga.NumeroDeLaTransaccion == "T-0227") trunca = carga;
-			Igual("sin lectura, vacio y no cero", "|", trunca!.KilometrajeAnotado + "|" + trunca.OrigenDelKilometraje);
+			Igual("sin lectura, vacio y no cero", "|", Dice(trunca!) + "|" + trunca.OrigenDelKilometraje);
 		}
 
 		private static void AgregarElKilometrajeParteElTramoLargo()
@@ -1060,14 +1074,12 @@ namespace Cargas.Consola
 			AgregarCarga(bitacora, "2026-08-01", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
 
 			Carga carga = bitacora.CargaDe("T-1");
-			Igual("la carga nace con la inferencia del corte", "lleno (estimado)",
-				carga.TanqueExpresado);
+			Igual("la carga nace con la inferencia del corte", "lleno (estimado)", Tanque(carga));
 			Igual("hay una inferencia esperando", "True",
 				bitacora.PuedeConfirmarTanque("T-1").ToString());
 
 			bitacora.ConfirmarTanque("T-1");
-			Igual("el visto bueno la sube a confirmado", "lleno (confirmado)",
-				carga.TanqueExpresado);
+			Igual("el visto bueno la sube a confirmado", "lleno (confirmado)", Tanque(carga));
 			Igual("y recien ahi cuenta para el calculo", "True",
 				carga.Tanque.EsLlenoQueCuenta.ToString());
 
@@ -1078,8 +1090,7 @@ namespace Cargas.Consola
 
 			// Sonia tambien puede corregir: declara directo, con su palabra.
 			bitacora.DeclararTanque("T-1", "parcial");
-			Igual("la declaracion directa pisa la inferencia", "parcial (observado)",
-				carga.TanqueExpresado);
+			Igual("la declaracion directa pisa la inferencia", "parcial (observado)", Tanque(carga));
 		}
 
 		private static void LaLealtadLlegaPorEventoYNoEsElFoco()
@@ -1153,13 +1164,14 @@ namespace Cargas.Consola
 		{
 			Titulo("todo consejo con plazo, y el rojo esta reservado");
 
+			Accion anotar = Accion.AnotarElKilometraje(Plazo.EnTuProximaCarga);
 			Igual("la accion viene dicha entera", "anotá el kilometraje en tu próxima carga",
-				Accion.AnotarElKilometraje(Plazo.EnTuProximaCarga).Legible);
+				LaRedaccion.Accion(EnEspanol, anotar.Clave, anotar.ClaveDelPlazo));
 
 			Revienta<ArgumentNullException>(
 				"una severidad que pide algo sin accion no se puede construir",
 				() => new EvaluacionDeRendimiento(VeredictoDeRendimiento.Empeoro,
-					Severidad.Vigilar, null, 9m, 12m, -0.25m, 5, 2, true, "", "", ""));
+					Severidad.Vigilar, null, 9m, 12m, -0.25m, 5, 2, true, "", default, default, ""));
 
 			// Un carro que rinde menos no es una emergencia: el rojo no se gasta aca.
 			Igual("el empeoro del guion pide vigilar, no urgente", "vigilar",
@@ -1187,7 +1199,8 @@ namespace Cargas.Consola
 			Igual("y el carro es el del canon", "Toyota Yaris 2019",
 				$"{vehiculo.MarcaDeLaFicha} {vehiculo.ModeloDeLaFicha} {vehiculo.AnioDeLaFicha}");
 			Igual("y el manual dice 18: la otra mitad del cruce con el concesionario",
-				"18 km/L", vehiculo.Ficha.RendimientoDeFabrica.Valor.Expresado);
+				"18 km/L", EnEspanol.ConUnidad(
+					vehiculo.Ficha.RendimientoDeFabrica.Valor.KilometrosPorLitro, "km/L"));
 
 			// El cero del formulario es "no lo se", y se escala al tipo de ausencia.
 			bitacora.CompletarFicha("BQR-482", ficha.alias, ficha.marca, ficha.modelo,
@@ -1296,6 +1309,190 @@ namespace Cargas.Consola
 
 		private static string Formato(decimal valor, string formato) =>
 			valor.ToString(formato, CultureInfo.InvariantCulture);
+
+		// ------------------------------------------------------ como se dice cada portador
+		//
+		// UN Dice POR PORTADOR, y todos entran por el MISMO camino que la puerta: el dominio
+		// entrega clave mas valores y App/Frases redacta. Ninguna comprobacion arma una frase
+		// a mano, porque entonces estaria afirmando sobre su propia copia y no sobre la que la
+		// persona lee.
+
+		private static string Dice(EvaluacionDeRendimiento evaluacion, LasFrases frases = null) =>
+			LaRedaccion.Lectura(frases ?? EnEspanol, evaluacion.NombreDelVeredicto,
+				evaluacion.SimboloDelRendimiento, evaluacion.ActualComoSeVe,
+				evaluacion.HabitualComoSeVe, evaluacion.ClaveDeLoQueFalta,
+				evaluacion.FechaDeLaCargaTrunca, evaluacion.FechaDelTotalQueNoCuadra,
+				evaluacion.MotivoDeReserva, evaluacion.ClaveDelCambio,
+				evaluacion.CambioPorcentualComoSeVe);
+
+		private static string Pide(EvaluacionDeRendimiento evaluacion, LasFrases frases = null) =>
+			LaRedaccion.Accion(frases ?? EnEspanol, evaluacion.ClaveDeLaAccion,
+				evaluacion.ClaveDelPlazo);
+
+		private static string Dice(LecturaDeRitmo ritmo, LasFrases frases = null) =>
+			LaRedaccion.Ritmo(frases ?? EnEspanol, ritmo.Situacion.Nombre, ritmo.PorDiaComoSeVe,
+				ritmo.KilometrosComoSeVen, ritmo.SimboloDeLaDistancia, ritmo.Desde, ritmo.Hasta,
+				ritmo.Lecturas);
+
+		private static string Dice(FaltanteDeDato faltante, LasFrases frases = null) =>
+			LaRedaccion.Faltante(frases ?? EnEspanol, faltante.ClaveDeLoQueFalta,
+				faltante.ClaveDeLoQueDesbloquea, faltante.FechaDeLaCarga,
+				faltante.KilometrosDelTramo, faltante.DesdeLaCarga, faltante.HastaLaCarga,
+				faltante.LoQueSeSupone, faltante.ClaveDelCorte);
+
+		private static string Supone(FaltanteDeDato faltante, LasFrases frases = null) =>
+			LaRedaccion.Suposicion(frases ?? EnEspanol, faltante.LoQueSeSupone,
+				faltante.ClaveDelCorte);
+
+		private static string Dice(BoletosDeLaCarga explicacion, LasFrases frases = null) =>
+			LaRedaccion.BoletosDeLaCarga(frases ?? EnEspanol, explicacion.ClaveDeLaExplicacion,
+				explicacion.BoletosEmitidos, explicacion.BoletosQueDaLaRegla,
+				explicacion.Sobrante, explicacion.MonedaDeLaCarga, explicacion.MonedaDeLaRegla);
+
+		private static string Dice(BoletosDelSorteo sorteo, LasFrases frases = null) =>
+			LaRedaccion.Sorteo(frases ?? EnEspanol, sorteo.ClaveDeLaExplicacion,
+				sorteo.CantidadDeBoletos, sorteo.FechaDelSorteo, sorteo.DiasParaElSorteo);
+
+		private static string Dice(GastoEnMoneda gasto, LasFrases frases = null) =>
+			LaRedaccion.Gasto(frases ?? EnEspanol, gasto.Monto, gasto.CodigoDeMoneda,
+				gasto.CantidadDeCargas);
+
+		private static string Dice(Carga carga, LasFrases frases = null) =>
+			LaRedaccion.Kilometraje(frases ?? EnEspanol, carga.KilometrosAnotados,
+				carga.UnidadDelKilometraje, carga.OrigenDelKilometraje);
+
+		private static string Tanque(Carga carga, LasFrases frases = null) =>
+			LaRedaccion.Tanque(frases ?? EnEspanol, carga.ClaveDelTanque,
+				carga.OrigenDelTanqueDicho);
+
+		private static string ConUnidad(PresentacionDeRendimiento presentacion,
+			Rendimiento rendimiento, LasFrases frases = null) =>
+			(frases ?? EnEspanol).ConUnidad(presentacion.Convertir(rendimiento),
+				presentacion.Simbolo);
+
+		// ---- los dos catalogos dicen las mismas claves ----
+		//
+		// EL DEFECTO QUE ESTO EXISTE PARA IMPEDIR, y que ninguna otra comprobacion ve: una
+		// clave que se agrega al catalogo en espanol y se olvida en el ingles. Frases.Diga
+		// contesta "{clave}" cuando falta, y esa cadena NO es vacia, SI tiene espacios y SI
+		// termina donde termina la frase que la envuelve -- asi que toda afirmacion de "dice
+		// algo" se pone verde sobre una frase que lleva "{plazo.este-mes}" adentro, a la vista
+		// de la persona.
+		private static void LosDosCatalogosDicenLasMismasClaves()
+		{
+			Titulo("las dos redacciones escriben exactamente las mismas claves");
+
+			Igual("claves que el espanol tiene y el ingles no", "",
+				string.Join(", ", LasQueLeFaltanA(EnEspanol, EnIngles)));
+
+			Igual("claves que el ingles tiene y el espanol no", "",
+				string.Join(", ", LasQueLeFaltanA(EnIngles, EnEspanol)));
+		}
+
+		private static IEnumerable<string> LasQueLeFaltanA(LasFrases estas, LasFrases aquellas)
+		{
+			var faltan = new List<string>();
+			foreach (string clave in estas.Claves) if (!aquellas.Tiene(clave)) faltan.Add(clave);
+			faltan.Sort(StringComparer.Ordinal);
+			return faltan;
+		}
+
+		// ---- cada frase se dice entera en los dos idiomas ----
+		//
+		// La comparacion de claves atrapa la asimetria; esto atrapa el hueco que quedo sin
+		// llenar, que la comparacion no ve: la clave esta en los dos catalogos y el valor no se
+		// le paso. Un "{" en la salida es la marca de las dos fallas a la vez.
+		private static void CadaFraseSeDiceEnLosDosIdiomas()
+		{
+			Titulo("cada frase que el dominio compone se dice entera en los dos idiomas");
+
+			foreach ((string caso, Func<LasFrases, string> redactar) in LasRedacciones())
+			{
+				string es = redactar(EnEspanol);
+				string en = redactar(EnIngles);
+
+				Igual($"{caso}: dice algo en espanol", "True", (es.Length > 0).ToString());
+				Igual($"{caso}: dice algo en ingles", "True", (en.Length > 0).ToString());
+				Igual($"{caso}: sin huecos en espanol", "True",
+					(!es.Contains('{') && !es.Contains('}')).ToString());
+				Igual($"{caso}: sin huecos en ingles", "True",
+					(!en.Contains('{') && !en.Contains('}')).ToString());
+				Igual($"{caso}: no dice lo mismo en los dos", "True", (es != en).ToString());
+			}
+		}
+
+		// UN CASO POR RESPUESTA, y cada uno entra por el MISMO camino que la puerta: el
+		// portador del dominio entrega su clave y sus valores, y App/Frases redacta.
+		private static IEnumerable<(string Caso, Func<LasFrases, string> Redactar)> LasRedacciones()
+		{
+			BitacoraDeCargas guion = ElGuion();
+			EvaluacionDeRendimiento empeoro = guion.EvaluarRendimientoDe("BQR-482");
+
+			yield return ("lectura empeoro", f => Dice(empeoro, f));
+			yield return ("accion del empeoro", f => Pide(empeoro, f));
+			yield return ("ritmo medido", f => Dice(guion.RitmoDe("BQR-482"), f));
+			yield return ("faltante del kilometraje", f => Dice(guion.FaltantesDe("BQR-482")[0], f));
+
+			CompletitudDeDatos completitud = guion.CompletitudDe("BQR-482");
+			yield return ("completitud", f => LaRedaccion.Completitud(f,
+				completitud.CargasConKilometraje, completitud.TotalDeCargas,
+				completitud.TramosCalculados));
+
+			yield return ("boletos de una carga", f => Dice(guion.BoletosPorCargaDe("BQR-482")[0], f));
+
+			// EL SORTEO SE ARMA APARTE: el guion del brief no anuncia ninguno, y pedirle uno
+			// seria afirmar sobre una lista vacia.
+			var conSorteo = new BitacoraDeCargas();
+			conSorteo.AnunciarSorteo("SORTEO-2026-12", "Fin de año", "un Yaris",
+				new DateTime(2026, 12, 15), 10000m, "CRC");
+			conSorteo.EmitirBoleto("B-1", "SORTEO-2026-12", Hoy, "T-1");
+			yield return ("un sorteo", f => Dice(conSorteo.BoletosPorSorteo(Hoy)[0], f));
+
+			IReadOnlyList<GastoEnMoneda> gasto = guion.GastoDelPeriodo(2026, 8);
+			yield return ("gasto del mes", f => Dice(gasto[0], f));
+
+			IReadOnlyList<CostoPorDistanciaEnMoneda> costo = guion.CostoPorDistanciaDe("BQR-482");
+			yield return ("costo por distancia", f => LaRedaccion.Costo(f,
+				costo[0].MontoPorKilometro, costo[0].CodigoDeMoneda, costo[0].Kilometros));
+
+			IReadOnlyList<Tramo> tramos = guion.TramosDe("BQR-482");
+			yield return ("un tramo bloqueado", f => LaRedaccion.Tramo(f, false, 0m, 0m, 0m,
+				PrimerBloqueado(tramos).FechaDeLaCargaTrunca));
+
+			Carga conKilometraje = null, conInferencia = null;
+			foreach (Carga carga in guion.CargasDe("BQR-482"))
+			{
+				if (conKilometraje == null && carga.TieneKilometraje) conKilometraje = carga;
+				if (conInferencia == null && carga.TieneInferenciaSinConfirmar) conInferencia = carga;
+			}
+
+			yield return ("el kilometraje con su procedencia", f => Dice(conKilometraje, f));
+			yield return ("el tanque con su procedencia", f => Tanque(conKilometraje, f));
+
+			// EL VEREDICTO SIN LECTURA, que es el que nombra lo que falta y no un numero.
+			var primeriza = new BitacoraDeCargas();
+			AgregarCarga(primeriza, "2026-08-01", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
+			primeriza.AnotarOdometro("T-1", 10000m, "km", "observado");
+			primeriza.ConfirmarTanque("T-1");
+			EvaluacionDeRendimiento sinTramo = primeriza.EvaluarRendimientoDe("BQR-482");
+			yield return ("lectura sin tramo", f => Dice(sinTramo, f));
+
+			// Y LOS DICHOS DE LOS CONJUNTOS CERRADOS, que a ojo son indistinguibles de un dato.
+			yield return ("la etiqueta de un veredicto",
+				f => LaRedaccion.Etiqueta(f, VeredictoDeRendimiento.DatoSospechoso.Nombre));
+			yield return ("la etiqueta de una severidad",
+				f => LaRedaccion.Etiqueta(f, Severidad.ConsultePronto.Nombre));
+			yield return ("la etiqueta de una situacion de ritmo",
+				f => LaRedaccion.Etiqueta(f, SituacionDelRitmo.SinLecturas.Nombre));
+			yield return ("el motivo de una reserva",
+				f => LaRedaccion.Reserva(f, "otro-surtidor"));
+		}
+
+		private static Tramo PrimerBloqueado(IReadOnlyList<Tramo> tramos)
+		{
+			foreach (Tramo tramo in tramos) if (!tramo.EstaCalculado) return tramo;
+			return tramos[0];
+		}
 
 		// ------------------------------------------------------------------ el arnes
 

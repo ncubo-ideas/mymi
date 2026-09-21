@@ -1,6 +1,7 @@
 @using System.Globalization
 @using System.Linq
 @using Examenes.App.Vistas
+@inject Textos textos
 
 @*  LA FORMA DEL COLESTEROL: un progreso, no una serie.
 
@@ -32,9 +33,11 @@
     </svg>
 
     <div class="forma-pie forma-pie--extremos">
-        <span class="forma-nota">@(HayEpisodio ? $"venías de {Numero(Partida!.Valor)}" : "hoy")
-            <b>@Numero(Actual) @Unidad</b></span>
-        <span class="forma-nota forma-nota--der">meta <b>@Numero(Meta?.Valor ?? Actual) @Unidad</b></span>
+        <span class="forma-nota">@(HayEpisodio
+                ? textos.Con("forma.veniasDe", ("valor", textos.Numero(Partida!.Valor)))
+                : textos["forma.hoy"])
+            <b>@textos.Medida(Actual, Unidad)</b></span>
+        <span class="forma-nota forma-nota--der">@textos["forma.meta"] <b>@textos.Medida(Meta?.Valor ?? Actual, Unidad)</b></span>
     </div>
 </div>
 
@@ -70,6 +73,4 @@
     private string Avance => (Proporcion * 296).ToString("0.#", CultureInfo.InvariantCulture);
     private string Ahora => (12 + Proporcion * 296).ToString("0.#", CultureInfo.InvariantCulture);
     private string Falta => ((1 - Proporcion) * 296).ToString("0.#", CultureInfo.InvariantCulture);
-
-    private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
 }

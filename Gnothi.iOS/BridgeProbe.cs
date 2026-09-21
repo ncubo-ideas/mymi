@@ -34,7 +34,14 @@ internal static class BridgeProbe
 			// The 1 exists because `availability` lies: on iOS 26.2 it says available and fails.
 			int estado = State();
 			log($"puente: estado = {estado}  ({(estado == 2 ? "genera" : estado == 1 ? "dice available pero NO genera" : "no disponible")})");
-			if (estado != 2) return;
+			if (estado != 2)
+			{
+				// El motivo solo se pide cuando hace falta: en el camino bueno no aporta nada.
+				IntPtr p = Reason();
+				try { log($"puente: motivo = {Marshal.PtrToStringUTF8(p)}"); }
+				finally { if (p != IntPtr.Zero) Free(p); }
+				return;
+			}
 
 			const string tools =
 				"""
@@ -42,6 +49,10 @@ internal static class BridgeProbe
 				  "description":"Dice si un analito de la persona viene subiendo, bajando o estable.",
 				  "params":[{"name":"analito","description":"Cual analito. Valores validos: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."}]}]
 				""";
+			// ESTA LINEA NO SE TOCA SIN SABER QUE SE PIERDE: es la misma con la que se midio
+			// 4 de 4 en iOS 26.6.2 y 0 de 4 en 27, asi que cambiarla rompe la comparacion. El
+			// experimento de pedirle explicitamente que llame la tool se corrio aparte y esta
+			// en Lab.Siri/HALLAZGOS.md seccion 12: no la hizo llamar, la hizo NARRAR la llamada.
 			const string instrucciones = "Sos el asistente de Gnothi. Prosa corta, sin markdown.";
 
 			// STEP 1 · the intent: it is expected to ask for the tool, not to answer.

@@ -55,14 +55,26 @@ var gnothi = new ConfiguracionDeGnothi();
 builder.Configuration.GetSection("Gnothi").Bind(gnothi);
 builder.Services.AddSingleton(gnothi);
 
-builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetRequiredService<IJSRuntime>()));
 builder.Services.AddSingleton<PuenteDeTraspaso>(sp => new PuenteDeTraspaso(sp.GetRequiredService<IJSRuntime>()));
+
+// LO QUE LA PANTALLA DICE CON SUS PROPIAS PALABRAS, en el idioma de la persona. Se negocia
+// antes del primer render -- abajo, contra el origen que sirvio la app -- porque una pantalla
+// que se pinta en un idioma y se repinta en otro es peor que una que tarda un instante mas.
+builder.Services.AddSingleton<Textos>();
 
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se
 // construye una vez y se mantiene alcanzable mientras la app vive.
 builder.Services.AddSingleton<EstadoDeLaApp>();
 
 var host = builder.Build();
+
+// EL CATALOGO SE BAJA DEL ORIGEN QUE SIRVIO LA APP, no del proveedor: es material que la
+// estacion publica con el bundle, como el logo, y el modulo no tiene red para conseguirlo.
+using (var deLaCaratula = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) })
+{
+    await host.Services.GetRequiredService<Textos>().NegociarAsync(
+        host.Services.GetRequiredService<IJSRuntime>(), deLaCaratula);
+}
 
 // EN QUE HOSPEDAJE CORRE, decidido ANTES del render: el contenedor construye el puente del
 // journal con el destino ya puesto, y despues seria tarde. Se pregunta por la presencia del

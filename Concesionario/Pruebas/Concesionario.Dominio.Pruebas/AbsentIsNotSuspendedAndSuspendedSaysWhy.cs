@@ -50,8 +50,8 @@ namespace Concesionario.Dominio.Pruebas
 				string standing = each.Value.ReadDistanceRemainderStanding(
 					OperationKindCode.FluidChange, TheInstantAsked);
 
-				string said = each.Value.DescribeDistanceRemaining(
-					OperationKindCode.FluidChange, TheInstantAsked);
+				string said = TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					each.Value, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 
 				Assert.That(standing, Is.EqualTo(each.Key),
 					"El estado alcanzado no es el que la escena monta.");
@@ -94,10 +94,10 @@ namespace Concesionario.Dominio.Pruebas
 				+ "unico que las dos comparten.");
 
 			Assert.That(
-				outsideTheLaw.DescribeDistanceRemaining(
-					OperationKindCode.FluidChange, TheInstantAsked),
-				Is.Not.EqualTo(cannotSay.DescribeDistanceRemaining(
-					OperationKindCode.FluidChange, TheInstantAsked)));
+				TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					outsideTheLaw, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord),
+				Is.Not.EqualTo(TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					cannotSay, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord)));
 
 			Assert.That(
 				outsideTheLaw.ReadDistanceRemainderStanding(
@@ -116,8 +116,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			MaintenanceSchedule schedule = AScheduleWithNoReadingAtAll();
 
-			string said = schedule.DescribeDistanceRemaining(
-				OperationKindCode.FluidChange, TheInstantAsked);
+			string said = TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(said, Does.Contain("lectura"),
 				"La frase tiene que nombrar la LECTURA que falta: es lo que la persona puede ir a "
@@ -159,8 +159,8 @@ namespace Concesionario.Dominio.Pruebas
 					OperationKindCode.RecallRemedy, TheInstantAsked),
 				Is.EqualTo("NoOperationScheduled"));
 
-			string said = schedule.DescribeDistanceRemaining(
-				OperationKindCode.RecallRemedy, TheInstantAsked);
+			string said = TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.RecallRemedy, TheInstantAsked, TheLanguage.OfTheRecord);
 
 			Assert.That(said,
 				Does.Contain(MaintenanceOperationKind.RecallRemedy.HowItIsSaid),
@@ -193,10 +193,11 @@ namespace Concesionario.Dominio.Pruebas
 			MaintenanceSchedule timeIsNotMeasured = AScheduleWhoseLawDoesNotMeasureTime();
 			MaintenanceSchedule distanceIsNotMeasured = AScheduleWhoseLawDoesNotMeasureDistance();
 
-			string aboutTime = timeIsNotMeasured.DescribeDaysRemaining(
-				OperationKindCode.FluidChange, TheInstantAsked);
-			string aboutDistance = distanceIsNotMeasured.DescribeDistanceRemaining(
-				OperationKindCode.FluidChange, TheInstantAsked);
+			string aboutTime = TheSentenceTheDoorWouldCompose.TheTimeRemainder(
+					timeIsNotMeasured, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
+			string aboutDistance = TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					distanceIsNotMeasured, OperationKindCode.FluidChange, TheInstantAsked,
+						TheLanguage.OfTheRecord);
 
 			Assert.That(
 				timeIsNotMeasured.ReadTimeRemainderStanding(
@@ -233,21 +234,21 @@ namespace Concesionario.Dominio.Pruebas
 						OperationKindCode.FluidChange, TheInstantAsked);
 					schedule.ReadDistanceRemainderStanding(
 						OperationKindCode.FluidChange, TheInstantAsked);
-					schedule.DescribeDistanceRemaining(
-						OperationKindCode.FluidChange, TheInstantAsked);
+					TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 					schedule.CanDaysRemainingBeSaid(
 						OperationKindCode.FluidChange, TheInstantAsked);
 					schedule.ReadTimeRemainderStanding(
 						OperationKindCode.FluidChange, TheInstantAsked);
-					schedule.DescribeDaysRemaining(
-						OperationKindCode.FluidChange, TheInstantAsked);
-					schedule.DescribeCountdown(
-						OperationKindCode.FluidChange, TheInstantAsked);
+					TheSentenceTheDoorWouldCompose.TheTimeRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
+					TheSentenceTheDoorWouldCompose.TheCountdown(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord);
 				}, each.Key + " revento una pregunta TOTAL.");
 
 				Assert.That(
-					schedule.DescribeDistanceRemaining(
-						OperationKindCode.FluidChange, TheInstantAsked),
+					TheSentenceTheDoorWouldCompose.TheDistanceRemainder(
+					schedule, OperationKindCode.FluidChange, TheInstantAsked, TheLanguage.OfTheRecord),
 					Is.Not.Empty,
 					each.Key + " contesta la frase vacia. ADimensionOutsideTheLaw.Describe() SI "
 					+ "devuelve la cadena vacia a proposito -- una dimension que la ley no tiene no "

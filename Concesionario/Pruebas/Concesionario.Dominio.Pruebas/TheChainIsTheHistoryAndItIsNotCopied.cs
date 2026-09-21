@@ -29,6 +29,11 @@ namespace Concesionario.Dominio.Pruebas
 		private const int TheTimeLimitInDays = 180;
 		private const int TheDistanceLimit = 8000;
 
+		// EL IDIOMA EN QUE SE PIDEN LAS FRASES. La ley de aqui es que el historial se CAMINA y no se
+		// guarda, que no depende del idioma; que las dos redacciones digan lo mismo palabra por
+		// palabra lo afirma TheHistoryIsSaidInTheLanguageItIsAskedIn.
+		private const string InSpanish = TheLanguage.OfTheRecord;
+
 		private static readonly DateTime TheAnchor = new DateTime(2025, 1, 10, 7, 30, 0);
 		private const int TheAnchorReading = 30000;
 
@@ -119,7 +124,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				schedule.CompletionCount(OperationKindCode.FluidChange),
-				Is.EqualTo(schedule.DescribeEachCompletionOf(OperationKindCode.FluidChange).Length),
+				Is.EqualTo(TheSentenceTheDoorWouldCompose.EachCompletionOf(
+					schedule, OperationKindCode.FluidChange, InSpanish).Length),
 				"El conteo y las frases tienen que contar lo mismo: si un contador aparte se "
 				+ "desincroniza, la tarjeta dice un numero y muestra otra cantidad de filas.");
 		}
@@ -132,15 +138,17 @@ namespace Concesionario.Dominio.Pruebas
 			MaintenanceSchedule schedule = APlanOperationCompletedTwice();
 
 			string[] instants = schedule.CompletionInstantsOf(OperationKindCode.FluidChange);
-			string[] readings = schedule.CompletionReadingsOf(OperationKindCode.FluidChange);
-			string[] said = schedule.DescribeEachCompletionOf(OperationKindCode.FluidChange);
+			string[] readings = TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+				schedule, OperationKindCode.FluidChange, InSpanish);
+			string[] said = TheSentenceTheDoorWouldCompose.EachCompletionOf(
+				schedule, OperationKindCode.FluidChange, InSpanish);
 
 			Assert.That(readings, Has.Length.EqualTo(instants.Length));
 			Assert.That(said, Has.Length.EqualTo(instants.Length));
 
 			Assert.That(instants[0], Is.EqualTo("2025-08-22 14:05:00"));
-			Assert.That(readings[0], Is.EqualTo("38700 km"));
-			Assert.That(said[0], Does.Contain("2025-08-22 14:05:00").And.Contain("38700 km"),
+			Assert.That(readings[0], Is.EqualTo("38.700 km"));
+			Assert.That(said[0], Does.Contain("2025-08-22 14:05:00").And.Contain("38.700 km"),
 				"Cada fila se describe a si misma: la frase de la fila 0 tiene que nombrar el instante "
 				+ "y la lectura de la fila 0, o las columnas estan cruzadas y nadie lo ve.");
 		}
@@ -176,15 +184,17 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void NoReadOfTheHistoryTakesAnInstant()
 		{
-			string[] theTenReads =
+			string[] theTwelveReads =
 			{
-				"HasAnyCompletion", "CompletionCount", "DescribeCompletions",
-				"CompletionInstantsOf", "CompletionReadingsOf", "DescribeEachCompletionOf",
+				"HasAnyCompletion", "CompletionCount", "TheCompletionsClauseFor",
+				"CompletionInstantsOf", "CompletionReadingShapesOf", "CompletionReadingValuesOf",
+				"CompletionReadingUnitsOf",
 				"CompletionKindsOnRecord", "CompletionInstantsOnRecord",
-				"CompletionReadingsOnRecord", "DescribeEachCompletionOnRecord",
+				"CompletionReadingShapesOnRecord", "CompletionReadingValuesOnRecord",
+				"CompletionReadingUnitsOnRecord",
 			};
 
-			foreach (string each in theTenReads)
+			foreach (string each in theTwelveReads)
 			{
 				MethodInfo[] found = typeof(MaintenanceSchedule)
 					.GetMethods(BindingFlags.Instance | BindingFlags.Public
@@ -222,7 +232,8 @@ namespace Concesionario.Dominio.Pruebas
 				+ "ya no tiene por donde alcanzarlas.");
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.Diagnostic),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Diagnostic, InSpanish),
 				Does.Contain("no tiene agendada ninguna operación de diagnóstico"),
 				"Y esta es la mitad que hace el limite honesto: la frase dice que no hay operacion "
 				+ "agendada, no que nunca se completo ninguna. Un unico L7 para las dos situaciones "
@@ -249,7 +260,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(schedule.HasAnyCompletion(OperationKindCode.Diagnostic), Is.False);
 
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.Diagnostic),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.Diagnostic, InSpanish),
 				Does.Contain("no hay ninguna completación registrada"),
 				"LIMITE CONOCIDO Y NO CERRADO, Y EL PEOR DE LOS TRES: la clase sigue agendada, asi que "
 				+ "la respuesta es la de 'nunca se completo' -- y se completo dos veces. El corte de "
@@ -267,8 +279,10 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			MaintenanceSchedule schedule = APlanOperationCompletedTwice();
 
-			string neverCompleted = schedule.DescribeCompletions(OperationKindCode.Inspection);
-			string notScheduled = schedule.DescribeCompletions(OperationKindCode.Repair);
+			string neverCompleted = TheSentenceTheDoorWouldCompose.TheCompletions(
+				schedule, OperationKindCode.Inspection, InSpanish);
+			string notScheduled = TheSentenceTheDoorWouldCompose.TheCompletions(
+				schedule, OperationKindCode.Repair, InSpanish);
 
 			Assert.That(neverCompleted, Is.Not.EqualTo(notScheduled));
 

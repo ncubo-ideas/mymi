@@ -4,6 +4,7 @@
 @using Examenes.App.Vistas
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
+@inject Textos textos
 
 @* La pantalla de detalle de este negocio NO es "el examen": es LA SERIE de un analito.
    Un examen suelto ya se ve en la lista, y ademas el laboratorio ya se lo entrego en una
@@ -35,13 +36,11 @@
 
 <PageTitle>@Analito</PageTitle>
 
-<button class="boton boton--enlace detalle-volver" @onclick="Volver">&larr; Mis exámenes</button>
+<button class="boton boton--enlace detalle-volver" @onclick="Volver">@textos["detalle.volver"]</button>
 
 @if (!estado.EstaArriba)
 {
-    <div class="aviso aviso--atencion">
-        La app no está abierta. <a href="">Volvé a la lista</a> para abrirla.
-    </div>
+    <div class="aviso aviso--atencion">@((MarkupString)textos["detalle.appNoAbierta"])</div>
 }
 @* role="alert", por lo mismo que en la lista: es lo único de esta pantalla que hay que
    interrumpir para decir. *@
@@ -64,7 +63,7 @@ else
     @if (interpretacion.NoLeCorresponde)
     {
         <div class="aviso aviso--neutro" style="margin-top:22px">
-            @interpretacion.ParaSonia.
+            @textos.Con("detalle.tranquilo", ("lectura", interpretacion.ParaSonia))
         </div>
     }
     else if (EsBinario)
@@ -76,10 +75,7 @@ else
         @if (!presencia.HaySerie)
         {
             <p class="apunte" style="margin-top:14px">
-                @(presencia.Mediciones == 0
-                    ? "Todavía no te hicieron esta prueba."
-                    : "Sólo hay una prueba. Con un solo resultado no se puede decir si esto "
-                      + "se repite: hace falta una segunda.")
+                @textos[presencia.Mediciones == 0 ? "detalle.sinPrueba" : "detalle.soloUnaPrueba"]
             </p>
             @if (presencia.Mediciones == 1)
             {
@@ -88,20 +84,23 @@ else
         }
         else
         {
-            <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@presencia.Presencia</span></p>
+            <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@presencia.PresenciaDicha</span></p>
 
             <p class="cifra-par">
                 <span class="@(interpretacion.PideAlgo ? "final" : "")">@presencia.UltimoResultado</span>
             </p>
             <p class="apunte">
-                @presencia.Positivas de @presencia.Mediciones pruebas,
-                en @presencia.Dias @(presencia.Dias == 1 ? "día" : "días")
+                @textos.Con("detalle.pruebasEnDias",
+                    ("positivas", presencia.Positivas.ToString(CultureInfo.InvariantCulture)),
+                    ("pruebas", presencia.Mediciones.ToString(CultureInfo.InvariantCulture)),
+                    ("dias", textos.Dias(presencia.Dias)))
                 @(presencia.PositivasSeguidas >= 2
-                    ? $"· {presencia.PositivasSeguidas} seguidas al final"
+                    ? textos.Con("detalle.seguidasAlFinal",
+                        ("seguidas", presencia.PositivasSeguidas.ToString(CultureInfo.InvariantCulture)))
                     : "")
                 @if (interpretacion.ReferenciaLegible.Length > 0)
                 {
-                    <text>· @interpretacion.ReferenciaLegible</text>
+                    <text>@textos.Con("detalle.conReferencia", ("referencia", interpretacion.ReferenciaLegible))</text>
                 }
             </p>
 
@@ -113,14 +112,15 @@ else
         @if (interpretacion.PideAlgo)
         {
             <div class="aviso @(interpretacion.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
-                @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
-                serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
+                @((MarkupString)textos.Con("detalle.pideAlgo",
+                    ("lectura", System.Net.WebUtility.HtmlEncode(interpretacion.ParaSonia)),
+                    ("accion", System.Net.WebUtility.HtmlEncode(interpretacion.Accion))))
             </div>
         }
         else if (interpretacion.ParaSonia.Length > 0)
         {
             <div class="aviso" style="margin-top:22px;border-left-color:var(--bien)">
-                @interpretacion.ParaSonia.
+                @textos.Con("detalle.tranquilo", ("lectura", interpretacion.ParaSonia))
             </div>
         }
 
@@ -129,13 +129,13 @@ else
            es una cosa si fue en dos meses y otra si fue en cuatro años. *@
         @if (presencia.Mediciones > 0)
         {
-            <h2 class="seccion">Cada prueba</h2>
+            <h2 class="seccion">@textos["detalle.cadaPrueba"]</h2>
             <ol class="mediciones">
                 @foreach (Paso paso in PasosBinarios())
                 {
                     <li class="medicion@(paso.EsPositivo ? " medicion--presente" : "")">
                         <div class="medicion-fecha">
-                            <span class="medicion-dia">@paso.Fecha.ToString("dd MMM", Cultura)</span>
+                            <span class="medicion-dia">@paso.Fecha.ToString("dd MMM", textos.Cultura)</span>
                             <span class="medicion-ano">@paso.Fecha.Year</span>
                         </div>
                         <div class="medicion-valor">@paso.Expresado</div>
@@ -154,7 +154,7 @@ else
             Con una sola observación no hay «todavía no se puede decir»: un color ES su
             categoría, así que la lectura ya está completa. Es la diferencia de fondo con
             las otras dos formas.                                                        *@
-        <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@constancia.Constancia</span></p>
+        <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@constancia.ConstanciaDicha</span></p>
 
         <p class="cifra-par">
             <span class="@(interpretacion.PideAlgo ? "final" : "")">@constancia.UltimaCategoria</span>
@@ -163,21 +163,23 @@ else
             @if (constancia.HaySerie)
             {
                 <text>
-                    @(constancia.Mediciones - constancia.NoEsperables) de @constancia.Mediciones
-                    veces dentro de lo esperable,
-                    en @constancia.Dias @(constancia.Dias == 1 ? "día" : "días")
+                    @textos.Con("detalle.vecesEsperable",
+                        ("esperables", (constancia.Mediciones - constancia.NoEsperables).ToString(CultureInfo.InvariantCulture)),
+                        ("veces", constancia.Mediciones.ToString(CultureInfo.InvariantCulture)),
+                        ("dias", textos.Dias(constancia.Dias)))
                     @(constancia.NoEsperablesSeguidas >= 2
-                        ? $"· {constancia.NoEsperablesSeguidas} seguidas al final"
+                        ? textos.Con("detalle.seguidasAlFinal",
+                            ("seguidas", constancia.NoEsperablesSeguidas.ToString(CultureInfo.InvariantCulture)))
                         : "")
                 </text>
             }
             else
             {
-                <text>una sola observación: la categoría ya es la lectura</text>
+                <text>@textos["detalle.unaSolaObservacion"]</text>
             }
             @if (interpretacion.ReferenciaLegible.Length > 0)
             {
-                <text>· @interpretacion.ReferenciaLegible</text>
+                <text>@textos.Con("detalle.conReferencia", ("referencia", interpretacion.ReferenciaLegible))</text>
             }
         </p>
 
@@ -191,14 +193,15 @@ else
         @if (interpretacion.PideAlgo)
         {
             <div class="aviso @(interpretacion.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
-                @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
-                serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
+                @((MarkupString)textos.Con("detalle.pideAlgo",
+                    ("lectura", System.Net.WebUtility.HtmlEncode(interpretacion.ParaSonia)),
+                    ("accion", System.Net.WebUtility.HtmlEncode(interpretacion.Accion))))
             </div>
         }
         else if (interpretacion.ParaSonia.Length > 0)
         {
             <div class="aviso" style="margin-top:22px;border-left-color:var(--bien)">
-                @interpretacion.ParaSonia.
+                @textos.Con("detalle.tranquilo", ("lectura", interpretacion.ParaSonia))
             </div>
         }
 
@@ -206,13 +209,13 @@ else
            fechas — y en un color el hueco entre observaciones es la mitad del dato. *@
         @if (constancia.Mediciones > 0)
         {
-            <h2 class="seccion">Cada observación</h2>
+            <h2 class="seccion">@textos["detalle.cadaObservacion"]</h2>
             <ol class="mediciones">
                 @foreach (Paso paso in PasosNominales())
                 {
                     <li class="medicion@(paso.EsPositivo ? " medicion--presente" : "")">
                         <div class="medicion-fecha">
-                            <span class="medicion-dia">@paso.Fecha.ToString("dd MMM", Cultura)</span>
+                            <span class="medicion-dia">@paso.Fecha.ToString("dd MMM", textos.Cultura)</span>
                             <span class="medicion-ano">@paso.Fecha.Year</span>
                         </div>
                         <div class="medicion-valor">@paso.Expresado</div>
@@ -228,7 +231,7 @@ else
 
         @if (lectura.Mediciones == 0)
         {
-            <p class="apunte" style="margin-top:14px">No hay ninguna medición de este analito todavía.</p>
+            <p class="apunte" style="margin-top:14px">@textos["detalle.sinMediciones"]</p>
         }
         else
         {
@@ -238,7 +241,7 @@ else
                que ya escribe el propio analito (interpretacion.ParaSonia) contando la
                historia con SUS hechos. No es prosa nueva de esta pantalla. *@
             <p style="margin:10px 0 0">
-                <span class="chip chip--grande @Insignia()">@(lectura.HaySerie ? $"{Flecha()} {EstadoCabecera()}" : "1 medición")</span>
+                <span class="chip chip--grande @Insignia()">@(lectura.HaySerie ? $"{Flecha()} {EstadoCabecera()}" : textos["detalle.unaMedicion"])</span>
             </p>
             @if (interpretacion.ParaSonia.Length > 0)
             {
@@ -277,20 +280,20 @@ else
                 <div class="detalle-stats">
                     <div class="detalle-stats-item">
                         <span class="detalle-stats-valor @(lectura.Cambio > 0 ? "detalle-stats-valor--sube" : lectura.Cambio < 0 ? "detalle-stats-valor--baja" : "")">@(lectura.Cambio > 0 ? "+" : lectura.Cambio < 0 ? "−" : "")@Valor(Math.Abs(lectura.Cambio)) <small>@lectura.Unidad</small></span>
-                        <span class="detalle-stats-rotulo">@(lectura.Cambio > 0 ? "aumento total" : lectura.Cambio < 0 ? "descenso total" : "cambio total")</span>
+                        <span class="detalle-stats-rotulo">@textos[lectura.Cambio > 0 ? "detalle.aumentoTotal" : lectura.Cambio < 0 ? "detalle.descensoTotal" : "detalle.cambioTotal"]</span>
                     </div>
                     <div class="detalle-stats-item">
                         <span class="detalle-stats-valor">@lectura.Mediciones</span>
-                        <span class="detalle-stats-rotulo">mediciones</span>
+                        <span class="detalle-stats-rotulo">@textos["detalle.mediciones"]</span>
                     </div>
                     <div class="detalle-stats-item">
-                        <span class="detalle-stats-valor">@lectura.Dias <small>@(lectura.Dias == 1 ? "día" : "días")</small></span>
-                        <span class="detalle-stats-rotulo">entre primera y última</span>
+                        <span class="detalle-stats-valor">@textos.Dias(lectura.Dias)</span>
+                        <span class="detalle-stats-rotulo">@textos["detalle.entrePrimeraYUltima"]</span>
                     </div>
                 </div>
                 @if (pasos.Count > 0 && pasos[0].Salto.Length > 0)
                 {
-                    <p class="detalle-delta">último salto: @pasos[0].Salto</p>
+                    <p class="detalle-delta">@textos.Con("detalle.ultimoSalto", ("salto", pasos[0].Salto))</p>
                 }
             }
             else
@@ -305,9 +308,9 @@ else
                banda/trayectoria con linea base la dicen en números en su forma-pie, no en
                esta frase completa). "progreso hacia meta" la repite dentro de su propia
                barra nueva de abajo, así que acá se omite para no duplicarla. *@
-            @if (interpretacion.ReferenciaLegible.Length > 0 && interpretacion.Forma != "progreso hacia meta")
+            @if (interpretacion.ReferenciaLegible.Length > 0 && interpretacion.Forma != "progreso-hacia-meta")
             {
-                <p class="apunte">referencia: @interpretacion.ReferenciaLegible</p>
+                <p class="apunte">@textos.Con("detalle.referenciaMinuscula", ("referencia", interpretacion.ReferenciaLegible))</p>
             }
 
             @* TU RESULTADO Y EL RANGO — Paso 6/RONDA 16-6: prioridad visual sobre la meta
@@ -319,16 +322,16 @@ else
                medición -Paso 9-B-. Sin veredicto no hay dibujo -Paso 12-. *@
             @if (!interpretacion.RequiereElSexo && interpretacion.Forma.Length > 0)
             {
-                <h2 class="seccion">Tu resultado y el rango</h2>
+                <h2 class="seccion">@textos["detalle.tuResultadoYElRango"]</h2>
                 @switch (interpretacion.Forma)
                 {
-                    case "trayectoria con linea base":
+                    case "trayectoria-con-linea-base":
                         <TrayectoriaConLineaBase Puntos="puntos"
                                                  Referencias="referencias"
                                                  PideAlgo="interpretacion.PideAlgo"
                                                  Descripcion="@interpretacion.ParaSonia" />
                         break;
-                    case "progreso hacia meta":
+                    case "progreso-hacia-meta":
                         (decimal? piso, decimal? techo) = RangoNumerico();
                         @if (techo is decimal techoReal)
                         {
@@ -343,26 +346,25 @@ else
                                 <div class="detalle-rango-grande-pista"></div>
                                 <div class="detalle-rango-grande-limites">
                                     <span>@Valor(pisoReal) @lectura.Unidad</span>
-                                    <span class="detalle-rango-grande-limite-der">@Valor(techoReal) @lectura.Unidad<br /><small>(límite de referencia)</small></span>
+                                    <span class="detalle-rango-grande-limite-der">@Valor(techoReal) @lectura.Unidad<br /><small>@textos["detalle.limiteDeReferencia"]</small></span>
                                 </div>
                             </div>
-                            <p class="detalle-rango-resumen">Resultado actual: <b>@Valor(lectura.ValorFinal) @lectura.Unidad</b> · Referencia: @interpretacion.ReferenciaLegible</p>
+                            <p class="detalle-rango-resumen">@((MarkupString)textos.Con("detalle.resultadoActual",
+                                ("valor", System.Net.WebUtility.HtmlEncode(textos.Medida(lectura.ValorFinal, lectura.Unidad))),
+                                ("referencia", System.Net.WebUtility.HtmlEncode(interpretacion.ReferenciaLegible))))</p>
                         }
                         @* Paso 11 — "META" Y "REFERENCIA" NO SON LO MISMO, y ahora quedan en ese
                            orden: primero el rango de referencia clínico (arriba), después,
                            más chica y con su propia nota, la meta orientativa -partida→meta:
                            MetaDeColesterol para el colesterol total; para LDL/Triglicéridos,
                            un alias del propio techo clínico, sin escalón de coaching-. *@
-                        <p class="detalle-meta-rotulo">Tu progreso hacia una meta orientativa</p>
+                        <p class="detalle-meta-rotulo">@textos["detalle.metaRotulo"]</p>
                         <ProgresoHaciaMeta Puntos="puntos"
                                            Referencias="referencias"
                                            Descripcion="@interpretacion.ParaSonia" />
-                        <p class="detalle-meta-nota">
-                            Es un paso sugerido desde tu valor actual, no el rango de
-                            referencia clínico de arriba.
-                        </p>
+                        <p class="detalle-meta-nota">@textos["detalle.metaNota"]</p>
                         break;
-                    case "posicion en banda":
+                    case "posicion-en-banda":
                         <PosicionEnBanda Puntos="puntos"
                                          Referencias="referencias"
                                          Descripcion="@interpretacion.ParaSonia" />
@@ -406,7 +408,7 @@ else
                         }
                         @if (interpretacion.Accion.Length > 0)
                         {
-                            <p class="detalle-interpretacion-accion">Vale la pena <b>@interpretacion.Accion</b>.</p>
+                            <p class="detalle-interpretacion-accion">@((MarkupString)textos.Con("detalle.valePenaAccion", ("accion", System.Net.WebUtility.HtmlEncode(interpretacion.Accion))))</p>
                         }
                     </div>
                 </div>
@@ -417,9 +419,8 @@ else
                    tampoco es un hallazgo. La frase la escribe el analito, que es el único que
                    sabe por qué no puede leerse. *@
                 <div class="aviso aviso--neutro" style="margin-top:22px">
-                    <strong>Falta un dato tuyo.</strong> @interpretacion.ParaSonia.
-                    Los valores de arriba son reales; lo que no hay todavía es la lectura.
-                    <a href="">Decilo en tus exámenes</a> y esto se interpreta solo.
+                    @((MarkupString)textos.Con("detalle.faltaUnDato",
+                        ("lectura", System.Net.WebUtility.HtmlEncode(interpretacion.ParaSonia))))
                 </div>
             }
             else
@@ -439,7 +440,7 @@ else
             @if (!interpretacion.RequiereElSexo && interpretacion.Forma.Length > 0)
             {
                 <p class="detalle-contexto">
-                    <span class="detalle-contexto-icono" aria-hidden="true">&#9432;</span> El rango de referencia se evalúa para @estado.EdadDelPaciente() años@(Sexo()).
+                    <span class="detalle-contexto-icono" aria-hidden="true">&#9432;</span> @textos.Con("detalle.contextoRango", ("edad", estado.EdadDelPaciente().ToString(CultureInfo.InvariantCulture)), ("sexo", Sexo()))
                 </p>
             }
 
@@ -448,11 +449,12 @@ else
             @if (velocidad.EsAplicable)
             {
                 <p class="ritmo @(velocidad.ExigeAtencion ? "ritmo--atencion" : "")">
-                    <span class="ritmo-rotulo">al ritmo del último tramo</span>
+                    <span class="ritmo-rotulo">@textos["detalle.ritmoRotulo"]</span>
                     <span class="ritmo-cifra">@velocidad.Expresada</span>
                     <span class="ritmo-nota">
-                        medido sobre @velocidad.Dias @(velocidad.Dias == 1 ? "día" : "días")
-                        · el umbral de este analito es @Valor(velocidad.Umbral) @velocidad.Unidad al año
+                        @textos.Con("detalle.ritmoNota",
+                            ("dias", textos.Dias(velocidad.Dias)),
+                            ("umbral", textos.Medida(velocidad.Umbral, velocidad.Unidad)))
                     </span>
                 </p>
             }
@@ -463,7 +465,7 @@ else
                mediciones reales haya -Paso 10 de esta ronda-. *@
             @if (pasos.Count > 0)
             {
-                <h2 class="seccion">Cada medición</h2>
+                <h2 class="seccion">@textos["detalle.cadaMedicion"]</h2>
                 <ol class="detalle-timeline">
                     @{ int indiceMedicion = 0; }
                     @foreach (Paso paso in pasos)
@@ -474,7 +476,7 @@ else
                             <span class="detalle-punto" aria-hidden="true"></span>
                             <div class="detalle-evento-fila">
                                 <div class="detalle-evento-datos">
-                                    <span class="detalle-evento-fecha">@paso.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                                    <span class="detalle-evento-fecha">@paso.Fecha.ToString("dd MMM yyyy", textos.Cultura)</span>
                                     <span class="detalle-evento-valor">@paso.Expresado <small>@lectura.Unidad</small></span>
                                 </div>
                                 @if (paso.Salto.Length > 0)
@@ -500,9 +502,9 @@ else
             @* Los DOS parámetros clínicos con los que el dominio elige los rangos, dichos
                juntos porque juntos deciden: 12.2 g/dL no significa lo mismo a los 30 que
                a los 60, ni en un hombre que en una mujer. *@
-            <text>Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años@(Sexo()).</text>
+            <text>@textos.Con("detalle.rangosSeEvaluan", ("edad", estado.EdadDelPaciente().ToString(CultureInfo.InvariantCulture)), ("sexo", Sexo()))</text>
         }
-        Leído hasta el evento @estado.UltimoEvento().
+        @textos.Con("detalle.leidoHasta", ("evento", estado.UltimoEvento().ToString(CultureInfo.InvariantCulture)))
     </p>
 }
 
@@ -512,7 +514,9 @@ else
     private string Sexo()
     {
         string cual = estado.SexoDelPaciente();
-        return cual.Length == 0 || cual == "desconocido" ? "" : $" y sexo {cual}";
+        return cual.Length == 0 || cual == "desconocido"
+            ? ""
+            : textos.Con("detalle.ySexo", ("sexo", textos["historial." + cual]));
     }
 
     [Parameter] public string Analito { get; set; } = "";
@@ -521,14 +525,14 @@ else
 
     // Un binario no tiene tendencia ni puntos con número: tiene presencias en fechas. Se
     // piden por su propia puerta, y cuál usar lo dice la forma.
-    private const string FormaDePresencia = "presencia en el tiempo";
+    private const string FormaDePresencia = "presencia-en-el-tiempo";
     private PresenciaDeAnalito presencia = new();
     private IReadOnlyList<PruebaEnSerie> pruebas = new List<PruebaEnSerie>();
     private bool EsBinario => interpretacion.Forma == FormaDePresencia;
 
     // Y un nominal tampoco tiene tendencia: tiene categorias en fechas. Tercera puerta,
     // por la misma razon que la segunda.
-    private const string FormaDeCategoria = "categoria en el tiempo";
+    private const string FormaDeCategoria = "categoria-en-el-tiempo";
     private ConstanciaDeAnalito constancia = new();
     private IReadOnlyList<ObservacionEnSerie> observaciones = new List<ObservacionEnSerie>();
     private bool EsNominal => interpretacion.Forma == FormaDeCategoria;
@@ -594,8 +598,6 @@ else
 
     private void Volver() => navegacion.NavigateTo("");
 
-    private static readonly CultureInfo Cultura = new CultureInfo("es-ES");
-
     // UNA MEDICION en la lista, ya con el salto contra la anterior resuelto. Se arma en
     // C# y no en el markup porque el salto necesita al vecino, y un @foreach no lo tiene.
     private sealed class Paso
@@ -628,7 +630,8 @@ else
                 // encuentra get_TotalDays y no get_Days. El dominio ya usa TotalDays en
                 // todos lados, por eso el resto de la app no lo sufria.
                 int dias = (int)(punto.Fecha - puntos[i - 1].Fecha).TotalDays;
-                salto = $"{(cambio >= 0 ? "+" : "−")}{Valor(Math.Abs(cambio))} en {dias} {(dias == 1 ? "día" : "días")}";
+                salto = $"{(cambio >= 0 ? "+" : "−")}{Valor(Math.Abs(cambio))} "
+                    + textos.Con("detalle.enDias", ("dias", textos.Dias(dias)));
             }
 
             pasos.Add(new Paso { Fecha = punto.Fecha, Expresado = Valor(punto.Valor), Salto = salto });
@@ -651,7 +654,7 @@ else
             {
                 // TotalDays por lo mismo que en Pasos(): get_Days no existe publicado.
                 int dias = (int)(prueba.Fecha - pruebas[i - 1].Fecha).TotalDays;
-                salto = $"{dias} {(dias == 1 ? "día" : "días")} después";
+                salto = textos.Con("detalle.despues", ("dias", textos.Dias(dias)));
             }
 
             pasos.Add(new Paso
@@ -681,7 +684,7 @@ else
             {
                 // TotalDays por lo mismo que en Pasos(): get_Days no existe publicado.
                 int dias = (int)(observacion.Fecha - observaciones[i - 1].Fecha).TotalDays;
-                salto = $"{dias} {(dias == 1 ? "día" : "días")} después";
+                salto = textos.Con("detalle.despues", ("dias", textos.Dias(dias)));
             }
 
             pasos.Add(new Paso
@@ -697,10 +700,11 @@ else
         return pasos;
     }
 
-    // Formato explícito SIEMPRE. Medido en el negocio de facturas: la escala del decimal
-    // no sobrevive el journal (5571.50 entra, 5571.5 sale del replay), así que un
-    // ToString() pelado mostraría valores distintos antes y después de reabrir la app.
-    private static string Valor(decimal medido) => medido.ToString("0.##", CultureInfo.InvariantCulture);
+    /// <summary>
+    /// UN VALOR MEDIDO, dicho por el renderizador. El separador decimal lo pone el idioma, y
+    /// el formato es explicito siempre: la escala del decimal no sobrevive el journal.
+    /// </summary>
+    private string Valor(decimal medido) => textos.Numero(medido);
 
     // EL ESTADO EN PALABRAS PARA EL CHIP GRANDE — RONDA 15: el MISMO vocabulario que ya
     // usa Home (EstadoBreve/Flecha en MisExamenes.razor) para que la cabecera del detalle
@@ -708,12 +712,12 @@ else
     // SugiereRepetirElExamen antes que la tendencia, igual que en Home.
     private string EstadoCabecera()
     {
-        if (interpretacion.SugiereRepetirElExamen) return "posible error de medición";
+        if (interpretacion.SugiereRepetirElExamen) return textos["atencion.posibleErrorDeMedicion"];
         return lectura.Tendencia switch
         {
-            "en ascenso"  => "viene aumentando",
-            "en descenso" => "viene bajando",
-            "estable"     => "en seguimiento",
+            "en-ascenso"  => textos["atencion.vieneAumentando"],
+            "en-descenso" => textos["atencion.vieneBajando"],
+            "estable"     => textos["atencion.enSeguimiento"],
             _             => "",
         };
     }
@@ -722,8 +726,8 @@ else
     // una resta hecha acá.
     private string Flecha() => lectura.Tendencia switch
     {
-        "en ascenso"  => "↑",
-        "en descenso" => "↓",
+        "en-ascenso"  => "↑",
+        "en-descenso" => "↓",
         _             => "→",
     };
 
@@ -736,11 +740,10 @@ else
     // EL PISO Y EL TECHO NUMÉRICOS — RONDA 16: PRIMERO las líneas reales y estructuradas
     // que ya trae Referencias(analito) ("piso"/"techo" de "posicion en banda", el "techo"
     // de "trayectoria con linea base"); si esta forma no expone ninguna -"progreso hacia
-    // meta": Colesterol Total/LDL/Triglicéridos, que sólo tienen "partida"/"meta"-, el
-    // único número real que queda es el que ya escribe ReferenciaLegible ("hasta 220
-    // mg/dL"), parseado con el MISMO método que ya usa Home (LimitesDeRango, duplicado
-    // acá por la misma razón de siempre). Nunca inventa un piso: si el texto es "hasta
-    // X" el piso vuelve null y la pantalla asume 0, igual que ya hacía Home.
+    // meta": Colesterol Total/LDL/Triglicéridos, que sólo tienen "partida"/"meta"-, los
+    // extremos son los que la propia referencia nombra, que desde la localización viajan
+    // como NÚMEROS al lado de la frase. Nunca inventa un piso: si la referencia es un
+    // techo solo, el piso vuelve null y la pantalla asume 0, igual que ya hacía Home.
     private (decimal? piso, decimal? techo) RangoNumerico()
     {
         LineaDeReferencia? pisoLinea = referencias.FirstOrDefault(r => r.Nombre == "piso");
@@ -748,27 +751,16 @@ else
         if (pisoLinea is not null || techoLinea is not null)
             return (pisoLinea?.Valor, techoLinea?.Valor);
 
-        return LimitesDeRango(interpretacion.ReferenciaLegible);
+        // LOS EXTREMOS VIENEN COMO NUMEROS, no leidos de vuelta de la frase. Sacarlos del
+        // texto era re-derivar lo que el dominio ya habia calculado, y ademas se rompia en
+        // cuanto la frase cambiaba de idioma: una coma decimal no se parsea con la cultura
+        // de la maquina, que es de la maquina y no de la persona.
+        //
+        // Cero significa "la referencia no nombra ese extremo", que es lo que dice su clave.
+        return (interpretacion.MinimoDeLaReferencia > 0m ? interpretacion.MinimoDeLaReferencia : (decimal?)null,
+                interpretacion.MaximoDeLaReferencia > 0m ? interpretacion.MaximoDeLaReferencia : (decimal?)null);
     }
 
-    private static (decimal? piso, decimal? techo) LimitesDeRango(string referenciaLegible)
-    {
-        if (string.IsNullOrWhiteSpace(referenciaLegible)) return (null, null);
-
-        var numeros = new List<decimal>();
-        foreach (string palabra in referenciaLegible.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            string candidato = palabra.Trim(',', '.', ';');
-            if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal valor))
-                numeros.Add(valor);
-            else if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.CurrentCulture, out valor))
-                numeros.Add(valor);
-        }
-
-        if (numeros.Count == 0) return (null, null);
-        if (numeros.Count == 1) return (null, numeros[0]);
-        return (numeros[0], numeros[^1]);
-    }
 
     // EL ESTADO ACTUAL, separado de la EVOLUCIÓN — RONDA 16-7/16-8: dónde cae el valor
     // respecto al rango, calculado con datos reales (nunca "extremo alto" fijo). 85%/15%
@@ -783,22 +775,20 @@ else
 
         if (techo is decimal t)
         {
-            if (actual > t) return "Tu resultado está por encima del rango de referencia.";
+            if (actual > t) return textos["detalle.porEncimaDelRango"];
 
             decimal desdePiso = piso ?? 0m;
             decimal recorrido = t - desdePiso;
             if (recorrido > 0)
             {
                 decimal proporcion = (actual - desdePiso) / recorrido;
-                if (proporcion >= 0.85m)
-                    return "Tu resultado sigue dentro del rango de referencia, pero está cerca del extremo alto.";
-                if (piso is not null && proporcion <= 0.15m)
-                    return "Tu resultado sigue dentro del rango de referencia, pero está cerca del extremo bajo.";
+                if (proporcion >= 0.85m) return textos["detalle.cercaDelAlto"];
+                if (piso is not null && proporcion <= 0.15m) return textos["detalle.cercaDelBajo"];
             }
-            return "Tu resultado sigue dentro del rango de referencia.";
+            return textos["detalle.dentroDelRango"];
         }
         if (piso is decimal p && actual < p)
-            return "Tu resultado está por debajo del rango de referencia.";
+            return textos["detalle.porDebajoDelRango"];
 
         return interpretacion.ParaSonia.Length > 0 ? Mayuscula(interpretacion.ParaSonia) + "." : "";
     }
@@ -812,9 +802,9 @@ else
         if (!lectura.HaySerie) return "";
         return lectura.Tendencia switch
         {
-            "en ascenso"  => "Ha venido aumentando en tus últimas mediciones.",
-            "en descenso" => "Ha venido bajando en tus últimas mediciones.",
-            "estable"     => "Se mantiene estable en tus últimas mediciones.",
+            "en-ascenso"  => textos["detalle.evolucionAumentando"],
+            "en-descenso" => textos["detalle.evolucionBajando"],
+            "estable"     => textos["detalle.evolucionEstable"],
             _             => "",
         };
     }
@@ -882,7 +872,7 @@ else
                 X = x,
                 Y = y,
                 Valor = Valor(puntos[i].Valor),
-                Fecha = puntos[i].Fecha.ToString("MMM yyyy", Cultura),
+                Fecha = puntos[i].Fecha.ToString("MMM yyyy", textos.Cultura),
             });
         }
         return lista;

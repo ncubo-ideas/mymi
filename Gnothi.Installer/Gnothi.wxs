@@ -30,7 +30,7 @@
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
   <Package
-      Name="Gnothi"
+      Name="Mymi"
       Manufacturer="Ncubo"
       Version="0.1.0"
       UpgradeCode="7B3C1E42-9A6D-4F2B-8E15-2C9A7D4E1F30"
@@ -42,7 +42,7 @@
          dos entradas en Agregar/quitar programas: cada `wix build` genera un ProductCode nuevo,
          y sin esto cada reinstalacion se acumulaba. -->
     <MajorUpgrade AllowSameVersionUpgrades="yes"
-                  DowngradeErrorMessage="Ya hay una version mas nueva de Gnothi instalada." />
+                  DowngradeErrorMessage="Ya hay una version mas nueva de Mymi instalada." />
     <MediaTemplate EmbedCab="yes" />
 
     <!-- ═══ UI INTERACTIVA ═══
@@ -95,8 +95,8 @@
     <!-- Acceso directo en el Menu Inicio. -->
     <StandardDirectory Id="ProgramMenuFolder">
       <Component Id="StartMenuShortcut">
-        <Shortcut Id="StartGnothi" Name="Gnothi"
-                  Description="Abrir Gnothi"
+        <Shortcut Id="StartGnothi" Name="Mymi"
+                  Description="Abrir Mymi"
                   Target="[INSTALLFOLDER]Gnothi.Desktop.exe"
                   WorkingDirectory="INSTALLFOLDER" />
         <RegistryValue Root="HKCU" Key="Software\Ncubo\Gnothi"
@@ -107,8 +107,8 @@
     <!-- Acceso directo en el Escritorio. -->
     <StandardDirectory Id="DesktopFolder">
       <Component Id="DesktopShortcut">
-        <Shortcut Id="DeskGnothi" Name="Gnothi"
-                  Description="Abrir Gnothi"
+        <Shortcut Id="DeskGnothi" Name="Mymi"
+                  Description="Abrir Mymi"
                   Target="[INSTALLFOLDER]Gnothi.Desktop.exe"
                   WorkingDirectory="INSTALLFOLDER" />
         <RegistryValue Root="HKCU" Key="Software\Ncubo\Gnothi"

@@ -266,10 +266,10 @@ namespace Municipalidad.Dominio.Pruebas
 			lector.Leer(api => api.LosRubrosQueHay(), () => new string[0]);
 			lector.Leer(api => api.RubrosConHistoria(), () => new string[0]);
 			lector.Leer(api => api.NumerosDeLasFincas(), () => new string[0]);
-			lector.Leer(api => api.HistorialDe(ElRubro), () => null);
-			lector.Leer(api => api.VencimientosAl(new DateTime(2025, 9, 25), 7), () => null);
-			lector.Leer(api => api.AtrasosAl(new DateTime(2025, 10, 5), 0.062m), () => null);
-			lector.Leer(api => api.PeriodosPagadosSinComprobante(LaConsulta), () => null);
+			lector.Leer(api => api.HistorialDe(ElRubro, "es"), () => null);
+			lector.Leer(api => api.VencimientosAl(new DateTime(2025, 9, 25), 7, "es"), () => null);
+			lector.Leer(api => api.AtrasosAl(new DateTime(2025, 10, 5), 0.062m, "es"), () => null);
+			lector.Leer(api => api.PeriodosPagadosSinComprobante(LaConsulta, "es"), () => null);
 			lector.Leer(api => api.AhorroPorProntoPago(LaConsulta, 0.062m), () => 0m);
 			lector.Leer(api => api.HayAlgunaConsulta(), () => false);
 			lector.Leer(api => api.ConsultaMasReciente(), () => DateTime.MinValue);
@@ -280,13 +280,13 @@ namespace Municipalidad.Dominio.Pruebas
 			// caratula nunca reciba la negativa del dominio, que es un tipo internal que no puede
 			// nombrar.
 			if (lector.Leer(api => api.SePuedeVerLaVariacionDe(ElRubro), () => false))
-				lector.Leer(api => api.VariacionDe(ElRubro, 0.25m, 0.02m), () => null);
+				lector.Leer(api => api.VariacionDe(ElRubro, 0.25m, 0.02m, "es"), () => null);
 
 			if (lector.Leer(api => api.SePuedeProyectar(), () => false))
-				lector.Leer(api => api.ReservaPropuestaPara(2025), () => null);
+				lector.Leer(api => api.ReservaPropuestaPara(2025, "es"), () => null);
 
 			if (lector.Leer(api => api.SePuedeVerElFaltanteDeReserva(), () => false))
-				lector.Leer(api => api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m), () => null);
+				lector.Leer(api => api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m, "es"), () => null);
 
 			LasSeisPreguntasDelAsistente(lector);
 		}

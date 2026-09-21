@@ -46,6 +46,24 @@ namespace Municipalidad.App
 
 		private bool HayJournal => MunicipalidadApp.HayJournalEn(carpeta);
 
+		/// <summary>
+		/// EN QUE IDIOMA CONTESTA CADA VISTA, y lo dice QUIEN PREGUNTA: la carátula manda su etiqueta
+		/// como un parametro mas de la vista, igual que la app suelta se la manda a la puerta.
+		/// <para>
+		/// Esta clase no se lo pregunta al dispositivo, y esa sigue siendo la decision: corre en
+		/// proceso adentro de Gnothi, donde no hay <c>navigator</c>, y preguntarselo desde aca ataria
+		/// el paquete de carga al navegador, que es lo que la forma hibrida existe para no hacer. La
+		/// carátula SI puede -- es una pagina --, asi que negocia ella y lo dice al preguntar.
+		/// </para>
+		/// <para>
+		/// TOTAL: una etiqueta vacia o que esta app no habla cae al idioma del registro, que es la
+		/// misma caida que hace la app suelta cuando no puede leer la eleccion. Una carátula que no
+		/// mande nada sigue recibiendo una respuesta, en espanol, y no un rechazo.
+		/// </para>
+		/// </summary>
+		private static string Elegido(string idioma) =>
+			Frases.Frases.EsUnaEtiquetaConocida(idioma) ? idioma : Frases.Frases.IdiomaDelRegistro;
+
 		// ------------------------------------------------------------ lo que contesta al asistente
 
 		[Query(ConsultasDelModulo.Resumen)]
@@ -73,32 +91,35 @@ namespace Municipalidad.App
 
 		/// <summary>Que cambio entre los dos ultimos comprobantes de cada rubro, y que lo explica.</summary>
 		[View("por-que-pago-mas")]
-		public object PorQuePagoMas() => Leer(api => (object)new
+		public object PorQuePagoMas(string idioma = "") => Leer(api => (object)new
 		{
-			variacion = LaVariacionDeCadaRubro.LeerPor(api),
+			variacion = LaVariacionDeCadaRubro.LeerPor(api, Elegido(idioma)),
 		});
 
 		/// <summary>Lo que esta por vencerse y lo que ya vencio.</summary>
 		[View("que-se-me-vence")]
-		public object QueSeMeVence() => Leer(api =>
+		public object QueSeMeVence(string idioma = "") => Leer(api =>
 		{
 			DateTime alDia = ElInstanteEnQueSePregunto();
-			return (object)new { vence = LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia)) };
+			return (object)new { vence = LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), Elegido(idioma)) };
 		});
 
 		/// <summary>Lo que esta app propone apartar por mes, y lo que la persona adopto.</summary>
 		[View("cuanto-apartar")]
-		public object CuantoApartar() => Leer(api =>
+		public object CuantoApartar(string idioma = "") => Leer(api =>
 		{
 			DateTime alDia = ElInstanteEnQueSePregunto();
-			return (object)new { reserva = LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia)) };
+			return (object)new
+			{
+				reserva = LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), Elegido(idioma)),
+			};
 		});
 
 		/// <summary>Lo que el portal da por pagado y aca no tiene recibo.</summary>
 		[View("sin-comprobante")]
-		public object SinComprobante() => Leer(api => (object)new
+		public object SinComprobante(string idioma = "") => Leer(api => (object)new
 		{
-			sinComprobante = LoSinComprobante.LeerPor(api),
+			sinComprobante = LoSinComprobante.LeerPor(api, Elegido(idioma)),
 		});
 
 		/// <summary>
@@ -107,15 +128,23 @@ namespace Municipalidad.App
 		/// omision, porque el dominio lo redacta distinto.
 		/// </summary>
 		[View("cuanto-he-pagado")]
-		public object CuantoHePagado(int anio) => Leer(api =>
+		public object CuantoHePagado(int anio, string idioma = "") => Leer(api =>
 		{
 			bool loEligio = anio > 0;
 			int elAnio = loEligio ? anio : ElInstanteEnQueSePregunto().Year;
 
-			return (object)new { pagado = LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligio) };
+			return (object)new
+			{
+				pagado = LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligio, Elegido(idioma)),
+			};
 		});
 
-		/// <summary>Que entro de lo que el portal publica, y que falta.</summary>
+		/// <summary>
+		/// Que entro de lo que el portal publica, y que falta. SIN idioma, y no es un olvido: esta
+		/// vista no trae ni una frase redactada -- son cuentas, dias y banderas --, asi que un
+		/// parametro de idioma aca no tendria a quien pasarselo. La carátula lo manda igual y el Host
+		/// lo ignora, que es lo que hace con todo argumento que la vista no declara.
+		/// </summary>
 		[View("que-tan-al-dia")]
 		public object QueTanAlDia() => Leer(api =>
 		{

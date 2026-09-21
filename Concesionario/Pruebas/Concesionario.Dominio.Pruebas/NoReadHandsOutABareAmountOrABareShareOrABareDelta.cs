@@ -291,10 +291,10 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheAmountsAndTheShareReachTheCallerInsideTheSentence()
 		{
-			string said = journal.Api.DescribeSpendBetween(TheHalfFrom, TheHalfTo);
+			string said = journal.Api.DescribeSpendBetween(TheHalfFrom, TheHalfTo, TheLanguage.OfTheRecord);
 
-			Assert.That(said, Does.Contain("₡777777.00"), "El monto entero de la duradera.");
-			Assert.That(said, Does.Contain("₡909090.00"),
+			Assert.That(said, Does.Contain("₡777.777,00"), "El monto entero de la duradera.");
+			Assert.That(said, Does.Contain("₡909.090,00"),
 				"Y la caja del semestre, sumada por el DOMINIO: 777777 mas 131313.");
 			Assert.That(said, Does.Contain("a este período le tocan ₡"),
 				"Y la PARTE amortizada, adentro de la clausula que dice la regla con que se saco. "
@@ -308,7 +308,7 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void NoColumnOfTheRecordHandsOutTheAmountAsABareNumber()
 		{
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord);
 
 			foreach (string cell in record.Money)
 				Assert.That(cell, Does.StartWith("₡"),

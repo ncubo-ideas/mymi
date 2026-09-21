@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Concesionario.Dominio
 {
@@ -14,9 +14,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>El motivo que compuso la ley.</summary>
-		internal override string Describe()
+		internal override ADueReason TheReason()
 		{
-			return _assessment.Describe();
+			return _assessment.TheReason();
 		}
 
 		/// <summary>Lo que dijo la ley de esta evaluacion, no lo que dijo alguna vez.</summary>

@@ -60,11 +60,20 @@ namespace Concesionario.Dominio.Pruebas
 			//
 			// Y SUBIO 24 -> 25 CON EL MENSAJE DEL FEED DE LA PLACA, que es UN archivo: la raiz paso de
 			// 37 a 38 y el margen sigue siendo TRECE. Va en Events/, que es de esta misma raiz.
-			// Y SUBIO 25 -> 33 CON LAS OCHO VISTAS QUE SE MUDARON DESDE Wasm, que son proyecciones del
+			//
+			// Y SUBIO 25 -> 28 CON LOS TRES ARCHIVOS DE Wording/, que son el renderizador y sus dos
+			// catalogos: la raiz paso de 38 a 41 y el margen sigue siendo TRECE. Se mueve POR LO QUE
+			// SE AGREGO y no hasta donde alcance, y subirlo es acto de la tarea que los ESCRIBE.
+			//
+			// Y SUBIO 28 -> 36 CON LAS OCHO VISTAS QUE SE MUDARON DESDE Wasm, que son proyecciones del
 			// dominio y no de la pantalla: viven en App\Views para que la superficie de carga pueda
-			// leerlas sin arrastrar la UI. La raiz paso de 41 a 49 y el margen sigue siendo DIECISEIS.
-			// Se mueve por lo que ENTRO, no hasta donde alcance, que es la convencion de abajo.
-			new object[] { TheCodeOfTheShellsAsData.App, 33 },
+			// leerlas sin arrastrar la UI. Se mueve por lo que ENTRO, no hasta donde alcance, que es
+			// la misma convencion del renglon de arriba.
+			//
+			// Y SUBIO 36 -> 37 CON TheWording.cs, EL CUARTO ARCHIVO DE Wording/: entro despues del
+			// renglon que subio el piso a 28 y no lo volvio a mover, asi que lo cuenta este merge. La
+			// raiz quedo en 53 y el margen sigue siendo DIECISEIS.
+			new object[] { TheCodeOfTheShellsAsData.App, 37 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
 			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices
@@ -94,14 +103,18 @@ namespace Concesionario.Dominio.Pruebas
 			// Y SUBIO 26 -> 27 CON EL PORTADOR DE LA PLACA, que es UN archivo: la raiz paso de 29 a 30
 			// y el margen sigue siendo TRES. Tampoco trajo ningun .razor: el bloque es un renglon mas
 			// de la tarjeta de informacion que Vehiculo.razor ya tenia.
-			// Y BAJO 27 -> 23 CON LAS OCHO VISTAS QUE SE FUERON A App\Views. Es la primera vez que este
+			//
+			// Y SUBIO 27 -> 29 CON EL CATALOGO DE LA PANTALLA Y EL APUNTE, que son DOS archivos: la
+			// raiz paso de 30 a 32 y el margen sigue siendo TRES.
+			//
+			// Y BAJO 29 -> 25 CON LAS OCHO VISTAS QUE SE FUERON A App\Views. Es la primera vez que este
 			// piso BAJA, y baja por la misma regla que lo hacia subir: se mueve por lo que cambio en la
-			// raiz, no hasta donde alcance. La raiz paso de 30 a 26 y el margen sigue siendo TRES.
+			// raiz, no hasta donde alcance. La raiz quedo en 28 y el margen sigue siendo TRES.
 			//
 			// Que un piso baje es raro y hay que decir por que: no es que la raiz se haya vaciado -- es
 			// que esos ocho archivos no eran de la pantalla. Son proyecciones del dominio, y la forma
 			// hibrida las necesita del lado que la superficie de carga puede leer.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 23 },
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 25 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },
@@ -135,11 +148,187 @@ namespace Concesionario.Dominio.Pruebas
 			},
 			new AllowedArithmetic
 			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "ThePriceRows",
+				Snippet = "for (int row = 0; row < operation.Length; row++)",
+				Reason = "Contador de un recorrido por las filas que el dominio ya conto. No mide nada: "
+					+ "compone el hito y la frase de cada fila con las columnas paralelas que "
+					+ "llegaron.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "TheLedgerRows",
+				Snippet = "for (int row = 0; row < incurredAt.Length; row++)",
+				Reason = "El mismo contador para las filas del libro: el dinero, la vida util y la "
+					+ "frase de cada una se componen de columnas paralelas que el dominio conto.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencySaid",
+				Snippet = "for (int each = 0; each < views.Length; each++)",
+				Reason = "Contador de un recorrido por las monedas que el dominio ya agrupo. Pone las "
+					+ "dos vistas de cada una en su marco y no toca ninguna cifra.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "ReadingsBetween",
+				Snippet = "for (int row = 0; row < says.Length; row++)",
+				Reason = "El mismo contador para las filas de la serie: la frase de cada lectura se "
+					+ "compone de las cuatro columnas paralelas que el dominio ya conto, y ni el "
+					+ "valor ni el instante se tocan.",
+			},
+			// UNA ENTRADA PARA CUATRO SITIOS, y no por descuido: la clave de esta lista es raiz,
+			// archivo y linea, asi que cuatro recorridos escritos igual en el mismo archivo son UNA
+			// clave. El campo Member nombra la familia, que es lo unico que puede nombrar sin mentir.
+			// Eran TRES hasta que las estadias entraron con el suyo.
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "TheReadingsSaid, las dos TheCompletionsSaid y TheStaysSaid",
+				Snippet = "for (int row = 0; row < said.Length; row++)",
+				Reason = "Contador de un recorrido por las filas -- del historial y de las estadias -- "
+					+ "que el dominio ya conto: la celda de la lectura y la frase de cada fila se "
+					+ "componen de las columnas paralelas, y ni el valor ni el instante se tocan.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheDaysListed",
+				Snippet = "for (int day = 0; day < days.Length; day++)",
+				Reason = "Contador de un recorrido por los dias de calendario que el dominio ya eligio "
+					+ "y ya ordeno. Dice cada uno en el orden del idioma y pone la puntuacion entre "
+					+ "dos: ningun dia se deriva de otro y ninguno se cuenta aqui.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheRateOfUse",
+				Snippet = "for (int reading = 0; reading < readingOf.Length; reading++)",
+				Reason = "Contador de un recorrido por las lecturas que cada periodo nombra. Llegan "
+					+ "aplanadas con el indice de su periodo y esto solo las reparte en la celda que "
+					+ "les toca: ninguna distancia se resta y ningun tramo se divide.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheRateOfUse",
+				Snippet = "for (int period = 0; period < howManyPeriods; period++)",
+				Reason = "El contador de los periodos, que son uno o dos y los conto el dominio. "
+					+ "Pone la situacion de cada uno en su marco y no compara los dos ritmos: el "
+					+ "cambio llega ya dicho con su propia situacion.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheEmptyCellsOf",
+				Snippet = "for (int period = 0; period < howManyPeriods; period++) cells[period] = \"\";",
+				Reason = "El mismo contador para dejar sin palabras la celda que la situacion de un "
+					+ "periodo no usa. No hay ninguna cifra en este recorrido.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencysShares",
+				Snippet = "for (int each = 0; each < howManyCurrencies; each++) "
+					+ "said[each] = new StringBuilder();",
+				Reason = "Abre un acumulador por moneda. El largo lo dice el dominio y aqui no se "
+					+ "deriva de nada.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencysShares",
+				Snippet = "for (int share = 0; share < currencyOfEachShare.Length; share++)",
+				Reason = "Contador de un recorrido por las partes amortizadas, que llegan aplanadas "
+					+ "con el indice de la moneda a la que pertenecen. El indice es del dominio.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachCurrencysShares",
+				Snippet = "for (int each = 0; each < howManyCurrencies; each++) "
+					+ "joined[each] = said[each].ToString();",
+				Reason = "Cierra esos mismos acumuladores, uno por moneda.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "APeriodOfSpend",
+				Snippet = "for (int each = 0; each < eachCurrency.Length; each++)",
+				Reason = "Contador de un recorrido que FILTRA las monedas de un periodo por el indice "
+					+ "que el dominio les puso. En cuantas monedas esta dicho el periodo NO se cuenta "
+					+ "aqui: lo dice el portador.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "APeriodOfSpend",
+				Snippet = "return phrases.Say(\"spend.\" + periodShapes[period] + frame,",
+				Reason = "Arma una CLAVE del catalogo pegando la situacion del periodo y el marco con "
+					+ "que se pregunto. Es texto y no una cuenta, como el de la mitad del sobre.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachFigure",
+				Snippet = "for (int each = 0; each < shapes.Length; each++)",
+				Reason = "Contador de un recorrido por las cifras por moneda que el dominio ya "
+					+ "dividio. Aqui solo se ponen en su marco con la unidad al lado.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarAPI.cs",
+				Member = "CoverageExclusions",
+				Snippet = "for (int each = 0; each < said.Length; each++)",
+				Reason = "Contador de un recorrido por las exclusiones que el dominio ya enumero. Lo "
+					+ "que hace con cada una es ponerla en el marco del idioma, y ninguna de las tres "
+					+ "columnas es un numero.",
+			},
+			new AllowedArithmetic
+			{
 				Root = TheCodeOfTheShellsAsData.App, File = "DealershipCarApp.cs", Member = "TheActorFor",
 				Snippet = "return ThePrefixOfEveryActor + vin.Trim();",
 				Reason = "Pega dos textos para armar el nombre del actor. Es un '+' entre dos "
 					+ "identificadores, que el detector marca a proposito, y los dos son texto: no "
 					+ "hay ningun numero.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheSystemsInsideTheScope",
+				Snippet = "for (int each = 0; each < codes.Length; each++)",
+				Reason = "Contador de un recorrido por los sistemas que el dominio ya enumero. La "
+					+ "unica cuenta es el indice; los limites de cada uno ya vienen medidos y esta "
+					+ "capa solo elige el marco.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "EachGrade",
+				Snippet = "for (int each = 0; each < grades.Length; each++)",
+				Reason = "Contador de un recorrido por los grados de combustible que el dominio ya "
+					+ "enumero. Las dos columnas son texto: el grado tal como el fabricante lo "
+					+ "publico y el NOMBRE de la postura, que esta capa traduce a una etiqueta.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs",
+				Member = "TheExclusions",
+				Snippet = "for (int each = 0; each < texts.Length; each++)",
+				Reason = "Contador de un recorrido por las exclusiones que el dominio ya enumero. Las "
+					+ "tres columnas son texto publicado: no hay ningun numero que contar.",
+			},
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.App, File = "Wording/TheWording.cs", Member = "AHalf",
+				Snippet = "family + (left == 1 ? \".BeforeTheLimit.one\" : \".BeforeTheLimit.many\"),",
+				Reason = "Pega la familia de la clave con el sufijo del plural, y las dos son texto: el "
+					+ "detector marca el '+' entre dos identificadores a proposito. El '== 1' de al "
+					+ "lado es una comparacion y no una cuenta, y lo que compara es lo que el dominio "
+					+ "ya midio -- esta capa elige la redaccion, no vuelve a medir.",
 			},
 			new AllowedArithmetic
 			{
@@ -249,20 +438,11 @@ namespace Concesionario.Dominio.Pruebas
 				Snippet = "bytes += new FileInfo(file).Length;",
 				Reason = "Suma de bytes del journal en memoria.",
 			},
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Wasm, File = "Parts/ComoSeLee.cs", Member = "Dia",
-				Snippet = "return day.Day + \" de \" + LosMeses[day.Month - 1] + \" de \" + day.Year;",
-				Reason = "Pone en base cero el indice del nombre del mes. Es FORMATO, que es el "
-					+ "discriminador que las cuatro rebanadas nombran: HowANumberReads dice de si "
-					+ "mismo 'Es formato y no una cuenta'.",
-			},
-			new AllowedArithmetic
-			{
-				Root = TheCodeOfTheShellsAsData.Wasm, File = "Parts/ComoSeLee.cs", Member = "DiaCorto",
-				Snippet = "return day.Day + \" \" + LosMeses[day.Month - 1][..3] + \" \" + day.Year;",
-				Reason = "La misma base cero del indice del mes, en la forma corta.",
-			},
+			// AQUI VIVIAN LAS DOS DE Parts/ComoSeLee.cs -- Dia y DiaCorto, que ponian en base cero el
+			// indice del nombre del mes -- y se fueron con la aritmetica, no con el permiso. El nombre
+			// del mes ya no sale de un arreglo indexado: sale del catalogo, con la clave "month." mas el
+			// numero del mes, porque el ORDEN de las partes de una fecha no es el mismo en los dos
+			// idiomas y tenia que vivir donde vive la traduccion.
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.EndPointDeEventos, File = "Program.cs",
@@ -383,10 +563,15 @@ namespace Concesionario.Dominio.Pruebas
 			ItDoesNotSee("a.cs", "/// <summary>Lo que falta: Stands.Odometer - Stands.DeliveryReading</summary>");
 			ItDoesNotSee("a.cs", "string when = \"2026-06-10\";");
 			ItDoesNotSee("a.cs", "string said = \"Te faltan \" + kilometres;");
-			ItDoesNotSee("Inicio.razor", "<div class=\"d-bar__fill d-bar__fill--ok\" id=\"cuenta-al-dia\"></div>");
-			ItDoesNotSee("Inicio.razor", "<span class=\"@(\"d-pill d-pill--\" + Tono)\">@Titular</span>");
-			ItDoesNotSee("Inicio.razor", "role=\"img\" aria-label=\"Sotavento Motors\" focusable=\"false\">");
-			ItDoesNotSee("nginx.conf", "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;");
+			ItDoesNotSee(
+				"Inicio.razor",
+				"<div class=\"d-bar__fill d-bar__fill--ok\" id=\"cuenta-al-dia\"></div>");
+			ItDoesNotSee(
+				"Inicio.razor", "<span class=\"@(\"d-pill d-pill--\" + Tono)\">@Titular</span>");
+			ItDoesNotSee(
+				"Inicio.razor", "role=\"img\" aria-label=\"Sotaventos Motors\" focusable=\"false\">");
+			ItDoesNotSee(
+				"nginx.conf", "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;");
 			ItDoesNotSee("a.js", "/* aca habria un x - y y no cuenta */");
 			ItDoesNotSee("a.cs", "return $\"{Kind} hecho el {CompletedAt:yyyy-MM-dd}\";");
 		}
@@ -445,15 +630,21 @@ namespace Concesionario.Dominio.Pruebas
 		}
 
 		// PLAN-BuildOrder.md §2.2 PREDIJO CERO ACIERTOS AQUI Y LA PREDICCION ES FALSA, medido: son
-		// diez, y los diez son una directiva de nginx seguida de un camino. No hay forma de afinar el
+		// once, y los once son una directiva de nginx seguida de un camino. No hay forma de afinar el
 		// detector que los quite sin quitar tambien una division de verdad: "root /usr/share" y
 		// "a / b" son la misma forma. Quedan enumerados uno por uno, que es lo que hace que un
 		// archivo NUEVO en esta raiz se ponga rojo y alguien lo lea.
+		//
+		// EL RENGLON ONCE LLEGO ASI, Y VALE LA PENA DECIRLO: 2b2648d abrio
+		// "location /descargas/ {" para los descargables del paso a paso con Gnothi y no escribio su
+		// renglon, asi que la lista quedo corta y esta prueba en rojo. La lista funciono exactamente
+		// como se queria -- una directiva nueva no pasa en silencio -- y lo que faltaba era cerrarla.
 		private static readonly AllowedArithmetic[] TheDownloadPagesDirectives =
 		{
 			Nginx("ssl_certificate", "ssl_certificate_key /etc/nginx/certs/localhost.key;"),
 			Nginx("location = /", "root /usr/share/nginx/descarga;"),
 			Nginx("location = /", "try_files /index.html =404;"),
+			Nginx("server", "location /descargas/ {"),
 			Nginx("server", "location = /app { return 301 /app/; }"),
 			Nginx("server", "location /app/eventos/ {"),
 			Nginx("location = /app/service-worker.js", "alias /usr/share/nginx/app/service-worker.js;"),

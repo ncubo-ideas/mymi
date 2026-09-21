@@ -56,7 +56,7 @@ internal static class HostInstaller
 			? Path.GetFullPath(args[0])
 			: Path.Combine(Path.GetDirectoryName(self)!, "Modulos");
 
-		Console.Error.WriteLine("-- Gnothi --");
+		Console.Error.WriteLine("-- Mymi --");
 		Console.Error.WriteLine($"executable    : {self}");
 		Console.Error.WriteLine($"modules folder: {modulesFolder}");
 
@@ -68,7 +68,7 @@ internal static class HostInstaller
 		if (OperatingSystem.IsWindows() && self.Contains(' '))
 		{
 			Console.Error.WriteLine();
-			Console.Error.WriteLine("!  Gnothi's path has a SPACE. The assistant launches it through cmd, and with a");
+			Console.Error.WriteLine("!  Mymi's path has a SPACE. The assistant launches it through cmd, and with a");
 			Console.Error.WriteLine("   space the launch fails. Move it to a folder with no spaces -- e.g. C:\\Gnothi\\ --");
 			Console.Error.WriteLine("   and run --install again.");
 			return 1;
@@ -91,7 +91,7 @@ internal static class HostInstaller
 		{
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("Found no installed assistant I know how to configure.");
-			Console.Error.WriteLine("Gnothi is installed anyway: you can register it by hand whenever you want.");
+			Console.Error.WriteLine("Mymi is installed anyway: you can register it by hand whenever you want.");
 			return 0;
 		}
 
@@ -112,7 +112,7 @@ internal static class HostInstaller
 		int chosen = Ask(none);
 		if (chosen == none)
 		{
-			Console.Error.WriteLine("Done. Gnothi is installed and unregistered.");
+			Console.Error.WriteLine("Done. Mymi is installed and unregistered.");
 			return 0;
 		}
 
@@ -136,8 +136,13 @@ internal static class HostInstaller
 
 		// Packaged Claude Desktop (MSIX). This is the path that is hard to find, and the one the
 		// app itself opens from its own "edit config" button.
+		//
+		// WINDOWS-ONLY, AND SAID SO. LocalApplicationData is ~/Library/Application Support on a
+		// Mac, so without the guard this probe stats another app's data territory looking for a
+		// Packages/ folder that only exists on Windows. It costs nothing and finds nothing, but
+		// it is a gratuitous knock on the door macOS gates behind "access data from other apps".
 		string packages = Path.Combine(local, "Packages");
-		if (Directory.Exists(packages))
+		if (OperatingSystem.IsWindows() && Directory.Exists(packages))
 			foreach (string dir in Directory.EnumerateDirectories(packages, "Claude_*"))
 			{
 				string cfg = Path.Combine(dir, "LocalCache", "Roaming", "Claude", "claude_desktop_config.json");
@@ -221,7 +226,7 @@ internal static class HostInstaller
 			return RegisterInCodex(assistant, executable, modulesFolder);
 
 		Console.Error.WriteLine();
-		Console.Error.WriteLine($"I am going to add Gnothi to: {assistant.Config}");
+		Console.Error.WriteLine($"I am going to add Mymi to: {assistant.Config}");
 
 		JsonObject root;
 		string original = "";
@@ -306,7 +311,7 @@ internal static class HostInstaller
 	private static int RegisterInCodex(Assistant assistant, string executable, string modulesFolder)
 	{
 		Console.Error.WriteLine();
-		Console.Error.WriteLine($"I am going to add Gnothi to: {assistant.Config}");
+		Console.Error.WriteLine($"I am going to add Mymi to: {assistant.Config}");
 
 		string original = File.Exists(assistant.Config) ? File.ReadAllText(assistant.Config) : "";
 		bool wasThere = CodexTable.Has(original);

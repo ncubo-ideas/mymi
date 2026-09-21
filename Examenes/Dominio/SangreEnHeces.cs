@@ -41,7 +41,7 @@ namespace Examenes.Dominio
 			this.positivo = positivo;
 		}
 
-		internal override string Expresado => Etiqueta;
+		internal override string Clave => Etiqueta;
 
 		internal override bool FueRealizada => realizada;
 
@@ -80,10 +80,10 @@ namespace Examenes.Dominio
 		internal override Accion AccionDelHallazgo =>
 			EsHallazgo ? Accion.RepetirElExamen(Plazo.EsteMes) : null;
 
-		internal override string ParaSonia =>
-			!realizada ? "el laboratorio no corrió esta prueba"
-			: positivo ? "apareció sangre en las heces, que muchas veces se debe a algo común; conviene revisarlo"
-			: "no apareció sangre en las heces, que es lo esperable";
+		internal override string ClaveDeLaFrase =>
+			!realizada ? "resultado.no-realizado"
+			: positivo ? "resultado.sangre-en-heces.positivo"
+			: "resultado.sangre-en-heces.negativo";
 
 		internal static SangreEnHeces PorNombre(string nombre)
 		{

@@ -124,6 +124,26 @@ namespace Examenes.Dominio
 
 		internal IReadOnlyList<Examen> Lista => examenes;
 
+		// LAS LECTURAS DE LA LISTA, planas y con el indice del examen del que salieron.
+		//
+		// Es la misma jugada que CeldasDelCuadro y por la misma razon: el print proyecta un
+		// solo nivel, asi que una lista de examenes que a su vez tienen lecturas no cruza la
+		// puerta. El indice es lo que deja que la superficie rearme el resultado de cada
+		// examen SIN volver a decidir que va donde.
+		internal IReadOnlyList<LecturaEnLaLista> LecturasDeLaLista
+		{
+			get
+			{
+				var lecturas = new List<LecturaEnLaLista>();
+
+				for (int fila = 0; fila < examenes.Count; fila++)
+					foreach (LecturaDeExamen lectura in examenes[fila].Lecturas)
+						lecturas.Add(new LecturaEnLaLista(fila, lectura));
+
+				return lecturas;
+			}
+		}
+
 		internal int Cantidad => examenes.Count;
 
 		// Los que TIENEN HISTORIA Y LE CORRESPONDEN a esta persona. Un antigeno prostatico
@@ -311,8 +331,7 @@ namespace Examenes.Dominio
 			// una vez y sabe contra que se lee el valor. Se aplica aca —el unico punto de
 			// consulta— para que ningun numero salga sin ella.
 			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Interpretar(paciente).ConForma(serie.Forma)
-					.ConReferencia(serie.ReferenciaLegible(paciente))
+				? serie.ConSuReferencia(serie.Interpretar(paciente).ConForma(serie.Forma), paciente)
 				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null))
 					.ConForma(FormaDeLectura.Afirmacion);
 		}
@@ -601,9 +620,9 @@ namespace Examenes.Dominio
 					filas.IndexOf(llave),
 					columnas.IndexOf(examen.Fecha.Date),
 					llave,
-					lectura.ParaMostrar,
+					lectura.ClaveDelAnalito,
 					examen.Fecha.Date,
-					lectura.Expresado));
+					lectura));
 			}
 
 			celdas.Sort((una, otra) => una.Fila == otra.Fila
@@ -639,7 +658,7 @@ namespace Examenes.Dominio
 				if (uno.AportaSerieContinua != otro.AportaSerieContinua)
 					return uno.AportaSerieContinua ? -1 : 1;
 
-				int porNombre = string.Compare(uno.Nombre, otro.Nombre,
+				int porNombre = string.Compare(uno.Clave, otro.Clave,
 					StringComparison.OrdinalIgnoreCase);
 				return porNombre != 0 ? porNombre : uno.Fecha.CompareTo(otro.Fecha);
 			});
@@ -681,7 +700,7 @@ namespace Examenes.Dominio
 				foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
 					if (par.Value.Interpretar(paciente).RequiereElSexo) sinLeer.Add(par.Key);
 
-				sinLeer.Sort((uno, otro) => string.Compare(uno.ParaMostrar, otro.ParaMostrar,
+				sinLeer.Sort((uno, otro) => string.Compare(uno.Nombre, otro.Nombre,
 					StringComparison.OrdinalIgnoreCase));
 
 				return new PedidoDeSexo(paciente.Sexo, sinLeer, CantidadDeAnalitosConSerie);

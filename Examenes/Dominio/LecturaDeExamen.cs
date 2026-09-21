@@ -2,30 +2,23 @@ using System;
 
 namespace Examenes.Dominio
 {
-	// UNA COSA MEDIDA dentro de un examen: que analito, y con que resultado.
+	// UNA COSA MEDIDA DENTRO DE UN EXAMEN: que analito es, y que dio.
 	//
-	// POR QUE HACE FALTA. Un examen no mide una cosa: mide las que mide. Uno de sangre
-	// informa un analito; el urianalisis informa TRES -color, nitritos y sangre- y el de
-	// heces DOS. Hasta ahora el dominio solo sabia contestar "el resultado del examen", en
-	// singular, y por eso el historial mostraba esto:
+	// Existe porque un examen NO es necesariamente un analito. Un colesterol si —una
+	// hoja, un numero—, pero un urianalisis informa color, nitritos y sangre en la misma
+	// hoja, y son tres analitos distintos con tres lecturas distintas.
 	//
-	//     Examen general de orina    ambar, nitritos negativo, sangre negativo
-	//
-	// Tres cosas medidas aplanadas en una fila y en un string, que es exactamente la
-	// aplanadora que sacamos del dominio, sobreviviendo en la presentacion.
-	//
-	// Con esto, cada analito vuelve a ser lo que es: una fila propia, con su nombre y su
-	// resultado. Es la forma "Examen -> Medicion[]" que el brief describia desde el
-	// principio y que no habiamos construido.
+	// Antes eso viajaba aplanado adentro de ResultadoExpresado, o sea como UN string:
+	// "ambar, nitritos negativo, sangre negativo". Aplanar es exactamente lo que este
+	// dominio evita en todos los otros pisos, y el costo se veia en el cuadro historico:
+	// un urianalisis ocupaba UNA fila con su string entero adentro, en vez de aportar a
+	// las filas de sus tres analitos.
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
 	internal sealed class LecturaDeExamen
 	{
 		internal Analito Analito { get; private set; }
 
-		// El resultado, como la magnitud que sea. Un numero con unidad, un color, un
-		// binario: cada una sabe decirse, y por eso aca no hay un decimal ni un string
-		// suelto.
 		internal Magnitud Resultado { get; private set; }
 
 		internal LecturaDeExamen(Analito analito, Magnitud resultado)
@@ -37,15 +30,25 @@ namespace Examenes.Dominio
 			Resultado = resultado;
 		}
 
-		// LAS TRES LECTURAS DE UN URIANALISIS FORMAN SERIE, cada una con la suya: los
-		// nitritos y la sangre una de presencia, el color una de categorias. Hubo aca un
-		// bool que contestaba cual de las tres la formaba, y dejo de tener sentido cuando
-		// la respuesta paso a ser "todas". Lo que las distingue —como se leen y como se
-		// dibujan— lo dice la FormaDeLectura de cada serie.
-
-		// Proyecciones planas, para que el print del DSL no navegue dos niveles.
+		// La llave del analito, que es con la que se pide su serie y su interpretacion.
 		internal string Nombre => Analito.Nombre;
-		internal string ParaMostrar => Analito.ParaMostrar;
-		internal string Expresado => Resultado.Expresado;
+
+		/// <summary>El codigo del analito dentro de una clave de frase.</summary>
+		internal string ClaveDelAnalito => Analito.Clave;
+
+		/// <summary>El codigo de lo que dio, vacio cuando lo que dio es un numero.</summary>
+		internal string ClaveDelResultado => Resultado.Clave;
+
+		/// <summary>Si lo que dio es un numero con unidad, y no una categoria ni un si o un no.</summary>
+		internal bool EsNumero => Resultado.EsNumero;
+
+		/// <summary>
+		/// El numero que dio, cero cuando no dio un numero. Viaja como numero y no como texto
+		/// porque el separador decimal es del idioma y lo pone quien redacta.
+		/// </summary>
+		internal decimal Valor => Resultado is MagnitudContinua continua ? continua.Valor : 0m;
+
+		/// <summary>El simbolo de la unidad, vacio cuando no dio un numero. NO se traduce.</summary>
+		internal string Unidad => Resultado is Medicion medicion ? medicion.Unidad.Simbolo : "";
 	}
 }

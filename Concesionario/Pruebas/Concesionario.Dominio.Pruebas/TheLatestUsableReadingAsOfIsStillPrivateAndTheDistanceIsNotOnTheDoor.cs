@@ -158,6 +158,11 @@ namespace Concesionario.Dominio.Pruebas
 		// Y NINGUNA DE LAS DOS PIDE UNA MEDICION. Los dos extremos son claves de catalogo -- eligen el
 		// periodo y la respuesta los nombra -- y nada mas cruza: ni el odometro, ni la distancia, ni la
 		// unidad. Es la primera invencion prohibida vista desde el cruce.
+		//
+		// EL IDIOMA TAMPOCO ES UNA MEDICION, y por eso la que contesta con una FRASE lo toma y la que
+		// contesta con un si o un no no: es la etiqueta con la que se elige catalogo, no un hecho de
+		// ningun carro. Lo que se afirma es que cada ranura sea un extremo de periodo o esa etiqueta,
+		// y NUNCA otra cosa: asi una medicion nueva se pone roja con cualquier nombre.
 		[Test]
 		public void AndNeitherCrossingReadAsksTheCallerForAFactAboutTheVehicle()
 		{
@@ -165,14 +170,19 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				ParameterInfo[] slots = TheDoorsMember(name).GetParameters();
 
-				Assert.That(slots, Has.Length.EqualTo(2),
-					"'" + name + "' gano un parametro. El unico hecho que le falta a esta respuesta es "
-					+ "el tramo de uso, y el registro ya lo tiene: pedirlo seria la primera invencion "
-					+ "prohibida con un esquema encima.");
-
 				foreach (ParameterInfo slot in slots)
 				{
-					Assert.That(slot.ParameterType, Is.EqualTo(typeof(DateTime)));
+					if (slot.Name == "language")
+					{
+						Assert.That(slot.ParameterType, Is.EqualTo(typeof(string)));
+						continue;
+					}
+
+					Assert.That(slot.ParameterType, Is.EqualTo(typeof(DateTime)),
+						"'" + name + "' gano un parametro que no es un extremo de periodo ni el "
+						+ "idioma. El unico hecho que le falta a esta respuesta es el tramo de uso, y "
+						+ "el registro ya lo tiene: pedirlo seria la primera invencion prohibida con "
+						+ "un esquema encima.");
 					Assert.That(new[] { "from", "to" }, Does.Contain(slot.Name));
 				}
 			}

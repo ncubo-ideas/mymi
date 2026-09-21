@@ -31,7 +31,13 @@ builder.Services.AddSingleton<PuenteDeJournal>(sp =>
 
 builder.Services.AddSingleton<EstadoDeLaApp>();
 
+builder.Services.AddSingleton<Textos>();
+
 var host = builder.Build();
+
+await host.Services.GetRequiredService<Textos>().NegociarAsync(
+	host.Services.GetRequiredService<IJSRuntime>(),
+	new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 PuenteDeGnothi puenteDeGnothi = host.Services.GetRequiredService<PuenteDeGnothi>();
 if (await puenteDeGnothi.EstaHospedadaAsync())

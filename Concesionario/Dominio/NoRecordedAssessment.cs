@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Concesionario.Dominio
 {
@@ -11,10 +11,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>Lo dice en vez de inventar una respuesta que nadie calculo.</summary>
-		internal override string Describe()
+		internal override ADueReason TheReason()
 		{
-			return "Sin vencer, pero esta operación todavía no se ha evaluado, así que esto no es "
-				+ "evidencia de que la operación no esté vencida.";
+			return ADueReason.NeverEvaluated();
 		}
 
 		/// <summary>No: no hay evaluacion de donde derivarlo.</summary>

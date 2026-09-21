@@ -24,7 +24,7 @@ namespace Examenes.Dominio
 		{
 		}
 
-		internal override string Nombre => Suyo.ParaMostrar;
+		internal override string Clave => Suyo.Clave;
 
 		// Rango con piso Y techo, a diferencia del colesterol y el antigeno.
 		//

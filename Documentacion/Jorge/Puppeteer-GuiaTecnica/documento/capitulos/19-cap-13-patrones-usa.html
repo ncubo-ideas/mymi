@@ -1,0 +1,41 @@
+<!-- CAP 13 · PATRONES QUE USA PUPPETEER -->
+  <section class="anchor" id="cap13">
+    <h2>13 · Patrones que usa Puppeteer</h2>
+    <p class="chapter-meta">Puppeteer no inventó estos patrones; los hace nativos. Reconocerlos conecta tu experiencia previa con lo que ya viste.</p>
+
+    <p>Si vienes de sistemas distribuidos, muchas de las ideas de esta guía tienen nombre propio en la literatura. La diferencia es que en Puppeteer <strong>no son librerías que agregas</strong>: son el sustrato mismo. Este es el mapa:</p>
+    <table>
+      <thead><tr><th>Patrón</th><th>Cómo lo da Puppeteer</th><th>Dónde lo viste</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Event Sourcing</strong></td><td>El diario append-only <em>es</em> la verdad; el estado es su reproducción.</td><td>Cap. 7</td></tr>
+        <tr><td><strong>Modelo de actores</strong></td><td>Un actor dueño de su estado, único escritor; nadie lo muta desde afuera.</td><td>Caps. 1–2</td></tr>
+        <tr><td><strong>CQRS</strong></td><td>Comando (cambia y persiste) vs. query (solo lee). Distinción de primera clase.</td><td>Caps. 1, 5</td></tr>
+        <tr><td><strong>Vistas materializadas / read models</strong></td><td>Réplicas (Cast) y proyecciones por reacción hacia un <em>sink</em> u outbox.</td><td>Caps. 9, 12</td></tr>
+        <tr><td><strong>Outbox</strong></td><td><code>Outbox.Emit</code> durable, atómico con el avance del cursor de la reacción.</td><td>Cap. 9</td></tr>
+        <tr><td><strong>Coreografía (event-driven)</strong></td><td>Reacciones + <code>tell</code>: cada actor reacciona a hechos, sin orquestador central.</td><td>Caps. 9–10</td></tr>
+        <tr><td><strong>Saga</strong></td><td><code>DefineSaga</code>: pasos por clave de instancia, serializados.</td><td>Cap. 11</td></tr>
+        <tr><td><strong>Replay / despliegue (red-black)</strong></td><td>Desplegar es reproducir el diario; reiniciar/mover deja de ser un evento de riesgo.</td><td>Cap. 7</td></tr>
+        <tr><td><strong>Consumidor pasivo / backup</strong></td><td>Un lector que solo reproduce el diario para respaldar o materializar, sin escribir.</td><td>Caps. 7, 12</td></tr>
+      </tbody>
+      <caption>Tabla 15. Patrones clásicos que Puppeteer ofrece de forma nativa.</caption>
+    </table>
+
+    <p>Vale la pena detenerse en tres, porque son los que más cambian la forma de pensar:</p>
+    <ul class="body">
+      <li><strong>Event sourcing sin ceremonia.</strong> En la mayoría de stacks, hacer event sourcing es una decisión de arquitectura costosa (event store, proyecciones, versionado). Aquí es el punto de partida: escribes comandos y el diario ya es la fuente de verdad.</li>
+      <li><strong>CQRS que no tienes que “montar”.</strong> No hay dos modelos que sincronizar a mano: el comando muta el actor y el diario; la query lee. La separación es de la plataforma, no un andamiaje tuyo.</li>
+      <li><strong>Coreografía en vez de orquestación.</strong> No hay un “orquestador” que conozca todos los pasos. Cada actor publica hechos (<code>tell</code>) y reacciona a los ajenos. El acoplamiento baja y el sistema crece por adición.</li>
+    </ul>
+
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Si un patrón que conoces (por ejemplo, un <em>event store</em> a mano, o un bus con orquestador central) ya está resuelto por el sustrato, resistir la tentación de reimplementarlo encima. Casi siempre ya lo tienes en una primitiva de Puppeteer.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Event sourcing, actores, CQRS, outbox, coreografía, saga y replay son <strong>nativos</strong>, no librerías que agregas.</li>
+      <li>Reconocerlos te deja mapear tu experiencia previa a las primitivas que ya viste en la guía.</li>
+    </ul>
+    <p>Y si un patrón <em>no</em> viene con nombre propio, muchas veces se arma con las mismas primitivas. Eso es el próximo capítulo.</p>
+  </section>

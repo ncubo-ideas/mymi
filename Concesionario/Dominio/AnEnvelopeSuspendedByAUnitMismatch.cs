@@ -10,16 +10,15 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class AnEnvelopeSuspendedByAUnitMismatch : EnvelopeAnswer
 	{
-		private readonly DistanceUnit _limitUnit;
 		private readonly DistanceUnit _odometerUnit;
-		private readonly string _clause;
 
 		/// <summary>
-		/// La compone quien vio las dos unidades que no calzaron: la del sobre publicado y la del
-		/// odometro recibido.
+		/// La compone quien vio las dos unidades que no calzaron: la del sobre publicado, que la
+		/// clausula ya cita, y la del odometro recibido.
 		/// </summary>
 		internal AnEnvelopeSuspendedByAUnitMismatch(
-			DistanceUnit limitUnit, DistanceUnit odometerUnit, string clause)
+			DistanceUnit limitUnit, DistanceUnit odometerUnit, AnEnvelopeClause clause)
+			: base(clause)
 		{
 			if (limitUnit == null || odometerUnit == null)
 				throw new DomainException(
@@ -27,9 +26,7 @@ namespace Concesionario.Dominio
 					+ "Decir que no se pudo medir sin decir cual contra cual no le deja a nadie "
 					+ "corregirlo.");
 
-			_limitUnit = limitUnit;
 			_odometerUnit = odometerUnit;
-			_clause = clause;
 		}
 
 		/// <summary>Si: es esta clase de ausencia y no otra.</summary>
@@ -38,17 +35,19 @@ namespace Concesionario.Dominio
 			return true;
 		}
 
-		/// <summary>
-		/// Nombra las dos unidades y dice que no se convierten. Sin las dos, quien lea la
-		/// respuesta sabe que algo no calzo y no sabe que arreglar.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Suspendida por unidades, que es la que nombra las dos.</summary>
+		internal override string TheShapeItHas()
 		{
-			return TheAnswerSaying(
-				"su mitad de distancia no se puede evaluar, porque el límite de distancia publicado "
-				+ "está en " + _limitUnit.Name + " y el odómetro de este vehículo está en "
-				+ _odometerUnit.Name + ", y las unidades nunca se convierten.",
-				_clause);
+			return UnitMismatch;
+		}
+
+		/// <summary>
+		/// La unidad que no coincidio, por su nombre. Sin ella, quien lea la respuesta sabe que algo
+		/// no calzo y no sabe que arreglar; la del limite la cita la clausula.
+		/// </summary>
+		internal override string TheUnitThatDidNotMatch()
+		{
+			return _odometerUnit.Name;
 		}
 	}
 }

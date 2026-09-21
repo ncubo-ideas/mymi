@@ -25,19 +25,19 @@ namespace Compras.Dominio
 	internal abstract class Categoria
 	{
 		internal static readonly Categoria Proteinas =
-			new Comestible("Proteinas", "proteínas", "una proteína", diasDeReabastecimiento: 10);
+			new Comestible("Proteinas", diasDeReabastecimiento: 10);
 		internal static readonly Categoria FrutasYVerduras =
-			new Comestible("FrutasYVerduras", "frutas y verduras", "una fruta o verdura", diasDeReabastecimiento: 10);
+			new Comestible("FrutasYVerduras", diasDeReabastecimiento: 10);
 		internal static readonly Categoria LacteosYHuevos =
-			new Comestible("LacteosYHuevos", "lácteos y huevos", "un lácteo", diasDeReabastecimiento: 12);
+			new Comestible("LacteosYHuevos", diasDeReabastecimiento: 12);
 		internal static readonly Categoria GranosYAbarrotes =
-			new Comestible("GranosYAbarrotes", "granos y abarrotes", "un grano o abarrote", diasDeReabastecimiento: 35);
+			new Comestible("GranosYAbarrotes", diasDeReabastecimiento: 35);
 		internal static readonly Categoria AceitesYGrasas =
-			new Comestible("AceitesYGrasas", "aceites y grasas", "un aceite o una grasa", diasDeReabastecimiento: 0);
+			new Comestible("AceitesYGrasas", diasDeReabastecimiento: 0);
 		internal static readonly Categoria Azucarados =
-			new Comestible("Azucarados", "dulces y postres", "algo dulce", diasDeReabastecimiento: 0);
+			new Comestible("Azucarados", diasDeReabastecimiento: 0);
 		internal static readonly Categoria Snacks =
-			new Comestible("Snacks", "snacks", "un snack", diasDeReabastecimiento: 0);
+			new Comestible("Snacks", diasDeReabastecimiento: 0);
 		// ENTRAN EN ENERO DE 2026, y por eso existen: el guion de la wiki dice que "embutidos
 		// y preparadas entran en ene 2026", y sin departamento propio el cambio se
 		// escondia dentro de proteinas. La nutricionista de Sonia le pide "cambiar
@@ -49,9 +49,9 @@ namespace Compras.Dominio
 		// alguien puede haber dejado de comprar a proposito. Decirle "hace un mes que no
 		// compra embutidos" seria justo el reclamo que este modulo no hace.
 		internal static readonly Categoria Embutidos =
-			new Comestible("Embutidos", "embutidos", "un embutido", diasDeReabastecimiento: 0);
+			new Comestible("Embutidos", diasDeReabastecimiento: 0);
 		internal static readonly Categoria ComidasPreparadas =
-			new Comestible("ComidasPreparadas", "comidas preparadas", "una comida preparada", diasDeReabastecimiento: 0);
+			new Comestible("ComidasPreparadas", diasDeReabastecimiento: 0);
 
 		// LA COMIDA DE LA PERRA NO ES COMESTIBLE, y la palabra engaña: EsComestible
 		// significa "comida de la persona", que es lo que sostiene el "de eso, comida" de
@@ -61,23 +61,21 @@ namespace Compras.Dominio
 		// invariante 14- asi que un hueco aca es un hueco de verdad. Es lo contrario de los
 		// azucarados: nadie deja de comprarle comida al perro a proposito.
 		internal static readonly Categoria Mascotas =
-			new NoComestible("Mascotas", "mascotas", "comida para la mascota", diasDeReabastecimiento: 30);
+			new NoComestible("Mascotas", diasDeReabastecimiento: 30);
 
 		internal static readonly Categoria Limpieza =
-			new NoComestible("Limpieza", "limpieza", "algo de limpieza", diasDeReabastecimiento: 45);
+			new NoComestible("Limpieza", diasDeReabastecimiento: 45);
 		internal static readonly Categoria Electrohogar =
-			new NoComestible("Electrohogar", "electrodomésticos", "un electrodoméstico", diasDeReabastecimiento: 0);
+			new NoComestible("Electrohogar", diasDeReabastecimiento: 0);
 
 		private readonly int diasDeReabastecimiento;
 
-		/// <summary>La LLAVE del departamento, la que viaja en el evento. No se le muestra a nadie.</summary>
+		/// <summary>
+		/// La LLAVE del departamento, la que viaja en el evento y la que cruza el wire. No se le
+		/// muestra a nadie: como se lee -- "frutas y verduras", "una fruta o verdura" -- lo busca con
+		/// esta llave la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
-
-		/// <summary>El nombre del departamento como lo lee una persona: "frutas y verduras".</summary>
-		internal string Titulo { get; private set; }
-
-		/// <summary>Como se menciona UNO de sus productos dentro de una frase: "una fruta o verdura".</summary>
-		internal string Mencion { get; private set; }
 
 		/// <summary>Si el departamento es de comida. Es donde esta la gondola, no un juicio.</summary>
 		internal abstract bool EsComestible { get; }
@@ -98,18 +96,14 @@ namespace Compras.Dominio
 			}
 		}
 
-		private Categoria(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
+		private Categoria(string nombre, int diasDeReabastecimiento)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(titulo);
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(mencion);
 			if (diasDeReabastecimiento < 0)
 				throw new ArgumentOutOfRangeException(nameof(diasDeReabastecimiento), diasDeReabastecimiento,
 					"Los dias de reabastecimiento no pueden ser negativos; cero significa que no se reabastece.");
 
 			Nombre = nombre;
-			Titulo = titulo;
-			Mencion = mencion;
 			this.diasDeReabastecimiento = diasDeReabastecimiento;
 		}
 
@@ -170,16 +164,16 @@ namespace Compras.Dominio
 
 		private sealed class Comestible : Categoria
 		{
-			internal Comestible(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
-				: base(nombre, titulo, mencion, diasDeReabastecimiento) { }
+			internal Comestible(string nombre, int diasDeReabastecimiento)
+				: base(nombre, diasDeReabastecimiento) { }
 
 			internal override bool EsComestible => true;
 		}
 
 		private sealed class NoComestible : Categoria
 		{
-			internal NoComestible(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
-				: base(nombre, titulo, mencion, diasDeReabastecimiento) { }
+			internal NoComestible(string nombre, int diasDeReabastecimiento)
+				: base(nombre, diasDeReabastecimiento) { }
 
 			internal override bool EsComestible => false;
 		}

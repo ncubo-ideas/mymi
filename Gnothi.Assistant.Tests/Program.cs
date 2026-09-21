@@ -124,9 +124,10 @@ Assert("Request carries no caller identity -- Dispatcher.Serve still does not kn
 // ============================================================================================
 
 // Un argumento manda: `dotnet run --project Gnothi.Assistant.Tests -- Modulos.local` corre la
-// suite contra el banco de ESTA maquina. Sin argumento busca ./Modulos, que esta versionado y
-// trae las rutas de la maquina donde se armo el POC: ahi el catalogo se compara igual, pero
-// ningun modulo arranca y la primera aserción de la conformance lo dice.
+// suite contra un banco propio (por ejemplo, uno que apunte a los journals reales de la persona).
+// Sin argumento busca ./Modulos, que esta versionado y apunta, RELATIVO a cada carpeta, al
+// bin/Debug de cada modulo: arranca en cualquier maquina que los haya compilado. Si no estan
+// compilados, la primera asercion de la conformance lo dice y dice que compilar.
 string modulos = args.Length > 0 && Directory.Exists(args[0])
 	? Path.GetFullPath(args[0])
 	: Gnothi.Conformance.Conformance.FindModules();
@@ -344,6 +345,264 @@ Console.WriteLine("=== THE RECORD'S LANGUAGE RIDES ON FREE-TEXT PARAMETERS ===")
 	Assert("a Host tool has no module and therefore no record locale",
 		Gnothi.Host.ToolIndex.RecordLocaleOf(null) is null,
 		"expected null");
+}
+
+// THE CATALOG OF TEXTS IS THERE, IN BOTH LANGUAGES.
+//
+// This is the assertion that pays for itself. textos.json is an EmbeddedResource declared in
+// THREE csproj with the same LogicalName -- Gnothi.Host for the desktop, Gnothi.Mobile and
+// Gnothi.iOS because the phones compile the Host's sources by glob instead of referencing it.
+// Forgetting one of the three does NOT break the build: Textos returns each key as its own text,
+// so the symptom is a screen that says 'instituciones.titulo', found on a phone.
+//
+// What this can check is the assembly it runs in, which is the desktop's. The two phone csproj
+// are checked by reading them: they are text, and a missing line is a missing line.
+Console.WriteLine();
+Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
+{
+	Gnothi.Host.Textos.Idioma = "es";
+	string es = Gnothi.Host.Textos.T("instituciones.titulo");
+	Gnothi.Host.Textos.Idioma = "en";
+	string en = Gnothi.Host.Textos.T("instituciones.titulo");
+
+	Assert("the embedded catalog loads: a known key is not its own name",
+		es != "instituciones.titulo", $"got '{es}' -- the EmbeddedResource is missing from this csproj");
+	Assert("the two languages are different phrases",
+		es == "Mis conexiones" && en == "My Connections", $"es='{es}' en='{en}'");
+
+	Gnothi.Host.Textos.Idioma = "es";
+	Assert("a value travels by name, not by position",
+		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")) == "3 consultas",
+		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")));
+
+	// A missing key has to be UGLY, not blank: a blank looks like a design decision and ships.
+	Assert("a key that does not exist renders as itself",
+		Gnothi.Host.Textos.T("no.existe.esta.clave") == "no.existe.esta.clave",
+		Gnothi.Host.Textos.T("no.existe.esta.clave"));
+
+	string[] faltantes = [.. Gnothi.Host.Textos.Faltantes()];
+	Assert("no key is missing one of its two languages",
+		faltantes.Length == 0, string.Join(" | ", faltantes));
+
+	// THE ONE A COMPILER CANNOT SEE. A translator drops a {titulo} or writes {title}, and the
+	// phrase ships either with a raw marker on screen or -worse- without the datum and looking
+	// fine. Sets, not order: order is exactly why the values travel by name.
+	string[] discrepancias = [.. Gnothi.Host.Textos.Discrepancias()];
+	Assert("the two languages of a key ask for the same values",
+		discrepancias.Length == 0, string.Join(" | ", discrepancias));
+
+	// A KEY WHOSE TWO LANGUAGES SAY THE SAME THING is almost always a half-finished paste. It
+	// happened while writing this very catalog: the English went into both columns and only one
+	// got translated. Neither of the two checks above sees it -- both columns are full and no
+	// marker is missing -- so the phrase ships in the wrong language looking finished.
+	string[] identicas = [.. Gnothi.Host.Textos.Identicas()];
+	Assert("no key says exactly the same in both languages",
+		identicas.Length == 0, string.Join(" | ", identicas));
+
+	// THE ENROLLMENT PHRASE WITH THE MOST SUBSTITUTION, end to end: three values, and one of
+	// them is itself a phrase from the catalog (what an institution with no declared name is
+	// called). Nothing may be left raw.
+	Gnothi.Host.Textos.Idioma = "es";
+	string colision = Gnothi.Host.Textos.T("alta.error.colision",
+		("modulo", "compras"), ("instalada", "La Guaria"),
+		("entrante", Gnothi.Host.Textos.T("alta.error.otra-institucion")));
+	Assert("a phrase with three values leaves no marker raw",
+		!colision.Contains('{') && colision.Contains("compras")
+			&& colision.Contains("La Guaria") && colision.Contains("otra institución"),
+		colision);
+
+	// LA RAIZ DEL REPO, para las dos comprobaciones que leen archivos que ningun proyecto de esta
+	// maquina compila.
+	string raiz = AppContext.BaseDirectory;
+	while (raiz.Length > 1 && !Directory.Exists(Path.Combine(raiz, "Gnothi.Host")))
+		raiz = Path.GetDirectoryName(raiz.TrimEnd(Path.DirectorySeparatorChar)) ?? "/";
+
+	// LO QUE LAS DOS CASCARAS DE PLATAFORMA LE PIDEN A Shell, COMPROBADO SIN COMPILARLAS.
+	//
+	// MainActivity.cs y ViewController.cs no los compila NINGUN proyecto que corra en una Mac
+	// cualquiera: Android necesita un workload que puede no estar, y el SDK de iOS exige una
+	// version exacta de Xcode. Pero los dos llaman a Shell, que esta suite si compila -- asi que
+	// el borde se puede comprobar aunque las cascaras no.
+	//
+	// Lo que atrapa: renombrar un metodo de Shell y actualizar una sola de las dos, que es
+	// exactamente lo que pasa cuando el compilador no esta mirando. Ya paso una vez en sentido
+	// contrario: ReportEnrollmentError recibia la FRASE y las dos la escribian identica.
+	{
+		string[] caras = ["Gnothi.Mobile/MainActivity.cs", "Gnothi.iOS/ViewController.cs"];
+		var deShell = typeof(Gnothi.MobileShared.Shell)
+			.GetMembers(BindingFlags.Public | BindingFlags.Instance)
+			.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
+
+		foreach (string cara in caras)
+		{
+			string archivo = Path.Combine(raiz, cara);
+			string texto = File.Exists(archivo) ? File.ReadAllText(archivo) : "";
+			string[] pedidos = [.. System.Text.RegularExpressions.Regex
+				.Matches(texto, @"shell\??\.([A-Z][A-Za-z0-9]*)")
+				.Select(m => m.Groups[1].Value).Distinct().Order()];
+			string[] huerfanos = [.. pedidos.Where(n => !deShell.Contains(n))];
+
+			Assert($"{cara.Split('/')[1]} only asks Shell for members it has",
+				texto.Length > 0 && huerfanos.Length == 0,
+				texto.Length == 0 ? $"could not read {archivo}"
+					: $"calls that do not exist on Shell: {string.Join(", ", huerfanos)}");
+		}
+	}
+
+	// TODA CLAVE data-i18n DE ui.html EXISTE EN EL CATALOGO.
+	//
+	// Es lo que hace segura la estrategia del respaldo: la pagina lleva el espanol escrito
+	// adentro del marcado para que la maqueta siga siendo legible, y el catalogo lo PISA cuando
+	// llega. Una clave mal escrita no rompe nada visible -- el nodo simplemente se queda en
+	// espanol -- asi que en ingles esa sola frase saldria en espanol y nadie lo notaria hasta
+	// verlo en un telefono. Aca se nota al compilar.
+	{
+		string pagina = Path.Combine(raiz, "Gnothi.Mobile", "Assets", "ui.html");
+		string html = File.Exists(pagina) ? File.ReadAllText(pagina) : "";
+		string[] claves = [.. System.Text.RegularExpressions.Regex
+			.Matches(html, @"data-i18n=""([^""]+)""")
+			.Select(m => m.Groups[1].Value).Distinct().Order()];
+
+		Gnothi.Host.Textos.Idioma = "es";
+		string[] sinCatalogo = [.. claves.Where(c => Gnothi.Host.Textos.T(c) == c)];
+
+		Assert("ui.html tags at least the static markup",
+			claves.Length >= 40, $"only {claves.Length} data-i18n keys found in {pagina}");
+		Assert("every data-i18n key in ui.html exists in the catalog",
+			sinCatalogo.Length == 0, $"keys with no phrase: {string.Join(", ", sinCatalogo)}");
+
+		// Y TODA CLAVE QUE PIDE EL JAVASCRIPT, que es la otra mitad y la que no se ve.
+		//
+		// Las de data-i18n fallan suave -- el nodo se queda con el espanol que trae el marcado --
+		// pero un T('clave') mal escrito PINTA LA CLAVE en la pantalla, y solo en la rama que la
+		// alcanza: la hoja de un paquete con la llave cambiada, el aviso de un origen que no
+		// responde. Ramas que nadie abre a mano.
+		//
+		// Es estatica y por eso vale mas que una corrida: cubre TODOS los sitios de llamada, no
+		// los que un render cualquiera toca.
+		// Los literales T('clave'), MAS las claves que se declaran como dato y se resuelven en
+		// tiempo de ejecucion -- hoy la nota de cada proveedor, `nota:'prov.nota.groq'`, que
+		// llega a T(p.nota) y que un regex sobre la llamada no puede ver. Una clave dinamica que
+		// nadie declara cerca es una que esta suite no puede cuidar: por eso se declaran asi.
+		string[] pedidas = [.. System.Text.RegularExpressions.Regex
+			.Matches(html, @"\bT\('([a-z0-9.-]+)'|\bnota:\s*'([a-z0-9.-]+)'")
+			.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value)
+			.Distinct().Order()];
+		string[] huerfanas = [.. pedidas.Where(c => Gnothi.Host.Textos.T(c) == c)];
+
+		Assert("ui.html asks the catalog for a good number of phrases",
+			pedidas.Length >= 60, $"only {pedidas.Length} T() call sites found");
+		Assert("every key the page's JavaScript asks for exists in the catalog",
+			huerfanas.Length == 0, $"keys with no phrase: {string.Join(", ", huerfanas)}");
+	}
+
+	// Y TODA CLAVE QUE PIDE EL C#, que es la tercera superficie y la que menos se mira.
+	//
+	// El lector devuelve la clave cuando no la encuentra -- feo a proposito -- asi que un
+	// `Textos.T("ajustes.carpta")` compila, corre, y pinta «ajustes.carpta» en la pantalla de
+	// quien tenga esa rama. El compilador no ve nada: es un string. Las dos aserciones de arriba
+	// cubren ui.html; esta cubre los .cs y los .razor, que son las otras dos caras.
+	{
+		string[] fuentes = [.. new[] { "Gnothi.Host", "Gnothi.MobileShared", "Gnothi.Assistant", "Gnothi.Desktop", "Gnothi.Mobile", "Gnothi.iOS" }
+			.Select(d => Path.Combine(raiz, d))
+			.Where(Directory.Exists)
+			.SelectMany(d => Directory.EnumerateFiles(d, "*.cs", SearchOption.AllDirectories)
+				.Concat(Directory.EnumerateFiles(d, "*.razor", SearchOption.AllDirectories)))
+			.Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+			         && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))];
+
+		// `Textos.T("x")` en los .cs, y `T("x")` en los .razor, que lo llaman por el helper.
+		// SIN COMENTARIOS: `_Imports.razor` documenta el helper escribiendo T("clave") en un
+		// comentario, y leerlo como sitio de llamada hace fallar la asercion por una clave que
+		// nadie pide. Se quitan los bloques @* *@ de Razor y las lineas // de C#.
+		static string SinComentarios(string s)
+		{
+			s = System.Text.RegularExpressions.Regex.Replace(s, @"@\*.*?\*@", " ",
+				System.Text.RegularExpressions.RegexOptions.Singleline);
+			return System.Text.RegularExpressions.Regex.Replace(s, @"^[ \t]*//.*$", " ",
+				System.Text.RegularExpressions.RegexOptions.Multiline);
+		}
+
+		string[] pedidasCs = [.. fuentes
+			.SelectMany(f => System.Text.RegularExpressions.Regex
+				.Matches(SinComentarios(File.ReadAllText(f)), @"\bTextos\.T\(""([a-z0-9.-]+)""|@?\bT\(""([a-z0-9.-]+)""")
+				.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value))
+			.Distinct().Order()];
+
+		Gnothi.Host.Textos.Idioma = "es";
+		string[] sinFrase = [.. pedidasCs.Where(c => Gnothi.Host.Textos.T(c) == c)];
+
+		Assert("the C# and .razor faces ask the catalog for a good number of phrases",
+			pedidasCs.Length >= 60, $"only {pedidasCs.Length} Textos.T() call sites found");
+		Assert("every key the C# and .razor faces ask for exists in the catalog",
+			sinFrase.Length == 0, $"keys with no phrase: {string.Join(", ", sinFrase)}");
+	}
+
+	// Y QUE NINGUN TEXTO PARA LA PERSONA SIGA CABLEADO EN EL JAVASCRIPT.
+	//
+	// Las dos aserciones de arriba comprueban que toda CLAVE USADA exista. Ninguna comprueba lo
+	// contrario -- que todo LITERAL este convertido en clave --, y por ese hueco pasaron treinta y
+	// un rotulos: se vieron el 2026-09-15 en un iPhone con el sistema en ingles y Ajustes entero en
+	// espanol. Ni el compilador ni una corrida los ven: la pagina se pinta perfecta, en el idioma
+	// equivocado. Las que se escaparon estaban todas en el JS que arma HTML concatenando, que es
+	// justo donde no hay un data-i18n que revisar.
+	//
+	// LA REGLA ES EXACTA Y NO UNA HEURISTICA DE IDIOMA -- buscar palabras en espanol no ve
+	// «Proveedor» ni «Modelo», que fueron dos de los treinta y uno. Lo que se exige es esto: EN EL
+	// MARCADO QUE ARMA EL JAVASCRIPT, NINGUN NODO DE TEXTO TRAE LETRAS. Todo lo visible entra por
+	// T(...) o por esc(dato).
+	//
+	// Mira solo desde <script hasta `const MOCK`: el mock del escritorio imita la voz de
+	// instituciones ficticias -«Laboratorio Clinico Delfos», «Tu salud, en tus manos»- y esa no se
+	// traduce nunca (regla 4).
+	{
+		string pagina = Path.Combine(raiz, "Gnothi.Mobile", "Assets", "ui.html");
+		string html = File.Exists(pagina) ? File.ReadAllText(pagina) : "";
+		int desde = html.IndexOf("<script", StringComparison.Ordinal);
+		int hasta = html.IndexOf("const MOCK", StringComparison.Ordinal);
+		string js = desde >= 0 && hasta > desde ? html[desde..hasta] : "";
+
+		List<string> cableados = [];
+		foreach (System.Text.RegularExpressions.Match lit in System.Text.RegularExpressions.Regex
+			.Matches(js, @"'((?:[^'\\\r\n]|\\.)*)'|""((?:[^""\\\r\n]|\\.)*)"""))
+		{
+			string s = lit.Groups[1].Success ? lit.Groups[1].Value : lit.Groups[2].Value;
+
+			// Un literal sin marcado es codigo: un id de protocolo, un selector, una regla CSS.
+			if (!s.Contains('<') && !s.Contains('>')) continue;
+
+			// Los fragmentos cortan tags por la mitad: se descarta la cola de un tag que abre al
+			// final, y la cabeza de atributos de uno que venia abierto del literal anterior.
+			string limpio = System.Text.RegularExpressions.Regex.Replace(s, @"<[^>]*$", "");
+			limpio = System.Text.RegularExpressions.Regex.Replace(limpio, @"^[^<]*>", "");
+
+			foreach (string fuera in System.Text.RegularExpressions.Regex.Split(limpio, @"<[^>]*>"))
+			{
+				string txt = System.Text.RegularExpressions.Regex
+					.Replace(fuera, @"&[a-z]+;|&#\d+;", " ").Trim();
+				if (System.Text.RegularExpressions.Regex.IsMatch(txt, @"\p{L}\p{L}"))
+					cableados.Add(txt.Length > 45 ? txt[..45] + "..." : txt);
+			}
+		}
+
+		Assert("no text for the person is hardcoded in ui.html's JavaScript",
+			cableados.Count == 0,
+			$"hardcoded: {string.Join(" | ", cableados.Distinct())}");
+	}
+
+	// THE OTHER TWO CSPROJ, read as text. Cheap, and it is the exact failure this suite exists
+	// to catch: the comment in Gnothi.iOS.csproj invokes this suite, and until now the suite
+	// said nothing about what each face declares.
+	foreach (string cara in new[] { "Gnothi.Mobile", "Gnothi.iOS" })
+	{
+		string csproj = Path.Combine(raiz, cara, cara + ".csproj");
+		string texto = File.Exists(csproj) ? File.ReadAllText(csproj) : "";
+		Assert($"{cara} declares the catalog with the shared LogicalName",
+			texto.Contains("gnothi.textos.json", StringComparison.Ordinal),
+			File.Exists(csproj)
+				? $"{cara}.csproj has no EmbeddedResource for textos.json: that face would start with no catalog"
+				: $"could not read {csproj}");
+	}
 }
 
 Console.WriteLine();

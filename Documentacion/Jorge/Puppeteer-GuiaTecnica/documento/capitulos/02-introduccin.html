@@ -1,0 +1,87 @@
+<!-- INTRODUCCIÓN -->
+  <section class="anchor" id="intro">
+    <h2>Introducción · ¿Qué es Puppeteer?</h2>
+    <p class="chapter-meta">El modelo mental en pocas páginas: qué es un actor, qué es un comando y por qué el diario lo cambia todo.</p>
+
+    <p>Imagina que cada pieza de lógica de negocio de tu sistema fuera un pequeño ser vivo que <strong>guarda su propio estado en memoria</strong> y es el <strong>único</strong> autorizado a cambiarlo. No le pides que exponga sus datos para que tú los modifiques desde afuera: le <strong>envías una instrucción</strong> y él la ejecuta contra sí mismo. Eso es un <em class="term">actor</em> de Puppeteer, y trabajar así es más simple y más seguro de lo que suena.</p>
+
+    <p>Puppeteer es un framework de <strong>event sourcing</strong> con <strong>actores</strong> y un pequeño <strong>lenguaje (DSL)</strong> para darles órdenes. Corre <em>detrás</em> de tu servidor: en cada request de tu API, la lógica de negocio se ejecuta sobre un actor que vive en memoria —como una base de datos en memoria— y por eso es rápido.</p>
+
+    <blockquote>«State is local. Continuity is not.» — El estado es local; la continuidad no. Puppeteer conserva el resultado local de cada actor y, a la vez, reconstruye la continuidad entre sesiones, servicios y dispositivos.</blockquote>
+
+    <h3>Los cinco elementos</h3>
+    <p>Todo lo que hace Puppeteer se organiza alrededor de cinco elementos. Vale la pena tenerlos a mano, porque el resto de la guía no hace más que profundizar en ellos:</p>
+    <table>
+      <thead><tr><th>Elemento</th><th>Qué es</th><th>En el bingo <em>Velada</em></th></tr></thead>
+      <tbody>
+        <tr><td><strong>Participantes</strong></td><td>Personas que actúan desde cualquier dispositivo.</td><td>El organizador, las vendedoras, los jugadores.</td></tr>
+        <tr><td><strong>Acciones</strong></td><td>Decisiones registradas como operaciones.</td><td>Vender un cartón, cantar una bolita, reclamar bingo.</td></tr>
+        <tr><td><strong>Reglas</strong></td><td>La lógica que interpreta el significado de cada acción.</td><td>Cuándo una figura se da por ganada; si un cartón puede salir de juego.</td></tr>
+        <tr><td><strong>Diario causal</strong></td><td>El registro append-only de lo que sucedió.</td><td>El diario de la velada: cada venta, cada bolita, en orden.</td></tr>
+        <tr><td><strong>Manifestaciones</strong></td><td>La presentación, personalizada por participante.</td><td>La pantalla del organizador, la de la vendedora, la del jugador.</td></tr>
+      </tbody>
+      <caption>Tabla 3. Los cinco elementos de Puppeteer, aterrizados en un caso real.</caption>
+    </table>
+
+    <h3>Tres ideas y ya lo entendiste</h3>
+
+    <h4 class="sub">1. El actor es dueño de su estado</h4>
+    <p>El estado no vive en una tabla que cualquiera edita: vive <strong>dentro del actor</strong>. Nadie lo muta desde afuera. Se le manda un <em class="term">script</em> —un comando escrito en el DSL— y el actor lo corre contra su propio estado. Esto elimina de raíz una categoría entera de errores: no hay dos partes del código peleando por el mismo dato.</p>
+
+    <h4 class="sub">2. Hablas con él en un DSL diminuto</h4>
+    <p>No manipulas objetos a mano ni escribes SQL. Escribes una frase corta y clara. Así se le ordena a un actor real —la mesa del bingo— que ponga un cartón en juego y cante un número:</p>
+    <pre><span class="tag real">DSL · real</span><code>mesa.PutCardInPlay(1001);
+mesa.RegisterDraw(@numero, @ronda);</code></pre>
+    <p>El DSL <strong>orquesta</strong> tu dominio en C#: construye tus objetos y llama sus verbos. Tú programas la lógica rica en C#; el DSL solo dice <em>qué</em> hacer, no <em>cómo</em>.</p>
+
+    <h4 class="sub">3. Todo queda escrito en un diario (y ahí está la magia)</h4>
+    <p>Cada comando que cambia el estado se anota en un <em class="term">diario causal</em>: una lista append-only de todo lo que pasó. El estado actual del actor no es más que <strong>el resultado de haber ejecutado el diario de principio a fin</strong>.</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 190" width="100%" style="max-width:600px" role="img" aria-label="Un comando entra al actor, que ejecuta el script contra su estado en memoria y anota el hecho en el diario. Reproducir el diario reconstruye el estado.">
+        <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="13" fill="var(--ink)">
+          <rect x="6" y="66" width="120" height="54" rx="10" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="66" y="90" text-anchor="middle" font-weight="700">Comando</text>
+          <text x="66" y="107" text-anchor="middle" fill="var(--ink-soft)" font-size="11">script DSL</text>
+          <circle cx="300" cy="93" r="58" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="300" y="88" text-anchor="middle" font-weight="700">Actor</text>
+          <text x="300" y="106" text-anchor="middle" fill="var(--ink-soft)" font-size="11">estado en memoria</text>
+          <rect x="486" y="50" width="148" height="86" rx="10" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="560" y="74" text-anchor="middle" font-weight="700">Diario</text>
+          <text x="560" y="93" text-anchor="middle" fill="var(--ink-soft)" font-size="11">append-only</text>
+          <text x="560" y="112" text-anchor="middle" fill="var(--ink-soft)" font-size="11">la verdad</text>
+          <line x1="128" y1="93" x2="238" y2="93" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+          <line x1="360" y1="93" x2="482" y2="93" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+          <path d="M486,120 C400,175 200,175 300,153" fill="none" stroke="var(--accent-soft)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+          <text x="300" y="184" text-anchor="middle" fill="var(--accent-soft)" font-size="11">reproducir el diario reconstruye el estado</text>
+        </g>
+      </svg>
+      <figcaption>Figura 1. Un comando cambia el estado y se anota en el diario. El estado siempre se puede reconstruir reproduciéndolo.</figcaption>
+    </figure>
+
+    <p>Si reproduces el diario, <strong>obtienes exactamente el mismo estado</strong>. Reiniciar un proceso, mover el actor a otra máquina o volver a desplegar el sistema no es un evento traumático: es, simplemente, <strong>reproducir el diario otra vez</strong>. En Puppeteer se dice que <em>desplegar es reproducir</em>.</p>
+
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>El diario guarda el <strong>texto del comando</strong>, no el efecto que tuvo. Por eso el actor puede renacer en cualquier momento re-ejecutando lo que se le dijo. Es también la razón por la que los comandos deben ser <strong>deterministas</strong>: la fecha y hora, por ejemplo, no se leen del reloj del sistema dentro del script, sino que el framework las inyecta y las guarda en el diario, para que una reproducción dé siempre el mismo resultado.</p>
+    </aside>
+
+    <h3>¿Y esto para qué me sirve?</h3>
+    <ul class="body">
+      <li><strong>Auditoría total, gratis.</strong> El diario <em>es</em> la historia completa: cada cambio, en orden, con su momento. No hay que “agregar logging”.</li>
+      <li><strong>Rendimiento de base de datos en memoria.</strong> El estado vive en RAM; las lecturas son inmediatas.</li>
+      <li><strong>Cambios baratos.</strong> Agregar una operación nueva suele ser <em>un método en tu dominio + una línea de DSL</em> — una propiedad que veremos en acción a lo largo de la Parte I.</li>
+      <li><strong>El mismo dominio en muchas topologías.</strong> Un actor puede reaccionar a lo que otro escribió y avisarle (un <em>tell</em>), y así se arman sistemas distribuidos completos sin acoplar sus partes.</li>
+    </ul>
+
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Piensa en cada capacidad de negocio como un actor que <strong>protege su estado</strong> y ofrece <strong>verbos</strong> (operaciones), no campos editables. Es la unidad natural de diseño en Puppeteer.</p>
+    </div>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No trates al actor como una bolsa de datos para leer y escribir desde afuera. Si te descubres “sacando” el estado para modificarlo y “metiéndolo” de vuelta, estás peleando contra el paradigma.</p>
+    </div>
+
+    <p>Con estas tres ideas —<strong>estado propio</strong>, <strong>DSL que orquesta</strong>, <strong>diario como verdad</strong>— ya tienes el mapa. Con él en mano, fijemos ahora el modelo mental completo.</p>
+  </section>

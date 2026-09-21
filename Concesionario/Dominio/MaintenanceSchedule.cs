@@ -424,19 +424,17 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Por que esa clase esta donde esta, en una frase. Total: una clase que no esta agendada
-		/// lo dice con todas las letras. Componer el motivo es del dominio y no de la vista.
+		/// Por que esa clase esta donde esta. Total: una clase que no esta agendada tiene su propia
+		/// forma de motivo. Elegirlo es del dominio y no de la vista.
 		/// </summary>
-		internal string ReadDueReason(OperationKindCode kind)
+		internal ADueReason TheDueReasonFor(OperationKindCode kind)
 		{
 			MaintenanceOperationKind asked = MaintenanceOperationKind.OfCode(kind);
 
 			if (!_operations.ContainsKey(kind))
-				return "Este vehículo no tiene agendada ninguna operación de "
-					+ asked.HowItIsSaid.ToLowerInvariant() + ", así que no hay nada que pueda "
-					+ "estar vencido.";
+				return ADueReason.WithNoOperationScheduled(asked.Name);
 
-			return _operations[kind].Describe();
+			return _operations[kind].TheReason();
 		}
 
 		/// <summary>
@@ -536,27 +534,28 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El ritmo de uso de ese periodo en una frase: los dos extremos con sus instantes, la
-		/// distancia, el tiempo y la distancia por dia; o la razon con nombre que impide decirlo.
-		/// TOTAL. Los dos extremos no salen nunca sueltos: salen dentro de esta frase, que ya trae
-		/// el ritmo.
+		/// El ritmo de uso de ese periodo como forma y valores: los dos extremos con sus instantes,
+		/// la distancia, el tiempo y el ritmo; o la razon con nombre que impide decirlo.
+		/// TOTAL. Los dos extremos no salen nunca sueltos: salen dentro de esta clausula, que ya
+		/// trae el ritmo.
 		/// </summary>
-		internal string DescribeRateOfUse(DateTime from, DateTime to)
+		internal ARateClause TheRateOfUseClause(DateTime from, DateTime to)
 		{
-			return TheSpanOfUseBetween(from, to).TheRate().Describe();
+			return ARateClause.OfOnePeriod(
+				TheSpanOfUseBetween(from, to).TheRate().TheClauseOfItsPeriod());
 		}
 
 		/// <summary>
-		/// Los dos periodos comparados en una sola frase: cada uno con su propio ritmo y el cambio
-		/// del PRIMERO respecto al SEGUNDO dicho adentro. TOTAL. Ninguna lectura entrega el cambio
+		/// Los dos periodos comparados en una sola clausula: cada uno con su propio ritmo y el
+		/// cambio del PRIMERO respecto al SEGUNDO adentro. TOTAL. Ninguna lectura entrega el cambio
 		/// solo.
 		/// </summary>
-		internal string DescribeTwoPeriodsOfUseCompared(
+		internal ARateClause TheTwoPeriodsOfUseComparedClause(
 			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
 		{
 			return ATwoSpanComparison.Of(
 				TheSpanOfUseBetween(from1, to1).TheRate(),
-				TheSpanOfUseBetween(from2, to2).TheRate()).Describe();
+				TheSpanOfUseBetween(from2, to2).TheRate()).TheClauseItComposes();
 		}
 
 		/// <summary>
@@ -657,20 +656,6 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Cada lectura del periodo en su propia frase, una por fila y en el mismo orden. TOTAL.
-		/// </summary>
-		internal string[] DescribeEachReadingBetween(DateTime from, DateTime to)
-		{
-			List<ASeriesRow> rows = TheSpanOfUseBetween(from, to).Rows();
-
-			string[] said = new string[rows.Count];
-
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
-
-			return said;
-		}
-
-		/// <summary>
 		/// Si se puede decir cuanta distancia le queda a esa operacion en ese instante. Total: es
 		/// la pregunta que hay que hacer antes de las dos guardadas de abajo.
 		/// </summary>
@@ -707,11 +692,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Lo que le queda de distancia, en una frase. Total: las siete situaciones dicen algo.
+		/// Lo que le queda de distancia, como situacion mas valores. Total: las siete situaciones
+		/// dicen algo, y ninguna se entrega ya redactada.
 		/// </summary>
-		internal string DescribeDistanceRemaining(OperationKindCode kind, DateTime asOf)
+		internal ARemainder TheDistanceRemainderFor(OperationKindCode kind, DateTime asOf)
 		{
-			return TheRemainderOnDistanceFor(kind, asOf).Describe();
+			return TheRemainderOnDistanceFor(kind, asOf);
 		}
 
 		/// <summary>Si se puede decir cuantos dias le quedan a esa operacion. Total.</summary>
@@ -735,33 +721,26 @@ namespace Concesionario.Dominio
 			return TheRemainderOnTimeFor(kind, asOf).Standing().Name;
 		}
 
-		/// <summary>Lo que le queda de plazo, en una frase. Total.</summary>
-		internal string DescribeDaysRemaining(OperationKindCode kind, DateTime asOf)
+		/// <summary>Lo que le queda de plazo, como situacion mas valores. Total.</summary>
+		internal ARemainder TheTimeRemainderFor(OperationKindCode kind, DateTime asOf)
 		{
-			return TheRemainderOnTimeFor(kind, asOf).Describe();
+			return TheRemainderOnTimeFor(kind, asOf);
 		}
 
 		/// <summary>
-		/// La cuenta atras entera: LAS DOS dimensiones y las dos situaciones en una frase, sin
-		/// elegir ninguna. Elegir la mas cercana dejaria el numero de la pantalla discrepando del
-		/// motivo del estado para quien lea los dos juntos. Total.
-		/// <para>
-		/// Sin operacion agendada no hay dos mitades que decir, asi que se dice una sola vez.
-		/// </para>
+		/// Si la cuenta atras tiene DOS mitades que decir. Total, y es lo que separa una clase
+		/// agendada de una que no lo esta: sin operacion no hay dos mitades, y decir la misma
+		/// ausencia dos veces en una linea seria duplicarla.
 		/// </summary>
-		internal string DescribeCountdown(OperationKindCode kind, DateTime asOf)
+		internal bool TheCountdownHasTwoHalves(OperationKindCode kind, DateTime asOf)
 		{
-			ARemainder distance = TheRemainderOnDistanceFor(kind, asOf);
-
-			if (distance.HasNoOperationScheduled()) return distance.Describe();
-
-			return distance.Describe() + "; " + TheRemainderOnTimeFor(kind, asOf).Describe();
+			return !TheRemainderOnDistanceFor(kind, asOf).HasNoOperationScheduled();
 		}
 
 		/// <summary>
 		/// Si esa clase tiene alguna completacion alcanzable en su cadena. Total: es la pregunta que
 		/// hay que hacer antes de leer las filas, y las dos ausencias contestan que no por razones
-		/// distintas que <see cref="DescribeCompletions"/> dice.
+		/// distintas que <see cref="TheCompletionsClauseFor"/> separa con su forma.
 		/// </summary>
 		internal bool HasAnyCompletion(OperationKindCode kind)
 		{
@@ -778,12 +757,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// El historial de esa clase en una frase. Total: nunca completada y no agendada son dos
-		/// ausencias distintas y cada una dice la suya.
+		/// El historial de esa clase como forma y valores. Total: nunca completada y no agendada son
+		/// dos ausencias distintas y cada una sale con su propio codigo.
 		/// </summary>
-		internal string DescribeCompletions(OperationKindCode kind)
+		internal ACompletionsClause TheCompletionsClauseFor(OperationKindCode kind)
 		{
-			return TheCompletionsOf(kind).Describe();
+			return TheCompletionsOf(kind).TheClause();
 		}
 
 		/// <summary>
@@ -802,31 +781,46 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Con que lectura del odometro se hizo cada completacion de esa clase, una por fila y en el
-		/// mismo orden. La que no tiene lectura lo DICE con palabras. TOTAL.
+		/// Si cada completacion de esa clase tiene lectura del odometro, por su codigo, una por fila y
+		/// en el mismo orden. La que no tiene lo DICE con su propia situacion. TOTAL.
 		/// </summary>
-		internal string[] CompletionReadingsOf(OperationKindCode kind)
+		internal string[] CompletionReadingShapesOf(OperationKindCode kind)
 		{
 			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheShapeOfItsReading();
 
 			return said;
 		}
 
 		/// <summary>
-		/// Cada completacion de esa clase en su propia frase, una por fila y en el mismo orden.
-		/// TOTAL.
+		/// Que leyo el odometro en cada completacion de esa clase, una por fila y en el mismo orden.
+		/// TOTAL, y cual fila dice algo lo dice su forma y nunca el cero.
 		/// </summary>
-		internal string[] DescribeEachCompletionOf(OperationKindCode kind)
+		internal int[] CompletionReadingValuesOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			int[] said = new int[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheValueOfItsReading();
+
+			return said;
+		}
+
+		/// <summary>
+		/// La unidad de la lectura de cada completacion de esa clase, una por fila y en el mismo
+		/// orden. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingUnitsOf(OperationKindCode kind)
 		{
 			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheUnitOfItsReading();
 
 			return said;
 		}
@@ -862,31 +856,46 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Con que lectura del odometro se hizo cada completacion del historial entero, una por fila
-		/// y en el mismo orden. La que no tiene lectura lo dice. TOTAL.
+		/// Si cada completacion del historial entero tiene lectura del odometro, por su codigo, una
+		/// por fila y en el mismo orden. La que no tiene lo dice con su propia situacion. TOTAL.
 		/// </summary>
-		internal string[] CompletionReadingsOnRecord()
+		internal string[] CompletionReadingShapesOnRecord()
 		{
 			List<ACompletionRow> rows = TheCompletionsOnRecord();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheShapeOfItsReading();
 
 			return said;
 		}
 
 		/// <summary>
-		/// Cada completacion del historial entero en su propia frase, una por fila y en el mismo
-		/// orden. TOTAL.
+		/// Que leyo el odometro en cada completacion del historial entero, una por fila y en el mismo
+		/// orden. TOTAL, y cual fila dice algo lo dice su forma y nunca el cero.
 		/// </summary>
-		internal string[] DescribeEachCompletionOnRecord()
+		internal int[] CompletionReadingValuesOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			int[] said = new int[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheValueOfItsReading();
+
+			return said;
+		}
+
+		/// <summary>
+		/// La unidad de la lectura de cada completacion del historial entero, una por fila y en el
+		/// mismo orden. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingUnitsOnRecord()
 		{
 			List<ACompletionRow> rows = TheCompletionsOnRecord();
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheUnitOfItsReading();
 
 			return said;
 		}
@@ -949,7 +958,7 @@ namespace Concesionario.Dominio
 		private static ARemainder NoOperationScheduledFor(OperationKindCode kind)
 		{
 			return ARemainder.WithNoOperationScheduled(
-				MaintenanceOperationKind.OfCode(kind).HowItIsSaid);
+				MaintenanceOperationKind.OfCode(kind).Name);
 		}
 
 		private static BasePoint TheAnchor(

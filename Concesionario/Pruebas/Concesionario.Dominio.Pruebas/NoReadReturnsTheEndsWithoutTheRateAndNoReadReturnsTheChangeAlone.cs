@@ -27,8 +27,9 @@ namespace Concesionario.Dominio.Pruebas
 	//   sola de las seis contesta con un NUMERO -- una cuenta de filas, que es una respuesta entera.
 	//   Un extremo suelto tendria que entrar por ahi y el mapa exacto lo nombra.
 	//
-	//   POR ALCANCE: los dos miembros que SI dan el ritmo como numero -- DistancePerDay y
-	//   HowItComparesTo -- viven en RateAnswer, que la puerta no puede nombrar NI ALCANZAR, porque
+	//   POR ALCANCE: los tres miembros que SI dan el ritmo como numero -- DistancePerDay,
+	//   TheShapeOfItsChangeAgainst y TheChangeAgainstAsSaid -- viven en RateAnswer, que la puerta no
+	//   puede nombrar NI ALCANZAR, porque
 	//   ningun miembro expuesto de MaintenanceSchedule devuelve un portador de esta serie. La puerta
 	//   solo puede escribir 'schedule.X(...)': si schedule no tiene por donde, no hay script que
 	//   llegue.
@@ -147,15 +148,20 @@ namespace Concesionario.Dominio.Pruebas
 			}
 		}
 
-		// ===== POR ALCANCE: LOS DOS MIEMBROS QUE DAN EL RITMO COMO NUMERO ==================
+		// ===== POR ALCANCE: LOS MIEMBROS QUE DAN EL RITMO COMO NUMERO ======================
 
-		// LOS DOS EXISTEN Y SON INTERNAL DE RateAnswer, que es donde tienen que estar: el ritmo se
+		// LOS TRES EXISTEN Y SON INTERNAL DE RateAnswer, que es donde tienen que estar: el ritmo se
 		// compone adentro. Sin este renglon la prueba de abajo se cumpliria tambien si alguien los
 		// borrara, que seria un defecto distinto.
+		//
+		// ERAN DOS HASTA EL TURNO DEL IDIOMA. HowItComparesTo redactaba la clausula del cambio y se
+		// partio en dos -- la SITUACION por su codigo y los DIGITOS del porcentaje --, porque una
+		// redaccion no se queda en el dominio. El redondeo sigue viviendo en UN solo miembro.
 		[Test]
-		public void TheTwoMembersThatDoGiveTheRateAsANumberLiveOnTheAnswerAndAreInternal()
+		public void TheThreeMembersThatDoGiveTheRateAsANumberLiveOnTheAnswerAndAreInternal()
 		{
-			foreach (string each in new[] { "DistancePerDay", "HowItComparesTo" })
+			foreach (string each in new[]
+				{ "DistancePerDay", "TheShapeOfItsChangeAgainst", "TheChangeAgainstAsSaid" })
 			{
 				MethodInfo found = typeof(RateAnswer).GetMethod(
 					each, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);

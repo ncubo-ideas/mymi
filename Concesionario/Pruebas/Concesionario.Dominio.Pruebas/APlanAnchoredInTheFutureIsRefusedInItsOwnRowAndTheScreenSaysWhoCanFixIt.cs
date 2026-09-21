@@ -106,7 +106,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			HowOneOperationStands answers = handed.Of(TheKindThatAnswers);
 
-			Assert.That(answers.Says, Does.Contain("distancia: te faltan 7345 km"));
+			Assert.That(answers.Says, Does.Contain("distancia: te faltan 7.345 km"));
 			Assert.That(answers.DistanceRemaining, Is.EqualTo(7345));
 			Assert.That(answers.DaysRemaining, Is.EqualTo(255));
 		}
@@ -151,7 +151,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				refused.CompletionsSays,
-				Is.EqualTo(journal.Api.DescribeCompletions(TheKindAnchoredAhead)),
+				Is.EqualTo(journal.Api.DescribeCompletions(
+					TheKindAnchoredAhead, TheLanguage.OfTheRecord)),
 				"Y es la frase de la puerta letra por letra, de ESA clase.");
 
 			Assert.That(refused.HasBeenCompleted, Is.False);
@@ -234,7 +235,7 @@ namespace Concesionario.Dominio.Pruebas
 				"La fila rechazada no dice nada. Un hueco donde iba la cuenta atras se lee igual que una "
 				+ "operacion que no tiene ninguna que mostrar.");
 
-			string said = TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom;
+			string said = TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom);
 
 			Assert.That(said, Does.Contain("concesionario"),
 				"La frase no dice quien pone la fecha. En una pantalla la persona es la que iria a "
@@ -258,7 +259,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		private void AnOperationWithAReadingAfterIt()

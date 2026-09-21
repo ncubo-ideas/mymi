@@ -1,6 +1,7 @@
 @using System.Globalization
 @using System.Linq
 @using Examenes.App.Vistas
+@inject Textos textos
 
 @*  LA FORMA DEL ANTÍGENO PROSTÁTICO: una trayectoria contra la línea base de la persona.
 
@@ -41,11 +42,11 @@
     <div class="forma-pie">
         @if (Habitual is not null)
         {
-            <span class="forma-nota"><i class="muestra muestra--banda"></i>tu nivel de siempre, @Numero(Habitual.Valor) @Unidad</span>
+            <span class="forma-nota"><i class="muestra muestra--banda"></i>@textos.Con("forma.nivelDeSiempre", ("valor", textos.Medida(Habitual.Valor, Unidad)))</span>
         }
         @if (Techo is not null)
         {
-            <span class="forma-nota"><i class="muestra muestra--techo"></i>esperable hasta @Numero(Techo.Valor) @Unidad</span>
+            <span class="forma-nota"><i class="muestra muestra--techo"></i>@textos.Con("forma.esperableHasta", ("valor", textos.Medida(Techo.Valor, Unidad)))</span>
         }
     </div>
 </div>
@@ -113,6 +114,4 @@
 
     private string Recorrido =>
         string.Join(" ", Puntos.Select((p, i) => $"{X(i)},{Y(p.Valor)}"));
-
-    private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
 }

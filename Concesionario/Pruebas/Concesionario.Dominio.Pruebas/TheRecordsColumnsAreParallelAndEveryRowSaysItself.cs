@@ -76,7 +76,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheFiveColumnsAreTheSameLengthAndThatLengthIsTheStayCount()
 		{
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(record.Subject, Has.Length.EqualTo(record.Branch.Length));
 			Assert.That(record.EnteredAt, Has.Length.EqualTo(record.Branch.Length));
@@ -98,7 +99,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EveryRowNamesItsOwnSubjectInsideItsOwnSentence()
 		{
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			for (int row = 0; row < record.Branch.Length; row++)
 			{
@@ -132,7 +134,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheFiveCellsOfARowAreAllFromTheSameStay()
 		{
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(record.Branch[0], Is.EqualTo(TheMarchBranch));
 			Assert.That(record.Subject[0], Is.EqualTo(TheMarchSubject));

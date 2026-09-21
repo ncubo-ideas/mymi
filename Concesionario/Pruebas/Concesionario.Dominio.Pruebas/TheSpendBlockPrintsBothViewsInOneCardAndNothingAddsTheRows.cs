@@ -138,19 +138,18 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				spend.Says,
-				Is.EqualTo(journal.Api.DescribeSpendBetween(TheWindowFrom, TheWindowTo)),
+				Is.EqualTo(journal.Api.DescribeSpendBetween(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord)),
 				"La frase del gasto es la de la puerta LETRA POR LETRA.");
 
 			Assert.That(
 				spend.PerCurrencySays,
 				Is.EqualTo(
-					journal.Api.DescribeSpendPerCurrencyBetween(TheWindowFrom, TheWindowTo)),
+					journal.Api.DescribeSpendPerCurrencyBetween(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord)),
 				"Y la de por moneda tambien.");
 
 			Assert.That(
 				spend.BothPeriodsSay,
-				Is.EqualTo(journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo)),
+				Is.EqualTo(journal.Api.DescribeTwoPeriodsOfSpendCompared(TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo, TheLanguage.OfTheRecord)),
 				"Y la de los dos periodos, con los cuatro limites en el orden en que se pasaron: "
 				+ "cruzar los dos pares da otra frase.");
 
@@ -161,7 +160,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				spend.CostPerDistanceSays,
 				Is.EqualTo(
-					journal.Api.DescribeCostPerDistanceBetween(TheWindowFrom, TheWindowTo)));
+					journal.Api.DescribeCostPerDistanceBetween(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord)));
 
 			Assert.That(spend.EntryCount, Is.EqualTo(3),
 				"EntryCount: los TRES del anio, contados por el dominio.");
@@ -180,14 +179,13 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			TheThreeCostsAndTheThreeReadings();
 
-			string half = journal.Api.DescribeSpendPerCurrencyBetween(
-				TheColonesHalfFrom, TheColonesHalfTo);
+			string half = journal.Api.DescribeSpendPerCurrencyBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord);
 
-			Assert.That(half, Does.Contain("Salieron ₡285000.00 del banco"),
+			Assert.That(half, Does.Contain("Salieron ₡285.000,00 del banco"),
 				"La caja del semestre, sumada por el DOMINIO -- 240000 mas 45000.");
 			Assert.That(half, Does.Contain("el período consumió ₡"),
 				"Y lo consumido en la MISMA frase: ningun miembro contesta una vista sola.");
-			Assert.That(half, Does.Not.Contain("consumió ₡285000.00"),
+			Assert.That(half, Does.Not.Contain("consumió ₡285.000,00"),
 				"Y las dos cifras DIFIEREN, que es el caso que hace que la distincion sirva de algo: "
 				+ "la duradera se reparte a lo largo de 48 meses, asi que 'compró llantas' no es 'el "
 				+ "carro se puso caro'.");
@@ -238,17 +236,17 @@ namespace Concesionario.Dominio.Pruebas
 			// moneda no existe una respuesta "entera" distinta de la lista por moneda, porque el total
 			// que las separaria es justo el que no hay.
 			Assert.That(
-				journal.Api.DescribeSpendPerCurrencyBetween(TheWindowFrom, TheWindowTo),
-				Is.EqualTo(journal.Api.DescribeSpendBetween(TheWindowFrom, TheWindowTo)),
+				journal.Api.DescribeSpendPerCurrencyBetween(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord),
+				Is.EqualTo(journal.Api.DescribeSpendBetween(TheWindowFrom, TheWindowTo, TheLanguage.OfTheRecord)),
 				"En un periodo de dos monedas las dos lecturas dejaron de decir lo mismo. Si eso "
 				+ "cambio, la decision de pintar una sola se vuelve a mirar.");
 
 			// (b) EL ESTADO DE UNA MONEDA: la de por moneda CONTIENE lo que dice la otra menos su
 			// primera clausula, y le agrega la suya. Se afirma por CONTENCION del resumen y no por
 			// igualdad, porque lo que cambia es justo la clausula que las une.
-			string whole = journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo);
+			string whole = journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord);
 			string perCurrency =
-				journal.Api.DescribeSpendPerCurrencyBetween(TheColonesHalfFrom, TheColonesHalfTo);
+				journal.Api.DescribeSpendPerCurrencyBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord);
 
 			Assert.That(perCurrency, Does.Contain("todo el gasto está dicho en una sola moneda"),
 				"La de por moneda dejo de decir su propia clausula, que es lo unico que agrega en "
@@ -262,9 +260,8 @@ namespace Concesionario.Dominio.Pruebas
 
 			// (c) EL ESTADO SIN NINGUN GASTO: lo mismo, contra un anio que no tiene ninguno.
 			string emptyWhole =
-				journal.Api.DescribeSpendBetween(TheEarlierWindowFrom, TheEarlierWindowTo);
-			string emptyPerCurrency = journal.Api.DescribeSpendPerCurrencyBetween(
-				TheEarlierWindowFrom, TheEarlierWindowTo);
+				journal.Api.DescribeSpendBetween(TheEarlierWindowFrom, TheEarlierWindowTo, TheLanguage.OfTheRecord);
+			string emptyPerCurrency = journal.Api.DescribeSpendPerCurrencyBetween(TheEarlierWindowFrom, TheEarlierWindowTo, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				emptyPerCurrency,
@@ -289,9 +286,16 @@ namespace Concesionario.Dominio.Pruebas
 				+ "que no se dibuja es la que dice menos.");
 			Assert.That(
 				markup,
-				Does.Contain("Lo que salió del banco y lo que el período consumió"),
+				Does.Contain("history.spendLabel"),
 				"La etiqueta de la linea dejo de nombrar LAS DOS vistas. Es lo que hace para una "
 				+ "persona lo que un nombre de campo hace para un modelo.");
+
+			// Y LA CLAVE SIGUE NOMBRANDO LAS DOS VISTAS en el idioma del registro. El markup nombra la
+			// CLAVE desde que la pantalla habla dos idiomas, asi que sin este renglon una etiqueta que
+			// dijera solo una de las dos pasaria.
+			Assert.That(
+				TheCatalogueOfTheScreen.InSpanish("history.spendLabel"),
+				Is.EqualTo("Lo que salió del banco y lo que el período consumió"));
 		}
 
 		// NINGUNA LINEA DEL BLOQUE LLEVA UN OPERADOR ARITMETICO. Es el control negativo de §2.2 hecho
@@ -374,7 +378,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				spend.Rows.Select(row => row.Money),
-				Is.EqualTo(new[] { "₡240000.00", "₡45000.00", "$120.50" }),
+				Is.EqualTo(new[] { "₡240.000,00", "₡45.000,00", "$120,50" }),
 				"El dinero llega DICHO por el dominio, con el signo y los decimales de cada moneda, y "
 				+ "la tercera fila en OTRA moneda: un cruce entre columnas cambia esta afirmacion.");
 
@@ -388,7 +392,7 @@ namespace Concesionario.Dominio.Pruebas
 			// que ya viene con su signo la escribiria por segunda vez, con otras reglas.
 			foreach (string formatter in new[]
 			{
-				"ComoSeLee.Miles(gasto.Money)", "HowANumberReads", "ToString(\"C",
+				"gasto.Money)", "HowANumberReads", "ToString(\"C",
 				"NumberFormatInfo", "Currencysymbol", "CurrencySymbol",
 			})
 			{
@@ -401,7 +405,7 @@ namespace Concesionario.Dominio.Pruebas
 			// EL CONTROL: el mismo bloque SI formatea un numero que NO es dinero -- el odometro de una
 			// fila del ritmo, en el mismo archivo -- asi que la ausencia de arriba no es que este
 			// archivo no formatee nada.
-			Assert.That(markup, Does.Contain("ComoSeLee.Miles(lectura.Value)"),
+			Assert.That(markup, Does.Contain("Texts.Grouped(lectura.Value)"),
 				"El archivo dejo de agrupar el odometro, asi que la ausencia de un formateador de "
 				+ "dinero no dice nada: podria ser que aca no se formatee nunca.");
 		}
@@ -445,11 +449,11 @@ namespace Concesionario.Dominio.Pruebas
 			// Does.Contain del asunto suelto pasaria con la columna cruzada.
 			Assert.That(
 				spend.Rows[0].Says,
-				Does.Contain("₡240000.00 en " + TheTyres + " el 2026-03-12 09:00:00")
+				Does.Contain("₡240.000,00 en " + TheTyres + " el 2026-03-12 09:00:00")
 					.And.Contains("Duradero"));
 			Assert.That(
 				spend.Rows[2].Says,
-				Does.Contain("$120.50 en " + TheWash + " el 2026-08-05 14:15:00")
+				Does.Contain("$120,50 en " + TheWash + " el 2026-08-05 14:15:00")
 					.And.Contains("Recurrente"));
 
 			// Y LA MAQUETA DIBUJA LA VIDA UTIL SOLO DONDE LA HAY. Una pastilla vacia en las dos filas
@@ -473,10 +477,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				shell,
 				Does.Contain(
-					"public WhatThisVehicleHasCost ReadWhatThisVehicleHasCost() { Require(); "
+					"public WhatThisVehicleHasCost ReadWhatThisVehicleHasCost(string language) "
+					+ "{ Require(); "
 					+ "DateTime asOf = TheInstantTheScreenAsksAt(); "
 					+ "return WhatThisVehicleHasCost.ReadThrough( api, TheTwelveMonthsBefore(asOf), "
-					+ "asOf, TheTwentyFourMonthsBefore(asOf), TheTwelveMonthsBefore(asOf));"),
+					+ "asOf, TheTwentyFourMonthsBefore(asOf), TheTwelveMonthsBefore(asOf), "
+					+ "language);"),
 				"La lectura del libro dejo de derivar sus cuatro limites de UN solo asOf, o dejo de "
 				+ "usar las mismas dos reglas de ventana que la del ritmo. Dos reglas distintas "
 				+ "pondrian el gasto de un periodo sobre la distancia de otro.");
@@ -504,12 +510,14 @@ namespace Concesionario.Dominio.Pruebas
 				Is.EqualTo(new[]
 				{
 					"api:DealershipCarAPI", "from:DateTime", "to:DateTime",
-					"from2:DateTime", "to2:DateTime",
+					"from2:DateTime", "to2:DateTime", "language:String",
 				}),
 				"La firma del portador cambio. El ORDEN es contrato: el dominio dice el primer "
 				+ "periodo respecto al segundo, asi que cruzar los dos pares da la frase al reves, y "
 				+ "los nombres son los que la puerta le da a los cuatro limites de su propia lectura "
-				+ "de comparacion.");
+				+ "de comparacion. El idioma va al final y no es una medicion: es la etiqueta con la "
+				+ "que se elige catalogo, y la pide la pantalla porque la caratula sigue a la "
+				+ "persona.");
 
 			Assert.That(TheCarrierAsItIsWritten(), Does.Not.Contain("DateTime.UtcNow"),
 				"El portador lee un reloj. Los cuatro limites llegan calculados a proposito.");
@@ -517,18 +525,22 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(TheCarrierAsItIsWritten(), Does.Not.Contain("DateTime.Today"));
 		}
 
-		// LA LECTURA DE LA CARATULA NO TOMA NINGUN ARGUMENTO Y NO AGREGA UN CUARTO RELOJ. Un parametro
+		// LA LECTURA DE LA CARATULA NO TOMA NINGUNA MEDICION Y NO AGREGA UN CUARTO RELOJ. Un parametro
 		// DateTime en un miembro publico de AppState seria una MEDICION, y el instante de la pantalla
 		// ya existe: TheShellHasExactlyTheseThreeMembersThatReadAClock tiene que quedarse en TRES.
+		// El IDIOMA si entra, y no es una medicion: es la etiqueta con la que se elige catalogo.
 		[Test]
 		public void TheShellsReadOfTheSpendTakesNoArgumentAndAddsNoFourthClock()
 		{
 			MethodInfo read = typeof(AppState).GetMethod("ReadWhatThisVehicleHasCost");
 
 			Assert.That(read, Is.Not.Null);
-			Assert.That(read.GetParameters(), Is.Empty,
-				"La lectura de la caratula gano un parametro. Un instante o un numero ahi es una "
-				+ "medicion: el instante lo lee ella del reloj de la maquina y no se lo pide a nadie.");
+			Assert.That(
+				read.GetParameters().Select(each => each.Name + ":" + each.ParameterType.Name),
+				Is.EqualTo(new[] { "language:String" }),
+				"La lectura de la caratula gano un parametro que no es el idioma. Un instante o un "
+				+ "numero ahi es una medicion: el instante lo lee ella del reloj de la maquina y no "
+				+ "se lo pide a nadie.");
 
 			var handingOutAnInstant = new List<string>();
 
@@ -584,12 +596,12 @@ namespace Concesionario.Dominio.Pruebas
 				+ "en pantalla, quien registra los gastos se ve en cada una.");
 
 			Assert.That(
-				TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork),
 				Does.Contain("no quiere decir que este carro no te haya costado nada"),
 				"La frase dejo de decir la lectura equivocada que existe para impedir.");
 
 			Assert.That(
-				TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork,
+				TheCatalogueOfTheScreen.InSpanish(TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork),
 				Does.Contain("no hay nada que tengas que llenar vos"),
 				"Y dejo de decir que no hay nada que la persona ponga, que es la mitad que un "
 				+ "formulario contradice.");
@@ -666,7 +678,8 @@ namespace Concesionario.Dominio.Pruebas
 		private WhatThisVehicleHasCost WhatTheScreenIsHanded()
 		{
 			return WhatThisVehicleHasCost.ReadThrough(
-				journal.Api, TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo);
+				journal.Api, TheWindowFrom, TheWindowTo, TheEarlierWindowFrom, TheEarlierWindowTo,
+				TheLanguage.OfTheRecord);
 		}
 
 		// LOS TRES GASTOS Y LAS TRES LECTURAS. Los gastos llegan DESORDENADOS -- el de agosto antes que

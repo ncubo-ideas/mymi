@@ -54,11 +54,19 @@ builder.Services.AddSingleton<Pantalla>(sp => new Pantalla(sp.GetRequiredService
 
 builder.Services.AddSingleton<PuenteDeGnothi>(sp => new PuenteDeGnothi(sp.GetRequiredService<IJSRuntime>()));
 
+builder.Services.AddSingleton<Textos>();
+
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se
 // construye una vez y se mantiene alcanzable mientras la app vive.
 builder.Services.AddSingleton<EstadoDeLaApp>();
 
 var host = builder.Build();
+
+using (var deLaCaratula = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) })
+{
+	await host.Services.GetRequiredService<Textos>().NegociarAsync(
+		host.Services.GetRequiredService<IJSRuntime>(), deLaCaratula);
+}
 
 // EN QUE HOSPEDAJE CORRE, decidido ANTES del render: el contenedor construye el puente del
 // journal con el destino ya puesto, y despues seria tarde. Se pregunta por la presencia del

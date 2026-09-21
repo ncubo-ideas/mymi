@@ -16,38 +16,32 @@ namespace Cargas.Dominio
 	internal sealed class SituacionDelRitmo
 	{
 		internal static readonly SituacionDelRitmo Medido =
-			new SituacionDelRitmo("medido", sePudo: true,
-				porque: "");
+			new SituacionDelRitmo("medido", sePudo: true);
 
 		internal static readonly SituacionDelRitmo SinLecturas =
-			new SituacionDelRitmo("sin lecturas", sePudo: false,
-				porque: "todavia no anotaste ningun kilometraje");
+			new SituacionDelRitmo("sin-lecturas", sePudo: false);
 
 		internal static readonly SituacionDelRitmo UnaSolaLectura =
-			new SituacionDelRitmo("una sola lectura", sePudo: false,
-				porque: "anotaste un solo kilometraje, y un ritmo necesita dos");
+			new SituacionDelRitmo("una-sola-lectura", sePudo: false);
 
 		internal static readonly SituacionDelRitmo LecturasDelMismoDia =
-			new SituacionDelRitmo("lecturas del mismo dia", sePudo: false,
-				porque: "los kilometrajes que anotaste son todos del mismo dia, "
-				      + "y un ritmo por dia necesita dos dias distintos");
+			new SituacionDelRitmo("lecturas-del-mismo-dia", sePudo: false);
 
-		/// <summary>El nombre para el conjunto cerrado que viaja a la frontera.</summary>
+		/// <summary>
+		/// EL CODIGO de esta situacion: identidad, y lo unico que cruza el wire. Por que no se
+		/// pudo medir es texto de presentacion, y lo busca con este codigo la capa que redacta,
+		/// en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
 
 		/// <summary>Si hay un ritmo que decir. Cuando es false, KilometrosPorDia no
 		/// significa nada y por eso viene en cero: no es un ritmo de cero.</summary>
 		internal bool SePudoMedir { get; private set; }
 
-		/// <summary>Por que no se pudo, dicho para la persona. Vacio cuando si se
-		/// pudo: ahi lo que hay que decir es el ritmo.</summary>
-		internal string Porque { get; private set; }
-
-		private SituacionDelRitmo(string nombre, bool sePudo, string porque)
+		private SituacionDelRitmo(string nombre, bool sePudo)
 		{
 			Nombre = nombre;
 			SePudoMedir = sePudo;
-			Porque = porque;
 		}
 
 		internal static SituacionDelRitmo PorNombre(string nombre)

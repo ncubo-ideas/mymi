@@ -136,6 +136,20 @@
     <None Include="..\..\App\Municipalidad.Wasm\PuenteDeGnothi.cs"
           Link="PuenteDeGnothi.cs.dato"
           CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Y LOS DOS CATALOGOS DE LA CARATULA, que son lo que la pantalla dice con sus propias palabras.
+         Una clave que esta en uno y no en el otro sale a pantalla como {clave}, y nada se pone rojo:
+         es el mismo defecto de una sola letra que EveryClauseOfTheRedactionIsSaidInBothLanguages
+         atrapa del lado del dominio, y del lado de la caratula no lo atrapaba nadie.
+
+         Viajan como dato y no se leen del wwwroot por una ruta relativa: el artifacts-path reubica el
+         output entero, asi que ninguna cantidad fija de '..' llega de vuelta al modulo. -->
+    <None Include="..\..\App\Municipalidad.Wasm\wwwroot\texto\es-CR.json"
+          Link="texto.es-CR.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\App\Municipalidad.Wasm\wwwroot\texto\en.json"
+          Link="texto.en.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

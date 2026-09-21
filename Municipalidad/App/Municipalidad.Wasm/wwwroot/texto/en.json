@@ -1,0 +1,292 @@
+{
+  "//": "WHAT THIS SCREEN SAYS IN ITS OWN WORDS. The sentences the domain composes are NOT here: the door brings those already said, in the language it was asked for. Charge names and period labels come from the municipality's record and are never translated. {key} is a hole the code fills. Keys match es-CR.json one for one.",
+
+  "app": {
+    "apunte": "Your account, in your folder"
+  },
+
+  "comun": {
+    "contestadoAl": "Answered as of {dia}.",
+    "deTotal": "{cuantos} of {total}",
+    "errorInesperado": "Something went wrong.",
+    "recargar": "Reload"
+  },
+
+  "porQuePagoMas": {
+    "titulo": "Why I pay more",
+    "bajada": "Between the last two receipts for each charge: what it went from and to, and what explains it. What explains an increase depends on how that charge is billed, and that is the half the portal does not answer.",
+    "umbrales": "A change is called a jump when it passes {salto}, and below {ruido} it counts as noise.",
+    "periodos": "Periods",
+    "porPeriodo": "Per period",
+    "elCambio": "The change",
+    "sinVariacion": {
+      "titulo": "There is no change to look at yet.",
+      "cuerpo": "A change needs two receipts for the same charge. They appear on their own as your payments reach this app."
+    },
+    "finca": {
+      "titulo": "The value of your property",
+      "nota": "Three of the five charges are billed on the value of your property. The <strong>assessment</strong> is set by your municipality and sent to this app: it is the value you are billed on, and the one used above to explain a jump. <strong>There is nothing to fill in here</strong> — it arrives on its own, with the rest of your records.",
+      "avaluo": "assessment: {monto}",
+      "sinAvaluo": "no assessment published",
+      "sinAvaluoNota": "Your municipality has not sent an assessment of this property yet. It arrives on its own, with the rest of your records, once they publish one."
+    },
+    "pie": "An increase is never pressing: it already happened. What is pressing is what falls due, and that is under",
+    "pieEnlace": "what falls due"
+  },
+
+  "queSeMeVence": {
+    "titulo": "What falls due",
+    "bajada": "This is the question your portal does not answer. The portal tells you what you owe today; this tells you what is about to fall due and what already has.",
+    "umbrales": "You are warned {dias} before the due date, and the cost of paying late is projected at an annual rate of {tasa}.",
+    "porVencer": "Falling due",
+    "nadaPorVencer": "As of {dia} there is nothing inside the warning window. That does not say you have nothing to pay later on: it says nothing falls within the next {dias}.",
+    "vence": "Due",
+    "faltan": "To go",
+    "monto": "Amount",
+    "yaVencidos": "Already overdue",
+    "nadaVencido": "There is nothing overdue and unpaid in what this app has seen. That is not proof of being up to date with the municipality: your portal is the authority on that.",
+    "vencio": "Fell due",
+    "deAtraso": "Overdue by",
+    "proyeccionDeMora": "Projected interest",
+    "noSeSuman": "The two lists do not add up",
+    "noSeSumanCuerpo": "A period falling due and one already overdue are different situations, and a total mixing them is not a number anyone calculated. If you want to know what you owe in total, your portal says that."
+  },
+
+  "cuantoApartar": {
+    "titulo": "How much to set aside",
+    "bajada": "Two things with two owners: what <strong>this app suggests</strong> from what you have already paid, and what <strong>you adopted</strong>. Their not matching is not an error.",
+    "laPropuesta": "What this app suggests",
+    "proyeccionDe": "{anio} projection",
+    "porMes": "Per month",
+    "loAdoptado": "What you adopted",
+    "adoptadoPorMes": "Adopted per month",
+    "leFalta": "Short by",
+    "venceEsteMes": "Due this month",
+    "umbral": "You are warned when what you adopted falls more than {umbral} below what is suggested.",
+    "etiquetaDelAporte": "Adopt a monthly amount, in colones",
+    "adoptar": "Adopt",
+    "guardando": "Saving…",
+    "notaDelAporte": "It is yours and not the municipality's: nobody reviews it and it does not change what you are billed. It can be adopted once a day, and the last one you enter is the one that stands.",
+    "sinRespaldo": "It was recorded and NOT saved.",
+    "falloLaApp": "The app failed while trying to save it, and that is not something you did ({tipo}: {detalle}).",
+    "entro": "Done, it is yours.",
+    "entroCuerpo": "Your reserve was recorded and saved in your folder.",
+    "rechazado": "It was not recorded, and this is why."
+  },
+
+  "sinComprobante": {
+    "titulo": "What has no receipt",
+    "tituloCorto": "No receipt",
+    "bajada": "The periods your portal treats as paid and for which this app never saw a receipt. It is said, not hidden: a named gap is an answer, and a silent one looks exactly like having no gaps.",
+    "sinConsulta": "There is nothing to check against yet",
+    "sinConsultaCuerpo": "<strong>Not being able to check is not being in order.</strong> It is a third answer, and it changes as soon as an enquiry to the portal arrives.",
+    "cotejadoContra": "checked against {dia}",
+    "noEsDeuda": "This is not a debt",
+    "noEsDeudaCuerpo": "Your portal treats those periods as settled; what is missing is the evidence here, almost always because they were paid by a route that leaves no digital receipt — over the counter, for instance. Do not add them to anything falling due.",
+    "fotoConFecha": "An enquiry is a dated snapshot: the portal says what is outstanding today, and tomorrow it says something else. The check is against {dia} and not against today."
+  },
+
+  "cuantoHePagado": {
+    "titulo": "How much I have paid",
+    "bajada": "What you paid in a year, and the series of receipts for each charge. The total has the interest inside, because that is what you actually paid.",
+    "totalDelAnio": "The year's total",
+    "anio": "Year",
+    "pagadoEn": "Paid in {anio}",
+    "sinNingunComprobante": "This app has not seen a single receipt of yours yet, so there is no series to show and the total comes back at zero. They arrive on their own, with the rest of your records.",
+    "anioSinComprobantes": "This app has no receipt from {anio}. A total of zero is not a year without payments: it may be that that year's receipts have not reached here yet. The years there are receipts for are in the list above.",
+    "incluyeLaMora": "The total includes interest",
+    "incluyeLaMoraCuerpo": "It is what you actually paid, not the price of the service. Each line carries its interest in its own column if you want to see them apart, and there is no total to subtract from another.",
+    "periodo": "Period",
+    "monto": "Amount",
+    "mora": "Interest",
+    "cubre": "Covers",
+    "porPeriodo": "Per period",
+    "inferido": "inferred",
+    "loQueSeInfirio": "The lines marked “inferred” were deduced by this app",
+    "loQueSeInfirioCuerpo": "When a line is the first for a charge there is no earlier one to tell how many periods it covers, so this app assumes one. That is its assumption and not a fact from your receipt.",
+    "pie": "One line can cover several periods, so comparing amounts across lines compares nothing: that is what the <strong>per period</strong> column is for. The series come back whole and the year does not trim them, so you can see which years have receipts."
+  },
+
+  "queTanAlDia": {
+    "titulo": "How up to date this is",
+    "tituloCorto": "How up to date",
+    "bajada": "How far this app has read what your municipality published, and what is missing. Your account is hybrid: they send the charges, the receipts and the interest; you contribute how much you want to set aside.",
+    "hastaDondeLeyo": "How far it read",
+    "ultimoHecho": "Last fact read",
+    "rubrosConComprobante": "Charges with at least one receipt",
+    "ultimaConsulta": "Last enquiry to the portal",
+    "ninguna": "none",
+    "notaDelNumero": "That number is only useful compared with itself: it goes up when something new arrives. Nobody knows how many facts your municipality has published, so a number on its own does not say whether you are up to date. Look at it, press <strong>fetch whatever the institution has published</strong> on the home screen, and look again.",
+    "queLlego": "What arrived for each charge",
+    "conComprobantes": "with receipts",
+    "sinComprobantes": "without receipts",
+    "rubroSinComprobantes": "This app has not seen a single receipt for this charge. That does not mean you are not paying it: it means your payments for this charge have not reached here yet.",
+    "queFalta": "What is missing",
+    "noFaltaNada": "Neither half is missing",
+    "noFaltaNadaCuerpo": "Your municipality published an assessment for every property, there is an enquiry to the portal to check against, and you have adopted a reserve. That does not say there are no new facts left to fetch: that is what the number above is for.",
+    "faltaLaReserva": "Your half is missing: you have not adopted a reserve",
+    "faltaLaReservaCuerpo": "How much you want to set aside each month is the one thing your municipality cannot know, and the one thing this app asks you for. It is adopted under",
+    "faltaLaReservaEnlace": "how much to set aside",
+    "faltaUnaConsulta": "An enquiry to the portal is missing",
+    "faltaUnaConsultaCuerpo": "With no enquiry on record there is nothing to check what this app did see paid against, so",
+    "faltaUnaConsultaCierre": "cannot answer yet. <strong>Not being able to check is not being in order.</strong>",
+    "faltaUnAvaluo": "Your municipality's half is missing: an assessment",
+    "faltaUnAvaluoCuerpo": {
+      "una": "There is {cuantas} of {total} property with no published assessment. The assessment is set by them and is the value you are billed on: without it, this app can say your property tax went up because of a new assessment, but not what it went from and to. <strong>There is nothing to fill in</strong> — it arrives on its own once they publish it.",
+      "varias": "There are {cuantas} of {total} properties with no published assessment. The assessment is set by them and is the value you are billed on: without it, this app can say your property tax went up because of a new assessment, but not what it went from and to. <strong>There is nothing to fill in</strong> — it arrives on its own once they publish it."
+    },
+    "finca": "Property",
+    "avaluoColumna": "Your municipality's assessment"
+  },
+
+  "arranque": {
+    "bajada": "Your municipality tells you what you owe. This app helps you understand it, see it coming and manage it, with your account kept in a folder of your own.",
+    "noSeGuarda": "What you see is NOT being saved.",
+    "pasoFallido": "That step could not be completed.",
+    "noAbrio": "The app could not be opened.",
+    "sinInstitucion": "Could not reach the institution.",
+    "sinInstitucionCuerpo": "What is already in your folder looks the same: that is what it is yours for.",
+    "sinHttps": "This page is not on a secure connection.",
+    "sinHttpsCuerpo": "No browser will let it save anything. Open it over <span class=\"mono\">https</span>, or over <span class=\"mono\">localhost</span>.",
+    "navegadorSinAlmacenamiento": "This browser cannot save anything for this app.",
+    "navegadorSinAlmacenamientoCuerpo": "It has neither a folder picker nor storage of its own. The way out is to open the app in another one.",
+    "dondeGuardar": "Where to save",
+    "reotorgar": "Your folder is <strong>&laquo;{carpeta}&raquo;</strong>. The browser asks you for write permission again every time the app opens.",
+    "darPermiso": "Grant permission to “{carpeta}”",
+    "elegirOtraCarpeta": "Choose another folder",
+    "olvidarCarpeta": "Forget this folder",
+    "elegirCarpeta": "Choose a folder",
+    "guardarEnLaApp": "Save inside this app",
+    "guardarEnElNavegador": "Save in this browser",
+    "abrirSinGuardar": "Open without saving anything",
+    "notaDeLaCarpeta": "A folder of your own is the option that makes it worthwhile: the MCP server reads it from outside the browser, and browser storage it cannot. Opening without saving leaves the record in memory only, and it is lost on closing.",
+    "traer": "Fetch whatever the institution has published",
+    "trayendo": "Fetching…",
+    "enlace": {
+      "porQuePagoMas": "What changed between your last two receipts for each charge, and what explains it.",
+      "queSeMeVence": "What is about to fall due and what already has. Your portal does not answer this.",
+      "cuantoApartar": "What this app suggests per month, and what you adopted.",
+      "sinComprobante": "What your portal treats as paid and has no receipt here.",
+      "cuantoHePagado": "A year's total, interest included, and the series for each charge.",
+      "queTanAlDia": "How far this app has read what your municipality published, and what is missing."
+    },
+    "loQueContestaElPortal": "What you owe today, what the whole year would come to and whether you are behind are answered by your portal, which is the authority on your debt. This app shows the rest.",
+    "plomeria": "How your account ended up stored",
+    "dondeVive": "Where the record lives",
+    "modo": "Mode",
+    "modoCarpeta": "a folder of your own",
+    "modoNavegador": "this browser's storage",
+    "modoMemoria": "memory only",
+    "carpeta": "Folder",
+    "permiso": "Permission",
+    "enMemfs": "In MEMFS",
+    "memfs": {
+      "uno": "{archivos} file, {bytes} bytes",
+      "varios": "{archivos} files, {bytes} bytes"
+    },
+    "queDiceElJournal": "What the journal says",
+    "entradas": "Entries",
+    "ultimoEvento": "Last event read",
+    "estaInstalacion": "This installation",
+    "sinRegistrar": "not registered",
+    "credencial": "Credential",
+    "credencialSi": "stored",
+    "credencialNo": "none",
+    "aQuienSeLePide": "Who it asks",
+    "feed": "Feed",
+    "deDondeSale": "It comes from <span class=\"mono\">wwwroot/appsettings.json</span>, not from a compiled constant.",
+    "ventanaDeEscritura": "The record is written down to the folder after every command. Between the actor confirming and the folder receiving there is an instant in which an abrupt close loses entries: that window is as narrow as it can be made, and it is not transactional durability.",
+
+    "noSeAlcanza": "{donde} could not be reached ({tipo}: {detalle}).",
+
+    "sinRespaldo": {
+      "faltaPermiso": "There is no write permission on “{carpeta}”. The browser grants it separately from the permission to choose the folder, and takes it back when the app opens again. Granting it again restores it; until then nothing you see is being saved.",
+      "fallaronArchivos": {
+        "uno": "Nothing could be saved in “{carpeta}”: {fallaron} file of {total} failed. {detalle}",
+        "varios": "Nothing could be saved in “{carpeta}”: {fallaron} files of {total} failed. {detalle}"
+      }
+    },
+
+    "navegadorDijoNo": {
+      "titulo": "The browser said no.",
+      "denegado": {
+        "elegirCarpeta": "The browser refused to choose that folder, without asking you. Either file editing permission for this site is blocked — open the padlock next to the address, reset this site's permissions, reload and choose the folder again — or this browser does not offer file editing at all, which is normal in an embedded browser. If there is no padlock to open, it is the second one.",
+        "darPermiso": "The browser refused to grant you write permission on that folder, without asking you. Either file editing permission for this site is blocked — open the padlock next to the address, reset this site's permissions, reload and choose the folder again — or this browser does not offer file editing at all, which is normal in an embedded browser. If there is no padlock to open, it is the second one.",
+        "usarNavegador": "The browser refused to use its own storage, without asking you. Either this site's permission is blocked — open the padlock next to the address, reset this site's permissions and reload — or this browser does not offer storage at all, which is normal in an embedded browser. If there is no padlock to open, it is the second one."
+      },
+      "otro": {
+        "elegirCarpeta": "That folder could not be chosen. The browser said: {motivo}",
+        "darPermiso": "Write permission on that folder could not be obtained. The browser said: {motivo}",
+        "usarNavegador": "This browser's storage could not be used. The browser said: {motivo}"
+      }
+    },
+
+    "falla": {
+      "paso": {
+        "elegirCarpeta": "Choosing a folder failed.",
+        "darPermiso": "Granting permission on the folder failed.",
+        "usarNavegador": "Saving in this browser failed.",
+        "olvidarCarpeta": "Forgetting the stored folder failed.",
+        "abrirLaApp": "Opening the app failed.",
+        "traerDeLaInstitucion": "Fetching whatever the institution published failed."
+      }
+    },
+
+    "apunte": {
+      "recuperarCarpeta": {
+        "ok": "The folder “{carpeta}” was recovered (permission {permiso}).",
+        "no": "The stored folder could not be recovered: {motivo}"
+      },
+      "conectarCarpeta": {
+        "ok": "The folder “{carpeta}” is now connected (permission {permiso}).",
+        "no": "No folder could be connected: {motivo}"
+      },
+      "pedirPermiso": {
+        "ok": "Permission on “{carpeta}” is now granted (permission {permiso}).",
+        "no": "Permission could not be obtained: {motivo}"
+      },
+      "usarNavegador": {
+        "ok": "It is now saving in this browser's storage (permission {permiso}).",
+        "no": "This browser's storage could not be used: {motivo}"
+      },
+      "olvidoLaCarpeta": "The stored folder was forgotten; nothing inside it was touched.",
+      "arribaHospedada": {
+        "uno": "The app is up, hosted in Mymi, with {precargados} file preloaded.",
+        "varios": "The app is up, hosted in Mymi, with {precargados} files preloaded."
+      },
+      "arribaEnCarpeta": {
+        "uno": "The app is up, with {precargados} file preloaded from “{carpeta}”.",
+        "varios": "The app is up, with {precargados} files preloaded from “{carpeta}”."
+      },
+      "arribaEnElNavegador": {
+        "uno": "The app is up, with {precargados} file preloaded from this browser's storage.",
+        "varios": "The app is up, with {precargados} files preloaded from this browser's storage."
+      },
+      "arribaSinCarpeta": "The app is up, but with NO folder: the record lives only in memory and is lost on closing.",
+      "alAbrir": "On opening, the institution answered: {resultado}",
+      "carpetaRechazoAlAbrir": "On opening, the institution answered, but the folder refused the write.",
+      "actualizacion": "Whatever the institution published was fetched: {resultado}",
+      "entregaDeGnothi": "Mymi delivered an envelope: {resultado}",
+      "noSeRegistroLaInstalacion": "This installation could not be registered: {rechazo}",
+      "credencialRotada": "The credential was rotated with the refresh token.",
+      "credencialNueva": "A new credential was obtained, with scope {alcance}.",
+      "noSeGuardoLaCredencial": "The credential could not be saved: {rechazo}"
+    }
+  },
+
+  "noEncontrado": {
+    "titulo": "Not found",
+    "cuerpo": "There is nothing at this address."
+  },
+
+  "sinAbrir": {
+    "titulo": "This screen cannot answer yet.",
+    "cuerpo": "Your account lives in a folder of your own, and this app has not opened it in this browser. Open the home screen, choose where to keep it, and come back.",
+    "irAlInicio": "Go to the home screen"
+  },
+
+  "numeroSinFirmar": {
+    "firmado": "signed on {dia}",
+    "sinFirmar": "nobody has signed it yet"
+  }
+}

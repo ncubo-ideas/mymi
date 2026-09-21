@@ -27,18 +27,18 @@ namespace Concesionario.Dominio
 		internal abstract bool Exists();
 
 		/// <summary>
-		/// La clausula de la regla, con su texto tal como se publico. Revienta si no hay ninguna:
-		/// hay que preguntar primero.
+		/// La clausula de la regla, como forma y valores, con su texto tal como se publico. Revienta
+		/// si no hay ninguna: hay que preguntar primero.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract AServicingClause TheClauseItComposes(string revisionCode);
 
 		/// <summary>
-		/// La mitad RECIBIDA de la respuesta: donde esta parado este vehiculo frente a la regla, con
-		/// los conteos tal como llegaron. Nada se guarda. Revienta si no hay regla publicada: sin
+		/// La misma clausula CON la mitad recibida: donde esta parado este vehiculo frente a la regla,
+		/// con los conteos tal como llegaron. Nada se guarda. Revienta si no hay regla publicada: sin
 		/// mitad publicada no hay contra que pararlos.
 		/// </summary>
-		internal abstract string DescribeAgainst(
-			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
-			int missedMaintenanceCount);
+		internal abstract AServicingClause TheClauseItComposesAgainst(
+			string revisionCode, int externalServicesWithEvidence,
+			int externalServicesWithoutEvidence, int missedMaintenanceCount);
 	}
 }

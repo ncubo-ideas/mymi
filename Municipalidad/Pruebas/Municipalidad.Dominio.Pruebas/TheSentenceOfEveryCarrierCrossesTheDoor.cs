@@ -99,13 +99,13 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			ElExpedienteCompleto();
 
-			RegistroDelHistorial conHistoria = api.HistorialDe(ElRubroPorUnidad);
-			RegistroDelHistorial rubroQueNoExiste = api.HistorialDe("cementerio");
-			RegistroDelHistorial sinHistoria = api.HistorialDe("parques-y-zonas-verdes");
+			RegistroDelHistorial conHistoria = api.HistorialDe(ElRubroPorUnidad, "es");
+			RegistroDelHistorial rubroQueNoExiste = api.HistorialDe("cementerio", "es");
+			RegistroDelHistorial sinHistoria = api.HistorialDe("parques-y-zonas-verdes", "es");
 
-			RegistroDePeriodosSinComprobante destapa = api.PeriodosPagadosSinComprobante(LaConsulta);
+			RegistroDePeriodosSinComprobante destapa = api.PeriodosPagadosSinComprobante(LaConsulta, "es");
 			RegistroDePeriodosSinComprobante sinConsulta =
-				api.PeriodosPagadosSinComprobante(UnDiaSinConsulta);
+				api.PeriodosPagadosSinComprobante(UnDiaSinConsulta, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -140,9 +140,9 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			ElExpedienteCompleto();
 
-			RegistroDeVencimientos loQueVence = api.VencimientosAl(LaFechaDeCorte, 35);
-			RegistroDeAtrasos atrasos = api.AtrasosAl(LaFechaDeCorte, 0.062m);
-			RegistroDePeriodosSinComprobante sinComprobante = api.PeriodosPagadosSinComprobante(LaConsulta);
+			RegistroDeVencimientos loQueVence = api.VencimientosAl(LaFechaDeCorte, 35, "es");
+			RegistroDeAtrasos atrasos = api.AtrasosAl(LaFechaDeCorte, 0.062m, "es");
+			RegistroDePeriodosSinComprobante sinComprobante = api.PeriodosPagadosSinComprobante(LaConsulta, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -190,11 +190,11 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			ElExpedienteCompleto();
 
-			RegistroDeLaVariacion basura = api.VariacionDe(ElRubroPorUnidad, 0.25m, 0.02m);
-			RegistroDeLaVariacion ibi = api.VariacionDe(ElRubroSobreBase, 0.25m, 0.02m);
-			RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(2025);
+			RegistroDeLaVariacion basura = api.VariacionDe(ElRubroPorUnidad, 0.25m, 0.02m, "es");
+			RegistroDeLaVariacion ibi = api.VariacionDe(ElRubroSobreBase, 0.25m, 0.02m, "es");
+			RegistroDeLaReservaPropuesta propuesta = api.ReservaPropuestaPara(2025, "es");
 			RegistroDelFaltanteDeReserva faltante =
-				api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m);
+				api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m, "es");
 
 			Assert.Multiple(() =>
 			{
@@ -259,11 +259,11 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(api.SePuedeProyectar(), Is.False, "ni con que proyectar");
 				Assert.That(api.SePuedeVerElFaltanteDeReserva(), Is.False, "ni reserva adoptada");
 
-				Assert.Throws<DomainException>(() => api.VariacionDe(ElRubroPorUnidad, 0.25m, 0.02m),
+				Assert.Throws<DomainException>(() => api.VariacionDe(ElRubroPorUnidad, 0.25m, 0.02m, "es"),
 					"y la lectura se niega, que es con lo que el predicado tiene que concordar");
-				Assert.Throws<DomainException>(() => api.ReservaPropuestaPara(2025));
+				Assert.Throws<DomainException>(() => api.ReservaPropuestaPara(2025, "es"));
 				Assert.Throws<DomainException>(
-					() => api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m));
+					() => api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m, "es"));
 			});
 
 			ElExpedienteCompleto();
@@ -275,17 +275,17 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(api.SePuedeProyectar(), Is.True);
 				Assert.That(api.SePuedeVerElFaltanteDeReserva(), Is.True);
 
-				Assert.That(api.VariacionDe(ElRubroPorUnidad, 0.25m, 0.02m).Dice, Is.Not.Empty,
+				Assert.That(api.VariacionDe(ElRubroPorUnidad, 0.25m, 0.02m, "es").Dice, Is.Not.Empty,
 					"y las tres lecturas contestan en vez de negarse");
-				Assert.That(api.ReservaPropuestaPara(2025).Dice, Is.Not.Empty);
-				Assert.That(api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m).Dice, Is.Not.Empty);
+				Assert.That(api.ReservaPropuestaPara(2025, "es").Dice, Is.Not.Empty);
+				Assert.That(api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m, "es").Dice, Is.Not.Empty);
 
 				// UN RUBRO QUE NO TIENE DOS PAGOS, con el par contestando que no: es el caso que una
 				// caratula tiene enfrente cada vez que itera los cinco rubros del catalogo.
 				Assert.That(api.SePuedeVerLaVariacionDe("parques-y-zonas-verdes"), Is.False,
 					"parques no tiene ni un pago en este expediente");
 				Assert.Throws<DomainException>(
-					() => api.VariacionDe("parques-y-zonas-verdes", 0.25m, 0.02m),
+					() => api.VariacionDe("parques-y-zonas-verdes", 0.25m, 0.02m, "es"),
 					"y la lectura se niega igual que el predicado dijo");
 			});
 		}
@@ -306,7 +306,7 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(api.SePuedeVerElFaltanteDeReserva(), Is.False,
 					"y sin reserva adoptada la compuesta todavia no se puede");
 
-				RegistroDeLaReservaPropuesta sola = api.ReservaPropuestaPara(2025);
+				RegistroDeLaReservaPropuesta sola = api.ReservaPropuestaPara(2025, "es");
 
 				Assert.That(sola.PropuestoPorMes, Is.EqualTo(9000m),
 					"la mitad general contesta: 9000 x 12 entre doce");
@@ -318,14 +318,14 @@ namespace Municipalidad.Dominio.Pruebas
 			api.AdoptarReserva(8000m, new DateTime(2025, 8, 1));
 
 			RegistroDelFaltanteDeReserva compuesta =
-				api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m);
+				api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m, "es");
 
 			Assert.Multiple(() =>
 			{
 				Assert.That(compuesta.Propuesto, Is.EqualTo(9000m),
 					"y la compuesta trae la misma mitad general");
 				Assert.That(compuesta.Declarado, Is.EqualTo(8000m), "mas la de la persona");
-				Assert.That(compuesta.Dice, Does.Not.Contain(api.ReservaPropuestaPara(2025).Dice),
+				Assert.That(compuesta.Dice, Does.Not.Contain(api.ReservaPropuestaPara(2025, "es").Dice),
 					"y NO contiene la frase general textual, asi que mostrar las dos no imprime la "
 					+ "misma clausula dos veces");
 			});
