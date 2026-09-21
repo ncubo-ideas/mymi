@@ -7,6 +7,8 @@
     "compras": "Purchases",
     "abriendo": "Opening your purchases…",
     "nuestroSitio": "Our website",
+    "escribinosPorWhatsApp": "Message us on WhatsApp",
+    "pieNota": "Your purchases live on this device. These links take you out; they take nothing of yours.",
     "verTodos": "See all",
     "sinAbrir": "The app has not opened on this computer yet.",
     "sinAbrirEnlace": "Go to Home",
@@ -248,6 +250,10 @@
     "deProducto": {
       "uno": "of {cuantos} product",
       "varios": "of {cuantos} products"
+    },
+    "unidades": {
+      "una": "{cuantas} unit",
+      "varias": "{cuantas} units"
     },
     "masRecientes": "The {cuantas} most recent of {total}. Search above to find an older one — and your assistant can consult them all.",
     "resultadosRecientes": "The {cuantas} most recent of {total}. The totals above are for all of them — and your assistant can consult them one by one."

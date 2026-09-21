@@ -7,6 +7,8 @@
     "compras": "Compras",
     "abriendo": "Abriendo tus compras…",
     "nuestroSitio": "Nuestro sitio",
+    "escribinosPorWhatsApp": "Escribinos por WhatsApp",
+    "pieNota": "Tus compras viven en este aparato. Estos enlaces te llevan afuera; no llevan nada tuyo.",
     "verTodos": "Ver todos",
     "sinAbrir": "La app todavía no abrió en esta computadora.",
     "sinAbrirEnlace": "Andá a Inicio",
@@ -248,6 +250,10 @@
     "deProducto": {
       "uno": "de {cuantos} producto",
       "varios": "de {cuantos} productos"
+    },
+    "unidades": {
+      "una": "{cuantas} u",
+      "varias": "{cuantas} u"
     },
     "masRecientes": "Las {cuantas} más recientes de {total}. Buscá arriba para encontrar una más vieja — y tu asistente las puede consultar todas.",
     "resultadosRecientes": "Las {cuantas} más recientes de {total}. Los totales de arriba sí son de todas — y tu asistente las puede consultar una por una."
