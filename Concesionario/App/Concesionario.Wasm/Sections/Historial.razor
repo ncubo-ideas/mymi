@@ -3,59 +3,72 @@
 @if (Operations is not null)
 {
     <div class="d-sec" style="margin-top:4px">
-        <span class="d-sec__title">Lo que le han hecho</span>
+        <span class="d-sec__title">Lo que le han hecho a tu carro</span>
     </div>
 
-    @if (Operations.WhatHasBeenDone.Count > 0)
+    @if (Operations.WhatHasBeenDone.Count == 0)
+    {
+        <div class="d-state d-state--mute" id="sin-historial">
+            <span class="d-state__icon d-state__icon--mute">
+                <Glyph Name="history" Size="26" Stroke="2" />
+            </span>
+            <div class="d-state__title">Todavía no hay operaciones registradas</div>
+            <p class="d-state__body">Cuando tu taller registre servicios, aparecerán aquí.</p>
+        </div>
+    }
+    else
     {
         <section class="d-card" id="linea-completaciones">
-            <div class="d-line">
+            <div class="d-hist-done-list">
                 @foreach (AThingThatWasDone hecho in Operations.WhatHasBeenDone)
                 {
-                    <div class="d-step" id="@("hecho-" + hecho.CompletedAt)">
-                        <span class="d-step__bullet d-step__bullet--ok">
-                            <Glyph Name="check" Size="11" Stroke="3" />
+                    <div class="d-hist-done" id="@("hecho-" + hecho.CompletedAt)">
+                        <span class="d-hist-done__check">
+                            <Glyph Name="check" Size="13" Stroke="3" />
                         </span>
-                        <div class="d-step__when">@hecho.CompletedAt</div>
-
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
-                            <span class="d-pill d-pill--info">@hecho.Reading</span>
+                        <div class="d-hist-done__body">
+                            <div class="d-hist-done__date">@ComoSeLee.DiaCorto(hecho.CompletedAt)</div>
+                            <div class="d-hist-done__title">@ComoSeLee.Operacion(hecho.Kind)</div>
+                            <span class="d-hist-done__km">@hecho.Reading</span>
+                            <p class="d-hist-done__desc">@hecho.Says</p>
                         </div>
-
-                        <div class="d-says">@hecho.Says</div>
                     </div>
                 }
             </div>
         </section>
-    }
-    else
-    {
-        <div class="d-empty" id="sin-completaciones">
-            <span class="d-empty__title">Todavía no hay nada registrado como hecho</span>
-            Cada operación dice abajo por qué no tiene nada.
-        </div>
-    }
 
-    @if (Operations.Operations.Any(parada => !parada.HasBeenCompleted))
-    {
-        <div class="d-sec">
-            <span class="d-sec__title">Lo que no tiene nada registrado</span>
-        </div>
+        @if (Operations.Operations.Any(parada => !parada.HasBeenCompleted))
+        {
+            <div class="d-sec">
+                <span class="d-sec__title">Operaciones sin registro</span>
+                <span class="d-pill d-pill--mute">@Operations.Operations.Count(parada => !parada.HasBeenCompleted)</span>
+            </div>
 
-        <section class="d-card" id="operaciones-sin-registro">
-            @foreach (HowOneOperationStands parada in Operations.Operations)
-            {
-                @if (!parada.HasBeenCompleted)
-                {
-                    <div class="d-says" id="@("nada-de-" + parada.Kind)">@parada.CompletionsSays</div>
-                }
-            }
-        </section>
+            <section class="d-card" id="operaciones-sin-registro">
+                <div class="d-hist-empty-list">
+                    @foreach (HowOneOperationStands parada in Operations.Operations)
+                    {
+                        @if (!parada.HasBeenCompleted)
+                        {
+                            <div class="d-hist-empty-row" id="@("nada-de-" + parada.Kind)" title="@parada.CompletionsSays">
+                                <span class="d-hist-empty-row__icon">
+                                    <Glyph Name="@ComoSeLee.DibujoOperacion(parada.Kind)" Size="17" Stroke="2.1" />
+                                </span>
+                                <div>
+                                    <div class="d-hist-empty-row__title">@ComoSeLee.Operacion(parada.Kind)</div>
+                                    <div class="d-hist-empty-row__value">Sin registros</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </section>
 
-        <p class="d-note" style="margin-top:10px">
-            <Glyph Name="info" Size="14" Stroke="2" />
-            <span>@TheOwnerIsTold.TheCompletionsAreRecordedByTheWorkshopThatDoesTheWork</span>
-        </p>
+            <p class="d-note" style="margin-top:10px">
+                <Glyph Name="info" Size="14" Stroke="2" />
+                <span>Que no aparezca un registro no significa que el trabajo nunca se haya hecho; solo que no está registrado aquí.</span>
+            </p>
+        }
     }
 }
 
@@ -66,17 +79,25 @@
 else
 {
     <div class="d-sec">
-        <span class="d-sec__title">Los días en el taller</span>
+        <span class="d-sec__title">Días en el taller</span>
     </div>
 
     <section class="d-card" id="dias-en-el-taller">
-        <div class="d-cover d-cover--mute" style="padding:0;background:none;grid-template-columns:1fr">
-            <div class="d-cover__body" style="margin:0" id="periodo-dice">@Stays.Says</div>
+        <div class="d-hist-days">
+            <span class="d-hist-days__icon">
+                <Glyph Name="calendar" Size="19" Stroke="2" />
+            </span>
+            <div>
+                <div class="d-hist-days__count">@Stays.DayCount día@(Stays.DayCount == 1 ? "" : "s")</div>
+                <div class="d-hist-days__period">
+                    Entre el @ComoSeLee.DiaCorto(Stays.FromDay) y el @ComoSeLee.DiaCorto(Stays.ToDay)
+                </div>
+            </div>
         </div>
 
         @if (Stays.InsideRightNow)
         {
-            <div class="d-says" id="adentro-ahora">
+            <div class="d-says" id="adentro-ahora" style="margin-top:14px">
                 <span class="d-says__label">Ahora mismo, al @Stays.AskedAt</span>
                 @Stays.TheStayRightNowSays
             </div>
@@ -87,6 +108,11 @@ else
             </p>
         }
     </section>
+
+    <p class="d-note" style="margin-top:10px">
+        <Glyph Name="info" Size="14" Stroke="2" />
+        <span>Las estadías cuentan los días que tu vehículo estuvo registrado en el taller.</span>
+    </p>
 
     @if (Stays.AnyStayInThePeriod)
     {
@@ -118,13 +144,6 @@ else
                 }
             </div>
         </section>
-    }
-    else
-    {
-        <div class="d-empty" id="sin-estadias">
-            <span class="d-empty__title">Ninguna estadía registrada en este periodo</span>
-            @TheOwnerIsTold.TheStaysAreRecordedByTheWorkshopThatReceivesTheCar
-        </div>
     }
 }
 

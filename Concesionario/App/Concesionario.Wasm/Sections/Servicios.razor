@@ -1,81 +1,103 @@
 @using Concesionario.Wasm.Parts
 
 <div class="d-sec" style="margin-top:4px">
-    <span class="d-sec__note">@Nueve.Count operaciones, primero lo urgente</span>
+    <span class="d-sec__note" style="font-size:11.5px;line-height:1.4;color:var(--d-ink-2)">@Nueve.Count operaciones · primero lo urgente</span>
 </div>
 
 @if (Operations is not null)
 {
-    <p class="d-note" style="margin-top:0;margin-bottom:10px">
-        <Glyph Name="clock" Size="14" Stroke="2" />
-        <span>Lo que falta está medido al @Operations.AskedAt</span>
+    <p class="d-note d-note--home" style="margin-top:2px;margin-bottom:14px;line-height:1.4">
+        <Glyph Name="clock" Size="13" Stroke="2" />
+        <span>Datos actualizados al @Operations.AskedAt</span>
     </p>
 }
 
 <section class="d-card" id="linea-servicios">
-    <div class="d-line">
+    <div class="d-svc-list">
         @foreach (string kind in EnOrden)
         {
             string estado = Board.TryGetValue(kind, out string s) ? s : "";
             string tono = ComoSeLee.Tono(estado);
+            HowOneOperationStands parada = Operations?.Of(kind);
+            bool abiertoAqui = abierto == kind;
 
-            <div class="d-step" id="@("servicio-" + kind)">
-                <span class="@("d-step__bullet d-step__bullet--" + tono)">
+            <div class="d-svc" id="@("servicio-" + kind)">
+                <div class="@("d-svc__badge d-svc__badge--" + tono)">
                     <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="11" Stroke="3" />
-                </span>
-                <div class="@("d-step__when d-step__when--" + tono)">@ComoSeLee.Estado(estado)</div>
-                <div class="d-step__title">@ComoSeLee.Operacion(kind)</div>
-                <div class="d-step__sub">
-                    @if (abierto == kind)
+                    @ComoSeLee.Estado(estado)
+                </div>
+
+                <div class="d-svc__title">@ComoSeLee.Operacion(kind)</div>
+
+                <div class="d-svc__sub">
+                    @if (abiertoAqui)
                     {
                         <span>@(Reasons.TryGetValue(kind, out string r) ? r : "")</span>
+                        @if (parada is not null && !parada.CountdownRefused && parada.Says.Length > 0)
+                        {
+                            <span class="d-svc__detail-extra">@parada.Says</span>
+                        }
                     }
                     else
                     {
-                        <span>@Resumen(kind, estado)</span>
+                        <span>@Resumen(kind, estado, parada)</span>
                     }
                 </div>
-                @if (Operations is not null)
-                {
-                    HowOneOperationStands parada = Operations.Of(kind);
 
+                @if (parada is not null)
+                {
                     if (parada.CountdownRefused)
                     {
-                        <div class="d-says" id="@("rechazo-" + kind)">
-                            <span class="d-says__label">No se pudo medir</span>
-                            @TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom
+                        <div class="d-svc__falta" id="@("rechazo-" + kind)">
+                            <span class="d-svc__falta-label">No se pudo medir</span>
+                            <p class="d-svc__falta-note">@TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom</p>
                         </div>
+                    }
+                    else if (!parada.DistanceCanBeSaid && !parada.DaysCanBeSaid)
+                    {
+                        @if (tono == "warn" || tono == "danger")
+                        {
+                            <div class="d-svc__falta" id="@("falta-" + kind)">
+                                <span class="d-svc__falta-label">Lo que falta</span>
+                                <div class="@("d-svc__now d-svc__now--" + tono)">
+                                    <Glyph Name="@ComoSeLee.DibujoOperacion(kind)" Size="17" Stroke="2.2" />
+                                    @(tono == "danger" ? "VENCIDO" : "AHORA")
+                                </div>
+                            </div>
+                        }
                     }
                     else
                     {
-                        <div class="d-says" id="@("falta-" + kind)">
-                            <span class="d-says__label">Lo que falta</span>
-                            @parada.Says
-                        </div>
-
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
-                            @if (parada.DistanceCanBeSaid)
-                            {
-                                <span class="d-pill d-pill--info" id="@("resto-km-" + kind)">
-                                    @ComoSeLee.Miles(parada.DistanceRemaining) @parada.DistanceUnit
-                                </span>
-                            }
-                            @if (parada.DaysCanBeSaid)
-                            {
-                                <span class="d-pill d-pill--info" id="@("resto-dias-" + kind)">
-                                    @ComoSeLee.Miles(parada.DaysRemaining) días
-                                </span>
-                            }
+                        <div class="d-svc__falta" id="@("falta-" + kind)">
+                            <span class="d-svc__falta-label">Lo que falta</span>
+                            <div class="d-svc__cols">
+                                @if (parada.DistanceCanBeSaid)
+                                {
+                                    <div class="d-svc__col" id="@("resto-km-" + kind)">
+                                        <span class="d-svc__col-value">@ComoSeLee.Miles(parada.DistanceRemaining) @parada.DistanceUnit</span>
+                                        <span class="d-svc__col-label">por distancia</span>
+                                    </div>
+                                }
+                                @if (parada.DaysCanBeSaid)
+                                {
+                                    <div class="d-svc__col" id="@("resto-dias-" + kind)">
+                                        <span class="d-svc__col-value">@ComoSeLee.Miles(parada.DaysRemaining) días</span>
+                                        <span class="d-svc__col-label">por tiempo</span>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
                 }
 
-                <div style="margin-top:6px">
-                    <button class="d-link" type="button" id="@("por-que-" + kind)"
-                            @onclick="@(() => abierto = abierto == kind ? "" : kind)">
-                        @(abierto == kind ? "Ocultar" : "¿Por qué?")
-                    </button>
-                </div>
+                <button class="d-link d-svc__why" type="button" id="@("por-que-" + kind)"
+                        @onclick="@(() => abierto = abiertoAqui ? "" : kind)">
+                    @(abiertoAqui ? "Ocultar" : "¿Por qué?")
+                    @if (!abiertoAqui)
+                    {
+                        <Glyph Name="chevron" Size="13" Stroke="2.6" />
+                    }
+                </button>
             </div>
         }
     </div>
@@ -127,15 +149,21 @@
     /// La linea corta que va bajo el nombre cuando el detalle esta cerrado. NO resume la frase del
     /// dominio -- la reemplaza por lo unico que se puede decir sin leerla: que estado tiene y quien
     /// lo decidio. Recortar la frase con puntos suspensivos cortaria justo donde estan los numeros.
+    ///
+    /// "NotDue" tiene DOS lecturas distintas segun si el registro programo un intervalo para esta
+    /// clase o no -- exactamente lo que ya dicen DistanceCanBeSaid/DaysCanBeSaid -- y decir una sola
+    /// frase para las dos volveria falsa a la mitad de los casos.
     /// </summary>
-    private static string Resumen(string kind, string estado) => estado switch
+    private static string Resumen(string kind, string estado, HowOneOperationStands parada) => estado switch
     {
-        "Overdue" => "Se pasó del intervalo que publicó el fabricante.",
-        "Due" => "Llegó al intervalo que publicó el fabricante.",
-        "DueSoon" => "Está cerca del intervalo que publicó el fabricante.",
+        "Overdue" => "Se pasó del intervalo programado.",
+        "Due" => "Llegó al intervalo programado.",
+        "DueSoon" => "Está cerca del intervalo programado.",
         "Deferred" => "Vos pediste posponerla.",
         "Missed" => "Pasó su momento sin registrarse.",
-        "NotDue" => "Dentro del intervalo, o sin intervalo programado para este carro.",
+        "NotDue" => parada is not null && !parada.DistanceCanBeSaid && !parada.DaysCanBeSaid
+            ? "Sin intervalo programado para este carro."
+            : "Dentro del intervalo programado.",
         _ => "Tu registro no le puso un estado a esta operación.",
     };
 }

@@ -6,16 +6,8 @@
     <div class="d-hero__cap">
         <div class="d-hero__model">
             <span class="d-hero__name">@(Modelo.Length > 0 ? Modelo : "Tu vehículo")</span>
-            @if (Revision.Length > 0)
-            {
-                <span class="d-hero__tag">ficha @Revision</span>
-            }
         </div>
         <div class="d-hero__odo">@Odometro @OdometroUnidad</div>
-        @if (Placa is not null && Placa.PlatePublished)
-        {
-            <div class="d-hero__placa">@Placa.AsPublished</div>
-        }
     </div>
 </section>
 
@@ -43,27 +35,36 @@
 @if (hoja == "informacion")
 {
     <section class="d-card" id="informacion">
-        <div class="d-rows">
+        <span class="d-card__title" id="datos-titulo">Datos de tu vehículo</span>
+        <div class="d-rows" style="margin-top:10px">
             <div class="d-row">
-                <span class="d-row__k">Modelo</span>
+                <span class="d-row__label"><Glyph Name="car" Size="15" Stroke="2.1" /><span class="d-row__k">Modelo</span></span>
                 <span class="d-row__v">@(Modelo.Length > 0 ? Modelo : "—")</span>
             </div>
             <div class="d-row">
-                <span class="d-row__k">VIN</span>
+                <span class="d-row__label"><Glyph Name="sheet" Size="15" Stroke="2.1" /><span class="d-row__k">VIN</span></span>
                 <span class="d-row__v d-row__v--mono">@Vin</span>
             </div>
-            <div class="d-row d-row--stack" id="placa">
-                <span class="d-row__k">Placa</span>
-                <span class="d-row__v" style="font-weight:600;font-size:13px">
-                    @(Placa is not null ? Placa.Says : "—")
-                </span>
+
+            <div class="d-row-group" id="placa">
+                <div class="d-row d-row--noline">
+                    <span class="d-row__label"><Glyph Name="plate" Size="15" Stroke="2.1" /><span class="d-row__k">Placa</span></span>
+                    <span class="d-row__v">
+                        @(Placa is not null && Placa.PlatePublished ? Placa.AsPublished : "Sin registrar")
+                    </span>
+                </div>
+                @if (Placa is null || !Placa.PlatePublished)
+                {
+                    <p class="d-row__note">Tu concesionario aún no la ha publicado.</p>
+                }
             </div>
+
             <div class="d-row">
-                <span class="d-row__k">Odómetro</span>
+                <span class="d-row__label"><Glyph Name="gauge" Size="15" Stroke="2.1" /><span class="d-row__k">Odómetro</span></span>
                 <span class="d-row__v">@Odometro @OdometroUnidad</span>
             </div>
             <div class="d-row">
-                <span class="d-row__k">Última lectura</span>
+                <span class="d-row__label"><Glyph Name="calendar" Size="15" Stroke="2.1" /><span class="d-row__k">Última lectura</span></span>
                 <span class="d-row__v">
                     @(Stands is not null && Stands.OdometerObservedAt.Length > 0
                         ? ComoSeLee.Dia(Stands.OdometerObservedAt)
@@ -71,55 +72,58 @@
                 </span>
             </div>
             <div class="d-row">
-                <span class="d-row__k">Entregado</span>
+                <span class="d-row__label"><Glyph Name="history" Size="15" Stroke="2.1" /><span class="d-row__k">Entregado</span></span>
                 <span class="d-row__v">
                     @(Stands is not null && Stands.DeliveryRecorded
                         ? ComoSeLee.Dia(Stands.DeliveredAt)
-                        : "sin registrar")
+                        : "Sin registrar")
                 </span>
             </div>
             @if (Stands is not null && Stands.DeliveryRecorded)
             {
                 <div class="d-row">
-                    <span class="d-row__k">Odómetro ese día</span>
+                    <span class="d-row__label"><Glyph Name="gauge" Size="15" Stroke="2.1" /><span class="d-row__k">Odómetro ese día</span></span>
                     <span class="d-row__v">
                         @ComoSeLee.Miles(Stands.DeliveryReading) @Stands.DeliveryUnit
                     </span>
                 </div>
             }
             <div class="d-row">
-                <span class="d-row__k">Ficha del fabricante</span>
+                <span class="d-row__label"><Glyph Name="folder" Size="15" Stroke="2.1" /><span class="d-row__k">Ficha del fabricante</span></span>
                 <span class="d-row__v">
-                    @(Revision.Length > 0 ? Revision : "sin publicar")
+                    @(Revision.Length > 0 ? Revision : "Sin publicar")
                 </span>
             </div>
         </div>
     </section>
 
-    <p class="d-note" style="margin-top:12px">
+    <p class="d-note d-note--home" style="margin-top:12px">
         <Glyph Name="info" Size="14" Stroke="2" />
         <span>
-            Estos son los hechos que tu concesionario envió sobre este carro. Lo que no aparece no
-            fue descartado: nunca se mencionó, y eso es otra cosa.
+            Estos son los datos que tu concesionario ha publicado sobre este vehículo. Lo que no
+            aparece aún no ha sido publicado.
         </span>
     </p>
 }
 else if (hoja == "garantia")
 {
-    <section class="@("d-cover d-cover--" + TonoGarantia)" id="garantia-resumen">
-        <span class="d-cover__icon"><Glyph Name="shield" Size="20" Stroke="2.2" /></span>
-        <div>
-            <div class="d-cover__title">@TitularGarantia</div>
-            <div class="d-cover__body">@CuerpoGarantia</div>
-        </div>
-    </section>
+    <section class="@("d-state d-state--" + TonoGarantia)" id="garantia-resumen">
+        <span class="@("d-state__icon d-state__icon--" + TonoGarantia)">
+            <Glyph Name="shield" Size="26" Stroke="2" />
+        </span>
+        <div class="d-state__title">@TitularGarantia</div>
+        <p class="d-state__body">@CuerpoGarantia</p>
+        @if (SubtituloGarantia.Length > 0)
+        {
+            <p class="d-state__body d-state__body--muted">@SubtituloGarantia</p>
+        }
 
-    <div style="margin-top:12px">
-        <button class="d-link" type="button" id="ver-cobertura"
+        <button class="btn btn--ghost d-state__action" type="button" id="ver-cobertura"
                 @onclick="@(() => detalleGarantia = !detalleGarantia)">
             @(detalleGarantia ? "Ocultar la cobertura completa" : "Ver la cobertura completa")
+            <Glyph Name="chevron" Size="16" Stroke="2.2" />
         </button>
-    </div>
+    </section>
 
     @if (detalleGarantia)
     {
@@ -139,21 +143,23 @@ else
 {
     <section class="d-card" id="manual-resumen">
         <div class="d-card__head">
-            <span class="d-card__title">Lo que publicó el fabricante</span>
+            <span class="d-state-card__icon d-state-card__icon--blue"><Glyph Name="sheet" Size="20" Stroke="2" /></span>
+            <span class="d-card__title" style="flex:1">Ficha del fabricante</span>
             @if (Revision.Length > 0)
             {
                 <span class="d-pill d-pill--info">@Revision</span>
+            }
+            else
+            {
+                <span class="d-pill d-pill--mute">Aún no publicada</span>
             }
         </div>
 
         @if (Sheet is null || !Sheet.HasASealedRevision)
         {
-            <div class="d-empty">
-                <span class="d-empty__title">Todavía no hay ficha</span>
-                Tu concesionario envía la ficha del fabricante por el mismo camino que trae todo lo
-                demás. Mientras no llegue, aquí no hay nada que citar — y eso no es una pantalla
-                esperando que la llenes.
-            </div>
+            <p class="d-state-card__body">
+                Tu concesionario aún no ha publicado la ficha de este vehículo.
+            </p>
         }
         else
         {
@@ -196,10 +202,15 @@ else
     {
         <section class="d-card" id="precios-publicados" style="margin-top:12px">
             <div class="d-card__head">
-                <span class="d-card__title">Precios publicados</span>
+                <span class="d-state-card__icon d-state-card__icon--amber"><Glyph Name="tag" Size="20" Stroke="2" /></span>
+                <span class="d-card__title" style="flex:1">Precios</span>
                 @if (Costs.AnyPriceOnRecord)
                 {
                     <span class="d-pill d-pill--info">@Costs.PriceCountOnRecord</span>
+                }
+                else
+                {
+                    <span class="d-pill d-pill--mute">Aún no publicados</span>
                 }
             </div>
 
@@ -221,11 +232,9 @@ else
             }
             else
             {
-                <div class="d-empty" id="sin-precios">
-                    <span class="d-empty__title">Todavía no hay ningún precio publicado</span>
-                    Tu concesionario manda los precios del fabricante por el mismo camino que trae la
-                    ficha. Mientras no lleguen, aquí no hay nada que citar.
-                </div>
+                <p class="d-state-card__body" id="sin-precios">
+                    Tu concesionario aún no ha publicado precios para este vehículo.
+                </p>
             }
         </section>
     }
@@ -303,7 +312,7 @@ else
         {
             if (Stands is null) return "Garantía";
             if (Stands.RecordContradictsItself) return "No se pudo medir";
-            if (!Stands.EnvelopePublished) return "Tu concesionario no ha publicado la garantía";
+            if (!Stands.EnvelopePublished) return "Garantía sin publicar";
             if (!Stands.CanBeEvaluated) return "Garantía publicada, sin medir completa";
 
             return "Garantía " + ComoSeLee.Postura(Stands.Standing).ToLowerInvariant();
@@ -311,9 +320,10 @@ else
     }
 
     /// <summary>
-    /// El cuerpo es la frase del dominio, literal. Es larga, y por eso vive aca abajo y no en el
-    /// titular: quien quiera el numero exacto lo tiene, y quien solo quiera saber si esta cubierto
-    /// ya lo leyo arriba en una palabra y un color.
+    /// El cuerpo es la frase del dominio, literal, EXCEPTO en el estado "sin publicar": ese es el
+    /// caso mas comun (todavia no hay sobre) y el que la duena ve primero, asi que ahi el copy es
+    /// el que la propia pantalla necesita sintetizar -- no la frase completa del registro, que
+    /// nombra "sobre" y "posicion" en vocabulario del dominio.
     /// </summary>
     private string CuerpoGarantia
     {
@@ -321,9 +331,20 @@ else
         {
             if (Stands is null) return "Este registro todavía no se ha leído.";
             if (Stands.RecordContradictsItself) return TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue;
+            if (!Stands.EnvelopePublished)
+                return "Tu concesionario aún no ha publicado la información de garantía de este vehículo.";
             if (Stands.Says.Length > 0) return Stands.Says;
 
             return TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet;
         }
     }
+
+    /// <summary>
+    /// La aclaracion de que "sin publicar" no es "sin garantia" -- solo aplica al estado sin
+    /// publicar, que es el unico donde esa lectura incorrecta es posible.
+    /// </summary>
+    private string SubtituloGarantia =>
+        Stands is not null && !Stands.RecordContradictsItself && !Stands.EnvelopePublished
+            ? "Esto no significa que no tenga garantía."
+            : "";
 }
