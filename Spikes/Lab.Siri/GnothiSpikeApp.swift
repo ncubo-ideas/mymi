@@ -126,6 +126,20 @@ struct ContentView: View {
          "Tu Mac cumple lo que Apple pide («Simulators use the host Mac's model»). Poné el simulador en Ajustes → General → Idioma y región → español (México), y Siri en el mismo idioma. Si aparece el interruptor de Apple Intelligence, a5 se puede correr ahí. Es un ajuste, no un aparato.")
     ]
 
+    private var fotoEnPantalla: String {
+        switch Instantanea.leer() {
+        case .sinContenedor:
+            return "SIN CONTENEDOR: el App Group '\(Instantanea.grupo)' no esta aprovisionado."
+        case .sinFoto(let carpeta):
+            return "SIN FOTO. Buscada en: \(carpeta)/\(Instantanea.archivo)"
+        case .ilegible(let ruta):
+            return "HAY ARCHIVO en \(ruta) pero no es json legible."
+        case .foto(let json, let escritaEn):
+            let cuando = escritaEn.map { ISO8601DateFormatter().string(from: $0) } ?? "sin fecha"
+            return "FOTO ENCONTRADA · \(json.count) caracteres · escrita \(cuando)"
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -138,6 +152,17 @@ struct ContentView: View {
                     .padding(.vertical, 2)
                 } header: {
                     Text("El dato quemado")
+                }
+
+                // LA FOTO, DICHA EN PANTALLA. Hasta aca solo las intents sabian si habia foto, y
+                // se enteraba quien le preguntaba a Siri. En la Mac nadie escribe la foto (la
+                // escribe Gnothi.iOS en el telefono), se copia a mano, y «no la encuentra» sin
+                // la ruta que miro la app cuesta una tarde. Se lee al pintar, asi que relanzar
+                // la app es releer.
+                Section {
+                    Text(fotoEnPantalla).font(.caption).textSelection(.enabled)
+                } header: {
+                    Text("El dato real · la foto del Host")
                 }
 
                 grupo("EL PISO · nombrando la app",

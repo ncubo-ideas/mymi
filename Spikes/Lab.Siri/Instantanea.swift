@@ -75,7 +75,13 @@ enum Instantanea {
 
         var fecha: Date? = nil
         if let texto = raiz["escritaEn"] as? String {
-            fecha = ISO8601DateFormatter().date(from: texto)
+            // El Host escribe DateTimeOffset con fracciones de segundo
+            // («2026-09-21T21:35:45.03653+00:00»), y el formateador por omision NO las admite:
+            // devolvia nil y la foto salia «sin fecha» aunque la fecha estuviera ahi. Se prueban
+            // las dos formas porque el formateador con fracciones rechaza un texto sin ellas.
+            let conFraccion = ISO8601DateFormatter()
+            conFraccion.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            fecha = conFraccion.date(from: texto) ?? ISO8601DateFormatter().date(from: texto)
         }
 
         return .foto(json: String(decoding: data, as: UTF8.self), escritaEn: fecha)
