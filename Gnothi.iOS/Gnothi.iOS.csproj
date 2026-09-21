@@ -189,6 +189,22 @@
     <BundleResource Include="..\Gnothi.Mobile\Assets\fonts\*" Link="Assets\fonts\%(Filename)%(Extension)" LogicalName="Assets/fonts/%(Filename)%(Extension)" />
     <BundleResource Include="..\Gnothi.Mobile\Assets\img\*" Link="Assets\img\%(Filename)%(Extension)" LogicalName="Assets/img/%(Filename)%(Extension)" />
 
+    <!-- EL SUSTRATO DE LA SALA, publicado y POR REFERENCIA: no se copia al repo. Entra al .app
+         bajo `sala/`, que es de donde IosSala lo sirve a su WKWebView por `gnothi-sala://sala/`.
+         El espejo exacto del AndroidAsset de Gnothi.Mobile.csproj, que lo deja en los assets del
+         apk bajo el mismo nombre; si esas dos entradas dejan de coincidir, las dos salas dejan de
+         ser la misma sala.
+
+         Se excluyen .gz y .br por el mismo motivo que alla: aca los bytes salen de disco local y
+         solo inflarian el paquete.
+
+         Se regenera con:
+           dotnet publish Spikes/Lab.Sala/Sustrato -c Release -o Spikes/Lab.Sala/Sustrato/publicado -->
+    <BundleResource Include="..\Spikes\Lab.Sala\Sustrato\publicado\wwwroot\**\*"
+                    Exclude="..\Spikes\Lab.Sala\Sustrato\publicado\wwwroot\**\*.gz;..\Spikes\Lab.Sala\Sustrato\publicado\wwwroot\**\*.br"
+                    Link="sala\%(RecursiveDir)%(Filename)%(Extension)"
+                    LogicalName="sala/%(RecursiveDir)%(Filename)%(Extension)" />
+
     <!-- EL PAQUETE, SI YA SE ARMO. Es lo mismo que armar-paquete.ps1 le empuja al Android por
          adb: los journals y los modulos. Va condicionado porque paquete/ esta gitignoreado
          -es salida de build, no fuente- y un clon limpio no lo tiene.
