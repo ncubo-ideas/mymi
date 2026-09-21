@@ -10,7 +10,10 @@
     "arriba": "No se pudo completar la operación.",
     "arranque": "No se pudo abrir la app.",
     "noEncontrado": "No encontrado",
-    "nadaEnEstaDireccion": "No hay nada en esta dirección."
+    "nadaEnEstaDireccion": "No hay nada en esta dirección.",
+    "inesperado": "Ocurrió un error inesperado.",
+    "recargar": "Recargar",
+    "descartar": "Descartar este aviso"
   },
 
   "arranque": {
@@ -92,6 +95,7 @@
     "rotulo": "lo demás está bien",
     "titulo": "Estos resultados están dentro de lo esperado.",
     "enRango": "en rango",
+    "mediciones": "{cuantas} mediciones",
     "nota": "{mediciones} · {tendencia}",
     "ocultarDetalle": "Ocultar detalle →",
     "verTodos": "Ver todos mis resultados →",

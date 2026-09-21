@@ -10,7 +10,10 @@
     "arriba": "That could not be completed.",
     "arranque": "The app could not be opened.",
     "noEncontrado": "Not found",
-    "nadaEnEstaDireccion": "There is nothing at this address."
+    "nadaEnEstaDireccion": "There is nothing at this address.",
+    "inesperado": "Something went wrong.",
+    "recargar": "Reload",
+    "descartar": "Dismiss this notice"
   },
 
   "arranque": {
@@ -92,6 +95,7 @@
     "rotulo": "the rest is fine",
     "titulo": "These results are within what is expected.",
     "enRango": "in range",
+    "mediciones": "{cuantas} measurements",
     "nota": "{mediciones} · {tendencia}",
     "ocultarDetalle": "Hide detail →",
     "verTodos": "See all my results →",
