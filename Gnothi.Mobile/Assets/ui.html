@@ -70,7 +70,21 @@
      action that grows Mymi sits next to it, in the Host's violet -- and STAYS on screen while the
      list scrolls, whether Sonia has five modules or thirty. The connect card left the grid. */
   .hola{display:flex;align-items:flex-end;gap:12px;margin:0 -16px 4px;padding:2px 18px 6px;
-       position:sticky;top:0;z-index:5;background:var(--paper)}
+       position:sticky;top:0;z-index:5;background:var(--paper);
+       /* Y SU FONDO SIGUE HASTA EL BORDE DE ARRIBA. `.scroll` tiene 12 px de relleno superior, y
+          `top:0` de una pegajosa se mide DESPUES de ese relleno: la cabecera se clavaba en y=12 y
+          por esos 12 px de aire asomaban los techos de las tarjetas que subian. Se veia una franja
+          suelta arriba del titulo, como si la cabecera flotara separada de la pantalla.
+          Medido en el Honor y en el emulador el 2026-09-21.
+
+          La sombra es un fondo, no una sombra: mismo color, sin difuminado, corrida 12 px hacia
+          arriba, asi que pinta exactamente la banda del relleno. NO se le quita el relleno a
+          `.scroll` porque son CINCO vistas colgando de esa misma clase, y NO se usa un
+          pseudo-elemento porque esto no agrega una caja ni cambia el alto: es pintura.
+
+          El color es `--paper`, el de la pantalla, no blanco puro: blanco dejaria una costura
+          visible contra el fondo de la pagina, que es justo lo que se estaba tratando de sacar. */
+       box-shadow:0 -12px 0 var(--paper)}
   .hola .t{flex:1;min-width:0}
   .hola{align-items:center}
   .hola b{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
