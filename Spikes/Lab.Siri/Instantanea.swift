@@ -32,7 +32,16 @@ import Foundation
 enum Instantanea {
 
     /// Tiene que coincidir con Entitlements.plist de Gnothi.iOS y con el del portal de Apple.
+    ///
+    /// EN LA MAC LLEVA EL PREFIJO DEL EQUIPO. macOS identifica los Group Containers como
+    /// «TEAMID.group.…»; con el string pelado, containerURL(...) no falla: devuelve una carpeta
+    /// propia que ninguna otra app comparte, y el sintoma seria «sin foto» sin explicacion. El
+    /// TEAMID es el DEVELOPMENT_TEAM del pbxproj y el mismo de Gnothi.mac.entitlements.
+    #if os(macOS)
+    static let grupo = "W5SWU29W6D.group.com.ncubo.gnothi"
+    #else
     static let grupo = "group.com.ncubo.gnothi"
+    #endif
 
     /// Tiene que coincidir con Instantanea.NombreDelArchivo del lado de .NET.
     static let archivo = "gnothi-instantanea.json"

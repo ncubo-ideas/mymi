@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- EL MISMO SPIKE, EN LA MAC. Siri AI necesita una app con App Intents en el aparato, y en
+	     la Mac la nuestra es .NET: este es el unico camino corto para medirla (docs/16, punto 4
+	     de «Lo que sigue»).
+
+	     DOS DIFERENCIAS CON Gnothi.entitlements, las dos de macOS y ninguna de gusto:
+	     - El App Group lleva el prefijo del equipo. En iOS es «group.…»; en macOS, si no lleva
+	       «TEAMID.», el sistema no reconoce el contenedor y containerURL(...) devuelve una
+	       carpeta que nadie comparte, sin error. El TEAMID es el mismo DEVELOPMENT_TEAM del
+	       pbxproj. Instantanea.swift usa el mismo string bajo #if os(macOS).
+	     - El sandbox va encendido: los Group Containers de macOS 15 en adelante lo piden para
+	       que el acceso no dispare el dialogo de «quiere acceder a datos de otras apps».
+
+	     En la Mac nadie escribe la foto (la escribe Gnothi.iOS en el telefono): para el spike
+	     se copia a mano a ~/Library/Group Containers/W5SWU29W6D.group.com.ncubo.gnothi/. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>W5SWU29W6D.group.com.ncubo.gnothi</string>
+	</array>
+</dict>
+</plist>
