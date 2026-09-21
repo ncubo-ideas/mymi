@@ -81,14 +81,18 @@ namespace Concesionario.Dominio.Pruebas
 			DueAssessment vencimiento = ReglaDeLasDos().Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(45000, DistanceUnit.UnitB), sinEscalar);
 
-			string motivo = vencimiento.Describe();
+			ADueReason motivo = vencimiento.TheReason();
 
-			Assert.That(motivo, Does.Contain("no se puede evaluar"));
-			Assert.That(motivo, Does.Contain("el límite está en km"));
-			Assert.That(motivo, Does.Contain("las mediciones están en mi"));
-			Assert.That(motivo, Does.Contain("nunca se convierten"),
-				"OUS-07: la persona tiene que poder saber POR QUE el sistema no esta mirando la "
-				+ "distancia. 'No vencio' a secas es indistinguible de 'no lo se'.");
+			// OUS-07: la persona tiene que poder saber POR QUE el sistema no esta mirando la
+			// distancia. 'No vencio' a secas es indistinguible de 'no lo se'. La clausula que lo
+			// dice nombra las DOS unidades, que es lo que ninguna de las otras dos suspensiones
+			// puede nombrar.
+			Assert.That(motivo.ClauseCodes, Does.Contain(LimitClause.UnitMismatch));
+
+			int cual = Array.IndexOf(motivo.ClauseCodes, LimitClause.UnitMismatch);
+
+			Assert.That(motivo.ClauseUnits[cual], Is.EqualTo(DistanceUnit.UnitA.Name));
+			Assert.That(motivo.ClauseMeasuredUnits[cual], Is.EqualTo(DistanceUnit.UnitB.Name));
 		}
 
 		// GAP G4. La suspension es CALCULADA: llega una lectura en la unidad del plan y
@@ -146,7 +150,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(vencimiento.DistanceIsSuspended, Is.True);
 			Assert.That(vencimiento.SuspendedByAnAbsentReading, Is.True);
 			Assert.That(vencimiento.SuspendedByUnitMismatch, Is.False);
-			Assert.That(vencimiento.Describe(), Does.Contain("ninguna lectura usable"));
+			Assert.That(
+				vencimiento.TheReason().ClauseCodes, Does.Contain(LimitClause.AbsentReading));
 		}
 
 		// Un ancla sin lectura -- la operacion nunca se completo -- suspende la distancia por
@@ -180,7 +185,9 @@ namespace Concesionario.Dominio.Pruebas
 				"Es la unica dimension que esta regla tiene, asi que no hay a donde degradar. "
 				+ "Devolver NotDue a secas seria mentir con la verdad.");
 			Assert.That(vencimiento.State, Is.SameAs(DueState.NotDue));
-			Assert.That(vencimiento.Describe(), Does.Contain("no es evidencia"),
+			Assert.That(
+				vencimiento.TheReason().Shape,
+				Is.EqualTo(ADueReason.NothingCouldBeEvaluated),
 				"El motivo tiene que decir que este NotDue no es evidencia de nada.");
 		}
 

@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 1112" width="680" role="img" aria-label="Las seis formas de aislar un modulo, y donde queda el motor en cada una">
+<title>Las seis formas de aislar un módulo, y dónde queda el motor en cada una</title>
+<desc>Si el motor queda AFUERA de la frontera, se comparte y el módulo queda aislado. Si queda ADENTRO, cada módulo trae el suyo. Si no hay frontera, se comparte pero nada aísla.</desc>
+<style>
+  .t  { font: 400 12px system-ui, "Segoe UI", Roboto, sans-serif; fill: currentColor }
+  .h  { font: 500 14px system-ui, "Segoe UI", Roboto, sans-serif; fill: currentColor }
+  .bx { fill: none; stroke: currentColor; stroke-width: 1; opacity: .65 }
+  .bd { fill: none; stroke: currentColor; stroke-width: 1; opacity: .65; stroke-dasharray: 4 3 }
+  .lbl { font: 400 11px system-ui, sans-serif; fill: currentColor; opacity: .7 }
+  /* Cada caja llena es una isla: relleno claro con texto oscuro, así se lee igual en claro y en oscuro. */
+  .mot rect { fill: #E6F1FB; stroke: #7FB2E5; stroke-width: .5 }
+  .mot text { fill: #0C447C }
+  .dup rect { fill: #FBEEDC; stroke: #E0B978; stroke-width: .5 }
+  .dup text { fill: #7A4E00 }
+  .mod rect { fill: #E7F5EC; stroke: #8CCAA4; stroke-width: .5 }
+  .mod text { fill: #1D6B39 }
+  .off rect { fill: #EDECF1; stroke: #BFBCC9; stroke-width: .5 }
+  .off text { fill: #55525E }
+  .mot text, .dup text, .mod text, .off text { font-family: system-ui, "Segoe UI", Roboto, sans-serif }
+  .n14 { font-size: 14px; font-weight: 500 }
+  .n11 { font-size: 11px; font-weight: 400 }
+</style>
+
+<text class="t" x="40" y="26">Línea continua = frontera real.   Línea de puntos = frontera dibujada, no existe.</text>
+
+<!-- A -->
+<text class="h" x="40" y="60">A · DLL en proceso — la que corre hoy en el Host</text>
+<rect class="bx" x="40" y="70" width="600" height="96" rx="4"/>
+<text class="lbl" x="52" y="90">un solo proceso</text>
+<g class="mot"><rect x="52" y="98" width="110" height="54" rx="4"/>
+  <text class="n14" x="66" y="120">motor</text><text class="n11" x="66" y="138">del Host</text></g>
+<g class="mod"><rect x="182" y="98" width="130" height="54" rx="4"/><text class="n14" x="196" y="130">módulo A</text></g>
+<g class="mod"><rect x="312" y="98" width="130" height="54" rx="4"/><text class="n14" x="326" y="130">módulo B</text></g>
+<text class="lbl" x="456" y="122">mismo heap:</text><text class="lbl" x="456" y="138">se tocan</text>
+<text class="t" x="40" y="186">Comparte la instancia del motor. Pero nada separa A de B — AssemblyLoadContext aísla</text>
+<text class="t" x="40" y="202">nombres, no memoria, y .NET ya no tiene partial trust. El ancla es la firma, no una pared.</text>
+
+<!-- B -->
+<text class="h" x="40" y="248">B · el mismo DLL, cada uno en su hilo</text>
+<rect class="bx" x="40" y="258" width="600" height="96" rx="4"/>
+<text class="lbl" x="52" y="278">un solo proceso</text>
+<g class="mot"><rect x="52" y="286" width="110" height="54" rx="4"/>
+  <text class="n14" x="66" y="308">motor</text><text class="n11" x="66" y="326">del Host</text></g>
+<rect class="bd" x="182" y="286" width="130" height="54" rx="4"/>
+<text class="lbl" x="194" y="304">hilo</text><text class="h" x="194" y="328">módulo A</text>
+<rect class="bd" x="322" y="286" width="130" height="54" rx="4"/>
+<text class="lbl" x="334" y="304">hilo</text><text class="h" x="334" y="328">módulo B</text>
+<text class="t" x="40" y="374">Un hilo comparte el espacio de direcciones, así que la caja está dibujada y no existe.</text>
+<text class="t" x="40" y="390">Resuelve concurrencia, que no es el problema: el módulo no inicia nada y se desaloja.</text>
+
+<!-- C y D -->
+<text class="h" x="40" y="436">C y D · un proceso del SO por módulo — sólo Android</text>
+<rect class="bx" x="40" y="446" width="170" height="96" rx="4"/>
+<text class="lbl" x="52" y="466">proceso de Gnothi</text>
+<g class="mot"><rect x="52" y="474" width="146" height="54" rx="4"/>
+  <text class="n14" x="66" y="496">motor</text><text class="n11" x="66" y="514">del Host</text></g>
+<rect class="bx" x="224" y="446" width="200" height="96" rx="4"/>
+<text class="lbl" x="236" y="466">proceso y uid propios</text>
+<g class="dup"><rect x="236" y="474" width="176" height="54" rx="4"/>
+  <text class="n14" x="250" y="496">módulo A</text><text class="n11" x="250" y="514">+ su instancia del motor</text></g>
+<rect class="bx" x="438" y="446" width="202" height="96" rx="4"/>
+<text class="lbl" x="450" y="466">proceso y uid propios</text>
+<g class="dup"><rect x="450" y="474" width="178" height="54" rx="4"/>
+  <text class="n14" x="464" y="496">módulo B</text><text class="n11" x="464" y="514">+ su instancia del motor</text></g>
+<text class="t" x="40" y="562">Aísla de verdad, y lo pone el SO. Comparte las PÁGINAS DE CÓDIGO del motor, no la</text>
+<text class="t" x="40" y="578">instancia — y arrancar cada proceso .NET costó 931 ms, medido. En iOS no existe.</text>
+
+<!-- E -->
+<text class="h" x="40" y="624">E · caja wasm que abre el Host — el spike S1 de Álvaro</text>
+<rect class="bx" x="40" y="634" width="600" height="96" rx="4"/>
+<text class="lbl" x="52" y="654">un solo proceso</text>
+<g class="mot"><rect x="52" y="662" width="110" height="54" rx="4"/>
+  <text class="n14" x="66" y="684">motor</text><text class="n11" x="66" y="702">del Host</text></g>
+<rect class="bx" x="200" y="662" width="150" height="54" rx="4"/>
+<text class="lbl" x="212" y="680">caja wasm</text>
+<g class="mod"><rect x="212" y="686" width="126" height="24" rx="4"/><text class="n14" x="222" y="703">módulo A</text></g>
+<rect class="bx" x="366" y="662" width="150" height="54" rx="4"/>
+<text class="lbl" x="378" y="680">caja wasm</text>
+<g class="mod"><rect x="378" y="686" width="126" height="24" rx="4"/><text class="n14" x="388" y="703">módulo B</text></g>
+<text class="t" x="40" y="750">El motor queda AFUERA de las cajas: una sola instancia, y cada módulo sin poder salir</text>
+<text class="t" x="40" y="766">de la suya. Es la única que da las dos cosas. Probada en escritorio; falta el port a WAMR.</text>
+
+<!-- F -->
+<text class="h" x="40" y="812">F · WebView por origen — la que corre hoy en el teléfono</text>
+<rect class="bx" x="40" y="822" width="600" height="96" rx="4"/>
+<text class="lbl" x="52" y="842">un solo proceso</text>
+<g class="off"><rect x="52" y="850" width="110" height="54" rx="4"/>
+  <text class="n14" x="66" y="872">motor</text><text class="n11" x="66" y="890">sin usar acá</text></g>
+<rect class="bx" x="182" y="850" width="216" height="54" rx="4"/>
+<text class="lbl" x="194" y="868">WebView · origen propio</text>
+<g class="dup"><rect x="194" y="874" width="192" height="24" rx="4"/>
+  <text class="n14" x="204" y="891">módulo A + su motor</text></g>
+<rect class="bx" x="410" y="850" width="216" height="54" rx="4"/>
+<text class="lbl" x="422" y="868">WebView · origen propio</text>
+<g class="dup"><rect x="422" y="874" width="192" height="24" rx="4"/>
+  <text class="n14" x="432" y="891">módulo B + su motor</text></g>
+<text class="t" x="40" y="938">Aísla por origen, pero el motor está ADENTRO de cada caja: viene en el bundle, porque</text>
+<text class="t" x="40" y="954">el runtime ES el bundle. El Host no tiene nada que prestar. 11,3 MB por módulo.</text>
+
+<!-- G -->
+<text class="h" x="40" y="1000">G · el dominio como DATO, no como código</text>
+<rect class="bx" x="40" y="1010" width="600" height="72" rx="4"/>
+<g class="mot"><rect x="52" y="1020" width="576" height="52" rx="4"/>
+  <text class="n14" x="66" y="1041">motor del Host — lo interpreta él</text>
+  <text class="n11" x="66" y="1060">datos de A          datos de B          no hay código del módulo que aislar</text></g>
+<text class="t" x="40" y="1102">El aislamiento deja de costar porque no hay qué aislar. Hoy no se puede: el dominio es un DLL.</text>
+</svg>

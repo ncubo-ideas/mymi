@@ -28,7 +28,7 @@ namespace Municipalidad.Dominio
 		}
 
 		/// <summary>Ese dia, dicho como dia de calendario.</summary>
-		internal string DiaDeLaConsulta { get { return Dichos.Dia(FechaDeLaConsulta); } }
+		internal DateTime DiaDeLaConsulta { get { return FechaDeLaConsulta.Date; } }
 
 		/// <summary>Si hay una consulta de ese dia con que cotejar. TOTAL.</summary>
 		internal abstract bool SePuedeDecir { get; }
@@ -40,11 +40,9 @@ namespace Municipalidad.Dominio
 		internal abstract string Etiqueta { get; }
 
 		/// <summary>
-		/// La frase que una persona lee cuando este cotejo trae lo que trae. TOTAL: las tres hojas
-		/// dicen la suya, y la de la consulta que no existe es la que mas hace falta -- callarla dejaria
-		/// cero filas pareciendo un cotejo limpio.
+		/// CUANTOS PERIODOS DESTAPA EL COTEJO, y cero donde no destapa ninguno. Valor para un hueco.
 		/// </summary>
-		internal abstract string Dice();
+		internal virtual int CuantosPeriodos { get { return 0; } }
 
 		/// <summary>
 		/// Resuelve el estado desde el dia pedido, si habia consulta de ese dia y los periodos que
@@ -73,18 +71,6 @@ namespace Municipalidad.Dominio
 		internal override bool SePuedeDecir { get { return false; } }
 		internal override bool HayPeriodos { get { return false; } }
 		internal override string Etiqueta { get { return "sin-consulta"; } }
-
-		/// <summary>
-		/// La frase NIEGA en voz alta la lectura benigna: cero periodos aqui es una pregunta sin
-		/// contestar, nunca una cuenta en orden.
-		/// </summary>
-		internal override string Dice()
-		{
-			return "No hay ninguna consulta del " + DiaDeLaConsulta + " registrada, así que no hay con "
-				+ "qué cotejar lo que esta app vio pagar. Esto no dice que todo esté en orden: dice que "
-				+ "la pregunta todavía no se puede contestar, y se va a poder en cuanto se registre una "
-				+ "consulta de ese día.";
-		}
 	}
 
 	/// <summary>
@@ -98,35 +84,24 @@ namespace Municipalidad.Dominio
 		internal override bool SePuedeDecir { get { return true; } }
 		internal override bool HayPeriodos { get { return false; } }
 		internal override string Etiqueta { get { return "nada-sin-comprobante"; } }
-
-		internal override string Dice()
-		{
-			return "La consulta del " + DiaDeLaConsulta + " se cotejó y no destapó ningún período: todo "
-				+ "lo que el portal da por pagado, esta app lo vio pagar.";
-		}
 	}
 
 	/// <summary>La consulta de ese dia destapa periodos que la app no vio pagar.</summary>
 	internal sealed class LaConsultaDestapaPeriodos : EstadoDeLosPeriodosSinComprobante
 	{
 		/// <summary>Cuantos periodos destapa el cotejo, que es lo que la frase cuenta.</summary>
-		internal int CuantosPeriodos { get; }
+		internal override int CuantosPeriodos { get { return cuantosPeriodos; } }
+
+		private readonly int cuantosPeriodos;
 
 		internal LaConsultaDestapaPeriodos(DateTime fechaDeLaConsulta, int cuantosPeriodos)
 			: base(fechaDeLaConsulta)
 		{
-			CuantosPeriodos = cuantosPeriodos;
+			this.cuantosPeriodos = cuantosPeriodos;
 		}
 
 		internal override bool SePuedeDecir { get { return true; } }
 		internal override bool HayPeriodos { get { return true; } }
 		internal override string Etiqueta { get { return "hay-periodos-sin-comprobante"; } }
-
-		internal override string Dice()
-		{
-			return "La consulta del " + DiaDeLaConsulta + " destapa " + CuantosPeriodos
-				+ (CuantosPeriodos == 1 ? " período" : " períodos")
-				+ " que el portal da por pagados y esta app no vio pagar.";
-		}
 	}
 }

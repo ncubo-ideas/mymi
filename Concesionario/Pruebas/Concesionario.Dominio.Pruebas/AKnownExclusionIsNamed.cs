@@ -124,9 +124,9 @@ namespace Concesionario.Dominio.Pruebas
 					DeliveredAt, 10, 12000, DistanceUnitCode.UnitA, AsOf),
 				Is.EqualTo("NotCovered"));
 			Assert.That(
-				specification.DescribeCoverage(
-					"PAINT", 36, 100000, DistanceUnitCode.UnitA,
-					DeliveredAt, 10, 12000, DistanceUnitCode.UnitA, AsOf),
+				TheSentenceTheDoorWouldCompose.TheCoverage(
+					specification, "PAINT", 36, 100000, DistanceUnitCode.UnitA,
+					DeliveredAt, 10, 12000, DistanceUnitCode.UnitA, AsOf, TheLanguage.OfTheRecord),
 				Does.Contain("paintwork"));
 		}
 
@@ -175,10 +175,22 @@ namespace Concesionario.Dominio.Pruebas
 			TheExclusionIsPublished();
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.CoverageExclusions().Length, Is.EqualTo(1));
-			Assert.That(specification.CoverageExclusions()[0], Does.Contain(TheSystem));
-			Assert.That(specification.CoverageExclusions()[0], Does.Contain(TheExclusion));
-			Assert.That(specification.CoverageExclusions()[0], Does.Contain(TheCondition));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					specification, TheLanguage.OfTheRecord).Length,
+				Is.EqualTo(1));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					specification, TheLanguage.OfTheRecord)[0],
+				Does.Contain(TheSystem));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					specification, TheLanguage.OfTheRecord)[0],
+				Does.Contain(TheExclusion));
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.TheCoverageExclusions(
+					specification, TheLanguage.OfTheRecord)[0],
+				Does.Contain(TheCondition));
 		}
 
 		private void TheExclusionIsPublished()
@@ -196,9 +208,9 @@ namespace Concesionario.Dominio.Pruebas
 
 		private string TheSentenceAt(DateTime asOf, int currentReading)
 		{
-			return specification.DescribeCoverage(
-				TheSystem, 36, 100000, DistanceUnitCode.UnitA,
-				DeliveredAt, 10, currentReading, DistanceUnitCode.UnitA, asOf);
+			return TheSentenceTheDoorWouldCompose.TheCoverage(
+				specification, TheSystem, 36, 100000, DistanceUnitCode.UnitA,
+				DeliveredAt, 10, currentReading, DistanceUnitCode.UnitA, asOf, TheLanguage.OfTheRecord);
 		}
 	}
 }

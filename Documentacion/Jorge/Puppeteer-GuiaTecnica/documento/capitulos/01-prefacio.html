@@ -1,0 +1,53 @@
+<!-- PREFACIO -->
+  <div class="part">Preliminares</div>
+  <section class="anchor" id="prefacio">
+    <h2>Prefacio</h2>
+
+    <p>Durante décadas construimos software de la misma manera: el estado vive en una base de datos, la aplicación lo lee, lo modifica y lo vuelve a escribir, y confiamos en que nadie más lo tocó mientras tanto. Funciona —hasta que deja de funcionar—: condiciones de carrera, auditorías que hay que “agregar” después, migraciones que dan miedo, y la misma lógica de negocio reescrita una y otra vez para cada canal y cada dispositivo.</p>
+
+    <p>Puppeteer parte de una premisa distinta, que nCubo resume en cuatro palabras: <strong>«State is local. Continuity is not.»</strong> —el estado es local; la continuidad no—. Cada pieza de lógica vive como un <em class="term">actor</em> dueño de su estado, y todo lo que ocurre queda escrito, en orden, en un <em class="term">diario causal</em> que es la única fuente de verdad. Desde ahí, la continuidad —entre sesiones, servicios, dispositivos y versiones— se reconstruye sola. nCubo lo describe como <em>«un sustrato de sistemas distribuidos para experiencias que ocurren juntas»</em>.</p>
+
+    <p>Esta guía enseña a <strong>usar</strong> ese paradigma. Pero antes de la primera línea de código conviene entender por qué vale la pena mirarlo.</p>
+
+    <h3>Por qué Puppeteer merece tu atención</h3>
+    <p>No es una idea de laboratorio. Puppeteer está <strong>en producción desde 2018</strong>, sostiene aplicaciones reales con miles de operaciones, está respaldado por <strong>diez artículos con DOI</strong> y se publica como <strong>código abierto bajo Apache 2.0</strong>. Cinco propiedades explican por qué quienes lo adoptan tienden a no volver atrás:</p>
+    <table>
+      <thead><tr><th>Propiedad</th><th>Qué significa en la práctica</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Una sola fuente de verdad</strong></td><td>El diario causal registra <em>todo</em> lo que pasó, en orden. La auditoría y la trazabilidad no se “agregan”: son el sustrato mismo.</td></tr>
+        <tr><td><strong>Rendimiento en memoria</strong></td><td>El estado vive en RAM, detrás de tu API. Las lecturas son inmediatas; no hay ida y vuelta a la base de datos en cada request.</td></tr>
+        <tr><td><strong>Desplegar es reproducir</strong></td><td>El estado se reconstruye reproduciendo el diario. Reiniciar, mover o redesplegar deja de ser un evento de riesgo.</td></tr>
+        <tr><td><strong>Un dominio, muchas topologías</strong></td><td>«Un dominio puede presentarse en distintos clientes, runtimes y topologías sin convertirse en otro sistema»: la misma lógica en web, móvil, CLI o distribuida.</td></tr>
+        <tr><td><strong>Cambios baratos</strong></td><td>Agregar una operación de negocio suele ser <em>un método de dominio y una línea de DSL</em>. Lo verás en acción a lo largo de esta guía.</td></tr>
+      </tbody>
+      <caption>Tabla 1. Las cinco propiedades que definen el valor de Puppeteer.</caption>
+    </table>
+
+    <h3>Cómo está organizada</h3>
+    <table>
+      <thead><tr><th>Sección</th><th>Qué encontrarás</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Introducción</strong></td><td>El paradigma en pocas páginas: qué es un actor, un comando y por qué el diario lo cambia todo.</td></tr>
+        <tr><td><strong>Parte I · Primeros pasos</strong></td><td>Del modelo mental a un actor que corre, y de ahí al DSL, los parámetros, las guardas, el dominio, la persistencia y el hosting.</td></tr>
+        <tr><td><strong>Parte II · Cruce de fronteras</strong></td><td>Cuando un actor debe provocar trabajo en otro: reacciones, <em>tell</em>, despacho de mensajes, sagas y topologías.</td></tr>
+        <tr><td><strong>Parte III · Patrones y recetas</strong></td><td>Los patrones que Puppeteer usa, otros fáciles de sumar, y recetas concretas: agregar una base de datos, migrar un sistema legado.</td></tr>
+        <tr><td><strong>Anexos</strong></td><td>Cómo correr los ejemplos, glosario, convenciones del DSL y la referencia consolidada de recomendaciones.</td></tr>
+      </tbody>
+      <caption>Tabla 2. Mapa del documento.</caption>
+    </table>
+
+    <h3>Convenciones</h3>
+    <p>A lo largo de la guía usamos cuatro tipos de recomendación. Son directas a propósito: te dicen qué hacer, no solo qué es posible.</p>
+    <div class="legend">
+      <div class="row"><span class="pill" style="background:var(--do)">HAZ</span><span class="txt">Prácticas que conviene seguir casi siempre. Son el camino principal.</span></div>
+      <div class="row"><span class="pill" style="background:var(--consider)">CONSIDERA</span><span class="txt">Buenas ideas en general; aplícalas con criterio según tu caso.</span></div>
+      <div class="row"><span class="pill" style="background:var(--avoid)">EVITA</span><span class="txt">Generalmente no es buena idea, aunque existan excepciones.</span></div>
+      <div class="row"><span class="pill" style="background:var(--dont)">NO HAGAS</span><span class="txt">Prácticas que casi siempre traen problemas. Mejor no.</span></div>
+    </div>
+    <p>También verás recuadros <strong style="color:var(--note)">Nota del diseñador</strong> con el porqué de una decisión del framework, y recuadros <strong style="color:var(--try)">Pruébalo</strong> con el comando exacto para correr un ejemplo. Los bloques de código llevan una etiqueta con su lenguaje —<code>C#</code>, <code>DSL</code>, <code>Salida</code>— y los que provienen de una aplicación real llevan además la marca <strong>real</strong>.</p>
+
+    <aside class="note">
+      <div class="h">✎ Sobre los ejemplos</div>
+      <p>Conviven dos clases. Los <strong>ejemplos de juguete</strong> son minúsculos y neutrales, escritos a la medida de cada concepto; <strong>todos compilan y se ejecutan</strong>, y las salidas que ves son reales (Anexo A). Los <strong>fragmentos marcados “real”</strong> provienen de <em>Velada</em>, una aplicación de bingo construida sobre Puppeteer y en uso real: muestran cómo se ve el framework en producción, no son código para copiar.</p>
+    </aside>
+  </section>

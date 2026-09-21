@@ -65,12 +65,13 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AnOperationNeverEvaluatedSaysSoInsteadOfClaimingAnAnswer()
 		{
-			string reason = RecordedAssessment.None.Describe();
+			ADueReason reason = RecordedAssessment.None.TheReason();
 
-			Assert.That(reason, Does.Contain("no se ha evaluado"));
-			Assert.That(reason, Does.Contain("no es evidencia"),
-				"Es el mismo cuidado del GAP G2 un piso mas arriba: un NotDue que nadie calculo "
-				+ "no puede sonar igual que uno que la ley decidio.");
+			// Es el mismo cuidado del GAP G2 un piso mas arriba: un NotDue que nadie calculo no
+			// puede sonar igual que uno que la ley decidio, y son dos FORMAS distintas de motivo.
+			Assert.That(reason.Shape, Is.EqualTo(ADueReason.NotEvaluatedYet));
+			Assert.That(reason.Shape, Is.Not.EqualTo(ADueReason.Decided));
+			Assert.That(reason.State, Is.EqualTo(DueState.NotDue.Name));
 		}
 
 		// LAS DOS PREGUNTAS SON TOTALES. Si revientaran, la ocurrencia tendria que preguntar

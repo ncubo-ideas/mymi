@@ -1,0 +1,37 @@
+{
+  "//": "THIS FILE BELONGS TO THE HOST. Kept apart from the manifest on purpose: these are two authorities. The institution declares who it is and what it offers; the HOST decides how it is run and which folder it grants it. If the shell came in the manifest, the module would choose how it is run.",
+
+  "//paths": "With forward slashes. Windows accepts them just the same and they avoid JSON's double escaping, which broke this file once already. And RELATIVE TO THIS FOLDER when not rooted: shell.arguments[0] is the dll that gets loaded, and the Host anchors it to the folder of this installation.json. That is what lets the versioned bench in Modulos/ start on any machine that has built the module (dotnet build HolaMundo/Facturas/App/Facturas.Mcp), instead of carrying the disk of whoever assembled the POC. The real installer keeps writing absolute paths: the dll lives inside the module folder and both forms name the same file.",
+
+  "//shell": "Stage 1: child process + stdio, because in this POC the module ships its own MCP server. Stage 2 changes ONLY this block for a wasm runtime with --dir, and neither the manifest nor the module notices. The granted folder is appended as the last argument; it does not go here.",
+  "shell": {
+    "type": "in-process",
+    "command": "dotnet",
+    "arguments": [
+      "../../HolaMundo/Facturas/App/Facturas.Mcp/bin/Debug/net9.0/Facturas.Mcp.dll"
+    ]
+  },
+
+  "//grantedFolder": "The ONLY folder this module may touch. The module does not choose it: granting is an act of the granter. IT HAS TO BE THE SAME ONE you picked in the app when you installed it - if they do not match, the module will report hayDatos=false and Claude will ask you to open the app.",
+  "grantedFolder": "C:/Gnothi/facturas",
+
+  "//enabled": "The switch belongs to the Host. Disabled = Gnothi leaves this module's tools out of the list it hands the assistant, and the module does NOT find out: it cannot tell 'I was switched off' apart from 'nobody asked'.",
+  "enabled": true,
+
+  "//disabledTools": "The fine cut, which is the one actually needed: 'the total yes, the detail no'. Put the name here exactly as it appears in the manifest, without the module prefix.",
+  "disabledTools": [],
+
+  "//caratula": "WHO MAY SPEAK FOR THIS MODULE FROM ANOTHER PROCESS. Only Gate 3 on Android uses it today: the per-module APK that declares the app functions to the OS and forwards here. It lives in the installation and not in the manifest for the same reason the granted folder does - the module does not get to say who may impersonate it.",
+
+  "//caratula-ausente": "ABSENT MEANS NOBODY. A module without this block cannot be reached across processes at all. Forgetting to declare it fails closed, never open - that is why the other three modules do not have it and are therefore unreachable from outside.",
+
+  "//signatureSha256": "SHA-256 of the caller's signing certificate. The package name alone is worthless: anyone can name their app the same. The signature is what an impostor cannot produce. GNOTHI LOOKS IT UP ITSELF from the uid the kernel reports - it is never read from the message. Get it with: apksigner verify --print-certs <apk>",
+
+  "//esta-es-de-debug": "This digest is the ANDROID DEBUG KEY, because the caratula of the spike is signed with it (CN=Android Debug). A real institution signs with its own key and this value changes. If you rebuild the caratula on another machine, its debug key is different and the call will be denied - that is the gate working, not a bug.",
+
+  "caratula": {
+    "package": "com.ncubo.lab.caratula",
+    "signatureSha256": "4f07f90c4633f3906c9a55889fbc33568bded70e0c81957798e9d9a5d6c85cf1",
+    "releaseId": "spike-2026-08-27"
+  }
+}

@@ -2,15 +2,15 @@ namespace Municipalidad.Wasm
 {
 	/// <summary>
 	/// Un monto como dinero, para las pantallas que lo necesitan asi: colones, con separador de
-	/// miles. Reusa Formato.Monto para los digitos y la coma decimal real -- SOLO le agrega el
-	/// simbolo y el agrupamiento que Formato.Monto deliberadamente no pone, porque ese metodo lo
+	/// miles. Reusa Textos.Monto para los digitos y la coma decimal real -- SOLO le agrega el
+	/// simbolo y el agrupamiento que Textos.Monto deliberadamente no pone, porque ese metodo lo
 	/// comparten otras pantallas que siguen sin simbolo de moneda.
 	/// </summary>
 	public static class Colones
 	{
-		public static string Formatear(decimal monto)
+		public static string Formatear(Textos textos, decimal monto)
 		{
-			string dicho = Formato.Monto(monto);
+			string dicho = textos.Monto(monto);
 			int coma = dicho.IndexOf(',');
 			string enteros = coma < 0 ? dicho : dicho[..coma];
 			string resto = coma < 0 ? "" : dicho[coma..];

@@ -27,8 +27,8 @@
                             <Glyph Name="check" Size="13" Stroke="3" />
                         </span>
                         <div class="d-hist-done__body">
-                            <div class="d-hist-done__date">@ComoSeLee.DiaCorto(hecho.CompletedAt)</div>
-                            <div class="d-hist-done__title">@ComoSeLee.Operacion(hecho.Kind)</div>
+                            <div class="d-hist-done__date">@ComoSeLee.DiaCorto(Texts.ThePhrases, hecho.CompletedAt)</div>
+                            <div class="d-hist-done__title">@ComoSeLee.Operacion(Texts.ThePhrases, hecho.Kind)</div>
                             <span class="d-hist-done__km">@hecho.Reading</span>
                             <p class="d-hist-done__desc">@hecho.Says</p>
                         </div>
@@ -55,7 +55,7 @@
                                     <Glyph Name="@ComoSeLee.DibujoOperacion(parada.Kind)" Size="17" Stroke="2.1" />
                                 </span>
                                 <div>
-                                    <div class="d-hist-empty-row__title">@ComoSeLee.Operacion(parada.Kind)</div>
+                                    <div class="d-hist-empty-row__title">@ComoSeLee.Operacion(Texts.ThePhrases, parada.Kind)</div>
                                     <div class="d-hist-empty-row__value">Sin registros</div>
                                 </div>
                             </div>
@@ -74,7 +74,7 @@
 
 @if (Stays is null)
 {
-    <p class="note">Este registro todavía no se ha leído.</p>
+    <p class="note">@Texts["history.notReadYet"]</p>
 }
 else
 {
@@ -90,7 +90,7 @@ else
             <div>
                 <div class="d-hist-days__count">@Stays.DayCount día@(Stays.DayCount == 1 ? "" : "s")</div>
                 <div class="d-hist-days__period">
-                    Entre el @ComoSeLee.DiaCorto(Stays.FromDay) y el @ComoSeLee.DiaCorto(Stays.ToDay)
+                    Entre el @ComoSeLee.DiaCorto(Texts.ThePhrases, Stays.FromDay) y el @ComoSeLee.DiaCorto(Texts.ThePhrases, Stays.ToDay)
                 </div>
             </div>
         </div>
@@ -98,13 +98,13 @@ else
         @if (Stays.InsideRightNow)
         {
             <div class="d-says" id="adentro-ahora" style="margin-top:14px">
-                <span class="d-says__label">Ahora mismo, al @Stays.AskedAt</span>
+                <span class="d-says__label">@Texts.With("history.staysRightNow", ("instant", Stays.AskedAt))</span>
                 @Stays.TheStayRightNowSays
             </div>
 
             <p class="d-note" style="margin-top:10px">
                 <Glyph Name="info" Size="14" Stroke="2" />
-                <span>@TheOwnerIsTold.TheDaysOfAStayArriveWhenTheCarIsCollected</span>
+                <span>@Texts[TheOwnerIsTold.TheDaysOfAStayArriveWhenTheCarIsCollected]</span>
             </p>
         }
     </section>
@@ -117,7 +117,7 @@ else
     @if (Stays.AnyStayInThePeriod)
     {
         <div class="d-sec">
-            <span class="d-sec__title">Cada estadía</span>
+            <span class="d-sec__title">@Texts["history.staysEach"]</span>
         </div>
 
         <section class="d-card" id="linea-estadias">
@@ -135,7 +135,9 @@ else
                         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
                             @foreach (string dia in estadia.CoveredDays)
                             {
-                                <span class="d-pill d-pill--info">@dia</span>
+                                <span class="d-pill d-pill--info">
+                                    @ComoSeLee.DiaCorto(Texts.ThePhrases, dia)
+                                </span>
                             }
                         </div>
 
@@ -150,14 +152,14 @@ else
 @if (Use is not null)
 {
     <div class="d-sec">
-        <span class="d-sec__title">Cuánto se maneja</span>
-        <span class="d-sec__note">los últimos doce meses</span>
+        <span class="d-sec__title">@Texts["history.useTitle"]</span>
+        <span class="d-sec__note">@Texts["history.lastTwelve"]</span>
     </div>
 
     <section class="d-card" id="cuanto-se-maneja">
         <p class="d-note" style="margin-top:0;margin-bottom:10px">
             <Glyph Name="clock" Size="14" Stroke="2" />
-            <span>Del @Use.From al @Use.To</span>
+            <span>@Texts.With("history.fromTo", ("from", Use.From), ("to", Use.To))</span>
         </p>
 
         <div class="d-cover d-cover--mute" style="padding:0;background:none;grid-template-columns:1fr">
@@ -166,17 +168,17 @@ else
     </section>
 
     <div class="d-sec">
-        <span class="d-sec__title">Contra los doce meses anteriores</span>
+        <span class="d-sec__title">@Texts["history.againstPrevious"]</span>
     </div>
 
     <section class="d-card" id="ritmo-comparado">
         <p class="d-note" style="margin-top:0;margin-bottom:10px">
             <Glyph Name="history" Size="14" Stroke="2" />
-            <span>Del @Use.EarlierFrom al @Use.EarlierTo</span>
+            <span>@Texts.With("history.fromTo", ("from", Use.EarlierFrom), ("to", Use.EarlierTo))</span>
         </p>
 
         <div class="d-says" id="comparacion-dice">
-            <span class="d-says__label">Los dos periodos</span>
+            <span class="d-says__label">@Texts["history.bothPeriodsUse"]</span>
             @Use.BothPeriodsSay
         </div>
     </section>
@@ -184,8 +186,10 @@ else
     @if (Use.ReadingCount > 0)
     {
         <div class="d-sec">
-            <span class="d-sec__title">Cada lectura del odómetro</span>
-            <span class="d-sec__note">@Use.ReadingCount en el periodo</span>
+            <span class="d-sec__title">@Texts["history.readingsTitle"]</span>
+            <span class="d-sec__note">
+                @Texts.With("history.inThePeriod", ("count", Texts.Grouped(Use.ReadingCount)))
+            </span>
         </div>
 
         <section class="d-card" id="linea-lecturas">
@@ -200,7 +204,7 @@ else
 
                         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
                             <span class="d-pill d-pill--info">
-                                @ComoSeLee.Miles(lectura.Value) @lectura.Unit
+                                @Texts.Grouped(lectura.Value) @lectura.Unit
                             </span>
                         </div>
 
@@ -213,8 +217,8 @@ else
     else
     {
         <div class="d-empty" id="sin-lecturas">
-            <span class="d-empty__title">Ninguna lectura del odómetro en este periodo</span>
-            @TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle
+            <span class="d-empty__title">@Texts["history.readingsNoneTitle"]</span>
+            @Texts[TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle]
         </div>
     }
 }
@@ -222,39 +226,39 @@ else
 @if (Spend is not null)
 {
     <div class="d-sec">
-        <span class="d-sec__title">En qué se fue la plata</span>
-        <span class="d-sec__note">los últimos doce meses</span>
+        <span class="d-sec__title">@Texts["history.spendTitle"]</span>
+        <span class="d-sec__note">@Texts["history.lastTwelve"]</span>
     </div>
 
     <section class="d-card" id="en-que-se-fue-la-plata">
         <p class="d-note" style="margin-top:0;margin-bottom:10px">
             <Glyph Name="clock" Size="14" Stroke="2" />
-            <span>Del @Spend.From al @Spend.To</span>
+            <span>@Texts.With("history.fromTo", ("from", Spend.From), ("to", Spend.To))</span>
         </p>
 
         <div class="d-says" id="gasto-dice">
-            <span class="d-says__label">Lo que salió del banco y lo que el período consumió</span>
+            <span class="d-says__label">@Texts["history.spendLabel"]</span>
             @Spend.PerCurrencySays
         </div>
 
         <div class="d-says" id="costo-por-distancia-dice">
-            <span class="d-says__label">Lo que costó la distancia</span>
+            <span class="d-says__label">@Texts["history.spendPerDistance"]</span>
             @Spend.CostPerDistanceSays
         </div>
     </section>
 
     <div class="d-sec">
-        <span class="d-sec__title">Contra los doce meses anteriores</span>
+        <span class="d-sec__title">@Texts["history.againstPrevious"]</span>
     </div>
 
     <section class="d-card" id="gasto-comparado">
         <p class="d-note" style="margin-top:0;margin-bottom:10px">
             <Glyph Name="history" Size="14" Stroke="2" />
-            <span>Del @Spend.EarlierFrom al @Spend.EarlierTo</span>
+            <span>@Texts.With("history.fromTo", ("from", Spend.EarlierFrom), ("to", Spend.EarlierTo))</span>
         </p>
 
         <div class="d-says" id="gasto-comparacion-dice">
-            <span class="d-says__label">Los dos períodos</span>
+            <span class="d-says__label">@Texts["history.bothPeriodsSpend"]</span>
             @Spend.BothPeriodsSay
         </div>
     </section>
@@ -262,8 +266,10 @@ else
     @if (Spend.EntryCount > 0)
     {
         <div class="d-sec">
-            <span class="d-sec__title">Cada gasto</span>
-            <span class="d-sec__note">@Spend.EntryCount en el periodo</span>
+            <span class="d-sec__title">@Texts["history.costsTitle"]</span>
+            <span class="d-sec__note">
+                @Texts.With("history.inThePeriod", ("count", Texts.Grouped(Spend.EntryCount)))
+            </span>
         </div>
 
         <section class="d-card" id="linea-gastos">
@@ -294,13 +300,19 @@ else
     else
     {
         <div class="d-empty" id="sin-gastos">
-            <span class="d-empty__title">Ningún gasto registrado en este periodo</span>
-            @TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork
+            <span class="d-empty__title">@Texts["history.costsNoneTitle"]</span>
+            @Texts[TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork]
         </div>
     }
 }
 
 @code {
+    /// <summary>
+    /// El catalogo de esta caratula, en el idioma de la persona. Baja desde la pagina y esta seccion
+    /// no lo lee por su cuenta.
+    /// </summary>
+    [CascadingParameter] public Texts Texts { get; set; }
+
     /// <summary>
     /// Las estadias en el taller, leidas en un solo momento. La seccion no lee nada por su cuenta.
     /// </summary>

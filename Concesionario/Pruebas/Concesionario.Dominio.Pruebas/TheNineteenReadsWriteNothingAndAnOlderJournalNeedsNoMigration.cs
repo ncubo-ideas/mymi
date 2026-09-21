@@ -116,9 +116,14 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanDistanceRemainingBeSaid(TheKindThatMeasuresDistance, TheDayItIsAsked), Is.True);
 			Assert.That(journal.Api.HasAnyCompletion(TheKindThatMeasuresDistance), Is.True);
 			Assert.That(journal.Api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(2));
-			Assert.That(journal.Api.CompletionsOfEveryKind().Says, Has.Length.EqualTo(3));
+			Assert.That(
+				journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Says,
+				Has.Length.EqualTo(3));
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.True);
-			Assert.That(journal.Api.PublishedServicePricesAsOf(TheDayItIsAsked).Says, Has.Length.EqualTo(1));
+			Assert.That(
+				journal.Api.PublishedServicePricesAsOf(
+					TheDayItIsAsked, TheLanguage.OfTheRecord).Says,
+				Has.Length.EqualTo(1));
 		}
 
 		// ===== LA SECUENCIA RECIBIDA, Y LAS DIECINUEVE RESPUESTAS =========================
@@ -171,9 +176,12 @@ namespace Concesionario.Dominio.Pruebas
 					.Append(journal.Api.ReadDistanceRemainderStanding(kind, TheDayItIsAsked))
 					.Append(" | timeStanding=")
 					.Append(journal.Api.ReadTimeRemainderStanding(kind, TheDayItIsAsked))
-					.Append(" | ").Append(journal.Api.DescribeDistanceRemaining(kind, TheDayItIsAsked))
-					.Append(" | ").Append(journal.Api.DescribeDaysRemaining(kind, TheDayItIsAsked))
-					.Append(" | ").Append(journal.Api.DescribeCountdown(kind, TheDayItIsAsked));
+					.Append(" | ").Append(journal.Api.DescribeDistanceRemaining(kind, TheDayItIsAsked,
+						TheLanguage.OfTheRecord))
+					.Append(" | ").Append(journal.Api.DescribeDaysRemaining(kind, TheDayItIsAsked,
+						TheLanguage.OfTheRecord))
+					.Append(" | ").Append(journal.Api.DescribeCountdown(kind, TheDayItIsAsked,
+						TheLanguage.OfTheRecord));
 
 				if (distance)
 					every.Append(" | left=")
@@ -188,9 +196,9 @@ namespace Concesionario.Dominio.Pruebas
 				every.Append("\nhistory ").Append(kind)
 					.Append(" : any=").Append(journal.Api.HasAnyCompletion(kind))
 					.Append(" count=").Append(journal.Api.CompletionCount(kind))
-					.Append(" | ").Append(journal.Api.DescribeCompletions(kind));
+					.Append(" | ").Append(journal.Api.DescribeCompletions(kind, TheLanguage.OfTheRecord));
 
-				CompletionRecord rows = journal.Api.CompletionsOf(kind);
+				CompletionRecord rows = journal.Api.CompletionsOf(kind, TheLanguage.OfTheRecord);
 
 				every.Append("\nrows ").Append(kind)
 					.Append(" : ").Append(string.Join(" / ", rows.CompletedAt))
@@ -199,17 +207,20 @@ namespace Concesionario.Dominio.Pruebas
 
 				every.Append("\nprice ").Append(kind)
 					.Append(" : ")
-					.Append(journal.Api.DescribePublishedServicePrice(kind, 10000, "UnitA"));
+					.Append(journal.Api.DescribePublishedServicePrice(
+						kind, 10000, "UnitA", TheLanguage.OfTheRecord));
 			}
 
-			EveryKindCompletionRecord everyKind = journal.Api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord everyKind =
+				journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord);
 
 			every.Append("\nevery kind : ").Append(string.Join(" / ", everyKind.Kind))
 				.Append(" | ").Append(string.Join(" / ", everyKind.CompletedAt))
 				.Append(" | ").Append(string.Join(" / ", everyKind.Reading))
 				.Append(" | ").Append(string.Join(" / ", everyKind.Says));
 
-			PublishedPriceRecord prices = journal.Api.PublishedServicePricesAsOf(TheDayItIsAsked);
+			PublishedPriceRecord prices = journal.Api.PublishedServicePricesAsOf(
+				TheDayItIsAsked, TheLanguage.OfTheRecord);
 
 			every.Append("\nprices : any=").Append(journal.Api.HasAnyPublishedServicePrice())
 				.Append(" count=").Append(journal.Api.PublishedServicePriceCount())

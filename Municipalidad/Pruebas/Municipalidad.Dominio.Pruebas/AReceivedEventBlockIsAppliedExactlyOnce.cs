@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -58,7 +59,9 @@ namespace Municipalidad.Dominio.Pruebas
 			app.Start();
 			api = new MunicipalidadAPI(app);
 
-			// El bucle no lee nada sin credencial guardada, asi que guardarla es parte de abrir.
+			// LA APP GUARDA SU CREDENCIAL AL ABRIR, asi que el journal de esta prueba tiene la forma del
+			// de verdad. El BUCLE ya no la lee -- es de la fuente HTTP -- y ninguna prueba de aca la
+			// necesita: la fuente falsa no pide token.
 			api.GuardarCredencial(ElToken, "");
 		}
 
@@ -359,6 +362,10 @@ namespace Municipalidad.Dominio.Pruebas
 		// EL BUCLE ARRANCA DESDE EL JOURNAL Y NO DESDE UN CAMPO, asi que la fuente recibe el checkpoint
 		// journalizado en cada corrida. Con un campo en memoria, una caida a mitad del bloque anterior
 		// haria que la segunda corrida pidiera desde un numero que nunca se persistio.
+		//
+		// EL CHECKPOINT ES LO UNICO QUE EL BUCLE LE PASA A LA FUENTE. Hasta que el modulo se pudo
+		// hospedar, tambien le pasaba el token que leia del journal; la credencial es del transporte y
+		// se mudo a la fuente HTTP, asi que aca ya no hay nada que afirmar sobre ella.
 		[Test]
 		public async Task TheLoopAsksTheFeedFromTheCheckpointItReadBackOutOfTheJournal()
 		{
@@ -370,9 +377,6 @@ namespace Municipalidad.Dominio.Pruebas
 			Assert.That(fuente.DesdeDondeLePidieron, Is.EqualTo(new List<long> { 0L, 7L }),
 				"La primera corrida pide desde 0 y la segunda desde 6, que es lo que quedo escrito.");
 
-			Assert.That(fuente.ConQueTokenLePidieron, Is.EqualTo(new List<string> { ElToken, ElToken }),
-				"Y con el token GUARDADO, leido del journal en cada corrida.");
-
 			Assert.That(fuente.LoQueSirvio, Is.EqualTo(new List<int> { 7, 0 }),
 				"Y la segunda corrida trae CERO senales, no siete rechazadas: un proveedor que respeta el "
 				+ "checkpoint no reenvia lo que la app ya dijo tener. Lo que pasa cuando SI reenvia lo "
@@ -383,33 +387,74 @@ namespace Municipalidad.Dominio.Pruebas
 		// SIN CREDENCIAL NO SE LEE NADA, y revienta en vez de contestar un bloque vacio: un cero de
 		// eventos leidos y un "no tengo con que leer" son dos cosas distintas, y confundirlas haria que
 		// una app sin credencial se viera como una municipalidad sin novedades.
+		//
+		// LA NEGATIVA SE MUDO DEL BUCLE A LA FUENTE HTTP, y sigue siendo la misma promesa. Quien lee
+		// necesita credencial o no segun POR DONDE lee: por HTTP hace falta, y por el puente de Gnothi no,
+		// porque la credencial la sostiene Gnothi del otro lado. Con la negativa en el bucle, hospedarse
+		// obligaba a inventarle al modulo un token que nadie usa.
 		[Test]
-		public void TheLoopRefusesToReadAtAllWithoutAStoredCredential()
+		public void TheHttpFeedRefusesToReadAtAllWithoutACredential()
+		{
+			using (HttpClient http = new HttpClient { BaseAddress = new Uri("http://localhost:1/") })
+			{
+				FuenteHttpDeEventos fuente = new FuenteHttpDeEventos(
+					http, "contribuyente", "1", ct => Task.FromResult(""));
+
+				Assert.That(
+					Assert.ThrowsAsync<InvalidOperationException>(
+						async () => await fuente.LeerDesde(0, CancellationToken.None)).Message,
+					Does.Contain("credencial"));
+			}
+		}
+
+		// EL DUAL, y es la razon de que la negativa se haya mudado: HOSPEDADO NO HAY CREDENCIAL Y EL BLOQUE
+		// ENTRA IGUAL. El modulo le pide el sobre a Gnothi, que releva con la suya contra el endpoint que
+		// quedo registrado al instalarlo; el punto de control sigue saliendo del journal del actor. El
+		// journal de esta prueba no tiene ni un GuardarCredencial, y ademas mide el sobre de verdad: los
+		// payloads de este modulo cruzando SobreDeEventos.Interpretar.
+		[Test]
+		public async Task TheFeedThroughGnothiNeedsNoCredentialAndTheBlockStillEntersOnce()
 		{
 			string otraCarpeta = Path.Combine(
 				Path.GetTempPath(), "municipalidad-ingesta", Guid.NewGuid().ToString("N"));
 			Directory.CreateDirectory(otraCarpeta);
 
-			MunicipalidadApp sinCredencial = new MunicipalidadApp(ElActor);
+			MunicipalidadApp hospedada = new MunicipalidadApp(ElActor);
 
 			try
 			{
-				sinCredencial.ConfigureStorage(DatabaseType.FileSystem, "path=" + otraCarpeta);
-				sinCredencial.Start();
+				hospedada.ConfigureStorage(DatabaseType.FileSystem, "path=" + otraCarpeta);
+				hospedada.Start();
+
+				MunicipalidadAPI puerta = new MunicipalidadAPI(hospedada);
+				string sobre = ElSobreQueTraeGnothi(LaNarrativa());
 
 				BucleDeRefresh bucle = new BucleDeRefresh(
-					new MunicipalidadAPI(sinCredencial),
-					new UnaFuenteFalsa(LaNarrativa()),
+					puerta,
+					new FuenteDeEventosPorGnothi((desde, ct) => Task.FromResult(sobre)),
 					MunicipalidadEventRoute.Route);
 
-				Assert.That(
-					Assert.ThrowsAsync<InvalidOperationException>(async () => await bucle.Ejecutar())
-						.Message,
-					Does.Contain("token"));
+				ResultadoDeRefresh primero = await bucle.Ejecutar();
+				ResultadoDeRefresh segundo = await bucle.Ejecutar();
+
+				Assert.Multiple(() =>
+				{
+					Assert.That(puerta.TokenGuardado(), Is.Empty,
+						"Y se contesto sin credencial guardada: la de Gnothi no entra al journal del modulo.");
+
+					Assert.That(primero.Aplicados, Is.EqualTo(7),
+						"El bloque entero entra por el sobre que trae Gnothi, igual que por HTTP.");
+
+					Assert.That(primero.UltimoEvento, Is.EqualTo(7L),
+						"Y el punto de control queda donde termina la narrativa.");
+
+					Assert.That(segundo.Aplicados, Is.EqualTo(0),
+						"Y el mismo sobre entregado de nuevo no aplica nada: la guarda Check es la misma.");
+				});
 			}
 			finally
 			{
-				sinCredencial.Dispose();
+				hospedada.Dispose();
 
 				try
 				{
@@ -462,6 +507,25 @@ namespace Municipalidad.Dominio.Pruebas
 			return new List<SenalDeEvento>(UnaNarrativaDeLaMunicipalidad.LaNarrativaEntera());
 		}
 
+		// EL SOBRE TAL COMO LO SIRVE EL FEED, que es lo que Gnothi releva sin mirar adentro. El numero y
+		// el tipo viajan ADENTRO de cada evento -- son campos del sobre, no de la senal -- asi que se le
+		// ponen al payload: es la forma que EndPointDeEventos sirve de verdad.
+		private static string ElSobreQueTraeGnothi(IReadOnlyList<SenalDeEvento> senales)
+		{
+			StringBuilder sobre = new StringBuilder("{\"events\":[");
+
+			for (int i = 0; i < senales.Count; i++)
+			{
+				if (i > 0) sobre.Append(',');
+
+				sobre.Append("{\"id\":").Append(senales[i].Numero)
+					.Append(",\"tipo\":\"").Append(senales[i].Tipo).Append("\",")
+					.Append(senales[i].Contenido.Substring(1));
+			}
+
+			return sobre.Append("]}").ToString();
+		}
+
 		private async Task<ResultadoDeRefresh> UnRefreshDe(IReadOnlyList<SenalDeEvento> senales)
 		{
 			return await new BucleDeRefresh(
@@ -487,7 +551,7 @@ namespace Municipalidad.Dominio.Pruebas
 
 			foreach (string rubro in puerta.RubrosConHistoria())
 			{
-				RegistroDelHistorial historia = puerta.HistorialDe(rubro);
+				RegistroDelHistorial historia = puerta.HistorialDe(rubro, "es");
 
 				dicho.Append(rubro).Append(' ').Append(historia.Estado).Append('\n');
 
@@ -546,6 +610,11 @@ namespace Municipalidad.Dominio.Pruebas
 		//
 		// NO LEE NINGUN RELOJ y no tiene estado propio mas alla de lo que anota: lo que guiona una
 		// secuencia recibida no toma reloj, porque reproducir la secuencia es todo el punto.
+		//
+		// NO RECIBE TOKEN, y eso es del mecanismo y no de esta prueba: la credencial es del TRANSPORTE.
+		// La fuente HTTP se consigue la suya y la fuente que pasa por Gnothi no tiene ninguna, asi que el
+		// bucle no tiene por que saber cual es el caso. Donde vive ahora esa negativa lo miden
+		// TheHttpFeedRefusesToReadAtAllWithoutACredential y su dual por el puente.
 		private sealed class UnaFuenteFalsa : IFuenteDeEventos
 		{
 			private readonly IReadOnlyList<SenalDeEvento> senales;
@@ -569,17 +638,13 @@ namespace Municipalidad.Dominio.Pruebas
 
 			internal List<long> DesdeDondeLePidieron { get; } = new List<long>();
 
-			internal List<string> ConQueTokenLePidieron { get; } = new List<string>();
-
 			internal List<int> LoQueSirvio { get; } = new List<int>();
 
 			public string Nombre { get { return "una fuente falsa"; } }
 
-			Task<IReadOnlyList<SenalDeEvento>> IFuenteDeEventos.LeerDesde(
-				long despuesDe, string token, CancellationToken ct)
+			Task<SobreLeido> IFuenteDeEventos.LeerDesde(long despuesDe, CancellationToken ct)
 			{
 				DesdeDondeLePidieron.Add(despuesDe);
-				ConQueTokenLePidieron.Add(token);
 
 				List<SenalDeEvento> desdeAhi = new List<SenalDeEvento>();
 
@@ -588,7 +653,7 @@ namespace Municipalidad.Dominio.Pruebas
 
 				LoQueSirvio.Add(desdeAhi.Count);
 
-				return Task.FromResult<IReadOnlyList<SenalDeEvento>>(desdeAhi);
+				return Task.FromResult(new SobreLeido { Senales = desdeAhi });
 			}
 		}
 	}

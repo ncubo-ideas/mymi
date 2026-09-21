@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!-- SIN lang ESCRITO A MANO: el bundle se sirve igual para los dos idiomas, asi que una etiqueta
+     fija seria falsa para la mitad de quienes lo abren. La pone language.js despues de negociar
+     con el aparato, con la misma regla que usa la app suelta. -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- EL NOMBRE NO SE TRADUCE: lo declara la institucion, y es el mismo que dice el <title> de la
+     app suelta y el `titulo` del manifiesto del modulo. -->
+<title>Mi plan de mantenimiento · Sotaventos Motors</title>
+<!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
+     leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
+     repintarla en el otro. Es el mismo criterio que la app suelta, que negocia antes del primer
+     render. -->
+<script src="text/es-CR.js"></script>
+<script src="text/en.js"></script>
+<script src="language.js"></script>
+<!-- LAS HOJAS DE LA INSTITUCION, TAL CUAL. `app.css` pone el reset, el cuerpo y la tipografia;
+     `dueno.css` el vocabulario `d-*` de la pantalla del dueño. No una copia curada: los archivos
+     que sirve la app suelta. -->
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/dueno.css">
+<link rel="stylesheet" href="cara.css">
+</head>
+<body class="d">
+
+<!--
+  LA CARA DEL CONCESIONARIO EN LA FORMA HIBRIDA, y lo importante es lo que NO tiene.
+
+  No trae motor: la aduana del Host lo rechaza incluso adentro de web/, y esa es la promesa
+  entera de la forma. Tampoco trae dominio ni superficie: viajan al lado, en dominio/*.dll, y
+  corren sobre el motor que presta Gnothi. La forma hospedada de este mismo modulo pesa 12,8 MB.
+
+  ES LA PANTALLA DEL DUEÑO, no la tecnica. La app suelta tiene dos pieles: app.css -- el
+  elegidor de carpeta, los permisos, el detalle de cada operacion -- y dueno.css, que es lo que
+  ve la persona que abre su carro. En la forma hibrida la carpeta la concede Gnothi, asi que la
+  primera no tiene nada que hacer aca. Lo portado salio de Sections/Inicio.razor.
+
+  EL DOMINIO HABLA EN UN VOCABULARIO CERRADO Y LA PANTALLA EN EL IDIOMA DE LA PERSONA.
+  `DealershipCarAPI` devuelve "Overdue" y "FluidChange" porque eso es identidad y no prosa; las
+  frases que compone el dominio -- el `says` de cada operacion -- las dice la superficie, que
+  recibe la etiqueta del idioma como un parametro mas de la vista. Lo que esta pantalla dice con
+  sus propias palabras esta en text/, con las claves de la app suelta.
+
+  Y LO QUE PINTA NO SON LAS TOOLS. Las dos declaradas son lo que el ASISTENTE puede preguntar;
+  esta pantalla necesita las nueve operaciones con su estado, el odometro y las estadias. Eso
+  viaja por [View], que no esta en el manifiesto y el modelo nunca ve.
+
+  EL TEXTO ESCRITO EN ESTE ARCHIVO ES EL RESPALDO y no la fuente: `data-text` nombra la clave, y
+  language.js lo repinta antes de que se pida nada. Esta en espanol porque es el idioma del
+  registro del concesionario, que es adonde cae toda etiqueta desconocida.
+-->
+
+<div class="d-top">
+    <div class="d-top__bar">
+        <div class="d-top__brand">
+            <span class="d-top__mark">
+                <!-- La marca de Sotaventos: el tile y la barra. El mismo SVG de la app. -->
+                <svg class="sotavento-mark" viewBox="0 0 32 32" width="30" height="30"
+                     role="img" aria-label="Sotaventos Motors" focusable="false">
+                    <rect width="32" height="32" rx="7" fill="#FFFFFF" />
+                    <path d="M4 4h5.6L28 22.4V28h-5.6L4 9.6Z" fill="#1F3A5F" />
+                </svg>
+            </span>
+            <span>
+                <span class="d-top__name">Sotaventos Motors</span>
+                <span class="d-top__kicker" data-text="home.kicker">Servicio al propietario</span>
+            </span>
+        </div>
+
+        <!-- LA UNICA TECLA QUE VA A BUSCAR DATOS. Aca significa otra cosa que en la app suelta:
+             no sale a la red -- no puede y no le hace falta -- sino que le pide a GNOTHI que
+             traiga lo nuevo. Lo dice con las palabras de la app suelta. -->
+        <button class="d-releer" id="releer" aria-busy="false"
+                data-text="home.refresh">Traer lo que haya nuevo</button>
+    </div>
+
+    <!-- EL SALUDO, que lo compone el estado del carro y no un rotulo fijo: es el <h1> de
+         Inicio.razor. Hasta que llegue el primer dato dice lo que dice la app suelta cuando no
+         sabe el modelo. -->
+    <h1 class="d-top__hello" id="saludo" data-text="home.yourCar">Tu carro</h1>
+    <p class="d-top__sub" data-text="home.sub">Tu concesionario lleva este registro y es el único
+       que lo cambia. Aquí lo leés.</p>
+    <p class="d-top__sub" id="subtitulo" data-text="face.asking">Preguntándole a Mymi…</p>
+</div>
+
+<div class="d-lift d__pad d__gap">
+    <!-- EL ESTADO: el puntaje, la frase, y los conteos. Es lo unico que alguien necesita leer si
+         no lee nada mas. -->
+    <section class="d-card" id="estado" aria-busy="true"></section>
+
+    <!-- LO QUE SIGUE. El tono lo decide el dominio con el estado de la operacion; aca solo se
+         pinta. -->
+    <section id="sigue"></section>
+
+    <!-- Los numeros: el odometro y la ultima lectura que envio el concesionario. -->
+    <div class="d-tiles" id="numeros"></div>
+
+    <div class="d-sec"><span class="d-sec__title" data-text="home.glance">Un vistazo a tu carro</span></div>
+    <section class="d-card" id="vistazo" aria-busy="true"></section>
+
+    <div class="d-sec"><span class="d-sec__title" data-text="face.thisYear">Lo que pasó este año</span></div>
+    <section class="d-card" id="historial" aria-busy="true"></section>
+</div>
+
+<footer>
+    <p data-text="face.explanation">El registro vive en este dispositivo. Esta pantalla no sale a
+       la red: le pregunta a Mymi, y Mymi responde con el motor que le presta.</p>
+    <p class="apunte mono" id="conexion">—</p>
+</footer>
+
+<!-- EL PUENTE LO PONE EL HOST, no la institución: `armar-bundle.ps1` lo copia a web/ al armar
+     cualquier paquete híbrido. -->
+<script src="puente.js"></script>
+<script src="cara.js"></script>
+</body>
+</html>

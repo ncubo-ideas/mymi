@@ -16,27 +16,26 @@ namespace Compras.Dominio
 	internal sealed class Severidad
 	{
 		/// <summary>Un dato. Decir que hay algo que hacer cuando no lo hay entrena a ignorar los avisos.</summary>
-		internal static readonly Severidad Informativo = new Severidad("informativo", 0, "");
+		internal static readonly Severidad Informativo = new Severidad("informativo", 0);
 
 		/// <summary>Hay tiempo, pero conviene no dejarlo pasar.</summary>
-		internal static readonly Severidad ConvieneRevisar =
-			new Severidad("conviene revisar", 1, "tenelo a mano por si acaso");
+		internal static readonly Severidad ConvieneRevisar = new Severidad("conviene-revisar", 1);
 
 		/// <summary>La ventana se esta cerrando y despues no se puede reclamar.</summary>
-		internal static readonly Severidad AntesDeQueSeCierre =
-			new Severidad("antes de que se cierre", 2, "hacé el reclamo antes de que venza");
+		internal static readonly Severidad AntesDeQueSeCierre = new Severidad("antes-de-que-se-cierre", 2);
 
+		/// <summary>
+		/// EL CODIGO de esta severidad: identidad, y lo unico que cruza el wire. Que hacer con un
+		/// hallazgo de esta severidad es texto de presentacion y lo busca con este codigo la capa que
+		/// redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
-
-		/// <summary>Que hacer, ya escrito como se le muestra a la persona. Vacio en Informativo, y eso es una respuesta.</summary>
-		internal string QueHacer { get; private set; }
 
 		private readonly int peso;
 
-		private Severidad(string nombre, int peso, string queHacer)
+		private Severidad(string nombre, int peso)
 		{
 			Nombre = nombre;
-			QueHacer = queHacer;
 			this.peso = peso;
 		}
 

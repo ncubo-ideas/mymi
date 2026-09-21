@@ -18,7 +18,16 @@
   <Project Path="Examenes/EndPointDeEventos/Examenes.EventosMock.csproj" />
   <Project Path="Examenes/InyectorDeEventosDemo/Examenes.InyectorDeEventosDemo.csproj" />
   <Project Path="Examenes/Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
+  <Project Path="Gnothi.Contract/Gnothi.Contract.csproj" />
+  <Project Path="Gnothi.Host/Gnothi.Host.csproj" />
 
+  <!-- Gate 2: our own agent loop, in its own projects BECAUSE it is designed to be
+       deleted. The day an external assistant reaches the Host directly, these three go
+       away and Gnothi.Host does not change a line. Gnothi.Assistant.Tests is what keeps
+       that true: it fails if the loop ever names something internal to the Host.
+
+       The Android app is NOT listed here on purpose. It targets net9.0-android and
+       would break the build for anyone without that workload installed. -->
   <Project Path="Cargas/App/Cargas.App/Cargas.App.csproj" />
   <Project Path="Cargas/App/Cargas.Consola/Cargas.Consola.csproj" />
   <Project Path="Cargas/App/Cargas.Mcp/Cargas.Mcp.csproj" />
@@ -43,6 +52,14 @@
   <Project Path="Concesionario/InyectorDeEventosDemo/Concesionario.InyectorDeEventosDemo.csproj" />
   <Project Path="Concesionario/Pruebas/Concesionario.Dominio.Pruebas/Concesionario.Dominio.Pruebas.csproj" />
 
+  <Project Path="Gnothi.Assistant/Gnothi.Assistant.csproj" />
+  <Project Path="Gnothi.Assistant.Measure/Gnothi.Assistant.Measure.csproj" />
+  <Project Path="Gnothi.Assistant.Tests/Gnothi.Assistant.Tests.csproj" />
+
+  <!-- The desktop window. It used to be left out for the same reason as the Android app
+       (net9.0-windows). Since 2026-09-08 it is Photino.Blazor over plain net9.0, so it builds
+       on Windows, macOS and Linux and the build catches it when it breaks. -->
+  <Project Path="Gnothi.Desktop/Gnothi.Desktop.csproj" />
   <Project Path="Municipalidad/App/Municipalidad.App/Municipalidad.App.csproj" />
   <Project Path="Municipalidad/App/Municipalidad.Consola/Municipalidad.Consola.csproj" />
   <Project Path="Municipalidad/App/Municipalidad.Mcp/Municipalidad.Mcp.csproj" />

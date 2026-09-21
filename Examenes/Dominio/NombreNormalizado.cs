@@ -35,6 +35,32 @@ namespace Examenes.Dominio
 
 		internal static bool EsElMismo(string uno, string otro) => De(uno) == De(otro);
 
+		/// <summary>
+		/// EL MISMO NOMBRE COMO CODIGO DE UNA CLAVE DE FRASE: minusculas, sin acentos y con guion
+		/// donde habia cualquier otra cosa. Se deriva del nombre y no se escribe aparte para que un
+		/// analito no pueda llamarse de dos maneras sin que nada avise.
+		/// </summary>
+		internal static string EnClave(string nombre)
+		{
+			var clave = new StringBuilder(nombre.Length);
+			bool guionPendiente = false;
+
+			foreach (char c in nombre)
+			{
+				char sinAcento = SinAcento(c);
+				if (char.IsLetterOrDigit(sinAcento))
+				{
+					if (guionPendiente && clave.Length > 0) clave.Append('-');
+					guionPendiente = false;
+					clave.Append(char.ToLowerInvariant(sinAcento));
+					continue;
+				}
+				guionPendiente = true;
+			}
+
+			return clave.ToString();
+		}
+
 		private static char SinAcento(char c)
 		{
 			switch (c)

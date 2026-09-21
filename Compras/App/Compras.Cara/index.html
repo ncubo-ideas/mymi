@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<!-- SIN lang ESCRITO A MANO: el bundle se sirve igual para los dos idiomas, asi que una etiqueta
+     fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de negociar con
+     el aparato, con la misma regla que usa la app suelta. -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- EL TITULO NO SE TRADUCE: «La Guaria y vos» es voz de la institucion, igual que en la app
+     suelta, donde vive en Textos.TituloDelModulo y fuera del catalogo. -->
+<title>La Guaria y vos</title>
+<!-- LOS DOS CATALOGOS VIAJAN SINCRONOS, y los dos: cual de ellos se usa se sabe recien despues de
+     leer navigator.languages, y bajarlos por fetch pintaria la pantalla en un idioma para
+     repintarla en el otro. Es el mismo criterio que la app suelta, que negocia antes del primer
+     render. -->
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
+<!-- LA PILA DE LA INSTITUCION, TAL CUAL Y EN SU ORDEN. Bootstrap primero y `app.css` despues, que
+     es como la sirve la app suelta: `app.css` pisa a Bootstrap en lo que la marca decide, y al
+     reves se veria un Bootstrap crudo con acentos verdes.
+     La estructura de carpetas tambien es la de ella -- `css/`, `fuentes/`, `brand/`, `lib/`,
+     `assets/` -- porque las reglas se referencian entre si por ruta relativa: `app.css` pide
+     `../fuentes/PlusJakartaSans.woff2` y, para la portada, `../brand/banner.jpg`. Aplanarlas
+     rompia la fuente y la foto de fondo sin que nada lo dijera. -->
+<link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="cara.css">
+</head>
+<body>
+
+<!--
+  LA CARA DE COMPRAS EN LA FORMA HIBRIDA.
+
+  ESTA ES LA SEGUNDA ESCRITURA, y la primera estaba mal de una forma que conviene dejar dicha:
+  usaba clases REALES de la institucion -- `barra`, `marca`, `mk-titulo`, `card card-body` -- pero
+  de OTRA pantalla. Son las del layout y las de las paginas de detalle, no las de la portada. El
+  resultado tenia los colores y la tipografia correctos y no se parecia a la app: una lista de
+  tarjetas con cifras donde la app abre con una foto, un saludo y un carrusel.
+  La leccion no es «copiar clases»: es copiar LA PANTALLA.
+
+  EL MARKUP ES EL DE Compras.Wasm/Pages/MisCompras.razor mas la nav de Layout/MainLayout.razor,
+  con sus clases reales y en su orden: `lg-home-portada`, `lg-home-arriba`, `lg-home-marca`,
+  `lg-home-saludo`, `lg-home-carrusel`, `lg-home-banner`, `lg-home-estado`, `mk-cambio`,
+  `mk-carrito`, `mk-oportunidad`, `mk-titulo`, `card card-body`, `pestanas`. Ninguna renombrada:
+  renombrar una es quedarse sin la hoja de la institucion, en silencio.
+
+  NO TRAE MOTOR: la aduana del Host lo rechaza incluso adentro de web/, y esa es la promesa entera
+  de la forma. Tampoco trae dominio ni superficie: viajan al lado, en dominio/*.dll, y corren sobre
+  el motor que presta Gnothi.
+
+  SI TRAE LAS FOTOS. `assets/` son 1,4 MB de PNG de producto, y son la mitad de lo que hace que
+  esta pantalla se parezca a la app: sin ellas el carrusel y la tarjeta de rutina quedan en texto.
+  Es lo mas caro que carga cualquiera de las cinco caras, y es una decision, no un descuido.
+
+  LAS DOS PESTANAS SON SECCIONES, NO RUTAS. Una cara hibrida es un solo index.html sin router, asi
+  que Inicio y Compras viven las dos aca y el JS muestra una. Aplanarlas en una pagina larga era
+  mas facil y perdia lo que la institucion decidio que es su app.
+
+  LO QUE NO SE TRAJO, Y NO ES OLVIDO: el boton de WhatsApp. Sale de `ConfiguracionDeLaInstitucion`,
+  que es del arranque de la app suelta; aca no hay quien lo configure y no se inventa uno.
+
+  HABLA LOS DOS IDIOMAS QUE HABLA LA APP SUELTA, y con las mismas palabras: los rotulos de abajo
+  llevan `data-texto` con la clave del catalogo de la institucion, y el texto escrito al lado es
+  el de es-CR, que es el respaldo visible mientras idioma.js no negocio. La etiqueta elegida viaja
+  ademas a la superficie en cada pedido -`idioma: I.etiqueta`-, porque las frases del DOMINIO no
+  las escribe esta pagina.
+-->
+
+<main class="container py-4" style="max-width:56rem">
+
+<!-- ============================================================ INICIO -->
+<div id="pestana-inicio">
+
+    <!-- LA PORTADA: la misma foto que la institucion declara como `brand.banner` para su tarjeta
+         en Gnothi, con el velo verde encima, la marca chica, el saludo y el carrusel. -->
+    <section class="lg-home-portada">
+        <div class="lg-home-arriba">
+            <span class="lg-home-marca">
+                <img src="assets/logo.png" alt="" />
+                <span>La Guaria</span>
+            </span>
+        </div>
+
+        <p class="lg-home-saludo" data-texto="inicio.saludo">¡Hola!</p>
+
+        <div class="lg-home-carrusel-envoltorio" id="carrusel-envoltorio" hidden>
+            <div class="lg-home-carrusel" id="lgHomeCarrusel"></div>
+            <div class="lg-home-carrusel-puntos" id="carrusel-puntos" aria-hidden="true"></div>
+        </div>
+    </section>
+
+    <!-- LA FRANJA DE ARRIBA: el boton dice lo que hace, y al lado va su historia con este super.
+         «Buscar compras nuevas» significa otra cosa que en la app suelta: no sale a la red -- no
+         puede -- sino que le pide a GNOTHI que traiga lo nuevo con SU credencial.
+         El texto escrito aca es el de es-CR y es el RESPALDO: lo pisa idioma.js apenas negocia,
+         y esta escrito -y no vacio- para que la pantalla nunca aparezca en blanco si el catalogo
+         no cargo. -->
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+        <button class="btn btn-primary" id="releer" data-texto="inicio.buscarNuevas">Buscar compras nuevas</button>
+        <span class="text-body-secondary" id="cifras">—</span>
+    </div>
+
+    <!-- HOSPEDADA: es el aviso que la app suelta muestra cuando corre adentro de Gnothi, palabra
+         por palabra. Aca es SIEMPRE cierto, asi que no hay rama que elegir. -->
+    <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
+        <div class="flex-grow-1" data-texto-html="inicio.hospedada">
+            <strong>Se está guardando en este teléfono.</strong>
+            Tu registro es tuyo y está acá: Mymi le dio a este supermercado una carpeta en tu
+            teléfono, y tu asistente la puede leer desde ahí.
+        </div>
+    </div>
+
+    <!-- «TUS COMPRAS · HAY N CAMBIOS RECIENTES →»: el renglon compacto que es tambien el camino a
+         la pestana de Compras. -->
+    <div class="lg-home-estado mb-3">
+        <a class="lg-home-estado-link" href="#" data-pestana="compras">
+            <span class="lg-home-estado-fuerte" data-texto="inicio.tusCompras">Tus compras</span>
+            <span class="lg-home-estado-punto" aria-hidden="true">&middot;</span>
+            <span class="lg-home-estado-cambio" id="estado-cambio">—</span>
+            <svg class="lg-home-estado-flecha" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 12h15M14 6l6 6-6 6"/>
+            </svg>
+        </a>
+        <button class="lg-home-estado-refrescar" id="refrescar-chico"
+                data-texto-aria="inicio.buscarNuevas" data-texto-titulo="inicio.buscarNuevas"
+                aria-label="Buscar compras nuevas" title="Buscar compras nuevas">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-2.6-6.36"/>
+                <path d="M21 3v6h-6"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- UN CAMBIO EN TU RUTINA: una sola historia -- la mas notoria, que ya viene primera del
+         dominio -- con su antes/ahora y desde cuando. -->
+    <div class="mk-cambio mb-3" id="rutina" hidden></div>
+
+    <!-- ¿EN QUE SE LLENA TU CARRITO? -->
+    <div class="card mk-carrito mb-3" id="carrito" hidden><div class="card-body"></div></div>
+
+    <!-- TU HABITUAL: la mejor bajada entre sus habituales, como mini-afiche propio. -->
+    <div class="mk-oportunidad mb-3" id="oportunidad" hidden></div>
+
+    <!-- PARA TU PROXIMA COMPRA. Compacta a proposito: la portada no le adivina el carrito a nadie. -->
+    <div class="card mb-3" id="proxima"><div class="card-body"><p class="apunte" data-texto="cara.preguntando">Preguntándole a Mymi…</p></div></div>
+
+    <!-- TU MES EN EL SUPER: primero la conclusion, el detalle detras. -->
+    <h2 class="mk-titulo" data-texto="inicio.tuMes">Tu mes en el súper</h2>
+    <div class="card mb-3" id="mes"><div class="card-body"></div></div>
+
+    <!-- TUS HABITUALES: la firma de la semana, que es lo que hace que la pantalla la reconozca a
+         ella y no a un cliente promedio. -->
+    <h2 class="mk-titulo" data-texto="precios.titulo">Tus habituales</h2>
+    <div class="card mb-3" id="firma"><div class="card-body"></div></div>
+
+    <!-- LO QUE SE MOVIO: precios y ritmos. -->
+    <h2 class="mk-titulo" data-texto="cara.loQueSeMovio">Lo que se movió</h2>
+    <div class="card mb-3" id="movimientos"><div class="card-body"></div></div>
+</div>
+
+<!-- ============================================================ COMPRAS -->
+<div id="pestana-compras" hidden>
+    <h2 class="mk-titulo" data-texto="recibos.pestana">Tus compras</h2>
+    <div class="card mb-3" id="compras"><div class="card-body"><p class="apunte">…</p></div></div>
+</div>
+
+<p class="text-body-secondary small mt-4 mb-0" data-texto="cara.pie">
+    El registro vive en este dispositivo. Esta pantalla no sale a la red: le pregunta a Mymi, y
+    Mymi responde con el motor que le presta.
+</p>
+<p class="text-body-secondary small mono" id="conexion">—</p>
+
+</main>
+
+<!-- LAS PESTANAS, fijas al pie, que es donde llega el pulgar. Mismo markup que MainLayout. -->
+<nav class="pestanas">
+    <div class="pestanas-dentro">
+        <a class="pestana active" href="#" data-pestana="inicio">
+            <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
+                <path d="M7.8 16.6v-4.7h4.4v4.7"/>
+            </svg>
+            <!-- EL ROTULO EN SU PROPIO <span> y no suelto como en MainLayout: `data-texto` escribe
+                 el textContent del nodo, y sobre el <a> eso se llevaria puesto el icono. La caja
+                 anonima que el flex le daba al texto suelto y este span se paran igual. -->
+            <span data-texto="comun.inicio">Inicio</span>
+        </a>
+        <a class="pestana" href="#" data-pestana="compras">
+            <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
+                <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
+            </svg>
+            <span data-texto="comun.compras">Compras</span>
+        </a>
+    </div>
+</nav>
+
+<!-- EL PUENTE LO PONE EL HOST, no la institución: `armar-bundle.ps1` lo copia a web/ al armar
+     cualquier paquete híbrido. -->
+<script src="puente.js"></script>
+<script src="cara.js"></script>
+</body>
+</html>

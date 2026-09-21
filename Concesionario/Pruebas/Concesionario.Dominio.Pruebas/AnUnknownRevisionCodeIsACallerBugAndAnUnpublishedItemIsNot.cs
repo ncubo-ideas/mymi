@@ -137,7 +137,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AFluidKindThatNobodyPublishedIsNotACallerBug()
 		{
-			Assert.DoesNotThrow(() => specification.DescribeFluid(FluidKindCode.Coolant));
+			Assert.DoesNotThrow(() => TheSentenceTheDoorWouldCompose.TheFluid(
+				specification, FluidKindCode.Coolant, TheLanguage.OfTheRecord));
 			Assert.That(specification.IsFluidPublished(FluidKindCode.Coolant), Is.False);
 		}
 
@@ -149,7 +150,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void AFluidCodeThatNamesNoMemberIsACallerBug()
 		{
 			Assert.Throws<DomainException>(
-				() => specification.DescribeFluid((FluidKindCode)99));
+				() => TheSentenceTheDoorWouldCompose.TheFluid(
+					specification, (FluidKindCode)99, TheLanguage.OfTheRecord));
 			Assert.Throws<DomainException>(
 				() => specification.IsFluidPublished((FluidKindCode)99));
 			Assert.Throws<DomainException>(

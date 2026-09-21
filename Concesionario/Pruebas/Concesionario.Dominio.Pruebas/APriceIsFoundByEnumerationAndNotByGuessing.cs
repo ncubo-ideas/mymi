@@ -71,8 +71,9 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(2));
 
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce),
-				Is.EquivalentTo(new[] { "10000 km", "20000 km" }),
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord),
+				Is.EquivalentTo(new[] { "10.000 km", "20.000 km" }),
 				"Cada fila nombra SU hito, que es lo que releva al llamador de aportar uno.");
 		}
 
@@ -87,7 +88,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(operations, Is.EquivalentTo(new[] { "Inspection", "FluidChange" }));
 			Assert.That(operations, Has.None.Contains("Revisión"));
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce),
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord),
 				Has.All.Contains(" km"),
 				"El hito sale con la unidad dicha. La forma direccionable necesitaria el codigo de la "
 				+ "unidad, que es una tercera copia de un mapeo que ya vive en dos sitios.");
@@ -99,14 +101,18 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void NoReadOfThePricesAsksForAMilestone()
 		{
-			string[] theSixReads =
+			string[] theReadsOfThePrices =
 			{
 				"HasAnyPublishedServicePrice", "PublishedServicePriceCount",
-				"PublishedPriceOperationsAsOf", "PublishedPriceMilestonesAsOf",
-				"DescribeEachPublishedPriceAsOf", "PublishedPriceRevisionsAsOf",
+				"PublishedPriceOperationsAsOf", "PublishedPriceMilestoneDistancesAsOf",
+				"PublishedPriceMilestoneUnitsAsOf", "PublishedPriceShapesAsOf",
+				"PublishedPriceCurrencyShapesAsOf", "PublishedPriceAmountsAsOf",
+				"PublishedPriceCurrencyCodesAsOf", "PublishedPriceValidFromAsOf",
+				"PublishedPriceValidUntilAsOf", "PublishedPriceValiditiesAsOf",
+				"PublishedPriceDaysAskedOnAsOf", "PublishedPriceRevisionsAsOf",
 			};
 
-			foreach (string each in theSixReads)
+			foreach (string each in theReadsOfThePrices)
 			{
 				MethodInfo[] found = typeof(ModelSpecification)
 					.GetMethods(BindingFlags.Instance | BindingFlags.Public
@@ -137,10 +143,12 @@ namespace Concesionario.Dominio.Pruebas
 				specification.PublishedPriceOperationsAsOf(WhileBothAreInForce),
 				Has.Length.EqualTo(count));
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce),
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord),
 				Has.Length.EqualTo(count));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(WhileBothAreInForce),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, WhileBothAreInForce, TheLanguage.OfTheRecord),
 				Has.Length.EqualTo(count));
 			Assert.That(
 				specification.PublishedPriceRevisionsAsOf(WhileBothAreInForce),
@@ -153,13 +161,15 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void EveryRowSaysItselfWhole()
 		{
-			string[] milestones = specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(WhileBothAreInForce);
+			string[] milestones = TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord);
 
-			int theFluidRow = Array.IndexOf(milestones, "20000 km");
+			int theFluidRow = Array.IndexOf(milestones, "20.000 km");
 
 			Assert.That(theFluidRow, Is.GreaterThanOrEqualTo(0));
-			Assert.That(said[theFluidRow], Does.Contain("Cambio de fluido a los 20000 km: ₡340.00"));
+			Assert.That(said[theFluidRow], Does.Contain("Cambio de fluido a los 20.000 km: ₡340,00"));
 			Assert.That(said[theFluidRow], Does.Not.Contain("120.50"));
 		}
 
@@ -170,14 +180,16 @@ namespace Concesionario.Dominio.Pruebas
 		public void AtAnInstantWhereAValidityLapsedThatRowSaysSoAndTheOtherDoesNot()
 		{
 			string[] milestones =
-				specification.PublishedPriceMilestonesAsOf(AfterTheFluidPriceLapsed);
-			string[] said = specification.DescribeEachPublishedPriceAsOf(AfterTheFluidPriceLapsed);
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
+			string[] said = TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+				specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord);
 
-			int theFluidRow = Array.IndexOf(milestones, "20000 km");
-			int theInspectionRow = Array.IndexOf(milestones, "10000 km");
+			int theFluidRow = Array.IndexOf(milestones, "20.000 km");
+			int theInspectionRow = Array.IndexOf(milestones, "10.000 km");
 
 			Assert.That(said[theFluidRow], Does.Contain("esa vigencia ya pasó"));
-			Assert.That(said[theFluidRow], Does.Contain("₡340.00"),
+			Assert.That(said[theFluidRow], Does.Contain("₡340,00"),
 				"Vencido no es inexistente: el monto publicado sigue saliendo.");
 			Assert.That(said[theInspectionRow], Does.Contain("esa vigencia está rigiendo"));
 		}
@@ -190,7 +202,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(2));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(BeforeAnyValidityStarted),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, BeforeAnyValidityStarted, TheLanguage.OfTheRecord),
 				Has.All.Contains("todavía no ha empezado"));
 		}
 
@@ -201,17 +214,22 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void TheRowSetIsTheSameAtEveryInstantAndOnlyTheSentenceMoves()
 		{
-			string[] atFirst = specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce);
+			string[] atFirst = TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord);
 
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(BeforeTheRevisionWasPublished),
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, BeforeTheRevisionWasPublished, TheLanguage.OfTheRecord),
 				Is.EqualTo(atFirst));
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(AfterTheFluidPriceLapsed),
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord),
 				Is.EqualTo(atFirst));
 			Assert.That(
-				specification.DescribeEachPublishedPriceAsOf(BeforeTheRevisionWasPublished),
-				Is.Not.EqualTo(specification.DescribeEachPublishedPriceAsOf(AfterTheFluidPriceLapsed)),
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, BeforeTheRevisionWasPublished, TheLanguage.OfTheRecord),
+				Is.Not.EqualTo(TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					specification, AfterTheFluidPriceLapsed, TheLanguage.OfTheRecord)),
 				"Si la frase tampoco se moviera, el instante no estaria haciendo nada y G4 no se "
 				+ "estaria honrando.");
 		}
@@ -229,8 +247,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(empty.HasAnyPublishedServicePrice(), Is.False);
 			Assert.That(empty.PublishedServicePriceCount(), Is.EqualTo(0));
 			Assert.That(empty.PublishedPriceOperationsAsOf(WhileBothAreInForce), Is.Empty);
-			Assert.That(empty.PublishedPriceMilestonesAsOf(WhileBothAreInForce), Is.Empty);
-			Assert.That(empty.DescribeEachPublishedPriceAsOf(WhileBothAreInForce), Is.Empty);
+			Assert.That(TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				empty, WhileBothAreInForce, TheLanguage.OfTheRecord), Is.Empty);
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.EachPublishedPrice(
+					empty, WhileBothAreInForce, TheLanguage.OfTheRecord),
+				Is.Empty);
 			Assert.That(empty.PublishedPriceRevisionsAsOf(WhileBothAreInForce), Is.Empty);
 
 			Assert.That(
@@ -254,8 +276,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(2));
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce),
-				Does.Not.Contain("30000 km"));
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord),
+				Does.Not.Contain("30.000 km"));
 		}
 
 		// EL MISMO NUMERO EN LA OTRA UNIDAD ES OTRO HITO, tambien al enumerar: dos filas, no una.
@@ -269,8 +292,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(specification.PublishedServicePriceCount(), Is.EqualTo(3));
 			Assert.That(
-				specification.PublishedPriceMilestonesAsOf(WhileBothAreInForce),
-				Is.EquivalentTo(new[] { "10000 mi", "10000 km", "20000 km" }));
+				TheSentenceTheDoorWouldCompose.EachPublishedMilestone(
+				specification, WhileBothAreInForce, TheLanguage.OfTheRecord),
+				Is.EquivalentTo(new[] { "10.000 mi", "10.000 km", "20.000 km" }));
 		}
 
 		// NINGUN PORTADOR DE PART C CRUZA LA SUPERFICIE DE LA ESPECIFICACION.

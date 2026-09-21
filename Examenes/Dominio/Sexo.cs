@@ -21,12 +21,12 @@ namespace Examenes.Dominio
 	// escribio como enum; acá el idioma de la casa es este.
 	internal sealed class Sexo
 	{
-		internal static readonly Sexo Hombre = new Sexo("hombre", "hombre");
+		internal static readonly Sexo Hombre = new Sexo("hombre");
 
-		internal static readonly Sexo Mujer = new Sexo("mujer", "mujer");
+		internal static readonly Sexo Mujer = new Sexo("mujer");
 
 		// Todavia nadie lo dijo: ni el laboratorio lo publico ni la persona lo declaro.
-		internal static readonly Sexo Desconocido = new Sexo("desconocido", "desconocido");
+		internal static readonly Sexo Desconocido = new Sexo("desconocido");
 
 		private static readonly Sexo[] todos = { Hombre, Mujer, Desconocido };
 
@@ -34,12 +34,11 @@ namespace Examenes.Dominio
 		// el que viaja en el comando del journal— y no se le habla a nadie.
 		internal string Nombre { get; private set; }
 
-		internal string ParaMostrar { get; private set; }
 
-		private Sexo(string nombre, string paraMostrar)
+
+		private Sexo(string nombre)
 		{
 			Nombre = nombre;
-			ParaMostrar = paraMostrar;
 		}
 
 		// Si hay dato. Es la pregunta que gobierna todo lo demas: sin esto el dominio no

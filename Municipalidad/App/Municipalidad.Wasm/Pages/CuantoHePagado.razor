@@ -1,0 +1,134 @@
+@page "/cuanto-he-pagado"
+@inject EstadoDeLaApp estado
+@inject Textos textos
+
+<PageTitle>@textos["cuantoHePagado.titulo"] · @Textos.TituloDelModulo</PageTitle>
+
+<h1>@textos["cuantoHePagado.titulo"]</h1>
+<p class="bajada">@textos["cuantoHePagado.bajada"]</p>
+
+@if (!estado.EstaArriba)
+{
+    <SinAbrir />
+}
+else
+{
+    <section class="bloque" id="el-total">
+        <h2>@textos["cuantoHePagado.totalDelAnio"]</h2>
+
+        <article class="tarjeta">
+            <div class="tarjeta__cabeza">
+                <label for="el-anio">@textos["cuantoHePagado.anio"]</label>
+                <select id="el-anio" @bind="anioElegido" @bind:after="Releer">
+                    @foreach (var anio in pagado.AniosQueSePuedenPedir)
+                    {
+                        <option value="@anio">@anio</option>
+                    }
+                </select>
+            </div>
+
+            <dl class="renglones">
+                <dt>@textos.Con("cuantoHePagado.pagadoEn", ("anio", pagado.Anio.ToString()))</dt>
+                <dd class="cifra">@textos.Monto(pagado.TotalDelAnio)</dd>
+            </dl>
+
+            @if (!pagado.HayAlgunComprobante)
+            {
+                <p class="nota">@textos["cuantoHePagado.sinNingunComprobante"]</p>
+            }
+            else if (pagado.ElAnioPedidoNoTieneComprobantes)
+            {
+                <p class="nota">@textos.Con("cuantoHePagado.anioSinComprobantes", ("anio", pagado.Anio.ToString()))</p>
+            }
+        </article>
+
+        <Aviso Tono="quieta" Id="el-total-trae-la-mora" Titulo="@textos["cuantoHePagado.incluyeLaMora"]">
+            <p>@textos["cuantoHePagado.incluyeLaMoraCuerpo"]</p>
+        </Aviso>
+    </section>
+
+    @foreach (var serie in pagado.Series)
+    {
+        <section class="bloque" id="@("serie-" + serie.Rubro)">
+            <div class="tarjeta__cabeza">
+                <LlaveDelRubro Rubro="@serie.Rubro" />
+                <span class="periodo">@textos.ComoSeDice(serie.Estado)</span>
+            </div>
+
+            <Frase Dice="@serie.Dice" Apagada="@(serie.Lineas.Count == 0)" />
+
+            @if (serie.Lineas.Count > 0)
+            {
+                <div class="tabla">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">@textos["cuantoHePagado.periodo"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.monto"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.mora"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.cubre"]</th>
+                                <th scope="col" class="tabla__cifra">@textos["cuantoHePagado.porPeriodo"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var linea in serie.Lineas)
+                            {
+                                <tr>
+                                    <td>
+                                        @linea.Periodo
+                                        @if (linea.Inferido)
+                                        {
+                                            <span class="sello sello--inferido">@textos["cuantoHePagado.inferido"]</span>
+                                        }
+                                    </td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.Monto)</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.Mora)</td>
+                                    <td class="tabla__cifra">@linea.Cubre</td>
+                                    <td class="tabla__cifra">@textos.Monto(linea.PorPeriodo)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+
+    @if (HayAlgunaLineaInferida())
+    {
+        <Aviso Tono="tibia" Id="lo-que-se-infirio" Titulo="@textos["cuantoHePagado.loQueSeInfirio"]">
+            <p>@textos["cuantoHePagado.loQueSeInfirioCuerpo"]</p>
+        </Aviso>
+    }
+
+    <p class="nota">@((MarkupString)textos["cuantoHePagado.pie"])</p>
+}
+
+@code {
+	private LoQuePagueEnUnAnio pagado;
+
+	private int anioElegido;
+
+	protected override void OnInitialized()
+	{
+		if (!estado.EstaArriba) return;
+
+		pagado = estado.LeerLoQuePague(0);
+		anioElegido = pagado.Anio;
+	}
+
+	/// <summary>La unica pasada de lectura de esta pantalla, con el anio que la persona tenga puesto.</summary>
+	private void Releer()
+	{
+		if (estado.EstaArriba) pagado = estado.LeerLoQuePague(anioElegido);
+	}
+
+	private bool HayAlgunaLineaInferida()
+	{
+		foreach (var serie in pagado.Series)
+			foreach (var linea in serie.Lineas)
+				if (linea.Inferido) return true;
+
+		return false;
+	}
+}

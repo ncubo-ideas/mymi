@@ -1,0 +1,126 @@
+{
+  "//": "MANIFIESTO DE EJEMPLO, PARA UNA INSTITUCION QUE VA A PUBLICAR SU MODULO. Es un archivo real y valido: se puede copiar, cambiarle los valores y empaquetar. Lo escribe LA INSTITUCION -y algun dia lo firma-, y declara quien es, que ofrece y donde vive su narrativa. El installation.json es del HOST y NO viene aca: la cascara, la carpeta concedida y el consentimiento los escribe Gnothi al adoptar el modulo, porque son su autoridad y no la de la institucion.",
+
+  "//comentarios": "LOS COMENTARIOS VAN COMO CLAVES QUE EMPIEZAN CON // Y NO COMO // DE LINEA. El lector de C# admite las dos formas, pero Herramientas/sincronizar-manifiesto.mjs usa JSON.parse -que NO admite comentarios de linea- y se rompe. Un comentario como clave es JSON legitimo y sobrevive a las dos herramientas.",
+
+  "//opcional": "TODO LO NUEVO ES OPCIONAL. Un manifiesto que solo traiga manifest, module, title, institution, substrate, capabilities y tools instala igual y funciona igual. Cada grupo que se agregue muestra una cosa mas en la pantalla, y ninguno es obligatorio.",
+
+  "manifest": "1.1",
+  "module": "delfos",
+
+  "//title": "EL NOMBRE QUE LA INSTITUCION LE DA A SU MODULO, y viaja tal cual: Gnothi no lo reescribe ni lo aplana. Se ve como segunda linea en la tarjeta y en el boton 'Abrir ...'. Tope: 32 caracteres.",
+  "title": "Tus exámenes, al día",
+
+  "//institution": "QUIEN ENTREGO ESTE MODULO. Es el texto que se usa para identificar cuando no hay brand.shortName, asi que conviene que se lea solo: sin siglas internas y sin parentesis tecnicos.",
+  "institution": "Laboratorio Clínico Delfos",
+
+  "//brand": "LA MARCA. La institucion DECLARA y el Host COMPONE: ella provee el material, el decide el lugar, el tamano y el contraste. Se ve en las cuatro pantallas donde aparece un modulo -la grilla, el detalle, el alta y el journal.",
+  "brand": {
+    "//shortName": "El nombre con el que la gente la conoce, no la razon social. Es la LINEA GRANDE de la tarjeta, la que identifica. Tope: 28 caracteres.",
+    "shortName": "Laboratorio Delfos",
+
+    "//logo": "UN ARCHIVO DENTRO DEL BUNDLE, nunca una URL: un logo traido de la red le contaria a la institucion cada vez que la persona abre su lista de modulos. PNG, JPEG o WebP -NUNCA SVG, porque un svg ejecuta-, hasta 64 KB y 512 pixeles. Cuadrado se ve mejor: la caja es cuadrada.",
+    "logo": "brand/logo.png",
+
+    "//color": "Un color en #rrggbb, uno solo. El Host lo usa para el tinte del icono y le garantiza el contraste. No se acepta CSS.",
+    "color": "#0E7C86",
+
+    "//banner": "OPCIONAL. Una foto ancha que el Host pone DETRAS de la tarjeta, con el nombre y el eslogan encima. Archivo dentro del bundle, como el logo: png, jpg o webp, hasta 200 KB y 1600 px de lado. Sin svg.",
+    "banner": "brand/banner.jpg",
+
+    "//font": "OPCIONAL. La tipografia del NOMBRE DE MARCA en la tarjeta y el detalle de ESTE modulo -solo el nombre: el eslogan y todo lo demas van en la letra de Gnothi-, para que la marca se lea como la marca sin pelear con las otras. Un archivo woff2, woff, ttf u otf dentro del bundle, hasta 160 KB, con el peso en que se escribe el nombre. El Host la embebe bajo un nombre propio: nunca corre CSS de la institucion.",
+    "font": { "family": "Nunito Sans", "file": "brand/NunitoSans-800.woff2" }
+  },
+
+  "//publisher": "DE DONDE VIENE ESTE MODULO Y QUE VERSION ES. Es el grupo que le da sentido a la marca: un logo sin procedencia es un dibujo que cualquiera copia. Aca va la razon social y la cedula juridica -y no arriba- porque nadie dice 'voy a Laboratorio Clinico Delfos S.A.': el nombre legal no es con lo que una persona reconoce a nadie, es LO QUE SE COMPRUEBA.",
+  "publisher": {
+    "//domain": "EL DOMINIO DESDE EL QUE SE PUBLICA, y es el unico campo de este grupo que Gnothi puede CONTRASTAR: el Host ya sabe de que host bajo el bundle -lo observo, no se lo declaro nadie- y compara. Si no coinciden, la pantalla del alta lo dice antes de que la persona acepte. Es un dominio, no una url: sin https:// y sin ruta.",
+    "domain": "delfos.cr",
+
+    "legal": "Laboratorio Clínico Delfos S.A.",
+    "taxId": "3-101-123456",
+    "jurisdiction": "CR",
+
+    "//version": "LA VERSION DEL MODULO, que no es la del formato: 'manifest' arriba es el formato. Sin esto, al reinstalar la persona puede saber que ya lo tiene pero no si lo que esta bajando es mas nuevo, que es la pregunta que hace.",
+    "version": "2.4.0",
+    "released": "2026-08-12",
+    "license": "propietaria"
+  },
+
+  "//about": "QUE ES ESTE MODULO, EN PALABRAS PARA LA PERSONA. Ojo con esto: las descripciones de las tools estan escritas para el modelo -densas, en tercera persona, hablando de 'la persona' en vez de con ella- y hasta ahora eran lo unico que ella podia leer. Este grupo es el primer texto del manifiesto que se escribe para quien lo va a leer.",
+  "about": {
+    "//category": "De aca sale el icono de reserva cuando no hay logo. Lista cerrada: laboratorio, salud, supermercado, comercio, banca, seguros, combustible, taller, telecom, educacion, gobierno, servicios. Una categoria que el Host no conozca cae al icono generico.",
+    "category": "laboratorio",
+
+    "//description": "Dos lineas para la persona, en su idioma y en segunda persona. Tope: 180 caracteres.",
+    "description": "Tus resultados de laboratorio, con su historia y qué te toca repetir.",
+
+    "//doesNotDo": "EL ANTI-CLAIM, y es una idea que el POC ya tenia enterrada: el modulo de compras dice 'este modulo no juzga la alimentacion de nadie', pero lo dice dentro de la descripcion de una tool, donde solo lo lee la IA. Aca lo lee la persona. Tope: 120 caracteres.",
+    "doesNotDo": "No interpreta resultados ni reemplaza a tu médico.",
+
+    "locale": "es-CR",
+
+    "//currency": "LA MONEDA DE LOS MONTOS QUE DEVUELVE ESTE MODULO, si devuelve montos. Dejalo vacio si no maneja plata -un laboratorio no cobra por aca-. Cuando falta, el modulo entrega numeros sin unidad y el asistente no tiene forma de saber de que son.",
+    "currency": "",
+    "units": "mg/dL, g/dL, ng/mL"
+  },
+
+  "//journal": "LO QUE LA INSTITUCION PROMETE SOBRE EL REGISTRO que va a vivir en el aparato de la persona. OJO CON LOS TRES PRIMEROS: se fijan AL CREAR el journal y pedir otro modo despues lanza excepcion. Activar cifrado a los dos anos significa EMPEZAR UN JOURNAL NUEVO, asi que conviene decidirlos ahora. Los tres ultimos son para la pantalla del alta, que hoy le dice a la persona donde va a vivir el registro y no cuanto va a pesar ni cada cuanto se actualiza.",
+  "journal": {
+    "compression": "None",
+    "encryption": "None",
+    "maxFileSize": 4194304,
+    "retention": "5 años",
+    "expectedSize": "~2 MB al año",
+    "updates": "al abrir la app"
+  },
+
+  "//view": "EL NOMBRE DE UN ARCHIVO, dentro del bundle, con la pantalla que la institucion diseno PARA LA PERSONA -no para el asistente-. El modulo describe y el Host renderiza; ver manifiesto-de-ejemplo.view.json al lado de este archivo. Un modulo sin vista es legitimo: contesta consultas y no tiene pantalla propia.",
+  "view": "view.json",
+
+  "//substrate": "UN RANGO, no una version exacta: si un modulo pinea una version puntual, cada actualizacion del Host huerfana a todos los modulos instalados.",
+  "substrate": {
+    "range": ">=3.0.0 <4.0.0"
+  },
+
+  "//capabilities": "LO QUE EL MODULO DECLARA NECESITAR. Es util porque es CONTRASTABLE: un modulo de laboratorio que pidiera microfono no necesita analisis, necesita un aviso. Un modulo de datos no necesita ninguna: red en false significa que el modulo no habla con nadie -el que trae los eventos es Gnothi, por el publicador de abajo, y con un endpoint que el modulo no elige.",
+  "capabilities": {
+    "network": false,
+    "folder": "own",
+    "speaker": false,
+    "microphone": false
+  },
+
+  "//publicador": "DONDE VIVE LA NARRATIVA DE ESTA INSTITUCION. Gnothi lo registra al dar de alta el modulo y a partir de ahi el endpoint es FIJO: el modulo no lo elige ni lo puede cambiar. El modulo nunca lo usa -no tiene red-: lo usa el cartero, que es Gnothi. La app pide una sola forma de url sobre esto: {recurso}/{id}/events?after=N.",
+  "publicador": {
+    "eventos": "https://eventos.delfos.cr/",
+    "recurso": "expediente",
+    "id": "1"
+  },
+
+  "//tools": "LA LISTA QUE GNOTHI LE PASA AL ASISTENTE. La description viaja TAL CUAL: no es documentacion, es lo unico que la IA tiene para decidir si esta consulta contesta la pregunta de la persona. Cada una lleva su interruptor: la persona puede apagar una y el asistente deja de verla.",
+  "//tools-sync": "Los NOMBRES tienen que coincidir con lo que el modulo expone de verdad sobre el protocolo. Gnothi los compara al dar de alta -gnothi_verify_module- y Herramientas/sincronizar-manifiesto.mjs los proyecta desde el modulo para que no se desincronicen a mano.",
+  "tools": [
+    {
+      "name": "que_me_falta_medir",
+      "title": "Qué me toca",
+      "description": "Cada analito del que la persona tiene historia, cuanto hace que se midio por ultima vez, cada cuanto conviene repetirlo y SI ESTA VENCIDO. Devuelve tambien los que estan al dia, asi que una fila no significa que este pendiente: hay que leer estaVencido en cada una, y cuantosVencidos, que es el numero que contesta la pregunta.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "evaluar_tendencia",
+      "title": "Cómo viene un analito",
+      "description": "Si un analito de la persona VIENE SUBIENDO, viene bajando o esta estable, mirando toda su historia y no el ultimo resultado. Es la pregunta que su hoja de laboratorio no puede contestar, porque una hoja lleva un valor y una fecha. Solo sirve para analitos que traen un NUMERO.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "analito",
+          "type": "string",
+          "description": "Cual analito evaluar.",
+          "enum": ["ColesterolTotal", "ColesterolLdl", "Hemoglobina"]
+        }
+      ]
+    }
+  ]
+}

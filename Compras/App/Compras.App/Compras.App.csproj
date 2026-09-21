@@ -19,6 +19,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Dominio\Compras.Dominio.csproj" />
     <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+
+    <!-- El contrato cargo, compilado contra pero NO copiado (el Host presta su copia en
+         ejecución). Private=false lo mantiene fuera del output de los otros consumidores. -->
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj"
+                      ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
   <!-- Solo el core, igual que Examenes: la app solo necesita PerformanceV2. -->

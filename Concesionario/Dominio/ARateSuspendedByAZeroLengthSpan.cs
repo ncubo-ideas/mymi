@@ -40,11 +40,9 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>La razon con el segundo nombrado.</summary>
-		internal override string Describe()
+		internal override ARateInAPeriod TheClauseOfItsPeriod()
 		{
-			return "no se puede decir cuánto se maneja: las dos lecturas del periodo se observaron "
-				+ "en el mismo segundo, el " + _theSecond
-				+ ", así que no hay tiempo transcurrido que dividir";
+			return ARateInAPeriod.SuspendedByAZeroLengthSpan(_theSecond);
 		}
 	}
 }

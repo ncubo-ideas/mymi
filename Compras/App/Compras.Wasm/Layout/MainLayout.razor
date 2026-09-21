@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject Textos textos
 @inject EstadoDeLaApp estado
 @inject ConfiguracionDeLaInstitucion institucion
 @inject NavigationManager navegacionDelLayout
@@ -109,7 +110,7 @@
                 <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
                 <path d="M7.8 16.6v-4.7h4.4v4.7"/>
             </svg>
-            Inicio
+            @textos["comun.inicio"]
         </NavLink>
         <NavLink class="pestana" href="recibos">
             <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
@@ -118,7 +119,7 @@
                 <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
                 <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
             </svg>
-            Compras
+            @textos["comun.compras"]
         </NavLink>
     </div>
 </nav>
@@ -138,7 +139,7 @@
     }
     else
     {
-        <p class="text-body-secondary">Abriendo tus compras…</p>
+        <p class="text-body-secondary">@textos["comun.abriendo"]</p>
     }
 </main>
 
@@ -197,7 +198,7 @@
                             <circle cx="10" cy="10" r="6.8"/>
                             <path d="M3.2 10h13.6M10 3.2c-4.4 4.4-4.4 9.2 0 13.6M10 3.2c4.4 4.4 4.4 9.2 0 13.6"/>
                         </svg>
-                        Nuestro sitio
+                        @textos["comun.nuestroSitio"]
                     </a>
                 }
                 @if (institucion.HayWhatsApp)
@@ -227,10 +228,7 @@
         @* LO QUE EL PIE TIENE QUE DECIR ADEMAS DE LOS ENLACES. Son dos enlaces que SALEN de
            la app, y esta app promete que los datos no salen: conviene que la frontera este
            escrita justo donde se cruza. *@
-        <div class="pie-dentro pie-nota">
-            Tus compras viven en este aparato. Estos enlaces te llevan afuera; no llevan
-            nada tuyo.
-        </div>
+        <div class="pie-dentro pie-nota">@textos["comun.pieNota"]</div>
     </footer>
 }
 

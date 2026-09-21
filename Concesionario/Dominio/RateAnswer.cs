@@ -98,10 +98,10 @@ namespace Concesionario.Dominio
 		internal abstract RateStanding Standing();
 
 		/// <summary>
-		/// El ritmo en palabras, con los dos extremos y el periodo adentro. TOTAL: las cinco
-		/// situaciones dicen algo, y ninguna dice la frase vacia.
+		/// Lo que este periodo tiene que decir, como forma y valores ya tipados. TOTAL: las cinco
+		/// situaciones contestan, y ninguna contesta una fila vacia.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract ARateInAPeriod TheClauseOfItsPeriod();
 
 		/// <summary>
 		/// La distancia recorrida por dia, redondeada al entero. Accesor GUARDADO: revienta si el
@@ -118,11 +118,21 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Como se dice el cambio de este ritmo respecto a ese otro, en una clausula. Accesor
-		/// GUARDADO: los dos ritmos tienen que poder decirse. El redondeo del porcentaje vive aqui,
-		/// una sola vez.
+		/// Que pudo decirse del cambio de este ritmo respecto a ese otro, por su codigo. Accesor
+		/// GUARDADO: los dos ritmos tienen que poder decirse.
 		/// </summary>
-		internal virtual string HowItComparesTo(RateAnswer other)
+		internal virtual string TheShapeOfItsChangeAgainst(RateAnswer other)
+		{
+			throw new DomainException(
+				"Este periodo no tiene ritmo que decir, asi que no se puede comparar: pregunte "
+				+ "CanBeSaid en los dos antes.");
+		}
+
+		/// <summary>
+		/// Los digitos de ese cambio en por ciento, sin signo. Accesor GUARDADO por lo mismo. El
+		/// redondeo del porcentaje vive aqui, una sola vez.
+		/// </summary>
+		internal virtual string TheChangeAgainstAsSaid(RateAnswer other)
 		{
 			throw new DomainException(
 				"Este periodo no tiene ritmo que decir, asi que no se puede comparar: pregunte "

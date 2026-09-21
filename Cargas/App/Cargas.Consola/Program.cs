@@ -14,6 +14,13 @@ namespace Cargas.Consola
 {
 	internal static class Program
 	{
+		/// <summary>
+		/// EN QUE IDIOMA LE PREGUNTA ESTE ARNES A LA PUERTA, y es el del registro de la estacion.
+		/// La consola mide el dominio, no atiende a nadie: no hay una persona con una eleccion que
+		/// respetar, asi que se nombra el del registro en vez de fingir una.
+		/// </summary>
+		private const string ElIdioma = Cargas.App.Frases.Frases.IdiomaDelRegistro;
+
 		private const string NombreDelActor = "cargas";
 
 		private static async Task<int> Main(string[] args)
@@ -218,7 +225,6 @@ namespace Cargas.Consola
 			Console.WriteLine($"ultimo evento procesado     : {api.UltimoEventoProcesado()}");
 			Console.WriteLine($"cantidad de cargas          : {api.CantidadDeCargas()}");
 			Console.WriteLine($"vehiculos                   : {api.CantidadDeVehiculos()}");
-			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			EstadoDeLealtad lealtad = api.Lealtad();
 			Console.WriteLine($"lealtad                     : {lealtad.Saldo} puntos, nivel {lealtad.Nivel}"
@@ -232,14 +238,14 @@ namespace Cargas.Consola
 
 				Console.WriteLine();
 				Console.WriteLine("-- tus cargas --");
-				foreach (CargaEnLista carga in api.Cargas(vehiculo.Placa))
+				foreach (CargaEnLista carga in api.Cargas(vehiculo.Placa, ElIdioma))
 					Console.WriteLine($"  {carga.Fecha:dd/MM/yyyy}  {carga.Surtidor,-4} {carga.Tipo,-8} "
 						+ $"{Formato(carga.Litros),6} L  {carga.Moneda}{Formato(carga.Total),10}  "
 						+ $"{carga.Corte,-13} km=[{carga.Kilometraje}] tanque=[{carga.Tanque}]");
 
 				Console.WriteLine();
 				Console.WriteLine("-- los tramos: la unidad de calculo, no la carga --");
-				foreach (TramoEnLista tramo in api.Tramos(vehiculo.Placa))
+				foreach (TramoEnLista tramo in api.Tramos(vehiculo.Placa, ElIdioma))
 				{
 					// La reserva solo aplica a los calculados: un bloqueado ya dice lo suyo.
 					string reserva = tramo.EstaCalculado && !tramo.EsComparable
@@ -255,12 +261,12 @@ namespace Cargas.Consola
 
 				Console.WriteLine();
 				Console.WriteLine("-- lo que falta, con lo que desbloquea --");
-				IReadOnlyList<FaltanteEnLista> faltantes = api.Faltantes(vehiculo.Placa);
+				IReadOnlyList<FaltanteEnLista> faltantes = api.Faltantes(vehiculo.Placa, ElIdioma);
 				if (faltantes.Count == 0) Console.WriteLine("  (nada: la serie esta completa)");
 				foreach (FaltanteEnLista faltante in faltantes)
 					Console.WriteLine($"  {faltante.ParaSonia}");
 
-				CompletitudDelVehiculo completitud = api.Completitud(vehiculo.Placa);
+				CompletitudDelVehiculo completitud = api.Completitud(vehiculo.Placa, ElIdioma);
 				Console.WriteLine($"  {completitud.Expresada}");
 
 				Console.WriteLine();
@@ -275,7 +281,7 @@ namespace Cargas.Consola
 				// EL RITMO, que es la mitad que el concesionario declara no tener. Se
 				// imprime aca porque es la consulta que sale por MCP: si el print de la
 				// frontera se rompe, se ve en el estado y no en produccion.
-				RitmoDelVehiculo ritmo = api.Ritmo(vehiculo.Placa);
+				RitmoDelVehiculo ritmo = api.Ritmo(vehiculo.Placa, ElIdioma);
 				Console.WriteLine($"  ritmo: {ritmo.Expresada} [{ritmo.Situacion}]");
 
 				OdometroPropuesto odometro = api.Odometro(vehiculo.Placa, FechaDeCorte);
@@ -284,7 +290,7 @@ namespace Cargas.Consola
 						+ $"({Formato(odometro.KilometrosPorDia)} km/dia, origen {odometro.Origen})"
 					: "  odometro esperado: sin lecturas suficientes");
 
-				foreach (CostoEnLista costo in api.Costos(vehiculo.Placa))
+				foreach (CostoEnLista costo in api.Costos(vehiculo.Placa, ElIdioma))
 					Console.WriteLine($"  costo por distancia: {costo.Expresado}");
 
 				Console.WriteLine();
@@ -296,7 +302,7 @@ namespace Cargas.Consola
 
 			Console.WriteLine();
 			Console.WriteLine("-- el gasto del mes de la ultima carga --");
-			foreach (GastoEnLista gasto in api.Gastos(FechaDeCorte.Year, FechaDeCorte.Month))
+			foreach (GastoEnLista gasto in api.Gastos(FechaDeCorte.Year, FechaDeCorte.Month, ElIdioma))
 				Console.WriteLine($"  {gasto.Expresado}");
 
 			if (!conVeredicto) return;
@@ -304,14 +310,14 @@ namespace Cargas.Consola
 			Console.WriteLine();
 			bool veredictoOk = false;
 			foreach (VehiculoEnLista vehiculo in api.Vehiculos())
-				veredictoOk = api.Rendimiento(vehiculo.Placa).Veredicto == Muestras.VeredictoEsperado;
+				veredictoOk = api.Rendimiento(vehiculo.Placa, ElIdioma).Veredicto == Muestras.VeredictoEsperado;
 			bool puntosOk = api.Lealtad().Saldo == Muestras.PuntosEsperados;
 			Console.WriteLine($"VEREDICTO Y PUNTOS CORRECTOS: {veredictoOk && puntosOk}");
 		}
 
 		private static void ImprimirRendimiento(CargasAPI api, string placa)
 		{
-			RendimientoDelVehiculo lectura = api.Rendimiento(placa);
+			RendimientoDelVehiculo lectura = api.Rendimiento(placa, ElIdioma);
 
 			// La frase la trae el dominio armada con hechos; esta caratula solo la
 			// muestra, con su severidad y su accion si las hay.
@@ -385,35 +391,42 @@ namespace Cargas.Consola
 
 			// La app consigue su credencial SOLA, contra su device key. Ni la consola ni
 			// la persona pegan un token: la estacion lo emite para ESTA instalacion.
-			if (api.DeviceKeyGuardado().Length == 0)
-				api.RegistrarDevice("device-consola-de-medicion");
+			//
+			// LA CREDENCIAL VIVE EN MEMORIA DURANTE LA CORRIDA, no en el journal: es contexto
+			// de sesion de este host -la consola-, no historia de la persona. Hasta el
+			// 2026-09-03 se journalizaba y quedaba en claro en la carpeta.
+			const string deviceKey = "device-consola-de-medicion";
+			string accessToken = "";
+			string refreshToken = "";
 
-			if (api.TokenGuardado().Length == 0)
+			async Task<string> CredencialVigente(System.Threading.CancellationToken ct)
 			{
-				Credencial credencial = await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id);
+				if (accessToken.Length > 0) return accessToken;
+
+				Credencial credencial = await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 				Console.WriteLine($"credencial: scope={credencial.Scope} expiresIn={credencial.ExpiresIn}s");
-				api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
+				(accessToken, refreshToken) = (credencial.AccessToken, credencial.RefreshToken ?? "");
+				return accessToken;
 			}
 
 			// Que hacer cuando la estacion rechaza el access token: rotar con el refresh
 			// token, que es para lo que existe. El access es corto a proposito.
 			async Task<string> Renovar(System.Threading.CancellationToken ct)
 			{
-				string refresh = api.RefreshTokenGuardado();
-
-				Credencial renovada = refresh.Length > 0
-					? await proveedorDeToken.Rotar(refresh, ct)
+				Credencial renovada = refreshToken.Length > 0
+					? await proveedorDeToken.Rotar(refreshToken, ct)
 					: null;
 				string comoSeObtuvo = renovada != null ? "rotada con el refresh token" : "nueva contra el device key";
-				renovada ??= await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id, ct);
+				renovada ??= await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 
 				Console.WriteLine($"  credencial renovada: {comoSeObtuvo} (scope {renovada.Scope})");
-				api.GuardarCredencial(renovada.AccessToken, renovada.RefreshToken);
-				return renovada.AccessToken;
+				(accessToken, refreshToken) = (renovada.AccessToken, renovada.RefreshToken ?? "");
+				return accessToken;
 			}
 
-			var bucle = new BucleDeRefresh(api, new FuenteHttpDeEventos(http, recurso, id),
-				RutaDeCargas.Rutear, null, Renovar);
+			var bucle = new BucleDeRefresh(api,
+				new FuenteHttpDeEventos(http, recurso, id, CredencialVigente, Renovar),
+				RutaDeCargas.Rutear);
 
 			ResultadoDeRefresh primero = await bucle.Ejecutar();
 			Console.WriteLine($"refresh 1 : {primero}");

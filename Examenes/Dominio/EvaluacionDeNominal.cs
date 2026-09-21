@@ -80,5 +80,7 @@ namespace Examenes.Dominio
 		internal bool EstaFueraDeLoEsperable => Constancia.EstaFueraDeLoEsperable;
 		internal bool EstaConfirmado => Constancia.EstaConfirmado;
 		internal int Esperables => CantidadDeMediciones - NoEsperables;
+
+		internal override void PonerSusValoresEn(Interpretacion lectura) => lectura.ConCategorias(this);
 	}
 }

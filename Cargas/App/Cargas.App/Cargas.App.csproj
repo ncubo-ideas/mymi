@@ -16,6 +16,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Dominio\Cargas.Dominio.csproj" />
     <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <!-- La etiqueta que el Host presta: [ModuleSurface], [Query], [View], [Deliver]. Sin
+         dependencias a proposito: es lo que deja que el modulo viaje como dos dll chicos
+         en vez de arrastrar el SDK de MCP. -->
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
   </ItemGroup>
 
   <!-- Solo el core. Los tres paquetes de adapters (Adapters, Adapters.Sql,

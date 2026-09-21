@@ -233,10 +233,8 @@ namespace Concesionario.Dominio
 		/// corrige un item no borra los que no republico, y sustituir SI retira lo que la sucesora
 		/// no volvio a publicar. Si ninguna la publico, la ausencia es la respuesta.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(FluidKindCode kind)
+		internal AFluidClause ARevisionAppliesForward(FluidKindCode kind)
 		{
-			FluidKind asked = FluidKind.OfCode(kind);
-
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
 				PublishedRevision candidate = _order[revision];
@@ -244,15 +242,14 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAFluidSpecification(kind)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeFluidSpecification(kind));
+				return candidate.TheFluidClause(kind);
 			}
 
-			return UnpublishedIsAnAnswer(asked.HowItIsSaid);
+			return AFluidClause.OfNothingPublished(FluidKind.OfCode(kind));
 		}
 
 		/// <summary>La misma ley para la llanta de una posicion.</summary>
-		internal SpecificationAnswer ARevisionAppliesForward(TyrePositionCode position)
+		internal ATyreClause ARevisionAppliesForward(TyrePositionCode position)
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -261,11 +258,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasATyreSpecification(position)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeTyreSpecification(position));
+				return candidate.TheTyreClause(position);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfATyre(position));
+			return ATyreClause.OfNothingPublished(TyrePosition.OfCode(position));
 		}
 
 		/// <summary>
@@ -273,7 +269,7 @@ namespace Concesionario.Dominio
 		/// entera, asi que la ultima revision sellada que publico algun grado contesta con TODOS los
 		/// suyos y ninguno de los de otra revision.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward()
+		internal AFuelClause ARevisionAppliesForward()
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -282,11 +278,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAFuelSpecification()) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeFuelSpecification());
+				return candidate.TheFuelClause();
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfTheFuel);
+			return AFuelClause.OfNothingPublished();
 		}
 
 		/// <summary>
@@ -294,7 +289,7 @@ namespace Concesionario.Dominio
 		/// mas: es la que contestan la presencia y la procedencia, que no preguntan por ningun
 		/// vehiculo.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(OperationKindCode kind)
+		internal AServiceIntervalClause ARevisionAppliesForward(OperationKindCode kind)
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -303,11 +298,11 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServiceInterval(kind)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServiceInterval(kind));
+				return candidate.TheServiceIntervalClause(kind);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServiceInterval(kind));
+			return AServiceIntervalClause.OfNothingPublished(
+				MaintenanceOperationKind.OfCode(kind));
 		}
 
 		/// <summary>
@@ -315,7 +310,7 @@ namespace Concesionario.Dominio
 		/// queda a este vehiculo. Sin nada publicado la respuesta es la ausencia sola, porque no hay
 		/// contra que parar lo recibido.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal AServiceIntervalClause ARevisionAppliesForward(
 			OperationKindCode kind, int distanceRemaining, DistanceUnitCode remainingUnit)
 		{
 			DistanceUnit received = DistanceUnit.OfCode(remainingUnit);
@@ -327,22 +322,19 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServiceInterval(kind)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate,
-					GeneralAndPersonalTogether(
-						candidate.DescribeServiceInterval(kind),
-						candidate.DescribeAgainstTheServiceInterval(
-							kind, distanceRemaining, received)));
+				return candidate.TheServiceIntervalClauseAgainst(
+					kind, distanceRemaining, received);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServiceInterval(kind));
+			return AServiceIntervalClause.OfNothingPublished(
+				MaintenanceOperationKind.OfCode(kind));
 		}
 
 		/// <summary>
 		/// La misma ley para el precio de una operacion en un hito, con su vigencia y sin decir
 		/// todavia si rige: eso necesita un instante que la presencia y la procedencia no piden.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal APriceClause ARevisionAppliesForward(
 			OperationKindCode kind, PublishedMilestone milestone)
 		{
 			MaintenanceOperationKind operation = MaintenanceOperationKind.OfCode(kind);
@@ -354,11 +346,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicePrice(operation, milestone)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServicePrice(operation, milestone));
+				return candidate.TheServicePriceClause(operation, milestone);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind));
+			return APriceClause.OfNothingPublished(operation);
 		}
 
 		/// <summary>
@@ -367,7 +358,7 @@ namespace Concesionario.Dominio
 		/// el codigo del wire y delega: el cuerpo es uno solo, y es el que la enumeracion tambien
 		/// recorre.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal APriceClause ARevisionAppliesForward(
 			OperationKindCode kind, PublishedMilestone milestone, DateTime asOf)
 		{
 			return ARevisionAppliesForward(
@@ -379,7 +370,7 @@ namespace Concesionario.Dominio
 		/// precio de un hito en un instante: la lectura llaveada llega envuelta y la enumeracion
 		/// llega derecho, asi que las dos dicen lo mismo porque no hay dos sitios que decirlo.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
+		internal APriceClause ARevisionAppliesForward(
 			MaintenanceOperationKind operation, PublishedMilestone milestone, DateTime asOf)
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
@@ -389,11 +380,10 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicePrice(operation, milestone)) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServicePrice(operation, milestone, asOf));
+				return candidate.TheServicePriceClause(operation, milestone, asOf);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(operation));
+			return APriceClause.OfNothingPublished(operation);
 		}
 
 		/// <summary>
@@ -402,7 +392,7 @@ namespace Concesionario.Dominio
 		/// dominio: el combustible tampoco tiene clave, y dos sobrecargas sin parametros no se
 		/// pueden declarar.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForwardToTheServicingPolicy()
+		internal AServicingClause ARevisionAppliesForwardToTheServicingPolicy()
 		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
@@ -411,18 +401,17 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicingPolicy()) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate, candidate.DescribeServicingPolicy());
+				return candidate.TheServicingPolicyClause();
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfTheServicingPolicy);
+			return AServicingClause.OfNothingPublished();
 		}
 
 		/// <summary>
 		/// La misma ley, y ademas la mitad RECIBIDA: la regla publicada emparejada con los conteos
 		/// de este vehiculo. Sin regla publicada la respuesta es la ausencia sola.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForwardToTheServicingPolicy(
+		internal AServicingClause ARevisionAppliesForwardToTheServicingPolicy(
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
 			int missedMaintenanceCount)
 		{
@@ -433,37 +422,12 @@ namespace Concesionario.Dominio
 				if (!OnlyASealedRevisionAnswers(candidate)) continue;
 				if (!candidate.HasAServicingPolicy()) continue;
 
-				return SpecificationAnswer.EveryAnswerNamesItsRevision(
-					candidate,
-					GeneralAndPersonalTogether(
-						candidate.DescribeServicingPolicy(),
-						candidate.DescribeAgainstTheServicingPolicy(
-							externalServicesWithEvidence, externalServicesWithoutEvidence,
-							missedMaintenanceCount)));
+				return candidate.TheServicingPolicyClauseAgainst(
+					externalServicesWithEvidence, externalServicesWithoutEvidence,
+					missedMaintenanceCount);
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfTheServicingPolicy);
-		}
-
-		/// <summary>
-		/// Empareja la verdad PUBLICADA con la posicion de ESTE vehiculo frente a ella, que es el
-		/// producto entero dicho en una linea. Las dos mitades son obligatorias y por eso esto
-		/// revienta sin ellas: la publicada sola es un folleto, y la del vehiculo sola no significa
-		/// nada. Solo se llama cuando hay algo publicado: una ausencia no se empareja con nada.
-		/// </summary>
-		internal string GeneralAndPersonalTogether(string publishedClause, string receivedClause)
-		{
-			if (string.IsNullOrWhiteSpace(publishedClause))
-				throw new DomainException(
-					"Se quiso emparejar la posicion de un vehiculo con nada publicado. Sin la mitad "
-					+ "publicada no hay contra que pararla, y unos numeros solos no dicen nada.");
-
-			if (string.IsNullOrWhiteSpace(receivedClause))
-				throw new DomainException(
-					"Se quiso contestar con lo publicado y nada de este vehiculo. Eso es un folleto: "
-					+ "dice lo que el modelo requiere y no dice donde esta parado este carro.");
-
-			return publishedClause + " " + receivedClause;
+			return AServicingClause.OfNothingPublished();
 		}
 
 		/// <summary>
@@ -492,12 +456,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Que fluido de esa clase lleva el modelo, en una frase, con la revision adentro. TOTAL:
-		/// lo no publicado tambien se dice.
+		/// Que fluido de esa clase lleva el modelo, como forma y valores, con la revision al lado.
+		/// TOTAL: lo no publicado tambien contesta, nombrando lo que se pregunto.
 		/// </summary>
-		internal string DescribeFluid(FluidKindCode kind)
+		internal AFluidClause TheFluidAnswer(FluidKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).Describe();
+			return ARevisionAppliesForward(kind);
 		}
 
 		/// <summary>
@@ -507,7 +471,7 @@ namespace Concesionario.Dominio
 		/// </summary>
 		internal string ReadFluidRevision(FluidKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).RevisionCode();
+			return ARevisionAppliesForward(kind).TheRevisionItCameFrom();
 		}
 
 		/// <summary>Si hay algo publicado sobre las llantas de esa posicion. TOTAL.</summary>
@@ -517,18 +481,18 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Que llanta lleva el modelo en esa posicion, en una frase, con la revision adentro. La
-		/// presion sale en la unidad en que se publico. TOTAL.
+		/// Que llanta lleva el modelo en esa posicion, como forma y valores, con la revision al lado.
+		/// La presion sale en la unidad en que se publico. TOTAL.
 		/// </summary>
-		internal string DescribeTyre(TyrePositionCode position)
+		internal ATyreClause TheTyreAnswer(TyrePositionCode position)
 		{
-			return ARevisionAppliesForward(position).Describe();
+			return ARevisionAppliesForward(position);
 		}
 
 		/// <summary>De que revision salio la respuesta de esa posicion. TOTAL.</summary>
 		internal string ReadTyreRevision(TyrePositionCode position)
 		{
-			return ARevisionAppliesForward(position).RevisionCode();
+			return ARevisionAppliesForward(position).TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -541,12 +505,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Que combustible acepta el modelo: los grados publicados con su postura, con la revision
-		/// adentro. TOTAL.
+		/// Que combustible acepta el modelo: los grados publicados con su postura, con la revision al
+		/// lado. TOTAL.
 		/// </summary>
-		internal string DescribeFuel()
+		internal AFuelClause TheFuelAnswer()
 		{
-			return ARevisionAppliesForward().Describe();
+			return ARevisionAppliesForward();
 		}
 
 		/// <summary>
@@ -590,7 +554,7 @@ namespace Concesionario.Dominio
 		/// <summary>De que revision salio la respuesta del combustible. TOTAL.</summary>
 		internal string ReadFuelRevision()
 		{
-			return ARevisionAppliesForward().RevisionCode();
+			return ARevisionAppliesForward().TheRevisionItCameFrom();
 		}
 
 		/// <summary>Si hay publicado un intervalo para esa operacion. TOTAL.</summary>
@@ -602,28 +566,28 @@ namespace Concesionario.Dominio
 		/// <summary>
 		/// Cada cuanto publica el fabricante que se hace esa operacion Y donde queda este vehiculo
 		/// contra ese intervalo, con la distancia que le queda tal como llego. Las dos mitades, o es
-		/// un folleto. TOTAL: lo no publicado se dice, y ahi no se empareja nada.
+		/// un folleto. TOTAL: lo no publicado contesta, y ahi no se empareja nada.
 		/// </summary>
-		internal string DescribeServiceInterval(
+		internal AServiceIntervalClause TheServiceIntervalAnswer(
 			OperationKindCode kind, int distanceRemaining, DistanceUnitCode remainingUnit)
 		{
-			return ARevisionAppliesForward(kind, distanceRemaining, remainingUnit).Describe();
+			return ARevisionAppliesForward(kind, distanceRemaining, remainingUnit);
 		}
 
 		/// <summary>
 		/// Cada cuanto publica el fabricante que se hace esa operacion, con su mitad publicada nada
 		/// mas. No pregunta por ningun vehiculo, asi que la contesta tambien quien no tenga ningun
-		/// hecho de ninguno. TOTAL: lo no publicado se dice.
+		/// hecho de ninguno. TOTAL.
 		/// </summary>
-		internal string DescribePublishedServiceInterval(OperationKindCode kind)
+		internal AServiceIntervalClause ThePublishedServiceIntervalAnswer(OperationKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).Describe();
+			return ARevisionAppliesForward(kind);
 		}
 
 		/// <summary>De que revision salio el intervalo de esa operacion. TOTAL.</summary>
 		internal string ReadServiceIntervalRevision(OperationKindCode kind)
 		{
-			return ARevisionAppliesForward(kind).RevisionCode();
+			return ARevisionAppliesForward(kind).TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -644,15 +608,15 @@ namespace Concesionario.Dominio
 		/// Cuanto cuesta esa operacion en ese hito, con su moneda, su vigencia, si esa vigencia rige
 		/// en el instante recibido, y la revision. TOTAL.
 		/// </summary>
-		internal string DescribeServicePrice(
+		internal APriceClause TheServicePriceAnswer(
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit,
 			DateTime asOf)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind)).Describe();
+				return APriceClause.OfNothingPublished(MaintenanceOperationKind.OfCode(kind));
 
 			return ARevisionAppliesForward(
-				kind, TheMilestone(milestoneDistance, milestoneUnit), asOf).Describe();
+				kind, TheMilestone(milestoneDistance, milestoneUnit), asOf);
 		}
 
 		/// <summary>De que revision salio el precio de esa operacion en ese hito. TOTAL.</summary>
@@ -660,10 +624,11 @@ namespace Concesionario.Dominio
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind)).RevisionCode();
+				return APriceClause.OfNothingPublished(
+					MaintenanceOperationKind.OfCode(kind)).TheRevisionItCameFrom();
 
 			return ARevisionAppliesForward(
-				kind, TheMilestone(milestoneDistance, milestoneUnit)).RevisionCode();
+				kind, TheMilestone(milestoneDistance, milestoneUnit)).TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -671,14 +636,14 @@ namespace Concesionario.Dominio
 		/// decir si rige: eso necesita un instante, y quien no tenga ninguno que aportar igual puede
 		/// citar lo que el fabricante publico. TOTAL.
 		/// </summary>
-		internal string DescribePublishedServicePrice(
+		internal APriceClause ThePublishedServicePriceAnswer(
 			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit)
 		{
 			if (milestoneDistance <= 0)
-				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind)).Describe();
+				return APriceClause.OfNothingPublished(MaintenanceOperationKind.OfCode(kind));
 
 			return ARevisionAppliesForward(
-				kind, TheMilestone(milestoneDistance, milestoneUnit)).Describe();
+				kind, TheMilestone(milestoneDistance, milestoneUnit));
 		}
 
 		/// <summary>
@@ -716,32 +681,158 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// A que hito se publico cada precio, dicho con su unidad, una por fila y en el mismo orden.
-		/// TOTAL.
+		/// A que distancia esta el hito de cada precio, tal como se publico, una por fila y en el
+		/// mismo orden. TOTAL, y va siempre con su unidad: una distancia suelta no nombra ningun
+		/// hito.
 		/// </summary>
-		internal string[] PublishedPriceMilestonesAsOf(DateTime asOf)
+		internal int[] PublishedPriceMilestoneDistancesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			int[] said = new int[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheMilestoneDistance();
+
+			return said;
+		}
+
+		/// <summary>
+		/// La unidad de esa distancia, como se dice, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceMilestoneUnitsAsOf(DateTime asOf)
 		{
 			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
 
 			string[] said = new string[rows.Count];
 
 			for (int row = 0; row < rows.Count; row++)
-				said[row] = rows[row].TheMilestoneItWasPublishedAt();
+				said[row] = rows[row].TheClauseItCarries().TheUnitTheMilestoneIsIn();
 
 			return said;
 		}
 
 		/// <summary>
-		/// Cada precio publicado en su propia frase -- con su monto, su moneda, su vigencia, si rige
-		/// en el instante preguntado y su revision --, una por fila y en el mismo orden. TOTAL.
+		/// Si hay algo publicado detras de cada fila, por su codigo, una por fila y en el mismo orden.
+		/// TOTAL, y todas contestan lo mismo: una fila nace de una clave que rige, y una clave que rige
+		/// sale de una revision sellada que la publico.
 		/// </summary>
-		internal string[] DescribeEachPublishedPriceAsOf(DateTime asOf)
+		internal string[] PublishedPriceShapesAsOf(DateTime asOf)
 		{
 			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().ThePublicationShape();
+
+			return said;
+		}
+
+		/// <summary>
+		/// La forma de la moneda de cada precio, por su codigo, una por fila y en el mismo orden.
+		/// TOTAL, y va junto con los digitos y el codigo: un monto sin ellos no se puede leer.
+		/// </summary>
+		internal string[] PublishedPriceCurrencyShapesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheShapeOfItsCurrency();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Los digitos de cada precio, en cultura invariante, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceAmountsAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheAmountAsSaid();
+
+			return said;
+		}
+
+		/// <summary>
+		/// El codigo de la moneda de cada precio, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceCurrencyCodesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheCodeOfItsCurrency();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Desde que dia rige cada precio, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceValidFromAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheDayItsValidityStarts();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Hasta que dia rige cada uno, en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceValidUntilAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheDayItsValidityEnds();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Donde cae el instante preguntado dentro de la vigencia de cada uno, por su codigo, en el
+		/// mismo orden. TOTAL, y el instante mueve esto y nunca el juego de filas.
+		/// </summary>
+		internal string[] PublishedPriceValiditiesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().WhereTheInstantAskedFalls();
+
+			return said;
+		}
+
+		/// <summary>
+		/// El dia por el que se pregunto, el mismo en todas las filas. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceDaysAskedOnAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheDayItWasAskedOn();
 
 			return said;
 		}
@@ -755,7 +846,8 @@ namespace Concesionario.Dominio
 
 			string[] said = new string[rows.Count];
 
-			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheRevisionItCameFrom();
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheClauseItCarries().TheRevisionItCameFrom();
 
 			return said;
 		}
@@ -811,29 +903,29 @@ namespace Concesionario.Dominio
 		/// ella, con los conteos tal como llegaron. Dice el alcance y la posicion; no dice que
 		/// ninguna reclamacion se vaya a pagar. TOTAL.
 		/// </summary>
-		internal string DescribeServicingElsewhereRule(
+		internal AServicingClause TheServicingElsewhereAnswer(
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
 			int missedMaintenanceCount)
 		{
 			return ARevisionAppliesForwardToTheServicingPolicy(
 				externalServicesWithEvidence, externalServicesWithoutEvidence,
-				missedMaintenanceCount).Describe();
+				missedMaintenanceCount);
 		}
 
 		/// <summary>
 		/// La regla publicada sobre servicio en otro taller, con su mitad publicada nada mas. No
 		/// pregunta por ningun vehiculo, asi que la contesta tambien quien no lleve los conteos de
-		/// ninguno. TOTAL: lo no publicado se dice.
+		/// ninguno. TOTAL.
 		/// </summary>
-		internal string DescribePublishedServicingElsewhereRule()
+		internal AServicingClause ThePublishedServicingElsewhereAnswer()
 		{
-			return ARevisionAppliesForwardToTheServicingPolicy().Describe();
+			return ARevisionAppliesForwardToTheServicingPolicy();
 		}
 
 		/// <summary>De que revision salio la regla de servicio en otro taller. TOTAL.</summary>
 		internal string ReadServicingPolicyRevision()
 		{
-			return ARevisionAppliesForwardToTheServicingPolicy().RevisionCode();
+			return ARevisionAppliesForwardToTheServicingPolicy().TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -847,47 +939,16 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Elige, para la pregunta de cobertura sobre un sistema, la ULTIMA revision sellada que
-		/// publico alcance, y compone su respuesta con la procedencia adentro. El alcance es UN
-		/// item: una revision que lo republica lo reemplaza entero, y una que solo corrige otra
-		/// cosa no lo toca.
+		/// Elige la ULTIMA revision sellada que publico alcance de garantia y entrega el alcance
+		/// entero como forma y valores, con su procedencia. El alcance es UN item: una revision que lo
+		/// republica lo reemplaza entero, y una que solo corrige otra cosa no lo toca. TOTAL: sin
+		/// ninguna que lo publique sale la ausencia, que es un objeto y no un alcance vacio.
 		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForward(
-			string systemCode, int envelopeMonths, int envelopeDistance,
-			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
-			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		internal ACoverageScope TheCoverageScope()
 		{
-			RefuseReceivedFactsThatCannotBeTrue(
-				deliveredAt, deliveryReading, currentReading, asOf);
+			if (!ARevisionAnswersAboutCoverage()) return ACoverageScope.NothingWasPublished();
 
-			if (!ARevisionAnswersAboutCoverage())
-				return UnpublishedIsAnAnswer(
-					WarrantyCoverage.TheCoverageQuestionAbout(systemCode));
-
-			PublishedRevision answering = TheRevisionThatAnswersAboutCoverage();
-
-			return SpecificationAnswer.EveryAnswerNamesItsRevision(
-				answering,
-				TheStandingAccordingTo(
-					answering, systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
-					deliveredAt, deliveryReading, currentReading, currentUnit, asOf).Describe());
-		}
-
-		/// <summary>
-		/// Elige la ULTIMA revision sellada que publico alcance de garantia y compone el resumen
-		/// del alcance con su procedencia. Lleva el nombre largo porque el alcance no tiene clave
-		/// -- se pregunta por el entero -- y una sobrecarga sin parametros ya la ocupa otro item
-		/// que tampoco la tiene.
-		/// </summary>
-		internal SpecificationAnswer ARevisionAppliesForwardToTheWarrantyScope()
-		{
-			if (!ARevisionAnswersAboutCoverage())
-				return UnpublishedIsAnAnswer("La cobertura de garantía");
-
-			PublishedRevision answering = TheRevisionThatAnswersAboutCoverage();
-
-			return SpecificationAnswer.EveryAnswerNamesItsRevision(
-				answering, answering.DescribeWarrantyCoverage());
+			return TheRevisionThatAnswersAboutCoverage().TheWarrantyScopePublished();
 		}
 
 		/// <summary>
@@ -896,24 +957,16 @@ namespace Concesionario.Dominio
 		/// </summary>
 		internal bool IsCoveragePublished()
 		{
-			return ARevisionAppliesForwardToTheWarrantyScope().IsPublished();
+			return ARevisionAnswersAboutCoverage();
 		}
 
 		/// <summary>
-		/// El alcance publicado en una frase -- los sistemas que declara adentro y las exclusiones
-		/// --, con la revision adentro. TOTAL: lo no publicado tambien se dice.
-		/// </summary>
-		internal string DescribeCoverageSummary()
-		{
-			return WithTheScopeAlwaysSaid(ARevisionAppliesForwardToTheWarrantyScope());
-		}
-
-		/// <summary>
-		/// De que revision salio el alcance publicado. TOTAL: lo no publicado contesta vacio.
+		/// De que revision salio el alcance publicado. TOTAL: lo no publicado contesta vacio, que no
+		/// se confunde con una revision porque ninguna tiene el codigo en blanco.
 		/// </summary>
 		internal string ReadCoverageRevision()
 		{
-			return ARevisionAppliesForwardToTheWarrantyScope().RevisionCode();
+			return TheCoverageScope().TheRevisionItCameFrom();
 		}
 
 		/// <summary>
@@ -925,17 +978,6 @@ namespace Concesionario.Dominio
 			if (!ARevisionAnswersAboutCoverage()) return new string[0];
 
 			return TheRevisionThatAnswersAboutCoverage().TheCoveredSystemsPublished();
-		}
-
-		/// <summary>
-		/// Las exclusiones publicadas, cada una con su texto y su condicion -- no como codigos,
-		/// porque un codigo no dice que esta excluido. TOTAL: sin alcance publicado, vacio.
-		/// </summary>
-		internal string[] CoverageExclusions()
-		{
-			if (!ARevisionAnswersAboutCoverage()) return new string[0];
-
-			return TheRevisionThatAnswersAboutCoverage().TheCoverageExclusionsPublished();
 		}
 
 		/// <summary>
@@ -985,19 +1027,22 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// La respuesta de cobertura en una frase: donde esta parado o por que no se pudo decidir,
-		/// contra que limites se midio, las exclusiones publicadas que haya, y la revision. TOTAL:
-		/// lo que no se pudo evaluar tambien se dice con palabras.
+		/// La respuesta de cobertura como forma y valores: donde esta parado o por que no se pudo
+		/// decidir, contra que limites se midio, las exclusiones publicadas que haya, y la revision.
+		/// TOTAL: lo que no se pudo evaluar tambien contesta, diciendo por que.
+		/// <para>
+		/// Es el MISMO resolvedor que contestan la presencia y el nombre suelto, asi que las tres
+		/// lecturas no pueden discrepar: no hay dos sitios donde decidirlo.
+		/// </para>
 		/// </summary>
-		internal string DescribeCoverage(
+		internal CoverageAnswer TheCoverageAnswer(
 			string systemCode, int envelopeMonths, int envelopeDistance,
 			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
 			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
 		{
-			return WithTheScopeAlwaysSaid(
-				ARevisionAppliesForward(
-					systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
-					deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+			return TheCoverageAnswerFor(
+				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+				deliveredAt, deliveryReading, currentReading, currentUnit, asOf);
 		}
 
 		/// <summary>
@@ -1066,13 +1111,6 @@ namespace Concesionario.Dominio
 			return OnlyASealedRevisionAnswers(candidate) && candidate.HasAFuelSpecification();
 		}
 
-		private static string WithTheScopeAlwaysSaid(SpecificationAnswer answer)
-		{
-			if (answer.IsPublished()) return answer.Describe();
-
-			return answer.Describe() + " " + WarrantyCoverage.ScopeIsNotAdjudication();
-		}
-
 		private static void RefuseReceivedFactsThatCannotBeTrue(
 			DateTime deliveredAt, int deliveryReading, int currentReading, DateTime asOf)
 		{
@@ -1105,9 +1143,8 @@ namespace Concesionario.Dominio
 
 			if (!ARevisionAnswersAboutCoverage())
 				return new ASettledCoverageAnswer(
-					WarrantyCoverage.TheCoverageQuestionAbout(systemCode),
-					CoverageStanding.NotPublished,
-					WarrantyCoverage.ScopeIsNotAdjudication());
+					systemCode, CoverageStanding.NotPublished,
+					ACoverageClause.OfNothingPublished());
 
 			return TheStandingAccordingTo(
 				TheRevisionThatAnswersAboutCoverage(), systemCode, envelopeMonths,
@@ -1150,32 +1187,6 @@ namespace Concesionario.Dominio
 		private bool ItAnswersAboutCoverage(PublishedRevision candidate)
 		{
 			return OnlyASealedRevisionAnswers(candidate) && candidate.HasWarrantyCoverage();
-		}
-
-		private const string TheSubjectOfTheFuel = "Grados de combustible";
-		private const string TheSubjectOfTheServicingPolicy =
-			"La regla de servicio en otro taller";
-
-		private static string TheSubjectOfATyre(TyrePositionCode position)
-		{
-			return "Llanta " + TyrePosition.OfCode(position).HowItIsSaid.ToLowerInvariant();
-		}
-
-		private static string TheSubjectOfAServiceInterval(OperationKindCode kind)
-		{
-			return "Intervalo de servicio de "
-				+ MaintenanceOperationKind.OfCode(kind).HowItIsSaid.ToLowerInvariant();
-		}
-
-		private static string TheSubjectOfAServicePrice(OperationKindCode kind)
-		{
-			return TheSubjectOfAServicePrice(MaintenanceOperationKind.OfCode(kind));
-		}
-
-		private static string TheSubjectOfAServicePrice(MaintenanceOperationKind operation)
-		{
-			return "Precio del servicio de " + operation.HowItIsSaid.ToLowerInvariant()
-				+ " en el hito preguntado";
 		}
 
 		private static PublishedMilestone TheMilestone(

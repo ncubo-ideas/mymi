@@ -167,7 +167,7 @@ namespace Concesionario.Dominio.Pruebas
 			using (AScheduleOnARealJournal journal = AScheduleWhereThePlanUnitArrivedLast())
 			{
 				string live = journal.Api.ReadDueState(TheOperationMeasuredByDistance);
-				string why = journal.Api.ReadDueReason(TheOperationMeasuredByDistance);
+				string why = journal.Api.ReadDueReason(TheOperationMeasuredByDistance, TheLanguage.OfTheRecord);
 
 				Assert.That(live, Is.EqualTo("Due"),
 					"La ultima en llegar dentro del segundo es la que mide: 40000 sobre un ancla de "
@@ -178,7 +178,8 @@ namespace Concesionario.Dominio.Pruebas
 					"S4: el instante llega al journal truncado al segundo, asi que el desempate que "
 					+ "sobrevive es el ORDEN. Si el replay devolviera las dos lecturas al reves, "
 					+ "esta evaluacion nueva contestaria otra cosa.");
-				Assert.That(journal.Api.ReadDueReason(TheOperationMeasuredByDistance), Is.EqualTo(why),
+				Assert.That(journal.Api.ReadDueReason(TheOperationMeasuredByDistance,
+					TheLanguage.OfTheRecord), Is.EqualTo(why),
 					"Y por el mismo motivo, no por otro que de la misma respuesta.");
 			}
 		}
@@ -391,19 +392,24 @@ namespace Concesionario.Dominio.Pruebas
 			{
 				DateTime asked = TheLastEvaluation.AddDays(10);
 
-				string first = journal.Api.DescribeWarrantyEnvelope(asked);
+				string first = journal.Api.DescribeWarrantyEnvelope(asked, TheLanguage.OfTheRecord);
 
 				Assert.That(first, Is.Not.Empty);
-				Assert.That(journal.Api.DescribeWarrantyEnvelope(asked.AddSeconds(1)), Is.Not.Empty);
+				Assert.That(
+					journal.Api.DescribeWarrantyEnvelope(
+						asked.AddSeconds(1), TheLanguage.OfTheRecord),
+					Is.Not.Empty);
 
 				Assert.That(
-					journal.Api.DescribeWarrantyEnvelope(asked), Is.EqualTo(first),
+					journal.Api.DescribeWarrantyEnvelope(
+						asked, TheLanguage.OfTheRecord), Is.EqualTo(first),
 					"Y OTRA VEZ EL PRIMERO, DESPUES DEL POSTERIOR, Y CONTESTA LO MISMO. Una guarda de "
 					+ "monotonia colada aqui dejaria pasar los dos primeros y rechazaria este; un "
 					+ "punto de control movido por una consulta lo haria contestar otra cosa.");
 
 				Assert.That(
-					journal.Api.DescribeWarrantyEnvelope(asked.AddSeconds(-1)), Is.Not.Empty,
+					journal.Api.DescribeWarrantyEnvelope(
+						asked.AddSeconds(-1), TheLanguage.OfTheRecord), Is.Not.Empty,
 					"Y un instante ANTERIOR a todos los ya preguntados tambien contesta.");
 			}
 		}
@@ -451,7 +457,8 @@ namespace Concesionario.Dominio.Pruebas
 				+ (journal.Api.CanTheEnvelopeBeEvaluated(asked)
 					? journal.Api.ReadEnvelopeStanding(asked)
 					: "refused")
-				+ "\nenvelope=" + journal.Api.DescribeWarrantyEnvelope(asked)
+				+ "\nenvelope=" + journal.Api.DescribeWarrantyEnvelope(
+					asked, TheLanguage.OfTheRecord)
 				+ "\ncanCoverage="
 				+ journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked)
 				+ "\ncoverageStanding="
@@ -460,7 +467,8 @@ namespace Concesionario.Dominio.Pruebas
 					: "refused")
 				+ "\ncoverage="
 				+ (theRecordHasTheThreeFacts
-					? journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked)
+					? journal.Api.DescribeCoverageForThisVehicle(
+						"POWERTRAIN", asked, TheLanguage.OfTheRecord)
 					: "refused");
 		}
 

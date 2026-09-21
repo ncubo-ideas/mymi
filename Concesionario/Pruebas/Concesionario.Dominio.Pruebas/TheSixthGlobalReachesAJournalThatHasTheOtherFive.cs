@@ -58,7 +58,7 @@ namespace Concesionario.Dominio.Pruebas
 
 		// Lo que se le escribe a cada una de las cinco globales viejas antes de reordenar, para que
 		// una re-corrida silenciosa tenga por donde verse.
-		private const string TheDeviceKey = "device-de-la-prueba-del-orden";
+		// TheDeviceKey SE FUE con la credencial (2026-09-03). Ver el comentario del testigo.
 		private const string TheRevision = "R1";
 		private const int TheOdometerAtDelivery = 30000;
 
@@ -321,7 +321,8 @@ namespace Concesionario.Dominio.Pruebas
 				+ "replay, y reemplazaria 'ledger' por un CostLedger recien hecho y vacio.");
 
 			Assert.That(
-				new DealershipCarAPI(real).CostEntriesBetween(TheYearFrom, TheYearTo).Says[0],
+				new DealershipCarAPI(real).CostEntriesBetween(
+					TheYearFrom, TheYearTo, TheLanguage.OfTheRecord).Says[0],
 				Does.Contain(TheCostSubject),
 				"Y es EL MISMO gasto y no otro: un libro recien hecho tendria cero filas, pero una "
 				+ "cuenta sola no distingue un uno de otro uno.");
@@ -344,7 +345,6 @@ namespace Concesionario.Dominio.Pruebas
 
 			DealershipCarAPI before = new DealershipCarAPI(older);
 
-			before.RegisterDevice(TheDeviceKey);
 			before.SeedPlanOperation(
 				"FluidChange", "TimeOrDistance", 365, 10000, "UnitA", true, false,
 				TheDelivery, TheOdometerAtDelivery, "UnitA");
@@ -371,9 +371,21 @@ namespace Concesionario.Dominio.Pruebas
 
 			DealershipCarAPI after = new DealershipCarAPI(reordered);
 
-			Assert.That(after.StoredDeviceKey(), Is.EqualTo(TheDeviceKey),
-				"La bitacora sigue siendo la MISMA: 'bitacora-de-eventos' no volvio a correr. Si "
-				+ "hubiera vuelto, esta credencial estaria en blanco y nada mas lo diria.");
+			// LA BITACORA SE QUEDO SIN TESTIGO, y se dice en vez de taparlo. Aca iba
+			// `Assert.That(after.StoredDeviceKey(), Is.EqualTo(TheDeviceKey))`, con esta razon:
+			// «la bitacora sigue siendo la MISMA: 'bitacora-de-eventos' no volvio a correr; si
+			// hubiera vuelto, esta credencial estaria en blanco y nada mas lo diria».
+			//
+			// El 2026-09-03 la credencial salio del journal, asi que ese testigo ya no existe. Lo
+			// unico observable que le queda a la bitacora es su punto de control, y esta prueba
+			// nunca lo avanza; fabricarselo aplicando un OdometerReported ESCRIBIRIA una lectura de
+			// odometro, que es justo lo que puede mover el ReadDueState de dos renglones mas abajo:
+			// se cambiaria lo que la prueba mide para conservar una linea.
+			//
+			// SIGUE CUBIERTO que ningun upgrade volvio a correr -lo dice el +2 de arriba- y que las
+			// otras globales sobrevivieron -la agenda y la especificacion, abajo-. SE PERDIO el
+			// testigo propio de la bitacora, y es lo unico de este merge que quedo mas debil: es de
+			// quien hizo el traspaso (PR 10064) decidir con que reemplazarlo.
 			Assert.That(after.ReadDueState("FluidChange"), Is.Not.EqualTo("NotScheduled"),
 				"Y la agenda tambien: la operacion que se le sembro sigue ahi.");
 			Assert.That(after.HasASealedRevision(), Is.True,

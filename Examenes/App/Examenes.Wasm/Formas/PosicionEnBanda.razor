@@ -1,6 +1,7 @@
 @using System.Globalization
 @using System.Linq
 @using Examenes.App.Vistas
+@inject Textos textos
 
 @*  LA FORMA DE LA HEMOGLOBINA: dónde caés dentro de una banda con piso Y techo.
 
@@ -19,16 +20,16 @@
     posición.                                                                            *@
 
 <div class="forma forma--banda">
-    <p class="detalle-rango-rotulo">Rango de referencia</p>
+    <p class="detalle-rango-rotulo">@textos["forma.rangoDeReferencia"]</p>
     <div class="detalle-rango-pista" style="background:@Gradiente">
         <div class="detalle-rango-marca @(Dentro ? "detalle-rango-marca--dentro" : "detalle-rango-marca--fuera")"
              style="left:@(Marca)%"></div>
     </div>
 
     <div class="forma-pie forma-pie--extremos">
-        <span class="forma-nota">@Numero(Piso?.Valor ?? 0) @Unidad</span>
-        <span class="forma-nota forma-nota--centro"><b>@Numero(Actual) @Unidad</b></span>
-        <span class="forma-nota forma-nota--der">@Numero(Techo?.Valor ?? 0) @Unidad</span>
+        <span class="forma-nota">@textos.Medida(Piso?.Valor ?? 0, Unidad)</span>
+        <span class="forma-nota forma-nota--centro"><b>@textos.Medida(Actual, Unidad)</b></span>
+        <span class="forma-nota forma-nota--der">@textos.Medida(Techo?.Valor ?? 0, Unidad)</span>
     </div>
 </div>
 
@@ -85,6 +86,4 @@
                  + $"var(--ambar) {N(mitadDerecha)}%, var(--rojo) 100%)";
         }
     }
-
-    private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
 }

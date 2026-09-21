@@ -32,7 +32,12 @@ namespace Examenes.Dominio
 		// El mismo analito escrito como se le muestra a la persona, con acentos. Va al
 		// lado del canonico y no en su lugar porque son dos cosas: uno es la llave con la
 		// que se pregunta, el otro es el texto que se lee.
-		internal string AnalitoParaMostrar { get; private set; }
+		/// <summary>
+		/// EL CODIGO DE ESTE ANALITO DENTRO DE UNA CLAVE DE FRASE. Es lo que deja que cada analito
+		/// nombre su propia frase entera: "el potasio cambio" y "las proteinas totales cambiaron" no
+		/// son la misma frase con un hueco, porque el espanol concuerda y el ingles no.
+		/// </summary>
+		internal string ClaveDelAnalito { get; private set; }
 
 		// Cuantas mediciones sostienen estos hechos. Las NO REALIZADAS no cuentan: una
 		// prueba que el laboratorio no corrio no es un punto de la serie.
@@ -43,7 +48,7 @@ namespace Examenes.Dominio
 			ArgumentNullException.ThrowIfNull(analito);
 
 			Analito = analito.Nombre;
-			AnalitoParaMostrar = analito.ParaMostrar;
+			ClaveDelAnalito = analito.Clave;
 			CantidadDeMediciones = cantidadDeMediciones;
 		}
 
@@ -59,5 +64,12 @@ namespace Examenes.Dominio
 		// continua es el salto inverosimil; en un binario, un positivo aislado que todavia
 		// nadie confirmo. En un nominal, nunca: un color se mira, no se repite.
 		internal abstract bool SugiereRepetirElExamen { get; }
+
+		/// <summary>
+		/// PONE SOBRE LA LECTURA LOS VALORES QUE ESTA FORMA DE SERIE TIENE PARA NOMBRAR. Cada forma
+		/// pone los suyos y nadie pregunta cual es: una continua pone de cuanto a cuanto, una binaria
+		/// cuantas veces y cuantas seguidas, una nominal ademas cual categoria salio.
+		/// </summary>
+		internal abstract void PonerSusValoresEn(Interpretacion lectura);
 	}
 }

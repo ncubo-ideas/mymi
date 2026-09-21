@@ -20,7 +20,7 @@
     <div class="carnet">
         <div class="carnet-datos">
             <div class="carnet-cabeza">
-                <span class="rotulo">Carnet de socia</span>
+                <span class="rotulo">@Texto["lealtad.carnet"]</span>
                 <img class="carnet-marca" src="assets/logo-estaciones-faro.png" alt="" aria-hidden="true" />
             </div>
             @if (lealtad.NombreDelSocio.Length > 0)
@@ -29,41 +29,38 @@
             }
             <div class="carnet-numero">@lealtad.NumeroDeSocio</div>
             <div class="cifra-pie carnet-pie">
-                <span>socia desde @lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)</span>
+                <span>@Texto.Con("lealtad.sociaDesde", ("mes", lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)))</span>
                 @if (lealtad.Nivel.Length > 0)
                 {
-                    <span class="carnet-nivel">@lealtad.Nivel</span>
+                    <span class="carnet-nivel">@Texto.ComoSeDice(lealtad.Nivel)</span>
                 }
             </div>
         </div>
 
         <div class="carnet-codigo">
             <svg viewBox="@ViewBox" role="img"
-                 aria-label="Código QR con el número de socia @lealtad.NumeroDeSocio">
+                 aria-label="@Texto.Con("lealtad.qr", ("numero", lealtad.NumeroDeSocio))">
                 <rect x="-2" y="-2" width="@(lado + 4)" height="@(lado + 4)" fill="#ffffff" />
                 <path d="@trazo" fill="#04171d" />
             </svg>
         </div>
     </div>
 
-    <p class="apunte carnet-apunte">
-        Se dibuja en tu teléfono, sin internet. Lleva tu número de socia y nada más: ni tu
-        historial, ni la llave que lo abre.
-    </p>
+    <p class="apunte carnet-apunte">@Texto["lealtad.carnetApunte"]</p>
 }
 else
 {
     <div class="carnet carnet--sin">
         <div class="carnet-datos">
-            <span class="rotulo">Carnet de socia</span>
-            <div class="cifra-pie" style="margin-top:6px">
-                Todavía no llegó tu número de socia. Lo emite la estación, no la app.
-            </div>
+            <span class="rotulo">@Texto["lealtad.carnet"]</span>
+            <div class="cifra-pie" style="margin-top:6px">@Texto["lealtad.sinCarnet"]</div>
         </div>
     </div>
 }
 
 @code {
+    [Inject] private Textos Texto { get; set; } = default!;
+
     [Parameter, EditorRequired] public EstadoDeLealtad lealtad { get; set; } = new();
 
     private string trazo = "";

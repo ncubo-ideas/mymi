@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Compras.App;
 using Compras.App.Eventos;
 using Compras.App.Vistas;
+using LasFrases = Compras.App.Frases.Frases;
 
 using Puppeteer;
 using Puppets.Portador;
@@ -16,6 +17,13 @@ namespace Compras.Consola
 	internal static class Program
 	{
 		private const string NombreDelActor = "compras";
+
+		/// <summary>
+		/// EN QUE IDIOMA LEE ESTA CONSOLA, que es el del registro del supermercado. No sigue a la
+		/// maquina a proposito: la consola es el arnes del dominio, y un arnes que cambiara de
+		/// idioma con la maquina dejaria de ser comparable entre dos corridas.
+		/// </summary>
+		private const string ElIdioma = ComprasAPI.IdiomaDelRegistro;
 
 		private static async Task<int> Main(string[] args)
 		{
@@ -148,7 +156,6 @@ namespace Compras.Consola
 			Console.WriteLine($"cantidad de compras         : {api.CantidadDeCompras()}");
 			Console.WriteLine($"esperadas                   : {Muestras.ComprasEsperadas}");
 			Console.WriteLine($"gasto total registrado      : {Formato(api.TotalDeCompras())}");
-			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			// LA PORTADA, y va primero por eso: la especificacion de marca pide que la app
 			// abra con la firma y con el quiebre, no con la lista de recibos.
@@ -172,7 +179,7 @@ namespace Compras.Consola
 			// contestar, aunque no sea un dato del historial.
 			Console.WriteLine();
 			Console.WriteLine("-- lo que NO esta (el hueco) --");
-			foreach (AbastecimientoEnEspera p in api.AbastecimientosPendientes(DateTime.Now))
+			foreach (AbastecimientoEnEspera p in api.AbastecimientosPendientes(DateTime.Now, ElIdioma))
 				Console.WriteLine($"  {p.ParaElAsistente}  [{p.Severidad}]");
 
 			if (!conVeredicto) return;
@@ -183,8 +190,8 @@ namespace Compras.Consola
 			// no sirve de veredicto.
 			decimal total = api.TotalDeCompras();
 			bool totalOk = total == Muestras.TotalEsperado;
-			bool comparacionOk = api.Comparacion(2025, 8, 2026, 8).HayAlgoQueLoExplique;
-			bool garantiaOk = api.Garantia(Muestras.ProductoConGarantia, DateTime.Now).Encontrada;
+			bool comparacionOk = api.Comparacion(2025, 8, 2026, 8, ElIdioma).HayAlgoQueLoExplique;
+			bool garantiaOk = api.Garantia(Muestras.ProductoConGarantia, DateTime.Now, ElIdioma).Encontrada;
 
 			Console.WriteLine();
 			Console.WriteLine($"  total        : {(totalOk ? "ok" : $"MAL (esperado [{Muestras.TotalEsperado}], obtenido [{total}])")}");
@@ -197,13 +204,13 @@ namespace Compras.Consola
 		// dos casos de "no hay respuesta todavia": aca no se decide nada, se imprime.
 		private static void ImprimirPortada(ComprasAPI api, DateTime corte)
 		{
-			FirmaDeLaSemana firma = api.Firma();
+			FirmaDeLaSemana firma = api.Firma(ElIdioma);
 			Console.WriteLine($"  {firma.ParaElAsistente}");
 			foreach (ProductoQueVuelve p in firma.Habituales)
 				Console.WriteLine($"    {p.Descripcion,-28} en {p.ComprasEnQueAparece} de {p.DeCuantas}"
 					+ $"{(p.EstaEnTodas ? "  (en todas)" : "")}");
 
-			CambioDeLaCanasta cambio = api.Cambio(corte);
+			CambioDeLaCanasta cambio = api.Cambio(corte, ElIdioma);
 			Console.WriteLine($"  {cambio.ParaElAsistente}");
 			foreach (ProductoQueEntroVista p in cambio.Entraron)
 				Console.WriteLine($"    entro  {p.Descripcion,-28} desde {p.Desde}");
@@ -212,7 +219,7 @@ namespace Compras.Consola
 
 			// CADA CUANTO, que es la otra cara del mismo quiebre: la tarjeta de arriba dice
 			// QUE entro, esta dice si lo compra mas seguido.
-			IReadOnlyList<RitmoQueCambio> ritmos = api.RitmosQueCambiaron(corte);
+			IReadOnlyList<RitmoQueCambio> ritmos = api.RitmosQueCambiaron(corte, ElIdioma);
 			if (ritmos.Count == 0)
 			{
 				Console.WriteLine("  ningun producto cambio de ritmo");
@@ -227,7 +234,7 @@ namespace Compras.Consola
 
 		private static void ImprimirComparacion(ComprasAPI api, int anioAntes, int mesAntes, int anioDespues, int mesDespues)
 		{
-			CanastasComparadas c = api.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues);
+			CanastasComparadas c = api.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues, ElIdioma);
 
 			// La linea viene del dominio, incluido el caso "no hay con que comparar". Aca no
 			// se decide nada: se imprime.
@@ -239,7 +246,7 @@ namespace Compras.Consola
 
 			Console.WriteLine($"  canasta {mesAntes}/{anioAntes}: {Formato(c.GastoAntes)}");
 			Console.WriteLine($"  canasta {mesDespues}/{anioDespues}: {Formato(c.GastoDespues)} "
-				+ $"({(c.CambioEnElTotal >= 0m ? "+" : "")}{Formato(c.CambioEnElTotal)})");
+				+ $"({(c.CambioEnElTotal >= 0m ? "+" : "-")}{Formato(Math.Abs(c.CambioEnElTotal))})");
 
 			foreach (DiferenciaPorDepartamentoVista d in c.Diferencias)
 				if (d.ExplicaElCambio)
@@ -251,7 +258,7 @@ namespace Compras.Consola
 
 		private static void ImprimirGarantia(ComprasAPI api, string texto, DateTime fechaDeConsulta)
 		{
-			GarantiaDeProducto g = api.Garantia(texto, fechaDeConsulta);
+			GarantiaDeProducto g = api.Garantia(texto, fechaDeConsulta, ElIdioma);
 
 			// La linea sale del dominio, incluido el caso "no encontrada".
 			Console.WriteLine($"  {g.ParaElAsistente}");
@@ -274,7 +281,7 @@ namespace Compras.Consola
 			ComprasApp app = Abrir(carpeta);
 			var api = new ComprasAPI(app);
 
-			CompraDetallada compra = api.Detalle(numero);
+			CompraDetallada compra = api.Detalle(numero, ElIdioma);
 			Console.WriteLine($"compra {compra.Numero} del {compra.Fecha:yyyy-MM-dd} — total {Formato(compra.Total)}");
 			foreach (LineaDeCompra linea in compra.Lineas)
 				Console.WriteLine($"  {linea.Cantidad,2} x {linea.Descripcion,-28} {Formato(linea.Total),10}  "
@@ -297,7 +304,7 @@ namespace Compras.Consola
 			ComprasApp app = Abrir(carpeta);
 			var api = new ComprasAPI(app);
 
-			CanastaDelMesVista canasta = api.Canasta(anio, mes);
+			CanastaDelMesVista canasta = api.Canasta(anio, mes, ElIdioma);
 			Console.WriteLine($"canasta {mes}/{anio} — {canasta.CantidadDeCompras} compras");
 			foreach (GastoPorDepartamentoVista d in canasta.Departamentos)
 				Console.WriteLine($"  {d.Titulo,-22}: {Formato(d.Monto),12}  {Porcentaje(d.ProporcionDelTotal)}");
@@ -365,15 +372,15 @@ namespace Compras.Consola
 			ComprasApp app = Abrir(carpeta);
 			var api = new ComprasAPI(app);
 
-			ComprasHalladas halladas = api.Halladas(termino);
+			ComprasHalladas halladas = api.Halladas(termino, ElIdioma);
 			Console.WriteLine(halladas.ParaElAsistente);
 			if (halladas.Productos.Count > 0)
 				Console.WriteLine($"  coinciden: {string.Join(", ", halladas.Productos)}");
 			Console.WriteLine();
 			foreach (CompraHallada compra in halladas.Compras)
 				Console.WriteLine($"  {compra.Fecha}  {compra.Numero,-10} "
-					+ $"{compra.Unidades,3} u  {Plata.Colones(compra.Gasto),12}"
-					+ $"   (de {compra.LineasDeLaCompra} lineas, {Plata.Colones(compra.TotalDeLaCompra)})");
+					+ $"{compra.Unidades,3} u  {LasFrases.De(ElIdioma).Monto(compra.Gasto),12}"
+					+ $"   (de {compra.LineasDeLaCompra} lineas, {LasFrases.De(ElIdioma).Monto(compra.TotalDeLaCompra)})");
 
 			Console.WriteLine();
 			Console.WriteLine("-- crudo (print, formatter JSON) --");
@@ -393,14 +400,14 @@ namespace Compras.Consola
 			ComprasApp app = Abrir(carpeta);
 			var api = new ComprasAPI(app);
 
-			CambioDeLaCanasta encontrado = api.CambioDelQuiebre();
+			CambioDeLaCanasta encontrado = api.CambioDelQuiebre(ElIdioma);
 			Console.WriteLine("EL DOMINIO ENCUENTRA");
 			Console.WriteLine($"  corte      : {(encontrado.Corte.Length > 0 ? encontrado.Corte : "(ninguno)")}" );
 			Console.WriteLine($"  hay cambio : {encontrado.HayCambio}");
 			Console.WriteLine($"  {encontrado.ParaElAsistente}");
 
 			DateTime enero = new DateTime(DateTime.Now.Year, 1, 1);
-			CambioDeLaCanasta porEnero = api.Cambio(enero);
+			CambioDeLaCanasta porEnero = api.Cambio(enero, ElIdioma);
 			Console.WriteLine();
 			Console.WriteLine($"CORTANDO EL {enero:yyyy-MM-dd}, como hacia la caratula");
 			Console.WriteLine($"  hay cambio : {porEnero.HayCambio}");
@@ -408,7 +415,7 @@ namespace Compras.Consola
 
 			Console.WriteLine();
 			Console.WriteLine("LOS RITMOS DEL MISMO QUIEBRE");
-			foreach (RitmoQueCambio ritmo in api.RitmosDelQuiebre())
+			foreach (RitmoQueCambio ritmo in api.RitmosDelQuiebre(ElIdioma))
 				Console.WriteLine($"  {ritmo.Descripcion,-32} {ritmo.Antes} -> {ritmo.Ahora}");
 
 			app.Actor.GracefulExit();
@@ -426,7 +433,7 @@ namespace Compras.Consola
 			ComprasApp app = Abrir(carpeta);
 			var api = new ComprasAPI(app);
 
-			ListaDeLaProximaCompra lista = api.Lista(hoy);
+			ListaDeLaProximaCompra lista = api.Lista(hoy, ElIdioma);
 			Console.WriteLine($"al {hoy:yyyy-MM-dd}: {lista.ParaElAsistente}");
 			Console.WriteLine();
 			foreach (ProductoPorCaer p in lista.Productos)
@@ -452,7 +459,7 @@ namespace Compras.Consola
 			ComprasApp app = Abrir(carpeta);
 			var api = new ComprasAPI(app);
 
-			IReadOnlyList<AbastecimientoEnEspera> pendientes = api.AbastecimientosPendientes(fecha);
+			IReadOnlyList<AbastecimientoEnEspera> pendientes = api.AbastecimientosPendientes(fecha, ElIdioma);
 			Console.WriteLine($"al {fecha:yyyy-MM-dd}: {pendientes.Count} "
 				+ (pendientes.Count == 1 ? "categoria atrasada" : "categorias atrasadas"));
 			foreach (AbastecimientoEnEspera p in pendientes)
@@ -475,7 +482,7 @@ namespace Compras.Consola
 			ComprasApp app = Abrir(carpeta);
 			var api = new ComprasAPI(app);
 
-			IReadOnlyList<GarantiaDeProducto> porVencer = api.GarantiasPorVencer(fecha);
+			IReadOnlyList<GarantiaDeProducto> porVencer = api.GarantiasPorVencer(fecha, ElIdioma);
 			Console.WriteLine($"al {fecha:yyyy-MM-dd}: {porVencer.Count} "
 				+ (porVencer.Count == 1 ? "garantia pide algo" : "garantias piden algo"));
 			foreach (GarantiaDeProducto g in porVencer)
@@ -485,7 +492,7 @@ namespace Compras.Consola
 				if (g.QueHacer.Length > 0) Console.WriteLine($"  {"",-22} -> {g.QueHacer}");
 			}
 			if (porVencer.Count == 0)
-				Console.WriteLine("  (ninguna esta cerca de vencer; " + api.GarantiasVigentes(fecha).Count + " vigentes)");
+				Console.WriteLine("  (ninguna esta cerca de vencer; " + api.GarantiasVigentes(fecha, ElIdioma).Count + " vigentes)");
 
 			app.Actor.GracefulExit();
 			return 0;
@@ -507,35 +514,42 @@ namespace Compras.Consola
 
 			// La app consigue su credencial SOLA, contra su device key. Ni la consola ni
 			// la persona pegan un token: el supermercado lo emite para ESTA instalacion.
-			if (api.DeviceKeyGuardado().Length == 0)
-				api.RegistrarDevice("device-consola-de-medicion");
+			//
+			// LA CREDENCIAL VIVE EN MEMORIA DURANTE LA CORRIDA, no en el journal: es contexto
+			// de sesion de este host -la consola-, no historia de la persona. Hasta el
+			// 2026-09-03 se journalizaba y quedaba en claro en la carpeta.
+			const string deviceKey = "device-consola-de-medicion";
+			string accessToken = "";
+			string refreshToken = "";
 
-			if (api.TokenGuardado().Length == 0)
+			async Task<string> CredencialVigente(System.Threading.CancellationToken ct)
 			{
-				Credencial credencial = await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id);
+				if (accessToken.Length > 0) return accessToken;
+
+				Credencial credencial = await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 				Console.WriteLine($"credencial: scope={credencial.Scope} expiresIn={credencial.ExpiresIn}s");
-				api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
+				(accessToken, refreshToken) = (credencial.AccessToken, credencial.RefreshToken ?? "");
+				return accessToken;
 			}
 
-			// Que hacer cuando el supermercado rechaza el access token: rotar con el
-			// refresh token, que es para lo que existe. El access es corto a proposito.
+			// Que hacer cuando el supermercado rechaza el access token: rotar con el refresh
+			// token, que es para lo que existe. El access es corto a proposito.
 			async Task<string> Renovar(System.Threading.CancellationToken ct)
 			{
-				string refresh = api.RefreshTokenGuardado();
-
-				Credencial renovada = refresh.Length > 0
-					? await proveedorDeToken.Rotar(refresh, ct)
+				Credencial renovada = refreshToken.Length > 0
+					? await proveedorDeToken.Rotar(refreshToken, ct)
 					: null;
 				string comoSeObtuvo = renovada != null ? "rotada con el refresh token" : "nueva contra el device key";
-				renovada ??= await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id, ct);
+				renovada ??= await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 
 				Console.WriteLine($"  credencial renovada: {comoSeObtuvo} (scope {renovada.Scope})");
-				api.GuardarCredencial(renovada.AccessToken, renovada.RefreshToken);
-				return renovada.AccessToken;
+				(accessToken, refreshToken) = (renovada.AccessToken, renovada.RefreshToken ?? "");
+				return accessToken;
 			}
 
-			var bucle = new BucleDeRefresh(api, new FuenteHttpDeEventos(http, recurso, id),
-				RutaDeCompras.Rutear, null, Renovar);
+			var bucle = new BucleDeRefresh(api,
+				new FuenteHttpDeEventos(http, recurso, id, CredencialVigente, Renovar),
+				RutaDeCompras.Rutear);
 
 			ResultadoDeRefresh primero = await bucle.Ejecutar();
 			Console.WriteLine($"refresh 1 : {primero}");
@@ -568,11 +582,16 @@ namespace Compras.Consola
 			args.Length > i && DateTime.TryParseExact(args[i], "yyyy-MM-dd", CultureInfo.InvariantCulture,
 				DateTimeStyles.None, out DateTime valor) ? valor : porDefecto;
 
-		private static string Formato(decimal valor) =>
-			valor.ToString("N0", CultureInfo.InvariantCulture);
+		/// <summary>
+		/// LA MISMA REDACCION CON QUE LA CARATULA ESCRIBE SUS CIFRAS. Una cifra se escribe en UN solo
+		/// lugar: la consola es el arnes del dominio, y una que pusiera el separador de miles por su
+		/// cuenta mediria una app que dice un numero distinto del que la persona ve.
+		/// </summary>
+		private static readonly LasFrases LasFrasesDelRegistro = LasFrases.De(ElIdioma);
 
-		private static string Porcentaje(decimal proporcion) =>
-			(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+		private static string Formato(decimal valor) => LasFrasesDelRegistro.Monto(valor);
+
+		private static string Porcentaje(decimal proporcion) => LasFrasesDelRegistro.Porcentaje(proporcion);
 
 		private static void Ayuda()
 		{

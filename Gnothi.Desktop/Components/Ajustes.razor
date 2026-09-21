@@ -1,0 +1,197 @@
+@inject ModelConfig Config
+@implements IDisposable
+
+@*
+    AJUSTES. El proveedor del modelo, la llave (BYOK) y —con la llave puesta— el modelo elegido de
+    entre los que el proveedor REALMENTE ofrece. La llave es de la persona: vive solo en su area
+    privada, NUNCA se muestra de vuelta (aca solo se ve SI hay una y la lista de modelos que el
+    proveedor responde), y no va a ningun log.
+*@
+
+<h1>@T("ajustes.titulo")</h1>
+<p class="sub">@T("ajustes.sub")</p>
+
+<div class="card">
+    <div class="title">@T("ajustes.proveedor")</div>
+    <div class="meta" style="margin:4px 0 10px">
+        @ModelConfig.Display(name) · <strong>@model</strong>
+        <br /><span style="font-family:ui-monospace,Consolas,monospace">@url</span>
+    </div>
+
+    <label class="field">@T("ajustes.proveedor.elegir")</label>
+    <select @onchange="OnPreset">
+        @foreach (ModelConfig.Preset p in Config.PresetsAvailable())
+        {
+            <option value="@p.Name" selected="@(p.Name == name)">@ModelConfig.Display(p.Name)</option>
+        }
+    </select>
+</div>
+
+<div class="card">
+        <div class="title">@T("ajustes.llave.de", ("proveedor", ModelConfig.Display(name)))</div>
+        @if (Config.IsApple)
+        {
+            <div class="meta" style="margin:4px 0">@T("ajustes.apple.sin-llave") @AppleModel.Diagnosis()</div>
+        }
+        else if (needsKey)
+    {
+        <div class="meta" style="margin:4px 0 10px">
+            @if (Config.KeyPresent)
+            {
+                <text>@T("ajustes.llave.hay")</text>
+            }
+            else
+            {
+                <text>@T("ajustes.llave.no-hay")</text>
+            }
+        </div>
+        <label class="field">@T("ajustes.llave.pegar")</label>
+        <input type="password" @bind="keyDraft" placeholder="sk-…" />
+        <div style="margin-top:10px">
+            <button class="small" disabled="@(keyDraft.Trim().Length == 0)" @onclick="SaveKey">@T("ajustes.llave.guardar")</button>
+            @if (Config.KeyPresent)
+            {
+                <button class="small ghost" @onclick="ClearKey">@T("ajustes.llave.borrar")</button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="meta" style="margin:4px 0">@T("ajustes.local")</div>
+    }
+
+    @if (saved.Length > 0)
+    {
+        <div class="notice" style="margin-top:10px">@saved</div>
+    }
+</div>
+
+@if (!Config.IsApple)
+{
+<div class="card">
+    <div class="title">@T("ajustes.modelo")</div>
+    <div class="meta" style="margin:4px 0 10px">
+        @T("ajustes.modelo.en-uso", ("modelo", model)) @T("ajustes.modelo.explicacion", ("proveedor", ModelConfig.Display(name)))
+    </div>
+
+    <button class="small" disabled="@(loadingModels || (needsKey && !Config.KeyPresent))" @onclick="LoadModels">
+        @(loadingModels ? T("ajustes.modelo.cargando") : T("ajustes.modelo.cargar"))
+    </button>
+    @if (needsKey && !Config.KeyPresent)
+    {
+        <div class="meta" style="margin-top:8px">@T("ajustes.modelo.primero-llave")</div>
+    }
+
+    @if (models.Count > 0)
+    {
+        <label class="field" style="margin-top:12px">@T("ajustes.modelo.disponibles", ("n", models.Count.ToString()))</label>
+        <select @onchange="OnModelChange">
+            @foreach (string mid in models)
+            {
+                <option value="@mid" selected="@(mid == model)">@mid</option>
+            }
+        </select>
+    }
+
+    @if (modelsError.Length > 0)
+    {
+        <div class="notice denied" style="margin-top:10px">@modelsError</div>
+    }
+</div>
+}
+
+@code {
+    private string name = "", kind = "", url = "", model = "";
+    private string keyDraft = "";
+    private string saved = "";
+
+    private bool loadingModels;
+    private List<string> models = new();
+    private string modelsError = "";
+
+    private CancellationTokenSource? cts;
+
+    private bool needsKey => Config.NeedsKey;
+
+    protected override void OnInitialized() => Load();
+
+    private void Load() => (name, kind, url, model) = Config.Provider();
+
+    private void OnPreset(ChangeEventArgs e)
+    {
+        ModelConfig.Preset? p = ModelConfig.Presets.FirstOrDefault(x => x.Name == e.Value?.ToString());
+        if (p is null) return;
+
+        Config.SetProvider(p.Name, p.Kind, p.Url, p.Model);
+        Load();
+        keyDraft = "";
+        saved = "";
+        // Los modelos listados eran del proveedor anterior: se descartan hasta volver a cargar.
+        models = new();
+        modelsError = "";
+    }
+
+    private void SaveKey()
+    {
+        Config.SetKey(keyDraft);
+        keyDraft = "";
+        saved = T("ajustes.llave.guardada");
+    }
+
+    private void ClearKey()
+    {
+        Config.ClearKey();
+        saved = T("ajustes.llave.borrada");
+        models = new();
+        modelsError = "";
+    }
+
+    private async Task LoadModels()
+    {
+        loadingModels = true;
+        modelsError = "";
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+
+        try
+        {
+            ModelConfig.ModelsResult r = await Config.FetchModels(cts.Token);
+            if (r.Ok)
+            {
+                models = r.Models.ToList();
+                // Si el modelo actual no está en la lista, adoptamos el primero para que lo que se
+                // usa sea siempre uno real del proveedor.
+                if (!models.Contains(model) && models.Count > 0)
+                {
+                    Config.SetModel(models[0]);
+                    Load();
+                }
+            }
+            else
+            {
+                models = new();
+                modelsError = r.Error ?? T("ajustes.error.no-se-pudo");
+            }
+        }
+        catch (OperationCanceledException) { /* reemplazado por otra carga */ }
+        finally
+        {
+            loadingModels = false;
+        }
+    }
+
+    private void OnModelChange(ChangeEventArgs e)
+    {
+        string? chosen = e.Value?.ToString();
+        if (string.IsNullOrEmpty(chosen)) return;
+        Config.SetModel(chosen);
+        Load();
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+}

@@ -1,7 +1,10 @@
 @inherits LayoutComponentBase
+@inject Texts texts
 
-<div class="app">
-    <div class="app__body">
-        @Body
+<CascadingValue Value="texts">
+    <div class="app">
+        <div class="app__body">
+            @Body
+        </div>
     </div>
-</div>
+</CascadingValue>

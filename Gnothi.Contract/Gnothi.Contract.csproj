@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- THE MODULE CONTRACT. Two attributes and nothing else.
+       ZERO DEPENDENCIES, on purpose and forever. A module marks its surface with these to
+       expose queries to the Host WITHOUT dragging the MCP SDK (~1.3 MB) behind it. That is
+       the whole point of the cargo shape: the module carries its domain, the Host lends the
+       engine, and the surface is declared with a tiny label that the Host also lends.
+
+       It is a SEPARATE assembly, not a type inside Gnothi.Host, because the module compiles
+       against it too -and the module must not take a dependency on the Host. Both the module
+       and the Host reference this; at run time the Host lends its copy. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Gnothi.Contract</RootNamespace>
+    <AssemblyName>Gnothi.Contract</AssemblyName>
+  </PropertyGroup>
+
+</Project>

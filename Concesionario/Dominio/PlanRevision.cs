@@ -28,9 +28,17 @@ namespace Concesionario.Dominio
 		/// <summary>Cuando se adopto.</summary>
 		internal DateTime AdoptedAt { get; }
 
-		/// <summary>Si esta revision es anterior a la otra.</summary>
+		/// <summary>
+		/// Si esta revision es anterior a la otra. La otra revision es obligatoria: comparar contra
+		/// nada dejaria el orden de las revisiones decidido por el hueco.
+		/// </summary>
 		internal bool WasAdoptedBefore(PlanRevision other)
 		{
+			if (other == null)
+				throw new DomainException(
+					"Se pregunto si una revision del plan es anterior a ninguna. Comparar contra "
+					+ "nada dejaria el orden de las revisiones decidido por el hueco.");
+
 			return AdoptedAt < other.AdoptedAt;
 		}
 	}

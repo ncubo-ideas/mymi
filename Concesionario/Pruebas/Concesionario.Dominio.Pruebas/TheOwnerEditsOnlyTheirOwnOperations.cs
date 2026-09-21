@@ -59,16 +59,16 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.Evaluate(Delivery.AddDays(TwelveMonthsInDays));
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.Diagnostic),
-				Does.Not.Contain("no tiene agendada"),
+				schedule.TheDueReasonFor(OperationKindCode.Diagnostic).Shape,
+				Is.Not.EqualTo(ADueReason.NoOperationScheduled),
 				"Primero tiene que estar: si no, la remocion no prueba nada.");
 			Assert.That(schedule.CountDue(), Is.EqualTo(2));
 
 			schedule.RemoveOwnerOperation(OperationKindCode.Diagnostic);
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.Diagnostic),
-				Does.Contain("no tiene agendada"));
+				schedule.TheDueReasonFor(OperationKindCode.Diagnostic).Shape,
+				Is.EqualTo(ADueReason.NoOperationScheduled));
 			Assert.That(schedule.CountDue(), Is.EqualTo(1),
 				"Y la agenda sigue contestando: quitar una operacion la saca del conteo, no deja "
 				+ "a la agenda apuntando a una clase que ya no tiene.");
@@ -202,8 +202,8 @@ namespace Concesionario.Dominio.Pruebas
 				() => schedule.RemoveOwnerOperation(OperationKindCode.RecallRemedy));
 
 			Assert.That(
-				schedule.ReadDueReason(OperationKindCode.RecallRemedy),
-				Does.Contain("no tiene agendada"));
+				schedule.TheDueReasonFor(OperationKindCode.RecallRemedy).Shape,
+				Is.EqualTo(ADueReason.NoOperationScheduled));
 		}
 
 		[Test]

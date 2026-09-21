@@ -75,8 +75,6 @@ namespace Examenes.Dominio
 
 		internal override bool AportaSerieContinua => true;
 
-		internal override string ResultadoExpresado => Valor.Expresado;
-
 		// Un examen de sangre mide UN analito. Es el caso simple, y es justamente por eso
 		// que la forma singular parecia alcanzar para todos.
 		internal override IReadOnlyList<LecturaDeExamen> Lecturas =>

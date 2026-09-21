@@ -21,8 +21,5 @@ namespace Cargas.Dominio
 			TramosBloqueados = bloqueados;
 		}
 
-		internal string Expresada =>
-			$"{CargasConKilometraje} de {TotalDeCargas} cargas con kilometraje · "
-			+ $"{TramosCalculados} tramos calculables";
 	}
 }

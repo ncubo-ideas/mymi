@@ -18,4 +18,34 @@
     <ProjectReference Include="..\Examenes.App\Examenes.App.csproj" />
   </ItemGroup>
 
+  <!-- LOS CATALOGOS DE LAS DOS CARATULAS, que son lo que cada pantalla dice con sus propias
+       palabras. Una clave que esta en uno y no en el otro sale a pantalla como {clave}, y nada se
+       pone rojo: es el mismo defecto de una sola letra que las frases del dominio ya tienen
+       atajado, y del lado de las caratulas no lo atrapaba nadie.
+
+       Viajan como DATO y no se leen por una ruta relativa al modulo: la ruta de artefactos reubica
+       el output entero, asi que ninguna cantidad fija de '..' llega de vuelta. Y no por referencia:
+       esta consola no compila contra ninguna caratula, y no debe empezar a hacerlo por esto.
+
+       El markup de la cara hibrida viaja por una razon propia: nombra sus claves en un atributo,
+       o sea en una cadena, y una cadena mal escrita compila siempre. -->
+  <ItemGroup>
+    <None Include="..\Examenes.Wasm\wwwroot\texto\es-CR.json"
+          Link="texto.es-CR.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Examenes.Wasm\wwwroot\texto\en.json"
+          Link="texto.en.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\Examenes.Cara\texto\es-CR.js"
+          Link="cara.es-CR.js.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Examenes.Cara\texto\en.js"
+          Link="cara.en.js.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Examenes.Cara\index.html"
+          Link="cara.index.html.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

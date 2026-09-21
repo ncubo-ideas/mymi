@@ -68,7 +68,21 @@ namespace Concesionario.Dominio.Pruebas
 		private const string TheUnitEverythingIsIn = "UnitA";
 		private const string TheRevision = "REV-2025-01";
 		private const string TheSystemThatIsCovered = "POWERTRAIN";
-		private const string TheDeviceKey = "device-de-la-prueba-de-la-ausencia";
+
+		// LA MARCA DE QUE LA CADENA BARRIDA TRAE CONTENIDO DE VERDAD. Era TheDeviceKey, que se fue
+		// con la credencial el 2026-09-03 (un token no es un hecho de la vida de la persona).
+		//
+		// TIENE QUE SER UN VALOR QUE EL BARRIDO NO INYECTE, y eso descarta a casi todas las otras
+		// constantes: Invoke() le pasa TheRevision a cualquier `revisionCode`, TheSystemThatIsCovered
+		// a `systemCode`, TheUnitEverythingIsIn a lo que termine en Unit y TheKindThatMeasuresDistance
+		// a cualquier otro string, asi que aparecen ECHADAS en las respuestas hasta de un journal
+		// vacio y la marca dejaria de distinguir nada. Se probo con TheRevision y esta prueba se puso
+		// roja por eso mismo. El grado de combustible lo escribe PublishFuelGrade, lo contesta
+		// ReadMinimumFuelGrade() -sin parametros, asi que nadie se lo inyecta- y un journal fresco no
+		// lo tiene.
+		private const string TheFuelGradeThatWasPublished = "91 RON";
+
+		// TheDeviceKey SE FUE con la credencial. Era la marca; ver TheFuelGradeThatWasPublished.
 
 		private const int TheTimeLimitInDays = 365;
 		private const int TheDistanceLimit = 12345;
@@ -119,21 +133,21 @@ namespace Concesionario.Dominio.Pruebas
 			"ReadDistanceRemaining/2",
 			"ReadDistanceRemainingUnit/2",
 			"ReadDistanceRemainderStanding/2",
-			"DescribeDistanceRemaining/2",
+			"DescribeDistanceRemaining/3",
 			"CanDaysRemainingBeSaid/2",
 			"ReadDaysRemaining/2",
 			"ReadTimeRemainderStanding/2",
-			"DescribeDaysRemaining/2",
-			"DescribeCountdown/2",
+			"DescribeDaysRemaining/3",
+			"DescribeCountdown/3",
 			"HasAnyCompletion/1",
 			"CompletionCount/1",
-			"DescribeCompletions/1",
-			"CompletionsOf/1",
-			"CompletionsOfEveryKind/0",
+			"DescribeCompletions/2",
+			"CompletionsOf/2",
+			"CompletionsOfEveryKind/1",
 			"HasAnyPublishedServicePrice/0",
 			"PublishedServicePriceCount/0",
-			"PublishedServicePricesAsOf/1",
-			"DescribePublishedServicePrice/3",
+			"PublishedServicePricesAsOf/2",
+			"DescribePublishedServicePrice/4",
 		};
 
 		// LAS NUEVE DEL LIBRO DE COSTOS, Y ESTAR AQUI ES OTRA COSA QUE ESTAR EN LA LISTA DE ARRIBA.
@@ -163,14 +177,14 @@ namespace Concesionario.Dominio.Pruebas
 		private static readonly string[] TheNineTheCostLedgerAdded =
 		{
 			"HasAnyCostBetween/2",
-			"DescribeSpendBetween/2",
+			"DescribeSpendBetween/3",
 			"IsSpendSaidInOneCurrencyBetween/2",
-			"DescribeSpendPerCurrencyBetween/2",
-			"DescribeTwoPeriodsOfSpendCompared/4",
-			"CostEntriesBetween/2",
+			"DescribeSpendPerCurrencyBetween/3",
+			"DescribeTwoPeriodsOfSpendCompared/5",
+			"CostEntriesBetween/3",
 			"CostEntryCountBetween/2",
 			"CanCostPerDistanceBeSaid/2",
-			"DescribeCostPerDistanceBetween/2",
+			"DescribeCostPerDistanceBetween/3",
 		};
 
 		// LOS DOS MIEMBROS PUBLICOS QUE DEVUELVEN ALGO Y ESCRIBEN. No son lecturas y el barrido no los
@@ -303,7 +317,7 @@ namespace Concesionario.Dominio.Pruebas
 				+ "cambio lo que esa pregunta responde -- que es exactamente lo que la rebanada "
 				+ "prometio no hacer.");
 
-			Assert.That(beforeThisAppOpenedIt, Does.Contain(TheDeviceKey),
+			Assert.That(beforeThisAppOpenedIt, Does.Contain(TheFuelGradeThatWasPublished),
 				"Y la cadena comparada trae de verdad lo que se escribio. Sin esto, dos cadenas "
 				+ "vacias serian iguales y este test estaria verde sin mirar nada.");
 		}
@@ -334,7 +348,8 @@ namespace Concesionario.Dominio.Pruebas
 					+ "contesta la de la persona, y en un journal viejo tambien.");
 				Assert.That(api.ReadDistanceRemainderStanding(TheKindThatMeasuresDistance, TheDayItIsAsked),
 					Is.EqualTo("StillAhead"));
-				Assert.That(api.DescribeDistanceRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeDistanceRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("distancia: te faltan"));
 
 				Assert.That(api.CanDaysRemainingBeSaid(TheKindThatMeasuresDistance, TheDayItIsAsked),
@@ -343,29 +358,35 @@ namespace Concesionario.Dominio.Pruebas
 					Is.EqualTo(TheTimeLimitInDays - (int)(TheDayItIsAsked - TheSecondCompletion).TotalDays));
 				Assert.That(api.ReadTimeRemainderStanding(TheKindThatMeasuresDistance, TheDayItIsAsked),
 					Is.EqualTo("StillAhead"));
-				Assert.That(api.DescribeDaysRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeDaysRemaining(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("tiempo: te faltan"));
-				Assert.That(api.DescribeCountdown(TheKindThatMeasuresDistance, TheDayItIsAsked),
+				Assert.That(api.DescribeCountdown(TheKindThatMeasuresDistance, TheDayItIsAsked,
+					TheLanguage.OfTheRecord),
 					Does.Contain("distancia:").And.Contain("tiempo:"),
 					"G1 en el journal viejo: dice las dos mitades y no escoge.");
 
 				Assert.That(api.HasAnyCompletion(TheKindThatMeasuresDistance), Is.True);
 				Assert.That(api.CompletionCount(TheKindThatMeasuresDistance), Is.EqualTo(2),
 					"Las dos completaciones que escribio la app de antes, caminadas de la cadena.");
-				Assert.That(api.DescribeCompletions(TheKindThatMeasuresDistance),
-					Does.Contain("se hizo el").And.Contain("27300"));
-				Assert.That(api.CompletionsOf(TheKindThatMeasuresDistance).CompletedAt,
+				Assert.That(api.DescribeCompletions(
+					TheKindThatMeasuresDistance, TheLanguage.OfTheRecord),
+					Does.Contain("se hizo el").And.Contain("27.300"));
+				Assert.That(api.CompletionsOf(
+					TheKindThatMeasuresDistance, TheLanguage.OfTheRecord).CompletedAt,
 					Has.Length.EqualTo(2));
-				Assert.That(api.CompletionsOfEveryKind().Kind, Has.Length.EqualTo(3),
+				Assert.That(api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Kind, Has.Length.EqualTo(3),
 					"Tres filas: dos de la clase que mide distancia y una de la que solo mide tiempo.");
 
 				Assert.That(api.HasAnyPublishedServicePrice(), Is.True);
 				Assert.That(api.PublishedServicePriceCount(), Is.EqualTo(1));
-				Assert.That(api.PublishedServicePricesAsOf(TheDayItIsAsked).Revision,
+				Assert.That(api.PublishedServicePricesAsOf(
+					TheDayItIsAsked, TheLanguage.OfTheRecord).Revision,
 					Is.EqualTo(new[] { TheRevision }),
 					"L9 en el journal viejo: la fila nombra la revision de la que salio.");
-				Assert.That(api.DescribePublishedServicePrice("Inspection", 10000, TheUnitEverythingIsIn),
-					Does.Contain("120.5"));
+				Assert.That(api.DescribePublishedServicePrice(
+					"Inspection", 10000, TheUnitEverythingIsIn, TheLanguage.OfTheRecord),
+					Does.Contain("₡120,50"));
 			}
 			finally
 			{
@@ -403,7 +424,7 @@ namespace Concesionario.Dominio.Pruebas
 					"La MISMA clase de app sobre una carpeta vacia contesta otra cosa. Eso es lo que "
 					+ "dice que las respuestas de arriba vienen de los bytes del journal y no de un "
 					+ "campo que la app se siembra sola al arrancar.");
-				Assert.That(fromAJournalNobodyWroteTo, Does.Not.Contain(TheDeviceKey));
+				Assert.That(fromAJournalNobodyWroteTo, Does.Not.Contain(TheFuelGradeThatWasPublished));
 				Assert.That(onAFreshJournal, Is.LessThan(onTheWrittenJournal),
 					"Y el actor de hoy sabe cuantas entradas traia el journal, que es un numero que "
 					+ "solo se puede saber leyendolo.");
@@ -611,7 +632,6 @@ namespace Concesionario.Dominio.Pruebas
 
 			DealershipCarAPI api = new DealershipCarAPI(older);
 
-			api.RegisterDevice(TheDeviceKey);
 
 			api.SeedPlanOperation(
 				TheKindThatMeasuresDistance, "TimeOrDistance",
@@ -637,7 +657,7 @@ namespace Concesionario.Dominio.Pruebas
 			api.PublishWarrantyEnvelope(36, 60000, TheUnitEverythingIsIn, ThePublication);
 
 			api.OpenRevision(TheRevision, ThePublication);
-			api.PublishFuelGrade(TheRevision, "91 RON", "Minimum");
+			api.PublishFuelGrade(TheRevision, TheFuelGradeThatWasPublished, "Minimum");
 			api.PublishServiceInterval(
 				TheRevision, TheKindThatMeasuresDistance, 10000, TheUnitEverythingIsIn, 365);
 			api.PublishCoveredSystem(

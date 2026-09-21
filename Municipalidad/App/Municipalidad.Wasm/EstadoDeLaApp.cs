@@ -1,6 +1,7 @@
 using Choreography.Theater;
 using Municipalidad.App;
 using Municipalidad.App.Events;
+using Municipalidad.App.Vistas;
 using Municipalidad.Wasm.Vistas;
 using Puppeteer;
 using Puppets.Portador;
@@ -17,25 +18,42 @@ namespace Municipalidad.Wasm
 		private readonly PuenteDeJournal puente;
 		private readonly HttpClient http;
 		private readonly AjustesDeLaMunicipalidad ajustes;
+		private readonly ModoDeLaApp modo;
+		private readonly PuenteDeGnothi puenteDeGnothi;
 
 		private MunicipalidadApp app;
 		private MunicipalidadAPI api;
 		private BucleDeRefresh bucle;
 
+		private readonly Textos textos;
+
 		private DateTime ultimoSelloMandado = DateTime.MinValue;
 
-		public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, AjustesDeLaMunicipalidad ajustes)
+		public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, AjustesDeLaMunicipalidad ajustes,
+			ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi, Textos textos)
 		{
 			ArgumentNullException.ThrowIfNull(puente);
 			ArgumentNullException.ThrowIfNull(http);
 			ArgumentNullException.ThrowIfNull(ajustes);
+			ArgumentNullException.ThrowIfNull(modo);
+			ArgumentNullException.ThrowIfNull(puenteDeGnothi);
+			ArgumentNullException.ThrowIfNull(textos);
 
 			this.puente = puente;
 			this.http = http;
 			this.ajustes = ajustes;
+			this.modo = modo;
+			this.puenteDeGnothi = puenteDeGnothi;
+			this.textos = textos;
 		}
 
 		public bool EstaArriba => app is not null;
+
+		/// <summary>
+		/// Si esta app corre HOSPEDADA dentro de Gnothi. Hospedada no hay carpeta que elegir ni
+		/// credencial que conseguir: el destino y la credencial son de Gnothi.
+		/// </summary>
+		public bool Hospedada => modo.Hospedada;
 
 		public bool HayCarpeta => puente.HayCarpeta;
 
@@ -49,13 +67,20 @@ namespace Municipalidad.Wasm
 
 		public bool EnElNavegador => Modo == "opfs";
 
-		public string UltimoMensaje { get; private set; } = "";
+		/// <summary>Lo ultimo que hizo esta app, como apunte para que la pantalla lo diga en su idioma.</summary>
+		public Apunte Apunte { get; private set; } = Apunte.Ninguno;
 
-		/// <summary>No vacio cuando una escritura a la carpeta fallo. Nunca se traga en silencio.</summary>
-		public string NoSeEstaGuardando { get; private set; } = "";
+		/// <summary>
+		/// Lo que contesto la institucion al abrir, como apunte propio y no pegado al de arriba: son dos
+		/// pasos y una frase que los junta no podria decir cual de los dos fallo.
+		/// </summary>
+		public Apunte ApunteDelFeed { get; private set; } = Apunte.Ninguno;
 
-		/// <summary>No vacio cuando no se pudo alcanzar la institucion. Abrir igual es lo correcto.</summary>
-		public string NoSeAlcanzaLaInstitucion { get; private set; } = "";
+		/// <summary>Hay algo que decir cuando una escritura a la carpeta fallo. Nunca se traga en silencio.</summary>
+		public Apunte NoSeEstaGuardando { get; private set; } = Apunte.Ninguno;
+
+		/// <summary>Hay algo que decir cuando no se pudo alcanzar la institucion. Abrir igual es lo correcto.</summary>
+		public Apunte NoSeAlcanzaLaInstitucion { get; private set; } = Apunte.Ninguno;
 
 		public string DondeEstaElFeed => http.BaseAddress?.ToString() ?? "(sin configurar)";
 
@@ -79,7 +104,7 @@ namespace Municipalidad.Wasm
 		{
 			ResultadoDeCarpeta resultado = await puente.RecuperarCarpetaAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = $"recuperar carpeta: {resultado}";
+			Apuntar("arranque.apunte.recuperarCarpeta", resultado);
 			return resultado;
 		}
 
@@ -87,7 +112,7 @@ namespace Municipalidad.Wasm
 		{
 			ResultadoDeCarpeta resultado = await puente.ElegirCarpetaAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = $"conectar carpeta: {resultado}";
+			Apuntar("arranque.apunte.conectarCarpeta", resultado);
 
 			if (resultado.Ok) SoltarElActor();
 			return resultado;
@@ -96,7 +121,7 @@ namespace Municipalidad.Wasm
 		public async ValueTask<ResultadoDeCarpeta> PedirPermisoAsync()
 		{
 			ResultadoDeCarpeta resultado = await puente.PedirPermisoAsync();
-			UltimoMensaje = $"pedir permiso: {resultado}";
+			Apuntar("arranque.apunte.pedirPermiso", resultado);
 
 			if (resultado.Ok) SoltarElActor();
 			return resultado;
@@ -106,7 +131,7 @@ namespace Municipalidad.Wasm
 		{
 			ResultadoDeCarpeta resultado = await puente.UsarOpfsAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = $"almacenamiento del navegador: {resultado}";
+			Apuntar("arranque.apunte.usarNavegador", resultado);
 
 			if (resultado.Ok) SoltarElActor();
 			return resultado;
@@ -116,7 +141,22 @@ namespace Municipalidad.Wasm
 		{
 			await puente.OlvidarCarpetaAsync();
 			Modo = await puente.ModoActualAsync();
-			UltimoMensaje = "se olvidó la carpeta guardada; no se tocó nada de lo que hay adentro";
+			Apunte = Apunte.De("arranque.apunte.olvidoLaCarpeta");
+			ApunteDelFeed = Apunte.Ninguno;
+		}
+
+		/// <summary>
+		/// Lo que contesto el navegador, como apunte de la accion que se le pidio. Son dos claves por
+		/// accion porque un si y un no son dos frases enteras, no una con un matiz adentro.
+		/// </summary>
+		private void Apuntar(string clave, ResultadoDeCarpeta resultado)
+		{
+			Apunte = resultado.Ok
+				? Apunte.De(clave + ".ok", ("carpeta", resultado.Nombre), ("permiso", resultado.Permiso))
+				: Apunte.De(clave + ".no",
+					("motivo", resultado.Motivo.Length > 0 ? resultado.Motivo : resultado.Permiso));
+
+			ApunteDelFeed = Apunte.Ninguno;
 		}
 
 		/// <summary>
@@ -142,7 +182,7 @@ namespace Municipalidad.Wasm
 		{
 			if (app is not null) return;
 
-			int precargados = puente.HayCarpeta ? await puente.PrecargarEnMemfsAsync() : 0;
+			int precargados = puente.HayDestino ? await puente.PrecargarEnMemfsAsync() : 0;
 
 			var abierto = new MunicipalidadApp(MunicipalidadApp.ElActor);
 			abierto.ConfigureStorage(DatabaseType.FileSystem, "path=" + PuenteDeJournal.RaizEnMemfs);
@@ -151,38 +191,57 @@ namespace Municipalidad.Wasm
 			app = abierto;
 			api = new MunicipalidadAPI(abierto);
 
-			bucle = new BucleDeRefresh(
-				api,
-				new FuenteHttpDeEventos(http, ajustes.Recurso, ajustes.Id),
-				MunicipalidadEventRoute.Route,
-				BajarAsync,
-				ct => RenovarLaCredencialAsync(ct));
+			bucle = new BucleDeRefresh(api, LaFuenteDeEventos(), MunicipalidadEventRoute.Route, BajarAsync);
 
 			try { await BajarAsync(); } catch (EscrituraRechazadaException) { }
 
-			UltimoMensaje = puente.HayCarpeta
-				? $"arriba. {precargados} archivos precargados de '{puente.NombreDeLaCarpeta}'"
-				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
+			string cuantos = precargados == 1 ? ".uno" : ".varios";
+
+			Apunte = modo.Hospedada
+				? Apunte.De("arranque.apunte.arribaHospedada" + cuantos,
+					("precargados", precargados.ToString()))
+				: EnElNavegador
+					? Apunte.De("arranque.apunte.arribaEnElNavegador" + cuantos,
+						("precargados", precargados.ToString()))
+					: puente.HayCarpeta
+						? Apunte.De("arranque.apunte.arribaEnCarpeta" + cuantos,
+							("precargados", precargados.ToString()), ("carpeta", puente.NombreDeLaCarpeta))
+						: Apunte.De("arranque.apunte.arribaSinCarpeta");
 
 			try
 			{
-				await LaCredencialAsync(CancellationToken.None);
 				ResultadoDeRefresh alAbrir = await bucle.Ejecutar(CancellationToken.None);
 				await BajarAsync();
-				NoSeAlcanzaLaInstitucion = "";
-				UltimoMensaje += $" | al abrir: {alAbrir}";
+				NoSeAlcanzaLaInstitucion = Apunte.Ninguno;
+				ApunteDelFeed = Apunte.De("arranque.apunte.alAbrir", ("resultado", alAbrir.ToString()));
 			}
 			catch (EscrituraRechazadaException)
 			{
-				UltimoMensaje += " | la institución contestó, pero la carpeta rechazó la escritura";
+				ApunteDelFeed = Apunte.De("arranque.apunte.carpetaRechazoAlAbrir");
 			}
 			catch (Exception ex)
 			{
-				NoSeAlcanzaLaInstitucion =
-					$"No se pudo alcanzar {DondeEstaElFeed} ({ex.GetType().Name}: {ex.Message}).";
-				UltimoMensaje += " | " + NoSeAlcanzaLaInstitucion;
+				NoSeAlcanzaLaInstitucion = Apunte.De("arranque.noSeAlcanza",
+					("donde", DondeEstaElFeed), ("tipo", ex.GetType().Name), ("detalle", ex.Message));
+
+				ApunteDelFeed = NoSeAlcanzaLaInstitucion;
 			}
+
+			if (modo.Hospedada) await puenteDeGnothi.ListoAsync();
 		}
+
+		/// <summary>
+		/// De donde salen los eventos, que es lo unico que depende del hospedaje junto con el destino del
+		/// journal. Suelta hace su propio pedido con su credencial; hospedada se lo pide a Gnothi, que lo
+		/// releva con la suya. El punto de control lo pone el actor en los dos casos.
+		/// </summary>
+		private IFuenteDeEventos LaFuenteDeEventos() =>
+			modo.Hospedada
+				? new FuenteDeEventosPorGnothi((desde, _) => modo.Puente.PullAsync(desde).AsTask())
+				: new FuenteHttpDeEventos(
+					http, ajustes.Recurso, ajustes.Id,
+					ct => LaCredencialAsync(ct).AsTask(),
+					ct => RenovarLaCredencialAsync(ct));
 
 		/// <summary>
 		/// Trae lo que la institucion haya publicado desde el punto de control que dice el journal.
@@ -191,14 +250,55 @@ namespace Municipalidad.Wasm
 		{
 			Exigir();
 
-			await LaCredencialAsync(ct);
-
 			ResultadoDeRefresh resultado = await bucle.Ejecutar(ct);
 
-			NoSeAlcanzaLaInstitucion = "";
-			UltimoMensaje = $"actualización: {resultado}";
+			NoSeAlcanzaLaInstitucion = Apunte.Ninguno;
+			Apunte = Apunte.De("arranque.apunte.actualizacion", ("resultado", resultado.ToString()));
+			ApunteDelFeed = Apunte.Ninguno;
 
 			await BajarAsync();
+			return resultado;
+		}
+
+		/// <summary>
+		/// UNA CONSULTA DEL HOST, contra el actor vivo. Los cuerpos son los mismos que usa la superficie
+		/// de carga, asi que el modulo contesta igual corra donde corra, y el instante es el mismo que
+		/// lee una pantalla. Una consulta que no existe se dice; no se contesta con algo inventado.
+		/// </summary>
+		public object Consultar(string tool)
+		{
+			Exigir();
+
+			DateTime preguntadoEn = ElInstanteEnQueLaPantallaPregunta();
+
+			return tool switch
+			{
+				ConsultasDelModulo.Resumen => ConsultasDelModulo.HacerResumen(api, preguntadoEn),
+				ConsultasDelModulo.ListaDeVencimientos =>
+					ConsultasDelModulo.HacerListaDeVencimientos(api, preguntadoEn),
+				_ => throw new ArgumentException($"El módulo no atiende la consulta '{tool}'."),
+			};
+		}
+
+		/// <summary>
+		/// EL CARTERO ENTREGA: Gnothi trae un sobre ya leido y se asienta por EL MISMO camino que el
+		/// refresco propio -- misma ruta, mismo Check, mismo flush --, asi que entregar dos veces el
+		/// mismo sobre no duplica nada.
+		/// </summary>
+		public async Task<ResultadoDeRefresh> EntregarAsync(string sobreJson, CancellationToken ct = default)
+		{
+			Exigir();
+
+			var unaVez = new BucleDeRefresh(
+				api,
+				new FuenteDeEventosPorGnothi((_, _) => Task.FromResult(sobreJson ?? ""), "gnothi.deliver"),
+				MunicipalidadEventRoute.Route,
+				BajarAsync);
+
+			ResultadoDeRefresh resultado = await unaVez.Ejecutar(ct);
+
+			Apunte = Apunte.De("arranque.apunte.entregaDeGnothi", ("resultado", resultado.ToString()));
+			ApunteDelFeed = Apunte.Ninguno;
 			return resultado;
 		}
 
@@ -211,11 +311,11 @@ namespace Municipalidad.Wasm
 			try
 			{
 				await puente.BajarDeMemfsAsync();
-				NoSeEstaGuardando = "";
+				NoSeEstaGuardando = Apunte.Ninguno;
 			}
 			catch (EscrituraRechazadaException ex)
 			{
-				NoSeEstaGuardando = ex.Message;
+				NoSeEstaGuardando = ex.Apunte;
 				throw;
 			}
 		}
@@ -234,7 +334,10 @@ namespace Municipalidad.Wasm
 				await BajarAsync();
 
 				if (rechazo.Length > 0)
-					UltimoMensaje = "no se pudo registrar esta instalación: " + rechazo;
+				{
+					Apunte = Apunte.De("arranque.apunte.noSeRegistroLaInstalacion", ("rechazo", rechazo));
+					ApunteDelFeed = Apunte.Ninguno;
+				}
 			}
 
 			string actual = api.TokenGuardado();
@@ -251,7 +354,8 @@ namespace Municipalidad.Wasm
 			if (refresco.Length > 0)
 			{
 				Credencial rotada = await new ProveedorDeToken(http).Rotar(refresco, ct);
-				if (rotada is not null) return await GuardarAsync(rotada, "credencial rotada con el token de refresco");
+				if (rotada is not null)
+					return await GuardarAsync(rotada, Apunte.De("arranque.apunte.credencialRotada"));
 			}
 
 			return await PedirUnaCredencialNuevaAsync(ct);
@@ -262,17 +366,20 @@ namespace Municipalidad.Wasm
 			Credencial nueva = await new ProveedorDeToken(http)
 				.Pedir(api.ClaveDeDispositivoGuardada(), ajustes.Recurso, ajustes.Id, ct);
 
-			return await GuardarAsync(nueva, $"credencial nueva (alcance {nueva.Scope})");
+			return await GuardarAsync(nueva,
+				Apunte.De("arranque.apunte.credencialNueva", ("alcance", nueva.Scope)));
 		}
 
-		private async Task<string> GuardarAsync(Credencial credencial, string quePaso)
+		private async Task<string> GuardarAsync(Credencial credencial, Apunte quePaso)
 		{
 			string rechazo = api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
 			await BajarAsync();
 
-			UltimoMensaje = rechazo.Length > 0
-				? "no se pudo guardar la credencial: " + rechazo
+			Apunte = rechazo.Length > 0
+				? Apunte.De("arranque.apunte.noSeGuardoLaCredencial", ("rechazo", rechazo))
 				: quePaso;
+
+			ApunteDelFeed = Apunte.Ninguno;
 
 			return credencial.AccessToken;
 		}
@@ -301,7 +408,7 @@ namespace Municipalidad.Wasm
 		public LaVariacionDeCadaRubro LeerLaVariacionDeCadaRubro()
 		{
 			Exigir();
-			return LaVariacionDeCadaRubro.LeerPor(api);
+			return LaVariacionDeCadaRubro.LeerPor(api, textos.Idioma);
 		}
 
 		/// <summary>
@@ -314,7 +421,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia));
+			return LoQueSeVence.LeerPor(api, alDia, ElDiaDe(alDia), textos.Idioma);
 		}
 
 		/// <summary>
@@ -327,7 +434,7 @@ namespace Municipalidad.Wasm
 
 			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
 
-			return LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia));
+			return LaReservaDeEsteAnio.LeerPor(api, alDia, ElDiaDe(alDia), textos.Idioma);
 		}
 
 		/// <summary>
@@ -347,7 +454,35 @@ namespace Municipalidad.Wasm
 		public LoSinComprobante LeerLoSinComprobante()
 		{
 			Exigir();
-			return LoSinComprobante.LeerPor(api);
+			return LoSinComprobante.LeerPor(api, textos.Idioma);
+		}
+
+		/// <summary>
+		/// Lo pagado en un anio y la serie de cada rubro. Con anio en cero contesta por el anio del
+		/// instante en que la pantalla pregunta, que es la unica forma en que esta app elige un anio.
+		/// </summary>
+		public LoQuePagueEnUnAnio LeerLoQuePague(int anio)
+		{
+			Exigir();
+
+			bool loEligioLaPersona = anio > 0;
+
+			int elAnio = loEligioLaPersona ? anio : ElInstanteEnQueLaPantallaPregunta().Year;
+
+			return LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligioLaPersona, textos.Idioma);
+		}
+
+		/// <summary>
+		/// Hasta donde leyo esta app y que mitad falta, al instante en que la pantalla pregunta: cual
+		/// avaluo rige se decide contra un dia, asi que las dos mitades salen de UNA lectura del reloj.
+		/// </summary>
+		public LoQueEntroYLoQueFalta LeerLoQueEntroYLoQueFalta()
+		{
+			Exigir();
+
+			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
+
+			return LoQueEntroYLoQueFalta.LeerPor(api, alDia, ElDiaDe(alDia));
 		}
 
 		/// <summary>
@@ -381,7 +516,8 @@ namespace Municipalidad.Wasm
 			}
 			catch (Exception ex)
 			{
-				return LoQueDijoElAporte.NoSePudo(LoQueSePuedeDecirDe(ex));
+				return LoQueDijoElAporte.NoSePudoPorLaApp(Apunte.De("cuantoApartar.falloLaApp",
+					("tipo", ex.GetType().Name), ("detalle", ex.Message)));
 			}
 
 			if (rechazo.Length > 0) return LoQueDijoElAporte.NoSePudo(Desenvolver(rechazo));
@@ -392,7 +528,7 @@ namespace Municipalidad.Wasm
 			}
 			catch (EscrituraRechazadaException ex)
 			{
-				return LoQueDijoElAporte.QuedoSinGuardar(ex.Message);
+				return LoQueDijoElAporte.QuedoSinGuardar(ex.Apunte);
 			}
 
 			return LoQueDijoElAporte.Entro();
@@ -423,14 +559,6 @@ namespace Municipalidad.Wasm
 
 			return rechazo;
 		}
-
-		/// <summary>
-		/// Lo que se le puede decir a una persona de una falla que no es un rechazo del dominio. Nombra
-		/// el tipo porque sin el nadie puede diagnosticarla, y no pretende explicarla.
-		/// </summary>
-		private static string LoQueSePuedeDecirDe(Exception ex) =>
-			$"La app falló al intentar guardarlo, y eso no es algo que hayas hecho vos: "
-			+ $"{ex.GetType().Name}: {ex.Message}";
 
 		/// <summary>
 		/// El instante que esta app le manda a un COMANDO. Es monotono dentro de la sesion, y es de

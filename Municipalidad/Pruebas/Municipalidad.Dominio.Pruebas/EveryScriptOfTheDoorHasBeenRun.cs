@@ -472,49 +472,49 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(api.LoPagadoEn(2023), Is.EqualTo(0m),
 					"LoPagadoEn es TOTAL: un anio sin pagos contesta cero y no se niega");
 
-				Assert.That(api.HistorialDe(ElRubro).Periodo, Is.EqualTo(new[] { "2024-03", "2024-06" }),
+				Assert.That(api.HistorialDe(ElRubro, "es").Periodo, Is.EqualTo(new[] { "2024-03", "2024-06" }),
 					"HistorialDe");
-				Assert.That(api.HistorialDe(ElRubro).EstadoDicho, Does.Contain(ElRubro),
+				Assert.That(api.HistorialDe(ElRubro, "es").EstadoDicho, Does.Contain(ElRubro),
 					"HistorialDe: y la frase del registro llego, nombrando su rubro");
 
 				Assert.That(api.SePuedeVerLaVariacionDe(ElRubro), Is.True,
 					"SePuedeVerLaVariacionDe: con dos pagos de basura, si");
-				Assert.That(api.VariacionDe(ElRubro, 0.25m, 0.02m).Rubro, Is.EqualTo(ElRubro),
+				Assert.That(api.VariacionDe(ElRubro, 0.25m, 0.02m, "es").Rubro, Is.EqualTo(ElRubro),
 					"VariacionDe");
 
 				Assert.That(
-					api.VencimientosAl(new DateTime(2025, 9, 25), 7).Periodo,
+					api.VencimientosAl(new DateTime(2025, 9, 25), 7, "es").Periodo,
 					Is.EqualTo(new[] { "2025-09", "2025-10" }),
 					"VencimientosAl: el pendiente acuno el cobro de setiembre y PonerAlCobro el de "
 					+ "octubre, y ninguno vencio al 25 de setiembre");
 				Assert.That(
-					api.AtrasosAl(new DateTime(2025, 10, 5), 0.062m).Periodo,
+					api.AtrasosAl(new DateTime(2025, 10, 5), 0.062m, "es").Periodo,
 					Is.EqualTo(new[] { "2025-09" }),
 					"AtrasosAl: al 5 de octubre vencio el de setiembre y no el de octubre");
 
 				Assert.That(api.SePuedeProyectar(), Is.True,
 					"SePuedeProyectar: con un pago registrado, si");
-				Assert.That(api.ReservaPropuestaPara(2025).Anio, Is.EqualTo(2025),
+				Assert.That(api.ReservaPropuestaPara(2025, "es").Anio, Is.EqualTo(2025),
 					"ReservaPropuestaPara");
 
 				Assert.That(api.SePuedeVerElFaltanteDeReserva(), Is.True,
 					"SePuedeVerElFaltanteDeReserva: hay proyeccion y hay reserva adoptada");
 				Assert.That(
-					api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m).Declarado,
+					api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m, "es").Declarado,
 					Is.EqualTo(30000m),
 					"FaltanteDeReservaAl: los 30000 que la persona adopto, y no lo que la app propone");
 				Assert.That(api.AhorroPorProntoPago(LaConsulta, 0.062m), Is.TypeOf<decimal>(),
 					"AhorroPorProntoPago");
 
 				Assert.That(
-					api.PeriodosPagadosSinComprobante(LaConsulta).Rubro, Is.All.EqualTo(ElRubro),
+					api.PeriodosPagadosSinComprobante(LaConsulta, "es").Rubro, Is.All.EqualTo(ElRubro),
 					"PeriodosPagadosSinComprobante");
 				Assert.That(
-					api.PeriodosPagadosSinComprobante(LaConsulta).Periodo, Is.Not.Empty,
+					api.PeriodosPagadosSinComprobante(LaConsulta, "es").Periodo, Is.Not.Empty,
 					"PeriodosPagadosSinComprobante: el expediente deja periodos sin comprobante, asi que "
 					+ "esta lectura contesta filas y no la ausencia");
 				Assert.That(
-					api.PeriodosPagadosSinComprobante(LaConsulta).EstadoDicho, Does.Contain("2025-09-03"),
+					api.PeriodosPagadosSinComprobante(LaConsulta, "es").EstadoDicho, Does.Contain("2025-09-03"),
 					"PeriodosPagadosSinComprobante: y la frase del registro llego, nombrando su dia");
 
 				// LAS SIETE DE M-5, por el camino que CONTESTA. Las dos guardadas -- ConsultaMasReciente
@@ -604,14 +604,14 @@ namespace Municipalidad.Dominio.Pruebas
 		{
 			Assert.Multiple(() =>
 			{
-				Assert.Throws<DomainException>(() => api.VariacionDe(ElRubro, 0.25m, 0.02m),
+				Assert.Throws<DomainException>(() => api.VariacionDe(ElRubro, 0.25m, 0.02m, "es"),
 					"VariacionDe sin dos pagos del rubro");
 
-				Assert.Throws<DomainException>(() => api.ReservaPropuestaPara(2025),
+				Assert.Throws<DomainException>(() => api.ReservaPropuestaPara(2025, "es"),
 					"ReservaPropuestaPara sin historia con que proyectar");
 
 				Assert.Throws<DomainException>(
-					() => api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m),
+					() => api.FaltanteDeReservaAl(new DateTime(2025, 9, 15), 0.10m, "es"),
 					"FaltanteDeReservaAl sin proyeccion y sin reserva adoptada");
 			});
 		}

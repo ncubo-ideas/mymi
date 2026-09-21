@@ -15,7 +15,7 @@ namespace Concesionario.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO CINCUENTA Y UNA
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO CUARENTA Y NUEVE
 	// operaciones de la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
@@ -59,7 +59,7 @@ namespace Concesionario.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON CIENTO CINCUENTA Y UNA Y LOS SCRIPTS SON MAS, y la ingesta es donde la
+	// LAS OPERACIONES SON CIENTO CUARENTA Y NUEVE Y LOS SCRIPTS SON MAS, y la ingesta es donde la
 	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTICINCO scripts
 	// detras -- uno por cada tipo de hecho recibido, que son veinticuatro, mas el comando suelto que
 	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
@@ -118,9 +118,12 @@ namespace Concesionario.Dominio.Pruebas
 	// A PASAR: al llegar CL-4 este encabezado decia "ciento veintiocho" en un parrafo y "ciento
 	// nueve" en otro mientras la puerta tenia CIENTO TREINTA Y CUATRO, y las tres cuentas se
 	// re-derivaron contra la lista de abajo en vez de arrastrarse. Una cuenta afirmada en prosa
-	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndFiftyOne, que la
+	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndFortyNine, que la
 	// afirma al lado de la lista que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que
 	// subirla obligue a renombrarla. CL-5 la subio y la renombro, CL-6 otra vez, y LP-2 otra vez.
+	// Y EL 2026-09-08 LA BAJO un merge, que es la primera vez: master traia el traspaso montado
+	// sobre RegisterDevice y StoreCredential, y esta rama los saco de la puerta el 2026-09-03
+	// porque un token no es un hecho de la vida de la persona. Bajar tambien obliga a renombrar.
 	//
 	// Y VOLVIO A PASAR EN CL-5, CUARTA VEZ: su primera pasada movio las cuentas de :18 y :59 y se
 	// dejo la de :84 diciendo la vieja, asi que su bloque afirmo tres donde habian aterrizado dos. La
@@ -228,9 +231,13 @@ namespace Concesionario.Dominio.Pruebas
 			"DescribeSpendBetween", "DescribeSpendPerCurrencyBetween",
 			"DescribeTwoPeriodsOfSpendCompared", "HasAnyCostBetween",
 			"IsSpendSaidInOneCurrencyBetween",
-			"RecordShopCollection", "RecordShopEntry", "RecordShopStay", "RegisterDevice",
+			// RegisterDevice y StoreCredential SALIERON de esta lista el 2026-09-08, con el merge de
+			// master: la puerta ya no los tiene desde el 2026-09-03 -un token no es un hecho de la
+			// vida de la persona-. Los LECTORES si siguen abajo (StoredDeviceKey, StoredToken,
+			// StoredRefreshToken): quedaron sin escritor, y eso es un cabo suelto de ese cambio.
+			"RecordShopCollection", "RecordShopEntry", "RecordShopStay",
 			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation",
-			"StayCountBetween", "StaysBetween", "StoreCredential",
+			"StayCountBetween", "StaysBetween",
 			"StoredDeviceKey", "StoredRefreshToken", "StoredToken", "SupersedeRevision",
 			"TheVocabularyIsTheManufacturers",
 		};
@@ -256,9 +263,9 @@ namespace Concesionario.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndFiftyOne()
+		public void TheOperationsAreOneHundredAndFortyNine()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(151));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(149));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -360,7 +367,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanBeDeferred("FluidChange"), Is.True);
 			Assert.That(journal.Api.HasAnythingDue(), Is.True);
 			Assert.That(journal.Api.ReadNextDueKind(), Is.EqualTo("FluidChange"));
-			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("Vencida"));
+			Assert.That(journal.Api.ReadDueReason("FluidChange",
+				TheLanguage.OfTheRecord), Does.Contain("Vencida"));
 			Assert.That(journal.Api.MissedCount(), Is.EqualTo(0));
 			Assert.That(journal.Api.HasBeenEvaluated(), Is.True);
 			Assert.That(
@@ -385,15 +393,18 @@ namespace Concesionario.Dominio.Pruebas
 
 			// SIN NINGUNA ESTADIA: los ocho scripts corren igual y ninguno rechaza.
 			Assert.That(journal.Api.IsInsideTheShopAt(insideTheStay), Is.False);
-			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay, TheLanguage.OfTheRecord),
+				Is.Not.Empty);
 			Assert.That(journal.Api.HasAnyStayBetween("2026-01-01", "2026-12-31"), Is.False);
 			Assert.That(journal.Api.DaysInTheShopBetween("2026-01-01", "2026-12-31"), Is.Empty);
 			Assert.That(
 				journal.Api.DaysInTheShopCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(0));
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31"), Is.Not.Empty);
+				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31",
+					TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(journal.Api.StayCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(0));
-			Assert.That(journal.Api.StaysBetween("2026-01-01", "2026-12-31").Branch, Is.Empty);
+			Assert.That(journal.Api.StaysBetween("2026-01-01", "2026-12-31",
+				TheLanguage.OfTheRecord).Branch, Is.Empty);
 
 			// CON UNA ESTADIA CERRADA Y UNA ABIERTA: los mismos ocho, y ahora contestando.
 			journal.Api.RecordShopStay(
@@ -407,7 +418,8 @@ namespace Concesionario.Dominio.Pruebas
 				new DateTime(2026, 6, 10, 8, 30, 0, DateTimeKind.Utc));
 
 			Assert.That(journal.Api.IsInsideTheShopAt(insideTheStay), Is.True);
-			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay), Does.Contain("Taller Escazu"));
+			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay, TheLanguage.OfTheRecord),
+				Does.Contain("Taller Escazu"));
 			Assert.That(journal.Api.HasAnyStayBetween("2026-01-01", "2026-12-31"), Is.True);
 			Assert.That(
 				journal.Api.DaysInTheShopBetween("2026-01-01", "2026-12-31"),
@@ -415,11 +427,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DaysInTheShopCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(2));
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31"),
+				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31",
+					TheLanguage.OfTheRecord),
 				Does.Contain("2 días"));
 			Assert.That(journal.Api.StayCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(1));
 			Assert.That(
-				journal.Api.StaysBetween("2026-01-01", "2026-12-31").Says,
+				journal.Api.StaysBetween("2026-01-01", "2026-12-31", TheLanguage.OfTheRecord).Says,
 				Has.Length.EqualTo(1),
 				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta.");
 		}
@@ -446,9 +459,12 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadTimeRemainderStanding("FluidChange", asked),
 				Is.EqualTo("NoOperationScheduled"));
-			Assert.That(journal.Api.DescribeDistanceRemaining("FluidChange", asked), Is.Not.Empty);
-			Assert.That(journal.Api.DescribeDaysRemaining("FluidChange", asked), Is.Not.Empty);
-			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeDistanceRemaining("FluidChange", asked,
+				TheLanguage.OfTheRecord), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeDaysRemaining("FluidChange", asked,
+				TheLanguage.OfTheRecord), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked,
+				TheLanguage.OfTheRecord), Is.Not.Empty);
 
 			Assert.Throws<InvalidOperationException>(
 				() => journal.Api.ReadDistanceRemaining("FluidChange", asked));
@@ -459,15 +475,20 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.HasAnyCompletion("FluidChange"), Is.False);
 			Assert.That(journal.Api.CompletionCount("FluidChange"), Is.EqualTo(0));
-			Assert.That(journal.Api.DescribeCompletions("FluidChange"), Is.Not.Empty);
-			Assert.That(journal.Api.CompletionsOf("FluidChange").Says, Is.Empty);
-			Assert.That(journal.Api.CompletionsOfEveryKind().Kind, Is.Empty);
+			Assert.That(
+				journal.Api.DescribeCompletions("FluidChange", TheLanguage.OfTheRecord),
+				Is.Not.Empty);
+			Assert.That(journal.Api.CompletionsOf("FluidChange", TheLanguage.OfTheRecord).Says, Is.Empty);
+			Assert.That(journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Kind, Is.Empty);
 
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.False);
 			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(0));
-			Assert.That(journal.Api.PublishedServicePricesAsOf(asked).Says, Is.Empty);
 			Assert.That(
-				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
+				journal.Api.PublishedServicePricesAsOf(asked, TheLanguage.OfTheRecord).Says,
+				Is.Empty);
+			Assert.That(
+				journal.Api.DescribePublishedServicePrice(
+					"FluidChange", TenThousandUnits, "UnitA", TheLanguage.OfTheRecord),
 				Is.Not.Empty);
 
 			// CON UNA OPERACION AGENDADA, UNA COMPLETACION Y UNA REVISION SELLADA: las mismas
@@ -496,26 +517,32 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadTimeRemainderStanding("FluidChange", asked),
 				Is.Not.EqualTo("NoOperationScheduled"));
-			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked), Does.Contain("distancia"));
+			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked,
+				TheLanguage.OfTheRecord), Does.Contain("distancia"));
 
 			Assert.That(journal.Api.HasAnyCompletion("FluidChange"), Is.True);
 			Assert.That(journal.Api.CompletionCount("FluidChange"), Is.EqualTo(1));
-			Assert.That(journal.Api.DescribeCompletions("FluidChange"), Does.Contain("2026-01-21"));
 			Assert.That(
-				journal.Api.CompletionsOf("FluidChange").Says, Has.Length.EqualTo(1),
-				"Y las TRES lineas del script del registro atan sus tres Out en una sola consulta.");
+				journal.Api.DescribeCompletions("FluidChange", TheLanguage.OfTheRecord),
+				Does.Contain("2026-01-21"));
 			Assert.That(
-				journal.Api.CompletionsOfEveryKind().Kind, Is.EqualTo(new[] { "FluidChange" }),
-				"Y las CUATRO lineas del script del historial entero atan sus cuatro Out en una sola.");
+				journal.Api.CompletionsOf("FluidChange", TheLanguage.OfTheRecord).Says, Has.Length.EqualTo(1),
+				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta.");
+			Assert.That(
+				journal.Api.CompletionsOfEveryKind(TheLanguage.OfTheRecord).Kind,
+				Is.EqualTo(new[] { "FluidChange" }),
+				"Y las CINCO lineas del script del historial entero atan sus cinco Out en una sola.");
 
 			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.True);
 			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(1));
 			Assert.That(
-				journal.Api.PublishedServicePricesAsOf(asked).Revision, Is.EqualTo(new[] { TheRevision }),
+				journal.Api.PublishedServicePricesAsOf(
+					asked, TheLanguage.OfTheRecord).Revision, Is.EqualTo(new[] { TheRevision }),
 				"Y las CUATRO lineas del script de los precios atan sus cuatro Out en una sola.");
 			Assert.That(
-				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
-				Does.Contain("$75.50").And.Not.Contain(" Al "));
+				journal.Api.DescribePublishedServicePrice(
+					"FluidChange", TenThousandUnits, "UnitA", TheLanguage.OfTheRecord),
+				Does.Contain("$75,50").And.Not.Contain(" Al "));
 		}
 
 		// LAS SEIS DE LA SERIE DEL ODOMETRO QUE TRAJO OD-2, CADA UNA EN LOS DOS ESTADOS DEL REGISTRO.
@@ -539,13 +566,13 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadRateOfUseStanding(from, to),
 				Is.EqualTo("SuspendedByAnAbsentReading"));
-			Assert.That(journal.Api.DescribeRateOfUse(from, to), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeRateOfUse(from, to, TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(
 				journal.Api.DescribeTwoPeriodsOfUseCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+					from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Is.Not.Empty);
 			Assert.That(journal.Api.ReadingCountBetween(from, to), Is.EqualTo(0));
-			Assert.That(journal.Api.ReadingsBetween(from, to).Says, Is.Empty);
+			Assert.That(journal.Api.ReadingsBetween(from, to, TheLanguage.OfTheRecord).Says, Is.Empty);
 
 			// CON DOS LECTURAS EN UNA UNIDAD: las mismas seis, y ahora contestando.
 			journal.Api.RecordReading(
@@ -557,16 +584,16 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanARateOfUseBeSaid(from, to), Is.True);
 			Assert.That(journal.Api.ReadRateOfUseStanding(from, to), Is.EqualTo("Measured"));
 			Assert.That(
-				journal.Api.DescribeRateOfUse(from, to), Does.Contain("unos 33 km por día"));
+				journal.Api.DescribeRateOfUse(from, to, TheLanguage.OfTheRecord), Does.Contain("unos 33 km por día"));
 			Assert.That(
 				journal.Api.DescribeTwoPeriodsOfUseCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+					from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Does.Contain("No se puede decir el cambio"),
 				"Y los CUATRO extremos del script de la comparacion atan por separado: el segundo "
 				+ "periodo es otro anio y no tiene ritmo que decir.");
 			Assert.That(journal.Api.ReadingCountBetween(from, to), Is.EqualTo(2));
 			Assert.That(
-				journal.Api.ReadingsBetween(from, to).Value, Is.EqualTo(new[] { 40000, 41000 }),
+				journal.Api.ReadingsBetween(from, to, TheLanguage.OfTheRecord).Value, Is.EqualTo(new[] { 40000, 41000 }),
 				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta, "
 				+ "cuatro de texto y una de numeros.");
 		}
@@ -589,15 +616,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			// SIN NINGUNA ENTRADA: las siete corren igual y ninguna rechaza.
 			Assert.That(journal.Api.HasAnyCostBetween(from, to), Is.False);
-			Assert.That(journal.Api.DescribeSpendBetween(from, to), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeSpendBetween(from, to, TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(journal.Api.IsSpendSaidInOneCurrencyBetween(from, to), Is.False);
-			Assert.That(journal.Api.DescribeSpendPerCurrencyBetween(from, to), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeSpendPerCurrencyBetween(from, to, TheLanguage.OfTheRecord), Is.Not.Empty);
 			Assert.That(
-				journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Is.Not.Empty);
 			Assert.That(journal.Api.CostEntryCountBetween(from, to), Is.EqualTo(0));
-			Assert.That(journal.Api.CostEntriesBetween(from, to).Says, Is.Empty);
+			Assert.That(journal.Api.CostEntriesBetween(from, to, TheLanguage.OfTheRecord).Says, Is.Empty);
 
 			// CON UNA DURADERA Y UNA RECURRENTE EN DOS MONEDAS: las mismas siete, y ahora contestando.
 			journal.Api.RecordDurableCost(
@@ -609,20 +635,19 @@ namespace Concesionario.Dominio.Pruebas
 				"Lavado premium");
 
 			Assert.That(journal.Api.HasAnyCostBetween(from, to), Is.True);
-			Assert.That(journal.Api.DescribeSpendBetween(from, to), Does.Contain("₡240000.00"));
+			Assert.That(journal.Api.DescribeSpendBetween(from, to, TheLanguage.OfTheRecord), Does.Contain("₡240.000,00"));
 			Assert.That(journal.Api.IsSpendSaidInOneCurrencyBetween(from, to), Is.False);
 			Assert.That(
-				journal.Api.DescribeSpendPerCurrencyBetween(from, to),
+				journal.Api.DescribeSpendPerCurrencyBetween(from, to, TheLanguage.OfTheRecord),
 				Does.Contain("2 monedas distintas"));
 			Assert.That(
-				journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					from, to, theYearBeforeFrom, theYearBeforeTo),
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(from, to, theYearBeforeFrom, theYearBeforeTo, TheLanguage.OfTheRecord),
 				Does.Contain("Segundo período: Entre el 2025-01-01 00:00:00"),
 				"Y los CUATRO extremos del script de la comparacion atan por separado: el segundo "
 				+ "periodo es otro anio y no tiene ningun gasto que decir.");
 			Assert.That(journal.Api.CostEntryCountBetween(from, to), Is.EqualTo(2));
 			Assert.That(
-				journal.Api.CostEntriesBetween(from, to).Classification,
+				journal.Api.CostEntriesBetween(from, to, TheLanguage.OfTheRecord).Classification,
 				Is.EqualTo(new[] { "Durable", "Recurring" }),
 				"Y las SEIS lineas del script del registro atan sus seis Out en una sola consulta.");
 		}
@@ -648,7 +673,8 @@ namespace Concesionario.Dominio.Pruebas
 			// SIN NINGUNA ASIGNACION: las tres totales corren igual y ninguna rechaza.
 			Assert.That(journal.Api.IsAPlatePublished(afterThePlate), Is.False);
 			Assert.That(
-				journal.Api.DescribePlate(afterThePlate), Does.Contain("concesionario"),
+				journal.Api.DescribePlate(afterThePlate,
+					TheLanguage.OfTheRecord), Does.Contain("concesionario"),
 				"La ausencia se dice en palabras y nombra a quien publica una placa.");
 			Assert.That(journal.Api.PlateAssignments().AsPublished, Is.Empty);
 
@@ -665,7 +691,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.IsAPlatePublished(afterThePlate), Is.True);
 
 			Assert.That(
-				journal.Api.DescribePlate(afterThePlate), Does.Contain("XKD-119"));
+				journal.Api.DescribePlate(afterThePlate, TheLanguage.OfTheRecord), Does.Contain("XKD-119"));
 
 			Assert.That(
 				journal.Api.ReadPlateAsPublished(afterThePlate), Is.EqualTo("XKD-119"));
@@ -705,7 +731,7 @@ namespace Concesionario.Dominio.Pruebas
 			// SIN NINGUNA LECTURA NI NINGUN GASTO: la rama ELSE, y el && corta en su primer operando.
 			Assert.That(journal.Api.CanCostPerDistanceBeSaid(from, to), Is.False);
 			Assert.That(
-				journal.Api.DescribeCostPerDistanceBetween(from, to),
+				journal.Api.DescribeCostPerDistanceBetween(from, to, TheLanguage.OfTheRecord),
 				Does.Contain("no hay un tramo de uso"),
 				"Y la rama else compone la frase del ritmo adentro de la del costo.");
 
@@ -728,9 +754,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.CanCostPerDistanceBeSaid(from, to), Is.True);
 			Assert.That(
-				journal.Api.DescribeCostPerDistanceBetween(from, to),
-				Does.Contain("₡80.00 por km"),
-				"240000 sobre los 3000 km que la serie dice son 80.00, y el 'km' sale del codigo de "
+				journal.Api.DescribeCostPerDistanceBetween(from, to, TheLanguage.OfTheRecord),
+				Does.Contain("₡80,00 por km"),
+				"240000 sobre los 3.000 km que la serie dice son 80.00, y el 'km' sale del codigo de "
 				+ "unidad que cruzo TIPADO de una global a la otra: si hubiera cruzado como NOMBRE, la "
 				+ "llamada no habria ligado.");
 		}
@@ -748,6 +774,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(() => journal.Api.LastEvaluatedAt());
 		}
 
+		// EL UNICO SCRIPT QUE LE QUEDA A LA BITACORA: la lectura del punto de control. Hasta el
+		// 2026-09-03 eran nueve -- dos comandos de credencial y siete lecturas, siete y no cuatro
+		// porque las tres de credencial eran GUARDADAS del lado del dominio y la puerta preguntaba
+		// la presencia antes que el valor --. Se fueron con la credencial: un token es contexto de
+		// sesion del host, no historia de la persona, y ya no se journaliza.
 		// LOS ONCE COMANDOS DE PUBLICACION QUE TRAJO T5, cada uno una vez, contra la tercera global
 		// de raiz. Se abren DOS revisiones porque sustituir necesita una sucesora sellada: sin eso,
 		// SupersedeRevision seria el unico script de la puerta que nunca corrio.
@@ -847,7 +878,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
 			Assert.That(
-				journal.Api.DescribePublishedWarrantyEnvelope(), Does.Contain("60000 mi"));
+				journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord), Does.Contain("60.000 mi"));
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(), Is.EqualTo(ThePublication));
 
 			Assert.That(journal.Api.HasDeliveryBeenRecorded(), Is.True);
@@ -892,14 +923,16 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(
 				() => journal.Api.ReadEnvelopeStanding(asked));
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("ninguna lectura del odómetro"));
+				journal.Api.DescribeWarrantyEnvelope(
+					asked, TheLanguage.OfTheRecord), Does.Contain("ninguna lectura del odómetro"));
 
 			Assert.That(
 				journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked), Is.False);
 			Assert.Throws<InvalidOperationException>(
 				() => journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked));
 			Assert.Throws<InvalidOperationException>(
-				() => journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked));
+				() => journal.Api.DescribeCoverageForThisVehicle(
+					"POWERTRAIN", asked, TheLanguage.OfTheRecord));
 
 			// CON LECTURA: la rama then de las tres del sobre, y el script de TRES globales de las
 			// tres de cobertura.
@@ -909,7 +942,8 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CanTheEnvelopeBeEvaluated(asked), Is.True);
 			Assert.That(journal.Api.ReadEnvelopeStanding(asked), Is.EqualTo("Inside"));
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("40000 km"));
+				journal.Api.DescribeWarrantyEnvelope(
+					asked, TheLanguage.OfTheRecord), Does.Contain("40.000 km"));
 
 			Assert.That(
 				journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked), Is.True);
@@ -917,7 +951,8 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked),
 				Is.EqualTo("CoveredWithExclusion"));
 			Assert.That(
-				journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked),
+				journal.Api.DescribeCoverageForThisVehicle(
+					"POWERTRAIN", asked, TheLanguage.OfTheRecord),
 				Does.Contain("wear parts"));
 		}
 
@@ -939,10 +974,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			journal.Api.CanTheEnvelopeBeEvaluated(asked);
 			journal.Api.ReadEnvelopeStanding(asked);
-			journal.Api.DescribeWarrantyEnvelope(asked);
+			journal.Api.DescribeWarrantyEnvelope(asked, TheLanguage.OfTheRecord);
 			journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked);
 			journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked);
-			journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked);
+			journal.Api.DescribeCoverageForThisVehicle(
+				"POWERTRAIN", asked, TheLanguage.OfTheRecord);
 
 			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before),
 				"El journal quedo byte a byte como estaba. Una lectura que escribe le agrega una "
@@ -958,16 +994,6 @@ namespace Concesionario.Dominio.Pruebas
 		public void EveryScriptOfTheEventLogParsesBindsAndRuns()
 		{
 			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(0L));
-			Assert.That(journal.Api.StoredDeviceKey(), Is.EqualTo(""));
-			Assert.That(journal.Api.StoredToken(), Is.EqualTo(""));
-			Assert.That(journal.Api.StoredRefreshToken(), Is.EqualTo(""));
-
-			journal.Api.RegisterDevice("device-de-prueba");
-			journal.Api.StoreCredential("at_1234", "rt_5678");
-
-			Assert.That(journal.Api.StoredDeviceKey(), Is.EqualTo("device-de-prueba"));
-			Assert.That(journal.Api.StoredToken(), Is.EqualTo("at_1234"));
-			Assert.That(journal.Api.StoredRefreshToken(), Is.EqualTo("rt_5678"));
 		}
 
 		// LOS ONCE SCRIPTS DE INGESTA QUE TRAJO T9, uno por comando de publicacion de la
@@ -1055,8 +1081,8 @@ namespace Concesionario.Dominio.Pruebas
 			// instante de publicacion, asi que leer las mitades de la segunda es lo que prueba que el
 			// segundo script corrio y no solo el primero.
 			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
-			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("24 meses").And.Contains("40000 mi"),
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(TheLanguage.OfTheRecord),
+				Does.Contain("24 meses").And.Contains("40.000 mi"),
 				"Las dos mitades del sobre que rige, con su unidad. Cruzar meses con distancia, o "
 				+ "quedarse con la primera publicacion, cambia esta frase.");
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(),
@@ -1126,7 +1152,7 @@ namespace Concesionario.Dominio.Pruebas
 			// nombra tambien el asunto, asi que un Does.Contain pelado se satisface con los dos campos
 			// cruzados. MEDIDO en la pasada de falsificacion de esta tarea.
 			Assert.That(
-				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay),
+				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay, TheLanguage.OfTheRecord),
 				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
 					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject));
 		}
@@ -1164,7 +1190,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Y los tres hechos avanzan el punto de control en el MISMO comando que el hecho.");
 
 			CostLedgerRecord record =
-				journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo);
+				journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(record.Classification, Is.EqualTo(new[] { "Durable", "Recurring", "Recurring" }),
 				"UNA duradera y DOS recurrentes, y en ese orden: es lo unico que separa el script del "
@@ -1245,7 +1271,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(journal.Api.ReadDueState("RecallRemedy"), Is.EqualTo("NotDue"));
 			Assert.That(journal.Api.DeferralsUsed("RecallRemedy"), Is.EqualTo(0));
-			Assert.That(journal.Api.ReadDueReason("RecallRemedy"), Does.Contain("no tiene agendada"));
+			Assert.That(journal.Api.ReadDueReason("RecallRemedy",
+				TheLanguage.OfTheRecord), Does.Contain("no tiene agendada"));
 			Assert.That(journal.Api.CanBeDeferred("RecallRemedy"), Is.False);
 		}
 
@@ -1271,15 +1298,20 @@ namespace Concesionario.Dominio.Pruebas
 				journal.Api.ReadModel(), Is.EqualTo(AScheduleOnARealJournal.TheModelAtDelivery));
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.True);
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("5W-30"));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain("5W-30"));
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.IsTyrePublished("Front"), Is.True);
-			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("205/55R16"));
+			Assert.That(
+				journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord),
+				Does.Contain("205/55R16"));
 			Assert.That(journal.Api.ReadTyreRevision("Front"), Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.IsFuelPublished(), Is.True);
-			Assert.That(journal.Api.DescribeFuel(), Does.Contain("91 RON regular"));
+			Assert.That(
+				journal.Api.DescribeFuel(TheLanguage.OfTheRecord), Does.Contain("91 RON regular"));
 			Assert.That(journal.Api.ReadMinimumFuelGrade(), Is.EqualTo("91 RON regular"));
 			Assert.That(
 				journal.Api.PermittedFuelGrades(), Is.EqualTo(new[] { "95 RON Premium" }));
@@ -1288,8 +1320,9 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.IsServiceIntervalPublished("FluidChange"), Is.True);
 			Assert.That(
-				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
-				Does.Contain("8400"));
+				journal.Api.DescribeServiceInterval(
+					"FluidChange", 8400, "UnitA", TheLanguage.OfTheRecord),
+				Does.Contain("8.400"));
 			Assert.That(
 				journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(TheRevision));
 
@@ -1298,17 +1331,20 @@ namespace Concesionario.Dominio.Pruebas
 				Is.True);
 			Assert.That(
 				journal.Api.DescribeServicePrice(
-					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
-				Does.Contain("$75.50"));
+					"FluidChange", TenThousandUnits, "UnitA", ThePublication, TheLanguage.OfTheRecord),
+				Does.Contain("$75,50"));
 			Assert.That(
 				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
 				Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.IsCoveragePublished(), Is.True);
-			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("POWERTRAIN"));
+			Assert.That(
+				journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
+				Does.Contain("POWERTRAIN"));
 			Assert.That(journal.Api.ReadCoverageRevision(), Is.EqualTo(TheRevision));
 			Assert.That(journal.Api.CoveredSystems(), Is.EqualTo(new[] { "POWERTRAIN" }));
-			Assert.That(journal.Api.CoverageExclusions().Length, Is.EqualTo(1));
+			Assert.That(
+				journal.Api.CoverageExclusions(TheLanguage.OfTheRecord).Length, Is.EqualTo(1));
 			Assert.That(journal.Api.TheVocabularyIsTheManufacturers("POWERTRAIN"), Is.True);
 
 			Assert.That(TheCoverageOf("POWERTRAIN", journal.Api.CanCoverageBeEvaluated), Is.True);
@@ -1316,12 +1352,13 @@ namespace Concesionario.Dominio.Pruebas
 				TheCoverageOf("POWERTRAIN", journal.Api.ReadCoverageStanding),
 				Is.EqualTo("CoveredWithExclusion"));
 			Assert.That(
-				TheCoverageOf("POWERTRAIN", journal.Api.DescribeCoverage),
+				TheCoverageSaidOf("POWERTRAIN", journal.Api),
 				Does.Contain("wear parts"));
 
 			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.True);
 			Assert.That(
-				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("service anywhere"));
+				journal.Api.DescribeServicingElsewhereRule(
+					2, 0, 0, TheLanguage.OfTheRecord), Does.Contain("service anywhere"));
 			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(TheRevision));
 
 			Assert.That(journal.Api.HasASealedRevision(), Is.True);
@@ -1344,15 +1381,21 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.HasASealedRevision(), Is.False);
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.False);
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsTyrePublished("Front"), Is.False);
-			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeTyre("Front", TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadTyreRevision("Front"), Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsFuelPublished(), Is.False);
-			Assert.That(journal.Api.DescribeFuel(), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeFuel(TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadMinimumFuelGrade(), Is.EqualTo(""));
 			Assert.That(journal.Api.PermittedFuelGrades(), Is.Empty);
 			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.Empty);
@@ -1360,10 +1403,12 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.IsServiceIntervalPublished("FluidChange"), Is.False);
 			Assert.That(
-				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
+				journal.Api.DescribeServiceInterval(
+					"FluidChange", 8400, "UnitA", TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(
-				journal.Api.DescribePublishedServiceInterval("FluidChange"),
+				journal.Api.DescribePublishedServiceInterval(
+					"FluidChange", TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(""));
 
@@ -1372,17 +1417,19 @@ namespace Concesionario.Dominio.Pruebas
 				Is.False);
 			Assert.That(
 				journal.Api.DescribeServicePrice(
-					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
+					"FluidChange", TenThousandUnits, "UnitA", ThePublication, TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(
 				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
 				Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsCoveragePublished(), Is.False);
-			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("no se ha publicado nada"));
+			Assert.That(
+				journal.Api.DescribeCoverageSummary(TheLanguage.OfTheRecord),
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadCoverageRevision(), Is.EqualTo(""));
 			Assert.That(journal.Api.CoveredSystems(), Is.Empty);
-			Assert.That(journal.Api.CoverageExclusions(), Is.Empty);
+			Assert.That(journal.Api.CoverageExclusions(TheLanguage.OfTheRecord), Is.Empty);
 			Assert.That(journal.Api.TheVocabularyIsTheManufacturers("POWERTRAIN"), Is.False);
 
 			// Sin nada publicado la pregunta SI se puede contestar, y la respuesta es que no se
@@ -1392,14 +1439,15 @@ namespace Concesionario.Dominio.Pruebas
 				TheCoverageOf("POWERTRAIN", journal.Api.ReadCoverageStanding),
 				Is.EqualTo("NotPublished"));
 			Assert.That(
-				TheCoverageOf("POWERTRAIN", journal.Api.DescribeCoverage),
+				TheCoverageSaidOf("POWERTRAIN", journal.Api),
 				Does.Contain("no se ha publicado nada"));
 
 			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.False);
 			Assert.That(
-				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("no se ha publicado nada"));
+				journal.Api.DescribeServicingElsewhereRule(
+					2, 0, 0, TheLanguage.OfTheRecord), Does.Contain("no se ha publicado nada"));
 			Assert.That(
-				journal.Api.DescribePublishedServicingElsewhereRule(),
+				journal.Api.DescribePublishedServicingElsewhereRule(TheLanguage.OfTheRecord),
 				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(""));
 		}
@@ -1443,7 +1491,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeCoverage(
 					"POWERTRAIN", 60, 100000, "UnitA",
-					Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitB", ThePublication),
+					Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitB", ThePublication, TheLanguage.OfTheRecord),
 				Is.Not.Empty,
 				"Pero la FRASE si contesta: lo que no se pudo evaluar tambien se dice con palabras.");
 		}
@@ -1509,6 +1557,16 @@ namespace Concesionario.Dominio.Pruebas
 		// Los nueve hechos de la pregunta de cobertura, atados una vez para las tres lecturas que la
 		// hacen. Van los nueve: la resta entre el limite y el odometro es donde se compara la
 		// unidad, y precalcularla aca se llevaria esa comparacion fuera del dominio.
+		// La misma llave que TheCoverageOf, para la lectura que ademas toma el idioma: una lectura
+		// de diez no entra en un Func de nueve, y la decima no es un hecho del vehiculo.
+		private static string TheCoverageSaidOf(string systemCode, DealershipCarAPI api)
+		{
+			return api.DescribeCoverage(
+				systemCode, 60, 100000, "UnitA",
+				Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitA", ThePublication,
+				TheLanguage.OfTheRecord);
+		}
+
 		private static T TheCoverageOf<T>(
 			string systemCode,
 			Func<string, int, int, string, DateTime, int, int, string, DateTime, T> read)

@@ -64,5 +64,7 @@ namespace Examenes.Dominio
 		internal bool EstaPresente => Presencia.EstaPresente;
 		internal bool EstaConfirmado => Presencia.EstaConfirmado;
 		internal int Negativas => CantidadDeMediciones - Positivas;
+
+		internal override void PonerSusValoresEn(Interpretacion lectura) => lectura.ConPruebas(this);
 	}
 }

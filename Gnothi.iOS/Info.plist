@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Mymi</string>
+
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+		<integer>2</integer>
+	</array>
+
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+
+	<!-- EL CICLO DE VIDA DE UIScene, Y ES OBLIGATORIO DESDE iOS 27.
+	     Sin esta clave la app NO ARRANCA: UIKit la mata a proposito con EXC_BREAKPOINT en
+	     __UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption, antes de que corra una
+	     linea nuestra. Medido el 2026-09-15 en el iPhone 13 Pro y en un simulador de iOS 27.0;
+	     el MISMO binario en un simulador de iOS 26.5 arrancaba bien.
+
+	     El requisito se aplica segun EL SDK CONTRA EL QUE SE ENLAZA la app, no segun la version
+	     del telefono: el build hecho con Xcode 26.6 declaraba `sdk 26.5` y corria en ese mismo
+	     iPhone con iOS 27. Xcode se auto-actualizo a 27 con macOS y se perdio la excepcion.
+
+	     UNA SOLA ESCENA a proposito: Mymi es una ventana. Y el delegado se nombra aca y no se
+	     resuelve en codigo, para que se vea sin compilar. Ver Gnothi.iOS/SceneDelegate.cs, donde
+	     ademas viven ahora el enlace y el archivo: con scenes, UIKit ya no llama OpenUrl ni
+	     ContinueUserActivity en el AppDelegate. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+
+	<!-- Sin esto la app corre en una ventana chica con marcos negros y parece rota. Un dict
+	     vacio alcanza desde iOS 14: el sistema pinta el color de fondo y ya. -->
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<!-- ESTAS DOS LINEAS SON LO QUE ANDROID NO PUEDE DAR.
+	     Con las dos, la carpeta Documents de la app aparece en la app ARCHIVOS del telefono:
+	     la persona puede dejar ella misma el paquete en incoming/, sin cable, sin adb y sin
+	     un desarrollador al lado. En Android el paquete se empuja por adb porque no hay otra
+	     forma, y eso siempre fue una muleta de laboratorio, no parte del producto. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!-- WHAT GNOTHI MAY SPEAK IN THE CLEAR, and the answer is: almost nothing.
+	     This is the exact twin of Gnothi.Mobile/Resources/xml/network_security_config.xml and
+	     it is here for the same reason: the postman talks to publishers over HTTPS, and the
+	     ONLY exception is loopback, which is where a local publisher lands while testing.
+
+	     IT IS NOT AN OPEN DOOR: 127.0.0.1 is the device itself. Nothing coming from the
+	     network can arrive through there, and no real publisher lives there.
+
+	     THE COST OF NOT HAVING IT, measured on the Android side: the postman failed with
+	     "Connection failure" and the module opened empty, WITH NOTHING SAYING WHY. On iOS the
+	     symptom is the same and App Transport Security produces it, having blocked plain http
+	     since iOS 9. Without these lines the first run on a simulator fails mute.
+
+	     WHY ExceptionDomains AND NOT NSAllowsArbitraryLoads: arbitrary loads turns ATS off for
+	     EVERYTHING, and it is also what Apple asks about in App Review. This names two hosts.
+
+	     [A PHYSICAL IPHONE NEEDS MORE] On the simulator this is enough, because the simulator
+	     shares the Mac's network stack and 127.0.0.1 IS its localhost. On a real device the
+	     publisher lives on another machine, so it has to be reached by its LAN address, and
+	     that additionally needs NSAllowsLocalNetworking. Said in PRUEBAS-WEBVIEW-IOS.md §0. -->
+	<!-- A SCHEME OF OUR OWN, and it is here because P6 could not be run without it.
+	     go.gnothi.app does not resolve (measured 2026-09-07), so iOS has no AASA to verify and
+	     never hands the universal link to the app: Safari just opens the page. Android papers
+	     over exactly this with `pm set-app-links`, which force-approves the link locally. iOS
+	     has NO command line equivalent, so the escape hatch has to live in the app.
+
+	         xcrun simctl openurl booted "gnothi://alta?bundle=http://127.0.0.1:8096/examenes.zip"
+
+	     WHAT KEEPS THIS FROM BEING A HOLE: a custom scheme can be invoked by anyone, any app or
+	     any web page, and unlike a universal link nothing verifies who owns it. What arrives is
+	     only a URL to a bundle, and the alta ALWAYS shows the consent sheet first, so a hostile
+	     link gets as far as the sheet and no further. The person still reads who serves it, what
+	     it will be able to answer, and where the journal will live.
+
+	     STILL WORTH A DECISION BEFORE SHIPPING: the universal link is the product path and this
+	     is the laboratory one. It is defensible to keep -a person could get a bundle link by
+	     mail or by QR- but if it should not ship, it is one `#if DEBUG` in AppDelegate. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.ncubo.gnothi.host</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gnothi</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- LA CAMARA, para leer el codigo de la institucion desde adentro de Gnothi. La pagina la
+	     pide con getUserMedia y WebKit no le pregunta a la persona si esta clave no existe: el
+	     lector muere con NotAllowedError y la hoja dice que Gnothi no tiene permiso. El texto es
+	     el que iOS muestra en su dialogo, asi que habla en la voz de la persona. Escrito el
+	     2026-09-09 en Windows, sin compilar: lo mide quien tenga la Mac. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Mymi usa la cámara solo para leer el código que te da tu institución y agregar su módulo. No guarda fotos ni video.</string>
+
+	<!-- LA FOTOTECA, para la foto del odometro que Cargas adjunta a una carga
+	     (Cargas.Wasm/Pages/Ruta.razor, un <input type=file accept="image/*">). El modulo corre
+	     dentro del WKWebView del Host, asi que quien le pide Fotos al sistema es Gnothi.Host, no
+	     Cargas. Sin esta clave, en la Mac el dialogo sale con la frase generica de Apple y en un
+	     iPhone tocar la fototeca puede matar la app en vez de preguntar.
+
+	     HOY ES PREVENTIVA. Medido en el 13 Pro el 2026-09-11 con Cargas dado de alta: hospedado
+	     el boton NO se dibuja, porque Ruta.razor lo condiciona a Estado.HayCarpeta, que es el
+	     handle del modo suelto, y GuardarArchivo escribe por journal-interop.js y no por el
+	     destino de Gnothi. El dia que la foto hospedada exista -HayDestino en vez de HayCarpeta
+	     y fotos/ por DestinoPorPuente-, esta clave ya esta puesta y el dialogo dice lo de arriba. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mymi abre tus fotos solo cuando elegís adjuntar una, como la del odómetro en una carga. No las recorre ni las sube a ningún lado.</string>
+
+	<!-- EL PAQUETE COMO DOCUMENTO: un .gmod que llega por Archivos, por AirDrop o por un chat
+	     ofrece «Copiar en Gnothi», igual que «Abrir con» en Android. Dos tipos a proposito, como
+	     alla: el propio (app.gnothi.module, declarado abajo) y el zip pelado, porque un archivo
+	     que paso por correo o chat suele perder el tipo; la inspeccion separa un modulo de
+	     cualquier otro zip. Rango Alternate: Gnothi se ofrece, no se apropia de todos los zips.
+	     Los documentos llegan por AppDelegate.OpenUrl como file:// y de ahi al alta. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Módulo de Mymi</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>app.gnothi.module</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Archivo zip</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.zip-archive</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- EL TIPO DEL PAQUETE, exportado: la extension .gmod y el mime que la pagina de la
+	     institucion sirve. Conforma a zip porque ES un zip, y eso es lo que deja que Archivos lo
+	     abra como carpeta si la persona quiere mirar adentro. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>app.gnothi.module</string>
+			<key>UTTypeDescription</key>
+			<string>Módulo de Mymi</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.zip-archive</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>gmod</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.gnothi.module</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+
+	<!-- EL PERMISO DE RED LOCAL, Y NO ES LO MISMO QUE NSAllowsLocalNetworking. Son DOS
+	     compuertas distintas y hay que pasar las dos:
+
+	       NSAllowsLocalNetworking       es de ATS: permite TEXTO CLARO hacia la red local.
+	       NSLocalNetworkUsageDescription es de PRIVACIDAD: desde iOS 14 hablarle a la red
+	                                      local exige permiso de la persona, y iOS solo se lo
+	                                      PIDE si esta clave existe.
+
+	     SIN ESTA CLAVE LA CONEXION SE DENIEGA Y EL ERROR MIENTE. Medido en un iPhone el
+	     2026-09-08, con NSAllowsLocalNetworking ya puesto: el alta fallo con
+	     "HttpRequestException: The Internet connection appears to be offline" -que manda a
+	     revisar el wifi cuando lo que falta es un permiso que nunca se pidio.
+
+	     [SOLO PARA EL LABORATORIO] En produccion el publicador es un servidor real por HTTPS y
+	     esto no hace falta. Esta para poder correr el guion en un aparato contra el escenario
+	     de la Mac; sale junto con NSAllowsLocalNetworking antes de publicar. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Para bajar el modulo de tu institucion desde un servidor de prueba en esta red.</string>
+
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- LA RED LOCAL, y hace falta SOLO en un aparato de verdad. En el simulador alcanzan
+		     las dos excepciones de abajo, porque comparte el stack de red de la Mac y el
+		     publicador vive en su 127.0.0.1. En un telefono ese 127.0.0.1 ES EL TELEFONO, asi
+		     que el publicador hay que alcanzarlo por la IP de la Mac en la LAN -y ATS bloquea
+		     texto claro hacia cualquier cosa que no sea loopback.
+
+		     NSAllowsLocalNetworking y NO NSAllowsArbitraryLoads: esto habilita texto claro
+		     hacia destinos de RED LOCAL nada mas -.local y rangos privados-, no hacia
+		     internet. Lo de afuera sigue exigiendo HTTPS, que es la unica red que un modulo
+		     hospedado deberia poder tocar en produccion.
+
+		     [SOLO PARA EL LABORATORIO] En produccion el publicador es un servidor real por
+		     HTTPS y esta clave no hace falta. Esta puesta para poder correr el guion en un
+		     aparato contra el escenario de la Mac; antes de publicar hay que sacarla, junto
+		     con las dos excepciones de loopback. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>

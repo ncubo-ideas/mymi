@@ -284,7 +284,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(journal.Api.ReadCurrentRevisionCode(),
 				Is.EqualTo(ADealershipNarrative.TheSecondRevision));
-			Assert.That(journal.Api.DescribeFluid("EngineOil"),
+			Assert.That(journal.Api.DescribeFluid("EngineOil", TheLanguage.OfTheRecord),
 				Does.Contain(ADealershipNarrative.TheSecondOilGrade));
 		}
 
@@ -373,7 +373,7 @@ namespace Concesionario.Dominio.Pruebas
 			// hay -- ninguna lectura de periodo la alcanza, asi que no tiene fila ni columnas -- de
 			// modo que si esta afirmacion no discrimina, nada discrimina.
 			Assert.That(
-				journal.Api.DescribeTheStayAt(InsideTheOpenStay),
+				journal.Api.DescribeTheStayAt(InsideTheOpenStay, TheLanguage.OfTheRecord),
 				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
 					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject),
 				"DescribeTheStayAt dice la estadia ABIERTA con la sucursal en la clausula de la "
@@ -381,7 +381,7 @@ namespace Concesionario.Dominio.Pruebas
 				+ "frase los diria al reves.");
 
 			Assert.That(
-				journal.Api.DescribeTheStayAt(InsideTheFirstClosedStay),
+				journal.Api.DescribeTheStayAt(InsideTheFirstClosedStay, TheLanguage.OfTheRecord),
 				Does.Contain("en " + ADealershipNarrative.TheFirstShopBranch + " desde el")
 					.And.Contains("Entró por " + ADealershipNarrative.TheFirstShopSubject),
 				"Y la del acto unico cuando se pregunta por un instante que ELLA cubre.");
@@ -401,14 +401,15 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.DaysInTheShopCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(5));
 
 			Assert.That(
-				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo),
+				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo, TheLanguage.OfTheRecord),
 				Does.Contain("5 días").And.Contains("2 estadías"));
 
 			Assert.That(journal.Api.StayCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(2),
 				"DOS estadias con dias registrados, no tres: la abierta no entra en un periodo dicho "
 				+ "en dias, y no cinco: dias y estadias son dos cuentas distintas.");
 
-			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo,
+				TheLanguage.OfTheRecord);
 
 			Assert.That(
 				record.Branch,
@@ -498,37 +499,36 @@ namespace Concesionario.Dominio.Pruebas
 			// de marzo. La caja del semestre son las dos entradas de colones enteras; lo consumido es el
 			// cambio de aceite entero mas la parte que a ese semestre le toca de las llantas.
 			string theColonesHalf =
-				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo);
+				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo, TheLanguage.OfTheRecord);
 
-			Assert.That(theColonesHalf, Does.Contain("Salieron ₡285000.00 del banco"),
+			Assert.That(theColonesHalf, Does.Contain("Salieron ₡285.000,00 del banco"),
 				"La caja del semestre, sumada por el DOMINIO: 240000 mas 45000, los dos montos como el "
 				+ "feed los mando.");
-			Assert.That(theColonesHalf, Does.Not.Contain("consumió ₡285000.00"),
+			Assert.That(theColonesHalf, Does.Not.Contain("consumió ₡285.000,00"),
 				"Y lo consumido DIFIERE de la caja: la duradera se reparte a lo largo de 48 meses.");
 			Assert.That(
 				theColonesHalf,
 				Does.Contain(
-					"₡240000.00 en " + ADealershipNarrative.TheTyresSubject
+					"₡240.000,00 en " + ADealershipNarrative.TheTyresSubject
 					+ ", en línea recta a lo largo de 48 meses desde el 2026-03-12 09:00:00"),
 				"Y la vida util que llego por el feed va dicha adentro de la regla, con el asunto y el "
 				+ "instante de anclaje: cruzar la vida con el monto cambia esta frase.");
 
-			string theYear = journal.Api.DescribeSpendPerCurrencyBetween(TheCostYearFrom, TheCostYearTo);
+			string theYear = journal.Api.DescribeSpendPerCurrencyBetween(TheCostYearFrom, TheCostYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(theYear, Does.Contain("2 monedas distintas"));
-			Assert.That(theYear, Does.Contain("₡285000.00"), "El colon por su lado.");
-			Assert.That(theYear, Does.Contain("$120.50"),
+			Assert.That(theYear, Does.Contain("₡285.000,00"), "El colon por su lado.");
+			Assert.That(theYear, Does.Contain("$120,50"),
 				"Y el dolar con su propio signo: las dos monedas del feed llegaron distintas, asi que una "
 				+ "moneda cruzada entre filas cambia esta frase.");
 			Assert.That(theYear, Does.Not.Contain("285120"), "Y NINGUN total entre las dos.");
 
 			Assert.That(
-				journal.Api.DescribeTwoPeriodsOfSpendCompared(
-					TheColonesHalfFrom, TheColonesHalfTo, TheYearBeforeFrom, TheYearBeforeTo),
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(TheColonesHalfFrom, TheColonesHalfTo, TheYearBeforeFrom, TheYearBeforeTo, TheLanguage.OfTheRecord),
 				Does.Contain("Primer período: Entre el 2026-01-01 00:00:00")
 					.And.Contains("no hay ningún gasto registrado"));
 
-			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo);
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				record.IncurredAt,
@@ -550,7 +550,7 @@ namespace Concesionario.Dominio.Pruebas
 				"Los asuntos con las palabras que la sucursal mando, sin tocar.");
 
 			Assert.That(
-				record.Money, Is.EqualTo(new[] { "₡240000.00", "₡45000.00", "$120.50" }),
+				record.Money, Is.EqualTo(new[] { "₡240.000,00", "₡45.000,00", "$120,50" }),
 				"El dinero dicho por el DOMINIO, con el signo y los decimales de cada moneda. LOS TRES "
 				+ "MONTOS LLEGARON CON UN CERO A LA DERECHA que el journal deja caer, asi que esta "
 				+ "afirmacion tambien dice que Normalized y Expressed lo reponen.");
@@ -566,7 +566,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				record.Says[0],
-				Does.Contain("₡240000.00 en " + ADealershipNarrative.TheTyresSubject
+				Does.Contain("₡240.000,00 en " + ADealershipNarrative.TheTyresSubject
 					+ " el 2026-03-12 09:00:00")
 					.And.Contains("Duradero"),
 				"Y cada fila se dice entera, con el asunto ADENTRO de su propia clausula (C60): un "
@@ -574,7 +574,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				record.Says[2],
-				Does.Contain("$120.50 en " + ADealershipNarrative.TheWashSubject
+				Does.Contain("$120,50 en " + ADealershipNarrative.TheWashSubject
 					+ " el 2026-08-05 14:15:00")
 					.And.Contains("Recurrente"),
 				"La tercera fila dice lo suyo: otra moneda, otra clase y otro asunto que la primera.");

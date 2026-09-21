@@ -42,8 +42,17 @@ namespace Examenes.Dominio
 
 		internal bool Subio => CambioContraElAnterior.HasValue && CambioContraElAnterior.Value > 0m;
 
-		internal string Expresado => HayConQueComparar
-			? $"{Ano}: {Valor.Expresado} ({(Subio ? "+" : "")}{CambioContraElAnterior.Value} contra {Ano - 1})"
-			: $"{Ano}: {Valor.Expresado}";
+		/// <summary>La frase con que se dice esta medicion del ano, por su nombre.</summary>
+		internal string ClaveDeLaFrase =>
+			HayConQueComparar ? "ano.con-comparacion" : "ano.sin-comparacion";
+
+		/// <summary>El numero de la medicion, para el hueco de la frase.</summary>
+		internal decimal Numero => Valor.Valor;
+
+		/// <summary>El simbolo de la unidad. NO se traduce.</summary>
+		internal string Unidad => Valor.Unidad.Simbolo;
+
+		/// <summary>Cuanto cambio contra el ano anterior, cero cuando no hay con que comparar.</summary>
+		internal decimal Cambio => CambioContraElAnterior ?? 0m;
 	}
 }

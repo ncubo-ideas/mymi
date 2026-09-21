@@ -25,6 +25,11 @@ namespace Concesionario.Dominio.Pruebas
 	{
 		private const string TheVin = "1HGCM82633A004352";
 		private const int TheTimeLimitInDays = 365;
+
+		// EL IDIOMA EN QUE SE PIDEN LAS FRASES. La ley de aqui es que la ausencia sea una SITUACION y
+		// no un cero, que es la misma en los dos idiomas; que las dos redacciones la digan palabra por
+		// palabra lo afirma TheHistoryIsSaidInTheLanguageItIsAskedIn.
+		private const string InSpanish = TheLanguage.OfTheRecord;
 		private const int NoDistanceLimit = 0;
 		private const int TheDistanceLimit = 8000;
 
@@ -50,11 +55,13 @@ namespace Concesionario.Dominio.Pruebas
 				+ "completacion.");
 
 			Assert.That(
-				schedule.CompletionReadingsOf(OperationKindCode.TimedComponent),
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.TimedComponent, InSpanish),
 				Is.EqualTo(new[] { "sin lectura registrada" }));
 
 			Assert.That(
-				schedule.DescribeEachCompletionOf(OperationKindCode.TimedComponent)[0],
+				TheSentenceTheDoorWouldCompose.EachCompletionOf(
+					schedule, OperationKindCode.TimedComponent, InSpanish)[0],
 				Does.Contain("2025-06-11 16:40:00").And.Contain("sin lectura del odómetro"),
 				"La frase de la fila dice el instante Y dice que no hay lectura: callarla haria "
 				+ "indistinguible 'no se midio' de 'no se dijo'.");
@@ -67,7 +74,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			MaintenanceSchedule schedule = ATimedComponentCompletedOnce();
 
-			string[] readings = schedule.CompletionReadingsOf(OperationKindCode.TimedComponent);
+			string[] readings = TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+				schedule, OperationKindCode.TimedComponent, InSpanish);
 
 			Assert.That(readings[0], Is.Not.Empty,
 				"Una celda vacia se lee como que la columna no aplica. La ausencia se DICE.");
@@ -88,16 +96,20 @@ namespace Concesionario.Dominio.Pruebas
 			string received = TheReadingThatIsReceivedAndDiscarded.ToString();
 
 			Assert.That(
-				schedule.CompletionReadingsOf(OperationKindCode.TimedComponent),
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.TimedComponent, InSpanish),
 				Has.None.Contains(received));
 			Assert.That(
-				schedule.DescribeEachCompletionOf(OperationKindCode.TimedComponent),
+				TheSentenceTheDoorWouldCompose.EachCompletionOf(
+					schedule, OperationKindCode.TimedComponent, InSpanish),
 				Has.None.Contains(received));
 			Assert.That(
-				schedule.DescribeCompletions(OperationKindCode.TimedComponent),
+				TheSentenceTheDoorWouldCompose.TheCompletions(
+					schedule, OperationKindCode.TimedComponent, InSpanish),
 				Does.Not.Contain(received));
 			Assert.That(
-				schedule.CompletionReadingsOnRecord(), Has.None.Contains(received),
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOnRecord(schedule, InSpanish),
+				Has.None.Contains(received),
 				"El ancla de solo instante no tiene lectura. Alcanzar la que se recibio seria "
 				+ "componer una fila con un hecho que el ancla no guarda.");
 		}
@@ -110,32 +122,66 @@ namespace Concesionario.Dominio.Pruebas
 			MaintenanceSchedule schedule = ATimedComponentCompletedOnce();
 
 			Assert.That(
-				schedule.CompletionReadingsOf(OperationKindCode.FluidChange),
-				Is.EqualTo(new[] { "34100 km" }));
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.FluidChange, InSpanish),
+				Is.EqualTo(new[] { "34.100 km" }));
 
 			Assert.That(
-				schedule.CompletionReadingsOnRecord(),
-				Is.EqualTo(new[] { "sin lectura registrada", "34100 km" }),
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOnRecord(schedule, InSpanish),
+				Is.EqualTo(new[] { "sin lectura registrada", "34.100 km" }),
 				"Las dos filas en el mismo juego, cada una diciendo lo suyo: la de junio sin lectura y "
 				+ "la de abril con la de ella.");
 		}
 
-		// L6 HECHO ESTRUCTURA: la fila no tiene ningun miembro que entregue un numero, asi que un
-		// cero no es ni representable. Tampoco entrega el par AnchorReading, que es de BasePoint y no
-		// suyo de repartir, ni el instante crudo -- comparar es una operacion con nombre (E23).
+		// L6 HECHO ESTRUCTURA, Y LA ESTRUCTURA CAMBIO EN ESTE TURNO. Hasta que la fila compuso su
+		// propia frase, lo que defendia L6 era que NINGUN miembro entregara un numero: sin accesor
+		// numerico el cero no era ni representable. Desde que la redaccion vive en el catalogo, la
+		// fila tiene que entregar la lectura como NUMERO -- los separadores de miles son del idioma --
+		// y lo que la defiende es la SITUACION que va al lado: la forma dice si hay lectura, y el cero
+		// solo aparece donde la forma ya dijo que no hay ninguna.
+		//
+		// LAS DOS MITADES SE AFIRMAN JUNTAS a proposito: la forma sola no prueba que nadie lea el
+		// numero igual, y la celda sola no prueba que el numero este apagado por una situacion en vez
+		// de por casualidad.
 		[Test]
-		public void NoMemberOfTheRowHandsOutANumberOrTheCarrier()
+		public void TheAbsentReadingIsASituationBesideTheNumberAndNeverTheNumberAlone()
 		{
-			List<string> numbers = EveryMemberOfTheRow()
-				.Where(member => member.ReturnType == typeof(int)
-					|| member.ReturnType == typeof(DateTime))
+			MaintenanceSchedule schedule = ATimedComponentCompletedOnce();
+
+			Assert.That(
+				schedule.CompletionReadingShapesOf(OperationKindCode.TimedComponent),
+				Is.EqualTo(new[] { CompletionReadingShape.WithNoReading }),
+				"La fila sin lectura tiene que decirlo con su propia situacion. Sin ella, el cero de "
+				+ "la columna de al lado es un centinela, que es lo que L6 prohibe.");
+
+			Assert.That(
+				schedule.CompletionReadingShapesOf(OperationKindCode.FluidChange),
+				Is.EqualTo(new[] { CompletionReadingShape.WithAReading }),
+				"Y la que SI tiene lectura dice la otra: si las dos dijeran lo mismo, esta prueba "
+				+ "pasaria por la razon equivocada.");
+
+			Assert.That(
+				TheSentenceTheDoorWouldCompose.EachCompletionReadingOf(
+					schedule, OperationKindCode.TimedComponent, InSpanish),
+				Is.EqualTo(new[] { "sin lectura registrada" }),
+				"Y la celda que se renderiza sobre esa situacion son palabras, no el cero que la "
+				+ "columna numerica lleva debajo.");
+		}
+
+		// Y LO QUE LA FILA NO ENTREGA SIGUE SIN ENTREGARLO: ni el par AnchorReading, que es de
+		// BasePoint y no suyo de repartir, ni el instante crudo -- comparar es una operacion con
+		// nombre (E23).
+		[Test]
+		public void NoMemberOfTheRowHandsOutTheCarrierOrARawInstant()
+		{
+			List<string> instants = EveryMemberOfTheRow()
+				.Where(member => member.ReturnType == typeof(DateTime))
 				.Select(member => member.Name)
 				.ToList();
 
-			Assert.That(numbers, Is.Empty,
-				"ACompletionRow entrega un numero o un instante crudo: " + string.Join(", ", numbers)
-				+ ". Con un accesor numerico la ausencia vuelve a necesitar un centinela, y el "
-				+ "centinela es el cero que L6 prohibe.");
+			Assert.That(instants, Is.Empty,
+				"ACompletionRow entrega un instante crudo: " + string.Join(", ", instants)
+				+ ". Quien ordena las filas las compara sin recibir el numero.");
 
 			List<string> carriers = EveryMemberOfTheRow()
 				.Where(member => member.ReturnType == typeof(AnchorReading)
@@ -146,7 +192,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(carriers, Is.Empty,
 				"ACompletionRow entrega un portador: " + string.Join(", ", carriers)
-				+ ". Lo que sale de la fila son palabras y una comparacion.");
+				+ ". Lo que sale de la fila son valores y una comparacion.");
 		}
 
 		private static IEnumerable<MethodInfo> EveryMemberOfTheRow()

@@ -27,7 +27,7 @@ namespace Cargas.Dominio
 			ArgumentNullException.ThrowIfNull(otro);
 			if (!Moneda.EsLaMisma(otro.Moneda))
 				throw new ErrorDeDominio(
-					$"No se puede sumar {Expresado} con {otro.Expresado}: el dinero no se "
+					$"No se puede sumar {Moneda.Codigo} con {otro.Moneda.Codigo}: el dinero no se "
 					+ "convierte, se registra. Agrupar por moneda es del que consulta.");
 
 			return new Dinero(Monto + otro.Monto, Moneda);
@@ -39,11 +39,12 @@ namespace Cargas.Dominio
 			ArgumentNullException.ThrowIfNull(otro);
 			if (!Moneda.EsLaMisma(otro.Moneda))
 				throw new ErrorDeDominio(
-					$"No se puede comparar {Expresado} con {otro.Expresado}: son monedas distintas.");
+					$"No se puede comparar {Moneda.Codigo} con {otro.Moneda.Codigo}: son monedas distintas.");
 
 			return Math.Abs(Monto - otro.Monto);
 		}
 
-		internal string Expresado => Moneda.Simbolo + Cifras.Plata(Monto);
+		/// <summary>El codigo de la moneda, aplanado para que el print lo alcance en un nivel.</summary>
+		internal string CodigoDeMoneda => Moneda.Codigo;
 	}
 }

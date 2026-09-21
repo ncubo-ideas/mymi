@@ -28,23 +28,42 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private const string NombreDelActor = "compras";
 
 	private readonly PuenteDeJournal puente;
+	private readonly ModoDeLaApp modo;
+	private readonly PuenteDeGnothi puenteDeGnothi;
+	private readonly AlmacenDeCredencial almacen;
 	private readonly HttpClient http;
 	private readonly ConfiguracionDelProveedor proveedor;
+	private readonly Textos textos;
 
 	private ComprasApp? app;
 	private ComprasAPI? api;
 	private BucleDeRefresh? bucle;
 
-	public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, ConfiguracionDelProveedor proveedor)
+	public EstadoDeLaApp(PuenteDeJournal puente, ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi,
+		AlmacenDeCredencial almacen, HttpClient http, ConfiguracionDelProveedor proveedor, Textos textos)
 	{
 		ArgumentNullException.ThrowIfNull(puente);
+		ArgumentNullException.ThrowIfNull(modo);
+		ArgumentNullException.ThrowIfNull(puenteDeGnothi);
+		ArgumentNullException.ThrowIfNull(almacen);
 		ArgumentNullException.ThrowIfNull(http);
 		ArgumentNullException.ThrowIfNull(proveedor);
+		ArgumentNullException.ThrowIfNull(textos);
 
 		this.puente = puente;
+		this.modo = modo;
+		this.puenteDeGnothi = puenteDeGnothi;
+		this.almacen = almacen;
 		this.http = http;
 		this.proveedor = proveedor;
+		this.textos = textos;
 	}
+
+	/// <summary>
+	/// EL IDIOMA CON QUE ESTA CARATULA LE PIDE SUS FRASES AL DOMINIO: el de la persona, negociado al
+	/// arrancar. No es el del registro: la caratula la lee ella, no el supermercado.
+	/// </summary>
+	private string ElIdioma => textos.Idioma;
 
 	public bool EstaArriba => app is not null;
 
@@ -143,7 +162,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		if (app is not null) return;
 
-		int precargados = puente.HayCarpeta ? await puente.PrecargarEnMemfs() : 0;
+		int precargados = puente.HayDestino ? await puente.PrecargarEnMemfs() : 0;
 
 		var arrancada = new ComprasApp(NombreDelActor);
 		arrancada.ConfigureStorage(DatabaseType.FileSystem, "path=" + PuenteDeJournal.RaizEnMemfs);
@@ -151,24 +170,33 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 		app = arrancada;
 		api = new ComprasAPI(arrancada);
-		bucle = new BucleDeRefresh(
-			api,
-			new FuenteHttpDeEventos(http, proveedor.Recurso, proveedor.Id),
-			RutaDeCompras.Rutear,
-			BajarADisco,
-			Renovar);
+		// LA FUENTE DEPENDE DEL HOSPEDAJE, y es lo unico que depende junto con el destino
+		// (11 §2). Suelta hace su propio pull con su credencial; hospedada le pide a Gnothi,
+		// que releva con la suya. El cursor lo pone el actor en los dos casos.
+		IFuenteDeEventos fuente = modo.Hospedada
+			? new FuenteDeEventosPorGnothi((desde, _) => modo.Puente!.Pull(desde).AsTask())
+			: new FuenteHttpDeEventos(http, proveedor.Recurso, proveedor.Id, Credencial, Renovar);
 
-		UltimoMensaje = puente.HayCarpeta
-			? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
-			: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
+		bucle = new BucleDeRefresh(api, fuente, RutaDeCompras.Rutear, BajarADisco);
+
+		UltimoMensaje = modo.Hospedada
+			? $"arriba, hospedada en Mymi. {precargados} archivos precargados"
+			: puente.HayDestino
+				? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
+				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
 
 		// La app se pone al dia sola: consigue su credencial si no la tiene y lee lo
 		// nuevo. Si el proveedor no esta disponible, abrir NO falla: se muestra lo que ya
 		// hay en el journal, que es justamente de lo que sirve tener el dato propio.
 		try
 		{
-			await Credencial(CancellationToken.None);
+			// LA CREDENCIAL SOLO EN EL MODO SUELTO. Hospedada la sostiene Gnothi del otro
+			// lado del puente y este modulo no ve ningun token: pedirla aca lo mandaria a
+			// hablar con el publicador, que es justo lo que la CSP le niega.
+			if (!modo.Hospedada) await Credencial(CancellationToken.None);
+
 			ResultadoDeRefresh alAbrir = await bucle.Ejecutar(CancellationToken.None);
+			if (alAbrir.Cuenta is not null) Cuenta = alAbrir.Cuenta;
 			UltimoMensaje += $" | al abrir: {alAbrir}";
 		}
 		catch (Exception ex)
@@ -176,8 +204,59 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			UltimoMensaje += $" | al abrir no se pudo poner al dia ({ex.GetType().Name}: {ex.Message}). "
 			               + "Lo que ya estaba registrado se muestra igual.";
 		}
+
+		// RECIEN AHORA el modulo puede recibir: el actor esta hidratado. Gnothi no puede
+		// adivinarlo mirando la pantalla, que se dibuja antes.
+		if (modo.Hospedada) await puenteDeGnothi.Listo();
 	}
 
+
+	// ---------------------------------------------------------------- hospedada en Gnothi
+
+	// EN QUE ESTADO ESTA LA CUENTA ante el proveedor, tal como vino en el ultimo sobre. Null
+	// hasta el primer refresh, o si el publicador todavia no manda el bloque `account`.
+	public EstadoDeCuenta? Cuenta { get; private set; }
+
+	// La instalacion SUELTA cuyo registro ya se mudo a Gnothi. Hospedada nunca esta migrada:
+	// es el destino, no el origen.
+	public bool Migrada => !modo.Hospedada && Cuenta is { Migrada: true };
+
+	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Mymi";
+
+	public bool Hospedada => modo.Hospedada;
+
+	// UNA CONSULTA, la que Gnothi pide por la superficie del modulo. Contra el actor VIVO y
+	// con los MISMOS cuerpos que usa el escritorio (ConsultasDelModulo): si cada hospedaje
+	// armara su propia respuesta, el mismo modulo contestaria distinto segun donde corra.
+	public object Consultar(string tool)
+	{
+		Exigir();
+
+		return tool switch
+		{
+			ConsultasDelModulo.Resumen => ConsultasDelModulo.HacerResumen(api!),
+			ConsultasDelModulo.ListaDeCompras => ConsultasDelModulo.HacerListaDeCompras(api!),
+			_ => throw new ArgumentException($"El módulo no atiende la tool '{tool}'."),
+		};
+	}
+
+	// EL CARTERO ENTREGA. Gnothi trae un sobre ya leido del publicador y se asienta por EL
+	// MISMO camino que el refresh propio: misma ruta, misma guarda Check, mismo flush. De ahi
+	// sale gratis que entregar dos veces el mismo sobre no duplique nada.
+	public async Task<ResultadoDeRefresh> Entregar(string sobreJson, CancellationToken ct = default)
+	{
+		Exigir();
+
+		var unaVez = new BucleDeRefresh(
+			api!,
+			new FuenteDeEventosPorGnothi((_, _) => Task.FromResult(sobreJson ?? ""), "gnothi.deliver"),
+			RutaDeCompras.Rutear,
+			BajarADisco);
+
+		ResultadoDeRefresh resultado = await unaVez.Ejecutar(ct);
+		UltimoMensaje = $"entrega de Mymi: {resultado}";
+		return resultado;
+	}
 	// El unico camino por el que la app baja a disco. Recuerda si fallo, para que la
 	// pantalla pueda decirlo.
 	private async Task BajarADisco()
@@ -197,17 +276,24 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// ---------------------------------------------------------------- credencial
 
 	// El token lo pide LA APP, no la persona. El proveedor lo emite contra el device key
-	// de esta instalacion, acotado a leer los eventos de un recurso. Las tres piezas
-	// viven en el journal, asi que al reabrir la app ya sabe quien es.
-	private async ValueTask<string> Credencial(CancellationToken ct)
+	// de esta instalacion, acotado a leer los eventos de un recurso. Las tres piezas viven
+	// en el ALMACEN DE CREDENCIAL -storage del browser del origen-, NO en el journal: un
+	// token es contexto de sesion, no historia de la persona, y en el journal quedaba en
+	// claro y viajaba con cualquier copia o traspaso (hasta el 2026-09-03 era asi). El
+	// bucle de refresh recibe Credencial y Renovar como delegados y nunca toca el diario
+	// para esto.
+
+	private async Task<string> Credencial(CancellationToken ct)
 	{
-		Exigir();
+		CredencialGuardada guardada = await almacen.Leer();
 
-		if (api!.DeviceKeyGuardado().Length == 0)
-			api.RegistrarDevice(NuevaClaveDeDevice());
+		if (guardada.DeviceKey.Length == 0)
+		{
+			guardada.DeviceKey = NuevaClaveDeDevice();
+			await almacen.Guardar(guardada);
+		}
 
-		string vigente = api.TokenGuardado();
-		if (vigente.Length > 0) return vigente;
+		if (guardada.Token.Length > 0) return guardada.Token;
 
 		return await PedirCredencialNueva(ct);
 	}
@@ -216,12 +302,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// hay o el proveedor lo rechaza, pedir una credencial nueva con el device key.
 	private async Task<string> Renovar(CancellationToken ct)
 	{
-		Exigir();
-
-		string refresh = api!.RefreshTokenGuardado();
-		if (refresh.Length > 0)
+		CredencialGuardada guardada = await almacen.Leer();
+		if (guardada.Refresh.Length > 0)
 		{
-			Credencial rotada = await new ProveedorDeToken(http).Rotar(refresh, ct);
+			// Rotar devuelve null si el refresh ya no vale (caducado, rotado por otra
+			// instancia, revocado). No es un error: se cae a pedir una credencial nueva.
+			Credencial rotada = await new ProveedorDeToken(http).Rotar(guardada.Refresh, ct);
 			if (rotada is not null) return await Guardar(rotada, "credencial rotada con el refresh token");
 		}
 
@@ -230,22 +316,31 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	private async Task<string> PedirCredencialNueva(CancellationToken ct)
 	{
+		CredencialGuardada guardada = await almacen.Leer();
 		Credencial nueva = await new ProveedorDeToken(http)
-			.Pedir(api!.DeviceKeyGuardado(), proveedor.Recurso, proveedor.Id, ct);
+			.Pedir(guardada.DeviceKey, proveedor.Recurso, proveedor.Id, ct);
 
 		return await Guardar(nueva, $"credencial nueva (scope {nueva.Scope})");
 	}
 
-	private async Task<string> Guardar(Credencial credencial, string quePaso)
+	// Guarda en el almacen, no en el journal: por eso ya no baja nada a disco.
+	private async Task<string> Guardar(Credencial nueva, string quePaso)
 	{
-		api!.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
-		await BajarADisco();
-		UltimoMensaje = quePaso;
-		return credencial.AccessToken;
+		CredencialGuardada guardada = await almacen.Leer();
+		guardada.Token = nueva.AccessToken;
+		guardada.Refresh = nueva.RefreshToken ?? "";
+		await almacen.Guardar(guardada);
+
+		UltimoMensaje = almacen.SinRespaldo
+			? quePaso + " (solo en memoria: el browser no dejo guardarla; al reabrir se pedira otra)"
+			: quePaso;
+		return nueva.AccessToken;
 	}
 
-	// Identidad de esta instalacion. Se genera una sola vez y se journaliza como
-	// parametro, asi el replay la reusa en vez de inventar otra.
+	// Identidad de esta instalacion. Se genera una sola vez y se guarda en el almacen de
+	// credencial (storage del browser), NO en el journal. Si el browser la desaloja, la app
+	// se presenta ante el proveedor como un device nuevo y pide otra concesion; la vieja
+	// queda huerfana hasta que el proveedor la revoque.
 	private static string NuevaClaveDeDevice() => "device-" + Guid.NewGuid().ToString("N")[..16];
 
 	// Donde quedo apuntando el cliente. Se dice en los errores: "no se pudo hablar con el
@@ -256,12 +351,32 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 
-		// PIDE LA CREDENCIAL PRIMERO, igual que el arranque. Sin esto, si al abrir no se
-		// pudo hablar con el proveedor no queda token y CADA Refresh muere para siempre
-		// diciendo "la app no tiene web token guardado", porque el unico camino que
-		// consigue el token era el arranque, que ya paso. Medido por Renan en un iPhone.
-		await Credencial(ct);
-
+		// LA CREDENCIAL LA CONSIGUE EL BUCLE, POR EL DELEGADO, y esta linea no vuelve.
+		//
+		// Aca habia un `await Credencial(ct)` sin condicion. Estaba puesto por una razon
+		// buena -medida en un iPhone: si al abrir no se podia hablar con el proveedor no
+		// quedaba token, y cada Refresh moria para siempre diciendo "la app no tiene web
+		// token guardado", porque el unico camino que lo conseguia era el arranque, que ya
+		// habia pasado-. Pero el arreglo estaba en el lugar equivocado.
+		//
+		// POR QUE ROMPIA HOSPEDADA. Pedir la credencial es HTTP contra el publicador, y
+		// `proveedor.BaseUrl` es RELATIVA -"eventos/"-, asi que hospedada la peticion sale
+		// a `<su origen>/app/eventos/device/token`: el propio origen del modulo, servido
+		// por Gnothi, donde ese archivo no existe. 404. Y hospedada el modulo NO TIENE NI
+		// NECESITA credencial: el cartero del Host tiene la suya.
+		//
+		// Medido en un iPhone por Renan el 2026-09-08: con el journal lleno, tocar
+		// "Buscar compras nuevas" devolvia el 404 sin que hubiera un solo pull por el
+		// puente. La URL decia `eventos/` y por eso parecia la llamada de eventos; era
+		// esta.
+		//
+		// DONDE VA. `FuenteHttpDeEventos.LeerDesde` ya pide la credencial POR PULL, por el
+		// delegado que se le pasa al construirla, y su propio comentario dice por que:
+		// "quien lee por el puente de Gnothi no [la necesita]. Poner eso en el bucle lo
+		// obligaba, hospedada, a inventarse un token que nadie usa". Asi que el caso suelto
+		// que motivo esta linea ya estaba cubierto, y hospedada no se pide nada.
+		//
+		// Es lo que Examenes ya hacia. Los cuatro modulos quedan iguales.
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		UltimoMensaje = $"refresh: {resultado}";
 		return resultado;
@@ -271,21 +386,21 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public IReadOnlyList<CompraEnLista> Compras() { Exigir(); return api!.Compras(); }
 
-	public CompraDetallada Detalle(string numero) { Exigir(); return api!.Detalle(numero); }
+	public CompraDetallada Detalle(string numero) { Exigir(); return api!.Detalle(numero, ElIdioma); }
 
 	// LA consulta que justifica la app: como cambio la canasta entre dos meses.
 	public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues)
-	{ Exigir(); return api!.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues); }
+	{ Exigir(); return api!.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues, ElIdioma); }
 
 	// La lectura por defecto. QUE DOS MESES se comparan lo elige el dominio, no esta
 	// pantalla: elegir es parte de la pregunta, no de como se dibuja.
-	public CanastasComparadas ComparacionPorDefecto() { Exigir(); return api!.ComparacionConElAnioAnterior(); }
+	public CanastasComparadas ComparacionPorDefecto() { Exigir(); return api!.ComparacionConElAnioAnterior(ElIdioma); }
 
-	public CanastaDelMesVista Canasta(int anio, int mes) { Exigir(); return api!.Canasta(anio, mes); }
+	public CanastaDelMesVista Canasta(int anio, int mes) { Exigir(); return api!.Canasta(anio, mes, ElIdioma); }
 
 	// LAS DOS LECTURAS DE LA PORTADA. Cuantas compras se miran para reconocer la firma lo
 	// decide la app (ComprasAPI), no esta caratula: es parte de la pregunta.
-	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(); }
+	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(ElIdioma); }
 
 	// DESDE CUANDO HASTA CUANDO hay compras. La pantalla lo usa para decir "87 compras desde
 	// enero de 2025" en vez de un numero suelto.
@@ -301,29 +416,29 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 		// El rango lo entrega como aaaa-mm, que es la forma en que viaja: se parte aca.
 		string[] partes = rango.UltimoMes.Split('-');
-		return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]));
+		return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]), ElIdioma);
 	}
 
 	// EL PRODUCTO SE NOMBRA. El dominio resuelve el texto igual que para la tool del MCP.
 	public ConsumoEnElTiempo ConsumoDe(string producto)
-	{ Exigir(); return api!.Consumo(producto); }
+	{ Exigir(); return api!.Consumo(producto, ElIdioma); }
 
 	// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. El "hoy" lo pone la caratula porque involucra
 	// el RELOJ, y el dominio no lo lee: si lo leyera, esta lectura daria distinto en cada
 	// replay del journal y dejaria de ser reproducible.
 	public ListaDeLaProximaCompra Lista()
-	{ Exigir(); return api!.Lista(DateTime.Now); }
+	{ Exigir(); return api!.Lista(DateTime.Now, ElIdioma); }
 
 	// LAS PROMOCIONES VIGENTES. El "hoy" lo pone la caratula: vigente-o-no depende de
 	// cuando se mira, y el dominio no lee el reloj.
 	public IReadOnlyList<PromocionVista> Promociones()
-	{ Exigir(); return api!.Promociones(DateTime.Now); }
+	{ Exigir(); return api!.Promociones(DateTime.Now, ElIdioma); }
 
 	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
 	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
 	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.
 	public ComprasHalladas Halladas(string termino)
-	{ Exigir(); return api!.Halladas(termino); }
+	{ Exigir(); return api!.Halladas(termino, ElIdioma); }
 
 	// EL QUIEBRE LO ENCUENTRA EL DOMINIO, y esta pantalla ya no elige una fecha.
 	//
@@ -336,7 +451,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// que vive en una caratula no lo audita nadie. Ahora la pantalla pide "el cambio" y el
 	// dominio dice cual y desde cuando.
 	public CambioDeLaCanasta CambioDelUltimoAnio()
-	{ Exigir(); return api!.CambioDelQuiebre(); }
+	{ Exigir(); return api!.CambioDelQuiebre(ElIdioma); }
 
 	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. EL MISMO quiebre
 	// que la tarjeta de arriba, y ahora lo garantiza el dominio: las dos cuentan el mismo
@@ -346,35 +461,35 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// conoce su propio rango: esta pantalla no sabe cual es el ultimo mes con compras, y la
 	// aritmetica de "el mes anterior" se resuelve mal en enero.
 	public CanastasComparadas ComparacionConElMesAnterior()
-	{ Exigir(); return api!.ComparacionConElMesAnterior(); }
+	{ Exigir(); return api!.ComparacionConElMesAnterior(ElIdioma); }
 
 	// SU PROPIA INFLACION, solo de los productos que si lleva.
-	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(); }
+	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(ElIdioma); }
 
 	// LA CANASTA FRENTE A HACE UNOS MESES. El "hoy" lo pone la caratula, y la ventana la
 	// pone el dominio (3 meses): la pantalla no inventa la suya.
 	public CanastaFrenteAlPasadoVista FrenteAlPasado()
-	{ Exigir(); return api!.FrenteAlPasado(DateTime.Now); }
+	{ Exigir(); return api!.FrenteAlPasado(DateTime.Now, ElIdioma); }
 
-	public RebajaVista Rebaja(string numero) { Exigir(); return api!.Rebaja(numero); }
+	public RebajaVista Rebaja(string numero) { Exigir(); return api!.Rebaja(numero, ElIdioma); }
 
 	// EN QUE SUCURSALES COMPRA. La portada lo pinta plegado en una fila; el detalle
 	// entero es del asistente (donde_compro).
-	public RecorridoDeSucursalesVista Recorrido() { Exigir(); return api!.Recorrido(); }
+	public RecorridoDeSucursalesVista Recorrido() { Exigir(); return api!.Recorrido(ElIdioma); }
 
 	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
 	// mide sobre todo el historial, y no hay reloj de por medio.
-	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }
+	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(ElIdioma); }
 
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron()
-	{ Exigir(); return api!.RitmosDelQuiebre(); }
+	{ Exigir(); return api!.RitmosDelQuiebre(ElIdioma); }
 
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
-	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
+	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now, ElIdioma); }
 
 	// LO QUE NO ESTA: lo unico que esta pantalla no podria calcular sola.
 	public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes()
-	{ Exigir(); return api!.AbastecimientosPendientes(DateTime.Now); }
+	{ Exigir(); return api!.AbastecimientosPendientes(DateTime.Now, ElIdioma); }
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeCompras(); }
 
@@ -382,7 +497,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public long UltimoEvento() { Exigir(); return api!.UltimoEventoProcesado(); }
 
-	public bool TieneToken() { Exigir(); return api!.TokenGuardado().Length > 0; }
+	// Del almacen, no del journal. Sincrono: la pantalla lo pregunta al renderizar y el
+	// almacen ya tiene la credencial en cache despues del primer Leer.
+	public bool TieneToken() => almacen.TieneToken;
 
 	public (int archivos, long bytes) EstadoDeMemfs() => PuenteDeJournal.EstadoDeMemfs();
 
@@ -395,6 +512,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		app?.Actor.GracefulExit();
 		await puente.DisposeAsync();
+		await almacen.DisposeAsync();
+		await puenteDeGnothi.DisposeAsync();
 	}
 }
 

@@ -1,0 +1,79 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- THE HOST. An MCP server towards the assistant (Door 1) and an MCP client towards every
+       module. It is a proxy that AGGREGATES: it joins the tools of N modules into a single list.
+
+       What this project does NOT do, on purpose:
+         - it understands nothing about invoices, nor lab tests, nor any domain;
+         - it touches no journal;
+         - it does not transcode the module's output: it forwards it as is.
+
+       It does not reference Puppeteer. The Host does not need the engine in order to act as a
+       proxy, and not having it is how the compiler guarantees no semantics crept in. -->
+
+  <!-- THE CONFORMANCE SUITE NEEDS TO SEE ToolBridge, which is internal and has to stay
+       internal: it is Door 1's projection and nobody outside the Host should build one.
+       The suite is the exception because its whole job is to compare that projection against
+       what the other doors return. Alvaro's 08: "corre la misma tool call por las tres
+       puertas y afirma resultado identico". -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Gnothi.Assistant.Tests" />
+    <!-- La ventana de escritorio compila la capa neutra de Gnothi.MobileShared (WebModule,
+         BundleServer, HybridShell, WebViewShell, el cartero) contra este ensamblado para alojar
+         la forma hibrida, igual que la suite compila ModuleEnrollment. Ver Module.ShellFactory. -->
+    <InternalsVisibleTo Include="Gnothi.Desktop" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Gnothi.Host</RootNamespace>
+    <AssemblyName>Gnothi.Host</AssemblyName>
+  </PropertyGroup>
+
+  <!-- LO QUE EL HOST LE DICE A LA PERSONA, EN SUS DOS IDIOMAS. Va embebido y no suelto al lado
+       del binario porque las tres caras lo cargan distinto: el escritorio referencia este
+       proyecto, y los dos telefonos COMPILAN sus fuentes por glob. Un archivo en disco tendria
+       tres rutas; un recurso embebido tiene una linea de lectura.
+
+       EL LogicalName ES LO QUE HACE QUE ESA LINEA SEA UNA SOLA. Sin el, cada ensamblado calcula
+       el nombre del recurso desde SU RootNamespace - Gnothi.Host.textos.json aca,
+       Gnothi.Mobile.textos.json en Android - y Textos.cs necesitaria un caso por cara. Con el
+       nombre fijo, typeof(Textos).Assembly resuelve al ensamblado correcto en cada una y el
+       recurso se llama igual en las tres.
+
+       ESTA MISMA LINEA VA EN Gnothi.Mobile.csproj Y EN Gnothi.iOS.csproj, y olvidarla en una de
+       las dos no rompe el build: rompe la pantalla, en ejecucion. Textos.cs no tira excepcion si
+       el recurso falta - devuelve cada clave como su propio texto - asi que el sintoma es una
+       pantalla que dice 'instituciones.titulo'. Es feo a proposito. -->
+  <ItemGroup>
+    <EmbeddedResource Include="textos.json" LogicalName="gnothi.textos.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- THE SUBSTRATE THE HOST LENDS (decision A1). Until now the Host referenced no engine on
+       purpose; a cargo module that carries only its two small DLLs needs SOMEBODY to provide
+       Puppeteer/Choreography, and that somebody is the Host, once, for every module. The
+       loan is automatic: InProcessShell.Resolving already asks the Host's Default context
+       FIRST, so a module that does not carry these resolves them here.
+
+       Note the trade this buys: the Host is now coupled to the engine version (pinned in
+       Directory.Build.props). The old property "the Host understands nothing of the engine"
+       is what was spent for the two-DLL module shape. Modules that still bring their own
+       engine keep working -the loan only kicks in for what they do NOT carry.
+
+       Gnothi.Contract is the tiny label a cargo surface wears instead of the MCP attributes;
+       the Host lends it the same way. -->
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+    <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

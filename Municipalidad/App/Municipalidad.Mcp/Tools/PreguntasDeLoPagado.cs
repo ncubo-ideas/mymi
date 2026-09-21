@@ -77,7 +77,7 @@ namespace Municipalidad.Mcp.Tools
 
 			foreach (string rubro in api.LosRubrosQueHay())
 			{
-				RegistroDelHistorial historial = api.HistorialDe(rubro);
+				RegistroDelHistorial historial = api.HistorialDe(rubro, ConsultasDelModulo.IdiomaDelRegistro);
 
 				List<LineaDeComprobante> lineas = new List<LineaDeComprobante>();
 

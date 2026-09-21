@@ -149,7 +149,7 @@ namespace Concesionario.Dominio.Pruebas
 				// suite entera verde.
 				foreach (PublishedFluid each in sheet.Fluids)
 				{
-					Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(each.Kind)),
+					Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, each.Kind)),
 						$"'{each.Kind}' contesto con la frase de otro fluido.");
 					Assert.That(each.Published, Is.EqualTo(each.Kind == "EngineOil"),
 						$"'{each.Kind}': solo el aceite se publico en esta revision.");
@@ -157,7 +157,7 @@ namespace Concesionario.Dominio.Pruebas
 
 				foreach (PublishedTyre each in sheet.Tyres)
 				{
-					Assert.That(each.Says, Does.StartWith("Llanta " + HowACanonNameReads.ATyre(each.Position).ToLowerInvariant()),
+					Assert.That(each.Says, Does.StartWith("Llanta " + HowACanonNameReads.ATyre(TheCatalogueOfTheScreen.InTheLanguageOfTheRecord, each.Position).ToLowerInvariant()),
 						$"'{each.Position}' contesto con la frase de otra posicion.");
 					Assert.That(each.Published, Is.EqualTo(each.Position == "Front"),
 						$"'{each.Position}': solo la delantera se publico en esta revision.");
@@ -196,7 +196,7 @@ namespace Concesionario.Dominio.Pruebas
 
 				Assert.That(pricing.Prices, Has.Count.EqualTo(1));
 
-				Assert.That(pricing.Prices[0].Milestone, Is.EqualTo("6000 mi"),
+				Assert.That(pricing.Prices[0].Milestone, Is.EqualTo("6.000 mi"),
 					"El hito vuelve en la unidad en que se publico. Contestar km aca seria haber "
 					+ "convertido, que es lo unico que este dominio nunca hace.");
 				Assert.That(
@@ -205,7 +205,7 @@ namespace Concesionario.Dominio.Pruebas
 					"Y se dice como la lee una persona, no como la nombra el wire: el codigo se fue "
 					+ "con el parametro que P-12 retiro.");
 
-				Assert.That(pricing.Prices[0].Says, Does.Contain("6000 mi"));
+				Assert.That(pricing.Prices[0].Says, Does.Contain("6.000 mi"));
 				Assert.That(pricing.Prices[0].Says, Does.Not.Contain("km"));
 				Assert.That(pricing.Prices[0].Revision, Is.EqualTo("MY2019-R1"));
 

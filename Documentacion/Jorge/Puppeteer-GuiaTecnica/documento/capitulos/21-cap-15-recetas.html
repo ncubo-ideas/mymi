@@ -1,0 +1,68 @@
+<!-- CAP 15 · RECETAS -->
+  <section class="anchor" id="cap15">
+    <h2>15 · Recetas: ¿cómo hago para…?</h2>
+    <p class="chapter-meta">Las preguntas concretas que todo equipo hace al adoptar Puppeteer, resueltas paso a paso.</p>
+
+    <h3>15.1 · Modificar una app que ya funciona</h3>
+    <p>Este es el titular de la guía, y conviene verlo con código real. Supón una app que ya lleva las existencias de una bodega: sabe <code>Ingresar</code> y <code>Retirar</code>. Nos piden registrar <strong>devoluciones</strong>. La modificación completa es <strong>un método nuevo en el dominio + una línea de DSL</strong>:</p>
+    <pre><span class="tag">C# · dominio (diff)</span><code>  <span class="k">public void</span> Retirar(<span class="k">int</span> cantidad) { <span class="c">/* … ya existía … */</span> }
+
+<span class="s">+ public void Devolver(int cantidad)</span>
+<span class="s">+ {</span>
+<span class="s">+     if (cantidad &lt;= 0) throw new LanguageException("la cantidad debe ser positiva");</span>
+<span class="s">+     _existencias = _existencias + cantidad;</span>
+<span class="s">+ }</span></code></pre>
+    <p>Y en el punto donde se necesita, una sola línea de DSL:</p>
+    <pre><span class="tag">DSL (diff)</span><code><span class="s">+ b.Devolver(@n);</span></code></pre>
+    <p>Eso es todo. No hubo que tocar migraciones, ni sincronizar un read-model, ni coordinar con las decenas de otros comandos: cada comando es un hecho independiente en el diario. La app corriendo, con la devolución ya integrada:</p>
+    <pre class="out"><span class="tag">Salida real</span><code>b.Ingresar(100); b.Retirar(30); b.Devolver(5);
+existencias -> {"existencias":75}</code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Al pensar una funcionalidad nueva, pregúntate primero <em>¿qué verbo de dominio expresa este hecho?</em> Si el verbo captura el hecho, la integración suele ser esa única línea de DSL. Modelar el hecho —no el flujo de pantallas— es lo que mantiene el cambio barato.</p>
+    </div>
+
+    <h3>15.2 · Agregar una base de datos a la arquitectura</h3>
+    <p>Dónde vive el diario es una decisión de <strong>configuración</strong>, no de arquitectura. La lógica de negocio no cambia ni una línea. Pasar de memoria a disco es cambiar el <em>backend</em> en <code>ConfigureStorage</code>:</p>
+    <pre><span class="tag">C# (diff)</span><code><span class="s">- actor.ConfigureStorage(DatabaseType.IN_MEMORY, "bodega");</span>
+<span class="s">+ actor.ConfigureStorage(DatabaseType.FileSystem, "path=C:\\datos\\bodega");</span></code></pre>
+    <p>Y de disco a una base relacional es el mismo gesto, apuntando al backend SQL (a través del adapter <code>Ncubo.Puppeteer.Adapters.Sql</code>):</p>
+    <pre><span class="tag">C#</span><code>actor.ConfigureStorage(DatabaseType.SQLServer, <span class="s">"&lt;connection string&gt;"</span>);</code></pre>
+    <p>Los mismos comandos, el mismo dominio, el mismo diario — solo cambia dónde se persiste. Es exactamente lo que verificamos en el Cap. 7: el actor “renacido” sobre el diario en disco reconstruye el estado idéntico. Elige el backend según tu necesidad:</p>
+    <table>
+      <thead><tr><th>Backend</th><th>Cuándo</th></tr></thead>
+      <tbody>
+        <tr><td><code>IN_MEMORY</code></td><td>Pruebas, ejemplos, cachés efímeros.</td></tr>
+        <tr><td><code>FileSystem</code></td><td>Apps locales / por instancia; un diario por carpeta.</td></tr>
+        <tr><td><code>SQLServer</code> · <code>MySQL</code></td><td>Persistencia relacional centralizada.</td></tr>
+        <tr><td><code>PlainText</code></td><td>Diario legible/editable por herramientas.</td></tr>
+      </tbody>
+      <caption>Tabla 17. El “dónde persiste” es configuración; la lógica no se entera.</caption>
+    </table>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Para <strong>leer</strong> desde una base BI (una tabla que no puede perder filas) no cambies el backend del diario: agrega una <strong>reacción con <code>Outbox.Emit</code></strong> hacia esa base (Cap. 9, 14). El diario sigue siendo la verdad; la tabla BI es una proyección durable alimentada por reacciones.</p>
+    </aside>
+
+    <h3>15.3 · Migrar un sistema legado a Puppeteer</h3>
+    <p>No se migra de un salto; se <strong>estrangula</strong> el legado poco a poco, dejando que el diario se vuelva la verdad de forma incremental:</p>
+    <ol class="body">
+      <li><strong>Envuelve la capacidad tras un actor.</strong> Pon una fachada (como el <code>FestivalJournal</code> del bingo) delante de la capacidad legada; toda operación entra ahora como un comando al actor.</li>
+      <li><strong>Journaliza cada operación como comando.</strong> Aunque al principio el comando solo delegue al código viejo, el diario ya empieza a registrar los hechos en orden — ganas auditoría y replay desde el día uno.</li>
+      <li><strong>Mueve la lógica al dominio C#, verbo por verbo.</strong> Reemplaza la delegación al legado por lógica de dominio propia, una operación a la vez. El contrato (el comando) no cambia para quien llama.</li>
+      <li><strong>Convierte las lecturas en queries y proyecciones.</strong> Las consultas pasan a <code>PerformQuery</code>/<code>print</code>; los read-models que el legado mantenía a mano pasan a reacciones (<code>Outbox</code>/<code>Program.Emit</code>).</li>
+      <li><strong>Apaga el legado</strong> cuando el actor cubre todas las operaciones. El diario ya es la fuente de verdad completa.</li>
+    </ol>
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Durante la transición puedes correr ambos en paralelo y <strong>comparar</strong>: el diario del actor te da una traza objetiva de cada hecho, ideal para validar que el nuevo dominio reproduce el comportamiento del legado antes de apagarlo.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><strong>Modificar</strong> una app viva ≈ un verbo de dominio + una línea de DSL; cada comando es un hecho independiente.</li>
+      <li><strong>Agregar una base de datos</strong> es cambiar el backend en <code>ConfigureStorage</code>; la lógica no cambia. Para BI, una reacción con <code>Outbox</code>.</li>
+      <li><strong>Migrar un legado</strong> se hace estrangulando: fachada → journalizar → mover lógica → proyectar lecturas → apagar.</li>
+    </ul>
+    <p>Con esto cierra el borrador de la guía: entendiste el paradigma, escribiste actores, cruzaste fronteras entre ellos y bajaste a patrones y recetas. Los anexos (glosario, convenciones del DSL y la referencia consolidada de recomendaciones) se desarrollarán tras esta ronda de revisión.</p>
+  </section>

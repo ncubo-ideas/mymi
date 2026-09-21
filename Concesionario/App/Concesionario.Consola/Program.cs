@@ -187,7 +187,7 @@ namespace Concesionario.Consola
 					: "";
 
 				Console.WriteLine($"   {kind,-20} {state,-10}{moved}");
-				Console.WriteLine($"   {"",-20} {api.ReadDueReason(kind)}");
+				Console.WriteLine($"   {"",-20} {api.ReadDueReason(kind, TheVoiceOfTheDealership)}");
 
 				int deferrals = api.DeferralsUsed(kind);
 				if (deferrals > 0)
@@ -207,7 +207,8 @@ namespace Concesionario.Consola
 
 		private static bool ItIsScheduled(DealershipCarAPI api, string kind)
 		{
-			return !api.ReadDueReason(kind).StartsWith("There is no scheduled", StringComparison.Ordinal);
+			return api.ReadDistanceRemainderStanding(kind, TheInstantTheBoardIsRead)
+				!= TheStandingOfAKindWithNoOperation;
 		}
 
 		private static void TheCountdownOfEveryKind(DealershipCarAPI api)
@@ -243,9 +244,9 @@ namespace Concesionario.Consola
 
 			try
 			{
-				Console.WriteLine($"   la cuenta atras          : {api.DescribeCountdown(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   la cuenta atras          : {api.DescribeCountdown(kind, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 				Console.WriteLine($"   situacion en distancia   : {api.ReadDistanceRemainderStanding(kind, TheInstantTheBoardIsRead)}");
-				Console.WriteLine($"   la distancia en palabras : {api.DescribeDistanceRemaining(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   la distancia en palabras : {api.DescribeDistanceRemaining(kind, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 
 				bool distance = api.CanDistanceRemainingBeSaid(kind, TheInstantTheBoardIsRead);
 				Console.WriteLine($"   se puede decir cuanta    : {distance}");
@@ -257,7 +258,7 @@ namespace Concesionario.Consola
 				}
 
 				Console.WriteLine($"   situacion en el plazo    : {api.ReadTimeRemainderStanding(kind, TheInstantTheBoardIsRead)}");
-				Console.WriteLine($"   el plazo en palabras     : {api.DescribeDaysRemaining(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   el plazo en palabras     : {api.DescribeDaysRemaining(kind, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 
 				bool days = api.CanDaysRemainingBeSaid(kind, TheInstantTheBoardIsRead);
 				Console.WriteLine($"   se puede decir cuantos   : {days}");
@@ -298,12 +299,14 @@ namespace Concesionario.Consola
 
 		private static void TheHistoryOfOneKind(DealershipCarAPI api, string kind)
 		{
-			CompletionRecord record = api.CompletionsOf(kind);
+			CompletionRecord record = api.CompletionsOf(kind, TheVoiceOfTheDealership);
 
 			Console.WriteLine($"   {kind}");
 			Console.WriteLine($"   hay alguna               : {api.HasAnyCompletion(kind)}");
 			Console.WriteLine($"   cuantas                  : {api.CompletionCount(kind)}");
-			Console.WriteLine($"   el historial en palabras : {api.DescribeCompletions(kind)}");
+			Console.WriteLine(
+				"   el historial en palabras : "
+				+ api.DescribeCompletions(kind, TheVoiceOfTheDealership));
 
 			if (record.Says.Length == 0) Console.WriteLine("   filas                    : (ninguna)");
 
@@ -319,7 +322,7 @@ namespace Concesionario.Consola
 
 		private static void TheWholeHistoryAsRows(DealershipCarAPI api)
 		{
-			EveryKindCompletionRecord record = api.CompletionsOfEveryKind();
+			EveryKindCompletionRecord record = api.CompletionsOfEveryKind(TheVoiceOfTheDealership);
 
 			Console.WriteLine("   -- el historial ENTERO, de la completacion mas reciente a la mas vieja");
 			Console.WriteLine("      entre todas las clases, en columnas paralelas --");
@@ -348,7 +351,8 @@ namespace Concesionario.Consola
 
 		private static void ThePublishedServicePrices(DealershipCarAPI api)
 		{
-			PublishedPriceRecord record = api.PublishedServicePricesAsOf(TheInstantTheBoardIsRead);
+			PublishedPriceRecord record = api.PublishedServicePricesAsOf(
+				TheInstantTheBoardIsRead, TheVoiceOfTheDealership);
 
 			Console.WriteLine("================================================================");
 			Console.WriteLine($"  CUANTO ME VA A COSTAR: LOS PRECIOS PUBLICADOS, AL {Day(TheInstantTheBoardIsRead)}");
@@ -385,7 +389,8 @@ namespace Concesionario.Consola
 
 		private static void TheRateOfUseOverTheStorysSpan(DealershipCarAPI api)
 		{
-			OdometerSeriesRecord record = api.ReadingsBetween(Story.Delivery, TheInstantTheBoardIsRead);
+			OdometerSeriesRecord record = api.ReadingsBetween(
+				Story.Delivery, TheInstantTheBoardIsRead, TheVoiceOfTheDealership);
 
 			Console.WriteLine("================================================================");
 			Console.WriteLine($"  CUANTO SE MANEJA: EL RITMO DEL {Day(Story.Delivery)} AL {Day(TheInstantTheBoardIsRead)}");
@@ -409,7 +414,7 @@ namespace Concesionario.Consola
 			Console.WriteLine();
 			Console.WriteLine($"   se puede decir           : {api.CanARateOfUseBeSaid(Story.Delivery, TheInstantTheBoardIsRead)}");
 			Console.WriteLine($"   situacion del ritmo      : {api.ReadRateOfUseStanding(Story.Delivery, TheInstantTheBoardIsRead)}");
-			Console.WriteLine($"   el ritmo en palabras     : {api.DescribeRateOfUse(Story.Delivery, TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   el ritmo en palabras     : {api.DescribeRateOfUse(Story.Delivery, TheInstantTheBoardIsRead, TheVoiceOfTheDealership)}");
 			Console.WriteLine($"   cuantas lecturas         : {api.ReadingCountBetween(Story.Delivery, TheInstantTheBoardIsRead)}");
 			Console.WriteLine();
 
@@ -456,7 +461,7 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   cuantas lecturas         : {api.ReadingCountBetween(Story.Delivery, Story.TheFirstEvaluation)}");
 			Console.WriteLine($"   se puede decir           : {api.CanARateOfUseBeSaid(Story.Delivery, Story.TheFirstEvaluation)}");
 			Console.WriteLine();
-			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfUseCompared(Story.TheFirstEvaluation, TheInstantTheBoardIsRead, Story.Delivery, Story.TheFirstEvaluation)}");
+			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfUseCompared(Story.TheFirstEvaluation, TheInstantTheBoardIsRead, Story.Delivery, Story.TheFirstEvaluation, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -606,7 +611,7 @@ namespace Concesionario.Consola
 			Console.WriteLine("   journal de la persona creceria en cada apertura de la app)");
 			Console.WriteLine();
 
-			string oil = api.DescribeFluid(SpecSheet.TheFluidKind);
+			string oil = api.DescribeFluid(SpecSheet.TheFluidKind, TheVoiceOfTheDealership);
 			string current = TheCurrentRevisionCodeOf(api);
 			string firstState = api.ReadRevisionState(SpecSheet.TheFirstRevision);
 
@@ -664,7 +669,7 @@ namespace Concesionario.Consola
 				"aceite de motor",
 				api.IsFluidPublished(SpecSheet.TheFluidKind),
 				api.ReadFluidRevision(SpecSheet.TheFluidKind),
-				api.DescribeFluid(SpecSheet.TheFluidKind));
+				api.DescribeFluid(SpecSheet.TheFluidKind, TheVoiceOfTheDealership));
 		}
 
 		private static void TheTyre(DealershipCarAPI api)
@@ -673,12 +678,14 @@ namespace Concesionario.Consola
 				"llanta delantera",
 				api.IsTyrePublished(SpecSheet.TheTyrePosition),
 				api.ReadTyreRevision(SpecSheet.TheTyrePosition),
-				api.DescribeTyre(SpecSheet.TheTyrePosition));
+				api.DescribeTyre(SpecSheet.TheTyrePosition, TheVoiceOfTheDealership));
 		}
 
 		private static void TheFuel(DealershipCarAPI api)
 		{
-			AnAnswer("combustible", api.IsFuelPublished(), api.ReadFuelRevision(), api.DescribeFuel());
+			AnAnswer(
+				"combustible", api.IsFuelPublished(), api.ReadFuelRevision(),
+				api.DescribeFuel(TheVoiceOfTheDealership));
 
 			AListOfIts("grado minimo", TheOneOrNone(api.ReadMinimumFuelGrade()));
 			AListOfIts("permitidos", api.PermittedFuelGrades());
@@ -693,7 +700,8 @@ namespace Concesionario.Consola
 				api.IsServiceIntervalPublished(SpecSheet.TheOperation),
 				api.ReadServiceIntervalRevision(SpecSheet.TheOperation),
 				api.DescribeServiceInterval(
-					SpecSheet.TheOperation, SpecSheet.TheDistanceRemaining, SpecSheet.UnitA));
+					SpecSheet.TheOperation, SpecSheet.TheDistanceRemaining, SpecSheet.UnitA,
+					TheVoiceOfTheDealership));
 		}
 
 		private static void TheServicePrice(DealershipCarAPI api)
@@ -706,7 +714,7 @@ namespace Concesionario.Consola
 					SpecSheet.TheOperation, SpecSheet.TheMilestone, SpecSheet.UnitA),
 				api.DescribeServicePrice(
 					SpecSheet.TheOperation, SpecSheet.TheMilestone, SpecSheet.UnitA,
-					SpecSheet.TheDayTheVehicleAsks));
+					SpecSheet.TheDayTheVehicleAsks, TheVoiceOfTheDealership));
 		}
 
 		private static void TheCoverage(DealershipCarAPI api)
@@ -715,10 +723,10 @@ namespace Concesionario.Consola
 				"garantia - el alcance",
 				api.IsCoveragePublished(),
 				api.ReadCoverageRevision(),
-				api.DescribeCoverageSummary());
+				api.DescribeCoverageSummary(TheVoiceOfTheDealership));
 
 			AListOfIts("sistemas adentro", api.CoveredSystems());
-			AListOfIts("exclusiones", api.CoverageExclusions());
+			AListOfIts("exclusiones", api.CoverageExclusions(TheVoiceOfTheDealership));
 			Console.WriteLine(
 				$"   {"lo conoce el catalogo",-24} : "
 				+ $"{api.TheVocabularyIsTheManufacturers(SpecSheet.TheSystem)}");
@@ -732,7 +740,7 @@ namespace Concesionario.Consola
 					? TheCoverageOfTheSystem(api.ReadCoverageStanding)
 					: "no se pudo evaluar - pedir la postura aca REVIENTA"));
 
-			Console.WriteLine($"     {TheCoverageOfTheSystem(api.DescribeCoverage)}");
+			Console.WriteLine($"     {TheCoverageOfTheSystemSaid(api)}");
 			Console.WriteLine();
 		}
 
@@ -745,7 +753,7 @@ namespace Concesionario.Consola
 				api.DescribeServicingElsewhereRule(
 					SpecSheet.TheExternalServicesWithEvidence,
 					SpecSheet.TheExternalServicesWithoutEvidence,
-					SpecSheet.TheMissedMaintenance));
+					SpecSheet.TheMissedMaintenance, TheVoiceOfTheDealership));
 		}
 
 		private static T TheCoverageOfTheSystem<T>(
@@ -757,6 +765,16 @@ namespace Concesionario.Consola
 				Story.Delivery, Story.OdometerAtDelivery,
 				SpecSheet.TheOdometerToday, SpecSheet.UnitA,
 				SpecSheet.TheDayTheVehicleAsks);
+		}
+
+		private static string TheCoverageOfTheSystemSaid(DealershipCarAPI api)
+		{
+			return api.DescribeCoverage(
+				SpecSheet.TheSystem,
+				SpecSheet.TheEnvelopeMonths, SpecSheet.TheEnvelopeDistance, SpecSheet.UnitA,
+				Story.Delivery, Story.OdometerAtDelivery,
+				SpecSheet.TheOdometerToday, SpecSheet.UnitA,
+				SpecSheet.TheDayTheVehicleAsks, TheVoiceOfTheDealership);
 		}
 
 		private static void AnAnswer(string label, bool published, string revision, string sentence)
@@ -797,7 +815,7 @@ namespace Concesionario.Consola
 			Console.WriteLine($"  {SpecSheet.TheFirstRevision,-24}  : "
 				+ $"{again.ReadRevisionState(SpecSheet.TheFirstRevision)}  (antes {firstState})");
 			Console.WriteLine($"  la frase del aceite igual : "
-				+ $"{again.DescribeFluid(SpecSheet.TheFluidKind) == oil}  <- letra por letra");
+				+ $"{again.DescribeFluid(SpecSheet.TheFluidKind, TheVoiceOfTheDealership) == oil}  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  La procedencia no es un campo de C#: sale del journal, y la linea de");
 			Console.WriteLine("  publicacion se vuelve a armar corriendo otra vez los mismos comandos.");
@@ -908,8 +926,9 @@ namespace Concesionario.Consola
 
 			TheOneHoleInTheSentence(api);
 
-			string standing = api.DescribeWarrantyEnvelope(Warranty.TheInstantPastTheTimeHalf);
-			string published = api.DescribePublishedWarrantyEnvelope();
+			string standing = api.DescribeWarrantyEnvelope(
+				Warranty.TheInstantPastTheTimeHalf, TheVoiceOfTheDealership);
+			string published = api.DescribePublishedWarrantyEnvelope(TheVoiceOfTheDealership);
 
 			app.Dispose();
 
@@ -964,7 +983,7 @@ namespace Concesionario.Consola
 		private static void ThePublishedHalfAlone(DealershipCarAPI api)
 		{
 			Console.WriteLine("   -- la mitad publicada, que cita quien no tiene el odometro de nadie --");
-			Console.WriteLine($"     {api.DescribePublishedWarrantyEnvelope()}");
+			Console.WriteLine($"     {api.DescribePublishedWarrantyEnvelope(TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -978,7 +997,7 @@ namespace Concesionario.Consola
 				+ (canBeEvaluated
 					? api.ReadEnvelopeStanding(asOf)
 					: "no se pudo decidir - pedir el nombre aca REVIENTA"));
-			Console.WriteLine($"     {api.DescribeWarrantyEnvelope(asOf)}");
+			Console.WriteLine($"     {api.DescribeWarrantyEnvelope(asOf, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -998,8 +1017,8 @@ namespace Concesionario.Consola
 				Console.WriteLine("                              mitades si se contestan, cada una entera");
 				Console.WriteLine("                              y dicha por el dominio, sin armar aca una");
 				Console.WriteLine("                              tercera con pedazos de las dos:");
-				Console.WriteLine($"     [lo publicado] {api.DescribeCoverageSummary()}");
-				Console.WriteLine($"     [este carro]   {api.DescribeWarrantyEnvelope(asOf)}");
+				Console.WriteLine($"     [lo publicado] {api.DescribeCoverageSummary(TheVoiceOfTheDealership)}");
+				Console.WriteLine($"     [este carro]   {api.DescribeWarrantyEnvelope(asOf, TheVoiceOfTheDealership)}");
 				Console.WriteLine();
 				return;
 			}
@@ -1011,15 +1030,16 @@ namespace Concesionario.Consola
 				+ (canBeEvaluated
 					? api.ReadCoverageStandingForThisVehicle(Warranty.TheSystem, asOf)
 					: "no se pudo evaluar - pedir el nombre aca REVIENTA"));
-			Console.WriteLine($"     {api.DescribeCoverageForThisVehicle(Warranty.TheSystem, asOf)}");
+			Console.WriteLine($"     {api.DescribeCoverageForThisVehicle(
+				Warranty.TheSystem, asOf, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
 		private static void TheSameSentenceAskedBothWays(DealershipCarAPI api)
 		{
 			string composed = api.DescribeCoverageForThisVehicle(
-				Warranty.TheSystem, Warranty.TheInstantInside);
-			string byHand = TheCoverageWithTheNineFactsHandedOver(api, api.DescribeCoverage);
+				Warranty.TheSystem, Warranty.TheInstantInside, TheVoiceOfTheDealership);
+			string byHand = TheCoverageWithTheNineFactsSaid(api);
 
 			Console.WriteLine("----------------------------------------------------------------");
 			Console.WriteLine("  LA MISMA FRASE, PEDIDA DE LAS DOS MANERAS");
@@ -1049,6 +1069,16 @@ namespace Concesionario.Consola
 			Console.WriteLine();
 		}
 
+		private static string TheCoverageWithTheNineFactsSaid(DealershipCarAPI api)
+		{
+			return api.DescribeCoverage(
+				Warranty.TheSystem,
+				Warranty.TheMonths, Warranty.TheFirstDistance, Warranty.TheUnit,
+				Warranty.TheDelivery, Warranty.TheOdometerAtDelivery,
+				Warranty.TheOdometerInside, Warranty.TheUnit,
+				Warranty.TheInstantInside, TheVoiceOfTheDealership);
+		}
+
 		private static T TheCoverageWithTheNineFactsHandedOver<T>(
 			DealershipCarAPI api,
 			Func<string, int, int, string, DateTime, int, int, string, DateTime, T> read)
@@ -1071,7 +1101,7 @@ namespace Concesionario.Consola
 			Console.WriteLine("falta nada: tiene el sobre, la entrega y una lectura de ese instante.");
 			Console.WriteLine();
 			Console.WriteLine("  la frase del sobre CONTESTA:");
-			Console.WriteLine($"    {api.DescribeWarrantyEnvelope(asOf)}");
+			Console.WriteLine($"    {api.DescribeWarrantyEnvelope(asOf, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 			Console.WriteLine("  la de cobertura RECHAZA:");
 			Console.WriteLine($"    {WhatCameBackInsteadOfTheCoverageSentence(api, asOf)}");
@@ -1091,7 +1121,8 @@ namespace Concesionario.Consola
 		{
 			try
 			{
-				return api.DescribeCoverageForThisVehicle(Warranty.TheSystem, asOf);
+				return api.DescribeCoverageForThisVehicle(
+				Warranty.TheSystem, asOf, TheVoiceOfTheDealership);
 			}
 			catch (Exception ex)
 			{
@@ -1109,10 +1140,11 @@ namespace Concesionario.Consola
 			Console.WriteLine($"  entrada del journal       : {reopened.Actor.CurrentEntryId}"
 				+ "  (crecio una: OnHydrated deja la semilla en CADA arranque)");
 			Console.WriteLine("  la frase del sobre igual  : "
-				+ $"{again.DescribeWarrantyEnvelope(Warranty.TheInstantPastTheTimeHalf) == standing}"
+				+ $"{again.DescribeWarrantyEnvelope(
+					Warranty.TheInstantPastTheTimeHalf, TheVoiceOfTheDealership) == standing}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  la mitad publicada igual  : "
-				+ $"{again.DescribePublishedWarrantyEnvelope() == published}  <- letra por letra");
+				+ $"{again.DescribePublishedWarrantyEnvelope(TheVoiceOfTheDealership) == published}  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  El sobre no es un campo de C#: sale del journal, y las dos");
 			Console.WriteLine("  publicaciones se vuelven a aplicar corriendo otra vez los mismos");
@@ -1201,7 +1233,8 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   {"cuantas estadias",-24} : {api.StayCountBetween(from, to)}");
 			Console.WriteLine($"   {"los dias, uno por uno",-24} : "
 				+ ADayList(api.DaysInTheShopBetween(from, to)));
-			Console.WriteLine($"     {api.DescribeDaysInTheShopBetween(from, to)}");
+			Console.WriteLine(
+				"     " + api.DescribeDaysInTheShopBetween(from, to, TheVoiceOfTheDealership));
 			Console.WriteLine();
 		}
 
@@ -1214,7 +1247,7 @@ namespace Concesionario.Consola
 			{
 				Console.WriteLine($"   al {Day(asOf)}");
 				Console.WriteLine($"   {"esta adentro",-24} : {api.IsInsideTheShopAt(asOf)}");
-				Console.WriteLine($"     {api.DescribeTheStayAt(asOf)}");
+				Console.WriteLine($"     {api.DescribeTheStayAt(asOf, TheVoiceOfTheDealership)}");
 			}
 
 			Console.WriteLine();
@@ -1222,7 +1255,8 @@ namespace Concesionario.Consola
 
 		private static void TheRowsOfThePeriod(DealershipCarAPI api)
 		{
-			ShopStayRecord record = api.StaysBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo);
+			ShopStayRecord record = api.StaysBetween(
+				ShopStays.TheYearFrom, ShopStays.TheYearTo, TheVoiceOfTheDealership);
 
 			Console.WriteLine("   -- el registro crudo: una fila por estadia CERRADA, en columnas");
 			Console.WriteLine("      paralelas y en orden de entrada --");
@@ -1268,7 +1302,7 @@ namespace Concesionario.Consola
 			string from = ShopStays.TheCutFrom;
 			string to = ShopStays.TheCutTo;
 
-			ShopStayRecord record = api.StaysBetween(from, to);
+			ShopStayRecord record = api.StaysBetween(from, to, TheVoiceOfTheDealership);
 
 			Console.WriteLine($"un periodo que CORTA una estadia, del {from} al {to}:");
 			Console.WriteLine($"  dias del periodo          : {ADayList(api.DaysInTheShopBetween(from, to))}");
@@ -1293,8 +1327,8 @@ namespace Concesionario.Consola
 			string days = ADayList(
 				api.DaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo));
 			string period = api.DescribeDaysInTheShopBetween(
-				ShopStays.TheYearFrom, ShopStays.TheYearTo);
-			string open = api.DescribeTheStayAt(TheInstantTheStaysAreRead);
+				ShopStays.TheYearFrom, ShopStays.TheYearTo, TheVoiceOfTheDealership);
+			string open = api.DescribeTheStayAt(TheInstantTheStaysAreRead, TheVoiceOfTheDealership);
 
 			Console.WriteLine("---- mediciones contra el disco -------------------------------");
 			Console.WriteLine();
@@ -1318,10 +1352,12 @@ namespace Concesionario.Consola
 				+ $"{ADayList(again.DaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo)) == days}"
 				+ "  <- uno por uno");
 			Console.WriteLine("  la frase del periodo igual: "
-				+ $"{again.DescribeDaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo) == period}"
+				+ $"{again.DescribeDaysInTheShopBetween(
+					ShopStays.TheYearFrom, ShopStays.TheYearTo, TheVoiceOfTheDealership) == period}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  la estadia abierta igual  : "
-				+ $"{again.DescribeTheStayAt(TheInstantTheStaysAreRead) == open}  <- letra por letra");
+				+ $"{again.DescribeTheStayAt(TheInstantTheStaysAreRead, TheVoiceOfTheDealership) == open}"
+				+ "  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  Las estadias no son un campo de C#: salen del journal, y los tres hechos");
 			Console.WriteLine("  se vuelven a aplicar corriendo otra vez los mismos comandos, en el mismo");
@@ -1412,8 +1448,8 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   {"hay algun gasto",-24} : {api.HasAnyCostBetween(from, to)}");
 			Console.WriteLine($"   {"en una sola moneda",-24} : {api.IsSpendSaidInOneCurrencyBetween(from, to)}");
 			Console.WriteLine($"   {"cuantos gastos",-24} : {api.CostEntryCountBetween(from, to)}");
-			Console.WriteLine($"     el gasto, entero  : {api.DescribeSpendBetween(from, to)}");
-			Console.WriteLine($"     moneda por moneda : {api.DescribeSpendPerCurrencyBetween(from, to)}");
+			Console.WriteLine($"     el gasto, entero  : {api.DescribeSpendBetween(from, to, TheVoiceOfTheDealership)}");
+			Console.WriteLine($"     moneda por moneda : {api.DescribeSpendPerCurrencyBetween(from, to, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -1424,13 +1460,13 @@ namespace Concesionario.Consola
 			Console.WriteLine("      dominio: el tramo lo dice la agenda y el dinero el libro. Ni la");
 			Console.WriteLine("      distancia ni el ancla salen por ninguna lectura como numero --");
 			Console.WriteLine($"   {"se puede decir",-24} : {api.CanCostPerDistanceBeSaid(from, to)}");
-			Console.WriteLine($"     {api.DescribeCostPerDistanceBetween(from, to)}");
+			Console.WriteLine($"     {api.DescribeCostPerDistanceBetween(from, to, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
 		private static void TheRowsOfTheLedger(DealershipCarAPI api, DateTime from, DateTime to)
 		{
-			CostLedgerRecord record = api.CostEntriesBetween(from, to);
+			CostLedgerRecord record = api.CostEntriesBetween(from, to, TheVoiceOfTheDealership);
 
 			Console.WriteLine("   -- el registro crudo: una fila por gasto incurrido adentro, en columnas");
 			Console.WriteLine("      paralelas y en orden del instante en que se incurrio --");
@@ -1484,9 +1520,9 @@ namespace Concesionario.Consola
 			Console.WriteLine($"   primer periodo, del      : {Instant(Costs.TheYearFrom)} al {Instant(Costs.TheYearTo)}");
 			Console.WriteLine($"   segundo periodo, del     : {Instant(Costs.TheEarlierYearFrom)} al {Instant(Costs.TheEarlierYearTo)}");
 			Console.WriteLine();
-			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo)}");
+			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
-			Console.WriteLine($"   el anio anterior solo    : {api.DescribeSpendBetween(Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo)}");
+			Console.WriteLine($"   el anio anterior solo    : {api.DescribeSpendBetween(Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo, TheVoiceOfTheDealership)}");
 			Console.WriteLine();
 		}
 
@@ -1521,13 +1557,14 @@ namespace Concesionario.Consola
 			string bytesBeforeReading = TheTreeOf(actorFolder);
 			long entryBeforeReading = app.Actor.CurrentEntryId;
 
-			string spend = api.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo);
+			string spend = api.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership);
 			string perCurrency =
-				api.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo);
-			string perDistance =
-				api.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo);
+				api.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo, TheVoiceOfTheDealership);
+			string perDistance = api.DescribeCostPerDistanceBetween(
+				Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership);
 			string bothPeriods = api.DescribeTwoPeriodsOfSpendCompared(
-				Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo);
+				Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo,
+				TheVoiceOfTheDealership);
 
 			Console.WriteLine("---- mediciones contra el disco -------------------------------");
 			Console.WriteLine();
@@ -1548,16 +1585,16 @@ namespace Concesionario.Consola
 			Console.WriteLine($"  entrada del journal       : {reopened.Actor.CurrentEntryId}"
 				+ "  (crecio una: OnHydrated deja la semilla en CADA arranque)");
 			Console.WriteLine("  el gasto igual            : "
-				+ $"{again.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo) == spend}"
+				+ $"{again.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership) == spend}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  por moneda igual          : "
-				+ $"{again.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo) == perCurrency}"
+				+ $"{again.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo, TheVoiceOfTheDealership) == perCurrency}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  por distancia igual       : "
-				+ $"{again.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo) == perDistance}"
+				+ $"{again.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo, TheVoiceOfTheDealership) == perDistance}"
 				+ "  <- letra por letra");
 			Console.WriteLine("  los dos periodos iguales  : "
-				+ $"{again.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo) == bothPeriods}"
+				+ $"{again.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo, TheVoiceOfTheDealership) == bothPeriods}"
 				+ "  <- letra por letra");
 			Console.WriteLine();
 			Console.WriteLine("  Los gastos no son un campo de C#: salen del journal, y los cuatro hechos");
@@ -1641,15 +1678,16 @@ namespace Concesionario.Consola
 				DealershipCarApp app = Open(folder);
 				var api = new DealershipCarAPI(app);
 				var tokens = new ProveedorDeToken(http);
+				var credential = new TheCredentialThisRunHolds();
 
-				await TheAppGetsItsOwnCredential(api, tokens, resource, id);
+				await TheAppGetsItsOwnCredential(credential, tokens, resource, id);
 
 				var loop = new BucleDeRefresh(
 					api,
-					new FuenteHttpDeEventos(http, resource, id),
-					DealershipEventRoute.Route,
-					null,
-					ct => RenewTheCredential(api, tokens, resource, id, ct));
+					new FuenteHttpDeEventos(http, resource, id,
+						ct => TheAppGetsItsOwnCredential(credential, tokens, resource, id, ct),
+						ct => RenewTheCredential(credential, tokens, resource, id, ct)),
+					DealershipEventRoute.Route);
 
 				string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
 
@@ -1677,7 +1715,7 @@ namespace Concesionario.Consola
 
 				bytesBefore = TheTreeOf(actorFolder);
 				entryBefore = app.Actor.CurrentEntryId;
-				Ingested whole = await TheWholeBlockAgainFromZero(api, http, resource, id);
+				Ingested whole = await TheWholeBlockAgainFromZero(api, http, credential, tokens, resource, id);
 
 				Console.WriteLine("-- el bloque ENTERO re-entregado desde el evento 0 --");
 				Console.WriteLine($"   {whole}");
@@ -1703,7 +1741,7 @@ namespace Concesionario.Consola
 				Console.WriteLine($"   arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}   <- tiene que ser False");
 				Console.WriteLine();
 
-				await TheDecoyAnswers403(http, api, resource, id);
+				await TheDecoyAnswers403(http, credential, resource, id);
 
 				app.Dispose();
 			}
@@ -1727,12 +1765,15 @@ namespace Concesionario.Consola
 			{
 				DealershipCarApp app = Open(folder);
 				var api = new DealershipCarAPI(app);
+				var tokens = new ProveedorDeToken(http);
+				var credential = new TheCredentialThisRunHolds();
 
-				await TheAppGetsItsOwnCredential(api, new ProveedorDeToken(http), resource, id);
+				await TheAppGetsItsOwnCredential(credential, tokens, resource, id);
 
-				var source = new FuenteHttpDeEventos(http, resource, id);
+				var source = new FuenteHttpDeEventos(http, resource, id,
+					ct => TheAppGetsItsOwnCredential(credential, tokens, resource, id, ct));
 				IReadOnlyList<SenalDeEvento> block =
-					await source.LeerDesde(api.LastEventApplied(), api.StoredToken(), CancellationToken.None);
+					(await source.LeerDesde(api.LastEventApplied(), CancellationToken.None)).Senales;
 
 				Console.WriteLine($"bloque    : {block.Count} eventos desde el {api.LastEventApplied()}");
 				Console.WriteLine($"se aplican: {howMany}, y despues se MATA el proceso");
@@ -1810,12 +1851,14 @@ namespace Concesionario.Consola
 
 		private static void WhatTheRefreshLoopNeededAndWhetherTheDoorAnswersItNow()
 		{
-			Console.WriteLine("BucleDeRefresh(diario, fuente, ruta, flush, renovarCredencial)");
+			Console.WriteLine("BucleDeRefresh(diario, fuente, ruta, flush)");
 			Console.WriteLine();
 			Console.WriteLine("  flush     : null, y es lo correcto para esta caratula: existe para bajar");
 			Console.WriteLine("              de MEMFS a la carpeta del usuario en wasm, y aca el journal");
 			Console.WriteLine("              ya esta en disco.");
-			Console.WriteLine("  fuente    : FuenteHttpDeEventos - la API de eventos del concesionario.");
+			Console.WriteLine("  fuente    : FuenteHttpDeEventos - la API de eventos del concesionario, y");
+			Console.WriteLine("              es ELLA la que sostiene la credencial y la rota: quien lee");
+			Console.WriteLine("              por HTTP necesita un token, quien lee por otro medio no.");
 			Console.WriteLine("  ruta      : DealershipEventRoute.Route - senal cruda -> IMensajeDeEvento.");
 			Console.WriteLine("  diario    : DealershipCarAPI, que ahora ES un IDiarioDeLaApp:");
 			Console.WriteLine();
@@ -1831,10 +1874,14 @@ namespace Concesionario.Consola
 
 			Console.WriteLine();
 			Console.WriteLine("  UltimoEventoProcesado sale DEL JOURNAL -- es lo que hace exacto el resume");
-			Console.WriteLine("  tras una caida -- y TokenGuardado de una credencial journalizada. Las dos");
-			Console.WriteLine("  viven en Logbook, una SEGUNDA global de raiz al lado de la agenda y nunca");
-			Console.WriteLine("  adentro: ni el punto de control ni la credencial son hechos de");
+			Console.WriteLine("  tras una caida -- y vive en Logbook, una SEGUNDA global de raiz al lado de");
+			Console.WriteLine("  la agenda y nunca adentro: el punto de control no es un hecho de");
 			Console.WriteLine("  mantenimiento. MaintenanceSchedule no cambio.");
+			Console.WriteLine();
+			Console.WriteLine("  LO QUE YA NO ESTA: TokenGuardado. Hasta el 2026-09-03 el bucle le pedia la");
+			Console.WriteLine("  credencial AL JOURNAL, y por eso quedaba en claro en la carpeta y viajaba");
+			Console.WriteLine("  con cualquier copia. Un token es contexto de sesion del host, no historia");
+			Console.WriteLine("  de la persona: ahora la sostiene la fuente y el diario no la conoce.");
 			Console.WriteLine();
 		}
 
@@ -1860,11 +1907,13 @@ namespace Concesionario.Consola
 		}
 
 		private static async Task<Ingested> TheWholeBlockAgainFromZero(
-			DealershipCarAPI api, HttpClient http, string resource, string id)
+			DealershipCarAPI api, HttpClient http, TheCredentialThisRunHolds credential,
+			ProveedorDeToken tokens, string resource, string id)
 		{
-			var source = new FuenteHttpDeEventos(http, resource, id);
+			var source = new FuenteHttpDeEventos(http, resource, id,
+				ct => TheAppGetsItsOwnCredential(credential, tokens, resource, id, ct));
 			IReadOnlyList<SenalDeEvento> block =
-				await source.LeerDesde(0, api.StoredToken(), CancellationToken.None);
+				(await source.LeerDesde(0, CancellationToken.None)).Senales;
 
 			var counted = new Ingested { Read = block.Count };
 
@@ -1894,37 +1943,57 @@ namespace Concesionario.Consola
 			}
 		}
 
-		private static async Task TheAppGetsItsOwnCredential(
-			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id)
+		// LA CREDENCIAL DE ESTA CORRIDA, en memoria y no en el journal. Hasta el 2026-09-03
+		// la sostenia el Logbook y se journalizaba: quedaba en claro en la carpeta y viajaba
+		// con cualquier copia del expediente. Un token es contexto de sesion de quien hospeda
+		// la app -- aca, esta consola -- y no historia de la persona, asi que muere con el
+		// proceso, que es exactamente lo que se quiere de el.
+		private sealed class TheCredentialThisRunHolds
 		{
-			if (api.StoredDeviceKey().Length == 0)
-				api.RegisterDevice("device-consola-de-medicion");
+			internal const string DeviceKey = "device-consola-de-medicion";
 
-			if (api.StoredToken().Length > 0) return;
+			internal string AccessToken { get; private set; } = "";
 
-			Credencial credential = await tokens.Pedir(api.StoredDeviceKey(), resource, id);
-			Console.WriteLine($"credencial: scope={credential.Scope} expiresIn={credential.ExpiresIn}s");
+			internal string RefreshToken { get; private set; } = "";
+
+			internal void Store(Credencial granted)
+			{
+				AccessToken = granted.AccessToken;
+				RefreshToken = granted.RefreshToken ?? "";
+			}
+		}
+
+		private static async Task<string> TheAppGetsItsOwnCredential(
+			TheCredentialThisRunHolds credential, ProveedorDeToken tokens, string resource, string id,
+			CancellationToken ct = default)
+		{
+			if (credential.AccessToken.Length > 0) return credential.AccessToken;
+
+			Credencial granted = await tokens.Pedir(TheCredentialThisRunHolds.DeviceKey, resource, id, ct);
+			Console.WriteLine($"credencial: scope={granted.Scope} expiresIn={granted.ExpiresIn}s");
 			Console.WriteLine();
-			api.StoreCredential(credential.AccessToken, credential.RefreshToken);
+			credential.Store(granted);
+			return credential.AccessToken;
 		}
 
 		private static async Task<string> RenewTheCredential(
-			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id,
+			TheCredentialThisRunHolds credential, ProveedorDeToken tokens, string resource, string id,
 			CancellationToken ct)
 		{
-			string refresh = api.StoredRefreshToken();
+			string refresh = credential.RefreshToken;
 
 			Credencial renewed = refresh.Length > 0 ? await tokens.Rotar(refresh, ct) : null;
 			string how = renewed != null ? "rotada con el refresh token" : "nueva contra el device key";
-			if (renewed == null) renewed = await tokens.Pedir(api.StoredDeviceKey(), resource, id, ct);
+			if (renewed == null)
+				renewed = await tokens.Pedir(TheCredentialThisRunHolds.DeviceKey, resource, id, ct);
 
 			Console.WriteLine($"   credencial renovada: {how} (scope {renewed.Scope})");
-			api.StoreCredential(renewed.AccessToken, renewed.RefreshToken);
-			return renewed.AccessToken;
+			credential.Store(renewed);
+			return credential.AccessToken;
 		}
 
 		private static async Task TheDecoyAnswers403(
-			HttpClient http, DealershipCarAPI api, string resource, string id)
+			HttpClient http, TheCredentialThisRunHolds credential, string resource, string id)
 		{
 			Console.WriteLine("-- el senuelo: la app NO es cliente de los servicios del concesionario --");
 
@@ -1933,7 +2002,7 @@ namespace Concesionario.Consola
 				using (var request = new HttpRequestMessage(HttpMethod.Get, route))
 				{
 					request.Headers.Authorization =
-						new AuthenticationHeaderValue("Bearer", api.StoredToken());
+						new AuthenticationHeaderValue("Bearer", credential.AccessToken);
 
 					using (HttpResponseMessage answer = await http.SendAsync(request))
 					{
@@ -2041,6 +2110,15 @@ namespace Concesionario.Consola
 
 		private static readonly DateTime TheInstantTheBoardIsRead =
 			new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		/// <summary>
+		/// EL IDIOMA EN QUE ESTE ARNES PIDE LAS FRASES DEL DOMINIO: el del registro, porque lo que
+		/// mide es el dominio del concesionario y no la pantalla de nadie.
+		/// </summary>
+		private const string TheVoiceOfTheDealership = Concesionario.App.Wording.Phrases.LanguageOfTheRecord;
+
+		/// <summary>La situacion con que la puerta nombra una clase que no tiene operacion agendada.</summary>
+		private const string TheStandingOfAKindWithNoOperation = "NoOperationScheduled";
 
 		private static string AnArgument(string[] args, int i, string byDefault)
 		{

@@ -1,0 +1,236 @@
+{
+  "sourceLanguage": "es",
+  "strings": {
+    "Arma la pregunta de la persona junto con sus exámenes y su encuadre, lista para pasarle a un modelo dentro de un atajo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Composes the person's question together with their lab results and their framing, ready to hand to a model inside a shortcut."
+          }
+        }
+      }
+    },
+    "Arma la pregunta de la persona junto con sus facturas, lista para pasarle a un modelo dentro de un atajo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Composes the person's question together with their invoices, ready to hand to a model inside a shortcut."
+          }
+        }
+      }
+    },
+    "Busca entre las facturas de la persona por comercio, monto o fecha, y responde con lo que encontró.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searches the person's invoices by merchant, amount or date, and answers with what it found."
+          }
+        }
+      }
+    },
+    "Busca entre los exámenes de la persona por analito o por lo que dice su veredicto, y responde con lo que encontró.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searches the person's lab results by analyte or by what their verdict says, and answers with what it found."
+          }
+        }
+      }
+    },
+    "Buscar en mis exámenes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search my lab results"
+          }
+        }
+      }
+    },
+    "Buscar en mis facturas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search my invoices"
+          }
+        }
+      }
+    },
+    "Buscar exámenes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search lab results"
+          }
+        }
+      }
+    },
+    "Buscar facturas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search invoices"
+          }
+        }
+      }
+    },
+    "Cómo salieron": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How they came out"
+          }
+        }
+      }
+    },
+    "Cómo salieron mis exámenes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How my lab results came out"
+          }
+        }
+      }
+    },
+    "Devuelve cuánto gastó la persona en total, leído de sus propias facturas guardadas en este dispositivo. No consulta a ninguna empresa.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns how much the person has spent in total, read from their own invoices kept on this device. It asks no company anything."
+          }
+        }
+      }
+    },
+    "Devuelve las facturas de la persona en JSON, para encadenar hacia un modelo dentro de un atajo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns the person's invoices as JSON, to chain into a model inside a shortcut."
+          }
+        }
+      }
+    },
+    "Devuelve los datos reales que el Host de Gnothi dejo en este telefono, con la fecha en que los actualizo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns the real data the Gnothi Host left on this phone, with the date it last updated them."
+          }
+        }
+      }
+    },
+    "Dice cuáles de los exámenes de la persona piden atención, según el veredicto que ya calculó su expediente.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Says which of the person's lab results ask for attention, according to the verdict their record already computed."
+          }
+        }
+      }
+    },
+    "Entrega los exámenes de la persona con su veredicto y su encuadre, para pasarle a un modelo dentro de un atajo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hands over the person's lab results with their verdict and their framing, to pass to a model inside a shortcut."
+          }
+        }
+      }
+    },
+    "Exámenes (datos para una IA)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lab results (data for an AI)"
+          }
+        }
+      }
+    },
+    "Exámenes en datos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lab results as data"
+          }
+        }
+      }
+    },
+    "Facturas (datos para una IA)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invoices (data for an AI)"
+          }
+        }
+      }
+    },
+    "Facturas en datos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invoices as data"
+          }
+        }
+      }
+    },
+    "Lo que Gnothi tiene de verdad": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What Gnothi really has"
+          }
+        }
+      }
+    },
+    "Preguntar sobre mis exámenes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask about my lab results"
+          }
+        }
+      }
+    },
+    "Preguntar sobre mis facturas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask about my invoices"
+          }
+        }
+      }
+    },
+    "Total de facturas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total of my invoices"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

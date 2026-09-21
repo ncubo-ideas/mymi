@@ -1,7 +1,8 @@
 @page "/cuanto-apartar"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Mi presupuesto · Mi cuenta municipal</PageTitle>
+<PageTitle>Mi presupuesto · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -20,10 +21,10 @@ else
             {
                 <IconoSprite Nombre="presupuesto" />
                 <span class="cifra-etiqueta cifra-etiqueta--eyebrow">Proyección @reserva.Anio</span>
-                <span class="cifra-protagonista">@Colones.Formatear(reserva.PropuestoPorMes)</span>
+                <span class="cifra-protagonista">@Colones.Formatear(textos, reserva.PropuestoPorMes)</span>
                 <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes</span>
                 <p class="cifra-secundaria" style="margin:.75rem 0 0">
-                    @Colones.Formatear(reserva.ProyeccionDelAnio) estimados en el año
+                    @Colones.Formatear(textos, reserva.ProyeccionDelAnio) estimados en el año
                 </p>
             }
             else
@@ -55,15 +56,15 @@ else
                     <SelloDeUrgencia Urgencia="@reserva.Urgencia" />
                 </div>
 
-                <span class="cifra-protagonista">@Colones.Formatear(reserva.AdoptadoPorMes)</span>
+                <span class="cifra-protagonista">@Colones.Formatear(textos, reserva.AdoptadoPorMes)</span>
                 <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes, definido por vos</span>
 
                 <span class="item__meta" style="display:block;margin-top:.75rem">
-                    Le falta <strong>@Colones.Formatear(reserva.Faltante)</strong>
-                    (@Formato.Porcentaje(reserva.ProporcionDelFaltante))
+                    Le falta <strong>@Colones.Formatear(textos, reserva.Faltante)</strong>
+                    (@textos.Porcentaje(reserva.ProporcionDelFaltante))
                 </span>
                 <span class="item__meta">
-                    Vence este mes: <strong>@Colones.Formatear(reserva.VenceEsteMes)</strong>
+                    Vence este mes: <strong>@Colones.Formatear(textos, reserva.VenceEsteMes)</strong>
                 </span>
 
                 <p class="item__frase">@reserva.DiceElFaltante</p>
@@ -96,7 +97,7 @@ else
                 <div class="disclosure-secundaria__contenido">
                     <NumeroSinFirmar Firmado="true"
                                      Dia="@Municipalidad.App.LosJuiciosSinFirmar.DiaEnQueSeFirmoElUmbralDeReserva"
-                                     Dicho="@($"Se te avisa cuando tu reserva queda más de un {Formato.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
+                                     Dicho="@($"Se te avisa cuando tu reserva queda más de un {textos.Porcentaje(reserva.UmbralConQueSeAvisa)} por debajo de lo propuesto.")" />
                 </div>
             </details>
 
@@ -124,7 +125,7 @@ else
                 @if (loQuePaso.QuedoSinRespaldo)
                 {
                     <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="Quedó registrado y NO se guardó.">
-                        <p>@loQuePaso.Dice</p>
+                        <p>@textos.Diga(loQuePaso.Apunte)</p>
                     </Aviso>
                 }
                 else if (loQuePaso.QuedoRegistrado)
@@ -136,13 +137,13 @@ else
                 else
                 {
                     <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="No se registró, y ésta es la razón.">
-                        <p>@loQuePaso.Dice</p>
+                        <p>@(loQuePaso.Dice.Length > 0 ? loQuePaso.Dice : textos.Diga(loQuePaso.Apunte))</p>
                     </Aviso>
                 }
             }
         </section>
 
-        <p class="nota">Contestado al @reserva.PreguntadoEl.</p>
+        <p class="nota">@textos.Con("comun.contestadoAl", ("dia", reserva.PreguntadoEl))</p>
     </div>
 }
 

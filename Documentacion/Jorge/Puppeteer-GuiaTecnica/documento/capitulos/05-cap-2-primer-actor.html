@@ -1,0 +1,98 @@
+<!-- CAP 2 · PRIMER ACTOR -->
+  <section class="anchor" id="cap2">
+    <h2>2 · Tu primer actor</h2>
+    <p class="chapter-meta">De cero a un actor que guarda estado, ejecuta comandos y responde queries — con código que compila y corre.</p>
+
+    <p>Con el modelo mental fresco, construyamos dos actores minúsculos. El primero es lo más simple posible: un contador. El segundo introduce un <strong>objeto de dominio con verbos</strong>. Los fragmentos de esta sección son recortes; cómo correrlos y su código está en el <a href="#anexoA">Anexo A</a>.</p>
+
+    <h3>2.1 · El actor más simple</h3>
+    <p>Crear un actor son dos líneas: darle un nombre y decirle dónde guarda su diario (aquí, en memoria).</p>
+    <pre><span class="tag">C#</span><code><span class="k">var</span> actor = <span class="k">new</span> ActorV2(<span class="s">"contador"</span>, <span class="k">typeof</span>(PrimerActor).Assembly);
+actor.ConfigureStorage(DatabaseType.IN_MEMORY, <span class="s">"contador"</span>);</code></pre>
+
+    <p>Ahora le mandamos <strong>comandos</strong>. Un comando cambia el estado y se persiste solo. Fíjate en que cada comando ve lo que dejó el anterior: <strong>el estado persiste entre comandos</strong>.</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"counter = 0;"</span>).PerformCommand();
+actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();
+actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();</code></pre>
+
+    <p>Para leer sin cambiar nada, usamos una <strong>query</strong>. El verbo <code>print</code> del DSL emite un valor con una etiqueta, y la query devuelve esa salida como JSON:</p>
+    <pre><span class="tag">C#</span><code><span class="k">string</span> salida = actor.Using(<span class="s">"print counter 'valor';"</span>).PerformQuery();</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"valor":2}</code></pre>
+
+    <p>Eso es todo: un actor que nace, recibe órdenes, guarda su estado y lo reporta. No escribimos SQL, no abrimos conexiones, no serializamos nada a mano. Ya viste en el capítulo anterior <em>por qué</em> funciona; esta es la mecánica.</p>
+
+    <table>
+      <thead><tr><th>Llamada</th><th>¿Cambia el estado?</th><th>¿Se persiste en el diario?</th><th>Devuelve</th></tr></thead>
+      <tbody>
+        <tr><td><code>PerformCommand()</code></td><td>Sí</td><td>Sí</td><td>La salida de <code>print</code>, si la hubo</td></tr>
+        <tr><td><code>PerformQuery()</code></td><td>No (solo lee)</td><td>No</td><td>La salida de <code>print</code> como JSON</td></tr>
+      </tbody>
+      <caption>Tabla 6. Comando vs. query: la distinción central al hablarle a un actor.</caption>
+    </table>
+
+    <h3>2.2 · Un objeto de dominio con verbos</h3>
+    <p>Un contador es útil para arrancar, pero la lógica real vive en tus <strong>clases de dominio</strong> en C#. El DSL las construye y llama sus verbos. Modelemos un <strong>torniquete</strong>: empieza bloqueado, una moneda lo desbloquea, y al empujar deja pasar una vez y vuelve a bloquearse.</p>
+
+    <p>Lo esencial del dominio: el estado es privado y solo cambia a través de <strong>verbos</strong>. El objeto es <strong>dueño de su invariante</strong> —no se puede pasar sin moneda—:</p>
+    <pre><span class="tag">C# · dominio</span><code><span class="k">public class</span> Torniquete
+{
+    <span class="k">private bool</span> _desbloqueado;
+    <span class="k">private int</span> _pasos;
+
+    <span class="k">public void</span> InsertarMoneda() { _desbloqueado = <span class="k">true</span>; }
+
+    <span class="k">public void</span> Empujar()
+    {
+        <span class="k">if</span> (!_desbloqueado)
+            <span class="k">throw new</span> LanguageException(<span class="s">"El torniquete esta bloqueado: inserte una moneda."</span>);
+        _pasos = _pasos + 1;
+        _desbloqueado = <span class="k">false</span>;
+    }
+
+    <span class="c">// Queries totales: nunca lanzan, siempre tienen respuesta.</span>
+    <span class="k">public bool</span> Desbloqueado => _desbloqueado;
+    <span class="k">public int</span>  Pasos       => _pasos;
+}</code></pre>
+
+    <p>Desde el DSL, lo construimos y lo dejamos en el estado raíz; luego llamamos sus verbos en comandos separados:</p>
+    <pre><span class="tag">DSL</span><code>t = Torniquete();   <span class="c">// se queda en el estado raiz del actor</span>
+t.InsertarMoneda();
+t.Empujar();</code></pre>
+
+    <p>Y consultamos su estado con una query que emite dos valores:</p>
+    <pre><span class="tag">DSL</span><code>{ print t.Desbloqueado <span class="s">'desbloqueado'</span>; print t.Pasos <span class="s">'pasos'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"desbloqueado":false,"pasos":1}</code></pre>
+
+    <p>Insertamos una moneda y empujamos una vez: el torniquete quedó de nuevo bloqueado (<code>false</code>) y registró un paso. El invariante se respetó sin que nosotros lo verificáramos desde afuera: vive dentro del objeto.</p>
+
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Expón el dominio como <strong>verbos que representan operaciones</strong> (<code>InsertarMoneda</code>, <code>Empujar</code>) y <strong>queries totales</strong> que siempre responden (<code>Pasos</code>). Deja que cada objeto proteja sus propias reglas.</p>
+    </div>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita <em>setters</em> públicos que dejen fijar el estado desde afuera (<code>t.Desbloqueado = true</code>). Rompen el invariante y convierten al objeto en una bolsa de datos. Un cambio de estado siempre debería pasar por un verbo con sentido de negocio.</p>
+    </div>
+
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Este estilo —verbos que cambian el estado, propiedades que solo leen— es exactamente el del dominio del bingo que viste en el capítulo anterior: su clase <code>BingoGame</code>, con verbos como <code>PutCardInPlay</code> o <code>RegisterDraw</code> y queries totales como <code>DrawnCount</code>. El torniquete es ese mismo patrón, en miniatura.</p>
+    </aside>
+
+    <div class="tryit">
+      <div class="h">▶ Pruébalo</div>
+      <p>El proyecto de ejemplos vive junto a esta guía. Para correr los dos actores de este capítulo:</p>
+      <pre><span class="tag">bash</span><code>cd ejemplos
+dotnet run -- cap2.1      <span class="c"># el contador</span>
+dotnet run -- cap2.2      <span class="c"># el torniquete</span></code></pre>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Un actor se crea con un nombre y un almacenamiento; le hablas con <code>Using(script)</code> y <code>PerformCommand()</code> / <code>PerformQuery()</code>.</li>
+      <li>Los <strong>comandos</strong> cambian el estado (y se persisten); las <strong>queries</strong> solo leen.</li>
+      <li>El estado <strong>persiste entre comandos</strong>; los identificadores de nivel superior son el estado raíz.</li>
+      <li>Tu <strong>dominio en C#</strong> lleva la lógica y los invariantes; el DSL lo <strong>orquesta</strong>.</li>
+    </ul>
+    <p>Con esto ya escribes y consultas actores, y entiendes el modelo que hay debajo. A partir del próximo capítulo entramos de lleno al DSL —literales, expresiones, <code>@Now</code>, variables locales y el bloque <code>upgrade</code>— y luego a los parámetros, las guardas y el dominio.</p>
+  </section>

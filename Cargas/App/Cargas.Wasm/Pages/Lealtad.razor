@@ -2,9 +2,9 @@
 @inherits PantallaDeCargas
 @using Cargas.App.Vistas
 
-<PageTitle>Lealtad · Estaciones Faro</PageTitle>
+<PageTitle>@Texto["lealtad.titulo"] · @Textos.NombreDeLaMarca</PageTitle>
 
-<h1 class="solo-para-lectores">Lealtad</h1>
+<h1 class="solo-para-lectores">@Texto["lealtad.titulo"]</h1>
 
 @* LOS PUNTOS Y LOS BOLETOS LLEGAN COMO EVENTOS, no se calculan acá: la tasa de canje y la
    regla de la tómbola son del programa y pueden cambiar, y una app que las derivara
@@ -25,21 +25,21 @@
 <div class="tarjeta-grupo cuadro-puntos">
     <div class="cuadro-puntos-col @(lealtad.Nivel.Length > 0 ? "" : "cuadro-puntos-col--apagado")">
         <span class="rotulo cuadro-puntos-rotulo">
-            <span class="faro-icon faro-icon--estrella" aria-hidden="true"></span> Puntos
+            <span class="faro-icon faro-icon--estrella" aria-hidden="true"></span> @Texto["lealtad.puntos"]
         </span>
         <div class="cifra">@Entero(lealtad.Saldo)</div>
         <div class="cifra-pie">
             @if (lealtad.Nivel.Length > 0)
             {
-                <text>nivel <b>@lealtad.Nivel</b></text>
+                <text>@Texto["lealtad.nivel"] <b>@Texto.ComoSeDice(lealtad.Nivel)</b></text>
                 @if (lealtad.PuntosParaElSiguienteNivel > 0)
                 {
-                    <text> &middot; faltan <b class="mono">@Entero(lealtad.PuntosParaElSiguienteNivel)</b> para el siguiente</text>
+                    <text> &middot; @Texto["lealtad.faltanPara"] <b class="mono">@Entero(lealtad.PuntosParaElSiguienteNivel)</b> @Texto["lealtad.paraElSiguiente"]</text>
                 }
             }
             else
             {
-                <text>Todavía no entró ningún punto de la estación.</text>
+                <text>@Texto["lealtad.sinPuntos"]</text>
             }
         </div>
     </div>
@@ -49,21 +49,21 @@
        son los que juegan; los pasados se dicen aparte, porque tampoco se esfuman. *@
     <div class="cuadro-puntos-col @(BoletosVigentes > 0 || BoletosPasados > 0 ? "" : "cuadro-puntos-col--apagado")">
         <span class="rotulo cuadro-puntos-rotulo">
-            <span class="faro-icon faro-icon--boleto" aria-hidden="true"></span> Boletos de tómbola
+            <span class="faro-icon faro-icon--boleto" aria-hidden="true"></span> @Texto["lealtad.boletos"]
         </span>
         <div class="cifra">@Entero(BoletosVigentes)</div>
         <div class="cifra-pie">
             @if (BoletosVigentes > 0)
             {
-                <text>en <b class="mono">@SorteosVigentes</b> @(SorteosVigentes == 1 ? "sorteo vigente" : "sorteos vigentes")</text>
+                <text>@Texto["lealtad.en"] <b class="mono">@SorteosVigentes</b> @Texto[SorteosVigentes == 1 ? "lealtad.sorteoVigente" : "lealtad.sorteosVigentes"]</text>
             }
             else if (BoletosPasados == 0)
             {
-                <text>Un boleto por cada carga que alcance el monto. Los emite la estación.</text>
+                <text>@Texto["lealtad.sinBoletos"]</text>
             }
             else
             {
-                <text>ninguno en juego ahora</text>
+                <text>@Texto["lealtad.ningunoEnJuego"]</text>
             }
         </div>
     </div>
@@ -83,27 +83,27 @@
                 <span class="sorteo-nombre">@(sorteo.Nombre.Length > 0 ? sorteo.Nombre : sorteo.Codigo)</span>
                 @if (sorteo.EstaVencido)
                 {
-                    <span class="sello">ya se rifó</span>
+                    <span class="sello">@Texto["lealtad.yaSeRifo"]</span>
                 }
                 else if (sorteo.FueAnunciado)
                 {
-                    <span class="sello sello--bien">en @sorteo.DiasParaElSorteo días</span>
+                    <span class="sello sello--bien">@Texto.Con("lealtad.enDias", ("dias", Texto.Dias(sorteo.DiasParaElSorteo)))</span>
                 }
                 else
                 {
-                    <span class="sello sello--dudoso">sin anunciar</span>
+                    <span class="sello sello--dudoso">@Texto["lealtad.sinAnunciar"]</span>
                 }
                 @* La fecha y nada más. El relato del dominio —«10 boletos para el sorteo
                    del 15/06/2026, que ya se rifó»— repetía la cifra de la derecha y el
                    sello de al lado. La cuenta se dice una vez, en la cifra. *@
                 @if (sorteo.FueAnunciado)
                 {
-                    <div class="sorteo-relato">sorteo del @sorteo.FechaDelSorteo.ToString("d 'de' MMMM 'de' yyyy", Cultura)</div>
+                    <div class="sorteo-relato">@Texto.Con("lealtad.sorteoDel", ("fecha", sorteo.FechaDelSorteo.ToString(Texto["comun.formatoDeFechaLarga"], Cultura)))</div>
                 }
             </div>
             <div>
                 <div class="cifra cifra--chica">@Entero(sorteo.Boletos)</div>
-                <div class="cifra-pie">@(sorteo.Boletos == 1 ? "boleto" : "boletos")</div>
+                <div class="cifra-pie">@Texto[sorteo.Boletos == 1 ? "lealtad.boleto" : "lealtad.boletosLlanos"]</div>
             </div>
         </div>
 
@@ -114,8 +114,8 @@
                cadena no cortaba nunca. Una cirugía sobre prosa ajena que un día corta. *@
             <p class="sorteo-premio">
                 <span class="faro-icon faro-icon--premio" aria-hidden="true"></span>
-                Se rifa <b>@sorteo.Premio</b>@(sorteo.MontoPorBoleto.Length > 0
-                ? $", un boleto por cada {sorteo.MontoPorBoleto} de una carga" : "").
+                @Texto["lealtad.seRifa"] <b>@sorteo.Premio</b>@(sorteo.MontoPorBoleto.Length > 0
+                    ? Texto.Con("lealtad.unBoletoPorCada", ("monto", sorteo.MontoPorBoleto)) : "").
             </p>
         }
     </div>
@@ -124,18 +124,18 @@
 @if (SorteosPasados > 0)
 {
     <details class="otras sorteos-pasados">
-        <summary>@(SorteosPasados == 1 ? "1 sorteo que ya se rifó" : $"{SorteosPasados} sorteos que ya se rifaron") &middot; @Entero(BoletosPasados) @(BoletosPasados == 1 ? "boleto" : "boletos")</summary>
+        <summary>@Texto.Con(SorteosPasados == 1 ? "lealtad.unSorteoPasado" : "lealtad.sorteosPasados", ("cuantos", Entero(SorteosPasados))) &middot; @Entero(BoletosPasados) @Texto[BoletosPasados == 1 ? "lealtad.boleto" : "lealtad.boletosLlanos"]</summary>
         <ul class="otros-carros">
             @foreach (SorteoEnLista sorteo in sorteos)
             {
                 if (!sorteo.EstaVencido) continue;
                 <li @key="@sorteo.Codigo">
                     <b>@(sorteo.Nombre.Length > 0 ? sorteo.Nombre : sorteo.Codigo)</b>
-                    &middot; @sorteo.FechaDelSorteo.ToString("d 'de' MMMM 'de' yyyy", Cultura)
-                    &middot; <span class="n">@sorteo.Boletos</span> @(sorteo.Boletos == 1 ? "boleto" : "boletos")
+                    &middot; @sorteo.FechaDelSorteo.ToString(Texto["comun.formatoDeFechaLarga"], Cultura)
+                    &middot; <span class="n">@sorteo.Boletos</span> @Texto[sorteo.Boletos == 1 ? "lealtad.boleto" : "lealtad.boletosLlanos"]
                     @if (sorteo.Premio.Length > 0)
                     {
-                        <text>&middot; se rifó @sorteo.Premio</text>
+                        <text>&middot; @Texto["lealtad.seRifoPremio"] @sorteo.Premio</text>
                     }
                 </li>
             }
@@ -145,11 +145,8 @@
 
 @if (explicaciones.Count > 0)
 {
-    <h2 class="seccion-titulo">De dónde salieron</h2>
-    <p class="apunte">
-        Es lo que el tiquete de la bomba no dice: cuántos boletos te dio cada carga, y
-        cuánto sobró.
-    </p>
+    <h2 class="seccion-titulo">@Texto["lealtad.deDondeSalieron"]</h2>
+    <p class="apunte">@Texto["lealtad.deDondeSalieronApunte"]</p>
     @* UNA TABLA, Y EN EL ORDEN DE LA RUTA. Nueve filas con la misma oración —«esta carga dio
        2 boletos; sobraron ₡4 600, que no se acumulan»— se leen una por una; en columnas se
        leen de un vistazo. Y de la más reciente a la más vieja, como la ruta: dos listas de
@@ -158,16 +155,16 @@
     <table class="explicaciones">
         <thead>
             <tr>
-                <th scope="col">carga</th>
-                <th scope="col" class="num">boletos</th>
-                <th scope="col">sobró</th>
+                <th scope="col">@Texto["lealtad.columnaCarga"]</th>
+                <th scope="col" class="num">@Texto["lealtad.columnaBoletos"]</th>
+                <th scope="col">@Texto["lealtad.columnaSobro"]</th>
             </tr>
         </thead>
         <tbody>
             @foreach (BoletosDeLaCargaEnLista fila in Recientes())
             {
                 <tr @key="@fila.Transaccion" class="@(fila.ProbablementeFaltaUnDato ? "explicacion--dudosa" : "")">
-                    <td class="n">@fila.Fecha.ToString("dd MMM yyyy", Cultura)</td>
+                    <td class="n">@fila.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</td>
                     @if (fila.HayRegla && !fila.ProbablementeFaltaUnDato)
                     {
                         <td class="n num">@fila.Emitidos</td>

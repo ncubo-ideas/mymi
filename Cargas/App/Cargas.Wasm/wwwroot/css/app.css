@@ -1275,7 +1275,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     font-family: var(--cifras); font-size: 12.5px; letter-spacing: .1em; color: var(--tenue-2);
     inset: calc(22vh + 2.2rem) 0 auto 0;
 }
-.loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
+.loading-progress-text:after { content: var(--blazor-load-percentage-text, var(--texto-cargando, "Cargando")); }
 
 /* La marca bajo el aro (ver index.html): la misma marca del capó, centrada y tenue. */
 .loading-marca {
@@ -1294,7 +1294,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .9rem; top: .6rem; }
 
 .blazor-error-boundary { background: #7f1d1d; color: #fff; padding: 1rem 1.25rem; }
-.blazor-error-boundary::after { content: "Ocurrió un error."; }
+.blazor-error-boundary::after { content: var(--texto-fallo, "Ocurrió un error."); }
 
 code { font-family: var(--tecnica); font-size: .9em; color: var(--cobre); }
 

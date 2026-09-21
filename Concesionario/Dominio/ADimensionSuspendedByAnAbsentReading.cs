@@ -25,19 +25,25 @@ namespace Concesionario.Dominio
 			get { return true; }
 		}
 
-		/// <summary>Dice que falta el hecho, no el limite.</summary>
-		internal override string Describe()
+		/// <summary><see cref="LimitClause.AbsentReading"/>: falta el hecho, no el limite.</summary>
+		internal override string TheClauseItAdds()
 		{
-			return "distancia: no se puede evaluar porque no hay ninguna lectura usable";
+			return LimitClause.AbsentReading;
+		}
+
+		/// <summary>La distancia.</summary>
+		internal override string TheDimensionItMeasures()
+		{
+			return IntervalDimension.Distance;
 		}
 
 		/// <summary>
 		/// No se puede decir lo que queda, y la razon es la unica de las tres que se cura trayendo
-		/// un hecho. La frase es la del dominio, no una paralela.
+		/// un hecho.
 		/// </summary>
 		internal override ARemainder WhatRemains()
 		{
-			return ARemainder.NoReadingToCountFrom(Describe());
+			return ARemainder.NoReadingToCountFrom();
 		}
 	}
 }

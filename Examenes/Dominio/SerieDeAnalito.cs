@@ -100,13 +100,11 @@ namespace Examenes.Dominio
 
 			if (aplica.EsIndeterminada)
 				return Interpretacion.RequiereSexo(SinLectura(),
-					$"sin saber tu sexo no puedo decir si el {Analito.ParaMostrar.ToLowerInvariant()} "
-					+ "te corresponde");
+					"lectura.requiere-sexo.aplicabilidad");
 
 			if (!SeSabeLeerPara(paciente))
 				return Interpretacion.RequiereSexo(SinLectura(),
-					$"el {Analito.ParaMostrar.ToLowerInvariant()} se compara contra rangos distintos "
-					+ "según el sexo, y de vos todavía no lo sé");
+					"lectura.requiere-sexo.rango");
 
 			return Leer(paciente);
 		}
@@ -141,16 +139,16 @@ namespace Examenes.Dominio
 		// serie binaria no emite ninguna porque no hay linea que trazar sobre un positivo.
 		internal abstract IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente);
 
-		// CONTRA QUE SE LEE el ultimo valor, en una frase corta: "hasta 4.5 ng/mL",
-		// "entre 13 y 17 g/dL", "lo esperable es negativo". Es la referencia que
-		// acompana a todo numero en pantalla —punto 5 de la §5 de las especificaciones—
-		// y la contesta la serie porque es quien sabe de que depende: la edad, el sexo
-		// y, en la hemoglobina, la altitud de residencia. Con el sexo desconocido lo DICE en
-		// vez de callarse: "depende de tu sexo" es una referencia honesta, un rango
-		// masculino puesto por defecto no lo seria.
+		// CONTRA QUE SE LEE el ultimo valor, puesto sobre la lectura: la frase por su
+		// nombre —"hasta el techo", "entre el piso y el techo", "lo esperable es
+		// negativo"— y los extremos que esa frase nombra. Es la referencia que acompana a
+		// todo numero en pantalla, y la contesta la serie porque es quien sabe de que
+		// depende: la edad, el sexo y, en la hemoglobina, la altitud de residencia. Con el
+		// sexo desconocido lo DICE en vez de callarse: "depende de tu sexo" es una
+		// referencia honesta, un rango masculino puesto por defecto no lo seria.
 		//
-		// Vacia cuando no hay mediciones: sin valor que acompanar no hay referencia que
-		// inventar.
-		internal abstract string ReferenciaLegible(Paciente paciente);
+		// Sin referencia cuando no hay mediciones: sin valor que acompanar no hay
+		// referencia que inventar.
+		internal abstract Interpretacion ConSuReferencia(Interpretacion lectura, Paciente paciente);
 	}
 }

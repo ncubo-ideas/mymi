@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- SPIKE APP for Puerta 3 (uncommitted). Two spikes in one caller:
+         spike1  can an ORDINARY app talk to the OS AppFunctions manager on this device?
+         spike2  the jump: bind Gnothi's IpcService from another app, Gnothi CLOSED,
+                 reach Dispatcher.Serve, and measure Alvaro's four results.
+       net10.0-android because the API 36 bindings (Android.App.AppFunctions) only ship
+       for net10 in this workload. -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>36.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.ncubo.lab.functions</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <RootNamespace>Lab.Functions</RootNamespace>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+</Project>

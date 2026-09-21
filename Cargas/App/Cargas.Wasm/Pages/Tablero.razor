@@ -2,11 +2,11 @@
 @inherits PantallaDeCargas
 @using Cargas.App.Vistas
 
-<PageTitle>Inicio · Estaciones Faro</PageTitle>
+<PageTitle>@Texto["tablero.titulo"] · @Textos.NombreDeLaMarca</PageTitle>
 
 @* El h1 existe para lectores de pantalla y el FocusOnNavigate del router; no se dibuja:
    la marca ya vive en el capó y un titular grande le comería el alto al hero. *@
-<h1 class="solo-para-lectores">Inicio</h1>
+<h1 class="solo-para-lectores">@Texto["tablero.titulo"]</h1>
 
 <Problema De="Error" />
 
@@ -62,7 +62,7 @@ else
                 <span class="hero-cifra">@Cifra(rendimiento.ActualComoSeVe)<span class="unidad">@rendimiento.Simbolo</span></span>
                 @if (rendimiento.Veredicto.Length > 0)
                 {
-                    <span class="sello @Sello()">@rendimiento.Veredicto</span>
+                    <span class="sello @Sello()">@Texto.ComoSeDice(rendimiento.Veredicto)</span>
                 }
                 @if (rendimiento.HaySerie && rendimiento.CambioPorcentualComoSeVe != 0)
                 {
@@ -133,17 +133,17 @@ else
                 </div>
             </div>
 
-            @if (proximoFaltante.QueFalta == "el kilometraje")
+            @if (proximoFaltante.ClaveDeLoQueFalta == ElKilometraje)
             {
                 <div class="pendiente-campo">
                     <div class="pendiente-campo-fila">
-                        <span class="pendiente-fecha">@proximoFaltante.Fecha.ToString("dd MMM", Cultura)</span>
+                        <span class="pendiente-fecha">@proximoFaltante.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)</span>
                         @* El ícono de odómetro vive DENTRO del campo -prefijo, como una lupa
                            en un buscador-, así que el input se reconoce sin leer el placeholder. *@
                         <span class="pendiente-input">
                             <span class="faro-icon faro-icon--odometro" aria-hidden="true"></span>
                             <input type="number" inputmode="numeric" min="1"
-                                   aria-label="@($"Kilometraje de tu carga del {proximoFaltante.Fecha.ToString("dd MMM", Cultura)}, en {unidades.Distancia}")"
+                                   aria-label="@($"Kilometraje de tu carga del {proximoFaltante.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)}, en {unidades.Distancia}")"
                                    placeholder="@($"odómetro en {unidades.Distancia}")"
                                    value="@KilometrajeOVacio()"
                                    @oninput="AnotarEnElCampo" />
@@ -169,7 +169,7 @@ else
             else
             {
                 <div class="pendiente-acciones">
-                    <span class="pendiente-fecha">@proximoFaltante.Fecha.ToString("dd MMM", Cultura)</span>
+                    <span class="pendiente-fecha">@proximoFaltante.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)</span>
                     <button class="tecla" @onclick="ConfirmarPendiente">
                         @(SuponeLleno ? "Sí, quedó lleno" : "Así fue, cargué un monto")
                     </button>
@@ -235,10 +235,10 @@ else
                 <span class="faro-icon faro-icon--gasto" aria-hidden="true"></span>
             </span>
             <div class="tarjeta-acceso-cuerpo">
-                <span class="tarjeta-acceso-rotulo">Gasto @MesDelGasto()</span>
+                <span class="tarjeta-acceso-rotulo">@Texto["tablero.gasto"] @MesDelGasto()</span>
                 <div class="tarjeta-acceso-valor">@Simbolo(gasto.Moneda)@Plata(gasto.Monto)</div>
                 <p class="tarjeta-acceso-pie">
-                    <b>@gasto.Cargas</b> @(gasto.Cargas == 1 ? "carga" : "cargas") &middot; <b>@Cifra(gasto.Litros) L</b>
+                    <b>@gasto.Cargas</b> @Texto[gasto.Cargas == 1 ? "comun.carga" : "comun.cargas"] &middot; <b>@Cifra(gasto.Litros) L</b>
                 </p>
             </div>
             <span class="faro-icon faro-icon--flecha tarjeta-acceso-flecha" aria-hidden="true"></span>
@@ -255,20 +255,20 @@ else
                 <span class="faro-icon faro-icon--ultimacarga" aria-hidden="true"></span>
             </span>
             <div class="tarjeta-acceso-cuerpo">
-                <span class="tarjeta-acceso-rotulo">Última carga &middot; @ultimaCarga.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                <span class="tarjeta-acceso-rotulo">Última carga &middot; @ultimaCarga.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</span>
                 <div class="tarjeta-acceso-valor">@Simbolo(ultimaCarga.Moneda)@Plata(ultimaCarga.Total)</div>
                 <p class="tarjeta-acceso-pie ultima-carga-datos">
-                    <span><span class="n">@ultimaCarga.Volumen</span> de @ultimaCarga.Tipo</span>
-                    <span>surtidor @ultimaCarga.Surtidor</span>
+                    <span><span class="n">@ultimaCarga.Volumen</span> @Texto["ruta.de"] @ultimaCarga.Tipo</span>
+                    <span>@Texto["ruta.surtidor"] @ultimaCarga.Surtidor</span>
                     @if (ultimaCarga.Tanque.Length > 0)
                     {
-                        <span class="ultima-carga-tanque @(ultimaCarga.Tanque.StartsWith("lleno") ? "" : "ultima-carga-tanque--parcial")">
-                            tanque @ultimaCarga.Tanque
+                        <span class="ultima-carga-tanque @(ultimaCarga.ClaveDelTanque == "lleno" ? "" : "ultima-carga-tanque--parcial")">
+                            @Texto["ruta.tanque"] @ultimaCarga.Tanque
                         </span>
                     }
                     @if (ultimaCarga.TieneKilometraje)
                     {
-                        <span class="n aporte" title="@($"Lo anotaste vos ({ultimaCarga.OrigenDelKilometraje})")">@ultimaCarga.KilometrajeAnotado</span>
+                        <span class="n aporte" title="@Texto.Con("ruta.loAnotasteVos", ("origen", Texto.ComoSeDice(ultimaCarga.OrigenDelKilometraje)))">@ultimaCarga.KilometrajeAnotado</span>
                     }
                     @if (ultimaCarga.TieneFoto)
                     {
@@ -297,7 +297,7 @@ else
             <p class="tarjeta-acceso-pie">
                 @if (lealtad.Nivel.Length > 0)
                 {
-                    <text>nivel <b>@lealtad.Nivel</b></text>
+                    <text>nivel <b>@Texto.ComoSeDice(lealtad.Nivel)</b></text>
                 }
                 else
                 {
@@ -323,7 +323,7 @@ else
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="3.4" width="8.2" height="13.2" rx="1.2" /><path d="M11.8 8.2h1.6a1.4 1.4 0 0 1 1.4 1.4v4.2a1.1 1.1 0 0 0 2.2 0V8.6l-1.8-1.8" /></svg>
                     </span>
                     <div class="resumen-cuerpo">
-                        <span class="resumen-rotulo">Autonomía estimada</span>
+                        <span class="resumen-rotulo">@Texto["tablero.autonomia"]</span>
                         <div class="resumen-valor">
                             ~@Entero(proxima.Hay ? proxima.KilometrosRestantes : autonomia.Kilometros)<span class="unidad">km</span>
                         </div>
@@ -331,11 +331,11 @@ else
                         <p class="resumen-pie">
                             @if (proxima.Hay)
                             {
-                                <text>lo que queda &middot; con el tanque lleno son <b>~@Entero(autonomia.Kilometros) km</b></text>
+                                <text>@Texto["tablero.loQueQueda"] &middot; @Texto["tablero.conTanqueLlenoSon"] <b>~@Entero(autonomia.Kilometros) km</b></text>
                             }
                             else
                             {
-                                <text>con el tanque lleno &middot; @Cifra(autonomia.CapacidadEnLitros) L a <b>@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b></text>
+                                <text>@Texto["tablero.conTanqueLleno"] &middot; @Cifra(autonomia.CapacidadEnLitros) L @Texto["tablero.a"] <b>@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b></text>
                             }
                         </p>
                     </div>
@@ -349,9 +349,9 @@ else
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.8" y="5.6" width="14.4" height="8.8" rx="1.6" /><path d="M6.4 5.6V4M13.6 5.6V4" /></svg>
                     </span>
                     <div class="resumen-cuerpo">
-                        <span class="resumen-rotulo">Próxima carga</span>
+                        <span class="resumen-rotulo">@Texto["tablero.proximaCarga"]</span>
                         <div class="resumen-valor">
-                            ~@proxima.DiasEstimados<span class="unidad">@(proxima.DiasEstimados == 1 ? "día" : "días")</span>
+                            ~@proxima.DiasEstimados<span class="unidad">@Texto[proxima.DiasEstimados == 1 ? "comun.dia" : "comun.dias"]</span>
                         </div>
                         <p class="resumen-pie">
                             según tu ritmo &middot; andás <b>@Cifra(proxima.KilometrosPorDia) km</b> por día
@@ -367,9 +367,9 @@ else
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.8" /><path d="M10 6.6v6.8M8 8.2h2.8a1.5 1.5 0 0 1 0 3H8" /></svg>
                     </span>
                     <div class="resumen-cuerpo">
-                        <span class="resumen-rotulo">Costo por kilómetro</span>
+                        <span class="resumen-rotulo">@Texto["tablero.costoPorKilometro"]</span>
                         <div class="resumen-valor">@Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)</div>
-                        <p class="resumen-pie">sobre <b>@Entero(costo.Kilometros) km</b> con kilometraje anotado</p>
+                        <p class="resumen-pie">@Texto["tablero.sobre"] <b>@Entero(costo.Kilometros) km</b> @Texto["tablero.conKilometrajeAnotado"]</p>
                     </div>
                 </div>
             }
@@ -381,13 +381,13 @@ else
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 14.4a6.4 6.4 0 0 1 12.8 0" /><path d="M10 14.4 13.4 10.8" /></svg>
                     </span>
                     <div class="resumen-cuerpo">
-                        <span class="resumen-rotulo">Odómetro, estimado hoy</span>
+                        <span class="resumen-rotulo">@Texto["tablero.odometro"]</span>
                         <div class="resumen-valor">
                             ~@Entero(propuesta.KilometrosComoSeVen)<span class="unidad">@propuesta.SimboloDeLaDistancia</span>
                         </div>
                         <p class="resumen-pie">
-                            <b>@Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia</b> por día desde tu
-                            última lectura, hace @propuesta.DiasDesdeLaUltimaLectura @(propuesta.DiasDesdeLaUltimaLectura == 1 ? "día" : "días")
+                            <b>@Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia</b> @Texto["tablero.porDia"] @Texto["tablero.desdeTuUltimaLectura"]
+                            <b>@propuesta.DiasDesdeLaUltimaLectura</b> @Texto[propuesta.DiasDesdeLaUltimaLectura == 1 ? "comun.dia" : "comun.dias"]
                         </p>
                     </div>
                 </div>
@@ -412,6 +412,12 @@ else
     private OdometroPropuesto propuesta = new();
     private UnidadesElegidas unidades = new();
     private DateTime mesDelGasto;
+
+    // LOS DOS CODIGOS CON QUE ESTA PANTALLA DECIDE que formulario dibujar. Son identidad y no
+    // prosa, igual que en Ruta.razor: decidir sobre la frase dejaria de decidir en cuanto la
+    // frase cambie de idioma.
+    private const string ElKilometraje = "kilometraje";
+    private const string LaConfirmacionDelTanque = "confirmacion-del-tanque";
 
     // MI CARNET FARO: es de la cuenta, no del carro -Estado.Lealtad() no toma placa-,
     // así que se lee siempre, incluso sin vehículos. Mismo dato que ya muestra
@@ -451,8 +457,11 @@ else
         return (fraccion * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
     }
 
+    // CON EL ANIO. El periodo es el mes de la ULTIMA CARGA, no el del calendario: si esa
+    // carga es de hace un anio, "gasto de agosto" se lee como el agosto de este anio y el
+    // rotulo miente por omision.
     private string MesDelGasto() => mesDelGasto == default
-        ? "" : "de " + mesDelGasto.ToString("MMMM yyyy", Cultura);
+        ? "" : Texto.Con("tablero.delMes", ("mes", mesDelGasto.ToString("MMMM yyyy", Cultura)));
 
     // Los dos botones de confirmación salen de lo que el DOMINIO supuso -corte
     // automático supone lleno, preseteado supone parcial-, igual que en Mis cargas.
@@ -471,7 +480,7 @@ else
 
     // ------------------------------------------------------------------ las acciones
 
-    private Task AgregarKilometraje() => Intentar("anotar el kilometraje", async () =>
+    private Task AgregarKilometraje() => Intentar("anotar-el-kilometraje", async () =>
     {
         if (proximoFaltante is null || pendienteKilometraje <= 0) return;
 
@@ -480,30 +489,27 @@ else
 
         string rechazo = await Estado.AnotarOdometro(proximoFaltante.Transaccion,
             pendienteKilometraje, unidades.Distancia, origen);
-        if (rechazo.Length > 0)
-            throw new InvalidOperationException(
-                "La app no anotó ese kilometraje: no es coherente con la serie (el "
-                + "odómetro solo crece). Revisá el número.");
+        if (rechazo.Length > 0) throw new RechazoDeLaApp("kilometraje-rechazado");
 
         pendienteKilometraje = 0;
         pendienteTransaccionCargada = "";
         MostrarListo("Listo: guardamos el kilometraje.");
     });
 
-    private Task ConfirmarPendiente() => Intentar("confirmar el tanque", async () =>
+    private Task ConfirmarPendiente() => Intentar("confirmar-el-tanque", async () =>
     {
         if (proximoFaltante is null) return;
         string rechazo = await Estado.ConfirmarTanque(proximoFaltante.Transaccion);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
         MostrarListo("Confirmado.");
     });
 
-    private Task CorregirPendiente() => Intentar("corregir el tanque", async () =>
+    private Task CorregirPendiente() => Intentar("corregir-el-tanque", async () =>
     {
         if (proximoFaltante is null) return;
         string contrario = proximoFaltante.LoQueSeSupone == "lleno" ? "parcial" : "lleno";
         string rechazo = await Estado.DeclararTanque(proximoFaltante.Transaccion, contrario);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
         MostrarListo($"Anotado: tanque {contrario}.");
     });
 
@@ -572,7 +578,7 @@ else
         DateTime fechaKm = DateTime.MinValue, fechaCualquiera = DateTime.MinValue;
         foreach (FaltanteEnLista f in faltantes)
         {
-            if (f.QueFalta == "el kilometraje" && f.Fecha > fechaKm) { fechaKm = f.Fecha; masRecienteConKm = f; }
+            if (f.ClaveDeLoQueFalta == ElKilometraje && f.Fecha > fechaKm) { fechaKm = f.Fecha; masRecienteConKm = f; }
             if (f.Fecha > fechaCualquiera) { fechaCualquiera = f.Fecha; masRecienteCualquiera = f; }
         }
         proximoFaltante = masRecienteConKm ?? masRecienteCualquiera;
@@ -588,7 +594,7 @@ else
                 if (carga.Transaccion == proximoFaltante.Transaccion) { cargaDelPendiente = carga; break; }
 
             foreach (FaltanteEnLista f in faltantes)
-                if (f.Transaccion == proximoFaltante.Transaccion && f.QueFalta == "la confirmación del tanque")
+                if (f.Transaccion == proximoFaltante.Transaccion && f.ClaveDeLoQueFalta == LaConfirmacionDelTanque)
                     cargaTieneTanquePendiente = true;
 
             // El checklist solo dice algo cuando esta carga tiene DE VERDAD los dos
@@ -599,7 +605,7 @@ else
             // La sugerencia del odómetro de hoy solo vale para la carga MÁS RECIENTE de
             // todas -ver el mismo argumento en Ruta.razor-: proponerle a una carga
             // anterior el kilometraje de hoy es un número que el dominio va a rechazar.
-            sugerenciaAplica = propuesta.Hay && proximoFaltante.QueFalta == "el kilometraje"
+            sugerenciaAplica = propuesta.Hay && proximoFaltante.ClaveDeLoQueFalta == ElKilometraje
                 && proximoFaltante.Fecha == fechaMasReciente;
 
             if (proximoFaltante.Transaccion != pendienteTransaccionCargada)

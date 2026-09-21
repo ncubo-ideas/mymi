@@ -45,13 +45,15 @@ namespace Concesionario.Dominio.Pruebas
 					"Cada uno contesta SU vin. Con un nombre de actor fijo, este segundo habria "
 					+ "rehidratado el journal del primero y contestado el vin ajeno.");
 				Assert.That(
-					other.Api.ReadDueReason("FluidChange"), Does.Contain("no tiene agendada"),
+					other.Api.ReadDueReason("FluidChange",
+						TheLanguage.OfTheRecord), Does.Contain("no tiene agendada"),
 					"Y no hereda sus operaciones: el plan que sembro el primer vehiculo no es el "
 					+ "plan del segundo.");
 
 				Assert.That(owners.Api.ReadVin(), Is.EqualTo(TheOwnersVin));
 				Assert.That(
-					owners.Api.ReadDueReason("FluidChange"), Does.Not.Contain("no tiene agendada"),
+					owners.Api.ReadDueReason("FluidChange",
+						TheLanguage.OfTheRecord), Does.Not.Contain("no tiene agendada"),
 					"Y el primero conserva la suya: abrir el segundo no le toco nada.");
 			}
 			finally

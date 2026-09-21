@@ -1,0 +1,125 @@
+@inject HostState State
+
+@*
+    THE LIST OF MODULES. The same thing the phone shows (MainActivity.Card): icon, title, who
+    handed it over, and its on/off state -read from installation.json.
+
+    WHAT IT DELIBERATELY DOES NOT HAVE: a switch to turn a module on or off. That is not an
+    omission. The real Host states it in HostTools: "There is deliberately NO tool to enable,
+    disable or change permissions... It is changed by editing installation.json." A button
+    here would quietly become that tool. So the window SHOWS consent and RESPECTS it; changing
+    it stays the person's explicit act on her file, and "Reload" picks it up.
+*@
+
+<h1>@T("instituciones.titulo")</h1>
+<p class="sub">@T("instituciones.sub")</p>
+
+@if (State.Warnings.Count > 0)
+{
+    @foreach (string w in State.Warnings)
+    {
+        <div class="notice">@w</div>
+    }
+}
+
+@if (State.Catalog.Modules.Count == 0)
+{
+    <div class="empty">
+        @T("instituciones.vacio")<br /><code>@State.Root</code>
+    </div>
+}
+else
+{
+    @foreach (Module m in State.Catalog.Modules)
+    {
+        Module.BrandLook look = Module.LookOf(m.Manifest, m.Directory, out _);
+        <div class="card @(m.Installation.Enabled ? "" : "off")"
+             style="@(look.Color.Length > 0 ? $"--marca:{look.Color}" : "")">
+            <div class="row">
+                <div class="quien">
+                    @* LA MARCA DE LA INSTITUCION, la que ella declaro y el Host ya tenia
+                       calculada. Cuando no declaro ninguna, cae al dibujo de su rubro: el Host
+                       no le inventa una cara a nadie. *@
+                    @if (look.Logo.Length > 0)
+                    {
+                        <img class="marca" src="@look.Logo" alt="" />
+                    }
+                    else
+                    {
+                        <span class="marca sinlogo">@HostState.Icon(m.Manifest)</span>
+                    }
+                    <div>
+                    @* QUIEN ES arriba y QUE ES abajo, igual que en el telefono. Estaba al
+                       revés: el titulo grande y la institucion en la linea chica. La linea que
+                       identifica la resuelve el manifiesto -Manifest.Identity- y no esta
+                       pagina, porque hay tres caras y un fallback implementado tres veces es un
+                       fallback que diverge. *@
+                    <span class="title">@m.Manifest.Identity</span>
+                    @if (m.Manifest.Brand?.Slogan is { Length: > 0 } lema)
+                    {
+                        <div class="lema">@lema</div>
+                    }
+                    <div class="meta">
+                        @m.Manifest.Title
+                        @if (!m.Installation.Enabled)
+                        {
+                            <text> &middot; <strong>@T("instituciones.apagada")</strong></text>
+                        }
+                        else
+                        {
+                            <text> &middot; @Consultas(CountEnabled(m))</text>
+                        }
+                    </div>
+                    </div>
+                </div>
+                @if (m.Installation.Enabled && CountEnabled(m) > 0)
+                {
+                    <button class="small" @onclick="() => Open.InvokeAsync(m.Name)">@T("instituciones.abrir")</button>
+                }
+            </div>
+        </div>
+    }
+}
+
+@* THE WAY IN. It used to be a file picker straight into ModuleInstaller, which takes cargo
+   modules only; now it is the enrollment the phone runs -link or file, every form, a proposal
+   before anything is written. *@
+<Alta Installed="Reload" />
+
+<p class="crumb" style="margin-top:18px">
+    <button class="ghost" @onclick="Reload">@T("instituciones.recargar")</button>
+    <span class="meta"> &nbsp;@T("instituciones.recargar.nota")</span>
+</p>
+
+@if (message.Length > 0)
+{
+    <pre class="@(ok ? "" : "notice denied")">@message</pre>
+}
+
+@code {
+    [Parameter] public EventCallback<string> Open { get; set; }
+
+    private string message = "";
+    private bool ok = true;
+
+    private static int CountEnabled(Module m) => m.EnabledTools().Count();
+
+    // EL PLURAL SON DOS CLAVES, NO UN SUFIJO. Esto decia `quer` + `y`/`ies`, que es el truco que
+    // funciona en ingles y no existe en espanol: «consulta»/«consultas» no comparten el prefijo
+    // que esa concatenacion asume. Regla 7 de las reglas de localizacion: cada clave es una
+    // frase entera.
+    //
+    // Y SON LAS MISMAS CLAVES QUE EL TELEFONO. Alla la tarjeta dice «20 permisos activos», no
+    // «20 consultas»: lo que se cuenta es lo que la persona dejo encendido, y esa es la palabra
+    // que lo dice. Dos caras del mismo producto no pueden llamarle distinto a lo mismo.
+    private static string Consultas(int cuantas) => cuantas == 1
+        ? T("detalle.permiso.uno")
+        : T("detalle.permiso.varios", ("n", cuantas.ToString()));
+
+    private void Reload() => State.Reload();
+
+    // The file picker used to live here and hand the package to ModuleInstaller (decision B1),
+    // which takes cargo modules only. The Alta component does both -link and file- through the
+    // enrollment the phone runs, for every form. The picker itself moved there unchanged; the
+    // texts it used (instituciones.importar, instituciones.elegir.*) stay in the catalog for it.
+}

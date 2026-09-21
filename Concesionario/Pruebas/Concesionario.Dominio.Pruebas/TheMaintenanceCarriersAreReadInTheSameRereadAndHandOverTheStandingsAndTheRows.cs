@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Concesionario.App;
+using Concesionario.App.Views;
 using Concesionario.Wasm;
 using NUnit.Framework;
 
@@ -102,10 +103,11 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(
 				row.Says,
-				Is.EqualTo(journal.Api.DescribeCountdown(TheKindWithACountdown, TheInstantTheScreenAsksAt)),
+				Is.EqualTo(journal.Api.DescribeCountdown(TheKindWithACountdown, TheInstantTheScreenAsksAt,
+					TheLanguage.OfTheRecord)),
 				"La cuenta atras entera es la de la puerta LETRA POR LETRA.");
 
-			Assert.That(row.Says, Does.Contain("distancia: te faltan 7345 km"));
+			Assert.That(row.Says, Does.Contain("distancia: te faltan 7.345 km"));
 			Assert.That(row.Says, Does.Contain("tiempo: te faltan 255 días"),
 				"Y dice LAS DOS dimensiones: elegir la mas cercana dejaria el numero de la pantalla "
 				+ "discrepando del motivo del estado para quien lea los dos juntos.");
@@ -120,7 +122,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				row.DistanceSays,
 				Is.EqualTo(journal.Api.DescribeDistanceRemaining(
-					TheKindWithACountdown, TheInstantTheScreenAsksAt)));
+					TheKindWithACountdown, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord)));
 
 			Assert.That(row.DaysCanBeSaid, Is.True);
 			Assert.That(row.DaysRemaining, Is.EqualTo(TheDaysThatAreLeft),
@@ -130,7 +132,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				row.DaysSays,
 				Is.EqualTo(journal.Api.DescribeDaysRemaining(
-					TheKindWithACountdown, TheInstantTheScreenAsksAt)));
+					TheKindWithACountdown, TheInstantTheScreenAsksAt, TheLanguage.OfTheRecord)));
 
 			// Y LAS DOS MITADES NO ESTAN CRUZADAS: los dos montos son distintos y las dos frases
 			// tambien, asi que cruzarlas cambia cuatro de las afirmaciones de arriba.
@@ -221,19 +223,19 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(second.Kind, Is.EqualTo(TheKindThatWasCompletedTwice));
 			Assert.That(second.CompletedAt, Is.EqualTo("2025-08-22 09:30:00"));
-			Assert.That(second.Reading, Is.EqualTo("27300 km"));
+			Assert.That(second.Reading, Is.EqualTo("27.300 km"));
 			Assert.That(
 				second.Says,
-				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27300 km"),
+				Does.Contain("se hizo el 2025-08-22 09:30:00 con el odómetro en 27.300 km"),
 				"La clausula entera. Contener el instante y la lectura sueltos se queda verde con las "
 				+ "dos columnas de dos filas cruzadas.");
 
 			Assert.That(first.Kind, Is.EqualTo(TheKindThatWasCompletedTwice));
 			Assert.That(first.CompletedAt, Is.EqualTo("2025-04-11 12:00:00"));
-			Assert.That(first.Reading, Is.EqualTo("22500 km"));
+			Assert.That(first.Reading, Is.EqualTo("22.500 km"));
 			Assert.That(
 				first.Says,
-				Does.Contain("se hizo el 2025-04-11 12:00:00 con el odómetro en 22500 km"));
+				Does.Contain("se hizo el 2025-04-11 12:00:00 con el odómetro en 22.500 km"));
 
 			// Y CADA FILA NOMBRA SU PROPIA CLASE, que es lo que la hace autodescriptiva sin la columna
 			// al lado.
@@ -312,7 +314,7 @@ namespace Concesionario.Dominio.Pruebas
 			// que SI se llaman aparecen.
 			foreach (string called in new[]
 			{
-				"api.CompletionsOfEveryKind()", "api.DescribeCompletions(", "api.HasAnyCompletion(",
+				"api.CompletionsOfEveryKind(", "api.DescribeCompletions(", "api.HasAnyCompletion(",
 				"api.DescribeCountdown(", "api.PublishedServicePricesAsOf(",
 				"api.HasAnyPublishedServicePrice()", "api.PublishedServicePriceCount()",
 			})
@@ -337,14 +339,25 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(read, Is.Not.Null, carrier.Name + " dejo de ofrecer ReadThrough.");
 
 				Assert.That(
-					read.GetParameters().Select(each => each.ParameterType.Name).ToArray(),
+					read.GetParameters().Take(2).Select(each => each.ParameterType.Name).ToArray(),
 					Is.EqualTo(new[] { "DealershipCarAPI", "DateTime" }),
+					carrier.Name + " dejo de empezar por la puerta y su instante.");
+
+				Assert.That(
+					read.GetParameters().Count(each => each.ParameterType == typeof(DateTime)),
+					Is.EqualTo(1),
 					carrier.Name + " toma la puerta y UN instante. Dos instantes son dos momentos que se "
 					+ "pueden separar.");
 
 				Assert.That(
-					read.GetParameters().Select(each => each.Name).ToArray(),
+					read.GetParameters().Take(2).Select(each => each.Name).ToArray(),
 					Is.EqualTo(new[] { "api", "asOf" }));
+
+				// Y EL IDIOMA NO ES UN MOMENTO. Un tercer parametro que no sea un instante no tiene
+				// nada que ver con esta ley; lo que la rompe es un SEGUNDO reloj.
+				Assert.That(
+					read.GetParameters().Skip(2).Select(each => each.ParameterType.Name).ToArray(),
+					Is.SubsetOf(new[] { "String" }));
 			}
 		}
 
@@ -363,8 +376,12 @@ namespace Concesionario.Dominio.Pruebas
 				Assert.That(found, Is.Not.Null,
 					"La caratula dejo de ofrecer '" + read + "' y la seccion no tiene de donde sacarlo.");
 
-				Assert.That(found.GetParameters(), Is.Empty,
-					"'" + read + "' gano un argumento. El instante sale del reloj de la maquina.");
+				Assert.That(
+					found.GetParameters().Where(each => each.ParameterType == typeof(DateTime)),
+					Is.Empty,
+					"'" + read + "' gano un instante. El instante sale del reloj de la maquina, y "
+					+ "pedirselo a alguien es dejar que pregunte por un momento que se invento. El "
+					+ "idioma SI se le pide, y no es un momento: es de la persona que lee.");
 			}
 
 			Assert.That(
@@ -399,14 +416,14 @@ namespace Concesionario.Dominio.Pruebas
 
 			foreach (string read in new[]
 			{
-				"state.ReadTheSpecification()",
-				"state.ReadWhereThisVehicleStands()",
-				"state.ReadTheStaysOfThisVehicle()",
-				"state.ReadWhereEachOperationStands()",
-				"state.ReadWhatTheServicesCost()",
-				"state.ReadHowThisVehicleIsDriven()",
-				"state.ReadWhatThisVehicleHasCost()",
-				"state.ReadThePlateOfThisVehicle()",
+				"state.ReadTheSpecification(texts.Language)",
+				"state.ReadWhereThisVehicleStands(texts.Language)",
+				"state.ReadTheStaysOfThisVehicle(texts.Language)",
+				"state.ReadWhereEachOperationStands(texts.Language)",
+				"state.ReadWhatTheServicesCost(texts.Language)",
+				"state.ReadHowThisVehicleIsDriven(texts.Language)",
+				"state.ReadWhatThisVehicleHasCost(texts.Language)",
+				"state.ReadThePlateOfThisVehicle(texts.Language)",
 			})
 				Assert.That(page, Does.Contain(read),
 					"La pagina no hace la lectura '" + read + "'. Las ocho se leen en el mismo Reread: "
@@ -448,14 +465,14 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(
 				page,
 				Does.Contain(
-					"sheet = state.ReadTheSpecification(); "
-					+ "stands = state.ReadWhereThisVehicleStands(); "
-					+ "stays = state.ReadTheStaysOfThisVehicle(); "
-					+ "operations = state.ReadWhereEachOperationStands(); "
-					+ "costs = state.ReadWhatTheServicesCost(); "
-					+ "use = state.ReadHowThisVehicleIsDriven(); "
-					+ "spend = state.ReadWhatThisVehicleHasCost(); "
-					+ "plate = state.ReadThePlateOfThisVehicle();"),
+					"sheet = state.ReadTheSpecification(texts.Language); "
+					+ "stands = state.ReadWhereThisVehicleStands(texts.Language); "
+					+ "stays = state.ReadTheStaysOfThisVehicle(texts.Language); "
+					+ "operations = state.ReadWhereEachOperationStands(texts.Language); "
+					+ "costs = state.ReadWhatTheServicesCost(texts.Language); "
+					+ "use = state.ReadHowThisVehicleIsDriven(texts.Language); "
+					+ "spend = state.ReadWhatThisVehicleHasCost(texts.Language); "
+					+ "plate = state.ReadThePlateOfThisVehicle(texts.Language);"),
 				"Las ocho lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
 				+ "otro metodo, o despues de un await -- contesta sobre otro momento del mismo registro, "
 				+ "y la pantalla mezcla dos: eso es exactamente lo que 'un solo Reread' existe para "
@@ -465,14 +482,14 @@ namespace Concesionario.Dominio.Pruebas
 			// bloque de arriba siga intacto.
 			foreach (string read in new[]
 			{
-				"state.ReadTheSpecification()",
-				"state.ReadWhereThisVehicleStands()",
-				"state.ReadTheStaysOfThisVehicle()",
-				"state.ReadWhereEachOperationStands()",
-				"state.ReadWhatTheServicesCost()",
-				"state.ReadHowThisVehicleIsDriven()",
-				"state.ReadWhatThisVehicleHasCost()",
-				"state.ReadThePlateOfThisVehicle()",
+				"state.ReadTheSpecification(texts.Language)",
+				"state.ReadWhereThisVehicleStands(texts.Language)",
+				"state.ReadTheStaysOfThisVehicle(texts.Language)",
+				"state.ReadWhereEachOperationStands(texts.Language)",
+				"state.ReadWhatTheServicesCost(texts.Language)",
+				"state.ReadHowThisVehicleIsDriven(texts.Language)",
+				"state.ReadWhatThisVehicleHasCost(texts.Language)",
+				"state.ReadThePlateOfThisVehicle(texts.Language)",
 			})
 				Assert.That(TimesItSays(page, read), Is.EqualTo(1),
 					"'" + read + "' se hace en mas de un sitio de la pagina.");
@@ -519,7 +536,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private WhereEachOperationStands WhatTheScreenIsHanded()
 		{
-			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt);
+			return WhereEachOperationStands.ReadThrough(journal.Api, TheInstantTheScreenAsksAt,
+				TheLanguage.OfTheRecord);
 		}
 
 		/// <summary>El fuente con cada corrida de espacios en blanco vuelta un espacio.</summary>
@@ -552,7 +570,7 @@ namespace Concesionario.Dominio.Pruebas
 			return System.IO.File.ReadAllText(path);
 		}
 
-		// EL FUENTE DE LOS DOS PORTADORES, JUNTO. Se lee del grupo <None> de la raiz Wasm, que es el
+		// EL FUENTE DE LOS DOS PORTADORES, JUNTO. Se lee del grupo <None> de la raiz App -- se mudaron de Wasm a App\Views --, que es el
 		// mismo que alimenta el barrido de aritmetica: si no llego, esto revienta con el nombre.
 		private static string TheCarriersAsTheyAreWritten()
 		{
@@ -564,7 +582,7 @@ namespace Concesionario.Dominio.Pruebas
 			})
 			{
 				string path = System.IO.Path.Combine(
-					AppContext.BaseDirectory, "CodigoComoDato", "Wasm", file);
+					AppContext.BaseDirectory, "CodigoComoDato", "App", "Views", file);
 
 				Assert.That(System.IO.File.Exists(path), Is.True,
 					"'" + file + "' no llego al output. Un barrido que leyo cero archivos esta verde por "

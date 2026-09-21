@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>La Guaria y vos · Supermercado La Guaria</title>
-<meta name="description" content="Sus compras del supermercado, instaladas en su computadora. El historial vive en una carpeta suya.">
+<meta name="description" content="Sus compras del supermercado, en su propio aparato con Mymi. El historial vive en una carpeta suya.">
 
 <!--
   La cara de la institución en URL1.
@@ -414,15 +414,16 @@
       </p>
 
       <div class="acciones anim d4">
-        <a class="boton" href="/app/">
-          Instalar la aplicación
+        <a class="boton" href="#gnothi">
+          Usarla con Mymi
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
             <path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8"
                   stroke="currentColor" stroke-width="1.4"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
-        <small>Gratuita, y se instala desde el navegador. Sin tienda de aplicaciones.</small>
+        <small>La aplicación vive dentro de Mymi: gratuita, en Google Play y para Windows.
+               Abajo, el paso a paso.</small>
       </div>
     </div>
 
@@ -510,23 +511,342 @@
     </div>
   </section>
 
-  <section class="envoltura instalar">
-    <div>
-      <h2>Cómo se instala</h2>
-      <p>Toma menos de un minuto. No hace falta crear una cuenta.</p>
+  <!-- CON GNOTHI: EL PASO A PASO POR AMBIENTE.
+
+       La aplicación de La Guaria se usa DENTRO de Gnothi, y esta sección es la que lo dice y
+       lo camina: primero Gnothi (una vez), después la institución (un toque). Un panel por
+       ambiente —Android, iPhone, computadora— porque los pasos NO son los mismos: en el
+       teléfono Gnothi viene de la tienda y el módulo entra por un enlace al dominio de Gnothi
+       (go.gnothi.app/alta, especificación 13 §7); en Windows Gnothi se descarga de acá y el
+       módulo se agrega desde la ventana de Gnothi, pegando el enlace o eligiendo el archivo.
+
+       LOS DOS PAQUETES SON DISTINTOS y los dos se llaman compras.gmod (armar-bundle.ps1):
+         descargas/compras.gmod        la forma cargo, los dll que el Host carga en escritorio
+         descargas/movil/compras.gmod  la forma hospedada, la app publicada para el WebView del
+                                       teléfono. NO va al repo (15 MB, y lleva el origen adentro):
+                                       se arma con armar-bundle.ps1 -Origen <este origen>, ver el
+                                       README de Compras.
+
+       EL ENLACE DE ALTA SE ARMA EN EL NAVEGADOR con location.origin, porque esta página es un
+       archivo estático y no sabe desde qué dirección la sirven; el manifiesto del paquete sí
+       tiene que declarar ese mismo origen o Gnothi lo rechaza («dice ser de otro origen»).
+       Sin sello (&h=) a propósito: el sello lo calcula quien puede leer el zip, y acá no hay
+       servidor. Es lo que la página dinámica (PaginaDeLaInstitucion) sí agrega.
+
+       EL PANEL INICIAL LO ELIGE EL USER AGENT y la persona puede cambiarlo; sin JavaScript se
+       ven los tres, uno debajo del otro.
+
+       EL NOMBRE. Hacia la persona la app se llama «Mymi» (decidido el 2026-09-18): lo dicen el
+       catálogo del Host (textos.json), la ventana del escritorio, la ficha de Android y esta
+       página. «Gnothi» es el nombre interno y se queda solo en lo que es contrato o ruta: el
+       paquete com.ncubo.gnothi.host, el dominio go.gnothi.app, el zip Gnothi.Host.zip, la
+       carpeta Documentos\Gnothi\… y las clases .gnothi__* de esta sección. -->
+  <style>
+    .gnothi { margin-top: 68px; padding: 44px 0 20px; border-top: 1px solid var(--gu-border); }
+    .gnothi h2 {
+      font-family: var(--sans);
+      font-weight: 400; font-size: 32px; line-height: 1.1; margin: 0;
+      letter-spacing: -.01em;
+    }
+    .gnothi h2 em { font-style: normal; color: var(--gu-verde); }
+    .gnothi .lead { margin: 14px 0 0; color: var(--gu-muted); font-size: 15.5px; max-width: 62ch; }
+    .gnothi .lead strong { color: var(--gu-ink); font-weight: 500; }
+
+    /* Los ambientes: una pastilla por cada uno (§4), y la elegida se rellena. */
+    .ambientes {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin: 28px 0 0; padding: 0; list-style: none;
+    }
+    .ambientes button {
+      font: inherit; font-size: 14px; font-weight: 500;
+      color: var(--gu-verde-oscuro); background: transparent;
+      border: 1px solid var(--gu-border); border-radius: 999px;
+      padding: 9px 18px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background .18s ease, color .18s ease, border-color .18s ease;
+    }
+    .ambientes button:hover { background: var(--gu-soft); }
+    .ambientes button[aria-selected="true"] {
+      background: var(--gu-verde); color: var(--gu-soft); border-color: var(--gu-verde);
+    }
+    .ambientes svg { width: 15px; height: 15px; flex: none; }
+    .js .ambientes { display: flex; }
+    .ambientes { display: none; }   /* sin JavaScript no hay qué elegir: se ven los tres */
+
+    .ambiente {
+      padding: 34px 0 40px;
+      border-bottom: 1px solid var(--gu-border);
+      display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 56px;
+    }
+    .ambiente:last-of-type { border-bottom: 0; }
+    .js .ambiente:not(.activo) { display: none; }
+    .js .ambiente { border-bottom: 0; padding-top: 30px; }
+
+    .ambiente h3 {
+      font-family: var(--sans); font-weight: 600; font-size: 15px; letter-spacing: .005em;
+      margin: 0 0 8px;
+    }
+    .ambiente .nota { margin: 0; color: var(--gu-muted); font-size: 14px; }
+    .descargas-super { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 20px; }
+    .boton--suave { background: transparent; color: var(--gu-verde); box-shadow: none;
+      border: 1px solid var(--gu-border); }
+    .boton--suave:hover { background: var(--gu-soft); color: var(--gu-verde-oscuro); }
+    .boton--inerte { background: var(--gu-soft); color: var(--gu-muted); box-shadow: none;
+      border: 1px solid var(--gu-border); cursor: default; pointer-events: none; }
+    .boton small { display: block; font-size: 11px; font-weight: 400; opacity: .85; letter-spacing: .02em; margin-bottom: 1px; }
+    .boton .dos-lineas { display: flex; flex-direction: column; line-height: 1.15; }
+
+    .pasos code, .enlace code {
+      font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+      font-size: 13px; background: var(--gu-soft); border: 1px solid var(--gu-border);
+      border-radius: 5px; padding: 2px 6px;
+    }
+
+    /* El enlace para pegar, con su botón de copiar: es lo que cruza de la computadora al
+       teléfono, o del navegador a la ventana de Gnothi. */
+    .enlace {
+      margin: 18px 0 0; padding: 14px 16px;
+      background: var(--gu-soft); border: 1px solid var(--gu-border); border-radius: 14px;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: center;
+      font-size: 13.5px; color: var(--gu-muted);
+    }
+    .enlace span { grid-column: 1 / -1; }
+    /* Solo el enlace en sí va en bloque; un <code> dentro de la frase sigue en línea. */
+    .enlace > code { display: block; overflow-wrap: anywhere; background: var(--gu-blanco); padding: 7px 10px; }
+    .enlace button {
+      font: inherit; font-size: 13px; font-weight: 500;
+      color: var(--gu-verde-oscuro); background: var(--gu-blanco);
+      border: 1px solid var(--gu-border); border-radius: 999px; padding: 7px 14px; cursor: pointer;
+    }
+    .enlace button:hover { background: var(--gu-verde); color: var(--gu-soft); border-color: var(--gu-verde); }
+    .js .enlace button { display: inline-block; }
+    .enlace button { display: none; }
+
+    .suelta { padding: 26px 0 60px; color: var(--gu-muted); font-size: 14px; max-width: 70ch; }
+    .suelta b { color: var(--gu-ink); font-weight: 600; }
+    .suelta a { color: var(--gu-verde); }
+
+    @media (max-width: 900px) {
+      .ambiente { grid-template-columns: 1fr; gap: 26px; }
+      .gnothi { margin-top: 48px; }
+    }
+  </style>
+
+  <section class="envoltura gnothi" id="gnothi">
+    <h2>Se usa con <em>Mymi</em>.</h2>
+    <p class="lead">
+      Mymi es la aplicación que junta lo que cada institución le entrega —su laboratorio, su
+      supermercado— y se lo muestra a su asistente de IA, en su propio aparato. <strong>Se instala
+      una sola vez</strong>, gratis; después, cada institución se agrega con un toque. La Guaria
+      es una de ellas.
+    </p>
+
+    <ul class="ambientes" role="tablist" aria-label="Elija su aparato">
+      <li><button role="tab" id="tab-android" aria-controls="amb-android" aria-selected="false" data-ambiente="android">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.6 6.4h8.8v5.2a1 1 0 0 1-1 1h-.6v2.2a.9.9 0 1 1-1.8 0v-2.2H7v2.2a.9.9 0 1 1-1.8 0v-2.2h-.6a1 1 0 0 1-1-1V6.4Zm-1.5.1a.9.9 0 0 1 .9.9v3.6a.9.9 0 1 1-1.8 0V7.4a.9.9 0 0 1 .9-.9Zm11.8 0a.9.9 0 0 1 .9.9v3.6a.9.9 0 1 1-1.8 0V7.4a.9.9 0 0 1 .9-.9ZM8 1.6c2.2 0 4 1.5 4.4 3.6H3.6C4 3.1 5.8 1.6 8 1.6Zm-1.7 2a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Zm3.4 0a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Z"/></svg>
+        Android</button></li>
+      <li><button role="tab" id="tab-iphone" aria-controls="amb-iphone" aria-selected="false" data-ambiente="iphone">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.3 8.5c0-1.5 1.2-2.2 1.3-2.2-.7-1-1.8-1.2-2.2-1.2-.9-.1-1.8.5-2.3.5s-1.2-.5-2-.5C4.9 5.1 3 6.4 3 9c0 .8.1 1.6.4 2.4.4 1.2 1.9 3.9 3.4 3.9.7 0 1.2-.5 2.1-.5.9 0 1.3.5 2.1.5 1.5 0 2.8-2.5 3.2-3.6-1.9-.9-2.9-2.1-2.9-3.2ZM9.9 3.9c.5-.6.8-1.4.7-2.2-.7 0-1.5.5-2 1.1-.4.5-.8 1.3-.7 2.1.8.1 1.5-.4 2-1Z"/></svg>
+        iPhone</button></li>
+      <li><button role="tab" id="tab-computadora" aria-controls="amb-computadora" aria-selected="false" data-ambiente="computadora">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="8.5" rx="1.2"/><path d="M5.5 14h5M8 11v3"/></svg>
+        Computadora</button></li>
+    </ul>
+
+    <!-- ANDROID: Gnothi viene de Google Play; La Guaria entra por el enlace al dominio de
+         Gnothi, que el teléfono abre en la app (App Link con autoVerify, MainActivity.cs). -->
+    <div class="ambiente" id="amb-android" role="tabpanel" aria-labelledby="tab-android" data-ambiente="android">
+      <div>
+        <h3>En su teléfono Android</h3>
+        <p class="nota">Mymi está en Google Play. La Guaria se agrega desde esta misma página,
+           con un toque.</p>
+        <div class="descargas-super">
+          <a class="boton" href="https://play.google.com/store/apps/details?id=com.ncubo.gnothi.host" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2.5 1.6c0-.5.5-.8.9-.6l10.4 6.3c.4.3.4.9 0 1.2L3.4 14.9c-.4.3-.9 0-.9-.5V1.6Z"/></svg>
+            <span class="dos-lineas"><small>Disponible en</small>Google Play</span>
+          </a>
+          <a class="boton boton--suave" id="agregar-android" href="https://go.gnothi.app/alta">Agregar La Guaria a Mymi</a>
+        </div>
+      </div>
+      <div>
+        <ol class="pasos">
+          <li><p><b>Instale Mymi desde Google Play.</b> <span>Es gratuita y se instala una sola vez:
+              la misma Mymi sirve para todas sus instituciones.</span></p></li>
+          <li><p><b>Vuelva a esta página en el teléfono y toque «Agregar La Guaria a Mymi».</b>
+              <span>Mymi baja el módulo del supermercado desde esta misma dirección y le muestra una
+              hoja: quién lo entrega, qué preguntas va a contestar y en qué carpeta del teléfono guarda
+              su historial. Nada se escribe antes de que usted lo lea.</span></p></li>
+          <li><p><b>Toque «Instalar en mi teléfono».</b> <span>La Guaria aparece en su lista de
+              instituciones, con su marca.</span></p></li>
+          <li><p><b>Pregunte.</b> <span>Su asistente ve «La Guaria y vos» junto a sus otras
+              instituciones. Cada consulta tiene un interruptor: usted apaga la que no quiera que
+              lea.</span></p></li>
+        </ol>
+        <div class="enlace">
+          <span>¿Está leyendo esto en una computadora? En Mymi toque <b>Pegar su enlace</b> y pegue
+                este. Si le llegó el archivo <code>compras.gmod</code> por correo o WhatsApp, ábralo:
+                el teléfono le ofrece Mymi.</span>
+          <code id="enlace-movil">https://go.gnothi.app/alta?bundle=…/descargas/movil/compras.gmod</code>
+          <button type="button" data-copiar="enlace-movil">Copiar</button>
+        </div>
+      </div>
     </div>
-    <ol class="pasos">
-      <li><p><b>Abra la aplicación</b> <span>con el botón de arriba.</span></p></li>
-      <li><p><b>Instálela</b> <span>desde el icono que aparece en la barra de direcciones del navegador.</span></p></li>
-      <li><p><b>Elija la carpeta</b> <span>donde quiere guardar su historial, y toque <b>Refresh</b>.</span></p></li>
-    </ol>
+
+    <!-- iPHONE: el mismo enlace, como universal link (Gnothi.iOS/Entitlements.plist). La ficha
+         de App Store todavía no existe, y el botón lo dice en vez de apuntar a ninguna parte. -->
+    <div class="ambiente" id="amb-iphone" role="tabpanel" aria-labelledby="tab-iphone" data-ambiente="iphone">
+      <div>
+        <h3>En su iPhone</h3>
+        <p class="nota">Los mismos pasos que en Android. Mymi para iPhone está en camino a la
+           App Store.</p>
+        <div class="descargas-super">
+          <span class="boton boton--inerte" aria-disabled="true">
+            <span class="dos-lineas"><small>Próximamente en</small>App Store</span>
+          </span>
+          <a class="boton boton--suave" id="agregar-iphone" href="https://go.gnothi.app/alta">Agregar La Guaria a Mymi</a>
+        </div>
+      </div>
+      <div>
+        <ol class="pasos">
+          <li><p><b>Instale Mymi desde la App Store</b> <span>cuando esté publicada. Una sola vez,
+              para todas sus instituciones.</span></p></li>
+          <li><p><b>Vuelva a esta página en el iPhone y toque «Agregar La Guaria a Mymi».</b>
+              <span>Mymi se abre con la hoja del módulo: quién lo entrega, qué contesta y dónde
+              guarda su historial.</span></p></li>
+          <li><p><b>Toque «Instalar en mi teléfono».</b></p></li>
+          <li><p><b>Pregunte.</b> <span>Su asistente ve a La Guaria, y usted decide qué consultas
+              quedan encendidas.</span></p></li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- COMPUTADORA: Gnothi se descarga de acá (no hay tienda), y La Guaria se agrega desde la
+         ventana de Gnothi —«Agregar una institución»: pegar el enlace o elegir el archivo—, que
+         es el mismo alta que corre el teléfono (Gnothi.Desktop/Components/Alta.razor).
+
+         EL ZIP DE DESCARGAS ES DEL 2026-08-27 Y TRAE SOLO Gnothi.Host: la ventana (Gnothi.Desktop)
+         no está adentro. Hay que regenerarlo con la receta de PRUEBA-MANUAL-DESKTOP.md §Parte 3
+         incluyendo Gnothi.Desktop, o reemplazarlo por el MSI de Gnothi.Installer/Gnothi.wxs, que
+         es lo que estos pasos describen. -->
+    <div class="ambiente" id="amb-computadora" role="tabpanel" aria-labelledby="tab-computadora" data-ambiente="computadora">
+      <div>
+        <h3>En su computadora</h3>
+        <p class="nota">Mymi para Windows se descarga de aquí. No pide permisos de administrador
+           y no toca nada fuera de su carpeta.</p>
+        <div class="descargas-super">
+          <a class="boton" href="descargas/gnothi/Gnothi.Host.zip" download>
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+              <path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8" stroke="currentColor"
+                    stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="dos-lineas"><small>Descargar para</small>Windows</span>
+          </a>
+          <a class="boton boton--suave" href="descargas/compras.gmod" download>Descargar el módulo de La Guaria</a>
+        </div>
+      </div>
+      <div>
+        <ol class="pasos">
+          <li><p><b>Descargue e instale Mymi.</b> <span>Una sola vez. Si Windows muestra el aviso de
+              SmartScreen, elija «Más información» y «Ejecutar de todas formas». La primera vez que abre,
+              Mymi le pregunta antes de registrarse con su asistente (Claude u otro) y hace un respaldo
+              de la configuración que va a tocar.</span></p></li>
+          <li><p><b>Abra Mymi y elija «Agregar una institución».</b> <span>Pegue el enlace de La Guaria
+              que está abajo, o toque «Elegir el archivo…» y busque el <code>compras.gmod</code> que bajó
+              con el botón.</span></p></li>
+          <li><p><b>Lea la hoja y toque «Instalar en esta computadora».</b> <span>Le dice quién entrega el
+              módulo, qué va a contestar y en qué carpeta guarda su historial:
+              <code>Documentos\Gnothi\compras</code>. La misma que usa la aplicación.</span></p></li>
+          <li><p><b>Reinicie su asistente y pregunte.</b> <span>«¿Cómo viene mi canasta?» «¿Hasta cuándo
+              tiene garantía la olla arrocera?» Todo se contesta desde su computadora; nada sube a la
+              nube.</span></p></li>
+        </ol>
+        <div class="enlace">
+          <span>El enlace de La Guaria, para pegar en Mymi:</span>
+          <code id="enlace-escritorio">…/descargas/compras.gmod</code>
+          <button type="button" data-copiar="enlace-escritorio">Copiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LA APLICACIÓN SUELTA. Sigue existiendo, colgada de /app/: es la etapa anterior a Gnothi
+         (especificación 13 §0, «la standalone y el módulo son etapas, no apps en paralelo»), y
+         lee y escribe la misma carpeta. Va al final y en chico porque el camino principal es el
+         de arriba. -->
+    <p class="suelta">
+      <b>¿Sin Mymi?</b> La aplicación también funciona suelta, en el navegador:
+      <a href="/app/">ábrala</a>, instálela desde el icono de la barra de direcciones, elija la
+      carpeta donde quiere guardar su historial y toque <b>Refresh</b>. Cuando instale Mymi, va a
+      leer esa misma carpeta.
+    </p>
   </section>
+
+  <script>
+    (function () {
+      var raiz = document.documentElement;
+      raiz.classList.add('js');
+
+      // EL ENLACE DE ALTA, con el origen desde el que se sirve esta página: la forma hospedada
+      // para los teléfonos, la forma cargo para la computadora. Los dos se llaman compras.gmod
+      // y se distinguen desde adentro (armar-bundle.ps1).
+      var origen = location.origin;
+      var movil = origen + '/descargas/movil/compras.gmod';
+      var cargo = origen + '/descargas/compras.gmod';
+      var alta = 'https://go.gnothi.app/alta?bundle=' + encodeURIComponent(movil);
+
+      ['agregar-android', 'agregar-iphone'].forEach(function (id) {
+        var a = document.getElementById(id);
+        if (a) a.href = alta;
+      });
+      var eMovil = document.getElementById('enlace-movil');
+      var eEscritorio = document.getElementById('enlace-escritorio');
+      if (eMovil) eMovil.textContent = alta;
+      if (eEscritorio) eEscritorio.textContent = cargo;
+
+      // COPIAR: el botón dice «Copiado» un momento y vuelve. Si el navegador no da portapapeles
+      // (http sin ser localhost), el texto queda seleccionado para copiarlo a mano.
+      document.querySelectorAll('[data-copiar]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var code = document.getElementById(b.getAttribute('data-copiar'));
+          if (!code) return;
+          var texto = code.textContent;
+          var listo = function () {
+            var antes = b.textContent; b.textContent = 'Copiado';
+            setTimeout(function () { b.textContent = antes; }, 1600);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).then(listo, function () { seleccionar(code); });
+          } else {
+            seleccionar(code);
+          }
+        });
+      });
+      function seleccionar(nodo) {
+        var r = document.createRange(); r.selectNodeContents(nodo);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      }
+
+      // EL AMBIENTE: lo propone el user agent y lo cambia la persona.
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.ambientes [role="tab"]'));
+      var paneles = Array.prototype.slice.call(document.querySelectorAll('.ambiente'));
+      function elegir(nombre) {
+        tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.ambiente === nombre)); });
+        paneles.forEach(function (p) { p.classList.toggle('activo', p.dataset.ambiente === nombre); });
+      }
+      tabs.forEach(function (t) { t.addEventListener('click', function () { elegir(t.dataset.ambiente); }); });
+
+      var ua = navigator.userAgent || '';
+      var inicial = /Android/i.test(ua) ? 'android'
+                  : /iPhone|iPad|iPod/i.test(ua) ? 'iphone'
+                  : 'computadora';
+      elegir(inicial);
+    })();
+  </script>
 </main>
 
 <footer>
   <div class="envoltura pie">
     <div>Supermercado La Guaria · La marca es ficticia.</div>
-    <span>Demo del milestone Gnothi</span>
+    <span>Demo del milestone Mymi</span>
   </div>
 </footer>
 

@@ -47,7 +47,7 @@ namespace Compras.App
 			return compras;
 		}
 
-		internal static CompraDetallada Detalle(string json)
+		internal static CompraDetallada Detalle(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new CompraDetallada();
 
@@ -65,7 +65,7 @@ namespace Compras.App
 						PrecioUnitario = Decimal(elemento, "precioUnitario"),
 						Total = Decimal(elemento, "totalDeLinea"),
 						Categoria = Texto(elemento, "categoria"),
-						Titulo = Texto(elemento, "titulo"),
+						Titulo = Frases.LaRedaccion.TituloDelDepartamento(frases, Texto(elemento, "categoria")),
 						TieneGarantia = Booleano(elemento, "tieneGarantia"),
 					});
 
@@ -79,7 +79,7 @@ namespace Compras.App
 			};
 		}
 
-		internal static CanastaDelMesVista Canasta(string json)
+		internal static CanastaDelMesVista Canasta(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new CanastaDelMesVista();
 
@@ -96,7 +96,7 @@ namespace Compras.App
 					departamentos.Add(new GastoPorDepartamentoVista
 					{
 						Categoria = Texto(elemento, "categoria"),
-						Titulo = Texto(elemento, "titulo"),
+						Titulo = Frases.LaRedaccion.TituloDelDepartamento(frases, Texto(elemento, "categoria")),
 						Monto = Decimal(elemento, "monto"),
 						ProporcionDelTotal = Decimal(elemento, "proporcionDelTotal"),
 					});
@@ -115,7 +115,7 @@ namespace Compras.App
 			};
 		}
 
-		internal static CanastasComparadas Comparacion(string json)
+		internal static CanastasComparadas Comparacion(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new CanastasComparadas();
 
@@ -130,7 +130,7 @@ namespace Compras.App
 					diferencias.Add(new DiferenciaPorDepartamentoVista
 					{
 						Categoria = Texto(elemento, "categoria"),
-						Titulo = Texto(elemento, "titulo"),
+						Titulo = Frases.LaRedaccion.TituloDelDepartamento(frases, Texto(elemento, "categoria")),
 						MontoAntes = Decimal(elemento, "montoAntes"),
 						MontoDespues = Decimal(elemento, "montoDespues"),
 						CambioDelPasillo = Decimal(elemento, "cambioDelPasillo"),
@@ -140,6 +140,16 @@ namespace Compras.App
 						ExplicaElCambio = Booleano(elemento, "explicaElCambio"),
 					});
 
+			var subieron = new List<string>();
+			var sonNuevos = new List<bool>();
+			var bajaron = new List<string>();
+			foreach (DiferenciaPorDepartamentoVista diferencia in diferencias)
+			{
+				if (!diferencia.ExplicaElCambio) continue;
+				if (diferencia.Subio) { subieron.Add(diferencia.Titulo); sonNuevos.Add(diferencia.EsNuevo); }
+				else bajaron.Add(diferencia.Titulo);
+			}
+
 			return new CanastasComparadas
 			{
 				HayComparacion = Booleano(cabecera, "hayComparacion"),
@@ -148,7 +158,11 @@ namespace Compras.App
 				CambioEnElTotal = Decimal(cabecera, "cambioEnElTotal"),
 				Cambio = Decimal(cabecera, "cambio"),
 				HayAlgoQueLoExplique = Booleano(cabecera, "hayAlgoQueLoExplique"),
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.Comparacion(frases, Texto(cabecera, "clave"),
+					ElMes(Entero(cabecera, "anioAntes"), Entero(cabecera, "mesAntes")),
+					ElMes(Entero(cabecera, "anioDespues"), Entero(cabecera, "mesDespues")),
+					Decimal(cabecera, "gastoAntes"), Decimal(cabecera, "gastoDespues"),
+					subieron, sonNuevos, bajaron),
 				AnioAntes = Entero(cabecera, "anioAntes"),
 				MesAntes = Entero(cabecera, "mesAntes"),
 				GastoComestibleAntes = Decimal(cabecera, "gastoComestibleAntes"),
@@ -159,7 +173,15 @@ namespace Compras.App
 			};
 		}
 
-		internal static FirmaDeLaSemana Firma(string json)
+		/// <summary>
+		/// Un mes de calendario en anio-mes, como lo escribe el dominio. La cultura es invariante y no
+		/// la de la maquina: anio-mes es una llave de calendario.
+		/// </summary>
+		private static string ElMes(int anio, int mes) =>
+			anio.ToString("0000", CultureInfo.InvariantCulture) + "-"
+			+ mes.ToString("00", CultureInfo.InvariantCulture);
+
+		internal static FirmaDeLaSemana Firma(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new FirmaDeLaSemana();
 
@@ -170,16 +192,19 @@ namespace Compras.App
 			// distintos del mismo bloque.
 			JsonElement cabecera = raiz.TryGetProperty("firma", out JsonElement f) ? f : raiz;
 
+			IReadOnlyList<ProductoQueVuelve> habituales = Habituales(raiz, "habitual", frases);
+
 			return new FirmaDeLaSemana
 			{
 				ComprasMiradas = Entero(cabecera, "comprasMiradas"),
 				CuantosHabituales = Entero(cabecera, "cuantosHabituales"),
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
-				Habituales = Habituales(raiz, "habitual"),
+				ParaElAsistente = Frases.LaRedaccion.Firma(frases, Texto(cabecera, "clave"),
+					Entero(cabecera, "comprasMiradas"), Descripciones(habituales)),
+				Habituales = habituales,
 			};
 		}
 
-		internal static CambioDeLaCanasta Cambio(string json)
+		internal static CambioDeLaCanasta Cambio(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new CambioDeLaCanasta();
 
@@ -200,20 +225,36 @@ namespace Compras.App
 						Proporcion = Decimal(elemento, "proporcion"),
 					});
 
+			IReadOnlyList<ProductoQueVuelve> salieron = Habituales(raiz, "salio", frases);
+
+			var nombresQueEntraron = new List<string>();
+			foreach (ProductoQueEntroVista entro in entraron) nombresQueEntraron.Add(entro.Descripcion);
+
+			string mesDelCambio = entraron.Count > 0 ? entraron[0].Desde : "";
+
 			return new CambioDeLaCanasta
 			{
 				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
 				HayCambio = Booleano(cabecera, "hayCambio"),
 				Corte = Texto(cabecera, "corte"),
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.CambioEnLaCanasta(frases, Texto(cabecera, "clave"),
+					mesDelCambio, nombresQueEntraron, Descripciones(salieron)),
 				Entraron = entraron,
-				Salieron = Habituales(raiz, "salio"),
+				Salieron = salieron,
 			};
+		}
+
+		private static IReadOnlyList<string> Descripciones(IReadOnlyList<ProductoQueVuelve> productos)
+		{
+			var nombres = new List<string>();
+			foreach (ProductoQueVuelve producto in productos) nombres.Add(producto.Descripcion);
+			return nombres;
 		}
 
 		// Los que vuelven, en las dos lecturas: la firma los llama "habitual" y el cambio
 		// llama "salio" a los que se cayeron. Misma forma, mismo lector.
-		private static IReadOnlyList<ProductoQueVuelve> Habituales(JsonElement raiz, string llave)
+		private static IReadOnlyList<ProductoQueVuelve> Habituales(JsonElement raiz, string llave,
+			Frases.Frases frases)
 		{
 			var productos = new List<ProductoQueVuelve>();
 			if (!raiz.TryGetProperty(llave, out JsonElement arreglo)) return productos;
@@ -227,13 +268,13 @@ namespace Compras.App
 					DeCuantas = Entero(elemento, "deCuantas"),
 					Proporcion = Decimal(elemento, "proporcion"),
 					EstaEnTodas = Booleano(elemento, "estaEnTodas"),
-					Constancia = Texto(elemento, "constancia"),
+					Constancia = Frases.LaRedaccion.Constancia(frases, Texto(elemento, "constancia")),
 				});
 
 			return productos;
 		}
 
-		internal static IReadOnlyList<PrecioQueCambio> Precios(string json)
+		internal static IReadOnlyList<PrecioQueCambio> Precios(string json, Frases.Frases frases)
 		{
 			var precios = new List<PrecioQueCambio>();
 			if (string.IsNullOrWhiteSpace(json)) return precios;
@@ -252,13 +293,17 @@ namespace Compras.App
 					CambioEnProporcion = Decimal(elemento, "cambioEnProporcion"),
 					Subio = Booleano(elemento, "subio"),
 					VecesQueLoCompro = Entero(elemento, "vecesQueLoCompro"),
-					ParaElAsistente = Texto(elemento, "paraElAsistente"),
+					ParaElAsistente = Frases.LaRedaccion.Precio(frases, Texto(elemento, "clave"),
+						Texto(elemento, "descripcion"), Texto(elemento, "sku"), Texto(elemento, "unidad"),
+						Texto(elemento, "desde"), Texto(elemento, "hasta"),
+						Decimal(elemento, "antes"), Decimal(elemento, "ahora"),
+						Decimal(elemento, "cambioEnProporcion")),
 				});
 
 			return precios;
 		}
 
-		internal static RecorridoDeSucursalesVista Recorrido(string json)
+		internal static RecorridoDeSucursalesVista Recorrido(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RecorridoDeSucursalesVista();
 
@@ -277,6 +322,9 @@ namespace Compras.App
 						UltimaVez = Fecha(elemento, "ultimaVez"),
 					});
 
+			var otras = new List<string>();
+			for (int cual = 1; cual < sucursales.Count; cual++) otras.Add(sucursales[cual].Nombre);
+
 			return new RecorridoDeSucursalesVista
 			{
 				HayDatos = Booleano(cabecera, "hayDatos"),
@@ -284,12 +332,15 @@ namespace Compras.App
 				ComprasSinSucursal = Entero(cabecera, "comprasSinSucursal"),
 				SeMueve = Booleano(cabecera, "seMueve"),
 				SeMueveDesde = Texto(cabecera, "seMueveDesde"),
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.Sucursales(frases, Texto(cabecera, "clave"),
+					Texto(cabecera, "laDeSiempre"), Entero(cabecera, "comprasEnLaDeSiempre"),
+					Entero(cabecera, "comprasConSucursal"), Entero(cabecera, "comprasSinSucursal"),
+					Texto(cabecera, "seMueveDesde"), otras),
 				Sucursales = sucursales,
 			};
 		}
 
-		internal static SerieDePreciosVista Serie(string json)
+		internal static SerieDePreciosVista Serie(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new SerieDePreciosVista();
 
@@ -306,7 +357,7 @@ namespace Compras.App
 						Mes = Texto(elemento, "mes"),
 						PrecioPorUnidad = Decimal(elemento, "precioPorUnidad"),
 						PrecioDeLinea = Decimal(elemento, "precioDeLinea"),
-						Presentacion = Texto(elemento, "presentacion"),
+						Presentacion = LaPresentacion(elemento, frases),
 						NumeroDeCompra = Texto(elemento, "numeroDeCompra"),
 					});
 
@@ -325,12 +376,24 @@ namespace Compras.App
 				Cambio = Decimal(cabecera, "cambio"),
 				CambioEnProporcion = Decimal(cabecera, "cambioEnProporcion"),
 				HayCambioReal = Booleano(cabecera, "hayCambioReal"),
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.Precio(frases, Texto(cabecera, "clave"),
+					Texto(cabecera, "descripcion"), Texto(cabecera, "sku"), Texto(cabecera, "unidad"),
+					Texto(cabecera, "desde"), Texto(cabecera, "hasta"),
+					Decimal(cabecera, "primero"), Decimal(cabecera, "ultimo"),
+					Decimal(cabecera, "cambioEnProporcion")),
 				Observados = observados,
 			};
 		}
 
-		internal static CanastaFrenteAlPasadoVista FrenteAlPasado(string json)
+		/// <summary>
+		/// COMO SE VENDIA una linea, dicho en el idioma que se pidio. El codigo y sus tres valores
+		/// cruzan la puerta por separado justamente para que esta capa arme el dicho.
+		/// </summary>
+		private static string LaPresentacion(JsonElement elemento, Frases.Frases frases) =>
+			Frases.LaRedaccion.Presentacion(frases, Texto(elemento, "presentacion"),
+				Decimal(elemento, "contenido"), Texto(elemento, "simbolo"), Entero(elemento, "piezas"));
+
+		internal static CanastaFrenteAlPasadoVista FrenteAlPasado(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new CanastaFrenteAlPasadoVista();
 
@@ -348,7 +411,7 @@ namespace Compras.App
 					{
 						Sku = Texto(elemento, "sku"),
 						Descripcion = Texto(elemento, "descripcion"),
-						Presentacion = Texto(elemento, "presentacion"),
+						Presentacion = LaPresentacion(elemento, frases),
 						Antes = Decimal(elemento, "antes"),
 						Ahora = Decimal(elemento, "ahora"),
 						Cambio = Decimal(elemento, "cambio"),
@@ -359,12 +422,13 @@ namespace Compras.App
 				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
 				MesesDeVentana = Entero(cabecera, "mesesDeVentana"),
 				Cambio = Decimal(cabecera, "cambio"),
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.CanastaFrenteAlPasado(frases, Texto(cabecera, "clave"),
+					Entero(cabecera, "mesesDeVentana"), productos.Count, Decimal(cabecera, "cambio")),
 				Productos = productos,
 			};
 		}
 
-		internal static RebajaVista Rebaja(string json)
+		internal static RebajaVista Rebaja(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RebajaVista();
 
@@ -378,11 +442,13 @@ namespace Compras.App
 				Sku = Texto(rebaja, "sku"),
 				Descripcion = Texto(rebaja, "descripcion"),
 				CuantoMenos = Decimal(rebaja, "cuantoMenos"),
-				ParaElAsistente = Texto(rebaja, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.Rebaja(frases, Texto(rebaja, "clave"),
+					Texto(rebaja, "descripcion"), Decimal(rebaja, "cuantoMenos"),
+					Texto(rebaja, "numeroDeCompra")),
 			};
 		}
 
-		internal static RitmoDelSuperVista RitmoDelSuper(string json)
+		internal static RitmoDelSuperVista RitmoDelSuper(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RitmoDelSuperVista();
 
@@ -395,11 +461,12 @@ namespace Compras.App
 				foreach (JsonElement elemento in Elementos(arreglo))
 					momentos.Add(new ComprasEnUnMomentoVista
 					{
-						Momento = Texto(elemento, "nombre"),
+						Momento = Frases.LaRedaccion.Momento(frases, Texto(elemento, "nombre")),
 						Cuantas = Entero(elemento, "cuantas"),
 						DeCuantas = Entero(elemento, "deCuantas"),
 						Proporcion = Decimal(elemento, "proporcion"),
-						ParaMostrar = Texto(elemento, "paraMostrar"),
+						ParaMostrar = Frases.LaRedaccion.ComprasEnUnMomento(frases,
+							Texto(elemento, "nombre"), Entero(elemento, "cuantas")),
 					});
 
 			return new RitmoDelSuperVista
@@ -407,17 +474,19 @@ namespace Compras.App
 				ComprasMiradas = Entero(r, "comprasMiradas"),
 				EsObservado = Booleano(r, "esObservado"),
 				DiasEntreCompras = Entero(r, "diasEntreCompras"),
-				Cadencia = Texto(r, "cadencia"),
-				CadenciaCompacta = Texto(r, "cadenciaCompacta"),
-				DiaFavorito = Texto(r, "diaFavorito"),
+				Cadencia = Frases.LaRedaccion.Cadencia(frases, Texto(r, "cadencia")),
+				CadenciaCompacta = Frases.LaRedaccion.CadenciaCompacta(frases, Texto(r, "cadencia")),
+				DiaFavorito = Frases.LaRedaccion.DiaDeLaSemana(frases, Texto(r, "diaFavorito")),
 				ComprasEnElDiaFavorito = Entero(r, "comprasEnElDiaFavorito"),
-				MomentoFavorito = Texto(r, "momentoFavorito"),
-				ParaElAsistente = Texto(r, "paraElAsistente"),
+				MomentoFavorito = Frases.LaRedaccion.Momento(frases, Texto(r, "momentoFavorito")),
+				ParaElAsistente = Frases.LaRedaccion.RitmoDelSuper(frases, Texto(r, "clave"),
+					Entero(r, "comprasMiradas"), Entero(r, "diasEntreCompras"),
+					Texto(r, "diaFavorito"), Texto(r, "momentoFavorito")),
 				PorMomento = momentos,
 			};
 		}
 
-		internal static RitmoDeUnProducto Ritmo(string json)
+		internal static RitmoDeUnProducto Ritmo(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RitmoDeUnProducto();
 
@@ -431,13 +500,14 @@ namespace Compras.App
 				Descripcion = Texto(r, "descripcion"),
 				HayConQueComparar = Booleano(r, "hayConQueComparar"),
 				Cambio = Booleano(r, "cambio"),
-				Antes = Texto(r, "antes"),
-				Ahora = Texto(r, "ahora"),
-				ParaElAsistente = Texto(r, "paraElAsistente"),
+				Antes = Frases.LaRedaccion.CadenciaCompacta(frases, Texto(r, "antes")),
+				Ahora = Frases.LaRedaccion.CadenciaCompacta(frases, Texto(r, "ahora")),
+				ParaElAsistente = Frases.LaRedaccion.CambioDeRitmo(frases, Texto(r, "clave"),
+					Texto(r, "descripcion"), Texto(r, "antes"), Texto(r, "ahora")),
 			};
 		}
 
-		internal static IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(string json)
+		internal static IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(string json, Frases.Frases frases)
 		{
 			var cambios = new List<RitmoQueCambio>();
 			if (string.IsNullOrWhiteSpace(json)) return cambios;
@@ -450,24 +520,25 @@ namespace Compras.App
 				{
 					Sku = Texto(elemento, "sku"),
 					Descripcion = Texto(elemento, "descripcion"),
-					Antes = Texto(elemento, "antes"),
-					Ahora = Texto(elemento, "ahora"),
+					Antes = Frases.LaRedaccion.CadenciaCompacta(frases, Texto(elemento, "antes")),
+					Ahora = Frases.LaRedaccion.CadenciaCompacta(frases, Texto(elemento, "ahora")),
 					EsMasSeguido = Booleano(elemento, "esMasSeguido"),
-					ParaElAsistente = Texto(elemento, "paraElAsistente"),
+					ParaElAsistente = Frases.LaRedaccion.CambioDeRitmo(frases, Texto(elemento, "clave"),
+						Texto(elemento, "descripcion"), Texto(elemento, "antes"), Texto(elemento, "ahora")),
 				});
 
 			return cambios;
 		}
 
-		internal static GarantiaDeProducto Garantia(string json)
+		internal static GarantiaDeProducto Garantia(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new GarantiaDeProducto();
 
 			using JsonDocument documento = JsonDocument.Parse(json);
-			return Garantia(documento.RootElement);
+			return Garantia(documento.RootElement, frases);
 		}
 
-		internal static IReadOnlyList<GarantiaDeProducto> GarantiasVigentes(string json)
+		internal static IReadOnlyList<GarantiaDeProducto> GarantiasVigentes(string json, Frases.Frases frases)
 		{
 			var garantias = new List<GarantiaDeProducto>();
 			if (string.IsNullOrWhiteSpace(json)) return garantias;
@@ -476,7 +547,7 @@ namespace Compras.App
 			if (!documento.RootElement.TryGetProperty("registro", out JsonElement arreglo)) return garantias;
 
 			foreach (JsonElement elemento in Elementos(arreglo))
-				garantias.Add(Garantia(elemento));
+				garantias.Add(Garantia(elemento, frases));
 
 			return garantias;
 		}
@@ -486,7 +557,7 @@ namespace Compras.App
 		// "compra".
 		// LO QUE VA A FALTAR. La clave del arreglo es el nombre de la variable del foreach
 		// -"producto"-, no el alias del print.
-		internal static ListaDeLaProximaCompra LaProximaCompra(string json)
+		internal static ListaDeLaProximaCompra LaProximaCompra(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ListaDeLaProximaCompra();
 
@@ -495,33 +566,42 @@ namespace Compras.App
 			JsonElement cabecera = raiz.TryGetProperty("lista", out JsonElement c) ? c : raiz;
 
 			var productos = new List<ProductoPorCaer>();
+			var losQueTocan = new List<string>();
 			if (raiz.TryGetProperty("producto", out JsonElement arreglo))
 				foreach (JsonElement elemento in Elementos(arreglo))
+				{
 					productos.Add(new ProductoPorCaer
 					{
 						Sku = Texto(elemento, "sku"),
 						Descripcion = Texto(elemento, "descripcion"),
-						Cadencia = Texto(elemento, "cadencia"),
-						CadenciaCompacta = Texto(elemento, "cadenciaCompacta"),
+						Cadencia = Frases.LaRedaccion.Cadencia(frases, Texto(elemento, "cadencia")),
+						CadenciaCompacta = Frases.LaRedaccion.CadenciaCompacta(frases, Texto(elemento, "cadencia")),
 						DiasTipicos = Entero(elemento, "diasTipicos"),
 						UltimaVez = Texto(elemento, "ultimaVez"),
 						DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
 						DiasDeMas = Entero(elemento, "diasDeMas"),
 						Toca = Booleano(elemento, "toca"),
-						ParaElAsistente = Texto(elemento, "paraElAsistente"),
+						ParaElAsistente = Frases.LaRedaccion.ProductoQueVaAFaltar(frases,
+							Texto(elemento, "clave"), Texto(elemento, "descripcion"),
+							Texto(elemento, "cadencia"), Entero(elemento, "diasDesdeLaUltima"),
+							Entero(elemento, "diasQueFaltan")),
 					});
+
+					if (Booleano(elemento, "toca")) losQueTocan.Add(Texto(elemento, "descripcion"));
+				}
 
 			return new ListaDeLaProximaCompra
 			{
 				Existe = Booleano(cabecera, "existe"),
 				CuantosTocan = Entero(cabecera, "cuantosTocan"),
 				Productos = productos,
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.ProximaCompra(frases, Texto(cabecera, "clave"),
+					Entero(cabecera, "cuantosTocan"), losQueTocan),
 			};
 		}
 
 		// La clave del arreglo es el nombre de la variable del foreach: "promocion".
-		internal static IReadOnlyList<PromocionVista> Promociones(string json)
+		internal static IReadOnlyList<PromocionVista> Promociones(string json, Frases.Frases frases)
 		{
 			var promociones = new List<PromocionVista>();
 			if (string.IsNullOrWhiteSpace(json)) return promociones;
@@ -538,13 +618,14 @@ namespace Compras.App
 					Sku = Texto(elemento, "sku"),
 					ValidaHasta = Texto(elemento, "validaHasta"),
 					DiasQueQuedan = Entero(elemento, "diasQueQuedan"),
-					ParaElAsistente = Texto(elemento, "paraElAsistente"),
+					ParaElAsistente = Frases.LaRedaccion.Promocion(frases, Texto(elemento, "gancho"),
+						Texto(elemento, "detalle"), Texto(elemento, "validaHasta")),
 				});
 
 			return promociones;
 		}
 
-		internal static ComprasHalladas Halladas(string json)
+		internal static ComprasHalladas Halladas(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ComprasHalladas();
 
@@ -585,11 +666,14 @@ namespace Compras.App
 				TotalGastado = Decimal(cabecera, "totalGastado"),
 				Productos = productos,
 				Compras = halladas,
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.Hallazgos(frases, Texto(cabecera, "clave"),
+					Texto(cabecera, "buscado"), productos, Entero(cabecera, "cuantasCompras"),
+					Entero(cabecera, "totalUnidades"), Decimal(cabecera, "totalGastado"),
+					halladas.Count > 0 ? halladas[0].Fecha : ""),
 			};
 		}
 
-		internal static ConsumoEnElTiempo Consumo(string json)
+		internal static ConsumoEnElTiempo Consumo(string json, Frases.Frases frases)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ConsumoEnElTiempo();
 
@@ -636,7 +720,7 @@ namespace Compras.App
 				TotalUnidades = Entero(cabecera, "totalUnidades"),
 				TotalCompras = Entero(cabecera, "totalCompras"),
 				UltimaVez = Texto(cabecera, "ultimaVez"),
-				Constancia = Texto(cabecera, "constancia"),
+				Constancia = Frases.LaRedaccion.Constancia(frases, Texto(cabecera, "constancia")),
 				PrimerMes = Texto(cabecera, "primerMes"),
 				UltimoMes = Texto(cabecera, "ultimoMes"),
 				MesDelPico = Texto(cabecera, "mesDelPico"),
@@ -645,7 +729,11 @@ namespace Compras.App
 				CambioDeGasto = Decimal(cabecera, "cambioDeGasto"),
 				HaySerie = Booleano(cabecera, "haySerie"),
 				HayCambioReal = Booleano(cabecera, "hayCambioReal"),
-				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				ParaElAsistente = Frases.LaRedaccion.Consumo(frases, Texto(cabecera, "clave"),
+					Texto(cabecera, "termino"), Booleano(cabecera, "esCategoria"),
+					Texto(cabecera, "primerMes"), Texto(cabecera, "ultimoMes"), Texto(cabecera, "mesDelPico"),
+					Decimal(cabecera, "gastoEnElPrimerMes"), Decimal(cabecera, "gastoEnElUltimoMes"),
+					Decimal(cabecera, "totalGastado"), Entero(cabecera, "mesesConConsumo")),
 				Meses = meses,
 			};
 		}
@@ -665,7 +753,8 @@ namespace Compras.App
 			};
 		}
 
-		internal static IReadOnlyList<AbastecimientoEnEspera> Abastecimientos(string json)
+		internal static IReadOnlyList<AbastecimientoEnEspera> Abastecimientos(string json,
+			Frases.Frases frases)
 		{
 			var pendientes = new List<AbastecimientoEnEspera>();
 			if (string.IsNullOrWhiteSpace(json)) return pendientes;
@@ -677,20 +766,22 @@ namespace Compras.App
 				pendientes.Add(new AbastecimientoEnEspera
 				{
 					Categoria = Texto(elemento, "categoria"),
-					Titulo = Texto(elemento, "titulo"),
+					Titulo = Frases.LaRedaccion.TituloDelDepartamento(frases, Texto(elemento, "categoria")),
 					UltimaCompra = Fecha(elemento, "ultimaCompra"),
 					DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
 					DiasEsperados = Entero(elemento, "diasEsperados"),
 					EsRitmoObservado = Booleano(elemento, "esRitmoObservado"),
 					EsComestible = Booleano(elemento, "esComestible"),
 					Severidad = Texto(elemento, "severidad"),
-					ParaElAsistente = Texto(elemento, "paraElAsistente"),
+					ParaElAsistente = Frases.LaRedaccion.Abastecimiento(frases, Texto(elemento, "clave"),
+						Texto(elemento, "categoria"), Entero(elemento, "diasDesdeLaUltima"),
+						Entero(elemento, "diasEsperados"), Booleano(elemento, "esRitmoObservado")),
 				});
 
 			return pendientes;
 		}
 
-		private static GarantiaDeProducto Garantia(JsonElement elemento) =>
+		private static GarantiaDeProducto Garantia(JsonElement elemento, Frases.Frases frases) =>
 			new GarantiaDeProducto
 			{
 				// La lista de vigentes no emite "encontrada" (todas lo estan); la
@@ -710,8 +801,11 @@ namespace Compras.App
 					: true,
 				DiasParaVencer = Entero(elemento, "diasParaVencer"),
 				Severidad = Texto(elemento, "severidad"),
-				QueHacer = Texto(elemento, "queHacer"),
-				ParaElAsistente = Texto(elemento, "paraElAsistente"),
+				QueHacer = Frases.LaRedaccion.QueHacer(frases, Texto(elemento, "severidad")),
+				ParaElAsistente = Frases.LaRedaccion.Garantia(frases, Texto(elemento, "clave"),
+					Texto(elemento, "textoBuscado"), Texto(elemento, "descripcion"),
+					frases.Dia(Fecha(elemento, "venceEl")), frases.Dia(Fecha(elemento, "fechaDeCompra")),
+					Entero(elemento, "diasParaVencer")),
 			};
 
 		// Un solo print emite un objeto; varios emiten un arreglo. Tratar los dos casos

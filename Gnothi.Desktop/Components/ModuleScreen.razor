@@ -1,0 +1,279 @@
+@inject HostState State
+
+@*
+    ONE MODULE'S SCREEN. A section per query the module offers, each with a field for every
+    parameter it declares, a Run button, and the result.
+
+    IT GOES THROUGH THE DISPATCHER, on purpose. Serve() checks consent and meters the call,
+    exactly like the MCP front end and the phone. This window does not reach into the module
+    behind the Host's authority -it is one more caller of the same single execution path.
+    (A future declarative view.json screen may argue for a person-facing path that skips the
+    assistant's switch, as the reference does; that is a design decision, not something to
+    smuggle in here.)
+
+    ENABLED queries only: EnabledTools() already drops what the person switched off. A module
+    switched off shows no queries and never reaches this screen.
+*@
+
+@if (module is null)
+{
+    <div class="empty">@T("pantalla.no-existe", ("nombre", Name))</div>
+}
+else
+{
+    <h1>@HostState.Icon(module.Manifest) @module.Manifest.Identity</h1>
+    <p class="sub">@module.Manifest.Title</p>
+    @if (module.Installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase))
+    {
+        @* LA PANTALLA DE LA INSTITUCION, en la forma hibrida. La cara corre en su propio origen
+           -un marco dentro de esta ventana, o su propia ventana con `--cara ventana`- y pregunta
+           por `consultar` a la misma superficie en proceso que contesta abajo. Abrirla es lo que
+           dispara el pull del cartero y la entrega a [Deliver]. *@
+        <div class="query">
+            <div class="title">@T("pantalla.cara.titulo", ("quien", module.Manifest.Identity))</div>
+            <div class="desc">@T("pantalla.cara.desc")</div>
+            <div style="margin-top:10px">
+                <button class="small" disabled="@faceBusy" @onclick="OpenFace">@(faceBusy ? T("pantalla.cara.abriendo") : T("pantalla.cara.abrir"))</button>
+                @* Only where it works: the icon is a Windows .lnk (DesktopShortcut). On macOS and
+                   Linux there is nothing to offer yet, so the button is not shown rather than
+                   shown and failing. *@
+                @if (OperatingSystem.IsWindows())
+                {
+                    <button class="small ghost" disabled="@faceBusy" @onclick="Pin">@T("pantalla.cara.fijar")</button>
+                }
+            </div>
+            @if (faceMessage is not null)
+            {
+                <div class="notice">@faceMessage</div>
+            }
+        </div>
+    }
+
+    @foreach (DeclaredTool tool in module.EnabledTools())
+    {
+        ToolUi ui = UiFor(tool.Name);
+        <div class="query">
+            <div class="title">@(string.IsNullOrWhiteSpace(tool.Title) ? tool.Name : tool.Title)</div>
+            @if (!string.IsNullOrWhiteSpace(tool.Description))
+            {
+                <div class="desc">@tool.Description</div>
+            }
+
+            @foreach (DeclaredParameter p in tool.Input)
+            {
+                <label class="field">@(string.IsNullOrWhiteSpace(p.Description) ? p.Name : $"{p.Name} — {p.Description}")</label>
+                <input type="text" value="@ui.Args[p.Name]"
+                       @onchange="e => ui.Args[p.Name] = e.Value?.ToString() ?? string.Empty" />
+            }
+
+            <div style="margin-top:10px">
+                <button class="small" disabled="@ui.Busy" @onclick="() => Run(tool, ui)">
+                    @(ui.Busy ? T("pantalla.consultando") : T("pantalla.consultar"))
+                </button>
+            </div>
+
+            @if (ui.Denied is not null)
+            {
+                <div class="notice denied">@ui.Denied</div>
+            }
+            else if (ui.Table is not null)
+            {
+                <table>
+                    <thead>
+                        <tr>@foreach (string c in ui.Table.Columns) { <th>@c</th> }</tr>
+                    </thead>
+                    <tbody>
+                        @foreach (IReadOnlyList<string> r in ui.Table.Rows)
+                        {
+                            <tr>@foreach (string cell in r) { <td>@cell</td> }</tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            @if (ui.Raw is not null)
+            {
+                <pre>@ui.Raw</pre>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public string Name { get; set; } = "";
+
+    private Module? module;
+    private bool faceBusy;
+    private string? faceMessage;
+
+    private async Task OpenFace()
+    {
+        if (module is null) return;
+        faceBusy = true;
+        faceMessage = null;
+        try
+        {
+            Module m = module;
+            await Task.Run(() => State.Faces.OpenFace(m, CancellationToken.None));
+            faceMessage = T("pantalla.cara.abierta");
+        }
+        catch (Exception e)
+        {
+            faceMessage = T("pantalla.cara.no-abrio", ("detalle", $"{e.GetType().Name}: {e.Message}"));
+        }
+        finally { faceBusy = false; }
+    }
+
+    // THE ICON ON THE DESKTOP: the phone's pinned shortcut. It opens Gnothi straight into this
+    // module's face; the label is the institution's, the process is Gnothi's.
+    private void Pin()
+    {
+        if (module is null) return;
+        try
+        {
+            string link = State.Faces.PinToDesktop(module, State.Root, State.JournalsRoot);
+            faceMessage = T("pantalla.cara.icono-puesto", ("quien", module.Manifest.Identity), ("archivo", Path.GetFileName(link)));
+        }
+        catch (Exception e)
+        {
+            faceMessage = T("pantalla.cara.icono-fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
+        }
+    }
+    private readonly Dictionary<string, ToolUi> uis = new(StringComparer.Ordinal);
+
+    protected override void OnParametersSet()
+        => module = State.Catalog.Modules.FirstOrDefault(
+            m => string.Equals(m.Name, Name, StringComparison.OrdinalIgnoreCase));
+
+    private ToolUi UiFor(string tool)
+    {
+        if (!uis.TryGetValue(tool, out ToolUi? ui))
+        {
+            ui = new ToolUi();
+            // Seed the arg map so binding has a slot per declared parameter.
+            DeclaredTool? dt = module?.EnabledTools().FirstOrDefault(t => t.Name == tool);
+            if (dt is not null)
+                foreach (DeclaredParameter p in dt.Input) ui.Args[p.Name] = "";
+            uis[tool] = ui;
+        }
+        return ui;
+    }
+
+    private async Task Run(DeclaredTool tool, ToolUi ui)
+    {
+        ui.Busy = true;
+        ui.Denied = null;
+        ui.Raw = null;
+        ui.Table = null;
+
+        // Only send parameters that were actually filled: an empty field is "not provided",
+        // and the module binds by name -a missing one falls to its default.
+        Dictionary<string, object?>? args = null;
+        if (tool.Input.Count > 0)
+        {
+            args = new Dictionary<string, object?>(StringComparer.Ordinal);
+            foreach (DeclaredParameter p in tool.Input)
+                if (ui.Args.TryGetValue(p.Name, out string? v) && !string.IsNullOrWhiteSpace(v))
+                    args[p.Name] = v;
+        }
+
+        try
+        {
+            // OFF THE UI THREAD. Serve() ends up replaying the journal to hydrate the actor,
+            // which is real work; on Blazor Hybrid the components run on the UI thread, so the
+            // window would freeze mid-replay without this.
+            Response r = await Task.Run(
+                () => State.Dispatcher.Serve(new Request(Name, tool.Name, args), CancellationToken.None));
+
+            if (!r.Authorized)
+            {
+                ui.Denied = r.Reason;
+            }
+            else
+            {
+                (ui.Table, ui.Raw) = Present(r.Content);
+            }
+        }
+        catch (Exception e)
+        {
+            ui.Denied = $"{e.GetType().Name}: {e.Message}";
+        }
+        finally
+        {
+            ui.Busy = false;
+        }
+    }
+
+    // THE RESULT TRAVELS OPAQUE, so the window does not interpret the domain: it serializes
+    // what the module returned. If that JSON happens to be an array of flat objects, it draws
+    // a plain table -a small convenience, not a view engine. Anything else is shown as
+    // pretty JSON. (The real declarative renderer -view.json- is a separate, larger piece;
+    // this is honest about being the raw result made readable.)
+    private static (Grid?, string?) Present(object? content)
+    {
+        string json = JsonSerializer.Serialize(content, Pretty);
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            Grid? grid = AsGrid(doc.RootElement);
+            // When we could make a table, still keep the JSON available underneath? No: the
+            // table is the point. Show JSON only when there is no table.
+            return grid is not null ? (grid, null) : (null, json);
+        }
+        catch (JsonException)
+        {
+            return (null, json);
+        }
+    }
+
+    // A table only for the unambiguous case: a non-empty array whose items are all objects
+    // with scalar fields. Nested arrays/objects -> not a table, fall back to JSON.
+    private static Grid? AsGrid(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0) return null;
+
+        var columns = new List<string>();
+        var rows = new List<IReadOnlyList<string>>();
+
+        foreach (JsonElement item in root.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object) return null;
+
+            var cells = new List<string>();
+            foreach (JsonProperty prop in item.EnumerateObject())
+            {
+                if (prop.Value.ValueKind is JsonValueKind.Object or JsonValueKind.Array) return null;
+                if (!columns.Contains(prop.Name)) columns.Add(prop.Name);
+            }
+            // Second pass over the fixed column order, so ragged objects still line up.
+            foreach (string col in columns)
+                cells.Add(item.TryGetProperty(col, out JsonElement v) ? Scalar(v) : "");
+            rows.Add(cells);
+        }
+
+        return new Grid(columns, rows);
+    }
+
+    private static string Scalar(JsonElement e) => e.ValueKind switch
+    {
+        JsonValueKind.String => e.GetString() ?? "",
+        JsonValueKind.Null => "",
+        _ => e.GetRawText(),
+    };
+
+    private static readonly JsonSerializerOptions Pretty = new()
+    {
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    private sealed class ToolUi
+    {
+        public Dictionary<string, string> Args { get; } = new(StringComparer.Ordinal);
+        public bool Busy { get; set; }
+        public string? Raw { get; set; }
+        public string? Denied { get; set; }
+        public Grid? Table { get; set; }
+    }
+
+    private sealed record Grid(IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
+}

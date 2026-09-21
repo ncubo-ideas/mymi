@@ -67,9 +67,9 @@ namespace Municipalidad.Mcp.Tools
 		private LoQueSeVence LoQueSeLeVenceAEstaPersona(MunicipalidadAPI api, DateTime preguntadoEn)
 		{
 			RegistroDeVencimientos vencimientos =
-				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso);
+				api.VencimientosAl(preguntadoEn, LosJuiciosSinFirmar.DiasDeAviso, ConsultasDelModulo.IdiomaDelRegistro);
 
-			RegistroDeAtrasos atrasos = api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora);
+			RegistroDeAtrasos atrasos = api.AtrasosAl(preguntadoEn, LosJuiciosSinFirmar.TasaDeMora, ConsultasDelModulo.IdiomaDelRegistro);
 
 			List<PeriodoPorVencer> porVencer = new List<PeriodoPorVencer>();
 

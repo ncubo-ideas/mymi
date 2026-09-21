@@ -84,11 +84,11 @@ namespace Examenes.Dominio
 			Medicion partida = PartidaDelEpisodio();
 			if (partida != null)
 				lineas.Add(new ReferenciaDeLectura("partida", partida,
-					$"veniás de {partida.Expresado}"));
+					"linea.colesterol-total.partida"));
 
 			MetaDeColesterol meta = Meta();
 			lineas.Add(new ReferenciaDeLectura("meta", meta.Objetivo,
-				meta.ComoObjetivo));
+				"linea.colesterol-total.meta"));
 
 			return lineas;
 		}
@@ -102,9 +102,7 @@ namespace Examenes.Dominio
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que no es un cambio que el cuerpo pueda hacer en ese tiempo", hechos,
+					"lectura.colesterol-total.salto-inverosimil", hechos,
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			// EL CASO DE ALVARO, y va antes que la comparacion contra el rango a
@@ -114,10 +112,13 @@ namespace Examenes.Dominio
 			{
 				MetaDeColesterol meta = Meta();
 				Medicion partida = PartidaDelEpisodio();
-				string desde = partida == null ? "" : $"venías de {partida.Expresado} y ";
 
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"{desde}vas bien: {meta.Expresada}", hechos);
+						partida == null
+							? "lectura.colesterol-total.va-bien"
+							: "lectura.colesterol-total.va-bien-desde", hechos)
+					.ConNivelPropio(partida == null ? 0m : partida.Valor)
+					.ConLimite(meta.Objetivo.Valor, meta.YaLlego ? "meta.ya-llego" : "meta.falta");
 			}
 
 			bool enRango = Ultima.EsNormalPara(paciente);
@@ -125,15 +126,14 @@ namespace Examenes.Dominio
 			if (!Ultima.EsCambioReal(hechos.Cambio))
 				return enRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"se mantiene en {Ultima.Valor.Expresado}, dentro de lo deseable", hechos)
+						"lectura.colesterol-total.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, Severidad.ConsultePronto,
-						$"lleva tiempo en {Ultima.Valor.Expresado}, por encima de lo deseable", hechos,
+						"lectura.colesterol-total.estable-fuera", hechos,
 						Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 
 			if (enRango)
 				return new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-					$"subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} días, todavía dentro de lo deseable", hechos,
+					"lectura.colesterol-total.subio-dentro", hechos,
 					Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 
 			// LA EDAD MODULA, y es otra cosa que el rango solo no dice. Alvaro: "quizas a
@@ -145,18 +145,18 @@ namespace Examenes.Dominio
 			// alguien mayor. La historia previa buena no cambia ninguno de los dos.
 			MetaDeColesterol objetivo = Meta();
 
+			string laMeta = objetivo.YaLlego ? "meta.ya-llego" : "meta.falta";
+
 			return paciente.Edad < EdadEnQuePesaMas
 				? new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-					$"subió a {Ultima.Valor.Expresado}. A tu edad esto se corrige, y {objetivo.ComoObjetivo}",
-					hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))
+						"lectura.colesterol-total.subio-fuera-joven", hechos,
+						Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))
+					.ConLimite(objetivo.Objetivo.Valor, laMeta)
 				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					$"subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} días. {Mayuscula(objetivo.ComoObjetivo)}", hechos,
-					Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
+						"lectura.colesterol-total.subio-fuera", hechos,
+						Accion.MostrarleEstoATuMedico(Plazo.EsteMes))
+					.ConLimite(objetivo.Objetivo.Valor, laMeta);
 		}
-
-		private static string Mayuscula(string frase) =>
-			frase.Length == 0 ? frase : char.ToUpperInvariant(frase[0]) + frase.Substring(1);
 
 		// A partir de que edad un colesterol fuera de rango deja de leerse como algo que se
 		// corrige con habitos y pasa a ser algo que conviene que vea un medico.

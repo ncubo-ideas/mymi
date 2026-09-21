@@ -435,7 +435,10 @@ h2, h3, h4, h5 { font-weight: 700; }
     background: var(--papel-suave);
     border: 1px solid var(--linea);
     border-radius: var(--radio-carta);
-    padding: 1rem 1.1rem;
+    padding: .7rem .9rem;
+    /* Smaller (2026-09-09): the notice read as a headline, not as a note. */
+    font-size: .88rem;
+    line-height: 1.4;
 }
 /* La version de una linea: mismo tono, menos cuerpo. La portada la lleva plegada. */
 .aviso-linea { padding: .55rem .9rem; }
@@ -1710,7 +1713,12 @@ h2.kicker { font-size: .74rem; margin: 0; }
     color: var(--tinta);
 }
 
-    .blazor-error-boundary::after { content: "Algo se rompió en esta parte de la pantalla." }
+    /* El valor por defecto es el idioma del registro, por la misma razón que el de index.html:
+       un límite de error puede saltar antes de que Textos negocie. La variable la fija
+       idioma-interop.js apenas hay catálogo. */
+    .blazor-error-boundary::after {
+        content: var(--texto-error-en-la-pantalla, "Algo se rompió en esta parte de la pantalla.")
+    }
 
 .loading-progress {
     position: relative;
@@ -1773,6 +1781,26 @@ code { color: var(--gu-morado-hondo); }
    grid-column explicito -mismo criterio que ".mk-cambio"/".mk-oportunidad" mas abajo-, asi
    que la imagen nunca flota sobre el texto ni al reves. Con scroll-snap nativo: sin libreria
    de carrusel, el proyecto no tenia ninguna cargada (solo bootstrap.min.CSS, sin su JS). */
+/* THE COVER (2026-09-09): the brand photo from brand/banner.jpg -the same file the manifest
+   declares for the Gnothi card- bleeds to the three edges of the screen (undoing the
+   container's .75rem sides and 1.5rem top), under a dark green veil so the white greeting and
+   the pastel slides read on it. Rounded only at the bottom, where the paper starts. */
+.lg-home-portada {
+    margin: -1.5rem -.75rem 1.25rem;
+    padding: max(14px, env(safe-area-inset-top)) .75rem 14px;
+    background:
+        linear-gradient(180deg, rgba(22,38,28,.42) 0%, rgba(22,38,28,.62) 55%, rgba(22,38,28,.82) 100%),
+        url(../brand/banner.jpg) center 35% / cover no-repeat;
+    border-radius: 0 0 22px 22px;
+    color: #fff;
+}
+.lg-home-portada .lg-home-marca span { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.lg-home-portada .lg-home-marca img { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+.lg-home-portada .lg-home-saludo { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.lg-home-portada .lg-home-carrusel-envoltorio { margin-bottom: 0; }
+.lg-home-portada .lg-home-punto { background: rgba(255,255,255,.45); }
+.lg-home-portada .lg-home-punto.activo { background: #fff; }
+
 .lg-home-arriba {
     display: flex; align-items: center; justify-content: space-between;
     padding: 4px 2px 0;

@@ -83,8 +83,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void WhenTheDistanceHalfCouldNotBeMeasuredTimeDecidesAlone()
 		{
-			RemainingEnvelope degradado = RemainingEnvelope.MeasuredOnlyInTime(
-				-5, ThirtySixMonths, "because this test is about the shape.");
+			RemainingEnvelope degradado =
+				RemainingEnvelope.MeasuredOnlyForWantOfAReading(-5, ThirtySixMonths);
 
 			Assert.That(degradado.TheStandingCanBeDecided, Is.True,
 				"El tiempo ya llego, asi que la distancia no puede cambiar la respuesta.");
@@ -100,8 +100,8 @@ namespace Concesionario.Dominio.Pruebas
 		[Test]
 		public void AnUndecidablePairRefusesToNameWhichHalfDecided()
 		{
-			RemainingEnvelope indecidible = RemainingEnvelope.MeasuredOnlyInTime(
-				12, ThirtySixMonths, "because this test is about the shape.");
+			RemainingEnvelope indecidible =
+				RemainingEnvelope.MeasuredOnlyForWantOfAReading(12, ThirtySixMonths);
 
 			Assert.That(indecidible.TheStandingCanBeDecided, Is.False);
 			Assert.Throws<DomainException>(() => { bool _ = indecidible.DecidedByTime; });
@@ -125,7 +125,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(said, Does.Contain("12 meses de 36 meses"),
 				"Ley L3: la otra mitad no se omite. Que el sobre se haya alcanzado por distancia no "
 				+ "borra que todavia quedan doce meses de plazo.");
-			Assert.That(said, Does.Contain("14990 km pasados de un límite de 60000 km"));
+			Assert.That(said, Does.Contain("14.990 km pasados de un límite de 60.000 km"));
 		}
 
 		[Test]
@@ -138,7 +138,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			Assert.That(said, Does.Contain("Alcanzado por tiempo"));
 			Assert.That(said, Does.Contain("5 meses pasados de un límite de 36 meses"));
-			Assert.That(said, Does.Contain("35010 km de 60000 km"),
+			Assert.That(said, Does.Contain("35.010 km de 60.000 km"),
 				"Ley L3, del otro lado: quedan 35010 km y se dicen, aunque no cambien la respuesta.");
 		}
 
@@ -178,7 +178,7 @@ namespace Concesionario.Dominio.Pruebas
 
 			string said = TheSentenceAt(elOdometroExacto, InsideTheTimeHalf);
 
-			Assert.That(said, Does.Contain("justo en un límite de 60000 km"));
+			Assert.That(said, Does.Contain("justo en un límite de 60.000 km"));
 			Assert.That(said, Does.Not.Contain("0 km past"));
 		}
 
@@ -223,8 +223,8 @@ namespace Concesionario.Dominio.Pruebas
 
 		private string TheSentenceAt(int reading, DateTime asOf)
 		{
-			return profile.DescribeWarrantyEnvelope(
-				reading, DistanceUnitCode.UnitA, ObservedAt, asOf);
+			return TheSentenceTheDoorWouldCompose.TheWarrantyEnvelope(
+				profile, reading, DistanceUnitCode.UnitA, ObservedAt, asOf, TheLanguage.OfTheRecord);
 		}
 
 		private string TheStandingAt(int reading, DateTime asOf)

@@ -39,25 +39,23 @@ namespace Concesionario.Dominio
 			return true;
 		}
 
-		/// <summary>Las dos mitades, cada una entre comillas y tal como se publicaron.</summary>
-		internal override string Describe()
+		/// <summary>Las dos mitades, tal como se publicaron.</summary>
+		internal override AServicingClause TheClauseItComposes(string revisionCode)
 		{
-			return "Servicio en otro taller: \"" + _rule + "\" Qué conserva la cobertura: \""
-				+ _whatPreservesCover + "\"";
+			return AServicingClause.Published(revisionCode, _rule, _whatPreservesCover);
 		}
 
 		/// <summary>
-		/// Los conteos recibidos, dichos como conteos y sin concluir nada de ellos. Decir aca que la
+		/// Los conteos recibidos, llevados como conteos y sin concluir nada de ellos. Decir aca que la
 		/// cobertura esta conservada seria adjudicar, y adjudicar es del fabricante.
 		/// </summary>
-		internal override string DescribeAgainst(
-			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
-			int missedMaintenanceCount)
+		internal override AServicingClause TheClauseItComposesAgainst(
+			string revisionCode, int externalServicesWithEvidence,
+			int externalServicesWithoutEvidence, int missedMaintenanceCount)
 		{
-			return "Este vehículo: servicios externos con comprobante "
-				+ externalServicesWithEvidence + ", servicios externos sin comprobante "
-				+ externalServicesWithoutEvidence + ", mantenimientos no hechos "
-				+ missedMaintenanceCount + ".";
+			return TheClauseItComposes(revisionCode).PairedWith(
+				externalServicesWithEvidence, externalServicesWithoutEvidence,
+				missedMaintenanceCount);
 		}
 	}
 }

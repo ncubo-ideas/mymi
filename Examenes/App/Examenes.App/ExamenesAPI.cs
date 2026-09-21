@@ -16,6 +16,13 @@ namespace Examenes.App
 	// performs, sabe pedirle a esto que aplique un mensaje.
 	public sealed class ExamenesAPI : IDiarioDeLaApp
 	{
+		/// <summary>
+		/// EL IDIOMA DEL REGISTRO del laboratorio, y al que cae toda etiqueta desconocida. Vive en el
+		/// renderizador y se reexpone aca para que una carátula sin idioma propio -- la consola, el
+		/// servidor MCP -- lo nombre sin conocer el catalogo.
+		/// </summary>
+		public const string IdiomaDelRegistro = Frases.Frases.IdiomaDelRegistro;
+
 		private readonly PerformanceV2 app;
 
 		public ExamenesAPI(PerformanceV2 app)
@@ -25,33 +32,6 @@ namespace Examenes.App
 		}
 
 		// ---------------------------------------------------------------- comandos
-
-		// La clave de ESTA instalacion ante el proveedor. Se genera en C# y entra como
-		// parametro, no dentro del DSL: asi el valor queda journalizado y el replay lo
-		// reusa. Un Guid.NewGuid() en codigo de dominio daria una clave distinta en cada
-		// replay y la app perderia su identidad ante el proveedor.
-		public void RegistrarDevice(string deviceKey)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
-
-			app.Using("bitacora.RegistrarDevice(@device);")
-			.WithParameters(p => {
-				p["device", typeof(string)] = deviceKey;
-			})
-			.PerformCommand();
-		}
-
-		public void GuardarCredencial(string token, string refreshToken)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(token);
-
-			app.Using("bitacora.GuardarCredencial(@token, @refresh);")
-			.WithParameters(p => {
-				p["token",   typeof(string)] = token;
-				p["refresh", typeof(string)] = refreshToken ?? "";
-			})
-			.PerformCommand();
-		}
 
 		// LO QUE LA PERSONA DICE DE SI MISMA. Procedencia TU, y por eso es un comando local
 		// y no un evento: nadie se lo publico, lo declaro ella.
@@ -334,6 +314,10 @@ namespace Examenes.App
 		// actual, y para poder decir el conflicto en vez de esconderlo.
 		public string SexoDelPaciente() => Texto("expediente.Sexo.Nombre");
 
+		/// <summary>El mismo sexo, ya dicho en el idioma que se pidio.</summary>
+		public string SexoDelPaciente(string idioma) =>
+			Frases.LaRedaccion.Sexo(Frases.Frases.De(idioma), SexoDelPaciente());
+
 		public string SexoDeclaradoPorLaPersona() => Texto("expediente.SexoDeclaradoPorLaPersona.Nombre");
 
 		public string SexoPublicadoPorLaInstitucion() => Texto("expediente.SexoPublicadoPorLaInstitucion.Nombre");
@@ -351,12 +335,6 @@ namespace Examenes.App
 				return alquilados["ultimo"].GetValue<long>();
 			}
 		}
-
-		public string TokenGuardado() => Texto("bitacora.Token");
-
-		public string RefreshTokenGuardado() => Texto("bitacora.RefreshToken");
-
-		public string DeviceKeyGuardado() => Texto("bitacora.DeviceKey");
 
 		private string Texto(string expresion)
 		{
@@ -387,11 +365,20 @@ namespace Examenes.App
 		// dominio se paga aca.
 		public string ListaDeExamenes() =>
 			app.Using(@"
-				foreach (examen in expediente.Lista) {
-					print examen.Nombre nombre,
-						examen.Fecha fecha,
-						examen.ResultadoExpresado resultado,
-						examen.AportaSerieContinua aportaSerieContinua;
+				{
+					foreach (examen in expediente.Lista) {
+						print examen.Clave nombre,
+							examen.Fecha fecha,
+							examen.AportaSerieContinua aportaSerieContinua;
+					}
+					foreach (lectura in expediente.LecturasDeLaLista) {
+						print lectura.Fila fila,
+							lectura.ClaveDelAnalito analito,
+							lectura.ClaveDelResultado resultado,
+							lectura.Valor valor,
+							lectura.Unidad unidad,
+							lectura.EsNumero esNumero;
+					}
 				}
 			")
 			.PerformQuery();
@@ -408,13 +395,15 @@ namespace Examenes.App
 				{
 					urgencia = expediente.LoMasUrgente;
 					print urgencia.NombreDeLaSeveridad severidad,
-						urgencia.AccionLegible accion,
+						urgencia.ClaveDeLaAccion accion,
+						urgencia.ClaveDelPlazo plazo,
 						urgencia.PideAlgo pideAlgo;
 				}
 			")
 			.PerformQuery();
 
-		public LoMasUrgente Urgente() => ProyeccionDeVistas.Urgente(LoMasUrgente());
+		public LoMasUrgente Urgente(string idioma) =>
+			ProyeccionDeVistas.Urgente(LoMasUrgente(), Frases.Frases.De(idioma));
 
 		// LO QUE ESTA BIEN, ya contado y ya dicho. Igual que el pedido de sexo, NO se puede
 		// armar en la pantalla: la cuenta exige recorrer cada serie y saber cual se puede
@@ -426,12 +415,13 @@ namespace Examenes.App
 					print tranquilidad.EnSuRango enSuRango,
 						tranquilidad.Analitos analitos,
 						tranquilidad.HayAlgoEnRango hayAlgo,
-						tranquilidad.ParaSonia paraSonia;
+						tranquilidad.ClaveDeLaFrase clave;
 				}
 			")
 			.PerformQuery();
 
-		public LoQueEstaBien LoQueEstaEnRango() => ProyeccionDeVistas.EstaEnRango(EstaEnRango());
+		public LoQueEstaBien LoQueEstaEnRango(string idioma) =>
+			ProyeccionDeVistas.EstaEnRango(EstaEnRango(), Frases.Frases.De(idioma));
 
 		// EL DATO QUE FALTA, ya contado y ya dicho. Es lo que alimenta el bloque que
 		// insiste, y NO se puede armar en la pantalla: el conteo sale de recorrer cada
@@ -444,13 +434,20 @@ namespace Examenes.App
 						pedido.SinInterpretar sinInterpretar,
 						pedido.Analitos analitos,
 						pedido.NombreDeLaSeveridad severidad,
-						pedido.ParaSonia paraSonia,
-						pedido.ElPorQue porQue;
+						pedido.ClaveDeLaFrase clave,
+						pedido.ClaveDelPorQue porQue;
+					foreach (porRango in pedido.ClavesPorRango) {
+						print porRango analito;
+					}
+					foreach (porAplicabilidad in pedido.ClavesPorAplicabilidad) {
+						print porAplicabilidad analito;
+					}
 				}
 			")
 			.PerformQuery();
 
-		public FaltaElSexoDelPaciente PedidoDeSexo() => ProyeccionDeVistas.PedidoDeSexo(FaltaElSexo());
+		public FaltaElSexoDelPaciente PedidoDeSexo(string idioma) =>
+			ProyeccionDeVistas.PedidoDeSexo(FaltaElSexo(), Frases.Frases.De(idioma));
 
 		// LOS PUNTOS DE LA SERIE, con su numero. Es lo que un grafico necesita y una tabla
 		// no: el cuadro historico los da ya convertidos a texto.
@@ -480,7 +477,7 @@ namespace Examenes.App
 			return app.Using(@"
 				foreach (prueba in expediente.PruebasDe(@analito)) {
 					print prueba.Fecha fecha,
-						prueba.Expresado expresado,
+						prueba.ClaveDelResultado resultado,
 						prueba.EsPositivo esPositivo,
 						prueba.EsHallazgo esHallazgo;
 				}
@@ -489,8 +486,8 @@ namespace Examenes.App
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) =>
-			ProyeccionDeVistas.Pruebas(PruebasDe(analito));
+		public IReadOnlyList<PruebaEnSerie> Pruebas(string analito, string idioma) =>
+			ProyeccionDeVistas.Pruebas(PruebasDe(analito), Frases.Frases.De(idioma));
 
 		// LOS HECHOS DE UNA SERIE BINARIA. Es el par de TendenciaDe, y son dos consultas
 		// porque no contestan lo mismo: aquella trae extremos y cambio, esta trae cuantas
@@ -503,7 +500,7 @@ namespace Examenes.App
 				{
 					presencia = expediente.EvaluarPresenciaDe(@analito);
 					print presencia.Analito analito,
-						presencia.AnalitoParaMostrar paraMostrar,
+						presencia.ClaveDelAnalito claveDelAnalito,
 						presencia.NombreDeLaPresencia presencia,
 						presencia.CantidadDeMediciones mediciones,
 						presencia.Positivas positivas,
@@ -518,8 +515,8 @@ namespace Examenes.App
 			.PerformQuery();
 		}
 
-		public PresenciaDeAnalito Presencia(string analito) =>
-			ProyeccionDeVistas.Presencia(PresenciaDe(analito));
+		public PresenciaDeAnalito Presencia(string analito, string idioma) =>
+			ProyeccionDeVistas.Presencia(PresenciaDe(analito), Frases.Frases.De(idioma));
 
 		// LAS OBSERVACIONES DE UNA SERIE NOMINAL: fechas con una categoria. Es el tercer par
 		// de PuntosDe, y va aparte por lo mismo que las pruebas: un color no tiene
@@ -531,7 +528,7 @@ namespace Examenes.App
 			return app.Using(@"
 				foreach (observacion in expediente.ObservacionesDe(@analito)) {
 					print observacion.Fecha fecha,
-						observacion.Expresado expresado,
+						observacion.ClaveDelResultado resultado,
 						observacion.EsEsperable esEsperable,
 						observacion.EsHallazgo esHallazgo;
 				}
@@ -540,8 +537,8 @@ namespace Examenes.App
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<ObservacionEnSerie> Observaciones(string analito) =>
-			ProyeccionDeVistas.Observaciones(ObservacionesDe(analito));
+		public IReadOnlyList<ObservacionEnSerie> Observaciones(string analito, string idioma) =>
+			ProyeccionDeVistas.Observaciones(ObservacionesDe(analito), Frases.Frases.De(idioma));
 
 		// LOS HECHOS DE UNA SERIE NOMINAL. Es el par de PresenciaDe para la forma 6: aquella
 		// trae cuantas veces aparecio, esta trae CUAL salio y si volvio a lo esperable.
@@ -553,7 +550,7 @@ namespace Examenes.App
 				{
 					constancia = expediente.EvaluarConstanciaDe(@analito);
 					print constancia.Analito analito,
-						constancia.AnalitoParaMostrar paraMostrar,
+						constancia.ClaveDelAnalito claveDelAnalito,
 						constancia.NombreDeLaConstancia constancia,
 						constancia.CantidadDeMediciones mediciones,
 						constancia.UltimaCategoria ultimaCategoria,
@@ -570,8 +567,8 @@ namespace Examenes.App
 			.PerformQuery();
 		}
 
-		public ConstanciaDeAnalito Constancia(string analito) =>
-			ProyeccionDeVistas.Constancia(ConstanciaDe(analito));
+		public ConstanciaDeAnalito Constancia(string analito, string idioma) =>
+			ProyeccionDeVistas.Constancia(ConstanciaDe(analito), Frases.Frases.De(idioma));
 
 		// LAS LINEAS que se dibujan junto a los puntos, y COMO se dibujan. Cada analito
 		// emite solo las que tiene; ninguno devuelve cero para rellenar.
@@ -584,7 +581,7 @@ namespace Examenes.App
 					print referencia.Nombre nombre,
 						referencia.Numero valor,
 						referencia.Unidad unidad,
-						referencia.ParaSonia paraSonia;
+						referencia.Clave clave;
 				}
 			")
 			.WithParameters(p => { p["analito", typeof(string)] = analito; })
@@ -594,8 +591,8 @@ namespace Examenes.App
 		public IReadOnlyList<PuntoDeSerie> Puntos(string analito) =>
 			ProyeccionDeVistas.Puntos(PuntosDe(analito));
 
-		public IReadOnlyList<LineaDeReferencia> Referencias(string analito) =>
-			ProyeccionDeVistas.Referencias(ReferenciasDe(analito));
+		public IReadOnlyList<LineaDeReferencia> Referencias(string analito, string idioma) =>
+			ProyeccionDeVistas.Referencias(ReferenciasDe(analito), Frases.Frases.De(idioma));
 
 		// QUE FALTA MEDIR. La consulta que ninguna pantalla puede contestar, porque una
 		// pantalla solo renderiza datos que tiene y esto es una AUSENCIA.
@@ -605,15 +602,20 @@ namespace Examenes.App
 			app.Using(@"
 				foreach (control in expediente.ControlesPendientes(@hoy)) {
 					print control.Nombre analito,
-						control.ParaMostrar paraMostrar,
+						control.ClaveDelAnalito claveDelAnalito,
 						control.UltimaMedicion ultimaMedicion,
 						control.DiasDesdeLaUltima diasDesdeLaUltima,
+						control.AnosDesdeLaUltima anosDesdeLaUltima,
 						control.MesesRecomendados mesesRecomendados,
+						control.AnosRecomendados anosRecomendados,
 						control.DiasQueFaltan diasQueFaltan,
 						control.EstaVencido estaVencido,
 						control.NombreDeLaSeveridad severidad,
-						control.AccionLegible accion,
-						control.ParaSonia paraSonia;
+						control.ClaveDeLaAccion accion,
+						control.ClaveDelPlazo plazo,
+						control.ClaveDeLaFrase clave,
+						control.ClaveDeLoQueHace claveDeLoQueHace,
+						control.ClaveDeCadaCuanto claveDeCadaCuanto;
 				}
 			")
 			.WithParameters(p => {
@@ -621,8 +623,8 @@ namespace Examenes.App
 			})
 			.PerformQuery();
 
-		public IReadOnlyList<ControlEnEspera> Controles(DateTime hoy) =>
-			ProyeccionDeVistas.Controles(ControlesPendientes(hoy));
+		public IReadOnlyList<ControlEnEspera> Controles(DateTime hoy, string idioma) =>
+			ProyeccionDeVistas.Controles(ControlesPendientes(hoy), Frases.Frases.De(idioma));
 
 		// EL CUADRO HISTORICO, plano. Ver CeldaDelCuadro en el dominio para por que viaja
 		// asi: el print proyecta un solo nivel, y una coleccion de filas que a su vez
@@ -634,9 +636,12 @@ namespace Examenes.App
 					print celda.Fila fila,
 						celda.Columna columna,
 						celda.Analito analito,
-						celda.ParaMostrar paraMostrar,
+						celda.ClaveDelAnalito claveDelAnalito,
 						celda.Fecha fecha,
-						celda.Expresado expresado;
+						celda.ClaveDelResultado resultado,
+						celda.Valor valor,
+						celda.Unidad unidad,
+						celda.EsNumero esNumero;
 				}
 			")
 			.PerformQuery();
@@ -654,7 +659,7 @@ namespace Examenes.App
 				{
 					evaluacion = expediente.EvaluarTendenciaDe(@analito);
 					print evaluacion.Analito analito,
-						evaluacion.AnalitoParaMostrar paraMostrar,
+						evaluacion.ClaveDelAnalito claveDelAnalito,
 						evaluacion.NombreDeLaTendencia tendencia,
 						evaluacion.CantidadDeMediciones mediciones,
 						evaluacion.ValorInicial valorInicial,
@@ -686,13 +691,29 @@ namespace Examenes.App
 				{
 					lectura = expediente.InterpretarSerieDe(@analito);
 					print lectura.Analito analito,
-						lectura.AnalitoParaMostrar paraMostrar,
+						lectura.ClaveDelAnalito claveDelAnalito,
 						lectura.NombreDelVeredicto veredicto,
 						lectura.NombreDeLaSeveridad severidad,
 						lectura.NombreDeLaForma forma,
-						lectura.ParaSonia paraSonia,
-						lectura.AccionLegible accion,
-						lectura.ReferenciaLegible referencia,
+						lectura.Clave clave,
+						lectura.ClaveDeLaAccion accion,
+						lectura.ClaveDelPlazo plazo,
+						lectura.ClaveDeLaReferencia claveDeLaReferencia,
+						lectura.MinimoDeLaReferencia minimoDeLaReferencia,
+						lectura.MaximoDeLaReferencia maximoDeLaReferencia,
+						lectura.UnidadDeLaReferencia unidadDeLaReferencia,
+						lectura.ValorInicial valorInicial,
+						lectura.ValorFinal valorFinal,
+						lectura.Unidad unidad,
+						lectura.Dias dias,
+						lectura.Cambio cambio,
+						lectura.Cuantas cuantas,
+						lectura.CuantasSeguidas cuantasSeguidas,
+						lectura.ClaveDeLaCategoria claveDeLaCategoria,
+						lectura.NivelPropio nivelPropio,
+						lectura.LimiteCitado limiteCitado,
+						lectura.RitmoPorAno ritmoPorAno,
+						lectura.ClaveDeLaColetilla claveDeLaColetilla,
 						lectura.PideAlgo pideAlgo,
 						lectura.SugiereRepetirElExamen sugiereRepetirElExamen,
 						lectura.NoLeCorresponde noLeCorresponde,
@@ -705,8 +726,8 @@ namespace Examenes.App
 			.PerformQuery();
 		}
 
-		public InterpretacionDeAnalito Interpretacion(string analito) =>
-			ProyeccionDeVistas.Interpretacion(InterpretacionDe(analito));
+		public InterpretacionDeAnalito Interpretacion(string analito, string idioma) =>
+			ProyeccionDeVistas.Interpretacion(InterpretacionDe(analito), Frases.Frases.De(idioma));
 
 		// A QUE RITMO viene cambiando un analito. Es la segunda pregunta que exige la serie
 		// completa, y para el antigeno prostatico es LA pregunta: la practica clinica no
@@ -724,14 +745,14 @@ namespace Examenes.App
 				{
 					velocidad = expediente.VelocidadDe(@analito);
 					print velocidad.Analito analito,
-						velocidad.AnalitoParaMostrar paraMostrar,
+						velocidad.ClaveDelAnalito claveDelAnalito,
 						velocidad.PorAno porAno,
 						velocidad.Unidad unidad,
 						velocidad.DiasDelTramo dias,
 						velocidad.UmbralPorAno umbral,
 						velocidad.EsAplicable esAplicable,
 						velocidad.ExigeAtencion exigeAtencion,
-						velocidad.Expresada expresada;
+						velocidad.ClaveDeLaFrase clave;
 				}
 			")
 			.WithParameters(p => {
@@ -752,17 +773,17 @@ namespace Examenes.App
 
 		// Las mismas vistas, ya tipadas. Es lo que consumen la UI y las tools MCP; las
 		// variantes que devuelven el string crudo quedan para diagnostico.
-		public IReadOnlyList<ExamenEnLista> Examenes() =>
-			ProyeccionDeVistas.Lista(ListaDeExamenes());
+		public IReadOnlyList<ExamenEnLista> Examenes(string idioma) =>
+			ProyeccionDeVistas.Lista(ListaDeExamenes(), Frases.Frases.De(idioma));
 
-		public IReadOnlyList<CeldaEnCuadro> Cuadro() =>
-			ProyeccionDeVistas.Cuadro(CuadroHistorico());
+		public IReadOnlyList<CeldaEnCuadro> Cuadro(string idioma) =>
+			ProyeccionDeVistas.Cuadro(CuadroHistorico(), Frases.Frases.De(idioma));
 
-		public TendenciaDeAnalito Tendencia(string analito) =>
-			ProyeccionDeVistas.Tendencia(TendenciaDe(analito));
+		public TendenciaDeAnalito Tendencia(string analito, string idioma) =>
+			ProyeccionDeVistas.Tendencia(TendenciaDe(analito), Frases.Frases.De(idioma));
 
-		public VelocidadDeAnalito Velocidad(string analito) =>
-			ProyeccionDeVistas.Velocidad(VelocidadDe(analito));
+		public VelocidadDeAnalito Velocidad(string analito, string idioma) =>
+			ProyeccionDeVistas.Velocidad(VelocidadDe(analito), Frases.Frases.De(idioma));
 
 		public IReadOnlyList<string> Analitos() =>
 			ProyeccionDeVistas.Analitos(AnalitosConHistoria());

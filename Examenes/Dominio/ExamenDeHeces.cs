@@ -43,13 +43,9 @@ namespace Examenes.Dominio
 			Sangre = SangreEnHeces.PorNombre(sangre);
 		}
 
-		internal override string Nombre => "Examen general de heces";
+		internal override string Clave => "examen-de-heces";
 
 		internal override bool AportaSerieContinua => false;
-
-		internal override string ResultadoExpresado => Sangre.FueRealizada
-			? $"{Color.Expresado}, sangre {Sangre.Expresado}"
-			: Color.Expresado;
 
 		internal override IReadOnlyList<LecturaDeExamen> Lecturas
 		{
@@ -82,13 +78,14 @@ namespace Examenes.Dominio
 			}
 		}
 
-		internal string ParaSonia
+		/// <summary>La frase que este examen elige, por su nombre.</summary>
+		internal string ClaveDeLaFrase
 		{
 			get
 			{
-				if (Sangre.EsHallazgo) return Sangre.ParaSonia;
-				if (!Color.EsEsperable) return $"el color de las heces salió {Color.Expresado}";
-				return "sin hallazgos";
+				if (Sangre.EsHallazgo) return Sangre.ClaveDeLaFrase;
+				if (!Color.EsEsperable) return Color.ClaveDeLaFrase;
+				return "resultado.sin-hallazgos";
 			}
 		}
 	}

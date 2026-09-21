@@ -63,14 +63,15 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.RecordReading(
 				21000, DistanceUnitCode.UnitA, Febrero10, ReadingSourceCode.CustomerDeclared);
 
-			string[] said = schedule.DescribeEachReadingBetween(ElAno, FinDelAno);
+			string[] said = TheSentenceTheDoorWouldCompose.EachReadingOnTheRecord(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				said,
 				Is.EqualTo(new[]
 				{
-					"20000 km el 2026-01-10 00:00:00, reportada por el vehículo",
-					"21000 km el 2026-02-10 00:00:00, declarada por la persona",
+					"20.000 km el 2026-01-10 00:00:00, reportada por el vehículo",
+					"21.000 km el 2026-02-10 00:00:00, declarada por la persona",
 				}),
 				"La fila es autodescriptiva: valor, unidad, instante y de donde vino. Nada de eso "
 				+ "significa algo sin lo demas.");
@@ -101,7 +102,8 @@ namespace Concesionario.Dominio.Pruebas
 
 				una.RecordReading(value, DistanceUnitCode.UnitA, observedAt, source);
 
-				string[] filas = una.DescribeEachReadingBetween(ElAno, FinDelAno);
+				string[] filas = TheSentenceTheDoorWouldCompose.EachReadingOnTheRecord(
+				una, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
 				Assert.That(filas.Length, Is.EqualTo(1));
 				dichas.Add(filas[0]);
@@ -122,7 +124,8 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.RecordReading(
 				22000, DistanceUnitCode.UnitA, Marzo10, ReadingSourceCode.Telemetry);
 
-			string conTelemetria = schedule.DescribeRateOfUse(ElAno, FinDelAno);
+			string conTelemetria = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, ElAno, FinDelAno, TheLanguage.OfTheRecord);
 
 			MaintenanceSchedule declaradas =
 				new MaintenanceSchedule(TheVin, UsageProfileCode.Standard);
@@ -133,7 +136,8 @@ namespace Concesionario.Dominio.Pruebas
 				22000, DistanceUnitCode.UnitA, Marzo10, ReadingSourceCode.HumanEntry);
 
 			Assert.That(
-				declaradas.DescribeRateOfUse(ElAno, FinDelAno), Is.EqualTo(conTelemetria),
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				declaradas, ElAno, FinDelAno, TheLanguage.OfTheRecord), Is.EqualTo(conTelemetria),
 				"Mismas lecturas, otras fuentes, mismo ritmo. Pesar una fuente seria el dominio "
 				+ "juzgando el registro de la persona, y §6 lo prohibe por nombre.");
 		}
@@ -149,9 +153,10 @@ namespace Concesionario.Dominio.Pruebas
 			schedule.RecordReading(
 				22000, DistanceUnitCode.UnitA, Marzo10, ReadingSourceCode.Telemetry);
 
-			string antes = schedule.DescribeRateOfUse(Enero10, Marzo10);
+			string antes = TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, Enero10, Marzo10, TheLanguage.OfTheRecord);
 
-			Assert.That(antes, Does.Contain("2000 km en 59 días"));
+			Assert.That(antes, Does.Contain("2.000 km en 59 días"));
 
 			// La enmienda entra como un hecho MAS, en el mismo segundo que la de marzo pero
 			// despues: no borra la que estaba.
@@ -162,11 +167,13 @@ namespace Concesionario.Dominio.Pruebas
 				schedule.ReadingCountBetween(Enero10, Marzo10), Is.EqualTo(3),
 				"No borro la que estaba: entra como un hecho mas.");
 			Assert.That(
-				schedule.DescribeRateOfUse(Enero10, Marzo10),
-				Does.Contain("3000 km en 59 días"),
+				TheSentenceTheDoorWouldCompose.TheRateOfUse(
+				schedule, Enero10, Marzo10, TheLanguage.OfTheRecord),
+				Does.Contain("3.000 km en 59 días"),
 				"Y el ritmo del periodo que la cubre cambio.");
 
-			string[] filas = schedule.DescribeEachReadingBetween(Enero10, Marzo10);
+			string[] filas = TheSentenceTheDoorWouldCompose.EachReadingOnTheRecord(
+				schedule, Enero10, Marzo10, TheLanguage.OfTheRecord);
 
 			Assert.That(
 				filas[2], Does.Contain("corrección de una lectura anterior"),

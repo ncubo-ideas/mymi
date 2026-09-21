@@ -1,0 +1,74 @@
+/* LO POCO QUE LA CARA AGREGA A LA PILA DE LA INSTITUCION.
+ *
+ * `bootstrap.min.css` y `app.css` VIAJAN TAL CUAL y en ese orden, que es como los sirve la app
+ * suelta. Antes esta hoja tenia entresacados a mano los bloques de `app.css` que me parecia que
+ * hacian falta, y elegir cuales era decidir como se ve La Guaria.
+ *
+ * Y NO CUESTA LO QUE PARECE: el css es texto y se comprime tres veces; los dll del dominio no.
+ *
+ * Lo unico que va aca es lo que la app suelta no necesita porque lo resuelve de otro modo: el
+ * ancho de la columna -- alla lo pone el layout de Blazor -- y el estado del cartero, que alla no
+ * existe porque la app sabe sola si pudo o no. */
+
+/* La columna de lectura. En la app suelta la da MainLayout; aca no hay layout. */
+.lg { max-width: 34rem; margin: 0 auto; padding: 14px 14px 20px; }
+.lg .card { margin-bottom: 14px; }
+
+/* EL PIE CON LO QUE HIZO EL CARTERO. Sin decir como le fue, «no hay compras» y «el cartero no
+   pudo» se ven exactamente igual, y son cosas muy distintas para quien mira. */
+footer {
+    max-width: 34rem; margin: 0 auto; padding: 4px 14px 36px;
+    color: var(--tenue-2); font-size: .78rem;
+}
+footer p { margin: 0 0 6px; }
+footer .malo { color: #b3261e; }
+
+/* Una fila de dato, para lo que la portada muestra como lista y no como mosaico. Toma los tokens
+   de la institucion, no valores propios. */
+.dato {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 14px; padding: 10px 0;
+    border-top: 1px solid var(--linea);
+}
+.dato:first-of-type { border-top: 0; }
+.dato span { color: var(--tenue); font-size: .88rem; }
+.dato b { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* QUE `hidden` GANE, y esto es el arreglo de un defecto real, no una precaucion.
+ *
+ * `[hidden] { display: none }` vive en la hoja del navegador, que es la de MENOR precedencia.
+ * Cualquier regla de la institucion que fije `display` en esa misma clase le gana, y el nodo
+ * se sigue viendo con el atributo puesto. Medido en el telefono el 2026-09-14: `.placa` es
+ * `inline-flex` en cargas, asi que la placa salia DOS VECES -- la fija y el selector, los dos
+ * marcados como escondidos, los dos visibles.
+ *
+ * La app suelta no tiene este problema porque Blazor no esconde: con un `@if` el nodo que no
+ * toca NO SE DIBUJA. Una cara hibrida es HTML estatico, los dos nodos existen siempre, y
+ * esconder es la unica herramienta. Entonces la herramienta tiene que funcionar.
+ *
+ * Va en `cara.css` -- que carga despues de la hoja de la institucion -- y no en la de ella:
+ * esto es una consecuencia de COMO pinta esta cara, no una opinion sobre su diseno.
+ *
+ * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
+ * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
+[hidden] { display: none !important; }
+
+/* EL APUNTE DEL PUENTE. Lo escribe `puente.js`, que pone el Host y es el mismo en los cinco
+   modulos: cada vez que la cara pide algo, `P.apunte(caja, texto, malo)` deja un
+   <p class="apunte"> -- o "apunte malo" si fallo. Faro y Delfos lo pintaban porque SUS apps
+   sueltas ya traian esa clase de antes; La Guaria no, asi que el aviso salia como parrafo pelado
+   con el cuerpo de la pagina, y un fallo se veia igual que una nota.
+
+   Va aca y no en app.css a proposito: app.css es la hoja de la institucion y viaja tal cual. */
+.apunte { color: var(--tenue); font-size: .85rem; margin: 0; }
+.apunte.malo { color: #b3261e; }
+
+/* Cifras alineadas para la lista de recibos, que las pone en columna. */
+.mono { font-variant-numeric: tabular-nums; }
+
+/* EL CAMBIO DEL MES, en la linea compacta. La app suelta lo pone en una tarjeta con sus propias
+   clases (`mes-resumen-*`); esta cara lo dice en un renglon, asi que el color es lo unico que
+   distingue subir de bajar. Subir es rojo aunque el numero crezca: es plata que sale. */
+.delta--sube  { color: #b3261e; font-weight: 600; }
+.delta--baja  { color: var(--tenue); font-weight: 600; }
+.delta--igual { color: var(--tenue-2); }

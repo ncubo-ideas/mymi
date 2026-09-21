@@ -1,0 +1,89 @@
+<!-- CAP 1 · FUNDAMENTOS -->
+  <section class="anchor" id="cap1">
+    <h2>1 · Fundamentos: el modelo mental en 30 minutos</h2>
+    <p class="chapter-meta">Cuatro ideas que explican todo lo demás — recorridas con una app de bingo real como guía.</p>
+
+    <p>Antes de escribir una sola línea, dediquemos media hora a fijar el <strong>modelo mental completo</strong>. Cabe en cuatro ideas: <strong>comando vs. query</strong>, <strong>persistencia automática</strong>, <strong>replay = redeploy</strong> y <strong>determinismo</strong>. Para que cada una aterrice en algo concreto, las recorremos con <em>Velada</em>, una aplicación de <strong>bingo comunitario</strong> en uso real, construida sobre Puppeteer.</p>
+
+    <p>En <em>Velada</em>, un organizador abre la velada, unas colaboradoras venden cartones en la puerta y los jugadores siguen el juego desde su teléfono mientras se cantan las bolitas. Es justo la clase de sistema para el que Puppeteer fue diseñado: <strong>varios participantes, varios dispositivos, todo a la vez</strong>. Cada velada es su propio actor —su propio diario— y los papeles se reparten así:</p>
+    <table>
+      <thead><tr><th>Actor</th><th>Papel</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Organizador</strong></td><td>Director</td><td>Dueño del diario de la velada: abre el bingo, pone cartones en venta, anuncia rondas, canta bolitas.</td></tr>
+        <tr><td><strong>Colaborador</strong></td><td>Réplica (Cast)</td><td>Vende y entrega cartones; mantiene una copia local para trabajar aunque se caiga la red.</td></tr>
+        <tr><td><strong>Jugador</strong></td><td>Suscriptor</td><td>Sigue el juego: recibe cada bolita y marca su cartón en su propio teléfono.</td></tr>
+      </tbody>
+      <caption>Tabla 4. Los tres actores de <em>Velada</em>. Un mismo dominio, en tres papeles — <em>«un dominio presentado en distintas topologías sin convertirse en otro sistema»</em>.</caption>
+    </table>
+    <p>No necesitas retener esta app: úsala como escenario mientras recorremos las cuatro ideas. Fíjate en las <em>formas</em>, no en los detalles.</p>
+
+    <h3>1.1 · Comando vs. query</h3>
+    <p>Toda interacción con un actor es una de dos cosas. Un <strong>comando</strong> cambia el estado y queda anotado; una <strong>query</strong> solo lee y no deja rastro. En <em>Velada</em>, poner cartones a la venta o cantar una bolita son <em>comandos</em>…</p>
+    <pre><span class="tag real">DSL · real</span><code>elder.PutUpForSale(festival, @cartones);   <span class="c">// comando: cambia el estado</span>
+mesa.RegisterDraw(@numero, @ronda);        <span class="c">// comando: registra la bolita</span></code></pre>
+    <p>…mientras que preguntar cuántas bolitas van, o pedir el “pulso” de la mesa para repintar la pantalla, son <em>queries</em>:</p>
+    <pre><span class="tag real">DSL · real</span><code>print mesa.DrawnCount <span class="s">'draws'</span>;   <span class="c">// query: solo lee</span>
+print mesa.Pulse <span class="s">'pulse'</span>;        <span class="c">// query barata que resume todo lo pintable</span></code></pre>
+    <p>El <code>Pulse</code> es un buen ejemplo del oficio: una sola consulta barata que resume todo lo que puede haber cambiado en pantalla, para no tener que traerse las bolitas una por una entre canto y canto.</p>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Ten clara, en cada interacción, si es comando o query. Un comando expresa un <strong>hecho</strong> que ocurrió y merece quedar en el diario; una query es una <strong>pregunta</strong> que no cambia nada. Mezclarlas —una “consulta” que de paso modifica— es la fuente de sorpresas más común.</p>
+    </div>
+
+    <h3>1.2 · Persistencia automática: no existe “guardar”</h3>
+    <p>Aquí está la primera sorpresa agradable. <strong>Nunca llamas a un <code>save</code>.</strong> Cuando un comando cambia el estado, el framework anota ese hecho en el diario por ti. Lo único que decides es <em>dónde</em> vive el diario, con <code>ConfigureStorage</code>: en memoria, en el sistema de archivos o en una base de datos.</p>
+    <pre><span class="tag real">C# · real</span><code>_stage.ConfigureStorage(kind, <span class="s">"path="</span> + _dir);   <span class="c">// aqui: sistema de archivos, un diario por bingo</span></code></pre>
+    <p>Por eso, en <em>Velada</em>, todo lo que debe sobrevivir a un reinicio —el precio de la noche, los cartones vendidos— entra al diario simplemente <strong>siendo el efecto de un comando</strong>. Nada que “sobreviva” puede quedarse solo en RAM; y no hay que hacer nada especial para que sobreviva, más que ejecutarlo como comando.</p>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Lo que el diario guarda es el <strong>texto del comando</strong>, no el efecto que produjo. “Vendé estos cartones” se anota como esa instrucción, no como el nuevo saldo resultante. Esa decisión —guardar la causa, no la consecuencia— es la que habilita las dos ideas que siguen.</p>
+    </aside>
+
+    <h3>1.3 · Replay = redeploy</h3>
+    <p>Si el diario guarda las causas en orden, entonces el estado actual del actor <strong>no es más que el resultado de reproducir el diario de principio a fin</strong> (vuelve a la Figura 1). Esto tiene una consecuencia liberadora: reiniciar el proceso, mover el actor a otra máquina o volver a desplegar el sistema es, simplemente, <strong>reproducir el diario otra vez</strong>. Desplegar <em>es</em> reproducir.</p>
+    <p>En <em>Velada</em> se ve con el bloque <code>upgrade</code>, que corre <strong>una sola vez por actor</strong> y sirve, con el mismo código, tanto para <em>nacer</em> como para <em>rehidratar</em>:</p>
+    <pre><span class="tag real">DSL · real</span><code>upgrade('festival') {
+    elder    = Elder('Bartolo');
+    dia      = CalendarDay(2026, 9, 17);
+    festival = elder.CreateFestival('MiBingo', dia, hoy);
+    mesa     = BingoGame();
+}</code></pre>
+    <p>La primera vez, el <code>upgrade</code> crea la velada. Cuando el teléfono se reinicia y el actor vuelve a la vida, ese mismo <code>upgrade</code> ya está en el diario: al reproducirlo, la velada <strong>renace idéntica a como estaba</strong>, leída de su propio diario. Las variables de nivel superior (<code>elder</code>, <code>festival</code>, <code>mesa</code>) son el <strong>estado raíz</strong> del actor: objetos de dominio ricos que todos los comandos siguientes reutilizan.</p>
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>Deja de pensar en “migraciones de datos” y “estados corruptos tras un despliegue”. Si el diario es la verdad y el estado se reconstruye reproduciéndolo, un despliegue nuevo arranca reproduciendo lo mismo. La pregunta deja de ser “¿cómo migro el estado?” y pasa a ser “¿mi diario reproduce igual?”.</p>
+    </div>
+
+    <h3>1.4 · Determinismo: por qué el replay funciona</h3>
+    <p>Reproducir el diario significa <strong>volver a ejecutar el texto de cada comando</strong>. Para que el resultado sea siempre el mismo, esos comandos deben ser <strong>deterministas</strong>: la misma entrada tiene que producir el mismo efecto, hoy y dentro de un año. De ahí sale la única regla que hay que interiorizar: <strong>no metas azar ni “ahoras” del reloj dentro de un comando</strong>.</p>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No leas <code>DateTime.Now</code> (ni un aleatorio) dentro de un script. Al reproducir el diario mañana, ese “ahora” sería otro y el estado reconstruido no coincidiría. La hora se inyecta desde afuera y se guarda en el diario, de modo que el replay use exactamente la misma.</p>
+    </div>
+    <p>El mismo principio explica un detalle que verás en las reacciones del bingo: el <code>once</code>. No te detengas en la mecánica de la reacción de abajo —<code>Cue</code>, <code>Seek</code>, <code>OnMatch</code>…, que se explica completa en el Cap. 9—; <strong>fíjate solo en la línea resaltada</strong>. Cuando el organizador canta, una reacción emite un aviso (<em>tell</em>) a los jugadores; el <code>once</code> le da a ese aviso una identidad estable para que reproducir el diario no lo genere dos veces ni descarte uno legítimo:</p>
+    <pre><span class="tag real">C# · real</span><code>live.Journal.Reactions.DefineReaction(<span class="s">"Cantar"</span>)
+    .Cue().DirectorOnly().WithSharedHydration()
+    .Seek(<span class="s">"Bolita"</span>).OnMatch(<span class="s">"[_:BingoGame].RegisterDraw($numero, $ronda)"</span>)
+    .Causation.Continue(
+        <span class="s">"tell Bolita with @numero, @ronda to &lt;rol-jugador&gt; "</span> +
+        <span style="background:rgba(210,154,92,.28);border-radius:3px;padding:1px 3px"><span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span></span>);</code></pre>
+    <p>De todo ese bloque, lo único que ejemplifica el determinismo es ese <code>once</code>: fija la identidad del aviso a partir de <strong>sus propios datos</strong> (la ronda y el número), no del reloj ni del azar. Por eso, al reproducir el diario, el “7 de la ronda 2” es siempre el mismo aviso — ni se duplica ni se pierde.</p>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Puppeteer te da la hora determinista servida: dentro de un script usas <code>@Now</code>, que el framework fija una sola vez al ejecutar el comando y guarda en el diario. En vivo es el reloj real; en el replay es el que quedó anotado. Así, <code>@Now</code> vale lo mismo en la ejecución original y en cada reproducción — el determinismo sin que tengas que pensarlo.</p>
+    </aside>
+
+    <h3>El modelo mental, ya completo</h3>
+    <p>Esas cuatro ideas son todo el andamiaje. Nota cómo cada una habilita a la siguiente:</p>
+    <table>
+      <thead><tr><th>Idea</th><th>En una frase</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Comando vs. query</strong></td><td>Un hecho que se anota, o una pregunta que no cambia nada.</td></tr>
+        <tr><td><strong>Persistencia automática</strong></td><td>No hay “guardar”: el hecho del comando entra solo al diario.</td></tr>
+        <tr><td><strong>Replay = redeploy</strong></td><td>El estado es el diario reproducido; desplegar es reproducir.</td></tr>
+        <tr><td><strong>Determinismo</strong></td><td>Comandos repetibles: por eso el replay da siempre lo mismo.</td></tr>
+      </tbody>
+      <caption>Tabla 5. Los cuatro fundamentos, y cómo cada uno habilita al siguiente.</caption>
+    </table>
+    <p>El <code>tell</code> que asomó arriba —un actor que le avisa a otro sin conocerlo— es la puerta a los sistemas de varios actores, y la abriremos en la Parte II. Pero primero, manos a la obra: en el próximo capítulo escribes —y corres— tu primer actor.</p>
+  </section>

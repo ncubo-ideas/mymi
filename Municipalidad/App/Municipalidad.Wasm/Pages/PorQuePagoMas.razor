@@ -1,8 +1,9 @@
 @page "/por-que-pago-mas"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 @using System.Linq
 
-<PageTitle>Cambios en mis cobros · Mi cuenta municipal</PageTitle>
+<PageTitle>Cambios en mis cobros · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -29,11 +30,8 @@ else
         }
         else
         {
-            <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="Todavía no hay ninguna variación que ver.">
-                <p>
-                    Una variación necesita dos comprobantes del mismo rubro. Aparecen solas conforme tus
-                    pagos vayan llegando a esta app.
-                </p>
+            <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="@textos["porQuePagoMas.sinVariacion.titulo"]">
+                <p>@textos["porQuePagoMas.sinVariacion.cuerpo"]</p>
             </Aviso>
         }
 
@@ -51,24 +49,24 @@ else
                                 <span class="rubro-cambio__cabeza">
                                     <span class="rubro-cambio__nombre"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
                                     <span class="sello sello--@(rubro.EsSalto ? "salto" : "quieto")">
-                                        @NombreLegible.DeLaExplicacionDeVariacion(rubro.Explicacion)
+                                        @textos.ComoSeDice(rubro.Explicacion)
                                     </span>
                                 </span>
                                 <span class="rubro-cambio__montos">
-                                    @Colones.Formatear(rubro.Antes) &rarr; @Colones.Formatear(rubro.Ahora)
+                                    @Colones.Formatear(textos, rubro.Antes) &rarr; @Colones.Formatear(textos, rubro.Ahora)
                                 </span>
                                 @if (rubro.EsSalto)
                                 {
                                     <span class="rubro-cambio__cambio">
                                         <span class="rubro-cambio__flecha rubro-cambio__flecha--atencion">@Flecha(rubro.Proporcion)</span>
-                                        <span class="rubro-cambio__porcentaje rubro-cambio__porcentaje--atencion">@Formato.Porcentaje(Math.Abs(rubro.Proporcion))</span>
+                                        <span class="rubro-cambio__porcentaje rubro-cambio__porcentaje--atencion">@textos.Porcentaje(Math.Abs(rubro.Proporcion))</span>
                                         <span class="rubro-cambio__nota" style="margin:0">por período</span>
                                     </span>
                                 }
                                 else
                                 {
                                     <span class="rubro-cambio__cambio-leve">
-                                        @Signo(rubro.Proporcion)@Formato.Porcentaje(Math.Abs(rubro.Proporcion)) por período
+                                        @Signo(rubro.Proporcion)@textos.Porcentaje(Math.Abs(rubro.Proporcion)) por período
                                     </span>
                                 }
                                 <span class="rubro-cambio__periodo">@NombreLegible.Periodo(rubro.Desde) &rarr; @NombreLegible.Periodo(rubro.Hasta)</span>
@@ -122,7 +120,7 @@ else
         @if (fincas.HayAlguna)
         {
             <section class="bloque" id="el-valor-de-mi-finca">
-                <h2>El valor de tu finca</h2>
+                <h2>@textos["porQuePagoMas.finca.titulo"]</h2>
                 <p class="explicacion-menor">Este dato puede influir en algunos cobros municipales.</p>
 
                 <details class="disclosure-secundaria">
@@ -132,26 +130,17 @@ else
                         <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                     </summary>
                     <div class="disclosure-secundaria__contenido">
-                        <p class="item__frase">
-                            Tres de los cinco rubros se cobran sobre el valor de tu finca. El
-                            <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el
-                            valor con que te cobra, y es el que se usa arriba para explicar un salto.
-                            <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
-                            movimientos.
-                        </p>
+                        <p class="item__frase">@((MarkupString)textos["porQuePagoMas.finca.nota"])</p>
 
                         @foreach (var finca in fincas.Fincas)
                         {
                             <p class="item__meta" style="display:block;margin-top:.625rem">
                                 <LlaveDelRubro Rubro="@finca.Numero" /> —
-                                <strong>@(finca.TieneAvaluo ? Colones.Formatear(finca.Avaluo) : "sin avalúo publicado")</strong>
+                                <strong>@(finca.TieneAvaluo ? textos.Con("porQuePagoMas.finca.avaluo", ("monto", textos.Monto(finca.Avaluo))) : textos["porQuePagoMas.finca.sinAvaluo"])</strong>
                             </p>
                             @if (!finca.TieneAvaluo)
                             {
-                                <p class="item__frase">
-                                    Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega
-                                    solo, con el resto de tus movimientos, cuando ella lo publique.
-                                </p>
+                                <p class="item__frase">@textos["porQuePagoMas.finca.sinAvaluoNota"]</p>
                             }
                         }
                     </div>
@@ -160,13 +149,15 @@ else
         }
 
         <p class="nota">
-            Un aumento nunca apura: ya pasó. Lo que apura es lo que vence, y eso está en
+            @textos["porQuePagoMas.pie"]
             <a href="que-se-me-vence">pagos y vencimientos</a>.
         </p>
 
         <details class="plomeria">
             <summary>¿Cómo detectamos estos cambios?</summary>
-            <NumeroSinFirmar Dicho="@($"Un cambio se llama salto cuando pasa el {Formato.Porcentaje(variacion.UmbralDeSalto)}, y por debajo del {Formato.Porcentaje(variacion.Ruido)} se considera ruido.")" />
+            <NumeroSinFirmar Dicho="@textos.Con("porQuePagoMas.umbrales",
+                ("salto", textos.Porcentaje(variacion.UmbralDeSalto)),
+                ("ruido", textos.Porcentaje(variacion.Ruido)))" />
         </details>
     </div>
 }

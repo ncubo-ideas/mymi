@@ -72,5 +72,7 @@ namespace Examenes.Dominio
 		internal decimal ValorFinal => Ultimo == null ? 0m : Ultimo.Valor;
 		internal string Unidad => Ultimo == null ? "" : Ultimo.Unidad.Simbolo;
 		internal override bool SugiereRepetirElExamen => Tendencia.SugiereRepetirElExamen;
+
+		internal override void PonerSusValoresEn(Interpretacion lectura) => lectura.ConTramo(this);
 	}
 }

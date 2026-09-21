@@ -50,18 +50,25 @@ namespace Puppets.Portador
 	{
 		string Nombre { get; }
 
-		Task<IReadOnlyList<SenalDeEvento>> LeerDesde(long despuesDe, string token, CancellationToken ct);
+		// SIN TOKEN, a proposito. Quien lee necesita una credencial o no segun POR DONDE
+		// lee, y eso es del transporte: la fuente HTTP se consigue la suya, y la fuente que
+		// pasa por Gnothi no tiene ninguna -la credencial la sostiene Gnothi, del otro lado
+		// del puente-. El bucle no tiene por que saber cual es el caso.
+		Task<SobreLeido> LeerDesde(long despuesDe, CancellationToken ct);
 	}
 
 	// Lo que el bucle necesita del journal de la app. La implementa la app, que es
 	// la que sabe hacer los performs.
+	//
+	// LO QUE NO ESTA ACA, a proposito: la credencial. Hasta el 2026-09-03 el diario
+	// exponia TokenGuardado() y el bucle le pedia el token AL JOURNAL. Un token no es
+	// historia de la persona sino contexto de sesion del host, asi que ahora el bucle
+	// lo recibe por un delegado del host (ver BucleDeRefresh) y el journal no lo conoce.
 	public interface IDiarioDeLaApp
 	{
 		// Del JOURNAL, no de una variable en memoria: es lo que hace exacto el
 		// resume tras una caida.
 		long UltimoEventoProcesado();
-
-		string TokenGuardado();
 
 		// Aplica el mensaje como UN comando. Devuelve "" si se aplico, o el mensaje
 		// del Check si se rechazo (contrato de PerformCheckThenCommand).
@@ -76,7 +83,12 @@ namespace Puppets.Portador
 		public int Rechazados { get; internal set; }
 		public long UltimoEvento { get; internal set; }
 
+		// El estado de la cuenta que vino en el sobre, si el proveedor lo manda. Null cuando
+		// no: es un campo aditivo y un proveedor viejo simplemente no lo trae.
+		public EstadoDeCuenta Cuenta { get; internal set; }
+
 		public override string ToString() =>
-			$"leidos={Leidos} aplicados={Aplicados} descartados={Descartados} rechazados={Rechazados} ultimoEvento={UltimoEvento}";
+			$"leidos={Leidos} aplicados={Aplicados} descartados={Descartados} rechazados={Rechazados} ultimoEvento={UltimoEvento}"
+			+ (Cuenta is null ? "" : $" cuenta={Cuenta.Estado}");
 	}
 }

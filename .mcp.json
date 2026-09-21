@@ -8,18 +8,11 @@
   "//O-NO-PONERLO": "Los cinco servidores tratan ese argumento como OPCIONAL: si falta, arman la carpeta con SpecialFolder.UserProfile mas el nombre del negocio, asi que la linea vale igual en cualquier maquina. concesionario y municipalidad no lo traen, porque su default es exactamente la carpeta que les toca. Los otros tres lo conservan: su carpeta no coincide con el default y quitarselo los mandaria a leer otra. Lo decide quien mantiene cada uno.",
 
   "mcpServers": {
-    "facturas": {
+    "gnothi": {
       "command": "dotnet",
       "args": [
-        "HolaMundo/Facturas/App/Facturas.Mcp/bin/Debug/net9.0/Facturas.Mcp.dll",
-        "C:\\Users\\jon32\\Documents\\FacturasMCP"
-      ]
-    },
-    "examenes": {
-      "command": "dotnet",
-      "args": [
-        "Examenes/App/Examenes.Mcp/bin/Debug/net9.0/Examenes.Mcp.dll",
-        "/Users/renandiazreyes/Documents/ExamenesMCP"
+        "Gnothi.Host/bin/Debug/net9.0/Gnothi.Host.dll",
+        "Modulos"
       ]
     },
     "compras": {

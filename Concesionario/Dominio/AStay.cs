@@ -74,10 +74,16 @@ namespace Concesionario.Dominio
 		internal abstract bool IsInsideAt(DateTime asOf);
 
 		/// <summary>
-		/// La estadia en una frase. TOTAL: la que sigue abierta tambien se dice con palabras, y
-		/// diciendo que sigue abierta.
+		/// En cual de las situaciones esta, por su codigo. TOTAL, y es lo que deja que quien redacta
+		/// elija el marco sin preguntar por el tipo.
 		/// </summary>
-		internal abstract string Describe();
+		internal abstract string TheShapeItHas();
+
+		/// <summary>
+		/// La estadia como forma y valores. TOTAL: la que sigue abierta tambien contesta, con su
+		/// propio codigo y sin inventarse una salida ni ningun dia.
+		/// </summary>
+		internal abstract AStayClause TheClause();
 
 		/// <summary>
 		/// Cuando salio. Accesor GUARDADO: una estadia abierta no tiene salida, y una fecha
@@ -103,18 +109,6 @@ namespace Concesionario.Dominio
 			throw new DomainException(
 				"Esta estadia sigue abierta y los dias llegan con la salida, asi que todavia no hay "
 				+ "dias que decir: hay que preguntar primero si sigue abierta.");
-		}
-
-		/// <summary>La clausula que las dos variantes comparten: donde estuvo y desde cuando.</summary>
-		protected string TheEntryClause()
-		{
-			return "en " + _branch + " desde el " + TheInstant(_enteredAt);
-		}
-
-		/// <summary>Por que entro, dicho al final de la frase con las palabras de la sucursal.</summary>
-		protected string TheSubjectClause()
-		{
-			return "Entró por " + _subject.Value + ".";
 		}
 
 		/// <summary>

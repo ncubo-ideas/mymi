@@ -1,0 +1,526 @@
+{
+  "//": "LO QUE EL HOST LE DICE A LA PERSONA, EN SUS DOS IDIOMAS. Lo lee Textos.cs y lo levantan las tres caras: el escritorio por referencia de proyecto, los dos telefonos porque compilan Gnothi.Host/*.cs por glob y declaran este archivo como EmbeddedResource con el mismo LogicalName. Las reglas de que entra y que no estan en Metodologia/Guias/reglas-de-localizacion.md.",
+
+  "//que-no-va-aca": "Nada que haya escrito la institucion -su nombre, su slogan, el titulo y la descripcion de sus tools-, nada que salga del journal de la persona, y nada escrito para el modelo en vez de para el ojo. Tampoco los warnings del catalogo: esos hablan de 'brand.shortName' y son diagnostico para quien empaqueta un modulo, no copy.",
+
+  "//la-forma": "Una clave por FRASE ENTERA, nunca por palabra suelta: el espanol concuerda en genero y armar frases pegando fragmentos produce concordancias rotas que ninguna prueba ve. Los valores van con NOMBRE -{titulo}, {host}- y nunca por posicion, porque el orden de las palabras cambia entre los dos idiomas y un {0} que se mueve compila, corre y miente. El plural son DOS claves, no un sufijo.",
+
+  "//el-trato": "En espanol el Host trata a la persona de TU NEUTRO -«Escribe tu pregunta»-, no de vos ni de usted. Decidido el 2026-09-14. Lo que quedaba escrito en voseo se paso en esta misma pasada.",
+
+  "//el-vocabulario": "En la cara se dice INSTITUCIONES, no modulos: es lo que la persona reconoce -su laboratorio, su super-. «Modulo» es vocabulario nuestro y se queda en el protocolo: el manifiesto, gnothi_installed_modules y el campo 'module' del json siguen diciendo modulo.",
+
+  "//la-hoja": "LA HOJA DEL ALTA: lo que Mymi le muestra a la persona sobre un paquete antes de instalarlo. Es la region mas intrincada de ui.html porque las frases se armaban de pedazos opcionales concatenados. Aca los casos estan ENUMERADOS -una clave por frase entera- en vez de pegados: es la regla 7, y es lo que hace que el ingles pueda ordenar las palabras distinto.",
+
+  "//enfasis": "ALGUNAS FRASES LLEVAN <b> ADENTRO. Es enfasis que la frase necesita -«la llave CAMBIO»- y por eso viaja con ella y no alrededor: partirla para sacar el <b> seria volver a los fragmentos. Quien traduzca tiene que conservar las etiquetas; el valor interpolado va aparte y ya viene escapado.",
+
+  "quitar.de":                      { "es": "Quitar {quien}", "en": "Remove {quien}" },
+  "quitar.cuerpo":                  { "es": "La app de {quien} sale de este teléfono. Tu bitácora se queda: si vuelves a agregar el módulo, la encuentra.", "en": "{quien}'s app leaves this phone. Your record stays: if you add the module again, it finds it." },
+  "quitar.irrecuperable":           { "es": "Tu bitácora lleva cosas que pusiste tú. Si la borras, no hay de dónde recuperarlas.", "en": "Your record carries things you put there yourself. If you delete it, there is nowhere to get them back from." },
+
+  "hoja.cabecera.actualizar":       { "es": "Actualizar {titulo}", "en": "Update {titulo}" },
+  "hoja.cabecera.anterior":         { "es": "Volver a una versión anterior de {titulo}", "en": "Go back to an earlier version of {titulo}" },
+  "hoja.cabecera.reinstalar":       { "es": "Reinstalar {titulo}", "en": "Reinstall {titulo}" },
+  "hoja.cabecera.agregar":          { "es": "Agregar {titulo}", "en": "Add {titulo}" },
+
+  "detalle.llave-retirada":         { "es": "<b>Tu institución retiró la llave</b> con la que firmó este módulo (Mymi lo supo el {dia}). Lo que ya tienes sigue siendo tuyo. Pídele un paquete nuevo y vuelve a agregarlo: Mymi va a recordar la llave nueva.", "en": "<b>Your institution retired the key</b> it signed this module with (Mymi learned it on {dia}). What you already have is still yours. Ask them for a new package and add it again: Mymi will remember the new key." },
+  "detalle.hay-version":            { "es": "<b>Hay una versión nueva.</b> {quien} publicó {que}{tienes}. Nada se instala solo: primero vas a ver qué cambia.", "en": "<b>There is a new version.</b> {quien} published {que}{tienes}. Nothing installs on its own: you will see what changes first." },
+  "detalle.version.numero":         { "es": "la {version}", "en": "version {version}" },
+  "detalle.version.otro-paquete":   { "es": "otro paquete", "en": "another package" },
+  "detalle.version.tienes":         { "es": "; tienes la {version}", "en": "; you have {version}" },
+  "detalle.ver-que-cambia":         { "es": "Ver qué cambia", "en": "See what changes" },
+
+  "detalle.proc.mismo-dominio":     { "es": "lo bajaste de {servido}, el dominio que declara", "en": "you downloaded it from {servido}, the domain it declares" },
+  "detalle.proc.distinto":          { "es": "declara <b>{dominio}</b> y lo bajaste de <b>{servido}</b>", "en": "it declares <b>{dominio}</b> and you downloaded it from <b>{servido}</b>" },
+  "detalle.proc.archivo":           { "es": "declara {dominio} · lo importaste de un archivo", "en": "it declares {dominio} · you imported it from a file" },
+
+  "detalle.journal.guarda":         { "es": "Lo guarda {retencion}.", "en": "They keep it {retencion}." },
+  "detalle.journal.actualiza":      { "es": "Se actualiza {refresco}.", "en": "It updates {refresco}." },
+  "detalle.journal.irrecuperable":  { "es": "Lleva cosas que pusiste tú: si se borra, se pierden.", "en": "It carries things you put there yourself: if it is deleted, they are lost." },
+
+  "//los-proveedores": "LA LINEA DE CADA PROVEEDOR DE MODELO. El NOMBRE no entra al catalogo -Groq, Claude (Anthropic), Gemini (Google) son nombres propios- pero la nota si: es texto nuestro describiendole a la persona que le va a costar cada uno.",
+
+  "prov.nota.groq":                 { "es": "gratis · sin tarjeta · rápido", "en": "free · no card · fast" },
+  "prov.nota.openai":               { "es": "la llave de tu cuenta de OpenAI", "en": "the key from your OpenAI account" },
+  "prov.nota.claude":               { "es": "la llave de tu Console", "en": "the key from your Console" },
+  "prov.nota.cerebras":             { "es": "gratis · 1M tokens por día", "en": "free · 1M tokens a day" },
+  "prov.nota.gemini":               { "es": "gratis · sin tarjeta", "en": "free · no card" },
+  "prov.nota.openrouter":           { "es": "muchos modelos gratis con una llave", "en": "many free models with one key" },
+
+  "alta.progreso":                  { "es": "{hechos} de {total} · {pct} %", "en": "{hechos} of {total} · {pct}%" },
+  "alta.pega-primero":              { "es": "Pega el enlace primero.", "en": "Paste the link first." },
+  "alta.sin-selector":              { "es": "En este teléfono todavía no se puede elegir un archivo: pega el enlace.", "en": "On this phone you cannot pick a file yet: paste the link." },
+  "alta.nada-encontrado":           { "es": "No encontré ningún módulo en lo que elegiste.", "en": "I found no module in what you picked." },
+  "alta.tag.instalado":             { "es": "instalado", "en": "installed" },
+  "alta.tag.no-entra":              { "es": "no entra", "en": "refused" },
+  "alta.tag.ya-lo-tienes":          { "es": "ya lo tienes", "en": "you have it" },
+  "alta.firmado":                   { "es": "firmado", "en": "signed" },
+
+  "scan.sin-lector":                { "es": "Este teléfono no puede leer códigos desde Mymi.", "en": "This phone cannot read codes from inside Mymi." },
+  "scan.sin-permiso":               { "es": "Mymi no tiene permiso para usar la cámara.", "en": "Mymi does not have permission to use the camera." },
+  "scan.no-abre":                   { "es": "No se pudo abrir la cámara: {detalle}", "en": "Could not open the camera: {detalle}" },
+  "scan.no-se-pudo-leer":           { "es": "No se pudo leer: {detalle}", "en": "Could not read it: {detalle}" },
+
+  "chat.no-pude":                   { "es": "No pude contestar: {detalle}", "en": "I could not answer: {detalle}" },
+  "general.copiado":                { "es": "Copiado", "en": "Copied" },
+
+  "//los-plurales": "CADA PLURAL SON DOS CLAVES, no un sufijo pegado al numero. El patron que habia -«ms.length + (ms.length === 1 ? ' conectada' : ' conectadas')»- funciona mientras el prefijo se comparta, y en ingles «1 institution» / «2 institutions» tambien; pero la frase entera es lo unico que sobrevive a un idioma donde el numero no va delante. Regla 7.",
+
+  "detalle.permiso.uno":            { "es": "1 permiso activo", "en": "1 permission on" },
+  "detalle.permiso.varios":         { "es": "{n} permisos activos", "en": "{n} permissions on" },
+  "journal.archivo.uno":            { "es": "1 archivo", "en": "1 file" },
+  "journal.archivo.varios":         { "es": "{n} archivos", "en": "{n} files" },
+  "journal.modulo.uno":             { "es": "1 módulo", "en": "1 module" },
+  "journal.modulo.varios":          { "es": "{n} módulos", "en": "{n} modules" },
+
+  "general.nada":                   { "es": "(nada)", "en": "(none)" },
+  "general.ninguno":                { "es": "(ninguno)", "en": "(none)" },
+
+  "hoja.cambio.misma":              { "es": "Ya tienes <b>exactamente este paquete</b>. Reinstalarlo solo repara la app; tu registro y tus interruptores quedan como están.", "en": "You already have <b>exactly this package</b>. Reinstalling only repairs the app; your record and your switches stay as they are." },
+  "hoja.cambio.anterior":           { "es": "<b>Es más viejo que el que tienes</b>. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».", "en": "<b>It is older than the one you have</b>. Going back can help if the new version fails; if you were not expecting it, «Not now»." },
+  "hoja.cambio.anterior.versionada": { "es": "<b>Es más viejo que el que tienes</b>: es la {nueva} y tienes la {instalada}. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».", "en": "<b>It is older than the one you have</b>: this is {nueva} and you have {instalada}. Going back can help if the new version fails; if you were not expecting it, «Not now»." },
+  "hoja.cambio.otro-contenido":     { "es": "<b>Misma versión, contenido distinto.</b> La institución cambió el paquete sin subir la versión. Abajo dice qué cambia.", "en": "<b>Same version, different content.</b> The institution changed the package without raising the version. What changes is below." },
+  "hoja.cambio.otro-contenido.versionada": { "es": "<b>Misma versión, contenido distinto.</b> La institución cambió el paquete sin subir la versión ({version}). Abajo dice qué cambia.", "en": "<b>Same version, different content.</b> The institution changed the package without raising the version ({version}). What changes is below." },
+  "hoja.cambio.actualizacion":      { "es": "<b>Actualización</b> de <b>{instalada}</b> a <b>{nueva}</b>. Tu registro y tus interruptores quedan como están.", "en": "<b>Update</b> from <b>{instalada}</b> to <b>{nueva}</b>. Your record and your switches stay as they are." },
+  "hoja.cambio.actualizacion.sin-version": { "es": "<b>Actualización</b>. La institución no versiona sus paquetes; Mymi compara el contenido. Tu registro y tus interruptores quedan como están.", "en": "<b>Update</b>. The institution does not version its packages; Mymi compares the content. Your record and your switches stay as they are." },
+
+  "hoja.cambio.que-cambia":         { "es": "Qué cambia", "en": "What changes" },
+  "hoja.cambio.nada":               { "es": "Nada de lo que Mymi compara: consultas, capacidades, publicador, origen, registro. Cambia la app adentro.", "en": "Nothing Mymi compares: queries, capabilities, publisher, origin, record. What changes is the app inside." },
+  "hoja.cambio.consultas-nuevas":   { "es": "<b>Consultas nuevas:</b> {lista}.", "en": "<b>New queries:</b> {lista}." },
+  "hoja.cambio.consultas-nuevas.detalle": { "es": "Entran encendidas: las estás aceptando con esta hoja.", "en": "They come switched on: you are accepting them with this sheet." },
+  "hoja.cambio.consultas-quitadas": { "es": "<b>Consultas que ya no están:</b> {lista}.", "en": "<b>Queries that are gone:</b> {lista}." },
+  "hoja.cambio.pide-mas":           { "es": "<b>Ahora pide más:</b> {lista}.", "en": "<b>It now asks for more:</b> {lista}." },
+  "hoja.cambio.publicador":         { "es": "<b>Cambia a dónde habla:</b> de <code>{antes}</code> a <code>{ahora}</code>.", "en": "<b>Where it talks changes:</b> from <code>{antes}</code> to <code>{ahora}</code>." },
+  "hoja.cambio.publicador.detalle": { "es": "Mymi conserva la dirección de antes salvo que aceptes la nueva.", "en": "Mymi keeps the earlier address unless you accept the new one." },
+  "hoja.cambio.publicador.aceptar": { "es": "Aceptar la dirección nueva", "en": "Accept the new address" },
+  "hoja.cambio.origen":             { "es": "<b>Cambia el origen que declara:</b> de {antes} a {ahora}.", "en": "<b>The origin it declares changes:</b> from {antes} to {ahora}." },
+  "hoja.cambio.registro":           { "es": "<b>Cambia lo que promete sobre tu registro</b> (retención, tamaño o frecuencia): abajo está lo nuevo.", "en": "<b>What it promises about your record changes</b> (retention, size or frequency): the new terms are below." },
+  "hoja.cambio.sustrato":           { "es": "<b>Pide otro sustrato:</b> {sustrato}.", "en": "<b>It asks for another substrate:</b> {sustrato}." },
+
+  "hoja.boton.actualizar":          { "es": "Actualizar", "en": "Update" },
+  "hoja.boton.volver":              { "es": "Volver a esa versión", "en": "Go back to that version" },
+  "hoja.boton.reinstalar":          { "es": "Reinstalar", "en": "Reinstall" },
+
+  "hoja.proc.mismo-dominio":        { "es": "Lo sirvió {servido}, el mismo dominio que declara", "en": "{servido} served it, the same domain it declares" },
+  "hoja.proc.distinto":             { "es": "Declara <b>{dominio}</b> y lo sirvió <b>{servido}</b>", "en": "It declares <b>{dominio}</b> and <b>{servido}</b> served it" },
+  "hoja.proc.archivo":              { "es": "Declara {dominio} · llegó como archivo", "en": "It declares {dominio} · it arrived as a file" },
+
+  "hoja.que-contesta":              { "es": "Qué va a poder contestar", "en": "What it will be able to answer" },
+  "hoja.donde-vive":                { "es": "Dónde va a vivir tu registro", "en": "Where your record will live" },
+  "hoja.journal.tamano":            { "es": "Unos {tamano}.", "en": "About {tamano}." },
+  "hoja.journal.refresco":          { "es": "Se actualiza {refresco}.", "en": "It updates {refresco}." },
+  "hoja.journal.retencion":         { "es": "La institución lo guarda {retencion}.", "en": "The institution keeps it {retencion}." },
+  "hoja.con-quien":                 { "es": "Con quién va a hablar", "en": "Who it will talk to" },
+  "hoja.sin-publicador":            { "es": "(no declara publicador)", "en": "(declares no publisher)" },
+  "hoja.unica-red":                 { "es": "Es la única red que va a poder tocar, y la hace Mymi por él.", "en": "It is the only network it will be able to touch, and Mymi makes the call for it." },
+  "hoja.reviso":                    { "es": "Lo que Mymi revisó", "en": "What Mymi checked" },
+  "hoja.sin-ejecutables":           { "es": "Sin ejecutables ni datos de muestra adentro.", "en": "No executables and no sample data inside." },
+
+  "hoja.via.qr":                    { "es": ", del código que escaneaste", "en": ", from the code you scanned" },
+  "hoja.via.pegado":                { "es": ", del enlace que pegaste", "en": ", from the link you pasted" },
+  "//hoja-en-dos-zonas":               "LA HOJA EN DOS ZONAS (Geaninna, 2026-09-21). Arriba va lo que decide la confianza y abajo, en un pliegue, el dato tecnico: la URL del publicador, el nombre de la llave, la version y el aviso de cifrado. Estas claves son las variantes SIN el dato tecnico adentro; las de al lado siguen usandose en el pliegue y en las alertas. El ESTADO nunca se pliega: una llave que cambio es alerta, no detalle.",
+  "hoja.respaldo.verificado.dominio":  { "es": "El paquete dice ser de <b>{quien}</b>, y ese origen lo publica y lo respalda.", "en": "The package says it is from <b>{quien}</b>, and that origin publishes and vouches for it." },
+  "hoja.proc.sin-dominio":             { "es": "Este paquete no declara quién lo publica.", "en": "This package does not declare who publishes it." },
+  "hoja.donde-vive.llano":             { "es": "En este teléfono, en la carpeta de Mymi para {quien}.", "en": "On this phone, in Mymi’s folder for {quien}." },
+  "hoja.firma.publicada.primera.sin-llave": { "es": "Firmado por la llave propia de su origen, que ese origen publica.", "en": "Signed by its origin’s own key, which that origin publishes." },
+  "hoja.firma.rotada.sin-llave":       { "es": "Firmado con una <b>llave nueva</b>, que su origen publica.", "en": "Signed with a <b>new key</b>, which its origin publishes." },
+  "hoja.firma.desconocida.sin-llave":  { "es": "Firmado por una llave que su origen <b>no publica</b> y que Mymi no conocía.", "en": "Signed by a key that its origin <b>does not publish</b> and Mymi did not know." },
+  "hoja.firma.cambiada.sin-llave":     { "es": "<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva.", "en": "<b>The key changed</b>: it is not the one that signed last time, and its origin does not publish the new one." },
+  "hoja.detalles":                     { "es": "Detalles técnicos", "en": "Technical details" },
+  "hoja.detalle.publicador":           { "es": "Publicador", "en": "Publisher endpoint" },
+  "hoja.detalle.llave":                { "es": "Llave", "en": "Key" },
+  "hoja.detalle.version":              { "es": "Versión del paquete", "en": "Package version" },
+  "hoja.detalle.servido":              { "es": "Lo sirvió", "en": "Served by" },
+  "hoja.respaldo.sello":            { "es": "El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.", "en": "The package is the one the link sealed: it has not changed since the code was made." },
+  "hoja.respaldo.inseguro":         { "es": "La conexión no va cifrada: así solo sirve en desarrollo.", "en": "The connection is not encrypted: like this it is only good for development." },
+
+  "hoja.archivo.verificado":        { "es": "Llegó como el archivo {archivo}, y {quien} lo respalda: publica exactamente este paquete.", "en": "It arrived as the file {archivo}, and {quien} backs it: they publish exactly this package." },
+  "hoja.archivo.llego":             { "es": "Llegó como el archivo {archivo}.", "en": "It arrived as the file {archivo}." },
+  "hoja.archivo.sin-publicacion":   { "es": "Dice ser de {quien}, pero ese origen no publica cuáles módulos son suyos: no se pudo verificar.", "en": "It says it is from {quien}, but that origin does not publish which modules are its own: it could not be verified." },
+  "hoja.archivo.no-publicado":      { "es": "Dice ser de {quien}, y ese origen <b>no publica este paquete</b> (o publica otra versión).", "en": "It says it is from {quien}, and that origin <b>does not publish this package</b> (or publishes another version)." },
+  "hoja.archivo.sin-origen":        { "es": "No declara de qué origen es: nadie responde por él.", "en": "It declares no origin: nobody answers for it." },
+  "hoja.archivo.sin-ninguno":       { "es": "No viene de ningún origen: nadie responde por él.", "en": "It comes from no origin: nobody answers for it." },
+
+  "hoja.respaldo.verificado":       { "es": "Lo respalda {host}{via}: ese origen publica este módulo y el paquete dice ser suyo.", "en": "{host} backs it{via}: that origin publishes this module and the package says it is theirs." },
+  "hoja.respaldo.sirvio":           { "es": "Lo sirvió {host}{via}.", "en": "{host} served it{via}." },
+  "hoja.respaldo.sin-publicacion":  { "es": "Ese origen no publica cuáles módulos son suyos, así que Mymi no pudo verificarlo: fíjate que lo reconozcas.", "en": "That origin does not publish which modules are its own, so Mymi could not verify it: make sure you recognise it." },
+  "hoja.respaldo.no-publicado":     { "es": "Ese origen publica sus módulos y <b>este no está entre ellos</b>.", "en": "That origin publishes its modules and <b>this one is not among them</b>." },
+  "hoja.respaldo.sin-origen":       { "es": "Ese origen lo publica, pero el paquete no declara de qué origen es: no queda atado del todo.", "en": "That origin publishes it, but the package declares no origin: it is not fully tied down." },
+  "hoja.respaldo.otro-origen":      { "es": "El paquete dice ser de {quien}, y no lo sirvió ese origen.", "en": "The package says it is from {quien}, and that origin did not serve it." },
+  "hoja.respaldo.no-verificado":    { "es": "Mymi no pudo verificar que ese origen sea el de la institución: fíjate que lo reconozcas.", "en": "Mymi could not verify that this origin is the institution's: make sure you recognise it." },
+
+  "hoja.firma.sin-firma":           { "es": "El paquete no viene firmado.", "en": "The package is not signed." },
+  "hoja.firma.publicada.desde":     { "es": "Firmado con la <b>misma llave</b> que la vez pasada (desde {desde}), y su origen la publica.", "en": "Signed with the <b>same key</b> as last time (since {desde}), and its origin publishes it." },
+  "hoja.firma.publicada.primera":   { "es": "Firmado por la llave «{llave}», que su origen publica.", "en": "Signed by the key «{llave}», which its origin publishes." },
+  "hoja.firma.publicada.recordar":  { "es": "Mymi la va a recordar para la próxima vez.", "en": "Mymi will remember it for next time." },
+  "hoja.firma.conocida":            { "es": "Firmado con la <b>misma llave</b> que la vez pasada (desde {desde}).", "en": "Signed with the <b>same key</b> as last time (since {desde})." },
+  "hoja.firma.conocida.detalle":    { "es": "Su origen no contestó, pero la llave ya la conocías.", "en": "Its origin did not answer, but you already knew the key." },
+  "hoja.firma.rotada":              { "es": "Firmado con una <b>llave nueva</b> («{llave}»), que su origen publica.", "en": "Signed with a <b>new key</b> («{llave}»), which its origin publishes." },
+  "hoja.firma.rotada.detalle":      { "es": "No es la de la vez pasada. Mymi va a recordar esta.", "en": "It is not last time's. Mymi will remember this one." },
+  "hoja.firma.desconocida":         { "es": "Firmado por una llave («{llave}») que su origen <b>no publica</b> y que Mymi no conocía.", "en": "Signed by a key («{llave}») that its origin <b>does not publish</b> and Mymi did not know." },
+  "hoja.firma.cambiada":            { "es": "<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva («{llave}»).", "en": "<b>The key changed</b>: it is not the one that signed last time, and its origin does not publish the new one («{llave}»)." },
+
+  "hoja.alerta.cambiada":           { "es": "Viene firmado con otra llave que la vez pasada, y su origen no publica la nueva.", "en": "It is signed with a different key than last time, and its origin does not publish the new one." },
+  "hoja.alerta.otro-origen":        { "es": "Dice ser de otro origen del que lo sirvió.", "en": "It says it is from an origin other than the one that served it." },
+  "hoja.alerta.no-publicado.archivo": { "es": "El origen que dice ser suyo no publica este paquete.", "en": "The origin it claims does not publish this package." },
+  "hoja.alerta.no-publicado.servido": { "es": "El origen que lo sirvió no lo reconoce como suyo.", "en": "The origin that served it does not recognise it as its own." },
+  "hoja.alerta.desconfia":          { "es": "<b>Desconfía de este módulo.</b> {motivo} Si no lo esperabas, «Ahora no».", "en": "<b>Do not trust this module.</b> {motivo} If you were not expecting it, «Not now»." },
+  "hoja.alerta.llave-no-publicada": { "es": "Su origen lo publica, pero viene firmado por una llave que ese origen <b>no publica</b>. Abajo dice más.", "en": "Its origin publishes it, but it is signed by a key that origin <b>does not publish</b>. More below." },
+  "hoja.alerta.sin-respaldo.archivo": { "es": "Este módulo llega <b>sin respaldo verificable</b>: Mymi no pudo confirmar que alguien responda por este archivo. Abajo dice por qué.", "en": "This module arrives <b>with no verifiable backing</b>: Mymi could not confirm that anybody answers for this file. Why, below." },
+  "hoja.alerta.sin-respaldo.host":  { "es": "Este módulo llega <b>sin respaldo verificable</b>: Mymi no pudo confirmar que {host} publique este módulo. Abajo dice por qué.", "en": "This module arrives <b>with no verifiable backing</b>: Mymi could not confirm that {host} publishes this module. Why, below." },
+
+  "hoja.forma.hospedado":           { "es": "Trae la app de la institución, publicada: {archivos} archivos, {peso}.", "en": "It carries the institution's app, published: {archivos} files, {peso}." },
+  "hoja.forma.motor":               { "es": "Con su propio motor adentro ({peso}): un navegador no corre C# sin él.", "en": "With its own engine inside ({peso}): a browser does not run C# without it." },
+  "hoja.forma.cargo":               { "es": "Trae solo su dominio, sin motor propio.", "en": "It carries only its domain, with no engine of its own." },
+  "hoja.forma.cargo.detalle":       { "es": "El motor se lo presta Mymi.", "en": "Mymi lends it the engine." },
+  "hoja.forma.hibrido":             { "es": "Trae la pantalla de la institución y su reglamento al lado: {archivos} archivos, {peso}.", "en": "It carries the institution's screen and its rulebook beside it: {archivos} files, {peso}." },
+  "hoja.forma.hibrido.detalle":     { "es": "El motor se lo presta Mymi; la pantalla se abre dentro de esta ventana.", "en": "Mymi lends it the engine; the screen opens inside this window." },
+  "hoja.forma.hospedado.sin-donde": { "es": "En esta computadora todavía no hay dónde correrla: se instala, pero no contesta.", "en": "On this computer there is nowhere to run it yet: it installs, but it does not answer." },
+  "hoja.caps.pide-mas":             { "es": "Pide más de lo que un módulo de datos necesita: <b>{lista}</b>.", "en": "It asks for more than a data module needs: <b>{lista}</b>." },
+  "hoja.caps.apagado":              { "es": "Se instala apagado. Tú decides si lo enciendes.", "en": "It is installed switched off. You decide whether to switch it on." },
+  "hoja.caps.no-pide":              { "es": "No pide red, ni micrófono, ni parlante.", "en": "It does not ask for network, microphone or speaker." },
+
+  "//el-alta": "LAS FRASES DEL ALTA, que nacen en Gnothi.Movil/Shell.cs y las pinta ui.html. El detalle tecnico que algunas llevan al final -los rechazos de PackageInspector- NO entra aca y se queda en ingles: describe la ESTRUCTURA del paquete -que trae el motor, que trae un installation.json- y eso lo arregla quien lo empaqueto, no quien lo instala. La frase que la persona SI puede accionar es la que la envuelve, y esa es la que esta traducida.",
+
+  "//la-pagina": "LAS FRASES DE ui.html, la cara de los dos telefonos. Lo que esta escrito adentro del marcado es el RESPALDO y no la fuente: la autoridad es este archivo, y el texto inline existe para que mock() -la maqueta que se itera en un monitor- siga mostrando algo legible. La suite afirma que toda clave data-i18n existe aca.",
+
+  "//modulo-en-prosa": "En la CARA la lista se rotula «instituciones», y eso no cambia. Pero donde la frase habla del PAQUETE que la institucion entrega -«toca el modulo que quieres agregar»- la palabra sigue siendo modulo, porque ahi el sujeto es la cosa y no quien la manda. Si el equipo prefiere otra palabra para eso, se cambia en estas claves y en ningun otro lado.",
+
+  "nav.inicio":                   { "es": "Inicio", "en": "Home" },
+  "general.cancelar":             { "es": "Cancelar", "en": "Cancel" },
+  "general.listo":                { "es": "Listo", "en": "Done" },
+
+  "chat.ejemplo1":                { "es": "«¿cómo vienen mis exámenes?»", "en": "«how are my lab results going?»" },
+  "chat.ejemplo2":                { "es": "«mira mis exámenes y mis compras juntos»", "en": "«look at my lab results and my shopping together»" },
+
+  "journal.titulo":               { "es": "Datos de tus instituciones", "en": "Your institutions' data" },
+  "journal.lead":                 { "es": "Nadie más las lee.", "en": "No one else reads them." },
+
+  "ajustes.cap.datos":            { "es": "Datos en este teléfono", "en": "Data on this phone" },
+  "ajustes.cap.tecnica":          { "es": "Información técnica", "en": "Technical information" },
+  "ajustes.proveedor-ia":         { "es": "Proveedor de IA", "en": "AI provider" },
+  "ajustes.permanecen":           { "es": "Tus datos permanecen en este dispositivo.", "en": "Your data stays on this device." },
+
+  "prov.lead":                    { "es": "Al modelo viaja solo lo que la consulta elegida devuelve.", "en": "Only what the chosen query returns travels to the model." },
+  "prov.cap.acceso":              { "es": "Acceso", "en": "Access" },
+  "prov.hint":                    { "es": "Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.", "en": "It is kept on this phone only, and goes nowhere except to the provider." },
+  "prov.cambiar":                 { "es": "Cambiar proveedor", "en": "Change provider" },
+  "prov.elegir.titulo":           { "es": "Elegí el proveedor del modelo", "en": "Pick the model's provider" },
+  "prov.elegir.lead":             { "es": "Todos hablan el mismo formato. La llave puede ser gratuita o de pago.", "en": "They all speak the same format. The key can be free or paid." },
+  "prov.usar-este":               { "es": "Usar este", "en": "Use this one" },
+  "prov.nombre-del-modelo":       { "es": "nombre-del-modelo", "en": "model-name" },
+
+  "propuesta.instalar":           { "es": "Instalar en mi teléfono", "en": "Install on my phone" },
+  "propuesta.ahora-no":           { "es": "Ahora no", "en": "Not now" },
+
+  "quitar.titulo":                { "es": "Quitar", "en": "Remove" },
+  "quitar.borrar-bitacora":       { "es": "Borrar también mi bitácora de este teléfono", "en": "Also delete my record from this phone" },
+
+  "scan.apunta":                  { "es": "Apunta al código de tu institución", "en": "Point at your institution's code" },
+
+  "agregar.titulo":               { "es": "Tus instituciones, siempre contigo.", "en": "Your institutions, always with you." },
+  "agregar.lead":                 { "es": "Mymi revisa el módulo y te muestra qué trae antes de instalar nada.", "en": "Mymi checks the module and shows you what it brings before installing anything." },
+  "agregar.escanear":             { "es": "Escanear su código", "en": "Scan their code" },
+  "agregar.escanear.sub":         { "es": "el QR de su página, o el de tu hoja de resultados", "en": "the QR on their page, or the one on your results sheet" },
+  "agregar.pegar":                { "es": "Pegar su enlace", "en": "Paste their link" },
+  "agregar.pegar.sub":            { "es": "el que te llegó por correo o por WhatsApp", "en": "the one you got by email or WhatsApp" },
+  "agregar.archivos":             { "es": "Elegir archivos en mi teléfono", "en": "Pick files on my phone" },
+  "agregar.archivos.sub":         { "es": "se abre en Descargas; puedes elegir varios", "en": "opens in Downloads; you can pick several" },
+  "agregar.sin-lector":           { "es": "Este teléfono no puede leer códigos desde Mymi: pega el enlace, o escanea el código con la cámara del sistema.", "en": "This phone cannot read codes from inside Mymi: paste the link, or scan the code with the system camera." },
+  "agregar.boton-pagina":         { "es": "Si estás en la página de tu institución, su botón «Agregar a Mymi» hace lo mismo.", "en": "If you are on your institution's page, its «Add to Mymi» button does the same." },
+
+  "hallazgos.titulo":             { "es": "Esto encontré en lo que elegiste", "en": "This is what I found in what you picked" },
+  "hallazgos.lead":               { "es": "Toca el módulo que quieres agregar. Mymi te muestra qué trae antes de instalarlo, y después puedes seguir con el siguiente.", "en": "Tap the module you want to add. Mymi shows you what it carries before installing it, and then you can go on with the next one." },
+
+  "alta.paso.bajando":            { "es": "Bajando el módulo de {host}…", "en": "Downloading the module from {host}…" },
+  "alta.paso.revisando":          { "es": "Revisando qué trae…", "en": "Checking what it carries…" },
+  "alta.paso.preguntando":        { "es": "Preguntándole a {host} si este paquete es suyo…", "en": "Asking {host} whether this package is theirs…" },
+  "alta.rechazado":               { "es": "Mymi rechazó el paquete: {detalle}", "en": "Mymi refused the package: {detalle}" },
+  "alta.no-se-pudo-leer":         { "es": "No se pudo leer el archivo {archivo}.", "en": "Could not read the file {archivo}." },
+
+  "alta.error.no-esta":           { "es": "La dirección que dio tu institución ya no tiene el módulo. Pídele el enlace otra vez.", "en": "The address your institution gave no longer has the module. Ask them for the link again." },
+  "alta.error.sin-conexion":      { "es": "No se pudo hablar con tu institución para bajar el módulo. Revisa tu conexión y prueba de nuevo.", "en": "Could not reach your institution to download the module. Check your connection and try again." },
+  "alta.error.tardo":             { "es": "La descarga tardó demasiado y se cortó. Prueba de nuevo.", "en": "The download took too long and stopped. Try again." },
+  "alta.error.enlace-invalido":   { "es": "El enlace no es una dirección válida de módulo.", "en": "The link is not a valid module address." },
+  "alta.error.sello":             { "es": "El paquete no es el que sellaba el enlace: cambió después de que se generó el código. Pídele a tu institución uno nuevo.", "en": "The package is not the one the link sealed: it changed after the code was made. Ask your institution for a new one." },
+  "alta.error.firma":             { "es": "El paquete viene firmado y la firma no cierra: lo tocaron después de firmarlo. Pídele a tu institución uno nuevo.", "en": "The package is signed and the signature does not hold: it was touched after signing. Ask your institution for a new one." },
+  "alta.error.llave-retirada":    { "es": "El paquete viene firmado con una llave que tu institución retiró: no se instala. Pídele un paquete nuevo.", "en": "The package is signed with a key your institution retired: it is not installed. Ask them for a new package." },
+  "alta.error.colision":          { "es": "Ya tienes «{modulo}» instalado, de {instalada}. Este paquete dice ser de {entrante} y no se instala. Si es el mismo, pídele a tu institución su enlace actual.", "en": "You already have «{modulo}» installed, from {instalada}. This package says it is from {entrante} and is not installed. If it is the same one, ask your institution for its current link." },
+  "alta.error.otra-institucion":  { "es": "otra institución", "en": "another institution" },
+  "alta.error.otro-origen":       { "es": "El paquete dice ser de otro origen del que lo sirvió: no se instala. Pídele a tu institución su enlace.", "en": "The package says it is from an origin other than the one that served it: it is not installed. Ask your institution for its link." },
+  "alta.error.no-reconocido":     { "es": "Tu institución no reconoce este paquete como suyo: no se instala. Pídele el enlace o el paquete actual.", "en": "Your institution does not recognise this package as its own: it is not installed. Ask them for the current link or the current package." },
+  "alta.error.no-se-pudo":        { "es": "No se pudo instalar: {detalle}", "en": "Could not install it: {detalle}" },
+
+  "alta.sin-manifiesto":          { "es": "No es un módulo de Mymi: no trae un manifiesto legible.", "en": "This is not a Mymi module: it carries no readable manifest." },
+  "alta.no-instalaria":           { "es": "Mymi no lo instalaría: {detalle}", "en": "Mymi would not install it: {detalle}" },
+  "alta.listo":                   { "es": "Listo: ya tienes «{titulo}» en Mymi.", "en": "Done: «{titulo}» is now in Mymi." },
+  "alta.volvio-la-anterior":      { "es": "La versión nueva de «{titulo}» no contestó; volvió la anterior.", "en": "The new version of «{titulo}» did not answer; the previous one came back." },
+  "alta.codigo-sin-enlace":       { "es": "El código no traía ningún enlace.", "en": "The code carried no link." },
+  "alta.pega-el-enlace":          { "es": "Pega el enlace que te dio tu institución.", "en": "Paste the link your institution gave you." },
+
+  "//la-traza": "LA TRAZA DEL ASISTENTE, la que la persona despliega en «que paso por debajo». La escribe AgentLoop y la pinta ui.html; el escritorio la pinta en Asistente.razor. NO ENTRA ACA lo que AgentLoop le devuelve al MODELO -«there is no query called X», y el motivo que compone Dispatcher-: eso lo lee un modelo, no un ojo, y sigue en ingles como el resto de Gnothi.Host. Los dos viven en el mismo archivo y se parecen; lo que los separa es quien los lee.",
+
+  "traza.catalogo.una":           { "es": "catálogo: 1 consulta", "en": "catalog: 1 query" },
+  "traza.catalogo.varias":        { "es": "catálogo: {n} consultas", "en": "catalog: {n} queries" },
+  "traza.vuelta.una":             { "es": "vuelta {vuelta}: 1 consulta", "en": "round {vuelta}: 1 query" },
+  "traza.vuelta.varias":          { "es": "vuelta {vuelta}: {n} consultas", "en": "round {vuelta}: {n} queries" },
+  "traza.no-existe":              { "es": "{consulta}: no existe", "en": "{consulta}: does not exist" },
+  "traza.denegada":               { "es": "{consulta}: denegada", "en": "{consulta}: denied" },
+  "traza.caracteres.uno":         { "es": "{consulta}: 1 carácter", "en": "{consulta}: 1 character" },
+  "traza.caracteres.varios":      { "es": "{consulta}: {n} caracteres", "en": "{consulta}: {n} characters" },
+
+  "asistente.encuadre":           { "es": "Sos el asistente de Mymi. Los datos que devuelven las herramientas son los datos REALES de la persona que te pregunta, leidos de los registros que sus instituciones le entregaron y que viven en su propio telefono. No vienen de ningun servidor. Contestale sobre SUS numeros, en su idioma, en prosa corrida y sin markdown. El veredicto clinico ya viene hecho y no es tuyo: no diagnostiques ni recomendes tratamiento.", "en": "You are Mymi's assistant. The data the tools return is the REAL data of the person asking you, read from the records their institutions handed them and that live on their own phone. It does not come from any server. Answer about THEIR numbers, in their language, in running prose and without markdown. The clinical verdict is already made and is not yours: do not diagnose and do not recommend treatment." },
+  "asistente.sin-consultas":      { "es": "No tienes ningún módulo con consultas disponibles.", "en": "You have no module with available queries." },
+  "asistente.sin-respuesta":      { "es": "(el modelo no contestó nada)", "en": "(the model answered nothing)" },
+  "asistente.no-termino":         { "es": "No pude terminar la respuesta: el asistente siguió pidiendo consultas y lo detuve.", "en": "I could not finish the answer: the assistant kept asking for queries and I stopped it." },
+
+  "//uikit-de-ios": "LAS DOS ETIQUETAS QUE DIBUJA UIKit, sin WebView de por medio: la cabecera de la hoja que abre un modulo y su boton de cerrar. Es la razon por la que el catalogo no podia vivir del lado del HTML.",
+
+  "ios.adentro-de":               { "es": "{titulo} · adentro de Mymi", "en": "{titulo} · inside Mymi" },
+
+  "//el-instalador-del-escritorio": "LO QUE DICE EL IMPORTADOR DE LA VENTANA. ModuleInstaller.Install devuelve un mensaje que ModuleList.razor le muestra a la persona, asi que es cara y entra al catalogo. NO entra lo que el mismo archivo saca por Console.Error con prefijo [gnothi]: eso es la linea de comandos -- Pack e InstallFromCli --, que es diagnostico para quien empaqueta. Y los RECHAZOS de PackageInspector pasan de largo adentro de {detalle}, sin traducir, igual que ya hace el telefono en alta.no-instalaria: se traduce el marco, no el valor.",
+
+  "instalar.no-existe":           { "es": "No existe el paquete: {paquete}", "en": "No such package: {paquete}" },
+  "instalar.sin-manifiesto":      { "es": "El paquete no trae manifest.json en su raíz. No se instaló.", "en": "The package has no manifest.json at its root. Not installed." },
+  "instalar.manifiesto-ilegible": { "es": "El manifiesto no se puede leer o no declara «module». No se instaló.", "en": "The manifest is unreadable or declares no 'module'. Not installed." },
+  "instalar.manifiesto-invalido": { "es": "El manifiesto no es json válido: {detalle}. No se instaló.", "en": "The manifest is not valid json: {detalle}. Not installed." },
+  "instalar.rechazado":           { "es": "RECHAZADO, no se instaló:\n{detalle}", "en": "REJECTED, not installed:\n{detalle}" },
+  "instalar.hospedado":           { "es": "El paquete es un módulo hospedado (web/); este instalador toma solo módulos de carga. No se instaló.", "en": "The package is a hosted module (web/); this installer takes cargo modules only. Not installed." },
+  "instalar.firma-no-sostiene":   { "es": "RECHAZADO, no se instaló: el paquete viene firmado y la firma no se sostiene — {detalle}", "en": "REJECTED, not installed: the package is signed and the signature does not hold — {detalle}" },
+  "instalar.colision":            { "es": "RECHAZADO, no se instaló: «{modulo}» ya está instalado desde «{instalada}» y este paquete dice venir de «{entrante}». No es una actualización: es otra institución con el mismo nombre.", "en": "REJECTED, not installed: '{modulo}' is already installed from '{instalada}' and this package says it is from '{entrante}'. Not an update: another institution under the same name." },
+
+  "instalar.hecho":               { "es": "instalado «{modulo}» ({titulo})", "en": "installed '{modulo}' ({titulo})" },
+  "instalar.campo.desde":         { "es": "desde", "en": "from" },
+  "instalar.campo.en":            { "es": "en", "en": "into" },
+  "instalar.campo.revisado":      { "es": "revisado", "en": "checked" },
+  "instalar.campo.firma":         { "es": "firma", "en": "signature" },
+  "instalar.campo.actualizacion": { "es": "actualización", "en": "update" },
+  "instalar.campo.datos":         { "es": "datos", "en": "data" },
+  "instalar.campo.encendido":     { "es": "encendido", "en": "enabled" },
+  "instalar.revisado":            { "es": "de carga, {archivos} archivos, {kb} KB, sin motor propio", "en": "cargo, {archivos} files, {kb} KB, no engine of its own" },
+  "instalar.firma.valida":        { "es": "válida, llave «{llave}» ({huella})", "en": "valid, key '{llave}' ({huella})" },
+  "instalar.firma.primera":       { "es": "primera vez, recordada", "en": "first time, remembered" },
+  "instalar.firma.misma":         { "es": "la misma llave de antes, desde {desde}", "en": "the same key as before, since {desde}" },
+  "instalar.firma.cambio":        { "es": "LA LLAVE CAMBIÓ: el paquete anterior lo firmó «{llave}» ({huella})", "en": "KEY CHANGED: the earlier package was signed by '{llave}' ({huella})" },
+  "instalar.firma.ninguna":       { "es": "ninguna (el paquete no viene firmado)", "en": "none (the package is not signed)" },
+  "instalar.apagado":             { "es": "(se instaló apagado: pidió capacidades que un módulo de datos no necesita)", "en": "(switched off: it asked for capabilities a data module does not need)" },
+
+  "//el-desenlace-de-una-actualizacion": "UN CONJUNTO CERRADO DE SIETE DESENLACES, que compone UpdatePlan y muestra el instalador. Es justo lo que la regla 4 manda traducir: no es dato del registro de nadie, es vocabulario del Host. Los numeros de version y los nombres de institucion pasan de largo adentro.",
+
+  "actualizacion.primera":        { "es": "primera instalación", "en": "first install" },
+  "actualizacion.misma":          { "es": "el mismo paquete que ya estaba ({version})", "en": "the same package already installed ({version})" },
+  "actualizacion.sube":           { "es": "actualización {instalada} → {entrante}", "en": "update {instalada} -> {entrante}" },
+  "actualizacion.sube.sin-version": { "es": "actualización (sin versión)", "en": "update (unversioned)" },
+  "actualizacion.baja":           { "es": "RETROCESO {instalada} → {entrante}", "en": "DOWNGRADE {instalada} -> {entrante}" },
+  "actualizacion.otro-contenido": { "es": "misma versión {version}, contenido distinto", "en": "same version {version}, different content" },
+  "actualizacion.colision":       { "es": "COLISIÓN: «{entrante}» no es «{instalada}»", "en": "COLLISION: '{entrante}' is not '{instalada}'" },
+  "actualizacion.cambio.nuevas.una":     { "es": "+1 consulta", "en": "+1 query" },
+  "actualizacion.cambio.nuevas.varias":  { "es": "+{n} consultas", "en": "+{n} queries" },
+  "actualizacion.cambio.quitadas.una":   { "es": "-1 consulta", "en": "-1 query" },
+  "actualizacion.cambio.quitadas.varias":{ "es": "-{n} consultas", "en": "-{n} queries" },
+  "actualizacion.cambio.pide":    { "es": "pide {lista}", "en": "asks for {lista}" },
+  "actualizacion.cambio.editor":  { "es": "cambió el editor", "en": "publisher moved" },
+  "actualizacion.cambio.origen":  { "es": "cambió el origen", "en": "origin moved" },
+  "actualizacion.cambio.journal": { "es": "cambió lo que promete del registro", "en": "journal promise changed" },
+  "actualizacion.cambio.sustrato":{ "es": "cambió el sustrato", "en": "substrate changed" },
+
+  "//el-inicio-vacio": "LA PRIMERA PANTALLA DE QUIEN NO TIENE NADA TODAVIA. Es la unica de la cara que habla antes de que exista un solo registro, asi que aca se dice lo que Mymi es y no lo que hace. El lema de la marca no se traduce, igual que el nombre.",
+
+  "inicio.titulo":                { "es": "Mis conexiones", "en": "My Connections" },
+  "inicio.sin-ninguna":           { "es": "Aún no tienes conexiones", "en": "No connections yet" },
+  "inicio.una":                   { "es": "1 conectada", "en": "1 connected" },
+  "inicio.varias":                { "es": "{n} conectadas", "en": "{n} connected" },
+  "inicio.conectar":              { "es": "Conectar", "en": "Connect" },
+  "inicio.vacio.titulo":          { "es": "Todo lo tuyo, en un solo lugar", "en": "Everything that\u2019s yours, in one place." },
+  "inicio.vacio.cuerpo":          { "es": "Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.", "en": "Your institutions deliver your records directly to you. They stay on your device and are only accessed when you allow it." },
+  "inicio.lema":                  { "es": "Your world, together", "en": "Your world, together", "igual": "el lema de la marca no se traduce, igual que el nombre" },
+
+  "nav.instituciones":            { "es": "Conexiones", "en": "Connections" },
+  "nav.asistente":                { "es": "Asistente", "en": "Assistant" },
+  "nav.ajustes":                  { "es": "Ajustes", "en": "Settings" },
+  "nav.volver":                   { "es": "Todas tus instituciones", "en": "All your institutions" },
+
+  "pantalla.no-existe":           { "es": "No hay ninguna institución llamada {nombre}.", "en": "No institution called {nombre}." },
+  "pantalla.consultar":           { "es": "Consultar", "en": "Run" },
+  "pantalla.consultando":         { "es": "consultando…", "en": "asking…" },
+
+  "//pantalla.cara": "LA PANTALLA DE LA INSTITUCION EN EL ESCRITORIO (forma hibrida): la cara que ella diseno corre dentro de la ventana de Mymi, y el icono en el escritorio es el gemelo del acceso directo fijado del telefono.",
+  "pantalla.cara.titulo":         { "es": "La pantalla de {quien}", "en": "{quien}'s screen" },
+  "pantalla.cara.desc":           { "es": "La cara que la institución diseñó, corriendo dentro de Mymi con el motor prestado.", "en": "The face the institution designed, running inside Mymi with the engine on loan." },
+  "pantalla.cara.abrir":          { "es": "Abrir la pantalla", "en": "Open the screen" },
+  "pantalla.cara.abriendo":       { "es": "abriendo…", "en": "opening…" },
+  "pantalla.cara.fijar":          { "es": "Poner un icono en el escritorio", "en": "Put an icon on the desktop" },
+  "pantalla.cara.abierta":        { "es": "La pantalla está abierta.", "en": "The screen is open." },
+  "pantalla.cara.no-abrio":       { "es": "No se pudo abrir: {detalle}", "en": "Could not open it: {detalle}" },
+  "pantalla.cara.icono-puesto":   { "es": "Listo: hay un icono de {quien} en tu escritorio ({archivo}). Abre esta pantalla directo.", "en": "Done: there is a {quien} icon on your desktop ({archivo}). It opens this screen directly." },
+  "pantalla.cara.icono-fallo":    { "es": "No se pudo crear el icono: {detalle}", "en": "Could not create the icon: {detalle}" },
+  "pantalla.cara.icono-descripcion": { "es": "La pantalla de {quien}, dentro de Mymi", "en": "{quien}'s screen, inside Mymi" },
+
+  "//pantalla.cara.franja": "LA FRANJA SOBRE LA CARA ABIERTA (Cara.razor), que es lo unico de Mymi que se ve mientras la institucion tiene la ventana. El telefono tiene su gemela y NO comparte estas dos claves: iOS dice ios.adentro-de y general.listo, y que el vocabulario de las dos caras se unifique o no todavia no esta decidido. La flecha del boton la pone el marcado: es decoracion del render y no de la frase.",
+  "pantalla.cara.volver":         { "es": "Volver a Mymi", "en": "Back to Mymi" },
+  "pantalla.cara.dentro":         { "es": "dentro de Mymi · tu registro queda en esta computadora", "en": "inside Mymi · your record stays on this computer" },
+
+  "//alta.escritorio": "EL ALTA EN LA VENTANA DE ESCRITORIO (Alta.razor). La hoja usa las MISMAS claves hoja.* que el telefono; aca va solo lo que existe en el escritorio y no en el telefono.",
+  "alta.escritorio.titulo":       { "es": "Agregar una institución", "en": "Add an institution" },
+  "alta.escritorio.lead":         { "es": "Pega el enlace que te dio la institución, o elige el paquete que te mandó.", "en": "Paste the link your institution gave you, or pick the package they sent you." },
+  "alta.escritorio.enlace.placeholder": { "es": "https://…/modulo.gmod, o el enlace de go.gnothi.app", "en": "https://…/module.gmod, or the go.gnothi.app link" },
+  "alta.escritorio.agregar":      { "es": "Agregar", "en": "Add" },
+  "alta.escritorio.revisando":    { "es": "revisando…", "en": "checking…" },
+  "alta.escritorio.elegir-archivo": { "es": "Elegir el archivo…", "en": "Pick the file…" },
+  "alta.escritorio.progreso":     { "es": "{texto} {bajados} de {total}", "en": "{texto} {bajados} of {total}" },
+  "alta.escritorio.instalar":     { "es": "Instalar en esta computadora", "en": "Install on this computer" },
+  "alta.escritorio.comprobacion": { "es": "Comprobación de {quien}: {veredicto}", "en": "Check of {quien}: {veredicto}" },
+  "alta.escritorio.contesto":     { "es": "«{consulta}» contestó: {texto}", "en": "«{consulta}» answered: {texto}" },
+  "alta.escritorio.comprobacion-fallo": { "es": "La comprobación de {quien} falló: {detalle}", "en": "The check of {quien} failed: {detalle}" },
+
+  "asistente.titulo":             { "es": "Asistente", "en": "Assistant" },
+  "asistente.sub":                { "es": "Tus instituciones responden; el modelo redacta.", "en": "Your institutions answer; the model writes." },
+  "asistente.sin-llave":          { "es": "Todavía no hay una llave para {proveedor}. Ponla en Ajustes para usar el asistente.", "en": "There is no key for {proveedor} yet. Add it in Settings to use the assistant." },
+  "asistente.sin-llave.accion":   { "es": "Ir a Ajustes", "en": "Go to Settings" },
+  "asistente.vacio":              { "es": "Pregunta algo sobre tus instituciones.", "en": "Ask something about your institutions." },
+  "asistente.traza":              { "es": "qué pasó por debajo", "en": "what happened underneath" },
+  "asistente.pensando":           { "es": "pensando…", "en": "thinking…" },
+  "asistente.placeholder":        { "es": "Escribe tu pregunta…", "en": "Type your question…" },
+  "asistente.enviar":             { "es": "Enviar", "en": "Send" },
+
+  "ajustes.titulo":               { "es": "Ajustes", "en": "Settings" },
+  "ajustes.sub":                  { "es": "El modelo que redacta las respuestas del asistente. La llave es tuya.", "en": "The model that writes the assistant's answers. The key is yours." },
+  "ajustes.proveedor":            { "es": "Proveedor", "en": "Provider" },
+  "ajustes.proveedor.elegir":     { "es": "Elige un proveedor", "en": "Pick a provider" },
+  "ajustes.llave.de":             { "es": "Llave de {proveedor}", "en": "{proveedor} key" },
+  "ajustes.llave.hay":            { "es": "✓ Hay una llave guardada (no se muestra).", "en": "✓ A key is saved (it is not shown)." },
+  "ajustes.llave.no-hay":         { "es": "Todavía no hay llave para este proveedor.", "en": "No key for this provider yet." },
+  "ajustes.llave.pegar":          { "es": "Pega tu API key", "en": "Paste your API key" },
+  "ajustes.llave.guardar":        { "es": "Guardar", "en": "Save" },
+  "ajustes.llave.borrar":         { "es": "Borrar", "en": "Delete" },
+  "ajustes.llave.guardada":       { "es": "Llave guardada. Ya puedes cargar los modelos.", "en": "Key saved. You can load the models now." },
+  "ajustes.llave.borrada":        { "es": "Llave borrada.", "en": "Key deleted." },
+  "//el-modelo-de-esta-mac": "LO QUE LA VENTANA DICE DEL MODELO DE APPLE INTELLIGENCE. Es la unica opcion que no pide llave, y la unica donde nada sale del equipo, asi que las frases existen para decir eso donde se decide. El nombre es aparte: lo que se guarda en model.cfg es ModelConfig.AppleName y esta clave es como se muestra, igual que ajustes.proveedor.local en el telefono.",
+
+  "ajustes.proveedor.apple":      { "es": "Apple Intelligence (en esta Mac)", "en": "Apple Intelligence (on this Mac)" },
+  "ajustes.apple.sin-llave":      { "es": "Es el modelo de Apple Intelligence de esta Mac: no necesita llave y nada sale del equipo.", "en": "This is the Apple Intelligence model on this Mac: it needs no key and nothing leaves the machine." },
+  "ajustes.apple.solo-mac":       { "es": "Apple Intelligence solo existe en macOS.", "en": "Apple Intelligence only exists on macOS." },
+  "ajustes.apple.sin-puente":     { "es": "Falta la librería del puente: corre Gnothi.Desktop/armar-modelo.sh en una Mac con Xcode 26.", "en": "The bridge library is missing: run Gnothi.Desktop/armar-modelo.sh on a Mac with Xcode 26." },
+  "ajustes.apple.contesta":       { "es": "El modelo de esta Mac contesta.", "en": "This Mac's model answers." },
+  "ajustes.apple.no-genera":      { "es": "Esta Mac dice tener modelo pero no genera: hace falta una versión más nueva de macOS.", "en": "This Mac says it has a model but does not generate: it needs a newer macOS." },
+  "ajustes.apple.sin-modelo":     { "es": "Esta Mac no tiene modelo propio.", "en": "This Mac has no model of its own." },
+  "ajustes.apple.fallo":          { "es": "No se pudo preguntarle al modelo de esta Mac: {detalle}", "en": "Could not ask this Mac's model: {detalle}" },
+  "asistente.sub.apple":          { "es": "Este modelo corre en esta Mac: nada sale del equipo.", "en": "This model runs on this Mac: nothing leaves it." },
+
+  "ajustes.local":                { "es": "Este proveedor es local — no necesita llave, nada sale de la máquina.", "en": "This provider is local — it needs no key, nothing leaves the machine." },
+  "ajustes.modelo":               { "es": "Modelo", "en": "Model" },
+  "ajustes.modelo.en-uso":        { "es": "En uso: {modelo}.", "en": "In use: {modelo}." },
+  "ajustes.modelo.explicacion":   { "es": "Carga los modelos que ofrece {proveedor} y elige el que quieras; ese es el que usa cada pregunta.", "en": "Load the models {proveedor} offers and pick the one you want; that is the one every question uses." },
+  "ajustes.modelo.cargar":        { "es": "Cargar modelos disponibles", "en": "Load available models" },
+  "ajustes.modelo.cargando":      { "es": "Cargando…", "en": "Loading…" },
+  "ajustes.modelo.primero-llave": { "es": "Pon primero la llave para poder consultar los modelos.", "en": "Add the key first to be able to query the models." },
+  "ajustes.modelo.disponibles":   { "es": "Modelo ({n} disponibles)", "en": "Model ({n} available)" },
+
+  "ajustes.error.sin-llave":      { "es": "Pon primero la API key de este proveedor.", "en": "Add this provider's API key first." },
+  "ajustes.error.respondio":      { "es": "El proveedor respondió {codigo}. Revisa la llave.", "en": "The provider answered {codigo}. Check the key." },
+  "ajustes.error.ilegible":       { "es": "El proveedor no devolvió una lista de modelos reconocible.", "en": "The provider did not return a recognisable list of models." },
+  "ajustes.error.vacia":          { "es": "El proveedor no listó modelos.", "en": "The provider listed no models." },
+  "ajustes.error.no-se-pudo":     { "es": "No se pudieron cargar los modelos.", "en": "Could not load the models." },
+
+  "instituciones.titulo": {
+    "es": "Mis conexiones",
+    "en": "My Connections"
+  },
+  "instituciones.sub": {
+    "es": "Lo que cada institución te entregó. Mymi lee lo que ya está en este aparato.",
+    "en": "What each institution handed you. Mymi reads what is already on this device."
+  },
+  "instituciones.vacio": {
+    "es": "Todavía no hay ninguna institución en",
+    "en": "No institutions yet in"
+  },
+  "instituciones.apagada": {
+    "es": "la apagaste",
+    "en": "switched off by you"
+  },
+  "instituciones.consultas.una": {
+    "es": "1 consulta",
+    "en": "1 query"
+  },
+  "instituciones.consultas.varias": {
+    "es": "{n} consultas",
+    "en": "{n} queries"
+  },
+  "instituciones.abrir": {
+    "es": "Abrir",
+    "en": "Open"
+  },
+  "instituciones.importar": {
+    "es": "Agregar una institución…",
+    "en": "Add an institution…"
+  },
+  "instituciones.recargar": {
+    "es": "Recargar",
+    "en": "Reload"
+  },
+  "instituciones.recargar.nota": {
+    "es": "vuelve a leer installation.json del disco",
+    "en": "re-reads installation.json from disk"
+  },
+  "instituciones.elegir.titulo": {
+    "es": "Elige un paquete de institución",
+    "en": "Pick an institution package"
+  },
+  "instituciones.elegir.gmod": {
+    "es": "Institución de Mymi",
+    "en": "Mymi institution"
+  },
+  "instituciones.elegir.todos": {
+    "es": "Todos los archivos",
+    "en": "All files"
+  },
+  "instituciones.elegir.fallo": {
+    "es": "No se pudo abrir el selector de archivos: {detalle}",
+    "en": "Could not open the file picker: {detalle}"
+  },
+
+  "//lo-que-se-salto": "LAS FRASES DE ui.html QUE LA PRIMERA PASADA NO CONVIRTIO. Se vieron en un iPhone en ingles el 2026-09-15: el sistema en ingles y estos rotulos en espanol. Todas nacen en el JavaScript que arma HTML concatenando -la tarjeta del inicio, el detalle, Ajustes y la hoja de proveedores-, que es justo donde no hay un data-i18n que revisar. La suite no las veia porque comprobaba que toda CLAVE USADA exista, no que todo LITERAL este convertido; ahora hay una asercion que mira lo segundo.",
+
+  "inicio.llave-retirada":        { "es": "Llave retirada por la institución", "en": "Key withdrawn by the institution" },
+  "inicio.version-nueva":         { "es": "Hay una versión nueva", "en": "There is a new version" },
+  "inicio.apagado":               { "es": "Apagado", "en": "Off" },
+
+  "detalle.consultas.de":         { "es": "Consultas de {quien}", "en": "{quien} queries" },
+  "detalle.consultas.lead":       { "es": "Puedes preguntarle a tu asistente sobre:", "en": "You can ask your assistant about:" },
+  "detalle.consultas.apagada":    { "es": "Una consulta apagada desaparece del catálogo: el asistente no la ve y no puede pedirla.", "en": "A query you switch off disappears from the catalog: the assistant does not see it and cannot ask for it." },
+  "detalle.modulo-encendido":     { "es": "Módulo encendido", "en": "Module on" },
+  "detalle.abrir.de":             { "es": "Abrir {quien}", "en": "Open {quien}" },
+  "detalle.abrir.sub":            { "es": "la app de tu institución, adentro de Mymi", "en": "your institution's app, inside Mymi" },
+  "detalle.quitar.sub":           { "es": "la app de tu institución sale de este teléfono; tu bitácora se queda", "en": "your institution's app leaves this phone; your record stays" },
+
+  "//fijar": "EL ICONO EN LA PANTALLA DE INICIO: el acceso directo fijado que abre Mymi directo en la app de la institucion. El icono lleva el logo y el nombre de ella, pero lo que corre es Mymi, y por eso el boton no dice «instalar la app».",
+  "detalle.fijar.boton":          { "es": "Ponerlo en tu pantalla de inicio", "en": "Put it on your home screen" },
+  "detalle.fijar.dicho":          { "es": "Un icono de {quien} que abre esta app acá adentro.", "en": "An icon of {quien} that opens this app right here." },
+  "detalle.fijar.pedido":         { "es": "Listo, pedido", "en": "Done, requested" },
+  "detalle.fijar.lugar":         { "es": "En tu pantalla de inicio", "en": "On your home screen" },
+  "detalle.fijar.agregar":       { "es": "Agregar", "en": "Add" },
+  "detalle.fijar.pedimos":             { "es": "Se lo pedimos a tu pantalla de inicio.", "en": "We asked your home screen for it." },
+  "detalle.fijar.si-no-aparece":  { "es": "Si no aparece, revisa que tu pantalla de inicio acepte accesos directos.", "en": "If it does not show up, check that your home screen accepts shortcuts." },
+  "detalle.fijar.ya":              { "es": "Ya está en tu pantalla de inicio.", "en": "It is already on your home screen." },
+  "detalle.fijar.otra-vez":        { "es": "Ponerlo de nuevo", "en": "Put it back" },
+  "detalle.fijar.fallo":          { "es": "No se pudo poner el acceso directo.", "en": "The shortcut could not be placed." },
+
+  "ajustes.servidor":             { "es": "Servidor", "en": "Server" },
+  "ajustes.clave.puesta":         { "es": "Clave configurada", "en": "Key set" },
+  "ajustes.clave.falta":          { "es": "Falta la clave — el asistente no puede contestar", "en": "No key — the assistant cannot answer" },
+  "prov.nota.local":             { "es": "sin llave y sin red — nada sale de este teléfono", "en": "no key and no network — nothing leaves this phone" },
+  "ajustes.clave.no-hace-falta":  { "es": "Sin llave — no hace falta", "en": "No key needed" },
+  "ajustes.local.telefono":       { "es": "Este proveedor corre en tu teléfono: no necesita llave y no sale nada de acá.", "en": "This provider runs on your phone: it needs no key and nothing leaves here." },
+  "ajustes.proveedor.local":      { "es": "En este teléfono", "en": "On this phone" },
+  "ajustes.servidor.local":       { "es": "este aparato", "en": "this device" },
+  "ajustes.clave.pega-nueva":     { "es": "Pega la clave nueva", "en": "Paste the new key" },
+  "ajustes.clave.placeholder":    { "es": "pégala aquí — se guarda solo en este teléfono", "en": "paste it here — it is kept on this phone only" },
+  "ajustes.clave.guardada-aqui":  { "es": "Guardada en este teléfono.", "en": "Kept on this phone." },
+  "ajustes.clave.cambiar":        { "es": "Cambiar clave", "en": "Change key" },
+  "ajustes.clave.pegar":          { "es": "Pegar clave", "en": "Paste key" },
+  "ajustes.modulos-instalados":   { "es": "Módulos instalados", "en": "Installed modules" },
+  "ajustes.carpeta":              { "es": "Carpeta", "en": "Folder" },
+  "ajustes.copiar":               { "es": "Copiar", "en": "Copy" },
+
+  "prov.otro":                    { "es": "Otro", "en": "Other" },
+  "prov.otro.nota":               { "es": "URL propia — LM Studio en tu red, etc.", "en": "Your own URL — LM Studio on your network, etc." }
+}

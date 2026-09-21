@@ -1,0 +1,138 @@
+@page "/que-tan-al-dia-esta"
+@inject EstadoDeLaApp estado
+@inject Textos textos
+
+<PageTitle>@textos["queTanAlDia.titulo"] · @Textos.TituloDelModulo</PageTitle>
+
+<h1>@textos["queTanAlDia.titulo"]</h1>
+<p class="bajada">@textos["queTanAlDia.bajada"]</p>
+
+@if (!estado.EstaArriba)
+{
+    <SinAbrir />
+}
+else
+{
+    <section class="bloque" id="hasta-donde-leyo">
+        <h2>@textos["queTanAlDia.hastaDondeLeyo"]</h2>
+
+        <article class="tarjeta">
+            <dl class="renglones">
+                <dt>@textos["queTanAlDia.ultimoHecho"]</dt>
+                <dd class="cifra">@entrado.UltimoEventoLeido</dd>
+                <dt>@textos["queTanAlDia.rubrosConComprobante"]</dt>
+                <dd>@textos.Con("comun.deTotal", ("cuantos", entrado.RubrosConHistoria.ToString()), ("total", entrado.Rubros.Count.ToString()))</dd>
+                <dt>@textos["queTanAlDia.ultimaConsulta"]</dt>
+                <dd>@(entrado.HayAlgunaConsulta ? entrado.DiaDeLaUltimaConsulta : textos["queTanAlDia.ninguna"])</dd>
+            </dl>
+
+            <p class="nota">@((MarkupString)textos["queTanAlDia.notaDelNumero"])</p>
+        </article>
+    </section>
+
+    <section class="bloque" id="que-llego-de-cada-rubro">
+        <h2>@textos["queTanAlDia.queLlego"]</h2>
+
+        @foreach (var rubro in entrado.Rubros)
+        {
+            <article class="tarjeta">
+                <div class="tarjeta__cabeza">
+                    <LlaveDelRubro Rubro="@rubro.Nombre" />
+                    <span class="sello sello--@(rubro.TieneHistoria ? "nada-sin-comprobante" : "sin-consulta")">
+                        @(rubro.TieneHistoria ? textos["queTanAlDia.conComprobantes"] : textos["queTanAlDia.sinComprobantes"])
+                    </span>
+                </div>
+
+                @if (!rubro.TieneHistoria)
+                {
+                    <p class="nota">@textos["queTanAlDia.rubroSinComprobantes"]</p>
+                }
+            </article>
+        }
+    </section>
+
+    <section class="bloque" id="que-falta">
+        <h2>@textos["queTanAlDia.queFalta"]</h2>
+
+        @if (entrado.NoFaltaNadaQueEstaPantallaSepaMirar)
+        {
+            <Aviso Tono="quieta" Id="no-falta-nada" Titulo="@textos["queTanAlDia.noFaltaNada"]">
+                <p>@textos["queTanAlDia.noFaltaNadaCuerpo"]</p>
+            </Aviso>
+        }
+
+        @if (!entrado.HayReservaAdoptada)
+        {
+            <Aviso Tono="tibia" Id="falta-la-reserva" Titulo="@textos["queTanAlDia.faltaLaReserva"]">
+                <p>
+                    @textos["queTanAlDia.faltaLaReservaCuerpo"]
+                    <a href="cuanto-apartar">@textos["queTanAlDia.faltaLaReservaEnlace"]</a>.
+                </p>
+            </Aviso>
+        }
+
+        @if (!entrado.HayAlgunaConsulta)
+        {
+            <Aviso Tono="tibia" Id="falta-una-consulta" Titulo="@textos["queTanAlDia.faltaUnaConsulta"]">
+                <p>
+                    @textos["queTanAlDia.faltaUnaConsultaCuerpo"]
+                    <a href="sin-comprobante">@textos["sinComprobante.titulo"]</a>
+                    @((MarkupString)textos["queTanAlDia.faltaUnaConsultaCierre"])
+                </p>
+            </Aviso>
+        }
+
+        @if (entrado.FincasSinAvaluoPublicado > 0)
+        {
+            <Aviso Tono="tibia" Id="falta-un-avaluo" Titulo="@textos["queTanAlDia.faltaUnAvaluo"]">
+                <p>@((MarkupString)textos.Con(
+                    entrado.Fincas.Fincas.Count == 1
+                        ? "queTanAlDia.faltaUnAvaluoCuerpo.una"
+                        : "queTanAlDia.faltaUnAvaluoCuerpo.varias",
+                    ("cuantas", entrado.FincasSinAvaluoPublicado.ToString()),
+                    ("total", entrado.Fincas.Fincas.Count.ToString())))</p>
+            </Aviso>
+        }
+
+        @if (entrado.Fincas.HayAlguna)
+        {
+            <div class="tabla">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">@textos["queTanAlDia.finca"]</th>
+                            <th scope="col">@textos["queTanAlDia.avaluoColumna"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var finca in entrado.Fincas.Fincas)
+                        {
+                            <tr>
+                                <td><span class="llave">@finca.Numero</span></td>
+                                <td>
+                                    @(finca.TieneAvaluo
+                                        ? textos.Monto(finca.Avaluo)
+                                        : textos["porQuePagoMas.finca.sinAvaluo"])
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <p class="nota">@textos.Con("comun.contestadoAl", ("dia", entrado.PreguntadoEl))</p>
+}
+
+@code {
+	private LoQueEntroYLoQueFalta entrado;
+
+	protected override void OnInitialized() => Releer();
+
+	/// <summary>La unica pasada de lectura de esta pantalla: las dos mitades del mismo momento.</summary>
+	private void Releer()
+	{
+		if (estado.EstaArriba) entrado = estado.LeerLoQueEntroYLoQueFalta();
+	}
+}

@@ -1,0 +1,99 @@
+# EL BUILD DE ANDROID ES EL TEST DE ARQUITECTURA.
+#
+# Gnothi.Mobile compila el nucleo del Host POR GLOB, sin el SDK de MCP. Si alguien mete un
+# using de MCP en un archivo del nucleo, el build de escritorio sigue verde -el SDK esta ahi-
+# y solo el de Android falla. Esa es la propiedad que sostiene las tres puertas, y hasta hoy
+# solo se comprobaba si a alguien se le ocurria compilar la app a mano.
+#
+# Y Gnothi.slnx NO lista la app a proposito: rompe el build de quien no tenga el workload de
+# Android. Correcto para una maquina de trabajo, y justo la razon por la que el test no corria
+# nunca. Aca el workload se instala, asi que puede correr.
+#
+# Los dos guardianes, entonces:
+#   1. el fixture de la costura  -> el Host no puede referenciar al Assistant
+#   2. el build de Android       -> el nucleo no puede arrastrar MCP
+
+trigger:
+  branches:
+    include:
+      - master
+      - master_gnothiHost
+
+pr:
+  branches:
+    include:
+      - master
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+steps:
+
+  - task: UseDotNet@2
+    displayName: SDK de .NET 9
+    inputs:
+      packageType: sdk
+      version: 9.x
+
+  # El motor (Ncubo.Puppeteer) vive en el feed privado de la organizacion, declarado en
+  # NuGet.config. Sin este paso el restore falla con NU1101 y el error no dice que falta
+  # autenticacion.
+  - task: NuGetAuthenticate@1
+    displayName: Autenticar contra el feed del motor
+
+  - script: dotnet restore Gnothi.slnx
+    displayName: Restore
+
+  - script: dotnet build Gnothi.slnx --no-restore -c Release
+    displayName: Build del solution
+
+  # GUARDIAN 1 - LA COSTURA.
+  # Cuatro aserciones sobre el grafo de referencias: la flecha va Assistant -> Host y nunca
+  # al reves. Si alguien pone un using del bucle dentro del Host, el build queda verde y esto
+  # es lo unico que se entera. Devuelve 1 si falla, asi que el paso falla solo.
+  # LOS MODULOS DEL BANCO, en Debug. La suite arranca cada modulo de Modulos/ y cruza su manifiesto
+  # contra las tools que expone de verdad; los installation.json apuntan, relativo a su carpeta,
+  # al bin/Debug del proyecto Mcp de cada uno. El solution se compila en Release y dos de estos
+  # tres ni estan en el solution, asi que sin este paso ningun modulo arranca y la asercion
+  # "al menos un modulo se pudo verificar contra su superficie real" queda roja.
+  - script: |
+      dotnet build Compras/App/Compras.Mcp -c Debug
+      dotnet build Examenes/App/Examenes.Mcp -c Debug
+      dotnet build HolaMundo/Facturas/App/Facturas.Mcp -c Debug
+    displayName: Compilar los modulos del banco
+
+  - script: dotnet run --project Gnothi.Assistant.Tests --no-build -c Release
+    displayName: "Guardian 1 - la Puerta 2 se puede borrar"
+
+  # GUARDIAN 3 - LA CARA HIBRIDA NO SE DESVIA DE SU APP SUELTA.
+  #
+  # Cada negocio tiene DOS pantallas del mismo hecho -- la app suelta en Blazor y la cara hibrida
+  # escrita a mano -- y nada las ata: la hoja entresacada, una clase sin regla y un catalogo con una
+  # clave de menos no ponen rojo ni al compilador ni a la suite. El guardian ya existe y sale con
+  # codigo 1, asi que sirve de compuerta tal cual.
+  #
+  # NO NECESITA .NET: es node sobre los archivos, asi que no depende del build ni del solution.
+  - script: node Herramientas/revisar-las-caras.mjs
+    displayName: "Guardian 3 - las caras no se desvian de su app suelta"
+
+  # GUARDIAN 2 - EL NUCLEO NO HABLA MCP.
+  # El workload tarda unos minutos la primera vez; es el precio de tener el test.
+  - script: dotnet workload install android --skip-sign-check
+    displayName: Workload de Android
+
+  - script: dotnet build Gnothi.Mobile/Gnothi.Mobile.csproj -c Release
+    displayName: "Guardian 2 - el nucleo compila SIN el SDK de MCP"
+
+  # Si el paso de arriba fallo, casi siempre es lo mismo: un archivo nuevo del nucleo trajo
+  # MCP, o un archivo de Puerta 1 entro por el glob y hay que excluirlo en el csproj.
+  - script: |
+      echo "El build de Android es el test de arquitectura."
+      echo "Si fallo, revisa Gnothi.Mobile.csproj: o un archivo nuevo del nucleo arrastra"
+      echo "el SDK de MCP, o uno de Puerta 1 entro por el glob y falta excluirlo."
+    displayName: Que significa si fallo
+    condition: failed()

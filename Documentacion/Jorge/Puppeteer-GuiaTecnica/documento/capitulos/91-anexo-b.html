@@ -1,0 +1,46 @@
+<!-- ANEXO B · GLOSARIO -->
+  <section class="anchor" id="anexoB">
+    <h2>B · Glosario</h2>
+    <p class="chapter-meta">Los términos del paradigma y del DSL usados en la guía. Como el código es inglés, se indica el nombre real entre paréntesis.</p>
+
+    <table>
+      <thead><tr><th>Término</th><th>Qué es</th><th>Cap.</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Actor</strong> (<code>ActorV2</code>)</td><td>Unidad que es dueña de su estado en memoria y la única que puede cambiarlo; se le habla con scripts.</td><td><a href="#cap1">1</a></td></tr>
+        <tr><td><strong>Comando</strong> (<code>PerformCommand</code>)</td><td>Script que cambia el estado del actor y se persiste en el diario.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><strong>Query</strong> (<code>PerformQuery</code>)</td><td>Script que solo lee; devuelve la salida de <code>print</code> como JSON; no deja rastro.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><strong>DSL</strong></td><td>El lenguaje diminuto con el que se orquesta el dominio (construir objetos, llamar verbos).</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong>Diario</strong> (journal)</td><td>Bitácora append-only que guarda el texto de cada comando; es la fuente de verdad.</td><td><a href="#cap7">7</a></td></tr>
+        <tr><td><strong>Reproducir</strong> (replay)</td><td>Re-ejecutar el diario para reconstruir el estado; “desplegar es reproducir”.</td><td><a href="#cap7">7</a></td></tr>
+        <tr><td><strong>Verbo</strong></td><td>Método del dominio que representa una operación con sentido de negocio; único camino para cambiar el estado.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><strong>Query total</strong></td><td>Lectura del dominio que siempre responde: nunca lanza, nunca devuelve <code>null</code>.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><strong>Estado raíz</strong></td><td>Los identificadores de nivel superior de un comando; persisten entre comandos.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong><code>upgrade</code></strong></td><td>Bloque que corre una sola vez por actor; sirve para nacer y para rehidratar.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong><code>@Now</code></strong></td><td>Fecha/hora determinista inyectada por el framework; igual en la ejecución y en el replay.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><strong>Parámetro</strong> (<code>@</code>)</td><td>Valor que entra al script desde afuera; se declara con tipo y se referencia con <code>@nombre</code>.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><strong><code>Out</code></strong></td><td>Parámetro para leer de vuelta a C# un valor tipado que el actor calculó.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><strong><code>Eval</code></strong></td><td>Parámetro derivado del estado, resuelto en el actor y congelado en el diario para el replay.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><strong>Guarda</strong> (<code>Check</code>)</td><td>Predicado puro que puede rechazar un comando sin dejar rastro; retorno vacío = aceptado.</td><td><a href="#cap5">5</a></td></tr>
+        <tr><td><strong>Reacción</strong> (<code>Reactions</code>)</td><td>Regla que observa el diario del actor tras el commit y ejecuta un efecto posterior.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Cue</code> / <code>Job</code></strong></td><td>Latencia de una reacción: <code>Cue</code> dispara al instante (push continuo); <code>Job</code> corre en pasadas.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Seek</code> / <code>OnMatch</code></strong></td><td>El patrón que una reacción busca en el diario; <code>$var</code> captura valores de la entrada.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Causation.Continue</code></strong></td><td>El cuerpo de una reacción que corre tras el commit; el único lugar donde vive un <code>tell</code>.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>tell</code></strong></td><td>Aviso de un actor a otro (rol lógico); el DSL nunca nombra el transporte.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>once</code></strong></td><td>Identidad idempotente de un <code>tell</code>, para que el replay no duplique ni descarte.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Outbox.Emit</code></strong></td><td>Salida durable de una reacción (p. ej. a BI): ordenada, no se pierde, al-menos-una-vez.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>Program.Emit</code> / <em>sink</em></strong></td><td>Salida efímera (fire-and-forget) de una reacción a un destino (<code>IOutputSink</code>).</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><strong><code>expose</code> / elide</strong></td><td>Capturar un agregado en un asiento y saltar los eventos que resume al rehidratar (snapshot).</td><td><a href="#cap14">14</a></td></tr>
+        <tr><td><strong>Saga</strong> (<code>DefineSaga</code>)</td><td>Flujo de pasos por clave de instancia, serializados; distintas claves en paralelo.</td><td><a href="#cap11">11</a></td></tr>
+        <tr><td><strong>Despacho</strong> (<code>Dispatch</code>)</td><td>Ruteo de mensajes entrantes a comandos propios, sin un <code>switch</code> gigante.</td><td><a href="#cap10">10</a></td></tr>
+        <tr><td><strong><code>StageV2</code> · Director · Cast</strong></td><td>Un actor replicado: un Director (dueño del diario) y N Casts (réplicas).</td><td><a href="#cap12">12</a></td></tr>
+        <tr><td><strong>Formación</strong></td><td>La forma del espacio de direcciones: qué entidad merece su propio actor/diario.</td><td><a href="#cap12">12</a></td></tr>
+        <tr><td><strong>Manifestación</strong></td><td>La presentación de un dominio, personalizada por participante/cliente.</td><td><a href="#intro">Intro</a></td></tr>
+        <tr><td><strong><code>ConfigureStorage</code></strong></td><td>Elige el backend del diario (memoria, archivos, SQL, texto) sin tocar la lógica.</td><td><a href="#cap7">7</a></td></tr>
+      </tbody>
+      <caption>Tabla 18. Glosario: término (nombre en código) · definición · capítulo.</caption>
+    </table>
+    <aside class="note">
+      <div class="h">✎ Vocabulario oficial de nCubo</div>
+      <p>La documentación del framework usa términos de teatro para el sustrato: <strong>Stage</strong> (el actor replicado y su hospedaje), <strong>Performer</strong> (la identidad de red), <strong>Performance</strong> (el host que corre un actor), <strong>Director</strong> / <strong>Cast</strong> (los papeles en la replicación) y <strong>Reaction</strong>. Esta guía usa los términos en español de la tabla anterior; aquí queda el puente por si lees el código o los papers.</p>
+    </aside>
+  </section>

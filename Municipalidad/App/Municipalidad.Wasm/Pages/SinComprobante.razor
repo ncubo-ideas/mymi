@@ -1,7 +1,8 @@
 @page "/sin-comprobante"
 @inject EstadoDeLaApp estado
+@inject Textos textos
 
-<PageTitle>Pagos sin comprobante · Mi cuenta municipal</PageTitle>
+<PageTitle>Pagos sin comprobante · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -20,7 +21,7 @@ else
 
         @if (!cotejo.HayAlgunaConsulta)
         {
-            <Aviso Tono="tibia" Id="sin-consulta" Titulo="Todavía no se puede cotejar">
+            <Aviso Tono="tibia" Id="sin-consulta" Titulo="@textos["sinComprobante.sinConsulta"]">
                 <Frase Dice="@cotejo.Dice" Apagada="true" />
             </Aviso>
 
@@ -31,10 +32,7 @@ else
                     <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                 </summary>
                 <div class="disclosure-secundaria__contenido">
-                    <p class="item__frase">
-                        <strong>No poder cotejar no es estar en orden.</strong> Es una tercera respuesta,
-                        y cambia en cuanto entre una consulta al portal.
-                    </p>
+                    <p class="item__frase">@((MarkupString)textos["sinComprobante.sinConsultaCuerpo"])</p>
                 </div>
             </details>
         }
@@ -107,11 +105,7 @@ else
                         <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                     </summary>
                     <div class="disclosure-secundaria__contenido">
-                        <p class="item__frase">
-                            Tu portal da esos períodos por saldados; lo que falta es el respaldo aquí,
-                            casi siempre porque se pagaron por un camino que no deja comprobante
-                            digital —la ventanilla, por ejemplo. No los sumés a nada que se te venza.
-                        </p>
+                        <p class="item__frase">@textos["sinComprobante.noEsDeudaCuerpo"]</p>
                     </div>
                 </details>
             </section>
@@ -120,10 +114,7 @@ else
 
             <details class="plomeria">
                 <summary>¿Qué significa esta fecha?</summary>
-                <p class="item__frase">
-                    La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana
-                    dice otra cosa. El cotejo es contra el @cotejo.DiaDeLaConsulta y no contra hoy.
-                </p>
+                <p class="item__frase">@textos.Con("sinComprobante.fotoConFecha", ("dia", cotejo.DiaDeLaConsulta))</p>
             </details>
         }
     </div>

@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using Municipalidad.App;
 namespace Municipalidad.Wasm.Vistas
 {
 	/// <summary>
@@ -18,8 +23,17 @@ namespace Municipalidad.Wasm.Vistas
 		/// <summary>Si quedó registrado pero la carpeta rechazó la escritura.</summary>
 		public bool QuedoSinRespaldo { get; private init; }
 
-		/// <summary>La frase que explica lo que pasó, vacia solo cuando entró sin nada que decir.</summary>
+		/// <summary>
+		/// La frase con que el DOMINIO rechazó el aporte, y nada más: es suya, viaja como la compuso y
+		/// esta capa no la traduce.
+		/// </summary>
 		public string Dice { get; private init; } = "";
+
+		/// <summary>
+		/// Lo que dice ESTA APP cuando la falla fue suya y no del dominio. Es lo contrario de
+		/// <see cref="Dice"/> y por eso son dos campos: sólo éste se dice en el idioma de la persona.
+		/// </summary>
+		public Apunte Apunte { get; private init; } = Apunte.Ninguno;
 
 		internal static LoQueDijoElAporte Entro() =>
 			new LoQueDijoElAporte { QuedoRegistrado = true };
@@ -27,7 +41,10 @@ namespace Municipalidad.Wasm.Vistas
 		internal static LoQueDijoElAporte NoSePudo(string porque) =>
 			new LoQueDijoElAporte { Dice = porque };
 
-		internal static LoQueDijoElAporte QuedoSinGuardar(string porque) =>
-			new LoQueDijoElAporte { QuedoRegistrado = true, QuedoSinRespaldo = true, Dice = porque };
+		internal static LoQueDijoElAporte NoSePudoPorLaApp(Apunte porque) =>
+			new LoQueDijoElAporte { Apunte = porque };
+
+		internal static LoQueDijoElAporte QuedoSinGuardar(Apunte porque) =>
+			new LoQueDijoElAporte { QuedoRegistrado = true, QuedoSinRespaldo = true, Apunte = porque };
 	}
 }

@@ -42,3 +42,75 @@ docs/
 # Cache de Python: los generadores de datos dejan .pyc al importarse.
 __pycache__/
 *.pyc
+
+# El paquete de modulos para el telefono: 20 MB de salida de build.
+# Lo arma Gnothi.Mobile/armar-paquete.ps1 cuando hace falta.
+Gnothi.Mobile/paquete/
+
+# Y el zip que se le manda al de iOS, por la MISMA razon y una mas: adentro van los
+# journals de la persona que armo el paquete. Eso no va a un repo compartido.
+Gnothi.Mobile/paquete.zip
+
+# LOS BUNDLES DE LOS MODULOS, que son lo que la institucion publica: 12 MB cada uno, y
+# hoy son cuatro. Medido: 136 MB en total.
+#
+# Los arma armar-bundle.ps1 -y escenario-webview.ps1 por el- CADA VEZ que se levanta el
+# escenario, porque el manifiesto lleva la URL del publicador ADENTRO: un bundle armado
+# con un puerto y probado con otro instala bien y no trae nada. O sea que versionarlos no
+# solo pesaria, ademas mentiria.
+#
+# ESTA LINEA SE AGREGO DESPUES DE CASI METERLOS. Un `git add -A` despues de correr el
+# escenario se los lleva, y 136 MB en un repo compartido no se sacan con un commit.
+Gnothi.Mobile/bundles/
+
+# La forma hospedada de compras que la pagina de La Guaria ofrece al telefono en
+# /descargas/movil/. Mismo motivo: 15 MB y el origen adentro. La arma armar-bundle.ps1
+# con -Origen, ver Compras/README.md. La forma cargo (descargas/compras.gmod) si va.
+Compras/PaginaDeDescarga/descarga/descargas/movil/
+
+# Las otras cuatro paginas ofrecen los mismos descargables (Gnothi para Windows, la forma
+# cargo y la hospedada del modulo) y ninguno va al repo: se arman antes de levantar URL1,
+# ver el nginx.conf de cada una.
+Examenes/PaginaDeDescarga/descarga/descargas/
+Municipalidad/PaginaDeDescarga/descarga/descargas/
+Concesionario/PaginaDeDescarga/descarga/descargas/
+Cargas/PaginaDeDescarga/descarga/descargas/
+
+# Xcode: estado de UI por persona, no del proyecto. El .xcodeproj y el esquema
+# compartido si van, para no rearmar el target a mano en cada clon.
+xcuserdata/
+*.xcuserstate
+
+# Lo que armar-intents.sh compila del Swift: la .a, el modulo y los const values. Es salida
+# de build y la regenera el script; el .swiftconstvalues cambia en cada corrida.
+Gnothi.iOS/Intents/out/
+
+# La dylib del puente a Apple Intelligence para la ventana de escritorio: salida de build, la
+# arma Gnothi.Desktop/armar-modelo.sh del MISMO Puente.swift de iOS, y solo existe en una Mac.
+Gnothi.Desktop/native/
+
+# Lo que deja xcodebuild al compilar Lab.Siri por linea de comandos. Xcode lo crea al lado del
+# .xcodeproj aunque se le pase CONFIGURATION_BUILD_DIR a otra parte.
+Spikes/Lab.Siri/build/
+
+# Y lo que dejan los dos laboratorios de Android al correr: el apk sin alinear, el base.apk que
+# se baja del aparato, y las clases desensambladas. Salida de build, la regeneran sus scripts.
+#
+# ACA NO ES POR PESO -son 40 KB, no los 136 MB de los bundles- sino para que `git status`
+# quede limpio: mientras estos aparecen sin trackear, lo que SI importa se pierde entre ellos.
+#
+# OJO, ESTAS LINEAS NO SACAN LO QUE YA ESTA TRACKEADO. agente.apk, sonda.apk, sus .idsig y los
+# classes.dex siguen versionados, y estan a proposito: entraron con los commits de spike
+# 868c2d3 y 28e214a como la evidencia del laboratorio, 12 KB que se instalan sin recompilar.
+Spikes/Lab.Agente/out/
+Spikes/Lab.Sonda/out/
+
+# Un banco de pruebas del Host propio de ESTA maquina: un root de modulos paralelo a Modulos/,
+# con installation.json apuntando a los journals reales de la persona. Ya no hace falta para
+# arrancar: los installation.json de Modulos/ apuntan RELATIVO a su carpeta al bin/Debug de cada
+# modulo, asi que el banco versionado arranca donde sea que se hayan compilado. Este queda para
+# quien quiera correr la suite contra sus datos: dotnet run --project Gnothi.Assistant.Tests -- Modulos.local
+Modulos.local/
+
+# Configuracion local del panel de Claude Code (launch.json apunta a rutas de esta maquina).
+.claude/

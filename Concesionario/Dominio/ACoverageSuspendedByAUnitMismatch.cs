@@ -10,32 +10,32 @@ namespace Concesionario.Dominio
 	/// </summary>
 	internal sealed class ACoverageSuspendedByAUnitMismatch : CoverageAnswer
 	{
-		private readonly string _subject;
+		private readonly string _systemCode;
 		private readonly DistanceUnit _limitUnit;
 		private readonly DistanceUnit _odometerUnit;
-		private readonly string _clause;
 
 		/// <summary>
 		/// La compone <see cref="WarrantyCoverage"/> con las dos unidades que no calzaron: la del
 		/// limite que rige y la del odometro recibido.
 		/// </summary>
 		internal ACoverageSuspendedByAUnitMismatch(
-			string subject, DistanceUnit limitUnit, DistanceUnit odometerUnit, string clause)
+			string systemCode, DistanceUnit limitUnit, DistanceUnit odometerUnit,
+			ACoverageClause clause)
+			: base(clause)
 		{
-			if (string.IsNullOrWhiteSpace(subject))
+			if (systemCode == null)
 				throw new DomainException(
 					"Se compuso una cobertura suspendida sin decir de que sistema habla.");
 
 			if (limitUnit == null || odometerUnit == null)
 				throw new DomainException(
-					$"Se compuso una cobertura suspendida sobre {subject} sin nombrar las dos "
+					$"Se compuso una cobertura suspendida sobre '{systemCode}' sin nombrar las dos "
 					+ "unidades que no coincidieron. Decir que no se pudo medir sin decir cual contra "
 					+ "cual no le deja a nadie corregirlo.");
 
-			_subject = subject;
+			_systemCode = systemCode;
 			_limitUnit = limitUnit;
 			_odometerUnit = odometerUnit;
-			_clause = clause;
 		}
 
 		/// <summary>Si: es esta clase de ausencia y no otra.</summary>
@@ -44,15 +44,28 @@ namespace Concesionario.Dominio
 			return true;
 		}
 
-		/// <summary>
-		/// Nombra las dos unidades y dice que no se convierten. La frase contesta aunque la
-		/// pregunta no: callarlo dejaria a la persona creyendo que le contestaron.
-		/// </summary>
-		internal override string Describe()
+		/// <summary>Suspendida por un desacuerdo de unidades.</summary>
+		internal override string TheShapeItHas()
 		{
-			return _subject + ": no se puede evaluar, porque el límite de distancia que rige está en "
-				+ _limitUnit.Name + " y el odómetro de este vehículo está en " + _odometerUnit.Name
-				+ ", y las unidades nunca se convierten. " + _clause;
+			return UnitMismatch;
+		}
+
+		/// <summary>El sistema por el que se pregunto, tal como llego.</summary>
+		internal override string TheSystemItIsAbout()
+		{
+			return _systemCode;
+		}
+
+		/// <summary>La unidad del limite de distancia que rige, por su nombre.</summary>
+		internal override string TheUnitTheLimitIsIn()
+		{
+			return _limitUnit.Name;
+		}
+
+		/// <summary>La unidad del odometro de este vehiculo, por su nombre.</summary>
+		internal override string TheUnitTheOdometerIsIn()
+		{
+			return _odometerUnit.Name;
 		}
 	}
 }

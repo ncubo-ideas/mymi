@@ -1,14 +1,14 @@
 @using Concesionario.Wasm.Parts
 
 <div class="d-sec" style="margin-top:4px">
-    <span class="d-sec__note" style="font-size:11.5px;line-height:1.4;color:var(--d-ink-2)">@Nueve.Count operaciones · primero lo urgente</span>
+    <span class="d-sec__note" style="font-size:11.5px;line-height:1.4;color:var(--d-ink-2)">@Texts.With("services.count", ("count", Texts.Grouped(Nueve.Count)))</span>
 </div>
 
 @if (Operations is not null)
 {
     <p class="d-note d-note--home" style="margin-top:2px;margin-bottom:14px;line-height:1.4">
         <Glyph Name="clock" Size="13" Stroke="2" />
-        <span>Datos actualizados al @Operations.AskedAt</span>
+        <span>@Texts.With("services.measuredAt", ("instant", Operations.AskedAt))</span>
     </p>
 }
 
@@ -24,10 +24,10 @@
             <div class="d-svc" id="@("servicio-" + kind)">
                 <div class="@("d-svc__badge d-svc__badge--" + tono)">
                     <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="11" Stroke="3" />
-                    @ComoSeLee.Estado(estado)
+                    @ComoSeLee.Estado(Texts.ThePhrases, estado)
                 </div>
 
-                <div class="d-svc__title">@ComoSeLee.Operacion(kind)</div>
+                <div class="d-svc__title">@ComoSeLee.Operacion(Texts.ThePhrases, kind)</div>
 
                 <div class="d-svc__sub">
                     @if (abiertoAqui)
@@ -40,7 +40,7 @@
                     }
                     else
                     {
-                        <span>@Resumen(kind, estado, parada)</span>
+                        <span>@Resumen(estado, parada)</span>
                     }
                 </div>
 
@@ -49,8 +49,8 @@
                     if (parada.CountdownRefused)
                     {
                         <div class="d-svc__falta" id="@("rechazo-" + kind)">
-                            <span class="d-svc__falta-label">No se pudo medir</span>
-                            <p class="d-svc__falta-note">@TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom</p>
+                            <span class="d-svc__falta-label">@Texts["services.refusedLabel"]</span>
+                            <p class="d-svc__falta-note">@Texts[TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom]</p>
                         </div>
                     }
                     else if (!parada.DistanceCanBeSaid && !parada.DaysCanBeSaid)
@@ -69,19 +69,19 @@
                     else
                     {
                         <div class="d-svc__falta" id="@("falta-" + kind)">
-                            <span class="d-svc__falta-label">Lo que falta</span>
+                            <span class="d-svc__falta-label">@Texts["services.remainingLabel"]</span>
                             <div class="d-svc__cols">
                                 @if (parada.DistanceCanBeSaid)
                                 {
                                     <div class="d-svc__col" id="@("resto-km-" + kind)">
-                                        <span class="d-svc__col-value">@ComoSeLee.Miles(parada.DistanceRemaining) @parada.DistanceUnit</span>
+                                        <span class="d-svc__col-value">@Texts.Grouped(parada.DistanceRemaining) @parada.DistanceUnit</span>
                                         <span class="d-svc__col-label">por distancia</span>
                                     </div>
                                 }
                                 @if (parada.DaysCanBeSaid)
                                 {
                                     <div class="d-svc__col" id="@("resto-dias-" + kind)">
-                                        <span class="d-svc__col-value">@ComoSeLee.Miles(parada.DaysRemaining) días</span>
+                                        <span class="d-svc__col-value">@Texts.Days(parada.DaysRemaining)</span>
                                         <span class="d-svc__col-label">por tiempo</span>
                                     </div>
                                 }
@@ -92,7 +92,7 @@
 
                 <button class="d-link d-svc__why" type="button" id="@("por-que-" + kind)"
                         @onclick="@(() => abierto = abiertoAqui ? "" : kind)">
-                    @(abiertoAqui ? "Ocultar" : "¿Por qué?")
+                    @(abiertoAqui ? Texts["services.hide"] : Texts["services.why"])
                     @if (!abiertoAqui)
                     {
                         <Glyph Name="chevron" Size="13" Stroke="2.6" />
@@ -106,12 +106,17 @@
 <p class="d-note" style="margin-top:14px">
     <Glyph Name="info" Size="14" Stroke="2" />
     <span>
-        El orden lo pone la urgencia, no el calendario: primero lo vencido, después lo que toca, y
-        de último lo que está al día. Las fechas de lo ya hecho todavía no vienen en el registro.
+        @Texts["services.order"]
     </span>
 </p>
 
 @code {
+    /// <summary>
+    /// El catalogo de esta caratula, en el idioma de la persona. Baja desde la pagina y esta seccion
+    /// no lo lee por su cuenta.
+    /// </summary>
+    [CascadingParameter] public Texts Texts { get; set; }
+
     [Parameter, EditorRequired] public IReadOnlyList<string> Nueve { get; set; } = new List<string>();
     [Parameter, EditorRequired] public Dictionary<string, string> Board { get; set; } = new();
     [Parameter, EditorRequired] public Dictionary<string, string> Reasons { get; set; } = new();
@@ -151,19 +156,24 @@
     /// lo decidio. Recortar la frase con puntos suspensivos cortaria justo donde estan los numeros.
     ///
     /// "NotDue" tiene DOS lecturas distintas segun si el registro programo un intervalo para esta
-    /// clase o no -- exactamente lo que ya dicen DistanceCanBeSaid/DaysCanBeSaid -- y decir una sola
-    /// frase para las dos volveria falsa a la mitad de los casos.
+    /// clase o no -- exactamente lo que ya dicen DistanceCanBeSaid/DaysCanBeSaid -- y el catalogo
+    /// solo tiene una frase para las dos: decirla igual volveria falsa a la mitad de los casos, asi
+    /// que esa rama se queda con sus dos frases propias en vez de pedirle al catalogo una distincion
+    /// que no tiene.
     /// </summary>
-    private static string Resumen(string kind, string estado, HowOneOperationStands parada) => estado switch
+    private string Resumen(string estado, HowOneOperationStands parada) => estado switch
     {
-        "Overdue" => "Se pasó del intervalo programado.",
-        "Due" => "Llegó al intervalo programado.",
-        "DueSoon" => "Está cerca del intervalo programado.",
-        "Deferred" => "Vos pediste posponerla.",
-        "Missed" => "Pasó su momento sin registrarse.",
         "NotDue" => parada is not null && !parada.DistanceCanBeSaid && !parada.DaysCanBeSaid
             ? "Sin intervalo programado para este carro."
             : "Dentro del intervalo programado.",
-        _ => "Tu registro no le puso un estado a esta operación.",
+        _ => Texts[estado switch
+        {
+            "Overdue" => "services.summaryOverdue",
+            "Due" => "services.summaryDue",
+            "DueSoon" => "services.summaryDueSoon",
+            "Deferred" => "services.summaryDeferred",
+            "Missed" => "services.summaryMissed",
+            _ => "services.summaryUnknown",
+        }],
     };
 }

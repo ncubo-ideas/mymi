@@ -17,10 +17,10 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Revienta: no hay regla que decir. Una clausula vacia se leeria como que el fabricante no
-		/// pone ninguna condicion, que es la lectura opuesta a la verdadera.
+		/// Revienta: no hay regla que decir. Una clausula sin texto se leeria como que el fabricante
+		/// no pone ninguna condicion, que es la lectura opuesta a la verdadera.
 		/// </summary>
-		internal override string Describe()
+		internal override AServicingClause TheClauseItComposes(string revisionCode)
 		{
 			throw new DomainException(
 				"Esta revision no publico ninguna regla de servicio en otro taller. Hay que "
@@ -28,12 +28,12 @@ namespace Concesionario.Dominio
 		}
 
 		/// <summary>
-		/// Revienta: sin regla publicada no hay contra que parar los conteos del vehiculo, y decir
+		/// Revienta: sin regla publicada no hay contra que parar los conteos del vehiculo, y llevar
 		/// solo los conteos seria dar numeros sin la regla que los hace significar algo.
 		/// </summary>
-		internal override string DescribeAgainst(
-			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
-			int missedMaintenanceCount)
+		internal override AServicingClause TheClauseItComposesAgainst(
+			string revisionCode, int externalServicesWithEvidence,
+			int externalServicesWithoutEvidence, int missedMaintenanceCount)
 		{
 			throw new DomainException(
 				"Se pidio la posicion de un vehiculo frente a una regla de servicio en otro taller "

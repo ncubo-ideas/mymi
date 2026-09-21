@@ -1,0 +1,220 @@
+{
+  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS, en el idioma del registro. El espanol es el de Costa Rica y es voseo: no lo pase a tuteo. El nombre del laboratorio, su lema y el titulo del modulo NO estan aca a proposito -son voz de la institucion, viven en Textos.cs y no se traducen-, y las frases que compone el dominio tampoco: esas llegan ya dichas por la puerta. Cada clave es una frase ENTERA: el espanol concuerda en genero y el ingles no, asi que pegar fragmentos produce concordancias rotas que ninguna comprobacion ve.",
+
+  "app": {
+    "membrete": "Tu expediente, en tu computadora.",
+    "privacidad": "Tus datos se quedan en tu dispositivo. Vos decidís qué compartir."
+  },
+
+  "error": {
+    "arriba": "No se pudo completar la operación.",
+    "arranque": "No se pudo abrir la app.",
+    "noEncontrado": "No encontrado",
+    "nadaEnEstaDireccion": "No hay nada en esta dirección.",
+    "inesperado": "Ocurrió un error inesperado.",
+    "recargar": "Recargar",
+    "descartar": "Descartar este aviso"
+  },
+
+  "arranque": {
+    "abriendo": "Abriendo…",
+    "abriendoNavegador": "Abriendo tu expediente guardado en este navegador…",
+    "abriendoCarpeta": "Abriendo tu carpeta «{carpeta}»…",
+    "abriendoCarpetaSinNombre": "Abriendo tu carpeta…",
+    "reotorgar": "Tu carpeta es <strong>«{carpeta}»</strong>. El browser pide confirmar el permiso de escritura cada vez que volvés a abrir la app.",
+    "darPermiso": "Dar permiso a «{carpeta}»",
+    "elegirCarpeta": "Elegir carpeta",
+    "elegiDonde": "Esta app guarda <strong>tus</strong> exámenes. Elegí dónde.",
+    "sinConexionSegura": "<strong>Esta página no está en una conexión segura</strong>, y por eso el navegador no le deja guardar nada — en cualquier navegador pasaría lo mismo. Entrá por <strong>https</strong> y las opciones de guardado aparecen.",
+    "sinNavegadorInstalada": "<strong>Acá no se puede guardar el expediente.</strong> Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que quede guardado, instalala desde <strong>Chrome</strong> o <strong>Edge</strong>.",
+    "sinNavegador": "<strong>Este navegador no puede guardar el expediente.</strong> Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que quede guardado, abrila desde <strong>Chrome</strong> o <strong>Edge</strong>.",
+    "modoCarpeta": "Una carpeta tuya",
+    "modoCarpetaTexto": "El expediente queda en la carpeta que elijas, en tu disco. <strong>Es el único modo en el que tu asistente lo puede leer.</strong>",
+    "modoCarpetaSinHttps": "Hace falta una conexión segura (https).",
+    "modoCarpetaSinAppInstalada": "Acá no está disponible. Para usarlo, instalá la app desde Chrome o Edge.",
+    "modoCarpetaSinApp": "Este navegador no lo permite. Para usarlo, abrí la app en Chrome o Edge.",
+    "modoAppInstalada": "Dentro de la app",
+    "modoNavegador": "En este navegador",
+    "modoAppInstaladaTexto": "Se guarda igual y sobrevive al cerrar, pero queda dentro de la app: <strong>no es una carpeta tuya y tu asistente no lo puede leer.</strong>",
+    "modoNavegadorTexto": "Se guarda igual y sobrevive al cerrar, pero lo administra el navegador: <strong>no es una carpeta tuya y tu asistente no lo puede leer.</strong>",
+    "modoNavegadorSinHttps": "También hace falta una conexión segura (https).",
+    "modoNavegadorNoDisponible": "Acá tampoco está disponible.",
+    "guardarAca": "Guardar acá",
+    "modoArchivo": "Un archivo",
+    "modoArchivoTexto": "Traé un expediente que exportaste antes, desde esta u otra computadora. Funciona en cualquier navegador.",
+    "importar": "Importar",
+    "sinGuardarNada": "Abrir sin guardar nada"
+  },
+
+  "portada": {
+    "saludo": "Hola, Sonia.",
+    "kicker": "Entendé cómo venís, no solo cómo saliste hoy.",
+    "ultimoChequeo": "Tu último chequeo",
+    "verMiChequeo": "Ver mi chequeo →",
+    "actualizar": "Actualizar",
+    "actualizando": "Actualizando…",
+    "yaNoSeActualiza": "Ya no se actualiza",
+    "urgente": "Hay algo que conviene revisar pronto.",
+    "consultePronto": "Conviene comentar un resultado con tu médico.",
+    "enGeneralBien": "En general, tus resultados vienen bien."
+  },
+
+  "guardado": {
+    "migrada": "<strong>Tus exámenes nuevos ahora entran por {donde}, en este mismo teléfono.</strong> Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de hacer es buscar novedades.",
+    "abrir": "Abrir {donde}",
+    "hospedada": "<strong>Se está guardando en este teléfono.</strong> Tu expediente es tuyo y está acá: Mymi le dio a este laboratorio una carpeta en tu teléfono, y tu asistente la puede leer desde ahí.",
+    "sinDestino": "<strong>No se está guardando nada.</strong> Esta app está funcionando sin destino: lo que ves lo vuelve a pedir al proveedor cada vez que abrís, y no queda registro tuyo.",
+    "guardarEnEsteNavegador": "Guardar en este navegador",
+    "rechazo": "<strong>La carpeta rechazó la escritura.</strong> Lo que ves en pantalla no está guardado en «{carpeta}». Suele ser el permiso, que caduca al reabrir.",
+    "volverADarPermiso": "Volver a dar permiso",
+    "enLaAppInstalada": "<strong>Se está guardando dentro de la app</strong>, así que tu expediente sobrevive al cerrar. Pero tu asistente <strong>no lo puede leer</strong>: para eso hace falta una carpeta tuya, y acá no las permite.",
+    "enElNavegador": "<strong>Se está guardando en este navegador</strong>, así que tu expediente sobrevive al cerrar. Pero tu asistente <strong>no lo puede leer</strong>: para eso hace falta una carpeta tuya, y este navegador no las permite.",
+    "exportarAUnArchivo": "Exportar a un archivo",
+    "enLaCarpeta": "Se guarda en «{carpeta}» después de cada cambio.",
+    "exportar": "Exportar",
+    "sinCarpeta": "<strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar."
+  },
+
+  "atencion": {
+    "rotulo": "merece atención",
+    "conteo": "1 resultado",
+    "conteoVarios": "{cuantos} resultados",
+    "tuResultado": "Tu resultado · {valor}",
+    "referencia": "Referencia · {referencia}",
+    "referenciaMinuscula": "referencia: {referencia}",
+    "entenderEsteResultado": "Entender este resultado →",
+    "verEvolucion": "Ver evolución",
+    "posibleErrorDeMedicion": "posible error de medición",
+    "vieneAumentando": "viene aumentando",
+    "vieneBajando": "viene bajando",
+    "enSeguimiento": "en seguimiento",
+    "seMantieneEstable": "se mantiene estable"
+  },
+
+  "tranquilo": {
+    "rotulo": "lo demás está bien",
+    "titulo": "Estos resultados están dentro de lo esperado.",
+    "enRango": "en rango",
+    "mediciones": "{cuantas} mediciones",
+    "nota": "{mediciones} · {tendencia}",
+    "ocultarDetalle": "Ocultar detalle →",
+    "verTodos": "Ver todos mis resultados →",
+    "relatoTendencia": "pasó de {antes} a {ahora} en {dias}, sobre {mediciones}",
+    "relatoPresencia": "{positivas} de {pruebas} pruebas en {dias}",
+    "relatoConstancia": "{esperables} de {veces} veces dentro de lo esperable, en {dias}"
+  },
+
+  "pedido": {
+    "rotulo": "ayudanos a interpretar mejor un resultado",
+    "ver": "Ver",
+    "ocultar": "Ocultar",
+    "verElDatoQueFalta": "Ver el dato que falta",
+    "ocultarElDatoQueFalta": "Ocultar el dato que falta",
+    "soyHombre": "Soy hombre",
+    "soyMujer": "Soy mujer"
+  },
+
+  "cambios": {
+    "titulo": "Qué cambió desde tu último chequeo",
+    "intro": "Así han cambiado tus resultados recientes.",
+    "verComparacion": "Ver comparación completa →"
+  },
+
+  "sinTendencia": {
+    "rotulo": "todavía no podemos ver la tendencia",
+    "conUna": "Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando.",
+    "conVarias": "Todavía no hay datos suficientes para mostrar cómo viene cambiando."
+  },
+
+  "historial": {
+    "titulo": "Tu historial",
+    "verMenos": "Ver menos",
+    "verCompleto": "Ver historial completo →",
+    "sinExamenes": "Todavía no hay exámenes. Apretá <em>Actualizar</em>.",
+    "intro": "Aquí podés ver tus resultados anteriores.",
+    "resultado": "1 resultado",
+    "resultados": "{cuantos} resultados",
+    "rangosDe": "Tus resultados se comparan contra los rangos de <strong>{sexo}</strong>.",
+    "hombre": "hombre",
+    "mujer": "mujer",
+    "cambiar": "Cambiar",
+    "compararContraHombre": "Comparar contra los rangos de hombre",
+    "compararContraMujer": "Comparar contra los rangos de mujer",
+    "cambiarElSexo": "Cambiar el sexo contra el que se comparan tus resultados"
+  },
+
+  "detalle": {
+    "despues": "{dias} después",
+    "volver": "← Mis exámenes",
+    "appNoAbierta": "La app no está abierta. <a href=\"\">Volvé a la lista</a> para abrirla.",
+    "sinPrueba": "Todavía no te hicieron esta prueba.",
+    "soloUnaPrueba": "Sólo hay una prueba. Con un solo resultado no se puede decir si esto se repite: hace falta una segunda.",
+    "pruebasEnDias": "{positivas} de {pruebas} pruebas, en {dias}",
+    "seguidasAlFinal": "· {seguidas} seguidas al final",
+    "conReferencia": "· {referencia}",
+    "pideAlgo": "{lectura}. No es un diagnóstico: es la lectura de tu propia serie. Lo que corresponde es <strong>{accion}</strong>.",
+    "tranquilo": "{lectura}.",
+    "cadaPrueba": "Cada prueba",
+    "cadaObservacion": "Cada observación",
+    "cadaMedicion": "Cada medición",
+    "vecesEsperable": "{esperables} de {veces} veces dentro de lo esperable, en {dias}",
+    "unaSolaObservacion": "una sola observación: la categoría ya es la lectura",
+    "sinMediciones": "No hay ninguna medición de este analito todavía.",
+    "unaMedicion": "1 medición",
+    "aumentoTotal": "aumento total",
+    "descensoTotal": "descenso total",
+    "cambioTotal": "cambio total",
+    "mediciones": "mediciones",
+    "entrePrimeraYUltima": "entre primera y última",
+    "ultimoSalto": "último salto: {salto}",
+    "referenciaMinuscula": "referencia: {referencia}",
+    "tuResultadoYElRango": "Tu resultado y el rango",
+    "limiteDeReferencia": "(límite de referencia)",
+    "resultadoActual": "Resultado actual: <b>{valor}</b> · Referencia: {referencia}",
+    "metaRotulo": "Tu progreso hacia una meta orientativa",
+    "metaNota": "Es un paso sugerido desde tu valor actual, no el rango de referencia clínico de arriba.",
+    "valePenaAccion": "Vale la pena <b>{accion}</b>.",
+    "faltaUnDato": "<strong>Falta un dato tuyo.</strong> {lectura}. Los valores de arriba son reales; lo que no hay todavía es la lectura. <a href=\"\">Decilo en tus exámenes</a> y esto se interpreta solo.",
+    "contextoRango": "El rango de referencia se evalúa para {edad} años{sexo}.",
+    "ritmoRotulo": "al ritmo del último tramo",
+    "ritmoNota": "medido sobre {dias} · el umbral de este analito es {umbral} al año",
+    "rangosSeEvaluan": "Los rangos de referencia se evalúan para {edad} años{sexo}.",
+    "leidoHasta": "Leído hasta el evento {evento}.",
+    "ySexo": " y sexo {sexo}",
+    "porEncimaDelRango": "Tu resultado está por encima del rango de referencia.",
+    "cercaDelAlto": "Tu resultado sigue dentro del rango de referencia, pero está cerca del extremo alto.",
+    "cercaDelBajo": "Tu resultado sigue dentro del rango de referencia, pero está cerca del extremo bajo.",
+    "dentroDelRango": "Tu resultado sigue dentro del rango de referencia.",
+    "porDebajoDelRango": "Tu resultado está por debajo del rango de referencia.",
+    "evolucionAumentando": "Ha venido aumentando en tus últimas mediciones.",
+    "evolucionBajando": "Ha venido bajando en tus últimas mediciones.",
+    "enDias": "en {dias}",
+    "evolucionEstable": "Se mantiene estable en tus últimas mediciones."
+  },
+
+  "fallo": {
+    "paso": "Paso: {paso}",
+    "causa": "\n  causa: {causa}",
+    "elegirCarpeta": "elegir carpeta",
+    "darPermiso": "dar permiso a la carpeta",
+    "usarNavegador": "guardar en este navegador",
+    "exportar": "exportar el expediente",
+    "importar": "importar un expediente",
+    "arrancar": "abrir la app",
+    "declararSexo": "declarar tu sexo",
+    "refrescar": "refrescar contra el proveedor"
+  },
+
+  "forma": {
+    "meta": "meta",
+    "hoy": "hoy",
+    "veniasDe": "venías de {valor}",
+    "rangoDeReferencia": "Rango de referencia",
+    "nivelDeSiempre": "tu nivel de siempre, {valor}",
+    "esperableHasta": "esperable hasta {valor}",
+    "categoriaSiempre": "{veces} veces, siempre lo esperable",
+    "categoriaFuera": "{afuera} de {veces} fuera de lo esperable",
+    "presenciaNinguna": "{pruebas} pruebas, ninguna",
+    "presenciaAlgunas": "{presentes} de {pruebas}"
+  }
+}

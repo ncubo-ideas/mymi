@@ -1,0 +1,2312 @@
+<!doctype html>
+<!-- THE FACE OF THE PHONE HOST. One file, zero network: everything the WebView needs is here.
+     The look follows the team's Android mockup -- lavender ground, purple accent, a greeting
+     card for Sonia, the modules as a two-column grid with tinted icons, four tabs -- with two
+     honesty edits: the modules are NOT labeled "aislados (WASM)" because measured they are
+     neither, and the Journal / Ajustes tabs show real numbers, not decoration.
+
+     HOW IT TALKS TO C#: window.prompt('gnothi', json), answered synchronously in OnJsPrompt;
+     C# pushes back through gn.push(kind, id, payload). -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Mymi</title>
+<style>
+  :root{
+    --paper:#F5F3FB; --card:#FFFFFF; --ink:#241F3D; --muted:#6F6B85; --line:#E7E4F2;
+    --accent:#6C4BD9; --accent-soft:#EEE9FC; --accent-ink:#4A2FB0;
+    --off:#C0442E; --off-soft:#F9E7E2;
+    --shadow:0 1px 2px rgba(36,31,61,.04), 0 6px 20px rgba(36,31,61,.07);
+    --shadow-up:0 2px 4px rgba(36,31,61,.06), 0 14px 34px rgba(36,31,61,.14);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:var(--paper);color:var(--ink);
+       font-family:Manrope,system-ui,Roboto,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+  /* GNOTHI'S OWN TYPEFACE: Manrope, technological and neutral, shipped in the app's assets. Each
+     institution's card can bring its own (brand.font); everything that is the Host's stays here. */
+  @font-face{font-family:Manrope;src:url(fonts/Manrope-400-800.woff2) format('woff2');font-weight:400 800;font-display:swap}
+  svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  .view{display:none;flex-direction:column;height:100%;padding-bottom:64px}
+  /* MICRO-ANIMATIONS (review 2026-09-08): the view slides in, the card sinks and lifts its shadow
+     when touched, and the touch leaves a ripple. None of this changes what the app does; it
+     changes how it feels. */
+  .view.on{display:flex;animation:enter .22s ease-out}
+  @keyframes enter{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+  .rip{position:absolute;border-radius:50%;pointer-events:none;background:var(--brand,var(--accent));
+       opacity:.14;transform:scale(0);animation:ripple .55s ease-out forwards}
+  @keyframes ripple{to{transform:scale(1);opacity:0}}
+  .scroll{flex:1;overflow-y:auto;padding:12px 16px 24px}
+
+  nav{position:fixed;left:0;right:0;bottom:0;height:60px;display:flex;
+      background:var(--card);border-top:1px solid var(--line)}
+  nav button{flex:1;border:0;background:none;color:var(--muted);font-size:10.5px;font-weight:600;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  nav button.on{color:var(--accent)}
+  nav svg{width:22px;height:22px}
+
+  /* ── header ───────────────────────────────────────────────────────────── */
+  .top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;
+       display:grid;place-items:center}
+  .logo svg{width:19px;height:19px}
+  .logo.mark{background:none;overflow:hidden;border-radius:10px}
+  .logo.mark img{width:34px;height:34px;display:block}
+  .top b{font-size:21px;font-weight:800;letter-spacing:-.02em;flex:1}
+  /* THE HIERARCHY (review 2026-09-08): Mymi + its promise, «Tus instituciones · N conectadas», the
+     cards. The greeting is gone: the space belongs to the modules, and the Assistant has its tab. */
+  .top .tt{flex:1;min-width:0}
+  .top .tt b{display:block;line-height:1.15}
+  .top .tt small{display:block;color:var(--muted);font-size:12px;line-height:1.3;margin-top:1px}
+  .ava{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);
+       color:var(--accent-ink);font-weight:700;font-size:14px;display:grid;place-items:center}
+
+  /* ── the greeting, straight from the mockup ───────────────────────────── */
+  .chev{color:var(--muted);font-size:20px;flex:none}
+
+  /* «HOLA, SONIA» + «AGREGAR MÓDULO» (mockup 2026-09-09): the greeting is the section head, and the
+     action that grows Mymi sits next to it, in the Host's violet -- and STAYS on screen while the
+     list scrolls, whether Sonia has five modules or thirty. The connect card left the grid. */
+  .hola{display:flex;align-items:flex-end;gap:12px;margin:0 -16px 4px;padding:2px 18px 6px;
+       position:sticky;top:0;z-index:5;background:var(--paper);
+       /* Y SU FONDO SIGUE HASTA EL BORDE DE ARRIBA. `.scroll` tiene 12 px de relleno superior, y
+          `top:0` de una pegajosa se mide DESPUES de ese relleno: la cabecera se clavaba en y=12 y
+          por esos 12 px de aire asomaban los techos de las tarjetas que subian. Se veia una franja
+          suelta arriba del titulo, como si la cabecera flotara separada de la pantalla.
+          Medido en el Honor y en el emulador el 2026-09-21.
+
+          La sombra es un fondo, no una sombra: mismo color, sin difuminado, corrida 12 px hacia
+          arriba, asi que pinta exactamente la banda del relleno. NO se le quita el relleno a
+          `.scroll` porque son CINCO vistas colgando de esa misma clase, y NO se usa un
+          pseudo-elemento porque esto no agrega una caja ni cambia el alto: es pintura.
+
+          El color es `--paper`, el de la pantalla, no blanco puro: blanco dejaria una costura
+          visible contra el fondo de la pagina, que es justo lo que se estaba tratando de sacar. */
+       box-shadow:0 -12px 0 var(--paper)}
+  .hola .t{flex:1;min-width:0}
+  .hola{align-items:center}
+  .hola b{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+  .hola small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+  .hola .addbtn{flex:none;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;
+       padding:9px 14px;background:var(--accent);color:#fff;font:inherit;font-size:13px;font-weight:700;
+       box-shadow:0 6px 16px rgba(108,75,217,.28);transition:transform .15s ease}
+  .hola .addbtn:active{transform:scale(.96)}
+  .hola .addbtn span{font-size:17px;line-height:1}
+  .sec{display:flex;align-items:center;gap:8px;margin:2px 2px 10px}
+  .sec b{font-size:16px;flex:1}
+  .sec small{color:var(--muted);font-size:12.5px;font-weight:600}
+  .sec .grid-icon{width:20px;height:20px;color:var(--accent);flex:none}
+
+  /* ── the module grid ──────────────────────────────────────────────────── */
+  /* THE CARD BELONGS TO THE INSTITUTION (Geaninna's mockup, 2026-09-08): its logo, its name and its
+     slogan, and the corporate color as a top STRIPE on a white card, not as a colored background:
+     five brands side by side have to get along. Two columns on the phone, more on a tablet. */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (min-width:600px){ .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))} }
+  /* THE PHOTO CARD (mockup 2026-09-09): the institution's banner fills the card, a gradient in its
+     color keeps the text readable, the name comes in two tiers -«Laboratorio Clínico» small, «Delfos»
+     big, in its typeface-, then the slogan, a chip with how many queries are on, and a white pill
+     «Abrir →». The first card spans both columns (.wide; `hero` is the detail's class). Without a banner, the card is a gradient
+     of the brand color: still the brand, never a grey box. */
+  .mod.photo{color:#fff;border-top:0;min-height:196px;padding:14px 14px 14px;justify-content:flex-start;gap:6px;
+       background:linear-gradient(100deg,var(--brand) 0%,color-mix(in srgb,var(--brand) 70%,transparent) 48%,transparent 100%),
+                  var(--banner,linear-gradient(135deg,var(--brand),var(--brand-deep,#000)));
+       background-size:cover;background-position:center}
+  .mod.photo.wide{grid-column:1 / -1;min-height:200px}
+  .mod.photo .head{flex-direction:row;align-items:center;gap:10px}
+  .mod.photo .ico{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.18);
+       box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  .mod.photo .ico.brand{background:rgba(255,255,255,.92)}
+  .mod.photo .ico.brand img{object-fit:contain;padding:5px;background:transparent}
+  .mod.photo .nm{min-width:0}
+  /* THE TYPOGRAPHY (Geaninna, 2026-09-09): Manrope for everything; the institution's typeface ONLY
+     on its brand name, and moderate. «LABORATORIO CLÍNICO» small caps 10-11 px; the name 20-21 px,
+     26 on the hero; the slogan 12-13 px in Manrope. The brand is the protagonist, the slogan is
+     secondary, and the chip and «Abrir» are Mymi's -- identical on every card. */
+  .mod.photo .nm .pre{display:block;font-size:10px;font-weight:500;opacity:.85;letter-spacing:.08em;
+       text-transform:uppercase;line-height:1.3}
+  .mod.photo .nm b{display:block;font-family:var(--font,inherit);font-size:21px;font-weight:700;line-height:1.05;
+       letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .mod.photo .nm b.mf{font-weight:800}
+  .mod.photo.wide .nm .pre{font-size:11px}
+  .mod.photo.wide .nm b{font-size:26px}
+  .mod.photo small{color:#fff;opacity:.85;font-size:12px;font-weight:400;line-height:1.35;
+       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:0 0 auto;
+       text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .mod.photo.wide small{font-size:13px;font-weight:500}
+  .mod.photo .acts{margin-top:auto;flex-direction:column;align-items:flex-start;gap:8px;padding-top:8px}
+  .mod.photo .perm{display:inline-flex;align-items:center;gap:6px;border:0;padding:5px 10px;border-radius:999px;
+       background:rgba(10,20,40,.42);color:#fff;font:inherit;font-size:11px;font-weight:600;
+       backdrop-filter:blur(4px);cursor:pointer}
+  .mod.photo .perm svg{width:11px;height:11px}
+  .mod.photo .abrir{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:8px 16px;
+       background:#fff;color:var(--accent-ink);font:inherit;font-size:13px;font-weight:800;
+       box-shadow:0 3px 10px rgba(0,0,0,.18);transition:transform .15s ease}
+  .mod.photo .abrir span{transition:transform .15s ease}
+  .mod.photo:active .abrir span{transform:translateX(3px)}
+  .mod.photo.off{opacity:.7;filter:saturate(.4)}
+  .mod.photo .off-tag{color:#fff;opacity:.9}
+  /* «Hay una versión nueva» (NotasGnothiHost/44 §4): a pill she can tap, with a dot so it reads as
+     news and not as another permission count. It downloads nothing by itself: the update sheet follows. */
+  .mod.photo .perm.nueva{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
+  .mod.photo .perm.nueva::before{content:'';width:7px;height:7px;border-radius:50%;background:#FFD166;flex:none}
+  .mod.photo .rip{background:#fff;opacity:.18}
+  .mod{position:relative;overflow:hidden;background:var(--card);border-radius:20px;box-shadow:var(--shadow);
+       padding:14px 14px 14px;display:flex;flex-direction:column;gap:8px;align-items:stretch;
+       text-align:left;min-height:156px;border-top:4px solid var(--brand,#CFC9E4);
+       transition:transform .18s ease,box-shadow .18s ease;-webkit-tap-highlight-color:transparent}
+  .mod:active{transform:scale(.965);box-shadow:var(--shadow-up)}
+  /* On the phone the logo goes on top and the name below at full width: «Supermercado» does not fit
+     next to a logo in 165 px. From tablet up, side by side as in the mockup. */
+  .mod .head{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
+  .mod .head b{min-width:0}
+  @media (min-width:600px){ .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+    .mod .head{flex-direction:row;align-items:center;gap:10px} .mod .head b{flex:1} .mod{min-height:0} }
+  .mod .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex:none}
+  .mod .ico svg{width:24px;height:24px}
+  /* THE INSTITUTION'S BRAND: its icon, exactly as published in its bundle, over its color. */
+  .ico.brand{overflow:hidden;padding:0}
+  .ico.brand img{width:100%;height:100%;object-fit:cover;display:block}
+  .mod b{font-size:14.5px;line-height:1.25}
+  /* the institution's slogan can be a sentence: two lines at most, never widens the grid */
+  .mod small{color:var(--muted);font-size:11.5px;line-height:1.35;display:-webkit-box;
+       -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;flex:1}
+  /* THE WHOLE CARD IS THE SHORTCUT: touching it opens the institution's app. The arrow at the top
+     right only hints at it, discreet and in the brand color; no button (review 2026-09-08). The
+     detail (consent, the switches of the queries) opens from «✦ Consultas disponibles». */
+  /* THE ACTIONS, at the bottom of the card (Geaninna, 2026-09-09): «Abrir <institución> →» in the
+     brand color says what a tap does, and «✦ Consultas disponibles» is the entry to what the
+     institution exposes to the AI -- no more press-and-hold to find the switches. */
+  .mod .acts{margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding-top:6px}
+  .mod .go{display:inline-flex;align-items:center;gap:6px;color:var(--brand,var(--accent));
+       font-size:13px;font-weight:700;line-height:1.2;transition:transform .15s ease}
+  .mod .go span{font-size:15px;transition:transform .15s ease}
+  .mod:active .go span{transform:translateX(3px)}
+  .mod .qs{border:0;background:none;padding:0;margin:0;font-family:inherit;text-align:left;cursor:pointer;
+       display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:11.5px;font-weight:600;line-height:1.2}
+  .mod .qs:active{color:var(--accent)}
+  .mod .off-tag{font-size:13px;font-weight:700;color:var(--muted)}
+  .mod .abrir span{font-size:14px;line-height:1}
+  /* No watermark: the PNG icons are full squares and in the background they read as a smudge, not
+     as the silhouette in the mockup. The brand is already in the stripe, the logo and the arrow. */
+  /* EL ALTA EN CURSO. Vive arriba de la grilla porque es lo que la persona está esperando. */
+  .alta{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;
+        border-radius:14px;font-size:13.5px;line-height:1.4}
+  .alta b{font-weight:600}
+  .alta.trabajando{background:#EEF0FB;color:#3A3577}
+  .alta.listo{background:#E6F6EC;color:#1D6B39}
+  .alta.error{background:#FDECEA;color:#8E2A1F}
+  .alta .sp{width:16px;height:16px;flex:0 0 16px;border-radius:50%;
+            border:2px solid rgba(58,53,119,.25);border-top-color:#3A3577;
+            animation:girar .8s linear infinite}
+  @keyframes girar{to{transform:rotate(360deg)}}
+  .alta .ic{flex:0 0 16px;font-size:15px;line-height:1}
+  .alta.trabajando{flex-wrap:wrap;padding:16px 18px;gap:8px 12px}
+  .alta .txt{flex:1;min-width:0}
+  .alta .txt b{display:block;font-weight:700}
+  .alta .txt small{display:block;font-size:12px;opacity:.8;margin-top:2px}
+  .alta .bar{flex:0 0 100%;height:6px;border-radius:999px;background:rgba(58,53,119,.15);overflow:hidden}
+  .alta .bar i{display:block;height:100%;background:#3A3577;border-radius:999px;transition:width .25s linear}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
+       color:var(--muted);margin-top:4px;justify-content:center}
+  .chip svg{width:12px;height:12px}
+  .mod.off{opacity:.7}
+  .mod.off .ico{filter:grayscale(1);opacity:.5}
+  .chip.no{color:var(--off)}
+
+  /* the ghost card: adding a module is part of the product, so the grid says so */
+  /* CONNECTING AN INSTITUTION is the action that grows Mymi: a card unlike the brand ones (dashed
+     accent border, soft background, no stripe). */
+  .mod.add{background:linear-gradient(160deg,#F1ECFF,#E6E0FA);box-shadow:none;border:1.5px dashed #C4B7F2;border-top-width:1.5px;
+       color:var(--muted);align-items:center;text-align:center;justify-content:center;gap:8px;--brand:var(--accent);min-height:196px}
+  .mod.add .cta{flex-direction:column;align-items:center}
+  .mod.add small{text-align:center;flex:0 0 auto}
+  .mod.add .cta{display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:var(--accent-ink);font-weight:800;font-size:14.5px;line-height:1.2;padding-right:30px}
+  @media (min-width:600px){ .mod.add .cta{flex-direction:row;align-items:center} }
+  .mod.add .cta .plus{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;
+       display:grid;place-items:center;font-size:22px;line-height:1;font-weight:600;flex:none}
+  .mod.add small{color:var(--accent-ink);opacity:.8}
+  .mod.add .go{color:var(--accent)}
+
+  /* bottom sheets: the add-module explanation and the provider picker share the shell */
+  .vias{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .via{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--paper);
+       border-radius:16px;padding:12px 14px;font:inherit;color:var(--ink);cursor:pointer}
+  .via:active{transform:scale(.99)}
+  .via .vi{width:42px;height:42px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);
+       display:grid;place-items:center;flex:none}
+  .via .vi svg{width:22px;height:22px}
+  .via .vt{flex:1;min-width:0}
+  .via .vt b{display:block;font-size:14.5px;font-weight:700}
+  .via .vt small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:1px}
+  .enlace{display:none;padding:0 4px 4px}
+  .enlace.on{display:block}
+  .osheet .enlace input{margin-top:0}
+  .osheet .enlace button.cta{margin-top:10px}
+  .hallazgo{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--paper);
+       border-radius:16px;padding:12px 14px;font:inherit;color:var(--ink);margin-top:10px}
+  .hallazgo:disabled{cursor:default}
+  .hallazgo.mal{opacity:.72}
+  .hallazgo .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex:none}
+  .hallazgo .ico svg{width:24px;height:24px}
+  .hallazgo .ht{flex:1;min-width:0}
+  .hallazgo .ht b{display:block;font-size:14.5px}
+  .hallazgo .ht small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:1px}
+  .hallazgo .tag{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;flex:none;
+       background:var(--accent-soft);color:var(--accent-ink)}
+  .hallazgo .tag.ok{background:#E6F6EC;color:#1D6B39}
+  .hallazgo .tag.no{background:var(--off-soft);color:var(--off)}
+  .ojo.suave{background:var(--accent-soft);color:var(--accent-ink)}
+  .osheet label.chk{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:600;color:var(--ink)}
+  .osheet label.chk input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+  .osheet{position:fixed;inset:0;background:rgba(36,31,61,.45);display:none;
+       align-items:flex-end;z-index:9}
+  .osheet.on{display:flex}
+  .osheet .card{background:var(--card);border-radius:22px 22px 0 0;padding:24px 22px 30px;
+       width:100%;max-height:78vh;overflow-y:auto}
+  /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Mymi fija. */
+  .pr-hero{margin-bottom:16px}
+  /* LA FRANJA DE PROCEDENCIA. Verde cuando el dominio que la institución declara se
+     corresponde con el host del que bajó el bundle, ámbar cuando no, y neutra cuando no hay
+     con qué comparar. Las tres son información y ninguna bloquea nada. */
+  .proc{display:flex;align-items:flex-start;gap:7px;border-radius:12px;padding:9px 11px;
+        font-size:11.5px;line-height:1.4;margin:2px 0 0}
+  .proc svg{width:14px;height:14px;flex:none;stroke-width:2.2;margin-top:1px}
+  .proc.ok{background:#E4F4EC;color:#0E5C3D}
+  .proc.duda{background:#FFF6E5;color:#8A5A00}
+  /* La neutra toma el color de la institución por style; acá solo su forma. */
+  .proc.dice{background:var(--accent-soft);color:var(--accent-ink)}
+  /* Lo que la institución dice de sí misma. No usa .hint -que es para las notas al pie del
+     Host, centrada y en gris-: esto es un párrafo de alguien, y un párrafo se lee alineado. */
+  .desc{font-size:12.5px;line-height:1.5;color:var(--ink);padding:0 2px;margin:0}
+  .hint + .desc{margin-top:16px}
+  .noHace{font-weight:600}
+  .pr-tools{list-style:none;margin:6px 0 14px;padding:0}
+  .pr-tools li{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .pr-tools li:last-child{border-bottom:0}
+  .pr-tools small{color:var(--muted);font-size:12px;line-height:1.4;display:block;margin-top:2px}
+  .osheet code{display:inline-block;background:#EEF0FB;color:#3A3577;border-radius:6px;
+               padding:3px 7px;font-size:11.5px;word-break:break-all;margin-top:3px}
+  .ojo{background:#FFF6E5;color:#8A5A00;border-radius:10px;padding:10px 12px;font-size:13px}
+  .osheet h4{font-size:17px;margin-bottom:8px}
+  .osheet p{color:var(--muted);font-size:13.5px;line-height:1.6;margin-bottom:8px}
+  .osheet button.cta{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13px;
+       background:var(--accent);color:#fff;font-size:15px;font-weight:600}
+  .prow{display:flex;align-items:center;gap:10px;padding:13px 2px;
+       border-bottom:1px solid var(--line)}
+  .prow:last-child{border-bottom:none}
+  .prow .t{flex:1}
+  .prow b{font-size:14.5px;display:block}
+  .prow small{color:var(--muted);font-size:11.5px}
+  .prow .cur{color:#1E9E6A;font-weight:800}
+  .osheet input{width:100%;margin-top:8px;border:1.5px solid var(--line);border-radius:12px;
+       padding:11px 14px;font-size:13px;font-family:ui-monospace,monospace;
+       background:var(--paper);color:var(--ink);outline:none}
+
+  /* ── the code reader: the camera full screen, a frame, one way out ───── */
+  .scan{position:fixed;inset:0;background:#000;display:none;z-index:12}
+  .scan.on{display:block}
+  .scan video{width:100%;height:100%;object-fit:cover}
+  .scan-ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+       justify-content:center;gap:18px;padding:24px}
+  .scan-box{width:62vw;max-width:280px;aspect-ratio:1;border:3px solid #fff;border-radius:18px;
+       box-shadow:0 0 0 200vmax rgba(0,0,0,.45)}
+  .scan-ui p{color:#fff;font-size:15px;text-align:center;margin:0;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .scan-ui button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:14px;
+       padding:12px 24px;font-size:15px}
+
+  /* ── module detail ────────────────────────────────────────────────────── */
+  .back{display:flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;
+       font-size:14px;margin-bottom:14px}
+  .hero{display:flex;align-items:center;gap:14px}
+  .hero .ico{width:54px;height:54px;border-radius:14px;display:grid;place-items:center}
+  .hero .ico svg{width:29px;height:29px}
+  .hero b{font-size:19px;display:block}
+  .hero small{color:var(--muted);font-size:12.5px}
+
+  .master{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
+       padding:14px;display:flex;align-items:center;gap:10px;margin:16px 0 4px}
+  .master span{flex:1;font-weight:600;font-size:14.5px}
+  /* THE CHEVRON IS NOT A COLUMN. `.master span` above reaches <span class="chev"> too, and beats
+     .chev{flex:none} on specificity, so text and arrow split the row in halves: the arrow landed
+     mid-line with «adentro de Mymi» wrapping under it (measured on the 13 Pro, 2026-09-11). */
+  .master .chev{flex:none;font-weight:400}
+
+  h3.cap{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+       color:var(--muted);margin:18px 4px 8px}
+  /* «Consultas de La Guaria» is what the card's link promised: it is the headline of the detail. */
+  .qtitle{font-size:17px;font-weight:800;margin:20px 2px 2px;line-height:1.2}
+  .qlead{color:var(--muted);font-size:13px;margin:0 2px 10px;line-height:1.45}
+  .tool{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
+       padding:13px 14px;display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+  .tool .t{flex:1;min-width:0}
+  .tool .t b{font-size:14px;display:block;margin-bottom:2px}
+  .tool .t p{color:var(--muted);font-size:12px;line-height:1.45}
+  .tool.dim{opacity:.55}
+  .hint{color:var(--muted);font-size:12px;margin:10px 8px 0;text-align:center;line-height:1.5}
+
+  .sw{position:relative;width:46px;height:28px;flex:none;margin-top:2px}
+  .sw input{opacity:0;width:0;height:0}
+  .sw i{position:absolute;inset:0;border-radius:99px;background:#D4D0E3;transition:.18s}
+  .sw i:before{content:"";position:absolute;width:22px;height:22px;border-radius:50%;
+       background:#fff;top:3px;left:3px;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .sw input:checked + i{background:var(--accent)}
+  .sw input:checked + i:before{transform:translateX(18px)}
+
+  /* ── chat ─────────────────────────────────────────────────────────────── */
+  .chat-head{padding:14px 16px 10px;border-bottom:1px solid var(--line);
+       display:flex;align-items:center;gap:10px}
+  .chat-head .ic{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);
+       color:var(--accent);display:grid;place-items:center}
+  .chat-head .ic svg{width:19px;height:19px}
+  .chat-head b{font-size:16.5px;display:block}
+  .chat-head small{display:block;color:var(--muted);font-size:11.5px}
+  #msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px}
+
+  .b{max-width:86%;padding:10px 14px;border-radius:16px;font-size:14.5px;overflow-wrap:break-word}
+  .b.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:5px}
+  .b.bot{align-self:flex-start;background:var(--card);box-shadow:var(--shadow);
+       border-bottom-left-radius:5px}
+  .b.bot .md p{margin:6px 0}
+  .b.bot .md p:first-child{margin-top:0}
+  .b.bot .md p:last-child{margin-bottom:0}
+  .b.bot .md h3{font-size:15px;margin:10px 0 4px}
+  .b.bot .md li{margin:2px 0 2px 18px}
+  .b.bot .md code{background:var(--paper);border-radius:4px;padding:1px 5px;
+       font-family:ui-monospace,monospace;font-size:12.5px}
+  .b.bot .md .tw{overflow-x:auto;margin:8px -4px}
+  .b.bot .md table{border-collapse:collapse;font-size:12.5px;min-width:100%}
+  .b.bot .md th,.b.bot .md td{border:1px solid var(--line);padding:5px 8px;text-align:left;
+       white-space:nowrap}
+  .b.bot .md th{background:var(--accent-soft)}
+  .b.bot .md tr:nth-child(even) td{background:#FAF9FD}
+
+  .trace{align-self:flex-start;max-width:86%}
+  .trace pre{background:#241F3D;color:#CBBDF7;border-radius:12px;padding:10px 12px;
+       font-family:ui-monospace,monospace;font-size:11px;line-height:1.6;overflow-x:auto;
+       white-space:pre-wrap}
+  details.trace summary{color:var(--muted);font-size:11.5px;font-weight:600;
+       margin:0 0 4px 4px;list-style:none}
+  details.trace summary:before{content:"▸ "}
+  details.trace[open] summary:before{content:"▾ "}
+
+  .think{display:inline-flex;gap:5px;padding:4px 2px}
+  .think i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:th 1.1s infinite}
+  .think i:nth-child(2){animation-delay:.18s}.think i:nth-child(3){animation-delay:.36s}
+  @keyframes th{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+  .inbar{display:flex;gap:8px;padding:10px 12px;background:var(--card);border-top:1px solid var(--line)}
+  .inbar input{flex:1;border:1.5px solid var(--line);border-radius:22px;padding:10px 16px;
+       font-size:15px;background:var(--paper);color:var(--ink);outline:none}
+  .inbar input:focus{border-color:var(--accent)}
+  #send{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);
+       color:#fff;font-size:19px;flex:none}
+  #send:disabled{background:#D4D0E3}
+
+  .empty{color:var(--muted);text-align:center;font-size:13px;margin-top:38vh;
+       transform:translateY(-50%);padding:0 30px;line-height:1.8}
+
+  /* ── journal · ajustes ────────────────────────────────────────────────── */
+  .row{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
+       padding:13px 14px;display:flex;gap:12px;margin-bottom:10px;align-items:center}
+  .row .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .row .ico svg{width:22px;height:22px}
+  .row .t{flex:1;min-width:0}
+  .row .t b{font-size:14.5px;display:block}
+  .row .t small{color:var(--muted);font-size:11.5px;display:block;white-space:nowrap;
+       overflow:hidden;text-overflow:ellipsis}
+  .row .n{text-align:right;flex:none}
+  .row .n b{font-size:14px;display:block}
+  .row .n small{color:var(--muted);font-size:10.5px}
+  .lede{color:var(--muted);font-size:12.5px;margin:-6px 2px 14px;line-height:1.55}
+  /* AJUSTES, SMALL (spec 2026-09-09): three rows, each opens a screen. Datos, Proveedor, Clave. */
+  .srow{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:13px 14px;display:flex;
+       gap:12px;align-items:center;margin-bottom:10px;transition:transform .15s ease}
+  .srow:active{transform:scale(.985)}
+  .srow .ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;
+       background:var(--accent-soft);color:var(--accent)}
+  .srow .ico svg{width:20px;height:20px}
+  .srow .t{flex:1;min-width:0}
+  .srow .t b{font-size:14.5px;display:block}
+  .srow .t small{color:var(--muted);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .srow.tall{align-items:flex-start}
+  .srow.tall .ico{margin-top:2px}
+  .srow.tall .t b{margin-bottom:6px}
+  .srow.tall .t small{line-height:1.5}
+  .srow.tall .chev{align-self:center}
+  .row .chev{margin-left:4px}
+  /* INFORMACIÓN TÉCNICA: the folder gets its own row, full width, monospaced, with a quiet Copy. */
+  .kv .path{flex-wrap:wrap;gap:4px 10px;align-items:center}
+  .kv .path span{flex:1 0 100%}
+  .kv .path code{flex:1;min-width:0;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--ink);
+       word-break:break-all;line-height:1.4}
+  .kv .path .copy{flex:none;border:0;border-radius:999px;padding:6px 12px;background:var(--accent-soft);color:var(--accent-ink);
+       font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .kv .path .copy:active{transform:scale(.95)}
+
+  /* the key card: state + actions, and an editor that NEVER echoes the stored value */
+  .key{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+  .key .st{display:flex;align-items:center;gap:10px;font-size:13.5px}
+  .key .st b{flex:1}
+  .key .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .key .dot.ok{background:#1E9E6A}
+  .key .dot.no{background:var(--off)}
+  .key input{width:100%;margin-top:12px;border:1.5px solid var(--line);border-radius:12px;
+       padding:11px 14px;font-size:13px;font-family:ui-monospace,monospace;
+       background:var(--paper);color:var(--ink);outline:none}
+  .key input:focus{border-color:var(--accent)}
+  .key .btns{display:flex;gap:8px;margin-top:12px}
+  .btn{flex:1;border:0;border-radius:12px;padding:11px;font-size:13.5px;font-weight:600;
+       background:var(--accent);color:#fff}
+  .btn.ghost{background:var(--accent-soft);color:var(--accent-ink)}
+  /* EL ACCESO DIRECTO, Y AHORA CON LA COSA A LA VISTA.
+     Era un botón de trazo gris con un texto gris debajo, y el argumento era bueno -no es el
+     punto de partida de esta pantalla, es una comodidad- pero la ejecución se pasó: gris sobre
+     transparente no se lee como «secundario», se lee como «apagado», y quedaba invisible.
+     La corrección no es subirle el tono al botón -eso lo pondría por encima de los
+     interruptores, que sí son el punto de la pantalla-. Es MOSTRAR LO QUE PRODUCE: el icono,
+     del tamaño del lanzador, con el logo y el color de la institución y su nombre debajo. Lo
+     que convence es ver la cosa; el botón puede seguir siendo modesto.
+     Y el color lo pone la marca -tint() sobre brand.color-, así que el bloque resalta siendo
+     de ELLA y no gritando en el acento de Gnothi. */
+  /* EL AIRE ARRIBA ES PARTE DEL ARREGLO (Geaninna, 2026-09-21): sin él, moverlo abajo solo
+     cambia a qué cosa queda pegado. */
+  .fijar-caja{display:flex;align-items:center;gap:13px;margin:20px 0 14px;padding:12px;
+         border-radius:14px;background:var(--card);box-shadow:var(--shadow)}
+  .fijar-muestra{flex:none;width:58px;text-align:center}
+  /* La misma caja de icono que la tarjeta, al tamaño en que la dibuja una pantalla de inicio. */
+  .fijar-muestra .ico{width:48px;height:48px;border-radius:14px;margin:0 auto 5px;
+         display:grid;place-items:center;overflow:hidden}
+  .fijar-muestra .ico img{width:100%;height:100%;object-fit:contain;padding:9px;box-sizing:border-box}
+  .fijar-muestra .ico svg{width:26px;height:26px}
+  /* El rótulo va como lo escribe un lanzador: chico, una línea, y cortado si no cabe. */
+  .fijar-muestra span{display:block;font-size:10px;color:var(--muted);line-height:1.2;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fijar-que{flex:1;min-width:0}
+  .fijar-que b{display:block;font-size:13.5px;margin-bottom:1px}
+  /* Sin regla para <p>: este bloque ya no lleva parrafo. */
+  .fijar{margin-top:7px;border:0;border-radius:10px;padding:7px 13px;
+         font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .fijar svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;
+             stroke-linecap:round;stroke-linejoin:round}
+  .fijar[disabled]{opacity:.6}
+  .fijar-dicho{margin:7px 0 0;font-size:11.5px;color:var(--muted);line-height:1.45}
+  .btn.danger{background:var(--off-soft);color:var(--off)}
+  .kv{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:4px 14px;margin-bottom:12px}
+  .kv div{display:flex;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .kv div:last-child{border-bottom:none}
+  .kv span{color:var(--muted);flex:1}
+  /* EL INICIO VACIO. La ilustracion manda y el resto se cuelga de ella. Todo junto tiene que
+     entrar sin scroll en un telefono corto, asi que la ilustracion se mide en unidades de
+     pantalla y no en pixeles. */
+  .nada{display:flex;flex-direction:column;align-items:center;text-align:center;padding:2vh 22px 28px}
+  .nada[hidden]{display:none}
+  .nada-art{position:relative;width:min(84vw,330px);aspect-ratio:340/210;max-height:28vh;margin-bottom:4px}
+
+  /* CADA UNO EN SU PROPIO BRAZO, anclado en el centro: girar el brazo mueve a su icono por un
+     arco alrededor de Mymi sin tocar a los demas, y por eso cada cual trae su angulo y su
+     velocidad. El icono gira al reves adentro para no quedar de lado a mitad de camino. */
+  .brazo{position:absolute;inset:0;transform-origin:50% 50%;pointer-events:none}
+  .brazo .orb{pointer-events:auto}
+  .halo{position:absolute;left:50%;top:50%;width:62%;aspect-ratio:1;opacity:0;pointer-events:none;
+        transform:translate(-50%,-50%);border-radius:50%;
+        background:radial-gradient(circle,rgba(126,146,223,.55),rgba(126,146,223,0) 68%)}
+  .red{position:absolute;inset:0;width:100%;height:100%}
+  .red .hilos path{fill:none;stroke:var(--accent);stroke-width:1;opacity:.22;
+                   stroke-linecap:round;stroke-dasharray:3 5}
+  .red .nodos circle{fill:var(--accent);opacity:.5}
+  .nada-mymi{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+             width:50%;filter:drop-shadow(0 12px 26px rgba(108,75,217,.20))}
+  .nada-art::before{content:'';position:absolute;left:50%;top:50%;width:52%;aspect-ratio:1;
+             transform:translate(-50%,-50%);border-radius:50%;
+             background:radial-gradient(circle,rgba(126,146,223,.20),rgba(126,146,223,0) 70%)}
+  .orb{position:absolute;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:14px;
+       background:var(--card);display:grid;place-items:center;
+       box-shadow:0 6px 18px rgba(36,31,61,.10)}
+  .orb svg{width:21px;height:21px;fill:none;stroke:var(--accent);stroke-width:1.7;
+           stroke-linecap:round;stroke-linejoin:round}
+  .orb.o1{left:15.3%;top:16.2%;--dx:-18.3px;--dy:-11.0px}
+  .orb.o2{left:84.7%;top:16.2%;--dx:18.3px;--dy:-11.0px}
+  .orb.o3{left:7.6%;top:53.3%;--dx:-22.4px;--dy:1.1px}
+  .orb.o4{left:92.4%;top:53.3%;--dx:22.4px;--dy:1.1px}
+  .orb.o5{left:19.4%;top:86.7%;--dx:-16.2px;--dy:12.0px}
+  .orb.o6{left:80.6%;top:86.7%;--dx:16.2px;--dy:12.0px}
+  .nada h2{margin:10px 0 0;font-size:22px;letter-spacing:-.02em}
+  /* NO ES LETRA CHICA: es la promesa del producto, asi que se lee como texto. */
+  .nada p{margin:12px 0 0;color:#4C4766;font-size:15px;line-height:1.5;max-width:320px}
+  .nada .cta{margin-top:20px;display:inline-flex;align-items:center;gap:8px;border:0;
+             background:var(--accent);color:#fff;font-size:15px;font-weight:600;
+             padding:14px 26px;border-radius:999px;box-shadow:0 8px 22px rgba(108,75,217,.28)}
+  .nada .cta span:first-child{font-size:18px;line-height:1}
+  .nada .lema{margin-top:24px;color:#3A3457;font-size:13px;letter-spacing:.03em}
+  .hola .addbtn[hidden]{display:none}
+
+  /* LA ENTRADA, UNA SOLA VEZ: llega Mymi, los seis vienen cada uno de su lado, despues se
+     dibujan los hilos, y al final la pantalla queda EXACTAMENTE como la estatica. */
+  .nada.entra .nada-mymi{animation:mymi-llega .55s cubic-bezier(.22,.7,.3,1) both}
+  .nada.entra .hilos path{animation:hilo-dibuja .75s ease-out both}
+  .nada.entra .nodos circle{animation:nodo-llega .5s ease-out 2.35s both}
+  .nada.entra .halo{animation:halo .95s ease-out 2.1s both}
+  .nada.entra .brazo.b1{animation:arco1 1.15s cubic-bezier(.19,.82,.25,1) 0.3s both}
+  .nada.entra .brazo.b1 .orb{animation:llega1 1.15s cubic-bezier(.19,.82,.25,1) 0.3s both}
+  .nada.entra .hilos .h1{animation-delay:1.10s}
+  .nada.entra .brazo.b2{animation:arco2 1.05s cubic-bezier(.19,.82,.25,1) 0.4s both}
+  .nada.entra .brazo.b2 .orb{animation:llega2 1.05s cubic-bezier(.19,.82,.25,1) 0.4s both}
+  .nada.entra .hilos .h2{animation-delay:1.20s}
+  .nada.entra .brazo.b3{animation:arco3 1.25s cubic-bezier(.19,.82,.25,1) 0.5s both}
+  .nada.entra .brazo.b3 .orb{animation:llega3 1.25s cubic-bezier(.19,.82,.25,1) 0.5s both}
+  .nada.entra .hilos .h3{animation-delay:1.30s}
+  .nada.entra .brazo.b4{animation:arco4 1.1s cubic-bezier(.19,.82,.25,1) 0.6s both}
+  .nada.entra .brazo.b4 .orb{animation:llega4 1.1s cubic-bezier(.19,.82,.25,1) 0.6s both}
+  .nada.entra .hilos .h4{animation-delay:1.40s}
+  .nada.entra .brazo.b5{animation:arco5 1.2s cubic-bezier(.19,.82,.25,1) 0.7s both}
+  .nada.entra .brazo.b5 .orb{animation:llega5 1.2s cubic-bezier(.19,.82,.25,1) 0.7s both}
+  .nada.entra .hilos .h5{animation-delay:1.50s}
+  .nada.entra .brazo.b6{animation:arco6 1.0s cubic-bezier(.19,.82,.25,1) 0.8s both}
+  .nada.entra .brazo.b6 .orb{animation:llega6 1.0s cubic-bezier(.19,.82,.25,1) 0.8s both}
+  .nada.entra .hilos .h6{animation-delay:1.60s}
+  @keyframes mymi-llega{from{opacity:0;transform:translate(-50%,-50%) scale(.96)}
+                        to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  @keyframes hilo-dibuja{from{opacity:0;stroke-dashoffset:26}to{opacity:.22;stroke-dashoffset:0}}
+  @keyframes nodo-llega{from{opacity:0}to{opacity:.5}}
+  @keyframes halo{0%{opacity:0}45%{opacity:1}100%{opacity:0}}
+  @keyframes arco1{from{transform:rotate(-64deg)}to{transform:rotate(0)}}
+  @keyframes llega1{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(64deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco2{from{transform:rotate(58deg)}to{transform:rotate(0)}}
+  @keyframes llega2{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(-58deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco3{from{transform:rotate(-76deg)}to{transform:rotate(0)}}
+  @keyframes llega3{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(76deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco4{from{transform:rotate(68deg)}to{transform:rotate(0)}}
+  @keyframes llega4{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(-68deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco5{from{transform:rotate(-54deg)}to{transform:rotate(0)}}
+  @keyframes llega5{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(54deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  @keyframes arco6{from{transform:rotate(62deg)}to{transform:rotate(0)}}
+  @keyframes llega6{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.82) rotate(-62deg)}
+                       to{opacity:1;transform:translate(0,0) scale(1) rotate(0)}}
+  /* Quien pidio menos movimiento recibe la pantalla armada, con un desvanecido corto. */
+  @media (prefers-reduced-motion:reduce){
+    .nada.entra .nada-mymi,.nada.entra .hilos path,.nada.entra .nodos circle,
+    .nada.entra .brazo,.nada.entra .brazo .orb{animation:none}
+    .nada.entra .halo{animation:none;opacity:0}
+    .nada.entra{animation:aparece .3s ease-out both}
+  }
+  @keyframes aparece{from{opacity:0}to{opacity:1}}
+
+  .kv b{font-weight:600;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- ═══ INICIO ═══ -->
+<div class="view on" id="v-home">
+  <div class="scroll">
+    <div class="top">
+      <!-- THE MARK (identidad visual v1.0, 2025): four petals around a four-point star -- your
+           institutions around you, your information in the centre. Rebuilt as geometry from the
+           brand board until the designer's vector arrives. -->
+      <div class="logo mark"><img alt="Mymi" src="img/gnothi-mark.png"></div>
+      <div class="tt"><b>Mymi</b></div>
+      <div class="ava">S</div>
+    </div>
+
+    <!-- EL ALTA, MIENTRAS PASA. Es lo primero que Sonia ve hacer a Mymi por ella: tocó un
+         botón en la página de su institución y volvió acá. Sin esto son 12 MB de silencio. -->
+    <div id="alta"></div>
+
+    <div class="hola">
+      <div class="t"><b data-i18n="inicio.titulo">Mis conexiones</b><small id="home-sub"></small></div>
+      <button class="addbtn" onclick="gn.sheet(true)"><span>+</span><span data-i18n="inicio.conectar">Conectar</span></button>
+    </div>
+    <div class="grid" id="mods"></div>
+
+    <!-- EL INICIO SIN NADA TODAVIA. Ilustracion, mensaje y boton: nada mas compitiendo con
+         ellos. Mymi va al centro y las organizaciones alrededor, porque eso es lo que hace:
+         no es una mas de la rueda, es el centro. Los seis rubros son los que este ecosistema
+         tiene de verdad; dibujar un birrete prometeria uno que no existe. -->
+    <div class="nada" id="home-empty" hidden>
+      <div class="nada-art">
+        <svg class="red" viewBox="0 0 340 210" aria-hidden="true">
+          <g class="hilos"><path class="h1" d="M170 105 Q95 60 52 34"/><path class="h2" d="M170 105 Q245 60 288 34"/><path class="h3" d="M170 105 Q84 100 26 112"/><path class="h4" d="M170 105 Q256 100 314 112"/><path class="h5" d="M170 105 Q132 135 66 182"/><path class="h6" d="M170 105 Q208 135 274 182"/></g>
+          <g class="nodos"><circle cx="83" cy="52" r="2.4"/><circle cx="257" cy="52" r="2.4"/><circle cx="63" cy="110" r="2.4"/><circle cx="277" cy="110" r="2.4"/><circle cx="93" cy="162" r="2.4"/><circle cx="247" cy="162" r="2.4"/></g>
+        </svg>
+        <div class="brazo b1"><div class="orb o1"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10l6-4 6 4v10M10 20v-5h4v5"/></svg></div></div>
+        <div class="brazo b2"><div class="orb o2"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 5 6.2 5 9a5 5 0 0 1-10 0c0-2.8 2-5 5-9z"/></svg></div></div>
+        <div class="brazo b3"><div class="orb o3"><svg viewBox="0 0 24 24"><path d="M4 5h2l2.2 9.2A2 2 0 0 0 10.1 16h6.6a2 2 0 0 0 2-1.6L20 8H7M10 20a1 1 0 1 0 2 0 1 1 0 0 0-2 0M16 20a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/></svg></div></div>
+        <div class="brazo b4"><div class="orb o4"><svg viewBox="0 0 24 24"><path d="M5 20V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v14M4 20h11M16 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5M7 9h4"/></svg></div></div>
+        <div class="brazo b5"><div class="orb o5"><svg viewBox="0 0 24 24"><path d="M4 16v-3l1.8-4.2A2 2 0 0 1 7.6 7.5h8.8a2 2 0 0 1 1.8 1.3L20 13v3M4 16h16M7 16v2H5v-2M19 16v2h-2v-2M7.5 13h2M14.5 13h2"/></svg></div></div>
+        <div class="brazo b6"><div class="orb o6"><svg viewBox="0 0 24 24"><path d="M4 8h16v11H4zM9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></div></div>
+        <div class="halo" aria-hidden="true"></div>
+        <img class="nada-mymi" src="img/mymi-hub.png" alt="">
+      </div>
+      <h2 data-i18n="inicio.vacio.titulo">Todo lo tuyo, en un solo lugar</h2>
+      <p data-i18n="inicio.vacio.cuerpo">Tus instituciones te entregan tus registros. Viven en tu dispositivo y solo se consultan cuando tú lo permites.</p>
+      <button class="cta" onclick="gn.sheet(true)"><span>+</span><span data-i18n="inicio.conectar">Conectar</span></button>
+      <small class="lema" data-i18n="inicio.lema">Your world, together</small>
+    </div>
+    <style id="brand-fonts"></style>
+  </div>
+</div>
+
+<!-- ═══ DETALLE ═══ -->
+<div class="view" id="v-detail">
+  <div class="scroll">
+    <div class="back" onclick="gn.nav('home')">‹ <span data-i18n="nav.inicio">Inicio</span></div>
+    <div id="detail"></div>
+  </div>
+</div>
+
+<!-- ═══ ASISTENTE ═══ -->
+<div class="view" id="v-chat">
+  <div class="chat-head">
+    <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v2M5.6 5.6l1.4 1.4M18.4 5.6L17 7M12 7a5 5 0 0 1 5 5v4a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-4a5 5 0 0 1 5-5z"/><circle cx="10" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="14" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></div>
+    <div><b data-i18n="asistente.titulo">Asistente</b><small data-i18n="asistente.sub">tus módulos responden; el modelo redacta</small></div>
+  </div>
+  <div id="msgs"><div class="empty" id="chat-empty"><span data-i18n="asistente.vacio">Preguntale a tus módulos.</span><br>
+    <i><span data-i18n="chat.ejemplo1">«¿cómo vienen mis exámenes?»</span><br><span data-i18n="chat.ejemplo2">«mirá mis exámenes y mis compras juntos»</span></i></div></div>
+  <div class="inbar">
+    <input id="q" type="text" placeholder="Escribí tu pregunta…" data-i18n="asistente.placeholder" data-i18n-attr="placeholder" autocomplete="off">
+    <button id="send" onclick="gn.ask()">➤</button>
+  </div>
+</div>
+
+<!-- ═══ JOURNAL ═══ -->
+<div class="view" id="v-journal">
+  <div class="scroll">
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="journal.titulo">Datos de tus instituciones</h2>
+    <!-- «Información que Gnothi mantiene en este dispositivo» era el título otra vez. Y la
+         segunda mitad -- lo que viaja al asistente -- estaba TAMBIÉN en la pantalla del
+         proveedor, palabra por palabra. Cada promesa se hace una vez, en la pantalla donde
+         importa: acá el registro es de ella; allá es donde hay un tercero. -->
+    <p class="qlead" data-i18n="journal.lead">Nadie más las lee.</p>
+    <div id="journal"></div>
+  </div>
+</div>
+
+<!-- ═══ AJUSTES ═══ -->
+<div class="view" id="v-set">
+  <div class="scroll">
+    <div class="top"><div class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></div><b data-i18n="ajustes.titulo">Ajustes</b></div>
+
+    <h3 class="cap" data-i18n="ajustes.cap.datos">Datos en este teléfono</h3>
+    <div class="srow" onclick="gn.nav('journal')">
+      <div class="ico"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
+      <div class="t"><b data-i18n="journal.titulo">Datos de tus instituciones</b><small id="set-datos-sub"></small></div><span class="chev">›</span>
+    </div>
+
+    <h3 class="cap" data-i18n="asistente.titulo">Asistente</h3>
+    <div class="srow tall" onclick="gn.nav('prov')">
+      <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/></svg></div>
+      <div class="t"><b data-i18n="ajustes.proveedor-ia">Proveedor de IA</b>
+        <small id="set-prov-sub"></small><small id="set-key-sub"></small></div>
+      <span class="chev">›</span>
+    </div>
+
+    <h3 class="cap" data-i18n="ajustes.cap.tecnica">Información técnica</h3>
+    <div class="kv tech" id="set-host"></div>
+
+    <p class="hint" style="margin-top:22px" data-i18n="ajustes.permanecen">Tus datos permanecen en este dispositivo.</p>
+  </div>
+</div>
+
+<!-- ═══ PROVEEDOR DE IA ═══ -->
+<div class="view" id="v-prov">
+  <div class="scroll">
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="ajustes.proveedor-ia">Proveedor de IA</h2>
+    <!-- «Todos hablan el mismo formato» se fue: es verdad cuando se ELIGE proveedor, y eso pasa
+         en la otra hoja, donde también estaba escrito. Acá ya hay uno puesto. Queda lo único que
+         esta pantalla tiene que decir, que es qué sale del teléfono. -->
+    <p class="qlead" data-i18n="prov.lead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
+    <div class="kv" id="set-model"></div>
+
+    <h3 class="cap" data-i18n="prov.cap.acceso">Acceso</h3>
+    <!-- The key card: state and actions, and an editor that NEVER echoes the stored value. -->
+    <div class="key" id="set-key"></div>
+    <!-- «Gratuita o de pago» vive en la hoja donde se elige proveedor, que es donde ella se
+         pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver.
+         El id es para poder OCULTARLO: con el modelo del aparato no hay proveedor al que
+         viajarle, así que la frase deja de ser cierta. Ver paint(). -->
+    <p class="hint" id="prov-hint" data-i18n="prov.hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
+
+    <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)" data-i18n="prov.cambiar">Cambiar proveedor</button>
+  </div>
+</div>
+
+<!-- ═══ EL ALTA: LO QUE LA INSTITUCIÓN PROPONE ═══
+     Instalar un módulo es el acto más grande que Sonia hace en Mymi: le da a una
+     institución una carpeta suya y un endpoint registrado. Hasta el 2026-09-04 pasaba sola,
+     como efecto de tocar un enlace. Acá se le muestra QUÉ trae y QUÉ va a poder hacer, y
+     recién si acepta el módulo ocupa un lugar. Cancelar no deja nada. -->
+<div id="propuesta" class="osheet">
+  <div class="card">
+    <div id="pr-h" class="hero pr-hero"></div>
+    <div id="pr-cuerpo"></div>
+    <button class="cta" onclick="gn.altaAceptar()" data-i18n="propuesta.instalar">Instalar en mi teléfono</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()" data-i18n="propuesta.ahora-no">Ahora no</button>
+  </div>
+</div>
+
+<!-- ═══ QUITAR UN MÓDULO ═══
+     Hasta 2026-09-11 no había forma: la persona podía apagar un módulo, pero no sacarlo del
+     teléfono, y «volver a instalar» era borrar Mymi entera. La app de la institución y la
+     bitácora son dos cosas: la app se va siempre; la bitácora es de la persona y se queda salvo
+     que ella marque lo contrario, y si el manifiesto dice que no se puede reconstruir, acá se
+     le dice con todas las letras antes de que lo marque. -->
+<div id="quitar" class="osheet" onclick="if(event.target===this)gn.quitarCerrar()">
+  <div class="card">
+    <h4 id="q-titulo" data-i18n="quitar.titulo">Quitar</h4>
+    <p id="q-cuerpo"></p>
+    <label class="chk"><input id="q-journal" type="checkbox"> <span data-i18n="quitar.borrar-bitacora">Borrar también mi bitácora de este teléfono</span></label>
+    <p id="q-aviso" class="hint"></p>
+    <button class="cta" onclick="gn.quitarConfirmar()" data-i18n="quitar.titulo">Quitar</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.quitarCerrar()" data-i18n="general.cancelar">Cancelar</button>
+  </div>
+</div>
+
+<!-- ═══ THE CODE READER ═══
+     The institution's page shows a QR with the SAME link as its button, for the person who reads
+     the page on a computer and has Mymi on her phone. Here it is read with the phone's camera,
+     inside Mymi. Decoding is jsQR (jsqr.js next to this file, Apache-2.0): pure JavaScript that
+     ships with the page, so it reads the same on every phone and nothing leaves it. The WebView's
+     own BarcodeDetector is only a fallback: the emulator offered it and Play Services never
+     downloaded the barcode module behind it, so detect() returned nothing, forever, silently.
+     What the code says goes down the same road as a pasted link, with its provenance marked. -->
+<script src="jsqr.js"></script>
+<div id="scan" class="scan">
+  <video id="cam" autoplay playsinline muted></video>
+  <div class="scan-ui">
+    <div class="scan-box"></div>
+    <p id="scan-msg" data-i18n="scan.apunta">Apuntá al código de tu institución</p>
+    <button onclick="gn.scan.stop()" data-i18n="general.cancelar">Cancelar</button>
+  </div>
+</div>
+
+<!-- ═══ ADDING A MODULE: THE WAYS IN ═══
+     Until 2026-09-08 this sheet only explained and closed with "Entendido": every enrollment
+     began OUTSIDE, on the institution's link. Now the person can paste that link here. Mymi
+     downloads it, inspects it and shows what it carries before installing anything -- the same
+     "propuesta" sheet a landed link gets. -->
+<div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
+  <div class="card">
+    <h4 data-i18n="agregar.titulo">Tus instituciones, siempre contigo.</h4>
+    <!-- UNA SOLA FRASE, y es la que ella no puede adivinar. Eran tres: la primera repetía el
+         título con otras palabras, la segunda repetía «llevá con vos» que el título ya dice, y
+         la tercera -la única con información- quedaba al final. Las tres vías de abajo dicen qué
+         hacer; esto dice lo que pasa después de tocarlas. -->
+    <p data-i18n="agregar.lead">Mymi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
+    <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
+         row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
+    <div class="vias">
+      <button class="via" id="alta-scan" onclick="gn.scan.start()">
+        <span class="vi"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M17 20h3M14 20h.5"/></svg></span>
+        <span class="vt"><b data-i18n="agregar.escanear">Escanear su código</b><small data-i18n="agregar.escanear.sub">el QR de su página, o el de tu hoja de resultados</small></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="via" id="alta-link" onclick="gn.altaMostrarEnlace()">
+        <span class="vi"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
+        <span class="vt"><b data-i18n="agregar.pegar">Pegar su enlace</b><small data-i18n="agregar.pegar.sub">el que te llegó por correo o por WhatsApp</small></span>
+        <span class="chev">›</span>
+      </button>
+      <div id="alta-enlace" class="enlace">
+        <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
+        <button class="cta" onclick="gn.altaDesdeEnlace()" data-i18n="inicio.conectar">Conectar</button>
+      </div>
+      <button class="via" id="alta-file" onclick="gn.altaArchivo()">
+        <span class="vi"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></span>
+        <span class="vt"><b data-i18n="agregar.archivos">Elegir archivos en mi teléfono</b><small data-i18n="agregar.archivos.sub">se abre en Descargas; podés elegir varios</small></span>
+        <span class="chev">›</span>
+      </button>
+    </div>
+    <div id="alta-hint" style="min-height:18px;margin:8px 4px 0;font-size:13px;color:#8E2A1F"></div>
+    <p id="alta-noscan" style="display:none"><small data-i18n="agregar.sin-lector">Este teléfono no puede leer códigos desde Mymi:
+    pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
+    <!-- SE FUE la cuarta vía en letra chica: «si estás en la página de tu institución, su botón
+         hace lo mismo». Es cierta y no sirve acá -- quien está leyendo esto ya eligió venir por
+         Gnothi, y tiene tres botones arriba. Explicar un camino alternativo mientras alguien
+         recorre el que eligió es ruido. -->
+  </div>
+</div>
+
+<!-- ═══ WHAT SHE PICKED: the modules Mymi found among the files, to choose from ═══
+     Several files come from the picker; each got a quick look (manifest, inspection, signed or not)
+     and nothing else. Tapping one runs the whole examination and opens its proposal; when that ends
+     the list comes back with the row marked, so she goes on with the next. -->
+<div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
+  <div class="card">
+    <h4 data-i18n="hallazgos.titulo">Esto encontré en lo que elegiste</h4>
+    <!-- SIN PÁRRAFO. Decía «tocá el módulo que querés agregar» -- sobre una lista de módulos --,
+         «Gnothi te muestra qué trae antes de instalarlo» -- ya dicho en la hoja anterior -- y
+         «podés seguir con el siguiente», que se descubre cuando vuelve la lista con la fila
+         marcada. Tres frases y ninguna aportaba. -->
+    <div id="ha-lista"></div>
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()" data-i18n="general.listo">Listo</button>
+  </div>
+</div>
+
+<!-- the provider picker: choose, then just paste that provider's key -->
+<div id="psheet" class="osheet" onclick="if(event.target===this)gn.psheet(false)">
+  <div class="card">
+    <h4 data-i18n="prov.elegir.titulo">Elegí el proveedor del modelo</h4>
+    <!-- «Elegí uno» sobre una lista, bajo un título que dice «elegí el proveedor», sobraba. -->
+    <p data-i18n="prov.elegir.lead">Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
+    <div id="plist"></div>
+    <div id="pcustom" style="display:none">
+      <input id="cu-url" autocomplete="off" spellcheck="false" placeholder="https://servidor/v1">
+      <input id="cu-model" autocomplete="off" spellcheck="false" placeholder="nombre-del-modelo" data-i18n="prov.nombre-del-modelo" data-i18n-attr="placeholder">
+      <button class="cta" onclick="gn.saveCustom()" data-i18n="prov.usar-este">Usar este</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <button id="n-home" class="on" onclick="gn.nav('home')">
+    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg><span data-i18n="nav.inicio">Inicio</span></button>
+  <button id="n-chat" onclick="gn.nav('chat')">
+    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L3 20l1.1-4.1a8 8 0 0 1-1.1-4.4A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg><span data-i18n="asistente.titulo">Asistente</span></button>
+  <button id="n-set" onclick="gn.nav('set')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg><span data-i18n="nav.ajustes">Ajustes</span></button>
+</nav>
+
+<script>
+'use strict';
+
+// THE BRAND COMES FROM THE BUNDLE (2026-09-08). Until now the icon was the Host's: a small map keyed
+// by module name, and the institution went in grey small print under «Mis exámenes». Institutions
+// put their module in Mymi so Sonia sees THEIR brand, so the icon and the color come from the
+// manifest.webmanifest they publish inside the bundle (BrandAssets.cs reads it and it travels in
+// the state as `brand`). The map below stays as a FALLBACK: a module without a brand falls to its
+// glyph, and an unknown one to the indigo box.
+const LOOK = {
+  examenes: { c:'#2F6BFF', bg:'#E8EEFE',
+    svg:'<svg viewBox="0 0 24 24"><path d="M10 3h4M12 3v5.5M9 8.5h6l3.6 8.2a2 2 0 0 1-1.8 2.8H7.2a2 2 0 0 1-1.8-2.8L9 8.5z"/><path d="M7.5 14h9"/></svg>' },
+  compras:  { c:'#1E9E6A', bg:'#E4F4EC',
+    svg:'<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11l2-8H6"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>' },
+  facturas: { c:'#C0741B', bg:'#FAEFDD',   // a supermarket: a cart, not a receipt (requested 2026-09-08)
+    svg:'<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11l2-8H6"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>' },
+  _:        { c:'#6C4BD9', bg:'#EEE9FC',
+    svg:'<svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>' },
+};
+const DB = '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.8"/><path d="M5 5.5v13c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-13"/><path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/></svg>';
+const look = n => LOOK[n] || LOOK._;
+
+// A module's little square: the brand if it brings one, the glyph if not. `glyph` replaces the
+// fallback drawing (the Journal uses the drum), never the institution's logo.
+function iconOf(m, glyph) {
+  const b = m.brand;
+  if (b && b.logo)
+    return '<div class="ico brand" style="background:' + attr(b.color || '#fff') + '">'
+      + '<img alt="" src="' + attr(b.logo) + '"></div>';
+  const k = look(m.name);
+  return '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + (glyph || k.svg) + '</div>';
+}
+// The card's corporate color: the brand's if declared, otherwise the fallback glyph's.
+const colorOf = m => (m.brand && m.brand.color) ? attr(m.brand.color) : look(m.name).c;
+// A #rrggbb with transparency, for the arrow's background. No color-mix: the WebView of an old
+// phone does not know it.
+function tint(hex, a) {
+  const h = /^#([0-9a-f]{6})$/i.exec(hex); if (!h) return 'var(--accent-soft)';
+  const n = parseInt(h[1], 16);
+  return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+// The institution big, its slogan small: the brand is what it pays to be seen. Without a slogan
+// the card carries only the name; the module title («My invoices») is not card copy (removed
+// 2026-09-08). A manifest without an institution does not leave the card mute: the title steps up.
+const nameOf    = m => m.shortName || m.institution || m.title;
+// THE NAME IN TWO TIERS, as the mockup reads it: «Laboratorio Clínico» small over «Delfos» big. The
+// big one is brand.shortName; the small one is what the institution's full name has before it. When
+// there is no shortName the split is at the first word -«Sotaventos» / «Motors»-, and a one-word
+// name goes big alone.
+function tiers(m) {
+  const full = (m.institution || m.title || '').trim(), short = (m.shortName || '').trim();
+  if (short && full.toLowerCase().endsWith(short.toLowerCase()) && full.length > short.length)
+    return { pre: full.slice(0, full.length - short.length).trim(), big: short };
+  if (short) return { pre: '', big: short };
+  const i = full.indexOf(' ');
+  return i > 0 && full.length > 12 ? { pre: full.slice(0, i), big: full.slice(i + 1) } : { pre: '', big: full };
+}
+const taglineOf = m => m.institution ? (m.slogan || '') : '';
+
+// ── EL COLOR DE LA INSTITUCIÓN, CORREGIDO PARA QUE SE LEA ────────────────────────────────
+//
+// AQUÍ ES DONDE «EL HOST COMPONE» DEJA DE SER UNA FRASE. Su color sirve para su logo y no
+// necesariamente para texto: un amarillo de marca como #F7E06B sobre blanco tiene 1.4:1 de
+// contraste, contra el 4.5:1 que hace falta para leerse.
+//
+// La institución declara SU color; el Host lo baja de luminosidad hasta que se pueda leer,
+// conservando el tono. Así ella no puede pedir un texto ilegible, porque no elige las dos
+// partes de la ecuación: pone el matiz, y el Host pone la legibilidad. Declarar #FFFFFF da
+// gris, no texto invisible.
+//
+// Se escala hacia negro en pasos de 6% porque escalar PRESERVA EL MATIZ -- un lila oscurecido
+// sigue siendo lila --, mientras que bajar la saturación lo apagaría hasta volverlo gris.
+// Luminancia relativa de WCAG.
+const HEX = /^#[0-9a-f]{6}$/i;
+const luminancia = (r, g, b) => {
+  const f = c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+  return .2126 * f(r) + .7152 * f(g) + .0722 * f(b);
+};
+function legible(hex) {
+  if (!HEX.test(hex || '')) return '';
+  let r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+  for (let k = 1; k > .1; k -= .06) {
+    const rr = Math.round(r * k), gg = Math.round(g * k), bb = Math.round(b * k);
+    if (1.05 / (luminancia(rr, gg, bb) + .05) >= 4.5) return 'rgb(' + rr + ',' + gg + ',' + bb + ')';
+  }
+  return 'var(--ink)';
+}
+// El color de este módulo ya corregido, o el acento de Mymi si no declaró ninguno. Las
+// pantallas piden esto y no `m.brand.color`: así ninguna se olvida de la corrección.
+//
+// El fondo sale del `tint(hex, a)` de más arriba, que ya estaba y es más general que el que
+// traía esta pieza -- toma el alpha y valida el hex.
+const acento  = m => legible(m.brand && m.brand.color) || 'var(--accent-ink)';
+const fondoDe = m => tint((m.brand && m.brand.color) || '', .13);
+
+// LA OTRA MITAD, y hace falta desde que el botón «Abrir →» se llena con el color de la marca:
+// ahí el texto va SOBRE ese color, no EN ese color. `color:#fff` fijo se rompe con una marca
+// clara -- un amarillo de marca con letras blancas no se lee --, y una institución no puede
+// quedar con un botón ilegible por haber declarado su propio color.
+//
+// Devuelve el blanco o la tinta del Host, el que contraste con SU fondo. Es la misma idea que
+// legible(): ella pone el color, el Host garantiza que se lea.
+const sobre = c => {
+  if (!HEX.test(c || '')) return '#fff';
+  const n = parseInt(c.slice(1), 16);
+  const L = luminancia(n >> 16 & 255, n >> 8 & 255, n & 255);
+  // Contraste contra blanco vs contra la tinta oscura del Host: gana el que más contraste dé.
+  return (1.05 / (L + .05)) >= ((L + .05) / .09) ? '#fff' : '#241F3D';
+};
+
+const gn = {
+  state: null, open: null, busy: false, seq: 0,
+
+  // ABRIR EL MODULO: la app de la institucion se dibuja a si misma, adentro de Mymi
+  // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
+  abrir(name) { gn.call('abrir', { module: name }); },
+
+  // EL ICONO EN LA PANTALLA DE INICIO. Lo pide ella, nunca se pide solo: Android muestra su
+  // propio diálogo encima, y disparárselo sin que lo haya tocado sería poner un icono en su
+  // teléfono porque instaló algo.
+  //
+  // LO QUE PASA DESPUÉS NO SE PUEDE SABER. `requestPinShortcut` devuelve en cuanto el diálogo
+  // se muestra, no cuando ella acepta, y en MIUI hay además un permiso propio que puede tragarse
+  // el icono en silencio. Por eso el texto dice lo que Gnothi hizo -- pedirlo -- y no promete que
+  // el icono esté.
+  // LO QUE EL LAUNCHER YA TIENE ANOTADO. Se pregunta dos veces por apertura del detalle -- el
+  // rótulo del botón y la nota de abajo -- y eso está bien: es un servicio del sistema leído en
+  // memoria, no una consulta al módulo, y una caché acá habría que invalidarla justo cuando la
+  // persona vuelve de la pantalla de inicio, que es el momento en que más importa acertar.
+  yaFijado(name) {
+    const r = gn.call('fijados') || {};
+    return !!(r.ok && r.ids && r.ids.indexOf('modulo:' + name) >= 0);
+  },
+  fijar(name) {
+    const b = document.getElementById('fijar');
+    const dicho = document.getElementById('fijar-dicho');
+    const r = gn.call('fijar', { module: name }) || {};
+    if (r.ok) {
+      // «PEDIDO» Y NO «LISTO», que es lo único que se puede afirmar -- ver el comentario de
+      // arriba. El botón ahora lleva glifo y texto, así que el rótulo es su <span> y no su
+      // último hijo.
+      if (b) { b.disabled = true; const s = b.querySelector('span'); if (s) s.textContent = T('detalle.fijar.pedido'); }
+      // Y LA FRASE SE COMPONE DE LAS DOS QUE YA EXISTÍAN: el texto quemado era un duplicado
+      // con otra redacción de 'detalle.fijar.si-no-aparece', que ya estaba en el catálogo en los
+      // dos idiomas. Lo único que no tenía clave era la primera oración.
+      if (dicho) dicho.textContent = T('detalle.fijar.pedimos') + ' ' + T('detalle.fijar.si-no-aparece');
+      return;
+    }
+    if (dicho) dicho.textContent = r.razon || T('detalle.fijar.fallo');
+  },
+
+  // «HAY UNA VERSIÓN NUEVA» (NotasGnothiHost/44 §4): the package the institution publishes is
+  // fetched and examined like a link that landed; the update sheet follows, and only her yes
+  // there installs it.
+  actualizar(name) { gn.call('actualizar', { module: name }); },
+
+  // QUITAR: pedir, confirmar, cerrar. El nombre corto de la institución en el título, para que
+  // la persona lea «Quitar Faro» y no «Quitar cargas», que es la llave técnica.
+  quitarPedir(name) {
+    const m = gn.state.modules.find(x => x.name === name);
+    if (!m) return;
+    gn.quitando = name;
+    const quien = m.shortName || m.institution || m.title;
+    const dia = m.diary || {};
+    document.getElementById('q-titulo').textContent = T('quitar.de', { quien: quien });
+    document.getElementById('q-cuerpo').textContent = T('quitar.cuerpo', { quien: quien });
+    document.getElementById('q-journal').checked = false;
+    document.getElementById('q-aviso').textContent = dia.reconstruible === false
+      ? T('quitar.irrecuperable')
+      : '';
+    document.getElementById('quitar').classList.add('on');
+  },
+  quitarCerrar() { document.getElementById('quitar').classList.remove('on'); gn.quitando = null; },
+  quitarConfirmar() {
+    const name = gn.quitando, journal = document.getElementById('q-journal').checked;
+    gn.quitarCerrar();
+    if (!name) return;
+    const s = gn.call('quitar', { module: name, journal });
+    if (s) { gn.state = s; gn.nav('home'); gn.paint(); }
+  },
+
+  sheet(on) {
+    document.getElementById('sheet').classList.toggle('on', on);
+    if (!on) document.getElementById('alta-enlace').classList.remove('on');
+  },
+  // "Pegar su enlace" unfolds the field under its row and puts the cursor in it.
+  altaMostrarEnlace() {
+    document.getElementById('alta-enlace').classList.add('on');
+    document.getElementById('alta-url').focus();
+  },
+
+  // THE PHONE'S BACK BUTTON lands here: the Activity asks the page first. Returns whether
+  // the page consumed it -- sheet open closes, any view that is not home goes home, and on
+  // home it answers false so Android does its own thing (the app steps aside).
+  back() {
+    if (document.getElementById('sheet').classList.contains('on')) { gn.sheet(false); return true; }
+    if (document.getElementById('quitar').classList.contains('on')) { gn.quitarCerrar(); return true; }
+    for (const sub of ['journal', 'prov'])
+      if (document.getElementById('v-' + sub).classList.contains('on')) { gn.nav('set'); return true; }
+    if (!document.getElementById('v-home').classList.contains('on')) { gn.nav('home'); return true; }
+    return false;
+  },
+
+  call(op, extra) {
+    // Inside the app -- marked by the Host in the user agent -- prompt() is intercepted and
+    // always answers JSON. In a plain browser that same dialog is MODAL and freezes the page,
+    // so outside the app it is never called: the page runs against the mock below, and the
+    // design can be iterated on a monitor with no phone attached.
+    if (!navigator.userAgent.includes('GnothiHost')) return mock(op, extra || {});
+    const res = prompt('gnothi', JSON.stringify(Object.assign({op}, extra || {})));
+    return res ? JSON.parse(res) : null;
+  },
+  push(kind, id, payload) {
+    if (kind === 'state')  { gn.state = JSON.parse(payload); gn.paint(); return; }
+    if (kind === 'trace')  { gn.traceLine(payload); return; }
+    if (kind === 'answer') { gn.answer(payload, false); return; }
+    if (kind === 'fail')   { gn.answer(T('chat.no-pude', { detalle: payload }), true); return; }
+    if (kind === 'alta')   { if (JSON.parse(payload).estado === 'nada') { document.getElementById('alta').innerHTML = ''; return; } gn.alta(JSON.parse(payload)); return; }
+    if (kind === 'propuesta') { gn.verPropuesta(JSON.parse(payload)); return; }
+    if (kind === 'hallazgos') { gn.hallazgos(JSON.parse(payload)); return; }
+  },
+
+  // EL ALTA, MIENTRAS PASA. "listo" se va solo a los 6 segundos porque ya se ve la tarjeta
+  // nueva abajo; "error" SE QUEDA, porque si no la persona vuelve a quedarse sin saber por qué.
+  // LO QUE LA INSTITUCIÓN PROPONE, antes de que exista nada. Se le muestra a Sonia lo que el
+  // manifiesto DECLARA -quién es, qué consultas ofrece- y las dos cosas que decide Mymi y
+  // ella tiene derecho a saber: dónde va a vivir el registro y contra qué endpoint va a hablar.
+  propuesta: null,
+  verPropuesta(p) {
+    gn.propuesta = p;
+    document.getElementById('alta').innerHTML = '';
+    document.getElementById('hallazgos').classList.remove('on');
+
+    // Who proposes, with its brand, and what: the same face the card is going to have.
+    document.getElementById('pr-h').innerHTML =
+      // The shell sends the proposal's brand as `marca`; the state uses `brand`. Take either.
+      iconOf({ name: p.modulo, brand: p.brand || p.marca })
+      + '<div><b>' + esc(p.institucion || p.titulo) + '</b>'
+      + '<small>' + T(p.actualizacion && p.actualizacion.tipo === 'actualizacion' ? 'hoja.cabecera.actualizar'
+                       : p.actualizacion && p.actualizacion.tipo === 'anterior' ? 'hoja.cabecera.anterior'
+                       : p.yaEstaba ? 'hoja.cabecera.reinstalar' : 'hoja.cabecera.agregar',
+                       { titulo: esc(p.titulo) }) + '</small></div>';
+
+    const tools = (p.tools || []).map(t =>
+      '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
+
+    // WHAT GNOTHI CHECKED before showing anything. It comes from the package inspection and the
+    // provenance: facts Mymi found out by itself, not what the institution declares. And it
+    // says what is NOT checked yet -- that the host that served the package is the institution's.
+    const rev = p.revision || {}, pro = p.procedencia || {};
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
+    const via = pro.origen === 'qr' ? T('hoja.via.qr')
+              : pro.origen === 'pegado' ? T('hoja.via.pegado') : '';
+    const host = esc(pro.servido || p.servido || '?');
+    const sello = pro.sello ? peq(T('hoja.respaldo.sello')) : '';
+    const inseguro = pro.seguro ? '' : peq(T('hoja.respaldo.inseguro'));
+
+    // A FILE came from no origin; but the package claims one, and that origin was asked whether
+    // it publishes exactly this package. `host` is the file's name here.
+    const quien = esc((pro.origenDeclarado || '').replace(/^https?:\/\//, '') || '?');
+    const nHost = fuerte(host), nQuien = fuerte(quien);
+    const llego = T('hoja.archivo.llego', { archivo: nHost });
+    const archivoTexto = {
+      'verificado': T('hoja.archivo.verificado', { archivo: nHost, quien: nQuien }) + inseguro,
+      'sin-publicacion': llego + peq(T('hoja.archivo.sin-publicacion', { quien: nQuien })),
+      'no-publicado': llego + peq(T('hoja.archivo.no-publicado', { quien: nQuien })),
+      'sin-origen-declarado': llego + peq(T('hoja.archivo.sin-origen')),
+    };
+
+    // THE ORIGIN CHECK, in the person's words: the origin that served the package was asked
+    // whether the package is its own, and the package was asked which origin it claims.
+    const sirvio = T('hoja.respaldo.sirvio', { host: nHost, via: via });
+    const respaldoTexto = pro.origen === 'archivo' ? archivoTexto : {
+      'verificado': T('hoja.respaldo.verificado', { host: nHost, via: via }) + inseguro,
+      'sin-publicacion': sirvio + peq(T('hoja.respaldo.sin-publicacion')),
+      'no-publicado': sirvio + peq(T('hoja.respaldo.no-publicado')),
+      'sin-origen-declarado': sirvio + peq(T('hoja.respaldo.sin-origen')),
+      'otro-origen': sirvio + peq(T('hoja.respaldo.otro-origen', { quien: fuerte(esc(pro.origenDeclarado || '?')) })),
+    };
+    const respaldo = (respaldoTexto[pro.respaldo]
+      || (pro.origen === 'archivo'
+        ? llego + peq(T('hoja.archivo.sin-ninguno'))
+        : sirvio + peq(T('hoja.respaldo.no-verificado'))))
+      + sello;
+
+    // LA MISMA REVISIÓN, DICHA SIN EL DATO TÉCNICO (Geaninna, 2026-09-21). Arriba, donde la
+    // persona decide en quién confía, una IP y un nombre de llave no ayudan: o no le dicen nada o
+    // la asustan. Lo que sí decide es QUIÉN publica, y eso es el dominio.
+    //
+    // NO ES UN TEXTO MÁS BLANDO: es el mismo, sin el host ni la llave adentro. Los estados que
+    // son advertencia -- sin publicación, no publicado, otro origen, llave nueva, llave cambiada
+    // -- siguen arriba con su redacción entera. Lo único que baja al pliegue es el DATO.
+    // Un archivo elegido a mano conserva su rama: ahí «{archivo}» es el nombre que ella eligió,
+    // no una IP, y decirlo la ayuda a reconocerlo.
+    const respaldoArriba = (pro.origen === 'archivo'
+      ? (archivoTexto[pro.respaldo] || llego + peq(T('hoja.archivo.sin-ninguno')))
+      : ({
+          'verificado': T('hoja.respaldo.verificado.dominio', { quien: nQuien }),
+          'sin-publicacion': T('hoja.respaldo.sin-publicacion'),
+          'no-publicado': T('hoja.respaldo.no-publicado'),
+          'sin-origen-declarado': T('hoja.respaldo.sin-origen'),
+          'otro-origen': T('hoja.respaldo.otro-origen', { quien: nQuien }),
+        }[pro.respaldo] || T('hoja.respaldo.no-verificado')));
+
+
+    // THE SIGNATURE: whose key, and since when Mymi knows it. Continuity, not virtue.
+    const desde = pro.firmaDesde ? dia(pro.firmaDesde) : '';
+    const llave = esc(pro.firmante || '?');
+    const firma = {
+      'sin-firma': T('hoja.firma.sin-firma'),
+      'publicada': desde
+        ? T('hoja.firma.publicada.desde', { desde: desde })
+        : T('hoja.firma.publicada.primera', { llave: llave }) + peq(T('hoja.firma.publicada.recordar')),
+      'conocida': T('hoja.firma.conocida', { desde: desde }) + peq(T('hoja.firma.conocida.detalle')),
+      'rotada': T('hoja.firma.rotada', { llave: llave }) + peq(T('hoja.firma.rotada.detalle')),
+      'desconocida': T('hoja.firma.desconocida', { llave: llave }),
+      'cambiada': T('hoja.firma.cambiada', { llave: llave }),
+    }[pro.firma] || T('hoja.firma.sin-firma');
+
+    // LA MISMA FIRMA, SIN EL NOMBRE DE LA LLAVE, que se fue al pliegue. El ESTADO no se
+    // pliega: una llave nueva, una que su origen no publica y una que cambio siguen dichas
+    // arriba con todas las letras. Va aca y no mas arriba porque necesita `desde` y `llave`.
+    const firmaArriba = {
+      'sin-firma': T('hoja.firma.sin-firma'),
+      'publicada': desde
+        ? T('hoja.firma.publicada.desde', { desde: desde })
+        : T('hoja.firma.publicada.primera.sin-llave') + peq(T('hoja.firma.publicada.recordar')),
+      'conocida': T('hoja.firma.conocida', { desde: desde }) + peq(T('hoja.firma.conocida.detalle')),
+      'rotada': T('hoja.firma.rotada.sin-llave') + peq(T('hoja.firma.rotada.detalle')),
+      'desconocida': T('hoja.firma.desconocida.sin-llave'),
+      'cambiada': T('hoja.firma.cambiada.sin-llave'),
+    }[pro.firma] || T('hoja.firma.sin-firma');
+
+    // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
+    // footnote: the warning goes first, and says how bad it is. A changed key is the loudest.
+    const desconfiar = pro.firma === 'cambiada' ? T('hoja.alerta.cambiada')
+      : pro.respaldo === 'otro-origen' ? T('hoja.alerta.otro-origen')
+      : pro.respaldo === 'no-publicado' ? T(pro.origen === 'archivo' ? 'hoja.alerta.no-publicado.archivo' : 'hoja.alerta.no-publicado.servido')
+      : null;
+    const ojo = t => '<p class="ojo">' + t + '</p>';
+    const alerta = desconfiar
+      ? ojo(T('hoja.alerta.desconfia', { motivo: desconfiar }))
+      : pro.respaldo === 'verificado' && pro.firma !== 'desconocida' ? ''
+      : pro.respaldo === 'verificado'
+        ? ojo(T('hoja.alerta.llave-no-publicada'))
+        : ojo(pro.origen === 'archivo'
+            ? T('hoja.alerta.sin-respaldo.archivo')
+            : T('hoja.alerta.sin-respaldo.host', { host: host }));
+    const forma = rev.forma === 'hospedado'
+      ? T('hoja.forma.hospedado', { archivos: (rev.archivos || 0), peso: mb(rev.bytes) })
+        + peq(T('hoja.forma.motor', { peso: mb(rev.motorBytes) }))
+      : T('hoja.forma.cargo') + peq(T('hoja.forma.cargo.detalle'));
+    const caps = (rev.excesos && rev.excesos.length)
+      ? T('hoja.caps.pide-mas', { lista: esc(rev.excesos.join(', ')) }) + peq(T('hoja.caps.apagado'))
+      : T('hoja.caps.no-pide');
+
+    // THE PUBLISHER'S IDENTITY, from the brand line: legal name, tax id, version, and the domain it
+    // DECLARES next to the host that served it. Three states, like the detail: coincide, no
+    // coincide, and nothing to compare -a file came from no server- which is said, not painted.
+    // WHAT THIS PACKAGE IS NEXT TO WHAT SHE HAS, when she has it: the same, newer, older, or the same
+    // version over other content. It lists the CHANGE -queries, capabilities, publisher, origin,
+    // journal, substrate- not the module again, and says what stays hers: the journal and the
+    // switches. The publisher's endpoint only moves with her own yes, the checkbox below.
+    const up = p.actualizacion;
+    const cambio = !up ? '' : (() => {
+      // LOS CASOS ESTAN ENUMERADOS, no pegados de pedazos: cada uno es una frase entera con sus
+      // valores. Antes la version se concatenaba en medio de la oracion y el ingles no puede
+      // ponerla en el mismo lugar.
+      const nueva = esc(up.versionNueva), instalada = esc(up.versionInstalada);
+      const cabecera = up.tipo === 'misma'
+          ? ojo(T('hoja.cambio.misma'))
+        : up.tipo === 'anterior'
+          ? ojo(up.versionada ? T('hoja.cambio.anterior.versionada', { nueva: nueva, instalada: instalada }) : T('hoja.cambio.anterior'))
+        : up.tipo === 'otro-contenido'
+          ? ojo(up.versionada ? T('hoja.cambio.otro-contenido.versionada', { version: nueva }) : T('hoja.cambio.otro-contenido'))
+          : '<p class="ojo suave">' + (up.versionada
+              ? T('hoja.cambio.actualizacion', { instalada: instalada, nueva: nueva })
+              : T('hoja.cambio.actualizacion.sin-version')) + '</p>';
+      const nombres = ts => ts.map(t => esc(t.titulo || t.nombre)).join(', ');
+      const items = [];
+      const nada = () => T('general.nada'), ninguno = () => T('general.ninguno');
+      if (up.consultasNuevas.length)  items.push(T('hoja.cambio.consultas-nuevas', { lista: nombres(up.consultasNuevas) }) + peq(T('hoja.cambio.consultas-nuevas.detalle')));
+      if (up.consultasQuitadas.length) items.push(T('hoja.cambio.consultas-quitadas', { lista: nombres(up.consultasQuitadas) }));
+      if (up.capacidadesNuevas.length) items.push(T('hoja.cambio.pide-mas', { lista: esc(up.capacidadesNuevas.join(', ')) }) + peq(T('hoja.caps.apagado')));
+      if (up.publicadorCambia) items.push(T('hoja.cambio.publicador', { antes: esc(up.publicadorInstalado || nada()), ahora: esc(up.publicadorNuevo || nada()) })
+        + peq(T('hoja.cambio.publicador.detalle'))
+        + '<label class="chk"><input type="checkbox" id="pr-publicador"> ' + T('hoja.cambio.publicador.aceptar') + '</label>');
+      if (up.origenCambia) items.push(T('hoja.cambio.origen', { antes: esc(up.origenInstalado || ninguno()), ahora: esc(up.origenNuevo || ninguno()) }));
+      if (up.registroCambia) items.push(T('hoja.cambio.registro'));
+      if (up.sustratoCambia) items.push(T('hoja.cambio.sustrato', { sustrato: esc(up.sustratoNuevo || ninguno()) }));
+      const queCambia = '<p>' + fuerte(T('hoja.cambio.que-cambia')) + '</p>';
+      const lista = items.length
+        ? queCambia + '<ul class="pr-tools">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
+        : up.tipo === 'misma' ? '' : '<p>' + fuerte(T('hoja.cambio.que-cambia')) + '<br>' + peq(T('hoja.cambio.nada')) + '</p>';
+      // The button says what it does.
+      document.querySelector('#propuesta button.cta').textContent = T(
+        up.tipo === 'actualizacion' ? 'hoja.boton.actualizar' : up.tipo === 'anterior' ? 'hoja.boton.volver' : 'hoja.boton.reinstalar');
+      return cabecera + lista;
+    })();
+    if (!up) document.querySelector('#propuesta button.cta').textContent = T('propuesta.instalar');
+
+    // EL NOMBRE CON QUE SE LA LLAMA EN LA FRASE DE LA CARPETA, y es `identidad`: el nombre
+    // corto de la marca, que es como ella la conoce -- «Delfos», no «Laboratorio Clínico Delfos».
+    // La propuesta NO manda `brand.shortName`; manda `identidad`, que el Host ya resolvió.
+    const marcaCorta = p.identidad || p.institucion || p.titulo || '';
+
+    const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
+    const proc = (p.dominio || p.razonSocial)
+      ? '<div class="proc ' + veredicto + '">'
+        + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+        + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+        // QUIÉN PUBLICA, y nada más: nombre legal, cédula y dominio. La IP y el puerto se fueron
+        // al pliegue, y la versión también: ninguna de las tres ayuda a decidir si confiar, y la
+        // IP encima se lee como una advertencia cuando no lo es. Cuando el dominio y el host NO
+        // coinciden eso sigue siendo una ALERTA arriba -- la pinta `alerta`, no esta línea.
+        //
+        // SIN DOMINIO DECLARADO SE DICE CON PALABRAS. Antes caía al host, que es justo la IP que
+        // se saca; un paquete que llega como archivo puede no declarar ninguno, y en esa pantalla
+        // «no declara quién lo publica» es información, mientras una IP es ruido.
+        + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
+        + (p.cedula ? ', ' + esc(p.cedula) : '')
+        + (p.dominio
+            ? '<br>' + esc(p.dominio)
+            : (p.razonSocial ? '<br>' : '') + peq(T('hoja.proc.sin-dominio')))
+        + '</span></div>'
+      : '';
+
+    document.getElementById('pr-cuerpo').innerHTML =
+      cambio
+      + alerta
+      + proc
+      + (p.descripcion
+          ? '<p class="desc" style="margin:10px 0">' + esc(p.descripcion)
+            + (p.noHace ? ' <span class="noHace">' + esc(p.noHace) + '</span>' : '') + '</p>'
+          : '')
+      + '<p>' + fuerte(T('hoja.que-contesta')) + '</p><ul class="pr-tools">' + tools + '</ul>'
+      // LO QUE LA PANTALLA NO PODÍA CONTESTAR: ya decía DÓNDE va a vivir el registro, y no
+      // cuánto va a pesar, cada cuánto se actualiza ni por cuánto tiempo lo guardan -- que es
+      // lo que la persona pregunta antes de aceptar.
+      // DÓNDE VIVE, PRIMERO EN LLANO. La ruta cruda era lo primero que se leía y no dice lo que
+      // la persona pregunta. Ahora arriba va la frase -- en este teléfono, en la carpeta de Mymi
+      // para ella --, después cuánto pesa, cada cuánto se actualiza y cuánto lo guardan, y la
+      // ruta completa queda debajo en letra chica. NO se esconde: tiene derecho a saber dónde
+      // está su registro, y por eso no va al pliegue.
+      + '<p>' + fuerte(T('hoja.donde-vive')) + '<br>'
+      + T('hoja.donde-vive.llano', { quien: esc(marcaCorta) })
+      + (p.tamano || p.refresco || p.retencion
+          ? '<br><small>' + [
+              p.tamano ? T('hoja.journal.tamano', { tamano: esc(p.tamano) }) : '',
+              p.refresco ? T('hoja.journal.refresco', { refresco: esc(p.refresco) }) : '',
+              p.retencion ? T('hoja.journal.retencion', { retencion: esc(p.retencion) }) : '',
+            ].filter(Boolean).join(' ') + '</small>'
+          : '')
+      + '<br><small><code>' + esc(p.journal) + '</code></small>'
+      + '</p>'
+      // CON QUIÉN HABLA: EL DOMINIO, no la URL. El puerto y el recurso -- `/expediente/1` -- son
+      // de quien empaqueta, no de quien decide. La URL entera vive en el pliegue.
+      + '<p>' + fuerte(T('hoja.con-quien')) + '<br>'
+      + (p.dominio ? fuerte(esc(p.dominio)) : '<code>' + esc(p.publicador || T('hoja.sin-publicador')) + '</code>')
+      + '<br>' + peq(T('hoja.unica-red')) + '</p>'
+      // QUÉ COMPROBÓ MYMI, en cuatro líneas y una más de la forma. El sello dejó de ser una nota
+      // al pie del respaldo y pasó a ser su propia línea: que el paquete no cambió desde que se
+      // generó es un hecho aparte de quién lo respalda. Y las capacidades y los ejecutables van
+      // juntos, porque son la misma pregunta: qué se lleva adentro.
+      + '<p>' + fuerte(T('hoja.reviso')) + '</p><ul class="pr-tools">'
+      + '<li>' + respaldoArriba + '</li>'
+      + (pro.sello ? '<li>' + T('hoja.respaldo.sello') + '</li>' : '')
+      + '<li>' + firmaArriba + '</li>'
+      + '<li>' + forma + '</li>'
+      + '<li>' + caps + ' ' + T('hoja.sin-ejecutables') + '</li></ul>'
+      // EL PLIEGUE, al pie: el dato que no decide nada pero que alguien va a querer ver. El host
+      // solo cuando NO es el dominio declarado, porque cuando coincide la línea de arriba ya lo
+      // dijo. Y el aviso de conexión sin cifrar entra acá porque su propio texto dice que así
+      // solo sirve en desarrollo: sobre https no aparece nunca.
+      + (function () {
+          const filas = [
+            p.publicador ? [T('hoja.detalle.publicador'), p.publicador] : null,
+            pro.firmante ? [T('hoja.detalle.llave'), pro.firmante] : null,
+            p.version ? [T('hoja.detalle.version'), p.version] : null,
+            (pro.servido && pro.servido !== p.dominio) ? [T('hoja.detalle.servido'), pro.servido + (via || '')] : null,
+          ].filter(Boolean);
+          if (!filas.length && pro.seguro) return '';
+          return '<details class="trace"><summary>' + T('hoja.detalles') + '</summary>'
+            + filas.map(f => '<p>' + peq(f[0]) + '<br><code>' + esc(f[1]) + '</code></p>').join('')
+            + (pro.seguro ? '' : '<p>' + peq(T('hoja.respaldo.inseguro')) + '</p>')
+            + '</details>';
+        })();
+
+    document.getElementById('propuesta').classList.add('on');
+  },
+
+  // On an update that moved the publisher's endpoint, the checkbox on the sheet is her yes to the
+  // move; without it Mymi keeps the endpoint it fixed the first time.
+  altaAceptar()   {
+    const publicadorNuevo = !!(document.getElementById('pr-publicador') || {}).checked;
+    document.getElementById('propuesta').classList.remove('on');
+    gn.call('altaAceptar', { publicadorNuevo });
+  },
+  altaDescartar() { document.getElementById('propuesta').classList.remove('on'); gn.propuesta = null; gn.call('altaDescartar'); },
+
+  // THE WAY IN THAT STARTS INSIDE GNOTHI: the person pastes the link her institution gave her.
+  // Either the go.gnothi.app link with the bundle as a parameter or the bundle's address work;
+  // the Host unwraps it. From here on it is identical to a link that landed: "alta", "propuesta".
+  altaDesdeEnlace() {
+    const inp = document.getElementById('alta-url'), hint = document.getElementById('alta-hint');
+    const url = (inp.value || '').trim();
+    if (!url) { hint.textContent = T('alta.pega-primero'); inp.focus(); return; }
+    hint.textContent = '';
+    gn.sheet(false);
+    inp.value = '';
+    gn.call('alta', { url });
+  },
+
+  // THE FILE, PICKED. The picker is the platform's (the system's document picker, no storage
+  // permission); the platform answers ok:true when it has one, and what she picks comes back down
+  // the same road, with its provenance marked as a file. A platform without a picker yet says so.
+  // WHAT GNOTHI FOUND IN THE FILES SHE PICKED, one row each: the institution's name and slogan when
+  // it is a module, the file's name when it is not, and a tag for what happened to it. A row that
+  // is a module she does not have yet is the only one that can be tapped.
+  hallazgos(h) {
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
+    gn.sheet(false);
+    document.getElementById('propuesta').classList.remove('on');
+    const rows = (h.archivos || []).map(a => {
+      const esModulo = !!a.modulo;
+      const nombre = esModulo ? (a.nombreCorto || a.institucion || a.titulo) : a.archivo;
+      const linea = esModulo
+        ? ((a.institucion && a.nombreCorto && a.institucion !== a.nombreCorto) ? a.institucion + ' · ' : '')
+          + a.archivo + ' · ' + mb(a.bytes) + (a.firmado ? ' · ' + T('alta.firmado') : '')
+        : a.archivo + ' · ' + mb(a.bytes);
+      const tag = a.instalado ? '<span class="tag ok">' + T('alta.tag.instalado') + '</span>'
+        : a.problema ? '<span class="tag no">' + T('alta.tag.no-entra') + '</span>'
+        : a.yaEstaba ? '<span class="tag">' + T('alta.tag.ya-lo-tienes') + '</span>'
+        : '<span class="chev">›</span>';
+      const bloqueado = !!a.problema || a.instalado;
+      return '<button class="hallazgo' + (a.problema ? ' mal' : '') + '"'
+        + (bloqueado ? ' disabled' : ' onclick="gn.altaElegido(' + a.indice + ')"') + '>'
+        + iconOf({ name: esModulo ? a.modulo : '_' })
+        + '<div class="ht"><b>' + esc(nombre) + '</b><small>' + esc(a.problema || linea) + '</small></div>'
+        + tag + '</button>';
+    }).join('');
+    document.getElementById('ha-lista').innerHTML = rows || '<p>' + T('alta.nada-encontrado') + '</p>';
+    document.getElementById('hallazgos').classList.add('on');
+  },
+  altaElegido(i) { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaElegido', { indice: i }); },
+  altaCerrarLista() { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaCerrarLista'); },
+
+  altaArchivo() {
+    const hint = document.getElementById('alta-hint');
+    const r = gn.call('altaArchivo');
+    if (!r || r.ok !== true) { hint.textContent = T('alta.sin-selector'); return; }
+    hint.textContent = '';
+    gn.sheet(false);
+  },
+
+  // THE CODE READER. Camera in, link out, and then the same road as a pasted link.
+  scan: {
+    stream: null, timer: null,
+    supported() {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+        && (typeof jsQR === 'function' || 'BarcodeDetector' in window);
+    },
+
+    // Read a code out of one frame -- the camera's, or an image a test hands in. jsQR first: pure
+    // JS, the same everywhere, no Google module. The platform's detector only if jsQR is missing.
+    async decode(source, width, height) {
+      const c = gn.scan.canvas || (gn.scan.canvas = document.createElement('canvas'));
+      c.width = width; c.height = height;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(source, 0, 0, width, height);
+      if (typeof jsQR === 'function') {
+        const px = g.getImageData(0, 0, width, height);
+        const hit = jsQR(px.data, width, height, { inversionAttempts: 'dontInvert' });
+        return hit && hit.data ? hit.data : null;
+      }
+      const codes = await new BarcodeDetector({ formats: ['qr_code'] }).detect(c);
+      return codes.length ? codes[0].rawValue : null;
+    },
+
+    async start() {
+      const hint = document.getElementById('alta-hint');
+      if (!gn.scan.supported()) { hint.textContent = T('scan.sin-lector'); return; }
+      hint.textContent = '';
+
+      // The platform grants or denies the camera here (Android asks the person the first time).
+      try {
+        // The back camera, asked for 720p: at the 640x480 some phones default to, a code shown on a
+        // monitor across a desk is a blur of modules (measured 2026-09-09 on the A54).
+        gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      } catch (e) {
+        hint.textContent = e && e.name === 'NotAllowedError'
+          ? T('scan.sin-permiso')
+          : T('scan.no-abre', { detalle: (e && e.message || e) });
+        return;
+      }
+
+      gn.sheet(false);
+      const video = document.getElementById('cam'), msg = document.getElementById('scan-msg');
+      msg.textContent = T('scan.apunta');
+      video.srcObject = gn.scan.stream;
+      document.getElementById('scan').classList.add('on');
+
+      // Four frames a second, downscaled to 640 wide: plenty for a code held up to the camera,
+      // and cheap enough for jsQR on a phone.
+      let busy = false;
+      gn.scan.timer = setInterval(async () => {
+        if (busy || video.readyState < 2 || !video.videoWidth) return;
+        busy = true;
+        try {
+          const scale = Math.min(1, 960 / video.videoWidth);
+          const text = await gn.scan.decode(video, Math.round(video.videoWidth * scale), Math.round(video.videoHeight * scale));
+          if (text) gn.scan.found(text);
+        } catch (e) { msg.textContent = T('scan.no-se-pudo-leer', { detalle: (e && e.message || e) }); }
+        busy = false;
+      }, 250);
+    },
+
+    stop() {
+      if (gn.scan.timer) { clearInterval(gn.scan.timer); gn.scan.timer = null; }
+      if (gn.scan.stream) { gn.scan.stream.getTracks().forEach(t => t.stop()); gn.scan.stream = null; }
+      document.getElementById('cam').srcObject = null;
+      document.getElementById('scan').classList.remove('on');
+    },
+
+    // What the code said. One entry for the camera and for a test that hands in a frame.
+    found(text) {
+      gn.scan.stop();
+      gn.call('alta', { url: text, via: 'qr' });
+    },
+  },
+
+  altaTimer: null,
+  alta(a) {
+    const caja = document.getElementById('alta');
+    if (gn.altaTimer) { clearTimeout(gn.altaTimer); gn.altaTimer = null; }
+
+    const adorno = a.estado === 'trabajando' ? '<span class="sp"></span>'
+                 : a.estado === 'listo'      ? '<span class="ic">✓</span>'
+                 :                              '<span class="ic">!</span>';
+
+    // While a bundle downloads the strip grows into a card with a bar and the megabytes: the
+    // shell sends how far it got (progreso, bytes, total) about every quarter megabyte.
+    const mb = n => nDecimal(Math.max(n || 0, 0) / 1048576) + ' MB';
+    const pct = a.progreso == null ? null : Math.round(Math.min(1, a.progreso) * 100);
+    const cuerpo = a.estado === 'trabajando' && pct != null
+      ? '<span class="txt"><b>' + esc(a.detalle) + '</b>' + peq(T('alta.progreso', { hechos: mb(a.bytes), total: mb(a.total), pct: pct })) + '</span>'
+        + '<div class="bar"><i style="width:' + pct + '%"></i></div>'
+      : '<span>' + esc(a.detalle) + '</span>';
+    caja.innerHTML = '<div class="alta ' + a.estado + '">' + adorno + cuerpo + '</div>';
+
+    if (a.estado === 'listo') gn.altaTimer = setTimeout(() => { caja.innerHTML = ''; }, 6000);
+  },
+
+  nav(v) {
+    console.log('nav:' + v);
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
+    document.getElementById('v-' + v).classList.add('on');
+    // The screens under Ajustes light its tab; Journal left the bar on 2026-09-09.
+    const tab = { journal: 'set', prov: 'set' }[v] || v;
+    ['home','chat','set'].forEach(n => {
+      const b = document.getElementById('n-' + n);
+      if (b) b.classList.toggle('on', n === tab);
+    });
+    if (v !== 'detail') gn.open = null;
+  },
+  detail(name) { gn.open = name; gn.nav('detail'); gn.paint(); },
+
+  // COPY TO THE CLIPBOARD, and say so on the button for a moment. The async API needs a secure
+  // context; inside the app the page is file:// and it may be missing, so the old textarea trick
+  // stays as the fallback.
+  copy(btn, text) {
+    const done = () => { const was = btn.textContent; btn.textContent = T('general.copiado'); setTimeout(() => btn.textContent = was, 1400); };
+    const legacy = () => {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { console.log('copy failed: ' + e); }
+      ta.remove();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, legacy);
+    else legacy();
+  },
+
+  // THE RIPPLE: a circle born where the finger touched, fading out. It covers the whole card, in
+  // the brand color; it removes itself when done.
+  ripple(e) {
+    const card = e.target.closest('.mod'); if (!card) return;
+    const r = card.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2;
+    const s = document.createElement('span'); s.className = 'rip';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (e.clientX - r.left - d / 2) + 'px'; s.style.top = (e.clientY - r.top - d / 2) + 'px';
+    card.appendChild(s); setTimeout(() => s.remove(), 600);
+  },
+
+  paint() {
+    if (!gn.state) return;
+    // NEWEST FIRST: the module added most recently is the hero, and stays there until another one
+    // arrives. Predictable, and it makes installing satisfying -- you add La Guaria, come back, and
+    // La Guaria is the big card. The Host says when each one arrived (installedAt, ISO UTC).
+    const ms = [...gn.state.modules].sort((a, b) => String(b.installedAt || '').localeCompare(String(a.installedAt || '')));
+
+    document.getElementById('home-sub').textContent =
+      ms.length === 0 ? T('inicio.sin-ninguna')
+      : ms.length === 1 ? T('inicio.una')
+      : T('inicio.varias', { n: ms.length });
+
+    const vacio = document.getElementById('home-empty');
+    vacio.hidden = ms.length > 0;
+    // Un solo llamado a la accion mientras no haya nada: el de abajo. El de arriba vuelve
+    // cuando ya hay tarjetas y deja de competir con el.
+    document.querySelector('.hola .addbtn').hidden = ms.length === 0;
+    // LA ENTRADA SE VE UNA VEZ. `paint()` corre con cada cambio de estado, asi que la clase se
+    // pone una sola vez por carga, y queda anotada en la sesion: quien sale al asistente y
+    // vuelve no la ve de nuevo. Si cierra y abre la app, volverla a ver esta bien.
+    if (!vacio.hidden && !vacio.dataset.entrada) {
+      vacio.dataset.entrada = '1';
+      let vista = false;
+      try { vista = sessionStorage.getItem('mymi.vacio') === '1'; sessionStorage.setItem('mymi.vacio', '1'); } catch (e) {}
+      if (!vista) vacio.classList.add('entra');
+    }
+
+    // THE INSTITUTIONS' TYPEFACES, one @font-face per module that declared one, under a name the
+    // Host chooses (gn-<module>): the institution brings the file, never the CSS.
+    document.getElementById('brand-fonts').textContent = ms.map(m => {
+      const f = m.brand && m.brand.font; if (!f || !f.regular) return '';
+      const fam = "'gn-" + attr(m.name) + "'";
+      // One file per institution: it carries the weight its brand name is set in, and it answers for
+      // the whole range so the card never asks for a weight the file does not have.
+      return '@font-face{font-family:' + fam + ";src:url(" + attr(f.regular) + ");font-weight:100 900;font-display:swap}";
+    }).join('');
+
+    const grid = document.getElementById('mods');
+    if (!grid.dataset.ripple) {
+      grid.dataset.ripple = '1';
+      grid.addEventListener('pointerdown', gn.ripple);
+    }
+    grid.innerHTML = ms.map((m, i) => {
+      const c = colorOf(m), b = m.brand || {};
+      // Enabled: touching the card opens the institution's app inside Mymi. Disabled: nothing to
+      // open, so it goes to the detail, which is where it gets switched on.
+      const onTap = m.enabled ? "gn.abrir('" + m.name + "')" : "gn.detail('" + m.name + "')";
+      const nm = tiers(m), on = (m.tools || []).filter(t => t.enabled).length;
+      const style = '--brand:' + c + ';--brand-soft:' + tint(c, .13) + ';--brand-deep:' + tint(c, .55).replace('rgba', 'rgb').replace(/,[^,]*\)$/, ')')
+        + (b.banner ? ';--banner:url(' + attr(b.banner) + ')' : '')
+        + (b.font && b.font.regular ? ";--font:'gn-" + attr(m.name) + "'" : '');
+      return '<div class="mod photo' + (i === 0 ? ' wide' : '') + (m.enabled ? '' : ' off') + '" data-mod="' + attr(m.name) + '" style="' + style + '"'
+        + ' onclick="' + onTap + '">'
+        + '<div class="head">' + iconOf(m) + '<div class="nm">'
+        + (nm.pre ? '<span class="pre">' + esc(nm.pre) + '</span>' : '') + '<b' + (b.font && b.font.regular ? '' : ' class="mf"') + '>' + esc(nm.big) + '</b></div></div>'
+        + '<small>' + esc(taglineOf(m)) + '</small>'
+        + '<div class="acts">'
+        + (m.signerRevokedAt ? '<span class="off-tag">' + T('inicio.llave-retirada') + '</span>' : '')
+        + (m.updateAvailable ? '<button class="perm nueva" onclick="event.stopPropagation();gn.actualizar(\'' + m.name + '\')">' + T('inicio.version-nueva') + '</button>' : '')
+        + '<button class="perm" onclick="event.stopPropagation();gn.detail(\'' + m.name + '\')">'
+        + '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+        + (on === 1 ? T('detalle.permiso.uno') : T('detalle.permiso.varios', { n: on })) + '</button>'
+        + (m.enabled ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">' + T('instituciones.abrir') + ' <span>→</span></button>'
+                     : '<span class="off-tag">' + T('inicio.apagado') + '</span>')
+        + '</div></div>';
+    }).join('');
+
+    // EL NOMBRE DE MARCA CABE EN SU TARJETA (Geaninna, 2026-09-18; medido y corregido el 09-21).
+    //
+    // «Monteverde» a 21 px pide 106 px y la caja del nombre topa en 102: se perdía la última
+    // letra. NO la recorta el `overflow:hidden` de la tarjeta -- el nombre termina en 186 y la
+    // tarjeta llega a 200, o sea adentro --: la recorta SU PROPIA CAJA, que es un item flex con
+    // `min-width:0` al lado del icono de 44. Importa saberlo: tocar el overflow de la tarjeta no
+    // arregla nada. «La Guaria» no baja ni un píxel, y «Sotaventos Motors» tampoco: ése parte en
+    // dos líneas y nunca desbordó.
+    //
+    // El tamaño baja de a un píxel hasta que la palabra más larga entra, nunca por debajo de 15.
+    // Medido, no silabeado: un nombre de marca no se parte al medio.
+    //
+    // VA CUANDO LA LETRA DE LA INSTITUCIÓN YA ESTÁ. Unas líneas más arriba se inyectan sus
+    // `@font-face`, y medir en el mismo tick mide con Manrope: el tamaño elegido no sería el de
+    // la letra que se va a ver. Por eso corre dos veces -- ahora, para que no haya un salto
+    // visible, y otra vez cuando `fonts.ready` dice que llegaron.
+    const queQuepaElNombre = () => grid.querySelectorAll('.nm b').forEach(b => {
+      b.style.fontSize = ''; b.style.overflowWrap = '';
+      let size = parseFloat(getComputedStyle(b).fontSize);
+      while (b.scrollWidth > b.clientWidth && size > 15) { size -= 1; b.style.fontSize = size + 'px'; }
+
+      // Y SI NI A 15 PX ENTRA, SE PARTE. Es el último recurso, y es lo honesto: a esa altura la
+      // opción es perder letras o partir la palabra, y una palabra a la que le falta la última
+      // letra se lee como un error de dedo, no como un nombre que no cabía. Sin esto el bucle
+      // se rendía en silencio: «Municipalidadísima» se queda en 126 px contra 102 y sigue
+      // recortada. El tope de 28 caracteres del manifiesto no alcanza, porque lo que no cabe
+      // es el ancho de UNA palabra, no el largo del nombre.
+      if (b.scrollWidth > b.clientWidth) b.style.overflowWrap = 'anywhere';
+    });
+    queQuepaElNombre();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queQuepaElNombre);
+
+    if (gn.open) {
+      const m = ms.find(x => x.name === gn.open);
+      if (!m) { gn.nav('home'); return; }
+      // EL DETALLE, PARTIDO EN DOS ZONAS. De acá hasta la franja de procedencia es lo que la
+      // institución declara de sí misma -- y hasta ahora estaba vacío: lo único que la persona
+      // podía leer eran las descripciones de las tools, escritas para el modelo. De los
+      // interruptores para abajo es del Host, y no se personaliza: quien puede diseñar la
+      // pantalla donde se le pide permiso a alguien diseña el contexto del permiso.
+      const proc = m.publisher || {}, dia = m.journal || {}, org = m.provenance || {};
+
+      // TRES ESTADOS, NO DOS. `matches` es true, false o null -- null es «no hay con qué
+      // comparar», y se ve distinto de las otras dos a propósito: un visto bueno que en
+      // realidad significa «no sé» es peor que no poner nada.
+      const veredicto = org.matches === true ? 'ok' : org.matches === false ? 'duda' : 'dice';
+
+      document.getElementById('detail').innerHTML =
+        '<div class="hero">' + iconOf(m)
+        + '<div>'
+        + '<b style="color:' + acento(m) + (m.brand && m.brand.font && m.brand.font.regular ? ";font-family:'gn-" + attr(m.name) + "'" : '') + '">' + esc(nameOf(m)) + '</b>'
+        + '<small>' + esc(taglineOf(m)) + '</small></div></div>'
+
+        // EL ICONO EN LA PANTALLA DE INICIO, y solo si hay algo que abrir: un módulo apagado no
+        // tiene cara, y un acceso directo a una pantalla que no se levanta es una promesa rota.
+        //
+        // El icono lleva el logo y el nombre de la institución, pero lo que abre es GNOTHI: el
+        // launcher le estampa su badge en la esquina y eso no se puede quitar. Está bien que
+        // esté -- dice quién corre el código -- y por eso el rótulo no dice «instalar la app».
+        // EL ACCESO DIRECTO SE FUE ABAJO (Geaninna, 2026-09-21). Estaba pegado a la cabecera y
+        // repetía el logo a 48 px justo debajo del grande: dos veces el mismo icono a dos
+        // tamaños, a un renglón de distancia, se lee como un error de la pantalla y no como una
+        // muestra. Ahora va DESPUÉS de las consultas, que es lo que la persona vino a ver.
+        //
+        // LA MUESTRA NO SE QUITA, y eso es a propósito: antes era una frase -- «un icono de
+        // Delfos» -- y se cambió porque el icono ES lo que va a quedar en su pantalla. Lo que
+        // sobraba era la cercanía, no la muestra.
+
+        // The institution retired the key this module was accepted with. Said here, once, and
+        // nothing is switched for her: what she has is hers; what she does about it is hers too.
+        + (m.signerRevokedAt
+            ? ojoDetalle(T('detalle.llave-retirada', { dia: dia(m.signerRevokedAt) }))
+            : '')
+
+        // The origin publishes a newer package than the one she has (NotasGnothiHost/44 §4). A note
+        // and a door: nothing downloads until she taps, and the update sheet says what changes.
+        + (m.updateAvailable
+            ? '<div class="ojo suave">' + T('detalle.hay-version', {
+                quien: esc(m.shortName || m.institution || m.title),
+                que: m.updateAvailable.version ? T('detalle.version.numero', { version: esc(m.updateAvailable.version) }) : T('detalle.version.otro-paquete'),
+                tienes: m.publisher && m.publisher.version ? T('detalle.version.tienes', { version: esc(m.publisher.version) }) : '',
+              })
+              + '<button class="btn" style="width:100%;margin-top:10px" onclick="gn.actualizar(\'' + m.name + '\')">' + T('detalle.ver-que-cambia') + '</button></div>'
+            : '')
+
+        // WHAT THE CARD PROMISED: the queries, first. This is the point of entry to what the
+        // institution exposes to the AI, and the person's switches live here.
+        + '<h2 class="qtitle">' + T('detalle.consultas.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</h2>'
+        + '<p class="qlead">' + T('detalle.consultas.lead') + '</p>'
+        + m.tools.map(t =>
+            '<div class="tool' + (m.enabled && t.enabled ? '' : ' dim') + '">'
+            + '<div class="t"><b>' + esc(t.title || t.name) + '</b><p>' + esc(t.description) + '</p></div>'
+            + sw(t.enabled, "gn.setTool('" + m.name + "','" + t.name + "',this.checked)")
+            + '</div>').join('')
+        + '<p class="hint">' + T('detalle.consultas.apagada') + '</p>'
+
+
+        + (m.description
+            ? '<p class="desc">' + esc(m.description)
+              + (m.doesNotDo ? ' <span class="noHace">' + esc(m.doesNotDo) + '</span>' : '') + '</p>'
+            : '')
+
+        + (m.enabled
+            ? '<div class="fijar-caja">'
+              // LA MUESTRA, que es el argumento entero: el MISMO iconOf() de la tarjeta, a 48px
+              // y con el rótulo debajo, o sea exactamente lo que va a quedar en la pantalla de
+              // inicio. Antes esto era una frase -«un icono de Delfos»- y una frase describe;
+              // esto muestra.
+              + '<div class="fijar-muestra">' + iconOf(m)
+              + '<span>' + esc(nameOf(m)) + '</span></div>'
+              + '<div class="fijar-que">'
+              // SIN PÁRRAFO. Decía «Así se va a ver. Al tocarlo abre esta app, acá adentro», y
+              // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
+              // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
+              // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
+              + '<b>' + esc(T('detalle.fijar.lugar')) + '</b>'
+              // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
+              // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
+              // pantalla sí.
+              + '<button class="fijar" id="fijar" style="background:' + tint(colorOf(m), .11)
+              + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
+              + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
+              + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
+              // EL VERBO CAMBIA SI YA ESTÁ. «Agregar» sobre algo que ya está agregado es lo que
+              // hacía que tocarlo pareciera roto: ahora dice volver a ponerlo, que es lo que el
+              // botón de verdad hace en ese caso.
+              + '<span>' + esc(T(gn.yaFijado(m.name) ? 'detalle.fijar.otra-vez' : 'detalle.fijar.agregar')) + '</span></button>'
+              // Y LA NOTA YA VIENE ESCRITA cuando el icono está: el mismo párrafo que después
+              // usa el resultado del pedido, para no sumar un lugar donde pueda hablar la
+              // pantalla.
+              + '<p class="fijar-dicho" id="fijar-dicho">'
+              + (gn.yaFijado(m.name) ? T('detalle.fijar.ya') : '') + '</p>'
+              + '</div></div>'
+            : '')
+
+        // LA PROCEDENCIA: lo que la institución DECLARA -- su dominio -- al lado de lo que
+        // Mymi OBSERVÓ al dar el alta, y guardó. Es la única cosa de toda la marca que el
+        // Host puede comprobar solo, y por eso es la que le da sentido al logo: sin esto, un
+        // logo es un dibujo que cualquiera copia.
+        //
+        // La franja neutra toma el color de la institución; las otras dos NO, y es a propósito:
+        // el verde dice «comprobado» y el ámbar «ojo», y esos son juicios del Host. Que una
+        // institución pudiera pintar de su color la franja que la avala sería dejarla firmar su
+        // propio certificado.
+        + (proc.domain || proc.legal
+            ? '<div class="proc ' + veredicto + '"'
+              + (veredicto === 'dice' ? ' style="color:' + acento(m) + ';background:' + fondoDe(m) + '"' : '')
+              + '><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+              + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>'
+                 : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+              // LA MISMA REGLA DE DOS ZONAS QUE LA HOJA (Geaninna, 2026-09-21). Acá también
+              // estaban la IP y la versión, y acá también lo que decide es QUIÉN publica. El
+              // ícono sigue diciendo el veredicto -- comprobado, ojo, o «no hay con qué
+              // comparar» --: eso es estado y el estado no se pliega.
+              + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
+              + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
+              + (proc.domain
+                  ? '<br>' + esc(proc.domain)
+                  : (proc.legal ? '<br>' : '') + peq(T('hoja.proc.sin-dominio')))
+              + '</span></div>'
+            : '')
+
+        // Y EL DATO TÉCNICO, PLEGADO. Las mismas claves de la hoja: la llave, la versión y quien
+        // sirvió -- ése solo cuando NO es el dominio declarado, porque si coincide ya lo dijo la
+        // línea de arriba. El detalle no tiene la URL del publicador: la cáscara no la manda en
+        // el estado del módulo, y no vale inventarla desde el dominio.
+        + (function () {
+            const filas = [
+              m.signerKey ? [T('hoja.detalle.llave'), m.signerKey] : null,
+              (org.version || proc.version) ? [T('hoja.detalle.version'), org.version || proc.version] : null,
+              (org.servedBy && org.servedBy !== proc.domain) ? [T('hoja.detalle.servido'), org.servedBy] : null,
+            ].filter(Boolean);
+            return filas.length
+              ? '<details class="trace"><summary>' + T('hoja.detalles') + '</summary>'
+                + filas.map(f => '<p>' + peq(f[0]) + '<br><code>' + esc(f[1]) + '</code></p>').join('')
+                + '</details>'
+              : '';
+          })()
+
+        + '<div class="master"><span>' + T('detalle.modulo-encendido') + '</span>'
+        + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
+
+        + (m.enabled
+            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>' + T('detalle.abrir.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</b><br>'
+              + '<small>' + T('detalle.abrir.sub') + '</small></span><span class="chev">›</span></div>'
+            : '')
+
+
+        // LO QUE LA INSTITUCIÓN PROMETE SOBRE EL REGISTRO. La pestaña Journal ya dice cuánto
+        // pesa HOY -- medido por el Host desde afuera --; esto es lo otro, que solo ella sabe.
+        // `reconstruible: false` es el dato que pesa: ese diario lleva aportes de la persona y
+        // borrarlo pierde datos.
+        + (dia.retention || dia.updates || dia.reconstruible === false
+            ? '<p class="hint">' + [
+                dia.retention ? T('detalle.journal.guarda', { retencion: esc(dia.retention) }) : '',
+                dia.updates ? T('detalle.journal.actualiza', { refresco: esc(dia.updates) }) : '',
+                dia.reconstruible === false ? T('detalle.journal.irrecuperable') : '',
+              ].filter(Boolean).join(' ') + '</p>'
+            : '')
+
+        // QUITAR, al final y con el mismo aspecto que «Abrir»: es una acción sobre el módulo, no
+        // un ajuste. La confirmación es un sheet propio y no confirm(): en el WebView del Host
+        // confirm() no tiene quién lo atienda y contesta false sin mostrar nada.
+        + '<div class="master" onclick="gn.quitarPedir(\'' + m.name + '\')"><span><b>' + T('quitar.de', { quien: esc(m.shortName || m.institution || m.title) }) + '</b><br>'
+          + '<small>' + T('detalle.quitar.sub') + '</small></span><span class="chev">›</span></div>';
+    }
+
+    // DATOS EN ESTE TELÉFONO: one row per institution, with its logo, what its record weighs and how
+    // many files it is. Tapping it opens the module's detail.
+    document.getElementById('journal').innerHTML = ms.map(m => {
+      return '<div class="row" onclick="gn.detail(\'' + m.name + '\')">'
+        + iconOf(m)
+        + '<div class="t"><b>' + esc(nameOf(m)) + '</b><small>' + kb(m.journalBytes) + ' · ' + (m.journalFiles === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: m.journalFiles })) + '</small></div>'
+        + '<span class="chev">›</span>'
+        + '</div>';
+    }).join('');
+    const files = ms.reduce((a, m) => a + (m.journalFiles || 0), 0);
+    document.getElementById('set-datos-sub').textContent =
+      (ms.length === 1 ? T('journal.modulo.uno') : T('journal.modulo.varios', { n: ms.length }))
+      + ' · ' + (files === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: files }));
+
+    const s = gn.state.settings || {};
+    // EL NOMBRE DEL PROVEEDOR LOCAL SE TRADUCE; EL DE LOS DEMAS NO. «Groq» es el nombre de una
+    // empresa y se dice igual en los dos idiomas; «En este teléfono» es texto NUESTRO, o sea UI
+    // del Host, que por la regla 1 sigue a la persona. Lo que viaja en `s.name` es la IDENTIDAD
+    // que se guarda en model.cfg y no se toca: acá solo se elige como mostrarla.
+    const nombreProv = s.local ? T('ajustes.proveedor.local') : (s.name || s.provider);
+    const nombreServ = s.local ? T('ajustes.servidor.local')  : s.provider;
+    document.getElementById('set-model').innerHTML =
+        '<div><span>' + T('ajustes.proveedor') + '</span><b>' + esc(nombreProv) + '</b></div>'
+      + '<div><span>' + T('ajustes.servidor') + '</span><b>' + esc(nombreServ) + '</b></div>'
+      + '<div><span>' + T('ajustes.modelo') + '</span><b>' + esc(s.model) + '</b></div>';
+    document.getElementById('set-prov-sub').textContent = (nombreProv || '—') + (s.model ? ' · ' + s.model : '');
+    // EL PUNTO ROJO NO VA DONDE NO HAY NADA QUE FALTAR. El Host manda `local` desde que existe el
+    // proveedor del aparato -Shell.cs, «para que la pagina no pida llave donde no hace falta»- y
+    // esta pagina no lo leia: mostraba «No key — the assistant cannot answer» sobre el unico
+    // proveedor que no lleva llave, y que estaba contestando igual. Visto en un iPhone 17 Pro el
+    // 2026-09-17.
+    const punto = (c) => '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + c + ';margin-right:6px"></i>';
+    document.getElementById('set-key-sub').innerHTML = s.local
+      ? punto('#1E9E6A') + T('ajustes.clave.no-hace-falta')
+      : s.keyPresent ? punto('#1E9E6A') + T('ajustes.clave.puesta')
+                     : punto('var(--off)') + T('ajustes.clave.falta');
+
+    // The stored key is NEVER echoed back into the page: the editor opens empty, always.
+    // Y EL PIE TAMBIEN: hablarle de llaves gratuitas o de pago a quien no necesita ninguna es
+    // ofrecerle un problema que no tiene. Se OCULTA, no se vacia: el repintado de data-i18n
+    // recorre el marcado y le volveria a poner el texto.
+    document.getElementById('prov-hint').hidden = !!s.local;
+    document.getElementById('set-key').innerHTML = s.local
+      ? '<div class="st"><i class="dot ok"></i><b>' + T('ajustes.local.telefono') + '</b></div>'
+      : gn.keyEdit
+      ? '<div class="st"><b>' + T('ajustes.clave.pega-nueva') + '</b></div>'
+        + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(T('ajustes.clave.placeholder')) + '">'
+        + '<div class="btns"><button class="btn" onclick="gn.saveKey()">' + T('ajustes.llave.guardar') + '</button>'
+        + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">' + T('general.cancelar') + '</button></div>'
+      : (s.keyPresent
+        ? '<div class="st"><i class="dot ok"></i><div><b>' + T('ajustes.clave.puesta') + '</b><br><small style="color:var(--muted)">' + T('ajustes.clave.guardada-aqui') + '</small></div></div>'
+          + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">' + T('ajustes.clave.cambiar') + '</button>'
+          + '<button class="btn danger" onclick="gn.clearKey()">' + T('ajustes.llave.borrar') + '</button></div>'
+        : '<div class="st"><i class="dot no"></i><b>' + T('ajustes.clave.falta') + '</b></div>'
+          + '<div class="btns"><button class="btn" onclick="gn.keyEdit=true;gn.paint()">' + T('ajustes.clave.pegar') + '</button></div>');
+    document.getElementById('set-host').innerHTML =
+        '<div><span>' + T('ajustes.modulos-instalados') + '</span><b>' + ms.length + '</b></div>'
+      + '<div class="path"><span>' + T('ajustes.carpeta') + '</span><code>' + esc(s.root) + '</code>'
+      + '<button class="copy" onclick="gn.copy(this, ' + JSON.stringify(String(s.root || '')).replace(/"/g, '&quot;') + ')">' + T('ajustes.copiar') + '</button></div>';
+  },
+
+  setTool(mod, tool, on)  { const s = gn.call('setTool',  {module: mod, tool: tool, enabled: on}); if (s) { gn.state = s; gn.paint(); } },
+  setModule(mod, on)      { const s = gn.call('setModule',{module: mod, enabled: on});            if (s) { gn.state = s; gn.paint(); } },
+
+  // ── the provider: pick one, then just paste ITS key ─────────────────────
+  // Every entry speaks the OpenAI shape, which is the one wire format the app implements.
+  // 'Otro' covers anything else that speaks it too -- LM Studio on the LAN included.
+  // LA LISTA DEL SELECTOR, CON EL APARATO ADELANTE CUANDO LO HAY. El Host manda la terna entera
+  // en settings.proveedorLocal, asi que la pagina no se sabe ni el nombre ni el modelo: los
+  // recibe. Va PRIMERO a proposito -- es el unico donde el dato no sale del telefono --, y su
+  // nombre se muestra traducido aunque lo que se guarde sea la identidad que vino.
+  provList() {
+    const s = (gn.state && gn.state.settings) || {};
+    const local = s.proveedorLocal
+      ? [{ name: s.proveedorLocal.name, url: s.proveedorLocal.url, model: s.proveedorLocal.model,
+           nota: 'prov.nota.local', local: true }]
+      : [];
+    return local.concat(PROV);
+  },
+  psheet(on) {
+    if (on) {
+      const cur = (gn.state && gn.state.settings) ? gn.state.settings.name : '';
+      document.getElementById('plist').innerHTML = gn.provList().map((p, i) =>
+        '<div class="prow" onclick="gn.pickProvider(' + i + ')">'
+        + '<div class="t"><b>' + esc(p.local ? T('ajustes.proveedor.local') : p.name) + '</b>' + peq(T(p.nota)) + '</div>'
+        + (cur === p.name ? '<span class="cur">✓</span>' : '') + '</div>').join('')
+        + '<div class="prow" onclick="document.getElementById(\'pcustom\').style.display=\'block\'">'
+        + '<div class="t"><b>' + T('prov.otro') + '</b>' + peq(T('prov.otro.nota')) + '</div></div>';
+      document.getElementById('pcustom').style.display = 'none';
+    }
+    document.getElementById('psheet').classList.toggle('on', on);
+  },
+  pickProvider(i) { gn.useProvider(gn.provList()[i]); },
+  saveCustom() {
+    const url = document.getElementById('cu-url').value.trim();
+    const model = document.getElementById('cu-model').value.trim();
+    if (!url || !model) return;
+    gn.useProvider({ name: 'Otro', url: url, model: model });
+  },
+  useProvider(p) {
+    const s = gn.call('setProvider', { name: p.name, url: p.url, model: p.model });
+    gn.psheet(false);
+    if (s) {
+      gn.state = s;
+      // no key for this provider yet -> open the editor right away: pick, paste, done.
+      // Salvo el del aparato, que no lleva llave: ahi abrir el editor seria pedir lo que no hace
+      // falta, que es el mismo error que la tarjeta de acceso ya tenia.
+      gn.keyEdit = !s.settings.local && !s.settings.keyPresent;
+      gn.paint();
+    }
+  },
+
+  // ── the key: paste, replace, delete. The value leaves the input and never comes back. ──
+  keyEdit: false,
+  saveKey() {
+    const v = document.getElementById('key-in').value.trim();
+    if (!v) return;
+    const s = gn.call('setKey', {key: v});
+    gn.keyEdit = false;
+    if (s) { gn.state = s; gn.paint(); }
+  },
+  clearKey() {
+    const s = gn.call('clearKey');
+    if (s) { gn.state = s; gn.paint(); }
+  },
+
+  ask() {
+    console.log('ask pressed');
+    if (gn.busy) return;
+    const q = document.getElementById('q');
+    const text = q.value.trim();
+    if (!text) return;
+    q.value = ''; q.blur();
+    gn.busy = true;
+    document.getElementById('send').disabled = true;
+    const empty = document.getElementById('chat-empty');
+    if (empty) empty.remove();
+
+    add('<div class="b user">' + esc(text) + '</div>');
+    const id = 'r' + (++gn.seq);
+    add('<div class="trace" id="' + id + '"><pre></pre></div>'
+      + '<div class="b bot" id="' + id + '-think"><span class="think"><i></i><i></i><i></i></span></div>');
+    gn.call('ask', {id: id, question: text});
+  },
+  traceLine(line) {
+    const t = document.querySelector('#r' + gn.seq + ' pre');
+    if (t) { t.textContent += (t.textContent ? '\n' : '') + line; scrollDown(); }
+  },
+  answer(text, failed) {
+    const think = document.getElementById('r' + gn.seq + '-think');
+    if (think) think.remove();
+    const tr = document.getElementById('r' + gn.seq);
+    if (tr) tr.outerHTML =
+      '<details class="trace"><summary>' + T('asistente.traza') + '</summary>' + tr.innerHTML + '</details>';
+    add('<div class="b bot"><div class="md">' + (failed ? esc(text) : md(text)) + '</div></div>');
+    gn.busy = false;
+    document.getElementById('send').disabled = false;
+  }
+};
+
+function add(html) { document.getElementById('msgs').insertAdjacentHTML('beforeend', html); scrollDown(); }
+function scrollDown() { const m = document.getElementById('msgs'); m.scrollTop = m.scrollHeight; }
+function sw(on, fn) {
+  return '<label class="sw"><input type="checkbox"' + (on ? ' checked' : '')
+       + ' onchange="' + fn + '"><i></i></label>';
+}
+// ── LO QUE ESTA PANTALLA DICE, EN EL IDIOMA DE LA PERSONA ─────────────────────────────
+//
+// El catalogo es el mismo que usa el C# del Host: Gnothi.Host/textos.json, servido por el
+// puente con el op 'textos'. Se PIDE al arrancar y no se espera un push, porque el puente es
+// sincrono: asi no hay un instante en que la pantalla este pintada en el idioma equivocado.
+// Y no se puede ir a buscar el archivo -- esta pagina se carga como file:// y un fetch a otro
+// file:// lo rechaza el navegador en las dos plataformas.
+//
+// LOS VALORES VIAJAN CON NOMBRE, nunca por posicion: el orden de las palabras cambia entre los
+// dos idiomas y un {0} que se mueve compila, corre y miente.
+//
+// EL TEXTO QUE ESTA ESCRITO EN EL HTML ES EL RESPALDO, no la fuente. La autoridad es el
+// catalogo; lo de adentro del marcado existe para que mock() -- la maqueta que se itera en un
+// monitor, sin telefono -- siga mostrando algo legible. La suite afirma que toda clave
+// data-i18n existe en el catalogo.
+let TEXTOS = {};
+
+// EL IDIOMA EN CURSO, para lo que NO es una frase: como se escribe un numero y una fecha. Lo
+// dice el catalogo con una clave suya en vez de adivinarlo, asi que no hay dos verdades.
+// Estaba cableado a 'es' en siete sitios -- toLocaleDateString('es') y .replace('.', ',') --,
+// que es la regla 8: el formato viaja con el render.
+let IDIOMA = 'es';
+
+// LA MARCA QUE ENVUELVE UN VALOR DENTRO DE UNA FRASE. Van aca y no adentro del catalogo para
+// que quien traduzca no tenga que cuidar etiquetas alrededor de un hueco; el enfasis que la
+// frase misma necesita -«la llave CAMBIO»- si viaja en la frase, porque partirla para sacarlo
+// seria volver a los fragmentos que la regla 7 prohibe.
+function fuerte(t) { return '<b>' + t + '</b>'; }
+
+// UN NUMERO CON UN DECIMAL, EN EL IDIOMA EN CURSO. Estaba escrito tres veces como el mismo
+// lambda con `.replace('.', ',')` adentro: la coma decimal del espanol, cableada, en una funcion
+// que se copio y pego. En ingles ese numero se escribe con punto.
+function nDecimal(n) { return Number(n).toLocaleString(IDIOMA, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+function dia(iso) { return new Date(iso).toLocaleDateString(IDIOMA, { day: 'numeric', month: 'short', year: 'numeric' }); }
+function peq(t) { return '<small>' + t + '</small>'; }
+function ojoDetalle(t) { return '<p class="ojo">' + t + '</p>'; }
+
+function T(clave, valores) {
+  let frase = TEXTOS[clave];
+  if (frase === undefined) return clave;
+  if (valores) for (const nombre in valores) frase = frase.split('{' + nombre + '}').join(valores[nombre]);
+  return frase;
+}
+
+// Repinta lo que esta escrito en el marcado. Un nodo lleva data-i18n con su clave; si ademas
+// lleva data-i18n-attr, lo que se cambia es ese atributo y no el texto.
+function pintarTextos() {
+  document.documentElement.lang = IDIOMA;
+  for (const el of document.querySelectorAll('[data-i18n]')) {
+    const clave = el.getAttribute('data-i18n');
+    if (!(clave in TEXTOS)) continue;
+    const attr = el.getAttribute('data-i18n-attr');
+    if (attr) el.setAttribute(attr, TEXTOS[clave]);
+    else el.textContent = TEXTOS[clave];
+  }
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+// For a value that goes INSIDE an attribute (the brand's color and logo): besides esc, no quote
+// survives.
+function attr(s) { return esc(s).replace(/["']/g, ''); }
+function kb(b) {
+  if (!b) return '0 KB';
+  return b < 1024*1024 ? nDecimal(b/1024) + ' KB'
+                       : nDecimal(b/1048576) + ' MB';
+}
+
+// A small markdown renderer — enough for what the model writes: tables, bold, lists,
+// headers, inline code. Escapes FIRST, transforms after.
+function md(src) {
+  const lines = esc(src).split('\n');
+  let out = [], i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^\s*\|/.test(l) && i + 1 < lines.length && /^\s*\|[\s\-:|]+\|\s*$/.test(lines[i+1])) {
+      const cells = r => r.replace(/^\s*\||\|\s*$/g,'').split('|').map(c => inline(c.trim()));
+      let t = '<div class="tw"><table><tr>' + cells(l).map(c => '<th>'+c+'</th>').join('') + '</tr>';
+      i += 2;
+      while (i < lines.length && /^\s*\|/.test(lines[i]))
+        t += '<tr>' + cells(lines[i++]).map(c => '<td>'+c+'</td>').join('') + '</tr>';
+      out.push(t + '</table></div>');
+      continue;
+    }
+    if (/^#{1,3}\s/.test(l)) { out.push('<h3>' + inline(l.replace(/^#{1,3}\s/,'')) + '</h3>'); i++; continue; }
+    if (/^\s*[-*]\s/.test(l)) {
+      let u = '<ul>';
+      while (i < lines.length && /^\s*[-*]\s/.test(lines[i]))
+        u += '<li>' + inline(lines[i++].replace(/^\s*[-*]\s/,'')) + '</li>';
+      out.push(u + '</ul>');
+      continue;
+    }
+    if (/^\s*---+\s*$/.test(l)) { out.push('<hr>'); i++; continue; }
+    if (l.trim() === '') { i++; continue; }
+    let p = [];
+    while (i < lines.length && lines[i].trim() !== '' && !/^\s*\||^#{1,3}\s|^\s*[-*]\s/.test(lines[i]))
+      p.push(inline(lines[i++]));
+    out.push('<p>' + p.join('<br>') + '</p>');
+  }
+  return out.join('');
+}
+function inline(s) {
+  return s.replace(/`([^`]+)`/g,'<code>$1</code>')
+          .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+          .replace(/\*([^*]+)\*/g,'<i>$1</i>');
+}
+
+// THE PROVIDERS ON OFFER. Adding one is adding a line; all speak the OpenAI shape.
+const PROV = [
+  { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', nota:'prov.nota.groq' },
+  { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         nota:'prov.nota.openai' },
+  { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     nota:'prov.nota.claude' },
+  { name:'Cerebras',          url:'https://api.cerebras.ai/v1',      model:'llama-3.3-70b',       nota:'prov.nota.cerebras' },
+  { name:'Gemini (Google)',   url:'https://generativelanguage.googleapis.com/v1beta/openai', model:'gemini-2.0-flash', nota:'prov.nota.gemini' },
+  { name:'OpenRouter',        url:'https://openrouter.ai/api/v1',    model:'meta-llama/llama-3.3-70b-instruct:free', nota:'prov.nota.openrouter' },
+];
+
+// THE DESKTOP MOCK. Never reached inside the app: there, prompt() always answers. It mirrors
+// the real state's shape so the page can be designed and exercised in a plain browser.
+const MOCK = { modules: [
+  {
+    shortName:'Laboratorio Delfos', description:'Tus resultados de laboratorio, con su historia y qué te toca repetir.',
+    doesNotDo:'No interpreta resultados ni reemplaza a tu médico.',
+    publisher:{ domain:'delfos.cr', legal:'Laboratorio Clínico Delfos S.A.', taxId:'3-101-123456', version:'2.4.0' },
+    provenance:{ servedBy:'delfos.cr', at:'2026-08-20T10:12:00Z', version:'2.4.0', matches:true },
+    journal:{ retention:'5 años', expectedSize:'~2 MB al año', updates:'al abrir la app' },
+    name:'examenes', installedAt:'2026-09-09T14:05:00Z', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
+    slogan:'Tu salud, en tus manos', shortName:'Delfos', brand:{ color:'#0e2f55', logo:'../bundles/examenes/web/icon-192.png', banner:'../bundles/examenes/web/brand/banner.jpg' },
+    enabled:true, journalBytes:2048, journalFiles:3, tools:[
+    { name:'revisar_mis_analitos', title:'Cómo vengo', enabled:true,
+      description:'Revisa cada analito del que la persona tiene historia y dice cómo viene cada uno.' },
+    { name:'evaluar_tendencia', title:'Cómo viene un analito', enabled:true,
+      description:'Dice si un analito va subiendo, bajando o estable en toda su historia.' },
+    { name:'velocidad_de', title:'Qué tan rápido cambia', enabled:true,
+      description:'Dice qué tan rápido viene cambiando un analito, en unidades por año.' }]},
+  {
+    shortName:'Supermercado La Guaria', description:'Tu historial de compras, con tus garantías y lo que sueles llevar.',
+    doesNotDo:'No te dice qué comer ni juzga tu canasta.',
+    publisher:{ domain:'laguaria.cr', legal:'Supermercado La Guaria S.A.', taxId:'3-101-654321', version:'1.2.0' },
+    provenance:{ servedBy:'cdn-barato.example', at:'2026-09-01T09:00:00Z', version:'1.2.0', matches:false },
+    journal:{ retention:'5 años', updates:'al abrir la app' },
+    name:'compras', installedAt:'2026-09-08T10:00:00Z', title:'Mis compras', institution:'Supermercado La Guaria',
+    slogan:'Tu canasta, más cerca de vos', shortName:'La Guaria', brand:{ color:'#2f6b3f', logo:'../bundles/compras/web/icon-192.png', banner:'../bundles/compras/web/brand/banner.jpg', font:{ family:'Nunito Sans', regular:'../bundles/compras/web/brand/NunitoSans-800.woff2', bold:'' } },
+    enabled:true, journalBytes:3172, journalFiles:3, tools:[
+    { name:'total_de_compras', title:'Cuanto gaste en total', enabled:true, description:'Total de todas las compras registradas.' },
+    { name:'canasta_del_mes', title:'Como fue mi canasta de un mes', enabled:true, description:'La canasta de un mes, sumada por perfil.' }]},
+  {
+    shortName:'Estaciones Faro',
+    publisher:{ domain:'faro.cr', legal:'Estaciones Faro S.A.', version:'2.4.0' },
+    provenance:{ servedBy:'', at:'2026-09-05T18:30:00Z', version:'', matches:null },
+    journal:{ retention:'2 años', reconstruible:false },
+    name:'cargas', installedAt:'2026-09-07T09:00:00Z', title:'Mis cargas', institution:'Estaciones Faro',
+    slogan:'Rendimiento real, tramo a tramo', shortName:'Faro', brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png', banner:'../bundles/cargas/web/brand/banner.jpg', font:{ family:'Barlow', regular:'../bundles/cargas/web/brand/Barlow-600.woff2', bold:'' } },
+    updateAvailable:{ version:'2.5.0', seenAt:'2026-09-09T12:00:00Z' },
+    enabled:true, journalBytes:1210, journalFiles:3, tools:[
+    { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
+  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'Mi plan de mantenimiento', institution:'Sotaventos Motors',
+    slogan:'Tu carro, siempre listo', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png', banner:'../bundles/dealership/web/brand/banner.jpg', font:{ family:'Sora', regular:'../bundles/dealership/web/brand/Sora-600.woff2', bold:'' } },
+    enabled:true, journalBytes:980, journalFiles:3, tools:[
+    { name:'resumen', title:'Cómo va mi carro', enabled:true, description:'Cómo está el vehículo ahora mismo.' }]},
+  // A module WITHOUT a brand, on purpose: it is the fallback path, and it has to keep looking good.
+  { name:'facturas', installedAt:'2026-09-05T09:00:00Z', title:'Mis facturas', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
+    brand:{ color:'#C86B12', logo:'../bundles/facturas/web/brand/logo.png', banner:'../bundles/facturas/web/brand/banner.jpg', font:{ family:'Lora', regular:'../bundles/facturas/web/brand/Lora-700.woff2', bold:'' } },
+    enabled:true, journalBytes:1650, journalFiles:3, signerKey:'facturas-202603', signerRevokedAt:'2026-09-09T12:00:00Z', tools:[
+    { name:'total_de_facturas', title:'Cuánto gasté en total', enabled:true, description:'El total de todas las facturas registradas.' }]},
+], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
+
+// What a pasted link produces in the mock, so the proposal sheet -- review block included -- can
+// be iterated on a monitor with no phone attached. Shape mirrors Shell.PushProposal.
+const MOCK_PROPUESTA = {
+  modulo: 'cargas', titulo: 'Mis cargas', institucion: 'Estaciones Faro (mock del POC)',
+  servido: 'estaciones-faro.cr', publicador: 'https://estaciones-faro.cr/eventos/cliente/1',
+  journal: '/data/user/0/com.ncubo.gnothi.host/files/journals/cargas', yaEstaba: false,
+  tools: [
+    { nombre: 'mis_cargas', titulo: 'Mis cargas', descripcion: 'Las cargas de combustible registradas en este teléfono.' },
+    { nombre: 'rendimiento_vs_habitual', titulo: 'Cómo viene el rendimiento', descripcion: 'Si el último tramo mejoró o empeoró contra tu nivel de siempre.' },
+  ],
+  procedencia: { origen: 'pegado', servido: 'estaciones-faro.cr' },
+  revision: { forma: 'hospedado', archivos: 214, bytes: 11862016, motorArchivos: 12, motorBytes: 1017000, excesos: [], encendido: true },
+};
+
+function mock(op, x) {
+  // En el monitor no hay pantalla de inicio donde poner nada, y decirlo es mejor que fingir
+  // que se pudo: el botón queda probable en su camino de error, que es el que más se ve.
+  if (op === 'fijar') return { ok: false, razon: 'Acá no hay pantalla de inicio: esto solo funciona en el teléfono.' };
+  // Y sin pantalla de inicio no hay nada anotado: la maqueta dibuja el camino de agregar.
+  if (op === 'fijados') return { ok: false, ids: [] };
+
+  // LA MAQUETA NO TIENE CATALOGO, y devuelve uno vacio a proposito en vez de inventar uno.
+  //
+  // Consecuencia, y conviene saberla antes de abrir esto en un monitor: lo que esta escrito en
+  // el MARCADO se sigue viendo -- es el respaldo -- y lo que arma el JavaScript sale como su
+  // clave, «alta.paso.revisando» en vez de la frase. La maqueta existe para iterar CSS y
+  // disposicion, y eso sigue sirviendo; para leer copy hay que abrirla en el telefono.
+  //
+  // La alternativa era repetir el espanol aca, y dos copias del mismo texto es exactamente lo
+  // que el catalogo existe para evitar.
+  if (op === 'textos') return {};
+
+  if (op === 'altaArchivo') {
+    // The mock "picks" three files: two modules -one she already has- and a zip that is not one.
+    setTimeout(() => gn.push('hallazgos', '', JSON.stringify({ archivos: [
+      { indice: 0, archivo: 'cargas.gmod', bytes: 11862016, modulo: 'cargas', titulo: 'Mis cargas', institucion: 'Estaciones Faro',
+        nombreCorto: 'Faro', eslogan: 'Rendimiento real, tramo a tramo', color: '#0B3C49', categoria: 'estacion', firmado: true, problema: '', instalado: false, yaEstaba: false },
+      { indice: 1, archivo: 'examenes.gmod', bytes: 13027208, modulo: 'examenes', titulo: 'Tus examenes, al dia', institucion: 'Laboratorio Clínico Delfos',
+        nombreCorto: 'Delfos', eslogan: 'Tu salud, en tus manos', color: '#0e2f55', categoria: 'laboratorio', firmado: true, problema: '', instalado: false, yaEstaba: true },
+      { indice: 2, archivo: 'fotos-vacaciones.zip', bytes: 40210000, modulo: '', titulo: '', institucion: '', nombreCorto: '', eslogan: '', color: '', categoria: '',
+        firmado: false, problema: 'No es un módulo de Mymi: no trae un manifiesto legible.', instalado: false, yaEstaba: false },
+    ] })), 400);
+    return { ok: true };
+  }
+  if (op === 'altaElegido') {
+    // The chosen file goes through the whole examination: its declared origin publishes exactly it.
+    setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Revisando qué trae…' })), 150);
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA,
+      { servido: 'cargas.gmod', procedencia: { origen: 'archivo', servido: 'cargas.gmod', sello: false, respaldo: 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
+        firma: 'publicada', firmante: 'estaciones-faro-202609', firmaDesde: '' } }))), 1100);
+    return 'ok';
+  }
+  // The card's «Hay una versión nueva»: in the mock it is the v2 link, so the update sheet follows.
+  if (op === 'actualizar') return mock('alta', { url: 'https://estaciones-faro.cr/' + x.module + '-v2.gmod' });
+  if (op === 'altaCerrarLista') return 'ok';
+  if (op === 'alta') {
+    // Unwrap the go.gnothi.app link the way ModuleEnrollment.BundleUrlOf does, so the host the
+    // mock shows is the bundle's, as it would be on the phone.
+    let host = 'tu institución';
+    try { const u = new URL(x.url); host = new URL(u.searchParams.get('bundle') || x.url).host || host; } catch {}
+    setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…' })), 150);
+    // The bar, as the shell feeds it: three steps of a 12 MB download.
+    [[0.35, 450], [0.72, 750], [1, 950]].forEach(([f, t]) => setTimeout(() => gn.push('alta', '', JSON.stringify(
+      { estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…', progreso: f, bytes: Math.round(11862016 * f), total: 11862016 })), t));
+    // The mock's institution backs its module; paste a link with "evil" in it to see the other sheet.
+    const evil = /evil/.test(x.url || '');
+    const procedencia = { origen: x.via === 'qr' ? 'qr' : 'pegado', servido: host, sello: /[?&]h=/.test(x.url || ''),
+      respaldo: evil ? 'otro-origen' : 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
+      firma: evil ? 'cambiada' : 'publicada', firmante: evil ? 'alguien-202609' : 'estaciones-faro-202609', firmaDesde: evil ? '' : '2026-09-01T12:00:00Z' };
+    // A link with "v2" in it rehearses an UPDATE of a module she has; "viejo", going back to an
+    // older version. Shape mirrors Shell.PushProposal's `actualizacion`.
+    const up = /v2/.test(x.url || '')
+      ? { tipo: 'actualizacion', versionada: true, versionInstalada: '2.4.0', versionNueva: '2.5.0',
+          consultasNuevas: [{ nombre: 'garantias_por_vencer', titulo: 'Garantías por vencer' }], consultasQuitadas: [],
+          capacidadesNuevas: [], publicadorCambia: true, publicadorInstalado: 'https://estaciones-faro.cr/eventos/cliente/1', publicadorNuevo: 'https://api.estaciones-faro.cr/eventos/cliente/1',
+          origenCambia: false, origenInstalado: 'https://estaciones-faro.cr', origenNuevo: 'https://estaciones-faro.cr', registroCambia: true, sustratoCambia: false, sustratoNuevo: '', hayCambios: true }
+      : /viejo/.test(x.url || '')
+      ? { tipo: 'anterior', versionada: true, versionInstalada: '2.4.0', versionNueva: '2.3.0',
+          consultasNuevas: [], consultasQuitadas: [{ nombre: 'rendimiento_vs_habitual', titulo: 'Cómo viene el rendimiento' }],
+          capacidadesNuevas: [], publicadorCambia: false, publicadorInstalado: '', publicadorNuevo: '', origenCambia: false, origenInstalado: '', origenNuevo: '',
+          registroCambia: false, sustratoCambia: false, sustratoNuevo: '', hayCambios: true }
+      : null;
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia, yaEstaba: !!up, actualizacion: up }))), 1100);
+    return 'ok';
+  }
+  if (op === 'setTool')   { const m = MOCK.modules.find(m => m.name === x.module);
+                            const t = m.tools.find(t => t.name === x.tool); t.enabled = x.enabled; return MOCK; }
+  if (op === 'setModule') { MOCK.modules.find(m => m.name === x.module).enabled = x.enabled; return MOCK; }
+  if (op === 'quitar')    { MOCK.modules = MOCK.modules.filter(m => m.name !== x.module); return MOCK; }
+  if (op === 'setProvider') { MOCK.settings.name = x.name; MOCK.settings.model = x.model;
+                              MOCK.settings.provider = x.url.split('//').pop().split('/')[0];
+                              MOCK.settings.keyPresent = false; return MOCK; }
+  if (op === 'setKey')    { MOCK.settings.keyPresent = true;  return MOCK; }
+  if (op === 'clearKey')  { MOCK.settings.keyPresent = false; return MOCK; }
+  if (op === 'ask') {
+    let n = 0;
+    const lines = ['catalog: 6 tools', 'round 1: 2 queries',
+      '  examenes_revisar_mis_analitos: 1974 characters', '  compras_total_de_compras: 123 characters'];
+    const t = setInterval(() => {
+      if (n < lines.length) gn.push('trace', x.id, lines[n++]);
+      else { clearInterval(t); gn.push('answer', x.id,
+        '**Exámenes**\n\n| Analito | Tendencia | Valor |\n|---|---|---|\n| Antígeno prostático | en ascenso | 5.2 ng/mL |\n| Colesterol total | salto inverosímil | 360 mg/dL |\n\n**Compras**\n- Total: **₡ 29 321,50** en 4 compras\n\nEl antígeno viene subiendo: mostráselo a tu médico en la próxima cita.'); }
+    }, 450);
+    return 'ok';
+  }
+  return MOCK;
+}
+
+document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') gn.ask(); });
+document.getElementById('alta-url').addEventListener('keydown', e => { if (e.key === 'Enter') gn.altaDesdeEnlace(); });
+
+// A phone that cannot read codes from inside Mymi (no BarcodeDetector, no camera API) is told
+// so, instead of being shown a button that does nothing.
+if (!gn.scan.supported()) {
+  document.getElementById('alta-scan').style.display = 'none';
+  document.getElementById('alta-noscan').style.display = '';
+}
+
+// EL IDIOMA PRIMERO, Y DESPUES EL ESTADO. Las dos llamadas son sincronas, asi que para cuando
+// se pinta la primera tarjeta la pantalla ya esta en el idioma del aparato.
+//
+// ACA HUBO DOS LECTORES POR UNAS HORAS. Geaninna escribio `t()`/`data-t`/`MYMI_T` para la
+// pantalla de inicio vacio el mismo dia que esta rama escribia `T()`/`data-i18n`/`TEXTOS` para
+// la pagina entera; los dos leian este mismo catalogo por este mismo puente. Queda uno -- el que
+// cubre las 124 llamadas -- y las seis etiquetas de ella entraron a el sin tocar su pantalla.
+TEXTOS = gn.call('textos') || {};
+IDIOMA = TEXTOS['idioma'] || 'es';
+pintarTextos();
+
+const first = gn.call('modules');
+if (first && !first.loading) { gn.state = first; gn.paint(); }
+</script>
+</body>
+</html>

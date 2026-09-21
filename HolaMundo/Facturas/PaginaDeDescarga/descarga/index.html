@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="format-detection" content="telephone=no">
+<title>Mis compras · Súper El Triunfo</title>
+<meta name="description" content="Tus compras del súper, instaladas en tu computadora. El historial vive en una carpeta tuya.">
+
+<!--
+  La cara de la institución en URL1, para el súper. Sigue el MISMO diseño que la página del
+  Laboratorio Clínico Delfos (barra superior, membrete, héroe sobre un tinte de marca con
+  serif 700, tarjetas de solo trazo), en paleta verde de supermercado.
+
+  Lo que Delfos NO tiene y esta sí: la sección "Para tu asistente" -bajar Gnothi (una vez) y
+  el módulo, el camino por el que la IA lee tu historial-. Es el paso opcional; la PWA de
+  arriba funciona sola.
+
+  "Súper El Triunfo" es FICTICIA -no es ninguna cadena real-, y es la misma marca que trae la
+  carátula wasm en su index.html y su manifest. La página vive en la raíz y la app cuelga de
+  /app/, por el scope del service worker.
+-->
+
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<style>
+  :root {
+    --papel: #ffffff; --papel-2: #f4f8f4; --menta: #e8f4ec;
+    --tinta: #17281d; --tinta-2: #566b5c; --linea: #d8e6dc;
+    --verde: #1a7a3c; --verde-oscuro: #0f5028; --verde-claro: #2e9e57;
+    --accion: #16a34a; --ambar: #b45309;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { margin: 0; background: var(--papel); color: var(--tinta); font-family: var(--sans);
+    font-size: 16.5px; line-height: 1.62; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  .envoltura { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+
+  .barra { background: var(--verde); color: #e4f2e8; font-size: 13px; }
+  .barra-adentro { display: flex; justify-content: space-between; gap: 18px; padding: 7px 0; white-space: nowrap; }
+
+  header { background: var(--papel); border-bottom: 2px solid var(--verde-oscuro); }
+  .membrete { display: flex; align-items: center; gap: 14px; padding: 16px 0; }
+  .sello { width: 44px; height: 44px; flex: none; }
+  .sello svg { display: block; width: 100%; height: 100%; }
+  .marca-texto b { display: block; font-family: var(--serif); font-weight: 700; font-size: 19px; color: var(--verde-oscuro); line-height: 1.2; }
+  .marca-texto i { font-style: normal; color: var(--tinta-2); font-size: 12.5px; }
+  nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  nav a { color: var(--tinta); text-decoration: none; font-size: 15px; }
+  nav a:hover { color: var(--verde-claro); }
+  nav .boton { font-size: 14.5px; padding: 10px 18px; }
+
+  .boton { display: inline-flex; align-items: center; gap: 10px; background: var(--verde); color: #fff;
+    text-decoration: none; font-weight: 600; font-size: 15.5px; letter-spacing: .005em; padding: 14px 26px;
+    border-radius: 6px; transition: background .18s ease, transform .18s ease, box-shadow .18s ease; }
+  .boton:hover { background: var(--verde-claro); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15,80,40,.18); }
+  .boton svg { transition: transform .18s ease; }
+  .boton:hover svg { transform: translateY(2px); }
+  .boton--contorno { background: var(--papel); color: var(--verde); border: 1px solid var(--verde); }
+  .boton--contorno:hover { background: var(--papel-2); color: var(--verde-oscuro); box-shadow: none; }
+
+  .heroe { background: linear-gradient(180deg, var(--menta), var(--papel-2)); }
+  .portada { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 64px; align-items: center; padding: 72px 0 64px; }
+  .rotulo { font-weight: 700; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--verde-claro); margin-bottom: 18px; }
+  h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(40px, 5vw, 58px); line-height: 1.08; letter-spacing: -.015em; color: var(--verde-oscuro); margin: 0 0 22px; }
+  h1 em { font-style: italic; color: var(--verde-claro); }
+  .bajada { font-size: 18.5px; color: var(--tinta-2); margin: 0 0 34px; max-width: 43ch; text-wrap: pretty; }
+  .bajada strong { color: var(--tinta); font-weight: 600; }
+  .acciones { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .acciones small { flex-basis: 100%; color: var(--tinta-2); font-size: 13.5px; }
+
+  .ficha { background: var(--papel); border: 1px solid var(--linea); border-radius: 12px; padding: 26px 28px 22px; box-shadow: 0 12px 34px -18px rgba(15,80,40,.3); }
+  .ficha-cabeza { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .ficha-cabeza h2 { margin: 0; font-size: 14.5px; font-weight: 600; }
+  .ficha-cabeza span { font-family: var(--mono); font-size: 11px; color: var(--tinta-2); letter-spacing: .06em; }
+  .ficha-nota { font-size: 13px; color: var(--tinta-2); margin: 0 0 14px; }
+  .ficha svg.serie { display: block; width: 100%; height: auto; overflow: visible; }
+  .lectura { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--linea); display: flex; align-items: baseline; gap: 10px; }
+  .lectura .flecha { color: var(--ambar); font-size: 15px; line-height: 1; }
+  .lectura p { margin: 0; font-size: 13.8px; line-height: 1.5; }
+  .lectura b { font-weight: 600; }
+  .lectura .cifra { font-family: var(--mono); color: var(--ambar); font-weight: 600; }
+
+  .argumento { padding: 64px 0 24px; }
+  .argumento h2 { font-weight: 700; font-size: clamp(28px, 3.6vw, 38px); line-height: 1.15; letter-spacing: -.01em; margin: 10px 0 14px; max-width: 26ch; }
+  .argumento h2 span { color: var(--accion); }
+  .argumento > .adentro > p { margin: 0 0 38px; color: var(--tinta-2); font-size: 17px; max-width: 52ch; }
+  .puntos { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .punto { background: var(--papel); border: 1px solid var(--linea); border-radius: 12px; padding: 22px 22px 20px; box-shadow: 0 1px 4px rgba(15,80,40,.05); }
+  .punto .icono { width: 44px; height: 44px; border-radius: 10px; background: var(--menta); display: grid; place-items: center; margin-bottom: 14px; }
+  .punto h3 { font-weight: 600; font-size: 17px; line-height: 1.3; margin: 0 0 7px; }
+  .punto p { margin: 0; color: var(--tinta-2); font-size: 14.5px; }
+
+  .instalar { margin-top: 56px; padding: 48px 0 24px; border-top: 1px solid var(--linea); display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 56px; }
+  .instalar h2 { font-family: var(--serif); font-weight: 700; font-size: 32px; line-height: 1.15; margin: 0; letter-spacing: -.01em; color: var(--verde-oscuro); }
+  .instalar h2 + p { margin: 12px 0 0; color: var(--tinta-2); font-size: 14.5px; }
+  ol.pasos { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  ol.pasos li { counter-increment: s; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 15px 0; border-bottom: 1px solid var(--linea); }
+  ol.pasos li p { margin: 0; }
+  ol.pasos li:first-child { padding-top: 0; }
+  ol.pasos li:last-child { border-bottom: 0; }
+  ol.pasos li::before { content: counter(s); align-self: start; width: 28px; height: 28px; border-radius: 50%; background: var(--menta); color: var(--verde); font-weight: 700; font-size: 13.5px; display: grid; place-items: center; }
+  ol.pasos b { font-weight: 600; }
+  ol.pasos span { color: var(--tinta-2); }
+  ol.pasos code { font-family: var(--mono); font-size: 13px; background: var(--papel-2); border: 1px solid var(--linea); border-radius: 5px; padding: 2px 6px; }
+  .sin-tienda { margin: 18px 0 0; font-size: 13.5px; color: var(--tinta-2); }
+
+  .asistente { background: var(--papel-2); border-top: 1px solid var(--linea); }
+  .asistente-adentro { padding: 56px 0 60px; display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 56px; }
+  .asistente h2 { font-family: var(--serif); font-weight: 700; font-size: 30px; line-height: 1.15; margin: 0; color: var(--verde-oscuro); letter-spacing: -.01em; }
+  .asistente h2 + p { margin: 12px 0 0; color: var(--tinta-2); font-size: 14.5px; }
+  .descargas { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 22px; }
+  .descargas .boton { font-size: 14.5px; padding: 12px 20px; }
+
+  footer { border-top: 1px solid var(--linea); background: var(--papel-2); }
+  .pie { padding: 26px 0 34px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; font-size: 12.5px; color: var(--tinta-2); }
+  .pie span { font-family: var(--mono); letter-spacing: .02em; }
+
+  @keyframes surgir { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes trazar { to { stroke-dashoffset: 0; } }
+  @keyframes aparecer { to { opacity: 1; } }
+  @keyframes latir { 0%,100% { r: 4.6; opacity: 1; } 50% { r: 6.2; opacity: .82; } }
+  .anim { opacity: 0; animation: surgir .72s cubic-bezier(.16,.8,.3,1) forwards; }
+  .d1 { animation-delay: .05s; } .d2 { animation-delay: .14s; } .d3 { animation-delay: .23s; } .d4 { animation-delay: .34s; } .d5 { animation-delay: .46s; }
+  .trazo { stroke-dasharray: 420; stroke-dashoffset: 420; animation: trazar 1.5s cubic-bezier(.5,0,.2,1) .62s forwards; }
+  .punto-serie { opacity: 0; animation: aparecer .3s ease forwards; }
+  .punto-serie.p1 { animation-delay: .78s; } .punto-serie.p2 { animation-delay: 1.06s; } .punto-serie.p3 { animation-delay: 1.34s; } .punto-serie.p4 { animation-delay: 1.7s; }
+  .halo { transform-origin: center; animation: latir 2.6s ease-in-out 2.1s infinite; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .anim, .punto-serie { opacity: 1; animation: none; } .trazo { stroke-dashoffset: 0; animation: none; } .halo { animation: none; } .boton, .boton svg { transition: none; } }
+
+  @media (max-width: 900px) {
+    .barra { font-size: 12px; } .barra-adentro span:last-child { display: none; }
+    nav a:not(.boton) { display: none; } nav .boton { font-size: 13px; padding: 9px 13px; }
+    .membrete { gap: 10px; padding: 12px 0; } .sello { width: 36px; height: 36px; }
+    .marca-texto b { font-size: 16px; } .marca-texto i { font-size: 11px; display: block; line-height: 1.35; }
+    .portada { grid-template-columns: 1fr; gap: 44px; padding: 48px 0 48px; }
+    .puntos { grid-template-columns: 1fr; gap: 16px; }
+    .instalar, .asistente-adentro { grid-template-columns: 1fr; gap: 28px; } .instalar { margin-top: 44px; }
+    .envoltura { padding: 0 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <div class="envoltura barra-adentro">
+    <span>Tel. 2519-0000 · WhatsApp 8700-0000</span>
+    <span>Todos los días 7:00 a. m. – 10:00 p. m.</span>
+  </div>
+</div>
+
+<header>
+  <div class="envoltura membrete">
+    <div class="sello">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1a7a3c" stroke-width="2.4" aria-hidden="true">
+        <path d="M9 13h22l-1.6 20a2 2 0 0 1-2 1.9H12.6a2 2 0 0 1-2-1.9L9 13z"/>
+        <path d="M15 15V11a5 5 0 0 1 10 0v4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="marca-texto">
+      <b>Súper El Triunfo</b>
+      <i>Tu barrio, bien surtido desde&nbsp;1998</i>
+    </div>
+    <nav>
+      <a href="#porque">Tu aplicación</a>
+      <a href="#instalar">Cómo se instala</a>
+      <a class="boton" href="/app/">Instalar la aplicación</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="heroe">
+    <div class="envoltura portada">
+      <div>
+        <div class="rotulo anim d1">Para nuestros clientes</div>
+        <h1 class="anim d2">Tus compras,<br>en <em>tu</em> computadora.</h1>
+        <p class="bajada anim d3">
+          Te entregamos tu historial completo de compras en una aplicación que se instala en
+          tu equipo. El registro queda en <strong>una carpeta tuya</strong> — no en un
+          servidor nuestro — y vos decidís quién lo lee.
+        </p>
+        <div class="acciones anim d4">
+          <a class="boton" href="/app/">
+            Instalar la aplicación
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+              <path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a class="boton boton--contorno" href="#instalar">Cómo se instala</a>
+          <small>Gratuita, y se instala desde el navegador. Sin tienda de aplicaciones.</small>
+        </div>
+      </div>
+
+      <div class="ficha anim d5">
+        <div class="ficha-cabeza">
+          <h2>Tu canasta del mes</h2>
+          <span>₡ colones</span>
+        </div>
+        <p class="ficha-nota">La misma lista de siempre, seis meses seguidos.</p>
+        <svg class="serie" viewBox="0 0 330 152" role="img"
+             aria-label="Gasto mensual de la canasta: alrededor de ₡78.000 durante cinco meses y ₡92.000 el último.">
+          <g stroke="#d8e6dc" stroke-width="1">
+            <line x1="34" y1="24" x2="318" y2="24" stroke-dasharray="2 4"/>
+            <line x1="34" y1="66" x2="318" y2="66" stroke-dasharray="2 4"/>
+            <line x1="34" y1="108" x2="318" y2="108"/>
+          </g>
+          <g fill="#566b5c" font-family="ui-monospace, Menlo, monospace" font-size="9.5" text-anchor="end">
+            <text x="26" y="27">95</text><text x="26" y="69">80</text><text x="26" y="111">65</text>
+          </g>
+          <path class="trazo" d="M34,71 L91,74 L148,68 L205,73 L262,71 L318,30" fill="none" stroke="#1a7a3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <g class="punto-serie p1"><circle cx="34" cy="71" r="3.2" fill="#fff" stroke="#1a7a3c" stroke-width="1.8"/></g>
+          <g class="punto-serie p1"><circle cx="91" cy="74" r="3.2" fill="#fff" stroke="#1a7a3c" stroke-width="1.8"/></g>
+          <g class="punto-serie p2"><circle cx="148" cy="68" r="3.2" fill="#fff" stroke="#1a7a3c" stroke-width="1.8"/></g>
+          <g class="punto-serie p3"><circle cx="205" cy="73" r="3.2" fill="#fff" stroke="#1a7a3c" stroke-width="1.8"/></g>
+          <g class="punto-serie p3"><circle cx="262" cy="71" r="3.2" fill="#fff" stroke="#1a7a3c" stroke-width="1.8"/></g>
+          <g class="punto-serie p4">
+            <circle class="halo" cx="318" cy="30" r="4.6" fill="#b45309" opacity=".22"/>
+            <circle cx="318" cy="30" r="4" fill="#b45309"/>
+            <text x="318" y="17" fill="#b45309" font-family="ui-monospace, Menlo, monospace" font-size="11.5" font-weight="500" text-anchor="middle">92</text>
+          </g>
+          <g fill="#566b5c" font-family="ui-monospace, Menlo, monospace" font-size="9" text-anchor="middle">
+            <text x="34" y="127">mar</text><text x="91" y="127">abr</text><text x="148" y="127">may</text>
+            <text x="205" y="127">jun</text><text x="262" y="127">jul</text><text x="318" y="127">ago</text>
+          </g>
+        </svg>
+        <div class="lectura">
+          <span class="flecha" aria-hidden="true">▲</span>
+          <p>Cinco meses planchada, y <b>+₡14.000 en agosto</b>. La aplicación te dice
+            <span class="cifra">casi todo en un solo pasillo</span> — no lo ves en el ticket.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="porque" class="envoltura argumento">
+    <div class="adentro">
+      <div class="rotulo anim d1">Nuevo para nuestros clientes</div>
+      <h2 class="anim d2">Tus compras son tuyas. <span>Llevátelas siempre con vos.</span></h2>
+      <p class="anim d3">Tu historial de compras vive con vos — en tu dispositivo, no en nuestros servidores.</p>
+    </div>
+    <div class="puntos">
+      <div class="punto anim d3">
+        <div class="icono"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#1a7a3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5v10a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-7l-2-2.5h-4a2 2 0 0 0-2 2.5z"/></svg></div>
+        <h3>El historial es tuyo</h3>
+        <p>La aplicación baja tus compras una vez y las guarda donde vos digas. Después funciona sin nosotros, y sin conexión.</p>
+      </div>
+      <div class="punto anim d4">
+        <div class="icono"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#1a7a3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 15.5l5-5 3.5 3 6.5-8"/><circle cx="17.5" cy="5.5" r="1.6"/></svg></div>
+        <h3>Lee la canasta, no el ticket</h3>
+        <p>Un total suelto no dice casi nada. <em>Qué subió y en qué pasillo</em> sí dice. Eso un ticket de caja no lo puede contar.</p>
+      </div>
+      <div class="punto anim d5">
+        <div class="icono"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#1a7a3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 10a7 7 0 0 1-7 7H5.5l-3 2.5v-9.5a7 7 0 0 1 7-7h3a7 7 0 0 1 7 7z"/></svg></div>
+        <h3>Tu asistente lo puede leer</h3>
+        <p>Podés preguntarle a tu IA sobre tus compras sin subir nada a la nube: los datos no salen de tu computadora.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="instalar" class="envoltura instalar">
+    <div>
+      <h2>Cómo se instala</h2>
+      <p>Toma menos de un minuto. No hace falta crear una cuenta.</p>
+    </div>
+    <div>
+      <ol class="pasos">
+        <li><p><b>Abrí la aplicación</b> <span>con el botón de arriba.</span></p></li>
+        <li><p><b>Instalala</b> <span>desde el icono que aparece en la barra de direcciones del navegador.</span></p></li>
+        <li><p><b>Elegí la carpeta</b> <span>donde querés guardar tu historial, y tocá <b>Actualizar</b>.</span></p></li>
+      </ol>
+      <p class="sin-tienda">No está en tiendas: la descarga es directa de esta página, del súper en el que ya confiás.</p>
+    </div>
+  </section>
+
+  <section id="asistente" class="asistente">
+    <div class="envoltura asistente-adentro">
+      <div>
+        <h2>¿Querés que tu asistente lea tus compras?</h2>
+        <p>Opcional. La aplicación de arriba ya funciona sola. Esto es solo si querés preguntarle a tu IA — todo se queda en tu computadora.</p>
+        <div class="descargas">
+          <a class="boton" href="descargas/gnothi/Gnothi.Host.zip" download>
+            Descargar Mymi
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="boton boton--contorno" href="descargas/facturas.gmod" download>Descargar el módulo</a>
+        </div>
+      </div>
+      <div>
+        <ol class="pasos">
+          <li><p><b>Instalá Mymi una vez.</b> <span>Es el programa que le presta el motor a cualquier módulo. Descomprimilo en <code>C:\Gnothi</code>.</span></p></li>
+          <li><p><b>Registralo con tu asistente.</b> <span>Corré <code>Gnothi.Host.exe --install</code> — te pregunta antes de tocar nada y hace un respaldo.</span></p></li>
+          <li><p><b>Sumá el módulo del súper.</b> <span>Corré <code>Gnothi.Host.exe --install-module facturas.gmod</code>, o importalo desde la ventana de Mymi.</span></p></li>
+          <li><p><b>Listo.</b> <span>Reiniciá tu asistente y preguntale por tus compras. Lee la misma carpeta que la aplicación de arriba.</span></p></li>
+        </ol>
+        <p class="sin-tienda">El módulo son unos pocos KB: no trae el motor, lo usa el que ya instaló Mymi. Y Mymi es una sola cosa, para todos tus módulos.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="envoltura pie">
+    <div>Súper El Triunfo · La marca es ficticia.</div>
+    <span>Demo del milestone Mymi</span>
+  </div>
+</footer>
+
+</body>
+</html>

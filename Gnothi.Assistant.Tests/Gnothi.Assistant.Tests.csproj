@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- THE DELETABILITY TEST. It does not test behaviour: it tests the REFERENCE GRAPH.
+       Exact precedent in the engine repo: UnitTestPuppeteer/PuppeteerCoreDependencyTests.cs
+       Its header comment explains why a test is needed for this, and it applies word for word:
+
+         "the property is expressed by no type and no method, only by the reference graph, so
+          nothing in a normal review notices when it is lost (a single using in a single file
+          is enough), and the build stays green because the developer's machine has everything
+          installed."
+
+       No xunit or nunit on purpose: it is an executable that asserts and returns an exit
+       code. Fewer moving parts for a property measured with Reflection and nothing else. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- LA FOTO, Y ES EL MISMO ARCHIVO QUE COMPILAN iOS Y ANDROID. No una copia: probar la foto
+         contra una reimplementacion seria repetir el antipatron del manifiesto, donde el
+         manifest.json de cada modulo era una copia, se desincronizo en silencio, y la suite
+         terminaba verificando la copia equivocada. Si Snapshot.cs cambia, el test lo ve. -->
+    <Compile Include="..\Gnothi.MobileShared\Snapshot.cs" Link="Snapshot.cs" />
+
+    <!-- Va Shell.cs con ella porque Snapshot usa Shell.Icon. Se enlaza entero en vez de
+         extraer el icono para NO tocar codigo compartido solo por el test: mover un metodo que
+         iOS y Android compilan es mas riesgo que compilar un archivo de mas aca. -->
+    <Compile Include="..\Gnothi.MobileShared\Shell.cs" Link="Shell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\ReviewSchedule.cs" Link="ReviewSchedule.cs" />
+
+    <!-- Y ModuleEnrollment con Shell, porque el alta se mudo ahi: la propuesta en curso dejo
+         de ser estado de cada pantalla. Esta linea la pidio el compilador y no una decision,
+         que es exactamente lo que se quiere de una suite que compila el archivo de verdad en
+         vez de una copia. -->
+    <Compile Include="..\Gnothi.MobileShared\ModuleEnrollment.cs" Link="ModuleEnrollment.cs" />
+
+    <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
+    <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
+  </ItemGroup>
+
+  <!-- `dotnet test` SOBRE ESTE PROYECTO TAMBIEN CORRE LA SUITE. Sin esto, `dotnet test` sobre
+       un Exe sin framework de pruebas sale con codigo 0 sin ejecutar ni una asercion: verde sin
+       haber probado nada, que es exactamente lo que esta suite existe para impedir. La forma
+       canonica sigue siendo `dotnet run` sobre este proyecto (asi la corre CI);
+       esto hace que la forma equivocada haga lo correcto en vez de mentir.
+
+       Se engancha ANTES del target VSTest del SDK, que es el que `dotnet test` invoca. Depende
+       de Build salvo cuando se pide sin build (VSTestNoBuild), igual que VSTest. El exit code
+       del ejecutable es el de la suite, asi que si una asercion falla, `dotnet test` falla. -->
+  <PropertyGroup>
+    <_LaSuiteDependeDe Condition="'$(VSTestNoBuild)' != 'true'">Build</_LaSuiteDependeDe>
+  </PropertyGroup>
+  <Target Name="LaSuiteCorreTambienConDotnetTest" BeforeTargets="VSTest" DependsOnTargets="$(_LaSuiteDependeDe)">
+    <Message Importance="high" Text="Gnothi.Assistant.Tests no usa un framework de pruebas: es un ejecutable que afirma y devuelve un exit code. Corriendolo." />
+    <Exec Command="dotnet &quot;$(TargetPath)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
+</Project>

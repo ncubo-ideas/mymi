@@ -114,7 +114,7 @@ internal sealed class ExamenesTools
 
 		return lector.Consultar(api =>
 		{
-			InterpretacionDeAnalito lectura = api.Interpretacion(nombre);
+			InterpretacionDeAnalito lectura = api.Interpretacion(nombre, ExamenesAPI.IdiomaDelRegistro);
 
 			// LA APLICABILIDAD SE CONTESTA PRIMERO, y ANTES que el conteo de mediciones.
 			//
@@ -131,11 +131,11 @@ internal sealed class ExamenesTools
 					HayDatos = true,
 					Analito = lectura.ParaMostrar,
 					Tendencia = "no aplica",
-					Veredicto = lectura.Veredicto,
-					Severidad = lectura.Severidad,
+					Veredicto = lectura.VeredictoDicho,
+					Severidad = lectura.SeveridadDicha,
 					Lectura = lectura.ParaSonia,
 					NoLeCorresponde = true,
-					SexoDelPaciente = api.SexoDelPaciente(),
+					SexoDelPaciente = api.SexoDelPaciente(ExamenesAPI.IdiomaDelRegistro),
 					EdadDelPaciente = api.EdadDelPaciente(),
 					Carpeta = lector.Carpeta,
 					UltimoEventoLeido = api.UltimoEventoProcesado(),
@@ -143,7 +143,7 @@ internal sealed class ExamenesTools
 						+ "reportar y no hay que sugerir el examen.",
 				};
 
-			TendenciaDeAnalito t = api.Tendencia(nombre);
+			TendenciaDeAnalito t = api.Tendencia(nombre, ExamenesAPI.IdiomaDelRegistro);
 
 			// Sin mediciones no se inventa una tendencia: se dice que no hay datos de ese
 			// analito, que es distinto de "esta estable".
@@ -158,13 +158,13 @@ internal sealed class ExamenesTools
 					// Ya no puede ser "el nombre esta mal": el enum lo impide. Si no hay
 					// mediciones es que la app todavia no las trajo, y eso se arregla con
 					// un Actualizar.
-					SexoDelPaciente = api.SexoDelPaciente(),
+					SexoDelPaciente = api.SexoDelPaciente(ExamenesAPI.IdiomaDelRegistro),
 					Detalle = $"El expediente todavia no tiene ninguna medicion de '{nombre}'. "
 						+ "Pedile que abra su app y apriete Actualizar.",
 				};
 
 			return Armar(t, lectura, api.UltimoEventoProcesado(), api.EdadDelPaciente(),
-				api.SexoDelPaciente());
+				api.SexoDelPaciente(ExamenesAPI.IdiomaDelRegistro));
 		});
 	}
 
@@ -198,7 +198,7 @@ internal sealed class ExamenesTools
 			// La misma guarda que en la tendencia, y por la misma razon: el antigeno
 			// prostatico es justamente el analito que tiene velocidad Y requisito
 			// anatomico, asi que esta es la otra puerta por la que su ritmo podria salir.
-			InterpretacionDeAnalito lectura = api.Interpretacion(nombre);
+			InterpretacionDeAnalito lectura = api.Interpretacion(nombre, ExamenesAPI.IdiomaDelRegistro);
 			if (lectura.NoLeCorresponde)
 				return new VelocidadDelAnalito
 				{
@@ -211,7 +211,7 @@ internal sealed class ExamenesTools
 					UltimoEventoLeido = api.UltimoEventoProcesado(),
 				};
 
-			VelocidadDeAnalito v = api.Velocidad(nombre);
+			VelocidadDeAnalito v = api.Velocidad(nombre, ExamenesAPI.IdiomaDelRegistro);
 
 			return new VelocidadDelAnalito
 			{
@@ -265,7 +265,7 @@ internal sealed class ExamenesTools
 
 		return lector.Consultar(api =>
 		{
-			PresenciaDeAnalito p = api.Presencia(nombre);
+			PresenciaDeAnalito p = api.Presencia(nombre, ExamenesAPI.IdiomaDelRegistro);
 
 			// Sin pruebas no se inventa una lectura: no es lo mismo "nunca aparecio" que
 			// "nunca te lo midieron", y confundirlos es como una app termina diciendo que
@@ -282,13 +282,13 @@ internal sealed class ExamenesTools
 						+ "Pedile que abra su app y apriete Actualizar.",
 				};
 
-			InterpretacionDeAnalito i = api.Interpretacion(nombre);
+			InterpretacionDeAnalito i = api.Interpretacion(nombre, ExamenesAPI.IdiomaDelRegistro);
 
 			return new PresenciaDelAnalito
 			{
 				HayDatos = true,
 				Analito = p.ParaMostrar,
-				Presencia = p.Presencia,
+				Presencia = p.PresenciaDicha,
 				Pruebas = p.Mediciones,
 				Positivas = p.Positivas,
 				PositivasSeguidas = p.PositivasSeguidas,
@@ -296,8 +296,8 @@ internal sealed class ExamenesTools
 				UltimoResultado = p.UltimoResultado,
 				EstaPresente = p.EstaPresente,
 				HaySerie = p.HaySerie,
-				Veredicto = i.Veredicto,
-				Severidad = i.Severidad,
+				Veredicto = i.VeredictoDicho,
+				Severidad = i.SeveridadDicha,
 				Lectura = i.ParaSonia,
 				Accion = i.Accion,
 				PideAlgo = i.PideAlgo,
@@ -342,7 +342,7 @@ internal sealed class ExamenesTools
 
 		return lector.Consultar(api =>
 		{
-			ConstanciaDeAnalito c = api.Constancia(nombre);
+			ConstanciaDeAnalito c = api.Constancia(nombre, ExamenesAPI.IdiomaDelRegistro);
 
 			// Sin observaciones no se inventa una lectura, por lo mismo que en la presencia:
 			// no es lo mismo "siempre estuvo bien" que "nunca te lo miraron".
@@ -358,13 +358,13 @@ internal sealed class ExamenesTools
 						+ "Pedile que abra su app y apriete Actualizar.",
 				};
 
-			InterpretacionDeAnalito i = api.Interpretacion(nombre);
+			InterpretacionDeAnalito i = api.Interpretacion(nombre, ExamenesAPI.IdiomaDelRegistro);
 
 			return new ConstanciaDelAnalito
 			{
 				HayDatos = true,
 				Analito = c.ParaMostrar,
-				Constancia = c.Constancia,
+				Constancia = c.ConstanciaDicha,
 				Observaciones = c.Mediciones,
 				NoEsperables = c.NoEsperables,
 				NoEsperablesSeguidas = c.NoEsperablesSeguidas,
@@ -373,8 +373,8 @@ internal sealed class ExamenesTools
 				UltimaCategoria = c.UltimaCategoria,
 				EstaFueraDeLoEsperable = c.EstaFueraDeLoEsperable,
 				HaySerie = c.HaySerie,
-				Veredicto = i.Veredicto,
-				Severidad = i.Severidad,
+				Veredicto = i.VeredictoDicho,
+				Severidad = i.SeveridadDicha,
 				Lectura = i.ParaSonia,
 				Accion = i.Accion,
 				PideAlgo = i.PideAlgo,
@@ -400,10 +400,14 @@ internal sealed class ExamenesTools
 	// dato del expediente, es una conclusion sobre el expediente MAS el calendario MAS la
 	// periodicidad que cada analito define para si mismo.
 	[McpServerTool(Name = "que_me_falta_medir", UseStructuredContent = true)]
-	[Description("Que analitos estan vencidos: cuanto hace que no se miden y cada cuanto conviene "
-		+ "repetir cada uno. Usala cuando pregunte '¿que examenes me toca hacerme?', '¿hace "
-		+ "cuanto que no me chequeo el colesterol?' o '¿estoy al dia?'. Es lo que NINGUNA "
-		+ "pantalla puede mostrar: la app muestra lo que hay, esto dice lo que FALTA. La "
+	[Description("Todos los analitos con historia, con cuanto hace que no se miden, cada cuanto "
+		+ "conviene repetir cada uno, y SI ESTA VENCIDO O NO. Usala cuando pregunte '¿que "
+		+ "examenes me toca hacerme?', '¿hace cuanto que no me chequeo el colesterol?' o "
+		+ "'¿estoy al dia?'. DEVUELVE TAMBIEN LOS QUE ESTAN AL DIA, asi que un renglon no "
+		+ "significa que este pendiente: mira estaVencido en cada uno, y mira cuantosVencidos, "
+		+ "que es el numero que contesta la pregunta -en cero, la persona esta al dia con todo-. "
+		+ "Es lo que NINGUNA pantalla puede mostrar: la app muestra lo que hay, esto dice lo "
+		+ "que FALTA. La "
 		+ "periodicidad la decide cada analito y no es fija — un colesterol en rango se repite "
 		+ "cada cinco anos y uno alto todos los anos. Solo aparecen analitos que ya se midieron "
 		+ "alguna vez: de uno que nunca se hizo no hay nada que repetir.")]
@@ -427,7 +431,7 @@ internal sealed class ExamenesTools
 			var controles = new List<ControlVencido>();
 			int vencidos = 0;
 
-			foreach (ControlEnEspera c in api.Controles(hoy))
+			foreach (ControlEnEspera c in api.Controles(hoy, ExamenesAPI.IdiomaDelRegistro))
 			{
 				if (c.EstaVencido) vencidos++;
 				controles.Add(new ControlVencido
@@ -437,7 +441,7 @@ internal sealed class ExamenesTools
 					DiasDesdeLaUltima = c.DiasDesdeLaUltima,
 					CadaCuantosMeses = c.MesesRecomendados,
 					EstaVencido = c.EstaVencido,
-					Severidad = c.Severidad,
+					Severidad = c.SeveridadDicha,
 					Accion = c.Accion,
 					Lectura = c.ParaSonia,
 				});
@@ -462,15 +466,15 @@ internal sealed class ExamenesTools
 		{
 			HayDatos = true,
 			Analito = t.Analito,
-			Tendencia = t.Tendencia,
+			Tendencia = t.TendenciaDicha,
 			Mediciones = t.Mediciones,
 			ValorInicial = t.ValorInicial,
 			ValorFinal = t.ValorFinal,
 			Unidad = t.Unidad,
 			DiasEntreLaPrimeraYLaUltima = t.Dias,
 			Cambio = t.Cambio,
-			Veredicto = i.Veredicto,
-			Severidad = i.Severidad,
+			Veredicto = i.VeredictoDicho,
+			Severidad = i.SeveridadDicha,
 			Lectura = i.ParaSonia,
 			Accion = i.Accion,
 			PideAlgo = i.PideAlgo,
@@ -513,7 +517,7 @@ internal sealed class TendenciaDelAnalito
 
 	[JsonPropertyName("tendencia")]
 	[Description("La lectura de la serie completa: 'estable', 'en ascenso', 'en descenso', "
-		+ "'salto inverosimil' (el cambio no da para el tiempo transcurrido: probable error de "
+		+ "'salto inverosímil' (el cambio no da para el tiempo transcurrido: probable error de "
 		+ "medicion), 'indeterminada' (una sola medicion, todavia no hay serie) o 'sin mediciones'.")]
 	public string Tendencia { get; init; } = "";
 
@@ -523,7 +527,7 @@ internal sealed class TendenciaDelAnalito
 	public int Mediciones { get; init; }
 
 	[JsonPropertyName("valorInicial")]
-	[Description("La primera medicion de la serie. Cuando la tendencia es 'salto inverosimil' este "
+	[Description("La primera medicion de la serie. Cuando la tendencia es 'salto inverosímil' este "
 		+ "y el final son los dos extremos DEL SALTO sospechoso, no de toda la serie: es el hecho "
 		+ "que importa para decidir repetir el examen.")]
 	public decimal ValorInicial { get; init; }
@@ -548,7 +552,7 @@ internal sealed class TendenciaDelAnalito
 
 	[JsonPropertyName("veredicto")]
 	[Description("Lo que ESTE analito concluye de su serie: estable, mejorando, empeorando, "
-		+ "indeterminado o probable error de medicion. Ojo: 'mejorando' puede venir con un valor "
+		+ "indeterminado o probable error de medición. Ojo: 'mejorando' puede venir con un valor "
 		+ "todavia fuera de rango, y eso es buena noticia, no una alarma.")]
 	public string Veredicto { get; init; } = "";
 

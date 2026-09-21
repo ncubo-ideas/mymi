@@ -1,4 +1,4 @@
-using Municipalidad.Wasm.Vistas;
+using Municipalidad.App.Vistas;
 
 namespace Municipalidad.Wasm
 {

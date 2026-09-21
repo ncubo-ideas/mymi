@@ -132,6 +132,20 @@ Y queda en **`http://localhost:8100`** — la página de descarga de la instituc
 la app colgando de **`/app/`** (la separación por el scope del service worker, medida
 por Exámenes).
 
+La página trae el **paso a paso para usar La Guaria con Gnothi**, por ambiente (Android,
+iPhone, computadora). El botón «Agregar La Guaria a Gnothi» del teléfono apunta a
+`/descargas/movil/compras.gmod`, la **forma hospedada** del módulo, que **no va al repo**
+(15 MB, y lleva el origen adentro). Se arma antes de levantar URL1, con el origen desde el
+que se va a servir la página:
+
+```powershell
+pwsh Gnothi.Mobile/armar-bundle.ps1 -Modulo compras -Forma hospedada -Origen http://localhost:8100 -Salida Compras/PaginaDeDescarga/descarga/descargas/movil
+```
+
+Si el origen no coincide con el que sirve la página, Gnothi rechaza el paquete («dice ser
+de otro origen»). La forma cargo, `/descargas/compras.gmod`, es la del escritorio y sí está
+en el repo.
+
 > **Tras republicar, la pantalla puede seguir mostrando la versión vieja, y hay TRES
 > cachés distintos.** El que muerde más no es el service worker: es el
 > `dotnet-resources-/app/` de Blazor y, encima, el caché HTTP del navegador. Cerrar las
