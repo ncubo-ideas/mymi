@@ -68,27 +68,31 @@ internal sealed class SalaShell : IShell
 	// No es `const` para que la prueba pueda bajarlo: sin eso, afirmar que un modulo trabado no
 	// cuelga la sala costaria diez segundos de suite, y una prueba cara termina sin correrse.
 	//
-	// ── PENDIENTE DE DECISION DE EQUIPO (2026-09-21), Y NO ES DE UNA PLATAFORMA ──────────────
+	// ── FRAGILIDAD CONOCIDA (2026-09-21), Y NO ES DE UNA PLATAFORMA ──────────────────────────
 	//
-	// ESTE TOPE ENVUELVE TAMBIEN EL ARRANQUE DEL DOCUMENTO, y en iOS eso no entra. `Pedir` de
-	// las dos salas empieza con `await Arrancar(ct)`, asi que el primer verbo paga el arranque.
-	// Medido en un simulador iPhone 17 Pro / iOS 26.5: el documento tarda 3,84 y 4,18 s con la
-	// app ociosa, y 14,6 s con la app ocupada en su propio arranque. Cuando pasa de 10, el
-	// `Descartar` de mas abajo tira el documento -- y el reintento vuelve a arrancar EN FRIO, asi
-	// que se retroalimenta: cuatro ciclos seguidos sin una sola respuesta, medidos.
+	// ESTE TOPE ENVUELVE TAMBIEN EL ARRANQUE DEL DOCUMENTO: `Pedir` de las dos salas empieza con
+	// `await Arrancar(ct)`, asi que el primer verbo paga lo que tarda el MOTOR EN EXISTIR con un
+	// presupuesto que existe para medir lo que tarda EL MODULO en contestar.
 	//
-	// EN ANDROID NO SE VE porque el sustrato arranca en 439 ms en un A54. No esta arreglado alla:
-	// esta tapado por el numero.
+	// NO APRIETA HOY. Medido en un simulador iPhone 17 Pro / iOS 26.5, cinco relanzamientos con el
+	// modulo ya instalado: el documento arranca en 0,86 a 1,41 s y `cargar` sale en 53 a 102 ms.
+	// Contra 10 s hay un orden de magnitud de aire, y en un A54 el sustrato arranca en 439 ms.
+	//
+	// PERO EL MODO DE FALLA ES ESTABLE, NO TRANSITORIO, y por eso queda escrito: si el arranque
+	// pasa de 10 s, el `Descartar` de mas abajo tira el documento y el reintento arranca EN FRIO
+	// otra vez. Nunca hay un intento que herede un documento tibio. Se vio: con esta Mac cargada
+	// -procesos ajenos comiendose la memoria- fueron cuatro ciclos seguidos sin una sola
+	// respuesta, y el sintoma es «la sala no contesta nunca».
 	//
 	// LO QUE SE PROPONE DISCUTIR, y por que no se toco aca: `Descartar` existe porque un modulo
 	// puede colgar su propio desalojo, que es codigo que eligio la institucion. Un documento que
 	// TODAVIA NO CARGO NINGUN MODULO no puede estar colgado en eso -- es el sustrato de Gnothi
-	// arrancando --, asi que descartarlo no recupera nada y garantiza que el siguiente intento
-	// sea peor. Las dos formas son sacar el arranque del presupuesto por verbo, o no descartar un
-	// documento que todavia arranca. Subir `Tope` NO es la salida: acomoda el contrato al aparato
-	// mas lento probado y deja la retroalimentacion en pie.
+	// arrancando --, asi que descartarlo no recupera nada. Las dos formas son no descartar un
+	// documento que todavia arranca, o sacar el arranque del presupuesto por verbo. Subir `Tope`
+	// NO es la salida: acomoda el contrato al aparato mas lento probado y deja la
+	// retroalimentacion en pie.
 	//
-	// El detalle, con los logs, en `Gnothi.iOS/HALLAZGOS-LA-SALA-EN-IOS.md` §4.
+	// El detalle, con los dos juegos de numeros, en `Gnothi.iOS/HALLAZGOS-LA-SALA-EN-IOS.md` §4.
 	internal static TimeSpan Tope = TimeSpan.FromSeconds(10);
 
 	private readonly string name;

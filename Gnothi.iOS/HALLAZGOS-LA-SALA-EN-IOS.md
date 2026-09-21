@@ -8,9 +8,10 @@ no hay workload de .NET 9 que acepte Xcode 27).
 Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]**, **[NO MEDIDO]**.
 
 > **Lo que hay que llevarse, en dos renglones.** La sala **corre** en iOS y un módulo real carga y
-> contesta por ella. Y hay **una decisión pendiente de equipo**: el arranque del documento vive
-> dentro del presupuesto por verbo de la cáscara, y cuando no entra, el arreglo actual empeora el
-> problema en vez de recuperarlo (§4). Eso es código **compartido con Android**.
+> contesta por ella, con el arranque del documento en **~0,9 s** y `cargar` en **53 a 102 ms**.
+> Queda anotada una **fragilidad latente**, no una falla: el arranque vive dentro del presupuesto
+> por verbo de la cáscara, así que si algún día pasa de 10 s, el arreglo actual empeora el problema
+> en vez de recuperarlo (§4). Es código **compartido con Android**.
 
 ---
 
@@ -25,7 +26,7 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 | **la comprobación pasa** | ✅ **[MEDIDO]** | `matches:true`, y **en la primera instalación** (§3) |
 | **la frontera entre journals** | ✅ **[MEDIDO]** | `"vecinos":[]`, `"retenidos":0` |
 | **una consulta contesta con dato** | ⛔ **[NO MEDIDO]** | el dominio tiró por dato sembrado viejo (§3b) |
-| **el arranque entra en el tope** | ⛔ **[FALLA]** | y el descarte lo retroalimenta (§4) |
+| **el arranque entra en el tope** | ✅ **[MEDIDO]** | ~0,9 s contra 10 s. Con la Mac cargada, no (§4) |
 | **memoria** | ⛔ **[NO MEDIDO]** | pide Instruments y un iPhone de verdad (§5) |
 
 ---
@@ -132,10 +133,33 @@ alta real el Host arranca con «0 modules installed».
 
 ---
 
-## 4 · LO QUE HAY QUE DECIDIR: el arranque no entra en el tope, y el descarte lo empeora
+## 4 · El arranque vive dentro del tope, y con la Mac cargada eso se rompe
 
-Al borrar el journal y relanzar —o sea, en el camino normal de una app con el módulo **ya
-instalado**— la sala **no contesta nunca**. **[MEDIDO]**:
+> **CORRECCION DEL 2026-09-21, MISMO DIA.** La primera version de este apartado decia que el
+> arranque **no entra** en el tope y lo daba por falla del diseño. **Estaba mal como titular.** Lo
+> que se habia medido era una Mac con procesos `Gnothi.Host` desbocados comiendose la memoria;
+> Renán los mató, y con la máquina sana los mismos pasos dan otra cosa. Se deja el error escrito
+> porque la conclusión equivocada ya estaba commiteada, y porque la lección —medir la máquina
+> antes de atribuirle una falla al diseño— es más cara que el hallazgo.
+
+### Lo medido con la máquina sana **[MEDIDO]**
+
+Cinco relanzamientos seguidos, con el módulo **ya instalado**, que es el camino normal:
+
+| corrida | arranque del documento | `cargar` | descartes |
+|---|---|---|---|
+| 1 | 1,41 s | 64 ms | 0 |
+| 2 | 0,88 s | 83 ms | 0 |
+| 3 | 0,92 s | 102 ms | 0 |
+| 4 | 0,92 s | 79 ms | 0 |
+| 5 | 0,86 s | 53 ms | 0 |
+
+Contra los 10 s de `SalaShell.Tope` hay **un orden de magnitud de aire**. Y `cargar` bajó de los
+506 ms de la primera corrida a 53-102 ms, por el mismo motivo.
+
+### Lo medido con la máquina cargada **[MEDIDO]**, y por qué se deja anotado
+
+Antes de que esos procesos murieran, los mismos pasos daban:
 
 ```
 09:43:32.903  sala: creando el documento
@@ -149,51 +173,44 @@ instalado**— la sala **no contesta nunca**. **[MEDIDO]**:
 09:44:35.292  sala: NO arranco -- TimeoutException: The operation has timed out.
 ```
 
-Cuatro ciclos y se rindió.
+Cuatro ciclos y se rindió, con arranques de 3,84 s, 4,18 s y 14,6 s en distintos momentos.
 
-**El mecanismo.** `SalaShell.Pedir` envuelve **cada verbo** con `SalaShell.Tope`, que son 10 s. El
-arranque del documento corre **adentro** del primer verbo, porque `IosSala.Pedir` —igual que
-`AndroidSala.Pedir`— empieza con `await Arrancar(ct)`. Y el arranque del documento, medido cuatro
-veces en este mismo simulador:
+**La atribución es inferencia, no medición.** No se registró el estado de la máquina en ese
+momento; lo que hay es la correlación —procesos desbocados antes, sanos después— y un mecanismo
+plausible. Nadie midió CPU ni memoria mientras fallaba.
 
-| | |
-|---|---|
-| app ociosa, sin módulos instalados | **3,84 s** y **4,18 s** |
-| app ocupada en su propio arranque (sonda AOT, sonda del modelo, instantánea) | **14,6 s** |
+### La fragilidad que SÍ es del diseño, y es lo que va a la discusión
 
-Cuando pasa de 10, el `Descartar` tira el documento — **y el reintento vuelve a arrancar en frío**.
-Se retroalimenta: nunca hay un intento que herede un documento tibio.
+Independiente de qué tan rápida sea la máquina, esto es cierto por construcción:
 
-**Por qué la corrida del §3 sí anduvo:** ahí la sala se había calentado sola dos minutos y medio
-antes del alta (el interruptor vacío la arranca sin módulos), así que `cargar` llegó a un documento
-ya vivo. Eso midió la ruta del calentamiento, no la que importa.
+- `SalaShell.Pedir` envuelve **cada verbo** con `Tope`, y `Arrancar` corre **adentro** del primero,
+  porque `Pedir` de las dos salas empieza con `await Arrancar(ct)`. O sea que el presupuesto que
+  existe para medir **lo que tarda el módulo** está pagando también **lo que tarda el motor en
+  existir**.
+- Si el arranque pasa de 10 s, `Descartar` tira el documento — **y el reintento arranca en frío**.
+  No hay un intento que herede un documento tibio, así que el modo de falla es estable, no
+  transitorio. Eso es lo que se vio arriba.
 
-**Esto NO es del simulador.** El mismo código está en Android, donde no se ve porque el sustrato
-arranca en 439 ms en un A54 (`Spikes/Lab.Sala/LEEME.md`). Un aparato lento, un arranque en frío
-después de que el sistema mate la app, o un sustrato que engorde, lo despiertan allá igual.
+`Descartar` existe por una razón buena y escrita: un módulo puede colgar su propio desalojo, que
+es código que eligió la institución. **Pero un documento que todavía no cargó ningún módulo no
+puede estar colgado en eso** — es el sustrato de Gnothi arrancando —, así que descartarlo no
+recupera nada.
 
-### La forma del arreglo que se propone, para discutir
+Dos formas, las dos sobre **código compartido** (`Gnothi.MobileShared/SalaShell.cs` y el contrato
+`ISalaHost`):
 
-`Descartar` existe por una razón buena y escrita: **un módulo puede colgar su propio desalojo** —
-adentro corre su `Dispose()`, código que eligió la institución, y un ciclo infinito no se
-interrumpe desde adentro de un motor web de un solo hilo. Tirar el documento es la única salida, y
-es honesta porque lo que el módulo tenía montado vive en su memoria.
+1. **No descartar un documento que todavía está arrancando.** Chica, conserva `Tope` como está, y
+   el descarte sigue aplicando en cuanto haya un módulo cargado, que es el caso que lo motivó.
+2. **Sacar el arranque del presupuesto por verbo.** De fondo: separar «esperar a que la sala esté»
+   de «pedirle algo».
 
-**Pero un documento que todavía no cargó ningún módulo no puede estar colgado en código de la
-institución.** Ahí no hay nada que la institución haya elegido corriendo: es el sustrato de Gnothi
-arrancando. Aplicarle el descarte no recupera nada y garantiza que el siguiente intento sea peor.
+Subir `Tope` no es salida: acomoda el contrato al aparato más lento probado y deja la
+retroalimentación en pie.
 
-Dos formas, y las dos tocan **código compartido** (`Gnothi.MobileShared/SalaShell.cs` y el contrato
-`ISalaHost`), así que la decisión no es de una plataforma:
-
-1. **Sacar el arranque del presupuesto por verbo.** `Tope` mide lo que el módulo tarda en contestar,
-   no lo que el motor tarda en existir. Pide separar «esperar a que la sala esté» de «pedirle algo».
-2. **No descartar un documento que todavía está arrancando.** Más chico, y conserva `Tope` como
-   está; el descarte sigue aplicando en cuanto haya un módulo cargado, que es el caso que lo
-   motivó.
-
-Lo que **no** conviene es subir `Tope`: acomoda el contrato al aparato más lento que se haya
-probado, y no arregla la retroalimentación — solo la hace menos frecuente.
+**Con qué urgencia.** Con la máquina sana hay 10x de aire, así que esto **no bloquea**. Es deuda
+conocida, y el día que aparezca —un aparato lento, un arranque en frío después de que el sistema
+mate la app, un sustrato que engorde— va a aparecer como «la sala no contesta nunca», que es un
+síntoma caro de diagnosticar si no está escrito.
 
 ---
 
