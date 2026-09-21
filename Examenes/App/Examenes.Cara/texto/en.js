@@ -79,7 +79,7 @@ window.TextoDeLaCara['en'] = {
         sinPuenteCorto: 'no bridge: this screen is not running inside Mymi',
         pidiendo: 'asking Mymi to bring what is new…',
         alDia: 'up to date, in {ms} ms · {dicho}',
-        noSePudo: 'could not bring what is new ({ms} ms): {porque}',
-        tiro: 'pull threw: {porque}'
+        noAlcance: 'could not reach your institution: check your connection and try again',
+        noSePudo: 'could not bring what is new: try again in a moment'
     }
 };

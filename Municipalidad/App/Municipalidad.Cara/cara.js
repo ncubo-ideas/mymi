@@ -497,7 +497,7 @@
             })
             .catch(function (e) {
                 traidas[cual] = false;   // que se pueda reintentar al volver
-                P.apunte(caja, e.message, true);
+                P.apunte(caja, P.porQue(e), true);
             });
     }
 
@@ -518,7 +518,7 @@
                     $('cuanto-he-pagado').innerHTML = cuantoHePagado(r);
                     cablearLosAnios();
                 })
-                .catch(function (err) { P.apunte($('cuanto-he-pagado'), err.message, true); });
+                .catch(function (err) { P.apunte($('cuanto-he-pagado'), P.porQue(err), true); });
         });
     }
 

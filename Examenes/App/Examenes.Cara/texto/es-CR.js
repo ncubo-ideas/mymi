@@ -78,7 +78,7 @@ window.TextoDeLaCara['es-CR'] = {
         sinPuenteCorto: 'sin puente: esta pantalla no corre dentro de Mymi',
         pidiendo: 'pidiéndole a Mymi que traiga lo nuevo…',
         alDia: 'al día, en {ms} ms · {dicho}',
-        noSePudo: 'no se pudo traer lo nuevo ({ms} ms): {porque}',
-        tiro: 'pull tiró: {porque}'
+        noAlcance: 'no se pudo llegar a tu institución: revisá tu conexión y volvé a intentar',
+        noSePudo: 'no se pudo traer lo nuevo: volvé a intentar en un momento'
     }
 };

@@ -413,7 +413,7 @@
         if (!placa) return;
         P.pedir('tablero', { placa: placa, idioma: I.etiqueta })
             .then(function (t) { pintarFranja(t.rendimiento, false); pintarCuadro(t); })
-            .catch(function (e) { P.apunte($('cuadro'), e.message, true); });
+            .catch(function (e) { P.apunte($('cuadro'), P.porQue(e), true); });
 
         P.pedir('faltantes', { placa: placa, idioma: I.etiqueta })
             .then(pintarFaltantes).catch(function () { /* nada */ });
@@ -450,7 +450,7 @@
 
                 pintarTablero();
             })
-            .catch(function (e) { P.apunte($('cuadro'), e.message, true); });
+            .catch(function (e) { P.apunte($('cuadro'), P.porQue(e), true); });
     }
 
     function releer() {

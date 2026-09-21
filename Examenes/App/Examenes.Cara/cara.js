@@ -716,7 +716,7 @@
         // el titular delante de quien lo esta leyendo.
         P.pedir('historial', { idioma: I.etiqueta })
             .then(function (r) { return pintarHistorial(r); })
-            .catch(function (e) { P.apunte($('historial-cuerpo'), e.message, true); return null; })
+            .catch(function (e) { P.apunte($('historial-cuerpo'), P.porQue(e), true); return null; })
             .then(function (masReciente) {
                 return P.pedir('alertas', { idioma: I.etiqueta }).then(function (a) {
                     if (pasada !== ultimaPasada) return;
@@ -749,7 +749,7 @@
                 if (!juntadas || pasada !== ultimaPasada) return;
                 pintarSecciones(repartir(juntadas));
             })
-            .catch(function (e) { contar(e.message, true); });
+            .catch(function (e) { contar(P.porQue(e), true); });
     }
 
     function releer() {
