@@ -1,0 +1,69 @@
+<!-- ANEXO C · CONVENCIONES DEL DSL -->
+  <section class="anchor" id="anexoC">
+    <h2>C · Convenciones del DSL</h2>
+    <p class="chapter-meta">La sintaxis del DSL en un solo lugar, para tener abierta al lado mientras escribes. Detalle en los Caps. 3–5.</p>
+
+    <h3>Cuerpo del script</h3>
+    <pre><span class="tag">DSL</span><code>saldo = 0;                 <span class="c">// sentencias terminan en ;</span>
+nota = <span class="s">'texto'</span>;            <span class="c">// cadenas: comillas SIMPLES</span>
+{ a = 1; b = 2; }          <span class="c">// bloque: agrupa sentencias</span>
+/* comentario de bloque */ <span class="c">// // y /* */ no afectan nada</span></code></pre>
+
+    <h3>Literales y promoción</h3>
+    <table>
+      <thead><tr><th>Tipo</th><th>Escritura</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td><code>int</code></td><td>entero sin sufijo</td><td><code>1</code></td></tr>
+        <tr><td><code>long</code></td><td>sufijo <code>L</code></td><td><code>9000000000L</code></td></tr>
+        <tr><td><code>double</code></td><td>punto o sufijo <code>d</code></td><td><code>1.0</code>, <code>2d</code></td></tr>
+        <tr><td><code>decimal</code></td><td>sufijo <code>m</code></td><td><code>2.25m</code></td></tr>
+        <tr><td><code>datetime</code></td><td><code>M/d/yyyy</code></td><td><code>03/31/2018</code></td></tr>
+        <tr><td>lista</td><td>llaves, homogénea</td><td><code>{1, 2, 3}</code></td></tr>
+        <tr><td>texto</td><td>comillas simples</td><td><code>'manzana'</code></td></tr>
+      </tbody>
+      <caption>Tabla 19. Literales. Promoción: <code>decimal &gt; double &gt; long &gt; int</code> (excepción: <code>int / int</code> → <code>double</code>).</caption>
+    </table>
+
+    <h3>Expresiones, <code>print</code> y ámbito</h3>
+    <pre><span class="tag">DSL</span><code>x = a * 2 + -b;                       <span class="c">// aritmetica y unario</span>
+et = n &gt; 0 ? <span class="s">'pos'</span> : <span class="s">'no'</span>;             <span class="c">// ternario</span>
+s = <span class="s">'total = '</span> + 5;                    <span class="c">// concat: TEXTO a la izquierda</span>
+print total <span class="s">'total'</span>, iva <span class="s">'iva'</span>;       <span class="c">// varios valores en una sentencia</span></code></pre>
+    <table>
+      <thead><tr><th>Dónde asignas</th><th>Alcance</th><th>¿Persiste?</th></tr></thead>
+      <tbody>
+        <tr><td>Nivel superior del comando</td><td>global (estado raíz)</td><td>Sí</td></tr>
+        <tr><td>Dentro de un bloque / <code>if</code> / <code>foreach</code></td><td>local</td><td>No</td></tr>
+        <tr><td>Dentro de <code>upgrade { }</code></td><td>global (excepción)</td><td>Sí</td></tr>
+      </tbody>
+      <caption>Tabla 20. Regla de ámbito: el lugar de la asignación decide su alcance.</caption>
+    </table>
+
+    <h3>Tiempo e inicialización</h3>
+    <pre><span class="tag">DSL</span><code>print @Now.Year <span class="s">'anio'</span>;                <span class="c">// @Now: DateTime determinista</span>
+
+upgrade('seed') { saldo = 100; }        <span class="c">// una sola vez por actor</span></code></pre>
+
+    <h3>Control de flujo y guarda</h3>
+    <pre><span class="tag">DSL</span><code>if (aforo.Cabe(@n)) { aforo.Tomar(@n); }        <span class="c">// una decision = un comando</span>
+foreach (x in @nums) { total = total + x; }     <span class="c">// no hay for; solo foreach</span>
+Check(aforo.Cabe(@n)) Error 'sin cupo';         <span class="c">// guarda (con PerformCheckThenCommand)</span></code></pre>
+
+    <h3>Parámetros (lado C#)</h3>
+    <pre><span class="tag">C#</span><code>.WithParameters(p =>
+{
+    p[<span class="s">"sku"</span>, <span class="k">typeof</span>(<span class="k">string</span>)] = sku;          <span class="c">// entrada @sku</span>
+    p[<span class="s">"dias"</span>, <span class="k">typeof</span>(<span class="k">int</span>[])] = items;         <span class="c">// coleccion</span>
+    p[<span class="s">"dia"</span>, <span class="k">typeof</span>(Enum)] = <span class="s">"Monday"</span>;         <span class="c">// enum por NOMBRE</span>
+    p[Parameter.Out,  <span class="s">"turno"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="k">default</span>;    <span class="c">// leer de vuelta</span>
+    p[Parameter.Eval, <span class="s">"id"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="s">"lastId + 1"</span>; <span class="c">// derivado del estado</span>
+})</code></pre>
+
+    <h3>Formato de la llamada <code>Perform</code></h3>
+    <ul class="body">
+      <li>Encadena en el orden: <code>actor.Using(<em>script</em>)</code> → <code>.WithParameters(...)</code> → <code>.PerformCommand()</code> / <code>.PerformQuery()</code> / <code>.PerformCheckThenCommand()</code>.</li>
+      <li>Para un cuerpo de varias líneas, usa una cadena literal (<code>@"..."</code>) con una sentencia por línea.</li>
+      <li>Un parámetro por línea en <code>.WithParameters</code>, en el mismo orden en que aparecen en el script.</li>
+      <li>Pasa valores como <code>@params</code>; <strong>nunca</strong> los interpoles en el texto del script (rompe la densidad del diario).</li>
+    </ul>
+  </section>

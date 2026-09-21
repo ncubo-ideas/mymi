@@ -1,0 +1,84 @@
+<!-- CAP 4 · PARÁMETROS -->
+  <section class="anchor" id="cap4">
+    <h2>4 · Parámetros y contratos</h2>
+    <p class="chapter-meta">El puente entre tu API y el actor: pasar valores desde afuera, leer resultados tipados y derivar valores del estado.</p>
+
+    <p>Hasta ahora los scripts llevaban valores fijos. En la vida real, esos valores llegan de fuera —del request que atiende tu API—. Los <strong>parámetros</strong> son ese puente, y forman un pequeño <strong>contrato tipado</strong> entre quien llama y el actor.</p>
+
+    <h3>4.1 · Pasar valores con <code>@</code></h3>
+    <p>Declaras cada parámetro con su nombre y tipo, y lo referencias en el cuerpo con <code>@nombre</code>:</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"emitidos = emitidos + @cuantos;"</span>)
+    .WithParameters(p => p[<span class="s">"cuantos"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = 3)
+    .PerformCommand();</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"emitidos":3}</code></pre>
+    <p>Así se ve en el bingo real, poniendo cartones a la venta (fíjate que el valor —la lista de cartones— viaja como parámetro, no interpolado en el texto):</p>
+    <pre><span class="tag real">C# · real</span><code>journal.Using(<span class="s">"elder.PutUpForSale(festival, @cartones);"</span>)
+    .WithParameters(p =>
+        p.UserParameter&lt;IEnumerable&lt;<span class="k">long</span>&gt;&gt;(<span class="s">"cartones"</span>, DelUnoAl(howManyCards)))
+    .PerformCommand();</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Verás dos formas de declarar parámetros. Sobre un <code>ActorV2</code> directo se usa el indexador <code>p["nombre", typeof(T)] = valor</code>; sobre un <code>Stage</code> (como el diario del bingo) hay además el atajo tipado <code>p.UserParameter&lt;T&gt;("nombre", valor)</code>. Son equivalentes: el mismo contrato, distinta ergonomía.</p>
+    </aside>
+
+    <h3>4.2 · El contrato: qué tipos viajan</h3>
+    <p>El canal de parámetros habla <strong>valores de dominio</strong>, no tipos de tu capa de C#. Estos son los que acepta:</p>
+    <table>
+      <thead><tr><th>Categoría</th><th>Cómo se declara</th></tr></thead>
+      <tbody>
+        <tr><td>Primitivos</td><td><code>typeof(int)</code>, <code>typeof(long)</code>, <code>typeof(decimal)</code>, <code>typeof(string)</code>, <code>typeof(bool)</code>, <code>typeof(DateTime)</code></td></tr>
+        <tr><td>Colecciones</td><td><code>typeof(int[])</code>, <code>typeof(string[])</code>… (pasa una proyección LINQ)</td></tr>
+        <tr><td>Opcionales / nulos</td><td><code>typeof(int?)</code> permite pasar <code>null</code> y comparar <code>@x == null</code> en el cuerpo</td></tr>
+        <tr><td>Enumeraciones</td><td><code>typeof(Enum)</code> pasando el <strong>nombre</strong> del miembro como texto (nunca el tipo del enum de dominio)</td></tr>
+      </tbody>
+      <caption>Tabla 9. Lo que viaja por el canal de parámetros.</caption>
+    </table>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita meter tipos de tu capa de interfaz (un <code>Guid</code>, un <code>DateTimeOffset</code>, un DTO) por el canal de parámetros. Conviértelos a un primitivo <strong>en el borde</strong>: <code>orderId.ToString()</code> declarado <code>typeof(string)</code>. El canal es una frontera anticorrupción entre tu C# y el dominio.</p>
+    </div>
+
+    <h3>4.3 · Leer un valor de vuelta: <code>Out</code></h3>
+    <p>Cuando el controlador necesita un valor <strong>tipado</strong> que el actor calculó —para una rama o para pasarlo a otra llamada—, se usa un parámetro <code>Out</code>. Requiere rentar el juego de parámetros para poder leerlo antes de que se libere:</p>
+    <pre><span class="tag">C#</span><code><span class="k">int</span> turno;
+<span class="k">using</span> (<span class="k">var</span> rented = actor.RentedParameters())
+{
+    actor.Using(<span class="s">"emitidos = emitidos + 1; @turno = emitidos;"</span>)
+        .WithParameters(rented, p => p[Parameter.Out, <span class="s">"turno"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="k">default</span>)
+        .PerformCommand();
+    turno = rented[<span class="s">"turno"</span>].GetValue&lt;<span class="k">int</span>&gt;();
+}</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>turno numero 4</code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No parsees la salida de <code>print</code> para recuperar un valor tipado (<code>int.Parse(actor.Using("print next 'x';").PerformQuery())</code>). Esa salida es texto de presentación, de formato no garantizado. Para un valor tipado, usa <code>Out</code>.</p>
+    </div>
+
+    <h3>4.4 · <code>Eval</code>: derivar del estado, congelar para el replay</h3>
+    <p>A veces el valor no lo tiene el que llama: hay que calcularlo <strong>en el actor</strong>, a partir de su estado. Un parámetro <code>Eval</code> lleva una expresión que el actor evalúa al cargar los argumentos, y su resultado <strong>queda congelado en el diario</strong> — así el replay reusa el mismo valor en vez de recalcularlo:</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"ultimo = @sig;"</span>)
+    .WithParameters(p => p[Parameter.Eval, <span class="s">"sig"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="s">"emitidos + 1"</span>)
+    .PerformCommand();</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"ultimo":5}</code></pre>
+    <p>El bingo lo usa para clavar la ronda en la que sale cada bolita: la ronda la dice la mesa, no el método, y queda congelada en el asiento para que al releerlo diga la misma que aquella noche:</p>
+    <pre><span class="tag real">C# · real</span><code>live.Journal.Using(<span class="s">"mesa.RegisterDraw(@numero, @ronda);"</span>)
+    .WithParameters(p =>
+    {
+        p.UserParameter&lt;<span class="k">int</span>&gt;(<span class="s">"numero"</span>, number);
+        p[Parameter.Eval, <span class="s">"ronda"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = <span class="s">"mesa.RoundNumber"</span>;
+    })
+    .PerformCommand();</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Esta es la razón de ser de <code>Eval</code>: un valor derivado del estado o no determinista, calculado en el cuerpo, se recalcularía distinto en el replay y divergiría. <code>Eval</code> lo congela una sola vez. Por lo mismo, nunca leas <code>DateTime.Now</code> en el dominio: usa <code>@Now</code> (Cap. 3).</p>
+    </aside>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><strong>Entrada:</strong> declara <code>p["n", typeof(T)] = v</code> y usa <code>@n</code> en el cuerpo.</li>
+      <li><strong>Contrato:</strong> viajan primitivos, colecciones, opcionales y enums (por nombre) — nunca tipos de tu capa de interfaz.</li>
+      <li><strong>Salida tipada:</strong> <code>Out</code> con el patrón <em>rent-lease</em>; no parsees <code>print</code>.</li>
+      <li><strong>Derivado del estado:</strong> <code>Eval</code> lo calcula en el actor y lo congela para el replay.</li>
+    </ul>
+    <p>Con valores entrando y saliendo, falta decidir <em>cuándo</em> corre cada cosa. Vamos al control de flujo y las guardas.</p>
+  </section>

@@ -1,0 +1,71 @@
+<!-- CAP 7 · JOURNAL -->
+  <section class="anchor" id="cap7">
+    <h2>7 · Journal, persistencia y replay</h2>
+    <p class="chapter-meta">El diario como fuente de verdad: dónde vive, cómo persiste solo, y por qué desplegar es reproducir.</p>
+
+    <p>Ya lo adelantamos en los fundamentos; ahora lo vemos funcionando. El <strong>diario</strong> es una bitácora append-only que guarda el <em>texto de cada comando</em>, en orden. El estado del actor es, literalmente, el resultado de reproducirlo.</p>
+
+    <h3>7.1 · Dónde vive el diario: <code>ConfigureStorage</code></h3>
+    <p>No escribes código de guardado: eliges un <strong>backend</strong> y el framework anota los hechos por ti.</p>
+    <table>
+      <thead><tr><th>Backend (<code>DatabaseType</code>)</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td><code>IN_MEMORY</code></td><td>Pruebas y ejemplos; el diario vive en RAM y se va con el proceso.</td></tr>
+        <tr><td><code>FileSystem</code></td><td>Un diario en disco (una carpeta). Ideal para apps locales / por instancia.</td></tr>
+        <tr><td><code>SQLServer</code>, <code>MySQL</code></td><td>El diario en una base de datos relacional.</td></tr>
+        <tr><td><code>PlainText</code></td><td>Diario en texto plano, legible/editable por herramientas.</td></tr>
+      </tbody>
+      <caption>Tabla 11. Backends de almacenamiento. Cambiar de uno a otro no toca la lógica.</caption>
+    </table>
+    <pre><span class="tag real">C# · real</span><code>_stage.ConfigureStorage(kind, <span class="s">"path="</span> + _dir);   <span class="c">// el bingo: un diario por velada en disco</span></code></pre>
+
+    <h3>7.2 · Replay = redeploy</h3>
+    <p>Aquí está la demostración que lo vuelve tangible. Un actor escribe su diario en disco. Una <strong>instancia nueva</strong>, sobre el <strong>mismo diario</strong>, reconstruye el estado reproduciéndolo — sin que hagamos nada especial:</p>
+    <pre><span class="tag">C#</span><code><span class="c">// actor original: escribe su diario en disco</span>
+<span class="k">var</span> original = <span class="k">new</span> ActorV2(<span class="s">"libro"</span>, dominio);
+original.ConfigureStorage(DatabaseType.FileSystem, <span class="s">"path="</span> + dir);
+original.Using(<span class="s">"upgrade('seed') { saldo = 0; }"</span>).PerformCommand();
+original.Using(<span class="s">"saldo = saldo + 100;"</span>).PerformCommand();
+original.Using(<span class="s">"saldo = saldo + 50;"</span>).PerformCommand();
+
+<span class="c">// instancia NUEVA sobre el MISMO diario: estado reconstruido por replay</span>
+<span class="k">var</span> renacido = <span class="k">new</span> ActorV2(<span class="s">"libro"</span>, dominio);
+renacido.ConfigureStorage(DatabaseType.FileSystem, <span class="s">"path="</span> + dir);</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>original -> {"saldo":150}
+renacido -> {"saldo":150}</code></pre>
+    <figure class="diagram">
+      <svg viewBox="0 0 620 170" width="100%" style="max-width:560px" role="img" aria-label="Un mismo diario en disco alimenta a dos instancias del actor; la instancia renacida reconstruye el mismo estado reproduciendo el diario.">
+        <defs><marker id="ah3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="12.5" fill="var(--ink)">
+          <rect x="230" y="60" width="160" height="50" rx="10" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="310" y="80" text-anchor="middle" font-weight="700">Diario en disco</text>
+          <text x="310" y="98" text-anchor="middle" fill="var(--ink-soft)" font-size="11">seed · +100 · +50</text>
+          <rect x="24" y="20" width="140" height="44" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="94" y="40" text-anchor="middle" font-weight="700" font-size="12">original</text>
+          <text x="94" y="55" text-anchor="middle" fill="var(--ink-soft)" font-size="10">escribe</text>
+          <rect x="24" y="108" width="140" height="44" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="94" y="128" text-anchor="middle" font-weight="700" font-size="12">renacido</text>
+          <text x="94" y="143" text-anchor="middle" fill="var(--ink-soft)" font-size="10">reproduce</text>
+          <line x1="164" y1="42" x2="228" y2="72" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#ah3)"/>
+          <line x1="228" y1="98" x2="164" y2="128" stroke="var(--accent-soft)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#ah3)"/>
+          <rect x="452" y="64" width="150" height="44" rx="9" fill="var(--panel)" stroke="var(--rule)"/>
+          <text x="527" y="84" text-anchor="middle" font-weight="700" font-size="12">saldo = 150</text>
+          <text x="527" y="99" text-anchor="middle" fill="var(--ink-soft)" font-size="10">mismo estado</text>
+          <line x1="390" y1="86" x2="450" y2="86" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ah3)"/>
+        </g>
+      </svg>
+      <figcaption>Figura 2. El diario es la verdad; cualquier instancia que lo reproduzca obtiene el mismo estado. Desplegar es reproducir.</figcaption>
+    </figure>
+    <div class="call consider">
+      <div class="h"><span class="mark">~</span> Considera</div>
+      <p>El <code>upgrade('seed')</code> idempotente es la pieza que hace esto seguro: corre una vez al nacer y, en cada arranque posterior, ya está en el diario y se reproduce sin volver a “sembrar”. La misma llamada sirve para nacer y para rehidratar.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El diario guarda el <strong>texto de los comandos</strong>, en orden; el estado es su reproducción.</li>
+      <li><code>ConfigureStorage</code> elige el backend (memoria, archivos, SQL, texto) sin tocar la lógica.</li>
+      <li>Una instancia nueva sobre el mismo diario <strong>renace idéntica</strong>: replay = redeploy.</li>
+    </ul>
+    <p>Falta cerrar el círculo: cómo sale la información hacia tu API y cómo se hospeda todo esto.</p>
+  </section>

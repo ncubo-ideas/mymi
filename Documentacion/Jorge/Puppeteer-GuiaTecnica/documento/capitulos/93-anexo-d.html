@@ -1,0 +1,39 @@
+<!-- ANEXO D · REFERENCIA DO / DON'T -->
+  <section class="anchor" id="anexoD">
+    <h2>D · Referencia DO / DON'T</h2>
+    <p class="chapter-meta">Todas las recomendaciones de la guía, reunidas. La chuleta para revisar o recordar de un vistazo.</p>
+
+    <table>
+      <thead><tr><th style="width:120px">Tipo</th><th>Recomendación</th><th style="width:60px">Cap.</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Piensa en cada capacidad de negocio como un actor que protege su estado y ofrece verbos, no campos editables.</td><td><a href="#intro">Intro</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No trates al actor como una bolsa de datos para leer y escribir desde afuera.</td><td><a href="#intro">Intro</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No leas <code>DateTime.Now</code> (ni azar) dentro de un script; usa <code>@Now</code>.</td><td><a href="#cap1">1</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>Deja de pensar en “migraciones” y “estados corruptos”; la pregunta pasa a ser “¿mi diario reproduce igual?”.</td><td><a href="#cap1">1</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Expón el dominio como verbos (operaciones) y queries totales; deja que cada objeto proteja sus reglas.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita <em>setters</em> públicos que dejen fijar el estado desde afuera.</td><td><a href="#cap2">2</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No pongas el número a la izquierda de una concatenación; el texto va a la izquierda.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Encierra las variables de trabajo en un bloque <code>{ }</code>; promueve a global solo lo que debe persistir.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No edites el cuerpo de un <code>upgrade</code> ya aplicado; publica un nombre nuevo.</td><td><a href="#cap3">3</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita meter tipos de tu capa de interfaz (Guid, DTO) por el canal de parámetros; convierte en el borde.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No parsees la salida de <code>print</code> para un valor tipado; usa <code>Out</code>.</td><td><a href="#cap4">4</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No partas la decisión en tu C#; la rama vive dentro de un solo cuerpo (una decisión = un comando).</td><td><a href="#cap5">5</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No pongas efectos secundarios en una guarda <code>Check</code>: es un predicado puro (corre hasta dos veces).</td><td><a href="#cap5">5</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Modela entidades de identidad con operaciones; cambios de estado siempre por un verbo.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Escribe queries totales: que respondan el caso vacío en vez de lanzar o devolver <code>null</code>.</td><td><a href="#cap6">6</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>El <code>upgrade</code> idempotente hace seguro el replay: la misma llamada sirve para nacer y rehidratar.</td><td><a href="#cap7">7</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Envuelve el acceso al actor en una fachada fluida estable, que aísle a la app de cambios del sustrato.</td><td><a href="#cap8">8</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No concatenes el texto del <code>tell</code> con los valores; pasa <code>@params</code>.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>En un actor replicado (<code>StageV2</code>), marca <code>.DirectorOnly()</code> la reacción que emite un <code>tell</code>.</td><td><a href="#cap9">9</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Acusa (ack) el mensaje después del commit del comando.</td><td><a href="#cap10">10</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita acusar un mensaje no mapeado; dejarlo sin ack mantiene la brecha visible.</td><td><a href="#cap10">10</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--dont)">NO</span></td><td>No esperes rollback automático en una saga; modela la compensación como un paso más.</td><td><a href="#cap11">11</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>No trates un <code>StageV2</code> como puente entre dos actores: es un actor en varios lugares. La unión entre actores distintos es la capa <code>tell</code>.</td><td><a href="#cap12">12</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>Si un patrón ya lo da el sustrato (event store, orquestador), no lo reimplementes encima.</td><td><a href="#cap13">13</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--consider)">CONSIDERA</span></td><td>Antes de sumar infraestructura externa, mira si el patrón se arma con reacciones + outbox + <code>tell</code>.</td><td><a href="#cap14">14</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--avoid)">EVITA</span></td><td>Evita esconder un envío cross-actor dentro de un <em>sink</em>: no deja constancia auditable.</td><td><a href="#cap14">14</a></td></tr>
+        <tr><td><span class="pill" style="background:var(--do)">HAZ</span></td><td>Al pensar una funcionalidad nueva, pregúntate qué verbo de dominio expresa el hecho; suele ser una línea de DSL.</td><td><a href="#cap15">15</a></td></tr>
+      </tbody>
+      <caption>Tabla 21. Referencia consolidada de recomendaciones, en orden de aparición.</caption>
+    </table>
+  </section>

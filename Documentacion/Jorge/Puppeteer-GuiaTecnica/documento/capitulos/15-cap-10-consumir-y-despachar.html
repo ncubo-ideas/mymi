@@ -1,0 +1,53 @@
+<!-- CAP 10 · CONSUMIR Y DESPACHAR -->
+  <section class="anchor" id="cap10">
+    <h2>10 · Consumir y despachar</h2>
+    <p class="chapter-meta">El lado receptor: convertir un mensaje que llega en un comando propio, sin un <code>switch</code> gigante.</p>
+
+    <p>Un actor recibe mensajes —el <code>tell</code> de otro actor, o algo que llega por un broker—. La tarea del receptor es siempre la misma: <strong>traducir el mensaje a un comando de su propio vocabulario</strong>. Hay dos formas de escribir ese lado, ambas reales en el bingo.</p>
+
+    <h3>10.1 · Uptake declarativo: <code>ListenAs</code> / <code>Told</code></h3>
+    <p>El receptor declara qué mensajes escucha y, por cada uno, el comando propio que ejecuta. Así escucha el jugador del bingo las bolitas, correcciones y cambios de ronda:</p>
+    <pre><span class="tag real">C# · real</span><code>journal.ListenAs(rolJugador, bindings, phone)
+    .Told(<span class="s">"Bolita"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"numero"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"ronda"</span>)
+        .Command(<span class="s">"if (miRonda == @ronda) { juego.RegisterDraw(@numero); } else { bolitaTardia = @numero; }"</span>)
+    .Told(<span class="s">"Correccion"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"malo"</span>).With&lt;<span class="k">int</span>&gt;(<span class="s">"bueno"</span>)
+        .Command(<span class="s">"juego.CorrectDraw(@malo, @bueno);"</span>)
+    .Told(<span class="s">"Ronda"</span>).With&lt;<span class="k">string</span>&gt;(<span class="s">"figuras"</span>)
+        .Command(<span class="s">"juego.MoveOnToRound(@figuras, 'OnClaim');"</span>)
+    .Start();</code></pre>
+    <p>Puntos clave:</p>
+    <ul class="body">
+      <li>Cada tell recibido corre <strong>exactamente un <code>PerformCommand</code></strong> con los valores del mensaje. Uno por aviso.</li>
+      <li>El orden de <code>.With&lt;T&gt;(...)</code> <strong>debe coincidir</strong> con el orden del <code>with</code> del emisor: por el cable solo viajan valores ordenados; los nombres son etiquetas locales.</li>
+      <li><strong>Idempotencia</strong> por identidad del sobre: un duplicado se vuelve a acusar (ack) pero no se re-ejecuta.</li>
+      <li>El comando usa el <strong>vocabulario del receptor</strong> (<code>juego.RegisterDraw</code>), no el del emisor.</li>
+    </ul>
+
+    <h3>10.2 · Despacho por handlers, sin <code>switch</code></h3>
+    <p>Cuando llegan varios tipos de mensaje por un mismo canal, se registran <strong>handlers</strong> —uno por tipo de mensaje—, y cada uno traduce a su comando. Así arma el organizador su teléfono:</p>
+    <pre><span class="tag real">C# · real</span><code>_phone.OnEnlist = Enlist;
+_phone.OnSale = AcceptSale;
+_phone.OnCall = AcceptCall;
+_phone.OnBingoClaim = AcceptBingoClaim;
+_phone.OnWhoIs = AnswerWhoIs;
+_phone.Listen();</code></pre>
+    <p>Cada handler (<code>AcceptSale</code>, etc.) deserializa el mensaje, valida, y hace un <code>Using(...).PerformCommand()</code> sobre el diario. No hay un <code>switch</code> gigante: el ruteo mensaje→handler lo lleva la tabla de <em>bindings</em>. En el marco general esto es <code>Dispatch.On&lt;T&gt;(...)</code> + <code>ConsumeFrom(source, routing)</code>: cada tipo de mensaje enruta a un comando que el receptor posee.</p>
+
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Acusa (ack) el mensaje <strong>después</strong> del commit del comando. Así, si el proceso muere entre recibir y procesar, el mensaje se reentrega y no se pierde el hecho.</p>
+    </div>
+    <div class="call avoid">
+      <div class="h"><span class="mark">!</span> Evita</div>
+      <p>Evita acusar un mensaje <strong>no mapeado</strong> (sin handler). Dejarlo sin ack mantiene la brecha visible en lugar de tragarse silenciosamente un mensaje que nadie atendió.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El receptor <strong>traduce</strong> el mensaje a un comando de su propio vocabulario.</li>
+      <li><code>ListenAs/Told</code> declara mensaje→comando; el orden de <code>.With&lt;T&gt;</code> sigue al del emisor.</li>
+      <li>Varios mensajes → <strong>handlers por tipo</strong> (<code>Dispatch.On&lt;T&gt;</code>), sin <code>switch</code>.</li>
+      <li>Ack después del commit; idempotencia por identidad del sobre.</li>
+    </ul>
+    <p>Cuando esos mensajes no son sueltos sino <strong>pasos ordenados de un mismo flujo</strong>, entra en juego la saga.</p>
+  </section>
