@@ -1,0 +1,63 @@
+<!-- CAP 5 · CONTROL DE FLUJO -->
+  <section class="anchor" id="cap5">
+    <h2>5 · Control de flujo y guardas</h2>
+    <p class="chapter-meta">Ramas y bucles dentro del cuerpo, y la guarda <code>Check</code> que rechaza un comando sin dejar rastro.</p>
+
+    <p>Una regla de oro guía todo este capítulo: <strong>una decisión = un comando</strong>. La lógica de qué hacer vive <em>dentro</em> del script, no repartida entre varios <code>Perform</code> en tu C#. Así, el comando persistido captura la decisión completa.</p>
+
+    <h3>5.1 · <code>if</code> / <code>else</code> en el cuerpo</h3>
+    <p>Ramifica dentro del script. Cualquier sentencia compone dentro de un <code>if</code>, también una llamada a verbo:</p>
+    <pre><span class="tag">DSL</span><code>if (aforo.Cabe(@n)) { aforo.Tomar(@n); }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"t":2}</code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No partas la decisión en tu C# (<code>if (x) actor.Using(A) else actor.Using(B)</code>). El camino “no hace nada” deja un comando vacío o ausente en el diario, y la decisión queda fuera del actor. Pon la rama <strong>dentro de un solo cuerpo</strong>.</p>
+    </div>
+
+    <h3>5.2 · <code>foreach</code></h3>
+    <p>Itera una colección dentro del mismo comando — toda la iteración es <strong>un solo hecho</strong> en el diario:</p>
+    <pre><span class="tag">DSL</span><code>foreach (x in @nums) { if (aforo.Cabe(x)) { aforo.Tomar(x); } }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"t":4}</code></pre>
+    <p>El bingo lo usa al vender: por cada cartón vendido, lo pone en juego, todo en el mismo comando:</p>
+    <pre><span class="tag real">DSL · real</span><code>foreach (numero in @cartones) { mesa.PutCardInPlay(numero); }</code></pre>
+
+    <h3>5.3 · <code>Check</code>: la guarda transaccional</h3>
+    <p>Cuando un comando debe correr <strong>solo si</strong> una condición se cumple, y quien llama necesita <em>enterarse</em> del rechazo, se usa una guarda <code>Check</code> con la variante de dos cuerpos (guarda + comando) y <code>PerformCheckThenCommand()</code>:</p>
+    <pre><span class="tag">C#</span><code>actor.Using(<span class="s">"Check(aforo.Cabe(@n)) Error 'sin cupo';"</span>, <span class="s">"aforo.Tomar(@n);"</span>)
+     .WithParameters(p => p[<span class="s">"n"</span>, <span class="k">typeof</span>(<span class="k">int</span>)] = 1)
+     .PerformCheckThenCommand();</code></pre>
+    <p>El <strong>contrato de retorno</strong>: vacío = aceptado (el comando corrió y se persistió); no vacío = rechazado, y trae los motivos. Al rechazar, <strong>nada se persiste</strong>:</p>
+    <pre class="out"><span class="tag">Salida real</span><code>Check acepta -> return=""          (vacio = aceptado)
+Check rechaza -> return="{"EWI":[{"Error":"sin cupo"}]}"</code></pre>
+    <p>Corre en dos fases: primero bajo un candado de <em>lectura</em> (si falla, devuelve el motivo y no persiste nada); si pasa, vuelve a comprobar bajo el candado de <em>escritura</em> y recién ahí corre y persiste el comando. Solo una severidad de <strong>falla</strong> bloquea:</p>
+    <table>
+      <thead><tr><th>Severidad</th><th>¿Bloquea el comando?</th></tr></thead>
+      <tbody>
+        <tr><td><code>Error</code>, <code>Warning</code></td><td>Sí — no persiste nada, devuelve el motivo</td></tr>
+        <tr><td><code>Information</code>, <code>Message</code></td><td>No — es informativa, el comando corre igual</td></tr>
+      </tbody>
+      <caption>Tabla 10. Severidades de <code>Check</code>: solo las de falla detienen el comando.</caption>
+    </table>
+    <p>Así encadena el bingo varias guardas antes de vender, cada una con su mensaje:</p>
+    <pre><span class="tag real">DSL · real</span><code>Check(festival.ErrandLetsThemDo(@marca, @quien, @oficio))
+    Error 'ese papelito no es tuyo o ya no esta vigente';
+Check(festival.MerchantCanSellThem(@marca, @cartones))
+    Error 'esos cartones ya no los tenes en la mano';</code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No pongas efectos secundarios en una guarda: debe ser un predicado <strong>puro</strong> (lee para decidir, no muta). Recuerda que el cuerpo de <code>Check</code> puede correr <strong>dos veces</strong> (pre-check y re-check); un efecto colateral se dispararía dos veces.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>¿Cuándo <code>Check</code> y cuándo un <code>if</code> simple? Usa <code>Check</code> cuando un intento <strong>rechazado no debe dejar entrada en el diario</strong> (un <code>if</code> que no hace nada igual persiste un comando), o cuando quieres el pre-chequeo optimista bajo candado de lectura. Para lo demás, un <code>if</code> basta.</p>
+    </aside>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><strong>Una decisión = un comando:</strong> la rama vive en el cuerpo, no en tu C#.</li>
+      <li><code>if</code>/<code>else</code> y <code>foreach</code> componen cualquier sentencia, incluidas llamadas a verbos.</li>
+      <li><code>Check</code> rechaza sin dejar rastro; retorno vacío = aceptado, no vacío = motivos.</li>
+      <li>Solo severidades <code>Error</code>/<code>Warning</code> bloquean; la guarda debe ser pura.</li>
+    </ul>
+    <p>Todo esto llama verbos y lee queries de <em>tu dominio</em>. Toca ver cómo se escribe ese dominio.</p>
+  </section>

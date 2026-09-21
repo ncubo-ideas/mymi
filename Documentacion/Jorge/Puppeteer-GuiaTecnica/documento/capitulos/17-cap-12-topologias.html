@@ -1,0 +1,69 @@
+<!-- CAP 12 · TOPOLOGÍAS Y FORMACIONES -->
+  <section class="anchor" id="cap12">
+    <h2>12 · Topologías y formaciones</h2>
+    <p class="chapter-meta">La capa multi-nodo: cómo un actor se replica entre máquinas y cómo actores distintos se unen.</p>
+
+    <p>Las reacciones y el <code>tell</code> ya cruzan de un actor a otro. Este capítulo mira el mapa completo: cómo <strong>un</strong> actor existe en varias máquinas, y cómo actores <strong>distintos</strong> en máquinas distintas se comunican. Son dos mecanismos separados; conviene no confundirlos.</p>
+
+    <h3>12.1 · <code>StageV2</code>: un actor replicado</h3>
+    <p>Un <code>StageV2</code> es <strong>un</strong> actor lógico replicado: <strong>un Director y N Casts del mismo actor</strong>. No es un puente entre dos actores — es un actor que existe en más de un lugar. Se apoya en dos grafos:</p>
+    <ul class="body">
+      <li><strong>Estrella de datos</strong> (Director↔Cast): replicación del diario + comandos.</li>
+      <li><strong>Bus de coordinación</strong> (todos↔todos): membresía y elección, ligero.</li>
+    </ul>
+    <p>Un comando corre en el Director y se journaliza; un Cast <strong>reenvía</strong> al Director y el registro replica de vuelta. En el bingo, el organizador es el Director de la velada y el colaborador es un Cast (una réplica local que le deja vender aunque se caiga la red).</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 600 200" width="100%" style="max-width:540px" role="img" aria-label="Un Director y dos Casts del mismo actor; los Casts reenvian comandos al Director y este replica el diario de vuelta.">
+        <defs><marker id="ah12" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker></defs>
+        <g font-family="var(--sans)" font-size="12.5" fill="var(--ink)">
+          <circle cx="300" cy="52" r="44" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="300" y="48" text-anchor="middle" font-weight="700">Director</text>
+          <text x="300" y="65" text-anchor="middle" fill="var(--ink-soft)" font-size="10">dueño del diario</text>
+          <circle cx="140" cy="158" r="40" fill="var(--panel)" stroke="var(--accent-soft)"/>
+          <text x="140" y="156" text-anchor="middle" font-size="12">Cast</text>
+          <text x="140" y="172" text-anchor="middle" fill="var(--ink-soft)" font-size="10">réplica</text>
+          <circle cx="460" cy="158" r="40" fill="var(--panel)" stroke="var(--accent-soft)"/>
+          <text x="460" y="156" text-anchor="middle" font-size="12">Cast</text>
+          <text x="460" y="172" text-anchor="middle" fill="var(--ink-soft)" font-size="10">réplica</text>
+          <line x1="168" y1="130" x2="270" y2="78" stroke="var(--accent-soft)" stroke-width="1.6" marker-end="url(#ah12)"/>
+          <line x1="285" y1="92" x2="160" y2="132" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah12)"/>
+          <line x1="432" y1="130" x2="330" y2="78" stroke="var(--accent-soft)" stroke-width="1.6" marker-end="url(#ah12)"/>
+          <line x1="315" y1="92" x2="440" y2="132" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah12)"/>
+          <text x="300" y="196" text-anchor="middle" fill="var(--ink-soft)" font-size="10">Cast → comando; Director → diario replicado (- - -)</text>
+        </g>
+      </svg>
+      <figcaption>Figura 4. Un <code>StageV2</code> es un actor en varios lugares: los Casts reenvían comandos, el Director replica el diario.</figcaption>
+    </figure>
+
+    <h3>12.2 · Unir actores distintos: la capa <code>tell</code></h3>
+    <p>Dos actores <strong>distintos</strong> en máquinas distintas no se unen con un <code>StageV2</code>, sino con la capa <code>tell</code>, que tiene tres partes:</p>
+    <table>
+      <thead><tr><th>Pieza</th><th>Rol</th></tr></thead>
+      <tbody>
+        <tr><td><code>tell</code></td><td>El aviso; su destinatario es un <strong>rol lógico</strong>. El DSL nunca nombra el transporte.</td></tr>
+        <tr><td>Tabla de <em>bindings</em></td><td>Mapea rol→ruta en tiempo de ejecución (tipo DNS, la más específica primero).</td></tr>
+        <tr><td>Transporte de broker</td><td>Envía + ack de vuelta; el consumidor mapea el mensaje a un comando propio y acusa tras el commit.</td></tr>
+      </tbody>
+      <caption>Tabla 14. La unión entre actores distintos: el DSL dice el rol, el runtime resuelve la ruta.</caption>
+    </table>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Si el actor que hereda el aviso es un <code>StageV2</code> replicado, la reacción que emite el <code>tell</code> debe ser <code>.DirectorOnly()</code>. Bajo <code>.Company()</code> cada réplica lo emitiría → N duplicados.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador — el <em>communicator</em></div>
+      <p>Un patrón elegante: un <code>StageV2</code> que abarca varias máquinas y cuyos endpoints son <strong>asertivos</strong> (relata un hecho: “hay una nueva X”), no imperativos. Actores <em>Performance</em> aislados en cada máquina reciben ese hecho y cada uno lo mapea a <strong>su</strong> comando local. Así se coordinan sin un enlace directo entre ellos: el <em>communicator</em> relata, cada quien actúa.</p>
+    </aside>
+
+    <h3>12.3 · Formaciones: la forma del espacio de direcciones</h3>
+    <p>Una <em class="term">formación</em> es la <strong>forma</strong> en que nombras y particionas tus actores. La decisión más común es la granularidad: <strong>un actor (un diario) por instancia clave</strong> — una velada por bingo, un vuelo como su propio actor —. Elegir bien la unidad es lo que mantiene los diarios acotados y auditables, y hace que un ciclo cerrado pueda, algún día, compactarse por completo. Sobre esa base, el espacio de direcciones puede tener distintas formas (plana, en cubo/NCube, en árbol, en grafo) según cómo se relacionen las instancias — pero el punto de partida siempre es la misma pregunta: <em>¿cuál es la entidad que merece su propio diario?</em></p>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li><code>StageV2</code> replica <strong>un</strong> actor (un Director, N Casts); no es un puente entre dos.</li>
+      <li>Actores <strong>distintos</strong> se unen por la capa <code>tell</code>: rol → <em>bindings</em> → broker.</li>
+      <li>En un actor replicado, el <code>tell</code> se emite <code>.DirectorOnly()</code>.</li>
+      <li>Una <strong>formación</strong> empieza por elegir la entidad que merece su propio diario.</li>
+    </ul>
+    <p>Con esto cierras la Parte II: sabes cómo un hecho cruza de un actor a otro, cómo se consume, cómo se orquesta un flujo por pasos y cómo todo se distribuye. La <strong>Parte III</strong> recoge esto como <em>patrones</em> —los que Puppeteer usa y otros fáciles de sumar— y baja a recetas concretas: agregar una base de datos, migrar un sistema legado.</p>
+  </section>

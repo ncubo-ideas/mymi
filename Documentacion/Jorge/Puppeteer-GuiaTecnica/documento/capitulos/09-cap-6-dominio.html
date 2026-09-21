@@ -1,0 +1,57 @@
+<!-- CAP 6 · DOMINIO -->
+  <section class="anchor" id="cap6">
+    <h2>6 · El dominio C# del actor</h2>
+    <p class="chapter-meta">El DSL orquesta, pero la lógica vive en tus clases de C#. Cómo escribir ese dominio.</p>
+
+    <p>El DSL no programa sistemas: <strong>orquesta</strong> tu dominio. La riqueza —las reglas, los invariantes— vive en clases de C# normales, sin dependencia del framework. Hay un estilo que hace que ese dominio encaje de forma natural con Puppeteer.</p>
+
+    <h3>6.1 · Operaciones sobre el estado, no <em>setters</em></h3>
+    <p>El estado es privado y solo cambia a través de <strong>verbos</strong> con sentido de negocio. Cada verbo protege sus invariantes antes de tocar nada. Así valida el organizador del bingo, real, cada operación antes de delegarla:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">public void</span> PutUpForSale(Festival festival, IEnumerable&lt;<span class="k">long</span>&gt; numbersTheGameGaveUs)
+{
+    <span class="k">if</span> (festival == <span class="k">null</span>) <span class="k">throw new</span> ArgumentNullException(nameof(festival));
+
+    MustGovern(festival);                    <span class="c">// invariante: este elder gobierna esa velada</span>
+    festival.PutUpForSale(numbersTheGameGaveUs);
+}</code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Modela <strong>entidades de identidad</strong> (objetos con vida propia, que cambian por operaciones), no bolsas de datos con getters y setters. Un cambio de estado siempre pasa por un verbo que puede hacer valer una regla.</p>
+    </div>
+
+    <h3>6.2 · Queries totales</h3>
+    <p>Las lecturas <strong>siempre responden</strong>: nunca lanzan, nunca devuelven <code>null</code>. Si no hay datos aún, devuelven el caso vacío razonable. La mesa del bingo responde su estado incluso sin ronda:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">public string</span> State     => _round <span class="k">is null</span> ? GameState.Waiting.ToString() : _round.State.ToString();
+<span class="k">public int</span>    DrawnCount => _round <span class="k">is null</span> ? 0 : _round.DrawnCount;</code></pre>
+    <p>Un caso particular muy útil son las guardas de tipo <em>“¿se puede AHORA?”</em>, pensadas para correr en un <code>Check</code> (Cap. 5) antes de mutar — contestan donde el verbo lanzaría:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">public bool</span> CanRegisterDraw(<span class="k">int</span> number)
+{
+    <span class="k">if</span> (!IsRunning) <span class="k">return false</span>;
+    <span class="k">if</span> (number &lt; Cardface.LowestBall || number &gt; Cardface.HighestBall) <span class="k">return false</span>;
+    <span class="k">foreach</span> (Ball ball <span class="k">in</span> _round.Drawn)
+        <span class="k">if</span> (ball.Number == number) <span class="k">return false</span>;
+    <span class="k">return true</span>;
+}</code></pre>
+
+    <h3>6.3 · Conjuntos cerrados como tipos</h3>
+    <p>Cuando algo solo puede tomar un conjunto fijo de valores, modélalo como un <strong>enum de dominio</strong>, no como <em>strings</em> sueltos. Nuestro semáforo de juguete lo hace, y al imprimirlo el DSL emite el <strong>nombre</strong> del miembro:</p>
+    <pre><span class="tag">C# · dominio</span><code><span class="k">public class</span> Semaforo
+{
+    <span class="k">public enum</span> Luz { Rojo, Verde, Amarillo }   <span class="c">// conjunto cerrado</span>
+    <span class="k">private</span> Luz _luz = Luz.Rojo;
+
+    <span class="k">public void</span> Cambiar()  { <span class="c">/* Rojo -&gt; Verde -&gt; Amarillo -&gt; Rojo */</span> }
+    <span class="k">public</span> Luz Actual => _luz;                 <span class="c">// query total</span>
+}</code></pre>
+    <pre><span class="tag">DSL</span><code>s = Semaforo(); s.Cambiar(); print s.Actual <span class="s">'luz'</span>;</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"luz":"Verde"}</code></pre>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El dominio es <strong>C# puro</strong>; el DSL solo lo orquesta.</li>
+      <li>Cambios de estado por <strong>verbos</strong> que hacen valer invariantes, nunca por <em>setters</em>.</li>
+      <li>Queries <strong>totales</strong> (nunca <code>null</code>, nunca lanzan); guardas <em>“¿se puede ahora?”</em> para los <code>Check</code>.</li>
+      <li>Conjuntos cerrados como <strong>enums</strong> de dominio; salen por su nombre.</li>
+    </ul>
+    <p>Ya tienes actor, DSL, parámetros, guardas y dominio. ¿Dónde queda todo esto guardado, y cómo sobrevive a un reinicio? El diario.</p>
+  </section>
