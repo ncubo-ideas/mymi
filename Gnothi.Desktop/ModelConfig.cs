@@ -65,7 +65,16 @@ internal sealed class ModelConfig
         new("LM Studio (local)", "openai", "http://localhost:1234/v1", "local-model"),
     ];
 
+    /// <summary>El proveedor que corre en esta Mac.</summary>
+    ///
+    /// ES UNA IDENTIDAD, NO UNA ETIQUETA: es lo que se guarda en model.cfg, lo que compara el
+    /// desplegable y de lo que sale KeyPath. La ventana lo MUESTRA por Display.
     public const string AppleName = "Apple Intelligence (en esta Mac)";
+
+    /// <summary>Como se llama un proveedor EN LA PANTALLA; lo que se guarda y se compara sigue
+    /// siendo el nombre del preset.</summary>
+    public static string Display(string name) =>
+        name == AppleName ? Textos.T("ajustes.proveedor.apple") : name;
 
     // Los presets que tiene sentido mostrar EN ESTA MAQUINA: el de Apple solo donde el modelo
     // genera. En Windows, Linux o una Mac sin el puente, la lista es la de siempre.

@@ -380,8 +380,9 @@
   "ajustes.llave.borrar":         { "es": "Borrar", "en": "Delete" },
   "ajustes.llave.guardada":       { "es": "Llave guardada. Ya puedes cargar los modelos.", "en": "Key saved. You can load the models now." },
   "ajustes.llave.borrada":        { "es": "Llave borrada.", "en": "Key deleted." },
-  "//el-modelo-de-esta-mac": "LO QUE LA VENTANA DICE DEL MODELO DE APPLE INTELLIGENCE. Es la unica opcion que no pide llave, y la unica donde nada sale del equipo, asi que las dos frases existen para decir eso donde se decide.",
+  "//el-modelo-de-esta-mac": "LO QUE LA VENTANA DICE DEL MODELO DE APPLE INTELLIGENCE. Es la unica opcion que no pide llave, y la unica donde nada sale del equipo, asi que las frases existen para decir eso donde se decide. El nombre es aparte: lo que se guarda en model.cfg es ModelConfig.AppleName y esta clave es como se muestra, igual que ajustes.proveedor.local en el telefono.",
 
+  "ajustes.proveedor.apple":      { "es": "Apple Intelligence (en esta Mac)", "en": "Apple Intelligence (on this Mac)" },
   "ajustes.apple.sin-llave":      { "es": "Es el modelo de Apple Intelligence de esta Mac: no necesita llave y nada sale del equipo.", "en": "This is the Apple Intelligence model on this Mac: it needs no key and nothing leaves the machine." },
   "asistente.sub.apple":          { "es": "Este modelo corre en esta Mac: nada sale del equipo.", "en": "This model runs on this Mac: nothing leaves it." },
 

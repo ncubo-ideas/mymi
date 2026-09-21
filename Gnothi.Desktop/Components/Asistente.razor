@@ -18,7 +18,7 @@
 @if (Config.NeedsKey && !Config.KeyPresent)
 {
     <div class="notice">
-        @T("asistente.sin-llave", ("proveedor", Config.Provider().Name))
+        @T("asistente.sin-llave", ("proveedor", ModelConfig.Display(Config.Provider().Name)))
         <button class="link" @onclick="OpenSettings">@T("asistente.sin-llave.accion")</button>
     </div>
 }

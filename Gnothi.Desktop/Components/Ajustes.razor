@@ -14,7 +14,7 @@
 <div class="card">
     <div class="title">@T("ajustes.proveedor")</div>
     <div class="meta" style="margin:4px 0 10px">
-        @name · <strong>@model</strong>
+        @ModelConfig.Display(name) · <strong>@model</strong>
         <br /><span style="font-family:ui-monospace,Consolas,monospace">@url</span>
     </div>
 
@@ -22,13 +22,13 @@
     <select @onchange="OnPreset">
         @foreach (ModelConfig.Preset p in Config.PresetsAvailable())
         {
-            <option value="@p.Name" selected="@(p.Name == name)">@p.Name</option>
+            <option value="@p.Name" selected="@(p.Name == name)">@ModelConfig.Display(p.Name)</option>
         }
     </select>
 </div>
 
 <div class="card">
-        <div class="title">@T("ajustes.llave.de", ("proveedor", name))</div>
+        <div class="title">@T("ajustes.llave.de", ("proveedor", ModelConfig.Display(name)))</div>
         @if (Config.IsApple)
         {
             <div class="meta" style="margin:4px 0">@T("ajustes.apple.sin-llave") @AppleModel.Diagnosis()</div>
@@ -71,7 +71,7 @@
 <div class="card">
     <div class="title">@T("ajustes.modelo")</div>
     <div class="meta" style="margin:4px 0 10px">
-        @T("ajustes.modelo.en-uso", ("modelo", model)) @T("ajustes.modelo.explicacion", ("proveedor", name))
+        @T("ajustes.modelo.en-uso", ("modelo", model)) @T("ajustes.modelo.explicacion", ("proveedor", ModelConfig.Display(name)))
     </div>
 
     <button class="small" disabled="@(loadingModels || (needsKey && !Config.KeyPresent))" @onclick="LoadModels">
