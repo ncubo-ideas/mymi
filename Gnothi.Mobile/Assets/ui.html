@@ -1532,6 +1532,38 @@ const gn = {
         + '</div></div>';
     }).join('');
 
+    // EL NOMBRE DE MARCA CABE EN SU TARJETA (Geaninna, 2026-09-18; medido y corregido el 09-21).
+    //
+    // «Monteverde» a 21 px pide 106 px y la caja del nombre topa en 102: se perdía la última
+    // letra. NO la recorta el `overflow:hidden` de la tarjeta -- el nombre termina en 186 y la
+    // tarjeta llega a 200, o sea adentro --: la recorta SU PROPIA CAJA, que es un item flex con
+    // `min-width:0` al lado del icono de 44. Importa saberlo: tocar el overflow de la tarjeta no
+    // arregla nada. «La Guaria» no baja ni un píxel, y «Sotaventos Motors» tampoco: ése parte en
+    // dos líneas y nunca desbordó.
+    //
+    // El tamaño baja de a un píxel hasta que la palabra más larga entra, nunca por debajo de 15.
+    // Medido, no silabeado: un nombre de marca no se parte al medio.
+    //
+    // VA CUANDO LA LETRA DE LA INSTITUCIÓN YA ESTÁ. Unas líneas más arriba se inyectan sus
+    // `@font-face`, y medir en el mismo tick mide con Manrope: el tamaño elegido no sería el de
+    // la letra que se va a ver. Por eso corre dos veces -- ahora, para que no haya un salto
+    // visible, y otra vez cuando `fonts.ready` dice que llegaron.
+    const queQuepaElNombre = () => grid.querySelectorAll('.nm b').forEach(b => {
+      b.style.fontSize = ''; b.style.overflowWrap = '';
+      let size = parseFloat(getComputedStyle(b).fontSize);
+      while (b.scrollWidth > b.clientWidth && size > 15) { size -= 1; b.style.fontSize = size + 'px'; }
+
+      // Y SI NI A 15 PX ENTRA, SE PARTE. Es el último recurso, y es lo honesto: a esa altura la
+      // opción es perder letras o partir la palabra, y una palabra a la que le falta la última
+      // letra se lee como un error de dedo, no como un nombre que no cabía. Sin esto el bucle
+      // se rendía en silencio: «Municipalidadísima» se queda en 126 px contra 102 y sigue
+      // recortada. El tope de 28 caracteres del manifiesto no alcanza, porque lo que no cabe
+      // es el ancho de UNA palabra, no el largo del nombre.
+      if (b.scrollWidth > b.clientWidth) b.style.overflowWrap = 'anywhere';
+    });
+    queQuepaElNombre();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queQuepaElNombre);
+
     if (gn.open) {
       const m = ms.find(x => x.name === gn.open);
       if (!m) { gn.nav('home'); return; }
