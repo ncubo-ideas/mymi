@@ -748,6 +748,44 @@ public class MainActivity : Activity
 		}
 	}
 
+	// ¿YA ESTÁ EN LA PANTALLA DE INICIO? Lo pregunta el detalle antes de dibujar el botón, porque
+	// pedir el pin de algo que ya está fijado no da error ni aviso: Android acepta el pedido y no
+	// pasa nada visible, así que la persona toca de nuevo creyendo que falló (Geaninna,
+	// 2026-09-21).
+	//
+	// LA RESPUESTA ES DEL LAUNCHER, NO NUESTRA. `PinnedShortcuts` devuelve lo que el launcher
+	// anotó. Medido en un A54 con Android 16: borrar el icono a mano SÍ lo saca del registro, y
+	// lo que queda fijado sigue estando; ahí esto dice la verdad. Pero hay launchers -- el del
+	// Honor -- que quitan el icono sin reportarlo, y ahí el registro afirmaría uno que no está.
+	// Por eso el detalle NO deshabilita el botón cuando esto contesta que sí: dice que ya está y
+	// deja cómo volver a ponerlo, que es lo único honesto en los dos casos.
+	private string AccesosFijados()
+	{
+		// Las mismas dos guardas que fijar, y por la misma razón: si el teléfono no sabe de
+		// accesos directos no hay registro que leer, y `ok:false` con la lista vacía deja al
+		// detalle en su camino normal en vez de afirmar nada.
+		if (!OperatingSystem.IsAndroidVersionAtLeast(26)) return SinFijados();
+
+		var gestor = (Android.Content.PM.ShortcutManager?)GetSystemService(ShortcutService);
+		if (gestor is null || !gestor.IsRequestPinShortcutSupported) return SinFijados();
+
+		try
+		{
+			string[] ids = [.. (gestor.PinnedShortcuts ?? [])
+				.Select(s => s.Id ?? "")
+				.Where(i => i.Length > 0)];
+			return JsonSerializer.Serialize(new { ok = true, ids });
+		}
+		catch (Exception ex)
+		{
+			Log($"accesos fijados: {ex.GetType().Name}: {ex.Message}");
+			return SinFijados();
+		}
+	}
+
+	private static string SinFijados() =>
+		JsonSerializer.Serialize(new { ok = false, ids = Array.Empty<string>() });
+
 	private static string Primero(params string[] cuales)
 	{
 		foreach (string c in cuales) if (!string.IsNullOrWhiteSpace(c)) return c.Trim();
@@ -899,6 +937,10 @@ public class MainActivity : Activity
 					// que se fija apunta a ELLA, y porque el diálogo que Android muestra es del
 					// sistema y hay que estar en primer plano para verlo.
 					"fijar" => host.FijarAcceso(req.GetProperty("module").GetString() ?? ""),
+					// Y LO QUE EL LAUNCHER YA TIENE ANOTADO, que el detalle pregunta antes de
+					// dibujar el botón. También necesita la Activity, porque el ShortcutManager
+					// sale de un servicio del sistema pedido con este contexto.
+					"fijados" => host.AccesosFijados(),
 					// The document picker is the platform's: the page asks, the Activity opens it,
 					// and what she picks comes back through OnActivityResult into the enrollment.
 					"altaArchivo" => host.PickModuleFile(),

@@ -1000,6 +1000,14 @@ const gn = {
   // se muestra, no cuando ella acepta, y en MIUI hay además un permiso propio que puede tragarse
   // el icono en silencio. Por eso el texto dice lo que Gnothi hizo -- pedirlo -- y no promete que
   // el icono esté.
+  // LO QUE EL LAUNCHER YA TIENE ANOTADO. Se pregunta dos veces por apertura del detalle -- el
+  // rótulo del botón y la nota de abajo -- y eso está bien: es un servicio del sistema leído en
+  // memoria, no una consulta al módulo, y una caché acá habría que invalidarla justo cuando la
+  // persona vuelve de la pantalla de inicio, que es el momento en que más importa acertar.
+  yaFijado(name) {
+    const r = gn.call('fijados') || {};
+    return !!(r.ok && r.ids && r.ids.indexOf('modulo:' + name) >= 0);
+  },
   fijar(name) {
     const b = document.getElementById('fijar');
     const dicho = document.getElementById('fijar-dicho');
@@ -1750,8 +1758,15 @@ const gn = {
               + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
               + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
               + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
-              + '<span>' + esc(T('detalle.fijar.agregar')) + '</span></button>'
-              + '<p class="fijar-dicho" id="fijar-dicho"></p>'
+              // EL VERBO CAMBIA SI YA ESTÁ. «Agregar» sobre algo que ya está agregado es lo que
+              // hacía que tocarlo pareciera roto: ahora dice volver a ponerlo, que es lo que el
+              // botón de verdad hace en ese caso.
+              + '<span>' + esc(T(gn.yaFijado(m.name) ? 'detalle.fijar.otra-vez' : 'detalle.fijar.agregar')) + '</span></button>'
+              // Y LA NOTA YA VIENE ESCRITA cuando el icono está: el mismo párrafo que después
+              // usa el resultado del pedido, para no sumar un lugar donde pueda hablar la
+              // pantalla.
+              + '<p class="fijar-dicho" id="fijar-dicho">'
+              + (gn.yaFijado(m.name) ? T('detalle.fijar.ya') : '') + '</p>'
               + '</div></div>'
             : '')
 
@@ -2179,6 +2194,8 @@ function mock(op, x) {
   // En el monitor no hay pantalla de inicio donde poner nada, y decirlo es mejor que fingir
   // que se pudo: el botón queda probable en su camino de error, que es el que más se ve.
   if (op === 'fijar') return { ok: false, razon: 'Acá no hay pantalla de inicio: esto solo funciona en el teléfono.' };
+  // Y sin pantalla de inicio no hay nada anotado: la maqueta dibuja el camino de agregar.
+  if (op === 'fijados') return { ok: false, ids: [] };
 
   // LA MAQUETA NO TIENE CATALOGO, y devuelve uno vacio a proposito en vez de inventar uno.
   //
