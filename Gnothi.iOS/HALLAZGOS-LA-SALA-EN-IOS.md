@@ -24,7 +24,7 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 | **el sustrato arranca** | ✅ **[MEDIDO]** | «la sala esta lista, hospedada por Gnothi» |
 | **un módulo real carga** | ✅ **[MEDIDO]** | `examenes`, 506 ms, motor prestado, 2 consultas y 7 vistas |
 | **la comprobación pasa** | ✅ **[MEDIDO]** | `matches:true`, y **en la primera instalación** (§3) |
-| **la frontera entre journals** | ✅ **[MEDIDO]** | `"vecinos":[]`, `"retenidos":0` |
+| **la frontera entre journals** | ✅ **[MEDIDO]** | con DOS módulos y en los dos sentidos (§8) |
 | **la cara abre y pinta dato real** | ✅ **[MEDIDO]** | `vista`, `entregar` y `guardar` por la sala (§6) |
 | **el arranque entra en el tope** | ✅ **[MEDIDO]** | ~0,9 s contra 10 s. Con la Mac cargada, no (§4) |
 | **memoria** | ⛔ **[NO MEDIDO]** | pide Instruments y un iPhone de verdad (§5) |
@@ -297,12 +297,72 @@ este método las rompía en el arranque siguiente.
 
 ---
 
+## 8 · El desalojo, con dos módulos y en los dos sentidos
+
+**Esto es lo que la sala existe para sostener**, y hasta acá estaba medido con UN solo módulo
+cargado — donde no hay nada que filtrar y la prueba no puede fallar. Con `examenes` y `compras` los
+dos forzados a la sala (`echo examenes,compras > .../Library/Application Support/sala`):
+
+### Ida — `examenes` sale, `compras` entra **[MEDIDO]**
+
+```
+11:46:22.011  sala/desalojar examenes: {"ok":true,"vaciada":true,"cerrado":"IDisposable",
+              "desmontada":"vaciada: 3 archivos, 4708 bytes que el proximo modulo ya no ve"}
+11:46:22.015  sala/guardar examenes: examenes/meta.bin · 48 bytes
+11:46:22.016  sala/guardar examenes: examenes/journal/journal_000001.bin · 4630 bytes
+11:46:22.017  sala/guardar examenes: examenes/index/index.bin · 30 bytes
+11:46:22.017  sala: examenes soltado, ya no se sirve por el origen
+11:46:22.098  sala/cargar compras: ok · 71 ms · ComprasSurface · borde prestado
+              montado {archivos:0, bytes:0} · retenidos 1 · vecinos []
+```
+
+El orden importa y es el que el diseño promete: **primero se guarda lo que el módulo escribió,
+después se suelta la ranura, y recién entonces entra el siguiente.** Si se guardara después, lo
+asentado se evaporaría al vaciarle la carpeta.
+
+### Vuelta — `compras` sale, `examenes` vuelve **[MEDIDO]**
+
+```
+11:47:55.138  sala/desalojar compras: {"ok":true,"vaciada":true,
+              "desmontada":"vaciada: 0 archivos, 0 bytes que el proximo modulo ya no ve",
+              "escrituras":[]}
+11:47:55.216  sala/cargar examenes: ok · 56 ms · montado {archivos:3, bytes:4708}
+              barrido {carpetas:1, bytes:0, vaciadas:true, borradas:1} · retenidos 2 · vecinos []
+```
+
+**`vecinos: []` en las dos cargas.** Ninguno de los dos ve un byte del otro, y el `barrido` dice que
+lo que quedó de la carga anterior fueron carpetas de **cero bytes** — el residuo conocido y acotado
+que `SalaShell.Vecindario` deja pasar a propósito.
+
+**Y el journal sobrevivió al desalojo:** `examenes` vuelve con sus 3 archivos y 4.708 bytes, los
+mismos que se vaciaron al salir.
+
+### De regalo, `cursor` **[MEDIDO]**
+
+```
+11:47:55.305  examenes: la cara pidio desde 0; la superficie va en 217
+11:47:55.700  examenes: pull after=217 -> 159 bytes
+```
+
+La superficie recordó dónde iba **a través del desalojo**, así que el cartero pidió 159 bytes en vez
+de bajar el historial entero. Eso es `SalaShell.Cursor` andando, y es lo que hace que un refresco no
+cueste lo mismo que una instalación.
+
+### Lo que NO es gratis, y conviene mirarlo
+
+`retenidos` pasó de 1 a 2. Es el número de cascarones que el sustrato retiene **a propósito**: si
+los soltara, su finalizador despertaría a escribir en una carpeta borrada y eso mata el runtime
+—medido en Android, «.NET runtime already exited with 255»—. El precio es memoria, y crece con cada
+carga de la sesión, no con cada módulo instalado. **En iOS eso todavía no se midió** (§5): el motor
+corre en otro proceso y pide Instruments.
+
+---
+
 ## 5 · Lo que queda sin medir
 
-- **`desalojar` y `cursor`** por la sala en iOS. `cargar`, `repertorio`, `vista`, `entregar` y
-  `guardar` ya están (§3 y §6); el desalojo solo se ejercita con un segundo módulo.
-- **El cruce entre dos módulos**, que es donde se paga el cambio de ranura (~200 a 450 ms medidos
-  en Android). Hace falta un segundo bundle híbrido.
+- **El COSTO del cruce.** El cambio de ranura está medido en Android (~200 a 450 ms) y acá se vio
+  que un `cargar` sale en 56 a 71 ms con el documento tibio, pero nadie cronometró una pregunta que
+  toque los dos módulos en el mismo turno, que es el caso que paga.
 - **Memoria.** En iOS el motor web corre en `com.apple.WebKit.WebContent`, o sea **otro proceso**:
   medirla pide Instruments contando los dos, no un `dumpsys`. Y el simulador no tiene presupuesto
   de jetsam, así que el número solo significa algo en un iPhone de verdad.
