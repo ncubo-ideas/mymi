@@ -7,7 +7,9 @@
 
   "comun": {
     "contestadoAl": "Answered as of {dia}.",
-    "deTotal": "{cuantos} of {total}"
+    "deTotal": "{cuantos} of {total}",
+    "errorInesperado": "Something went wrong.",
+    "recargar": "Reload"
   },
 
   "porQuePagoMas": {

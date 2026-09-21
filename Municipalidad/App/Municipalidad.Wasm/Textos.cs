@@ -134,6 +134,12 @@ namespace Municipalidad.Wasm
 		/// guionado. Se fija DESPUES de negociar y nunca en el HTML: el documento se sirve igual para
 		/// los dos idiomas, asi que una etiqueta escrita a mano seria falsa para la mitad de quienes lo
 		/// abren.
+		/// <para>
+		/// De la misma pasada se reemplazan los textos de la cascara -- el aviso de error con su
+		/// enlace -- que estan escritos a mano en el HTML. Se ven cuando la app NO arranco, que es
+		/// justo cuando no hay catalogo con que decirlos: por eso nacen en el idioma del registro y
+		/// esto los reemplaza, y quien nunca llega hasta aca ve la caida de siempre.
+		/// </para>
 		/// </summary>
 		private async Task FijarElIdiomaDelDocumentoAsync(IJSRuntime js)
 		{
@@ -143,6 +149,9 @@ namespace Municipalidad.Wasm
 					await js.InvokeAsync<IJSObjectReference>("import", "./idioma-interop.js");
 
 				await modulo.InvokeVoidAsync("fijarIdiomaDelDocumento", Etiqueta);
+
+				await modulo.InvokeVoidAsync("fijarTextosDeLaCascara",
+					this["comun.errorInesperado"], this["comun.recargar"]);
 			}
 			catch (JSException)
 			{
