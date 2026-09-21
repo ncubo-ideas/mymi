@@ -54,7 +54,8 @@ window.Puente = (function () {
                         'no hay puente, y sin puente no tiene a quién preguntarle',
         sinPuenteCorto: 'sin puente: esta pantalla no corre dentro de Mymi',
         pidiendo:       'pidiéndole a Mymi que traiga lo nuevo…',
-        alDia:          'al día, en {ms} ms · {dicho}',
+        alDia:          'al día',
+        alDiaCon:       'al día · {dicho}',
         noAlcance:      'no se pudo llegar a tu institución: revisá tu conexión y volvé a intentar',
         noSePudo:       'no se pudo traer lo nuevo: volvé a intentar en un momento'
     };
@@ -163,12 +164,23 @@ window.Puente = (function () {
             var t0 = Date.now();
             pendientes[id] = {
                 resolver: function (json) {
-                    var dicho = json;
+                    // SOLO UNA FRASE DEL MODULO, Y SI NO HAY, NINGUNA.
+                    //
+                    // Antes, cuando la respuesta no traía `resultado`, se mostraba el JSON tal
+                    // cual: Monteverde decía «al día, en 19 ms · {"events":[],"last":0}» en la
+                    // pantalla de la persona. Un payload no es una frase, y los milisegundos
+                    // tampoco le dicen nada -- la misma razón por la que se fueron de la línea
+                    // roja. Los dos van a la consola.
+                    var dicho = null;
                     try {
                         var r = JSON.parse(json);
-                        dicho = r && r.resultado ? r.resultado : json;
-                    } catch (e) { /* se muestra crudo */ }
-                    decir(dice('alDia', { ms: Date.now() - t0, dicho: String(dicho).slice(0, 200) }));
+                        if (r && typeof r.resultado === 'string' && r.resultado) dicho = r.resultado;
+                    } catch (e) { /* no era JSON: menos todavía es una frase */ }
+
+                    if (window.console && console.log)
+                        console.log('Mymi · al día en ' + (Date.now() - t0) + ' ms: ' + String(json).slice(0, 400));
+
+                    decir(dicho ? dice('alDiaCon', { dicho: String(dicho).slice(0, 200) }) : dice('alDia'));
                     resolver(json);
                 },
                 rechazar: function (e) {
