@@ -384,6 +384,12 @@
 
   "ajustes.proveedor.apple":      { "es": "Apple Intelligence (en esta Mac)", "en": "Apple Intelligence (on this Mac)" },
   "ajustes.apple.sin-llave":      { "es": "Es el modelo de Apple Intelligence de esta Mac: no necesita llave y nada sale del equipo.", "en": "This is the Apple Intelligence model on this Mac: it needs no key and nothing leaves the machine." },
+  "ajustes.apple.solo-mac":       { "es": "Apple Intelligence solo existe en macOS.", "en": "Apple Intelligence only exists on macOS." },
+  "ajustes.apple.sin-puente":     { "es": "Falta la librería del puente: corre Gnothi.Desktop/armar-modelo.sh en una Mac con Xcode 26.", "en": "The bridge library is missing: run Gnothi.Desktop/armar-modelo.sh on a Mac with Xcode 26." },
+  "ajustes.apple.contesta":       { "es": "El modelo de esta Mac contesta.", "en": "This Mac's model answers." },
+  "ajustes.apple.no-genera":      { "es": "Esta Mac dice tener modelo pero no genera: hace falta una versión más nueva de macOS.", "en": "This Mac says it has a model but does not generate: it needs a newer macOS." },
+  "ajustes.apple.sin-modelo":     { "es": "Esta Mac no tiene modelo propio.", "en": "This Mac has no model of its own." },
+  "ajustes.apple.fallo":          { "es": "No se pudo preguntarle al modelo de esta Mac: {detalle}", "en": "Could not ask this Mac's model: {detalle}" },
   "asistente.sub.apple":          { "es": "Este modelo corre en esta Mac: nada sale del equipo.", "en": "This model runs on this Mac: nothing leaves it." },
 
   "ajustes.local":                { "es": "Este proveedor es local — no necesita llave, nada sale de la máquina.", "en": "This provider is local — it needs no key, nothing leaves the machine." },

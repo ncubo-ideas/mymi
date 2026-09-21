@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Gnothi.Host;
 using Gnothi.iOS;
 
 namespace Gnothi.Desktop;
@@ -50,12 +51,27 @@ internal static class AppleModel
 		return works.Value;
 	}
 
+	/// <summary>Por que no hay modelo de Apple aca, dicho en el idioma de la persona.</summary>
+	///
+	/// EL ESTADO ES UN CONJUNTO CERRADO y la frase la dice el catalogo: ModelFoundation.Diagnosis()
+	/// redacta para un telefono, y su texto no se puede adaptar a una Mac reemplazando palabras.
 	public static string Diagnosis()
 	{
-		if (!OperatingSystem.IsMacOS()) return "Apple Intelligence solo existe en macOS.";
-		if (!File.Exists(Path)) return "falta la libreria del puente: correr Gnothi.Desktop/armar-modelo.sh en una Mac con Xcode 26.";
-		try { return ModelFoundation.Diagnosis().Replace("telefono", "equipo"); }
-		catch (Exception e) { return $"{e.GetType().Name}: {e.Message}"; }
+		if (!OperatingSystem.IsMacOS()) return Textos.T("ajustes.apple.solo-mac");
+		if (!File.Exists(Path)) return Textos.T("ajustes.apple.sin-puente");
+		try
+		{
+			return ModelFoundation.State() switch
+			{
+				2 => Textos.T("ajustes.apple.contesta"),
+				1 => Textos.T("ajustes.apple.no-genera"),
+				_ => Textos.T("ajustes.apple.sin-modelo"),
+			};
+		}
+		catch (Exception e)
+		{
+			return Textos.T("ajustes.apple.fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
+		}
 	}
 
 	public static Gnothi.Assistant.IModel Create(string instructions) => new ModelFoundation(instructions);
