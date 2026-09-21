@@ -1,0 +1,39 @@
+<!-- CAP 8 · SALIDA Y HOSTING -->
+  <section class="anchor" id="cap8">
+    <h2>8 · Salida y hosting</h2>
+    <p class="chapter-meta">Cómo sale la información del actor hacia tu API, y cómo vive el actor detrás de tu servidor.</p>
+
+    <p>El actor corre <strong>detrás</strong> de tu servidor: en cada request que invoca lógica de negocio, tu endpoint le habla a un actor y devuelve lo que responde. Veamos las dos caras: la salida y el hospedaje.</p>
+
+    <h3>8.1 · La salida: JSON listo para servir</h3>
+    <p>Una query devuelve la salida de <code>print</code> ya como <strong>JSON</strong>; tu endpoint puede devolverla tal cual. Varios valores etiquetados en una sola query salen como un objeto:</p>
+    <pre><span class="tag">DSL</span><code>{ print total <span class="s">'total'</span>, total * 0.13m <span class="s">'iva'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"total":250,"iva":32.5}</code></pre>
+    <p>Para un valor <strong>tipado</strong> que tu C# va a usar (no a serializar), recuerda usar <code>Out</code> (Cap. 4), no parsear este texto.</p>
+
+    <h3>8.2 · El hosting: una fachada estable sobre el sustrato</h3>
+    <p>Hospedar un actor es crearlo, decirle dónde persiste y ponerlo a atender. En el bingo real, una fachada (<code>FestivalJournal</code>) envuelve el sustrato (<code>StageV2</code>) para que los cientos de sitios que le hablan al diario no dependan de sus detalles:</p>
+    <pre><span class="tag real">C# · real</span><code><span class="k">new</span> StageV2(WhoAmI(), actorName, libraries);   <span class="c">// el sustrato hospeda al actor</span>
+_stage.ConfigureStorage(kind, <span class="s">"path="</span> + _dir);   <span class="c">// donde persiste</span>
+_stage.PromoteToDirector(force: <span class="k">true</span>);          <span class="c">// listo para escribir</span></code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Envuelve el acceso al actor en una <strong>fachada fluida</strong> propia (como <code>FestivalJournal</code>). Es lo que permite que la plataforma cambie por debajo sin tocar los cientos de llamadas <code>Using(...).PerformCommand()</code> de tu app. La forma de hablarle al actor es un contrato estable.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>El bingo le “presta voz” al diario con un <em>logger</em> propio (<code>JournalVoice</code>, que implementa <code>IPuppeteerLogger</code>): enruta los mensajes del sustrato hacia la interfaz de usuario. Es el patrón general para observar lo que hace el actor sin acoplarte a sus internos.</p>
+    </aside>
+
+    <h3>8.3 · Un dominio, muchos anfitriones</h3>
+    <p>El mismo actor puede vivir detrás de una API REST, dentro de una app móvil o en una CLI, sin cambiar su lógica. Es la promesa de nCubo hecha práctica: <em>«un dominio puede presentarse en distintos clientes, runtimes y topologías sin convertirse en otro sistema»</em>. En el bingo, el <em>mismo</em> dominio es organizador (Director), colaborador (réplica) y jugador (suscriptor) — tres anfitriones, un sistema.</p>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Una query devuelve <strong>JSON</strong> listo para servir; para valores tipados, <code>Out</code>.</li>
+      <li>Hospedar = crear el actor + <code>ConfigureStorage</code> + atender; envuélvelo en una <strong>fachada estable</strong>.</li>
+      <li>Un <em>logger</em> (<code>IPuppeteerLogger</code>) te da observabilidad sin acoplarte al sustrato.</li>
+      <li>El mismo dominio sirve a <strong>muchos anfitriones</strong> sin volverse otro sistema.</li>
+    </ul>
+    <p>Con esto cierras la Parte I: sabes escribir, consultar, guardar y hospedar un actor. La <strong>Parte II</strong> abre la puerta a los sistemas de varios actores — reacciones, <code>tell</code>, despacho de mensajes y sagas — donde un actor provoca trabajo en otro sin acoplarse a él.</p>
+  </section>
