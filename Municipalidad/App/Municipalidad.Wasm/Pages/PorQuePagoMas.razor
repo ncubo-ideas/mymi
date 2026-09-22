@@ -3,7 +3,7 @@
 @inject Textos textos
 @using System.Linq
 
-<PageTitle>Cambios en mis cobros · @Textos.TituloDelModulo</PageTitle>
+<PageTitle>@textos["porQuePagoMas.encabezado"] · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -13,10 +13,10 @@ else
 {
     <div class="fondo-noche">
         <div class="titulo-con-volver">
-            <a class="volver" href="" aria-label="Volver a Inicio">&larr;</a>
-            <h1>Cambios en mis cobros</h1>
+            <a class="volver" href="" aria-label="@textos["nav.volverAInicio"]">&larr;</a>
+            <h1>@textos["porQuePagoMas.encabezado"]</h1>
         </div>
-        <p class="subtitulo-pagina">Qué cambió entre tus comprobantes y qué puede explicarlo.</p>
+        <p class="subtitulo-pagina">@textos["porQuePagoMas.subtitulo"]</p>
 
         @if (variacion.AlgunoSePuedeVer)
         {
@@ -38,7 +38,7 @@ else
         @{ var conCambios = variacion.Rubros.Where(r => r.SePuedeVer).ToList(); }
         @if (conCambios.Count > 0)
         {
-            <h2>Cobros con cambios</h2>
+            <h2>@textos["porQuePagoMas.cobrosConCambios"]</h2>
             <div class="rubros-cambio">
                 @foreach (var rubro in conCambios)
                 {
@@ -60,19 +60,19 @@ else
                                     <span class="rubro-cambio__cambio">
                                         <span class="rubro-cambio__flecha rubro-cambio__flecha--atencion">@Flecha(rubro.Proporcion)</span>
                                         <span class="rubro-cambio__porcentaje rubro-cambio__porcentaje--atencion">@textos.Porcentaje(Math.Abs(rubro.Proporcion))</span>
-                                        <span class="rubro-cambio__nota" style="margin:0">por período</span>
+                                        <span class="rubro-cambio__nota" style="margin:0">@textos["porQuePagoMas.porPeriodoSufijo"]</span>
                                     </span>
                                 }
                                 else
                                 {
                                     <span class="rubro-cambio__cambio-leve">
-                                        @Signo(rubro.Proporcion)@textos.Porcentaje(Math.Abs(rubro.Proporcion)) por período
+                                        @Signo(rubro.Proporcion)@textos.Porcentaje(Math.Abs(rubro.Proporcion)) @textos["porQuePagoMas.porPeriodoSufijo"]
                                     </span>
                                 }
                                 <span class="rubro-cambio__periodo">@NombreLegible.Periodo(rubro.Desde) &rarr; @NombreLegible.Periodo(rubro.Hasta)</span>
                                 <span class="rubro-cambio__toggle">
-                                    <span class="rubro-cambio__toggle-abrir">Ver explicación</span>
-                                    <span class="rubro-cambio__toggle-cerrar">Ocultar explicación</span>
+                                    <span class="rubro-cambio__toggle-abrir">@textos["porQuePagoMas.verExplicacion"]</span>
+                                    <span class="rubro-cambio__toggle-cerrar">@textos["porQuePagoMas.ocultarExplicacion"]</span>
                                     <span class="rubro-cambio__toggle-chevron" aria-hidden="true">&rsaquo;</span>
                                 </span>
                             </span>
@@ -89,7 +89,7 @@ else
         @if (sinDatos.Count > 0)
         {
             <section class="bloque" id="sin-datos-todavia">
-                <h2>Aún no podemos comparar</h2>
+                <h2>@textos["porQuePagoMas.aunNoPodemosComparar"]</h2>
                 <div class="rubros-cambio">
                     @foreach (var rubro in sinDatos)
                     {
@@ -99,11 +99,11 @@ else
                                 <span class="rubro-cambio__info">
                                     <span class="rubro-cambio__cabeza">
                                         <span class="rubro-cambio__nombre"><LlaveDelRubro Rubro="@rubro.Rubro" /></span>
-                                        <span class="sello">Sin historial suficiente</span>
+                                        <span class="sello">@textos["porQuePagoMas.sinHistorialSuficiente"]</span>
                                     </span>
                                     <span class="rubro-cambio__toggle">
-                                        <span class="rubro-cambio__toggle-abrir">Ver explicación</span>
-                                        <span class="rubro-cambio__toggle-cerrar">Ocultar explicación</span>
+                                        <span class="rubro-cambio__toggle-abrir">@textos["porQuePagoMas.verExplicacion"]</span>
+                                        <span class="rubro-cambio__toggle-cerrar">@textos["porQuePagoMas.ocultarExplicacion"]</span>
                                         <span class="rubro-cambio__toggle-chevron" aria-hidden="true">&rsaquo;</span>
                                     </span>
                                 </span>
@@ -121,12 +121,12 @@ else
         {
             <section class="bloque" id="el-valor-de-mi-finca">
                 <h2>@textos["porQuePagoMas.finca.titulo"]</h2>
-                <p class="explicacion-menor">Este dato puede influir en algunos cobros municipales.</p>
+                <p class="explicacion-menor">@textos["porQuePagoMas.finca.influye"]</p>
 
                 <details class="disclosure-secundaria">
                     <summary class="disclosure-secundaria__resumen">
                         <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
-                        <span class="disclosure-secundaria__texto">Ver detalle de tus fincas</span>
+                        <span class="disclosure-secundaria__texto">@textos["porQuePagoMas.finca.verDetalle"]</span>
                         <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                     </summary>
                     <div class="disclosure-secundaria__contenido">
@@ -150,11 +150,11 @@ else
 
         <p class="nota">
             @textos["porQuePagoMas.pie"]
-            <a href="que-se-me-vence">pagos y vencimientos</a>.
+            <a href="que-se-me-vence">@textos["porQuePagoMas.enlaceVencimientos"]</a>.
         </p>
 
         <details class="plomeria">
-            <summary>¿Cómo detectamos estos cambios?</summary>
+            <summary>@textos["porQuePagoMas.comoDetectamos"]</summary>
             <NumeroSinFirmar Dicho="@textos.Con("porQuePagoMas.umbrales",
                 ("salto", textos.Porcentaje(variacion.UmbralDeSalto)),
                 ("ruido", textos.Porcentaje(variacion.Ruido)))" />

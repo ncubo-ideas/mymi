@@ -553,21 +553,10 @@
         var l = r.lectura || {}, t = r.hechos || {};
         var n = t.mediciones || (r.presencia || {}).mediciones || (r.constancia || {}).mediciones || 1;
 
-        // LA FRASE ES LA DE LA APP SUELTA (TextoSinTendencia, MisExamenes.razor:1266), y allá se
-        // usa A PROPOSITO en vez de `ParaSonia`: con una sola medicion la lectura del dominio
-        // habla de un valor, no de que falta historia. Son DOS frases, no una: con mas de una
-        // medicion y sin serie igual, prometer «tu proximo resultado» seria mentir.
-        var frase = n <= 1 ? I.texto('sinTendencia.conUna') : I.texto('sinTendencia.conVarias');
-
-        return '<div class="inicio-sintendencia-tarjeta">' +
-            '<div class="inicio-sintendencia-cuerpo">' +
-                '<p class="inicio-sintendencia-nombre">' + texto(nombreDe(r, l, t)) + '</p>' +
-                '<div class="inicio-sintendencia-fila">' +
-                    '<span class="inicio-sintendencia-valor">' + cifraDe(r, t) + '</span>' +
-                    '<span class="chip chip--repetir">' + texto(mediciones(n)) + '</span>' +
-                '</div>' +
-                '<p class="inicio-sintendencia-texto">' + texto(frase) + '</p>' +
-            '</div>' +
+        return '<div class="inicio-sintendencia-item">' +
+            '<p class="inicio-sintendencia-nombre">' + texto(nombreDe(r, l, t)) + '</p>' +
+            '<p class="inicio-sintendencia-valor">' + cifraDe(r, t) + '</p>' +
+            '<span class="chip chip--repetir">' + texto(mediciones(n)) + '</span>' +
         '</div>';
     }
 
@@ -639,7 +628,8 @@
 
         mostrar('sintendencia', g.sintendencia.length,
             '<p class="inicio-sintendencia-rotulo">' + texto(I.texto('sinTendencia.rotulo')) + '</p>' +
-            g.sintendencia.map(tarjetaSinTendencia).join(''));
+            '<p class="inicio-sintendencia-intro">' + texto(I.texto('sinTendencia.intro')) + '</p>' +
+            '<div class="inicio-sintendencia-grid">' + g.sintendencia.map(tarjetaSinTendencia).join('') + '</div>');
     }
 
     // ---------------------------------------------------------------- el historial

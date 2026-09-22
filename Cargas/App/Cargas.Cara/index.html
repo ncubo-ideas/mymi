@@ -42,17 +42,10 @@
 <header class="capo">
     <div class="capo-dentro">
         <div class="marca">
-            <!-- El surtidor con su haz, solo trazo, nunca relleno. El mismo SVG de la app. -->
-            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
-                 fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
-                <path d="M16 34 L18 12 h4 L24 34 z" />
-                <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
-                <path d="M26 8 l6 -2.5 M26 11 l7 0" />
-            </svg>
-            <div>
-                <div class="marca-nombre">Estaciones Faro</div>
-                <div class="marca-claim">Tu camino, claro</div>
-            </div>
+            <!-- El logo oficial, como imagen -no se recrea con CSS-. El mismo archivo de la
+                 app: el nombre vive en el alt y no se repite al lado. -->
+            <img class="marca-logo" src="assets/logo-estaciones-faro.png" alt="Estaciones Faro" />
+            <span class="marca-claim">Tu camino, claro</span>
         </div>
 
         <span class="placa" id="placa-fija" hidden></span>

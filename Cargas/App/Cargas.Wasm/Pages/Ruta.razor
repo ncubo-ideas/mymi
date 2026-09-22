@@ -52,7 +52,7 @@
     <div class="ruta-pendientes">
         <div class="ruta-pendientes-texto">
             <p class="ruta-pendientes-titulo">
-                @faltantesPorCarga.Count @(faltantesPorCarga.Count == 1 ? "carga necesita" : "cargas necesitan") revisión
+                @faltantesPorCarga.Count @(faltantesPorCarga.Count == 1 ? "carga necesita" : "cargas necesitan") @Texto["ruta.necesitaRevision"]
             </p>
             @if (completitud.Expresada.Length > 0)
             {
@@ -245,12 +245,12 @@ else
                         @if (tarea is not null)
                         {
                             <div class="parada-tarea" @key="@($"tarea-{tarea.Transaccion}-{tarea.ClaveDeLoQueFalta}")">
-                                <span class="parada-tarea-eyebrow">Completá esta carga</span>
+                                <span class="parada-tarea-eyebrow">@Texto["ruta.completaEstaCarga"]</span>
                                 @if (tarea.ClaveDeLoQueFalta == ElKilometraje)
                                 {
-                                    <p class="parada-tarea-titulo">Falta el kilometraje</p>
+                                    <p class="parada-tarea-titulo">@Texto["ruta.faltaElKilometrajeTitulo"]</p>
                                     <p class="parada-tarea-texto">
-                                        Ingresá el kilometraje@(tarea.QueDesbloquea.Length > 0
+                                        @Texto["ruta.ingresaElKilometraje"]@(tarea.QueDesbloquea.Length > 0
                                             ? $" para poder calcular {tarea.QueDesbloquea}" : "").
                                     </p>
                                     @* VACÍO ES VACÍO, no «0». El campo sin valor mostraba un cero,

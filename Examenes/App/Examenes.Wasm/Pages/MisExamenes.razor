@@ -359,8 +359,8 @@ else
     @if (enRango.Analitos > 0)
     {
         int cuantosParaSeguir = CuantosMerecenAtencion();
-        <section class="inicio-resumen" aria-label="Tus resultados en resumen" @key="@($"resumen-{estado.Refrescos}")">
-            <p class="inicio-resumen-rotulo">Tus resultados en resumen</p>
+        <section class="inicio-resumen" aria-label="@textos["resumen.titulo"]" @key="@($"resumen-{estado.Refrescos}")">
+            <p class="inicio-resumen-rotulo">@textos["resumen.titulo"]</p>
             <div class="inicio-resumen-fila">
                 <div class="inicio-resumen-item">
                     <svg class="inicio-resumen-icono" viewBox="0 0 24 24" aria-hidden="true">
@@ -369,7 +369,7 @@ else
                               stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                     <span class="inicio-resumen-cifra">@enRango.EnSuRango</span>
-                    <span class="inicio-resumen-etiqueta">en rango</span>
+                    <span class="inicio-resumen-etiqueta">@textos["tranquilo.enRango"]</span>
                 </div>
                 <span class="inicio-resumen-divisor" aria-hidden="true"></span>
                 <div class="inicio-resumen-item">
@@ -380,7 +380,7 @@ else
                         <circle cx="12" cy="12" r="1.6" fill="#1b1b1a" stroke="none" />
                     </svg>
                     <span class="inicio-resumen-cifra">@cuantosParaSeguir</span>
-                    <span class="inicio-resumen-etiqueta">para seguir</span>
+                    <span class="inicio-resumen-etiqueta">@textos["resumen.paraSeguir"]</span>
                 </div>
                 <span class="inicio-resumen-divisor" aria-hidden="true"></span>
                 <div class="inicio-resumen-item">
@@ -390,7 +390,7 @@ else
                         <circle cx="12" cy="16.6" r="1.15" fill="#fc2824" stroke="none" />
                     </svg>
                     <span class="inicio-resumen-cifra">@fueraDeRango</span>
-                    <span class="inicio-resumen-etiqueta">fuera de rango</span>
+                    <span class="inicio-resumen-etiqueta">@textos["resumen.fueraDeRango"]</span>
                 </div>
             </div>
         </section>
@@ -999,10 +999,7 @@ else
     {
         <section class="inicio-sintendencia">
             <p class="inicio-sintendencia-rotulo">@textos["sinTendencia.rotulo"]</p>
-            <p class="inicio-sintendencia-intro">
-                Todavía tienen pocas mediciones. Con la próxima de cada uno vamos a poder
-                empezar a mostrarte cómo vienen cambiando.
-            </p>
+            <p class="inicio-sintendencia-intro">@textos["sinTendencia.intro"]</p>
             <div class="inicio-sintendencia-grid">
                 @foreach (TendenciaDeAnalito t in sinTendenciaAnalitos)
                 {

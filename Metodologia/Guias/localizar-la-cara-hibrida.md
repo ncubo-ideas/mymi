@@ -136,7 +136,7 @@ Filtrá por el url del módulo o enganchás la cáscara. Para volver al idioma d
 
 **1 · Campos que la superficie no manda.** La cara leía `h.stays.stays`, `h.plate.plate` y
 `x.cuando`, y pintaba vacío **para siempre, sin un error en consola**. Las estadías del taller y la
-placa de Sotavento llevaban días sin aparecer. Antes de leer un campo, **leé el record en
+placa de Sotaventos llevaban días sin aparecer. Antes de leer un campo, **leé el record en
 `Vistas/`**, no lo que parece razonable.
 
 **2 · Códigos del dominio que no son los que parecen.** En Exámenes son `progreso-hacia-meta` y
@@ -155,7 +155,7 @@ app, byte por byte. Entresacar reglas a mano es decidir cómo se ve ella. Lo pro
 
 **5 · La marca vive en la app suelta.** La foto y la tipografía están en
 `<X>.Wasm/wwwroot/brand/`. `armar-bundle.ps1` completa desde ahí lo que la cara no trae, y **declara
-la fuente sólo si el archivo quedó en el paquete**: antes Faro y Sotavento nombraban una tipografía
+la fuente sólo si el archivo quedó en el paquete**: antes Faro y Sotaventos nombraban una tipografía
 que no viajaba.
 
 **6 · Al localizar, no arrastres el texto viejo de la cara.** Al localizar Delfos, el saludo del hero

@@ -57,7 +57,7 @@ de esta guía son haberse saltado este paso.
 | categoría | ejemplo | ¿se traduce? | regla |
 |---|---|---|---|
 | **UI propia de la carátula o del Host** | *"Lo que falta"*, *"Agregar"*, *"Tus instituciones"* | **sí** | 10, 11 |
-| **Dato del journal** | *"leche"*, *"Bienes inmuebles"*, *"Sotavento Motors"* | **no** | 3 |
+| **Dato del journal** | *"leche"*, *"Bienes inmuebles"*, *"Sotaventos Motors"* | **no** | 3 |
 | **Voz de la institución** | *"La Guaria y vos"*, `about.description` | **no** | 4 |
 | **Frase que compone el dominio** | *"En bienes-inmuebles, un período pasó de 20 000 en 2024-T2 a…"* | **sí** | 5, 6, 7 |
 
