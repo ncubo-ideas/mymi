@@ -30,6 +30,7 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 | Teléfono, 2026-09-17 | iPhone 17 Pro, iOS 26.6.2, **con Apple Intelligence** — prestado por una tarde |
 | Simuladores | iPhone 17 Pro / iOS 26.2 y iPhone 17 Pro / iOS 26.5 |
 | Mac | arm64, macOS 26.5.2, Xcode 26.6, Apple Intelligence **activo** |
+| Mac, 2026-09-21 | M2 8 GB, **macOS 27.0**, Xcode 27, aparato y Siri en inglés, **Siri AI activa** (lista de espera pasada), el spike con destino macOS — §14 |
 | Datos | los cinco montos de `Facturas.swift` (los del spike de Android) y los cinco analitos de `Examenes.swift`, que salen del guion sembrado de Examenes — el expediente de Sonia, no inventados |
 
 ---
@@ -52,6 +53,10 @@ filas de Siri: ahí Apple Intelligence estaba **apagado** por el cruce de idioma
 | | t5b · Spotlight por analito (`colesterol`) | ✅ en el 13 Pro · ❌ en el 17 Pro, **sin aislar** — §13 | ambos |
 | | t6b · Spotlight por veredicto (`deseable`) | ❌ **sigue sin encontrarlo** (no depende de AI) | 17 Pro |
 | | t8b · sin nombrar la app, exámenes | ❌ búsqueda web · **sin AI activo** — §11 | 17 Pro |
+| **SIRI AI** | m1 · nombrando la app, la frase declarada | ❌ *«I couldn't find any records of your spending in Gnothi»* — §14 | **Mac 27** |
+| | m2 · nombrando la app Y la acción | ❌ *«I can't search within Gnothi directly»* — §14 | **Mac 27** |
+| | m3 · la misma intent desde Atajos | ✅ — §14 | **Mac 27** |
+| | m4 · la misma intent desde **Spotlight** | ✅ canal que el teléfono no tiene — §14 | **Mac 27** |
 | **CADENA** | t7 · la pieza existe en Atajos | ✅ 11 acciones | 17 Pro |
 | | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 | 13 Pro |
 | | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** | 13 Pro |
@@ -933,6 +938,84 @@ reciente de la app. **No se puede atribuir a ninguna**, y conviene volver a corr
 un rato desde la instalación antes de sacar conclusiones sobre el índice.
 
 ---
+
+## 14. Siri AI, medida por fin: no invoca las intents, y lo dice con todas las letras
+
+Medido el **2026-09-21** en la Mac M2 (8 GB) con **macOS 27.0**, el aparato y Siri en inglés, Apple
+Intelligence encendido y **Siri AI activa** tras la lista de espera. Es la primera corrida de este
+spike con Siri AI en la cancha: las de §11 eran la Siri de siempre, y en el 13 Pro Siri AI no existe.
+
+**Cómo se pudo.** Siri AI necesita una app con App Intents en el aparato, y en la Mac la nuestra es
+.NET. Al spike se le dio **destino macOS** (rama `feat/siri-spike-destino-mac`): SDK automático, un
+`Gnothi.mac.entitlements` con el App Group **prefijado por equipo** (`W5SWU29W6D.group.…`, que en
+macOS es obligatorio y con el string pelado falla en silencio) y el sandbox encendido. Compila para
+las dos plataformas sin tocar una línea de UI. La app se instaló en `~/Applications` y no se corrió
+desde DerivedData: la primera prueba se hizo así y se descarta abajo.
+
+**La foto.** En la Mac nadie escribe `gnothi-instantanea.json`: la escribe `Gnothi.iOS` en el
+teléfono, y `devicectl` no llega al contenedor del grupo (`ContainerLookupErrorDomain error 7`). Se
+generó en la Mac con el **mismo `Snapshot.Write`** contra `Modulos.local` —cinco módulos, 91 959
+caracteres— y se copió al contenedor **con el Finder**: ni la terminal de Claude ni un `cp` desde
+ella pueden escribir en `~/Library/Group Containers/` (privacidad de macOS, «Operation not
+permitted»). La pantalla del spike ahora dice si la encontró y dónde la buscó, y dijo **FOTO
+ENCONTRADA**.
+
+**El registro, verificado antes de culpar a Siri.** Atajos lista las **11 acciones**, incluidas
+`Find Factura` y `Find Examen`, que son las de entidades. Ajustes › Siri muestra a Gnothi con un
+solo interruptor, «Learn from this application», encendido. O sea: el sistema conoce las intents.
+
+### Lo medido
+
+| | qué se dijo o hizo | qué pasó |
+|---|---|---|
+| m1 (descartada) | Siri AI, *«How much did I spend in Gnothi?»*, app corriendo desde DerivedData | *«I couldn't find any records of your spending in Gnothi across your emails, messages, transactions, or files.»* |
+| **m1** | lo mismo, app instalada en `~/Applications`, foto encontrada | *«I couldn't find any records of your spending in Gnothi.»* Ya reconoce «Gnothi» como algo concreto. **No invoca la App Shortcut**, y la frase es la declarada palabra por palabra: `How much did I spend in ${applicationName}`. |
+| **m2** | Siri AI, *«Use Gnothi to get the total of my invoices»* — app **y** acción nombradas | *«I can't search within Gnothi directly. However, you can open the app to find your invoices.»* y una ficha para abrir la app. |
+| **m3** | Atajos, la acción **Total of my invoices**, ▶ | ✅ *«Tenés 5 facturas registradas, por un total de ₡30.996,50.»* |
+| **m4** | **Spotlight**, escribiendo «Total of my invoices» | ✅ la acción aparece en la lista y **contesta ahí mismo**, sin abrir nada. |
+
+### Lo que esto dice
+
+1. **Siri AI en macOS 27 no invoca App Intents de terceros, ni siquiera nombrando la app y la
+   acción.** No es que elija mal: dice *«I can't search within Gnothi directly»*. La intent está
+   registrada y corre por otros dos canales (m3, m4). En el 13 Pro, la Siri clásica con la misma
+   frase **sí** disparaba la App Shortcut (t1, t2). Para el piso, esta beta es un paso atrás.
+
+2. **El techo sigue sin medirse, y cambió la razón.** t3, t4 y t8b —sin nombrar la app— no se
+   pueden medir mientras Siri AI no invoque las intents ni nombrándolas. Ya no es la versión, el
+   idioma ni la lista de espera: es lo que Siri AI hace hoy con apps de terceros.
+
+3. **Spotlight en la Mac es un canal que el teléfono no tiene.** Ejecuta la App Intent y muestra la
+   respuesta en la propia lista. Es piso sin Siri, y funciona con firma de desarrollo.
+
+4. **m3 y m4 contestan con el dato quemado**, `Facturas.swift`, no con la foto: `TotalDeFacturasIntent`
+   nunca leyó la foto, eso lo hacen las de «data for an AI». Es lo esperado del spike; se anota para
+   que nadie lea «5 facturas, ₡30.996,50» como el journal de facturas del banco (3, 19 321,50).
+
+### Lo que NO dice
+
+- Una corrida por frase. m1 se repitió dos veces con el mismo resultado; m2, una.
+- La app va firmada con **Apple Development**, no distribuida. Si Siri AI exige App Store o
+  notarización para consultar apps de terceros, no está escrito en ningún material de Apple que
+  hayamos leído, y este spike no lo distingue.
+- Un M2 con 8 GB no es el hardware «más potente» de la tabla de `IOS27.md`. Si Siri AI corre
+  recortada acá, tampoco lo distingue.
+- No se probó en un iPhone 17 Pro con iOS 27 y Siri AI. Es la corrida que falta para saber si es
+  Siri AI o Siri AI en la Mac.
+
+### Para repetirlo
+
+```bash
+cd Spikes/Lab.Siri
+xcodebuild -project Gnothi.xcodeproj -scheme Gnothi -destination 'platform=macOS' -derivedDataPath /tmp/dd build
+ditto /tmp/dd/Build/Products/Debug/Gnothi.app ~/Applications/Gnothi.app && open ~/Applications/Gnothi.app
+```
+
+La foto se genera con `Snapshot.Write` contra `Modulos.local` (una consola de tres líneas con
+`Gnothi.Host`, `Gnothi.Assistant` y `Gnothi.MobileShared/Snapshot.cs`; `Shell.Icon` hay que
+copiarlo o traer `Shell.cs` entero) y se arrastra con el Finder a
+`~/Library/Group Containers/W5SWU29W6D.group.com.ncubo.gnothi/`. La sección «El dato real» de la
+pantalla dice si la vio.
 
 ## Lo que este spike NO responde
 
