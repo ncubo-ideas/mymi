@@ -2,7 +2,7 @@
 @inject EstadoDeLaApp estado
 @inject Textos textos
 
-<PageTitle>Mi presupuesto · @Textos.TituloDelModulo</PageTitle>
+<PageTitle>@textos["cuantoApartar.encabezado"] · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -11,20 +11,18 @@
 else
 {
     <div class="fondo-noche">
-        <h1>Mi presupuesto</h1>
-        <p class="subtitulo-pagina">
-            Una guía para organizar lo que podrías apartar cada mes según lo que ya has pagado.
-        </p>
+        <h1>@textos["cuantoApartar.encabezado"]</h1>
+        <p class="subtitulo-pagina">@textos["cuantoApartar.subtitulo"]</p>
 
         <section class="bloque-protagonista" id="la-propuesta">
             @if (reserva.SePuedeProponer)
             {
                 <IconoSprite Nombre="presupuesto" />
-                <span class="cifra-etiqueta cifra-etiqueta--eyebrow">Proyección @reserva.Anio</span>
+                <span class="cifra-etiqueta cifra-etiqueta--eyebrow">@textos.Con("cuantoApartar.proyeccionDe", ("anio", reserva.Anio.ToString()))</span>
                 <span class="cifra-protagonista">@Colones.Formatear(textos, reserva.PropuestoPorMes)</span>
-                <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes</span>
+                <span class="cifra-etiqueta cifra-etiqueta--debajo">@textos["cuantoApartar.alMes"]</span>
                 <p class="cifra-secundaria" style="margin:.75rem 0 0">
-                    @Colones.Formatear(textos, reserva.ProyeccionDelAnio) estimados en el año
+                    @Colones.Formatear(textos, reserva.ProyeccionDelAnio) @textos["cuantoApartar.estimadosEnElAnio"]
                 </p>
             }
             else
@@ -38,7 +36,7 @@ else
             <details class="disclosure-secundaria">
                 <summary class="disclosure-secundaria__resumen">
                     <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
-                    <span class="disclosure-secundaria__texto">¿Cómo calculamos esta sugerencia?</span>
+                    <span class="disclosure-secundaria__texto">@textos["cuantoApartar.comoCalculamos"]</span>
                     <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                 </summary>
                 <div class="disclosure-secundaria__contenido">
@@ -48,7 +46,7 @@ else
         }
 
         <section class="bloque" id="lo-adoptado">
-            <h2>Mi reserva mensual</h2>
+            <h2>@textos["cuantoApartar.miReservaMensual"]</h2>
 
             @if (reserva.HayReservaAdoptada)
             {
@@ -57,14 +55,14 @@ else
                 </div>
 
                 <span class="cifra-protagonista">@Colones.Formatear(textos, reserva.AdoptadoPorMes)</span>
-                <span class="cifra-etiqueta cifra-etiqueta--debajo">al mes, definido por vos</span>
+                <span class="cifra-etiqueta cifra-etiqueta--debajo">@textos["cuantoApartar.alMesDefinidoPorVos"]</span>
 
                 <span class="item__meta" style="display:block;margin-top:.75rem">
-                    Le falta <strong>@Colones.Formatear(textos, reserva.Faltante)</strong>
+                    @textos["cuantoApartar.leFalta"] <strong>@Colones.Formatear(textos, reserva.Faltante)</strong>
                     (@textos.Porcentaje(reserva.ProporcionDelFaltante))
                 </span>
                 <span class="item__meta">
-                    Vence este mes: <strong>@Colones.Formatear(textos, reserva.VenceEsteMes)</strong>
+                    @textos["cuantoApartar.venceEsteMes"]: <strong>@Colones.Formatear(textos, reserva.VenceEsteMes)</strong>
                 </span>
 
                 <p class="item__frase">@reserva.DiceElFaltante</p>
@@ -74,12 +72,12 @@ else
                 <div class="estado-amigable">
                     <div class="estado-amigable__cabeza">
                         <span class="estado-amigable__icono"><IconoSprite Nombre="alcancia" /></span>
-                        <p class="estado-amigable__titulo">Aún no definiste una reserva</p>
+                        <p class="estado-amigable__titulo">@textos["cuantoApartar.sinReservaTitulo"]</p>
                     </div>
-                    <p class="estado-amigable__texto">Podés elegir cuánto querés guardar cada mes.</p>
+                    <p class="estado-amigable__texto">@textos["cuantoApartar.sinReservaCuerpo"]</p>
                     @if (!mostrarFormulario)
                     {
-                        <button type="button" @onclick="() => mostrarFormulario = true">Definir mi reserva</button>
+                        <button type="button" @onclick="() => mostrarFormulario = true">@textos["cuantoApartar.definirMiReserva"]</button>
                     }
                 </div>
                 @if (mostrarFormulario)
@@ -91,7 +89,7 @@ else
             <details class="disclosure-secundaria">
                 <summary class="disclosure-secundaria__resumen">
                     <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
-                    <span class="disclosure-secundaria__texto">Sobre este aviso</span>
+                    <span class="disclosure-secundaria__texto">@textos["cuantoApartar.sobreEsteAviso"]</span>
                     <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                 </summary>
                 <div class="disclosure-secundaria__contenido">
@@ -104,7 +102,7 @@ else
             @if (reserva.HayReservaAdoptada || mostrarFormulario)
             {
                 <div class="aporte" id="adoptar">
-                    <label for="monto-a-apartar">Definir mi reserva mensual, en colones por mes</label>
+                    <label for="monto-a-apartar">@textos["cuantoApartar.etiquetaDefinir"]</label>
                     <div class="aporte__linea">
                         <input id="monto-a-apartar" type="number" min="1" step="1" inputmode="numeric"
                                @bind="montoAAdoptar" @bind:event="oninput" disabled="@adoptando" />
@@ -113,10 +111,7 @@ else
                             @(adoptando ? "Guardando…" : "Definir")
                         </button>
                     </div>
-                    <p class="nota">
-                        Es tuyo y no de la municipalidad: nadie lo revisa y no cambia lo que te cobran. Se
-                        puede definir una vez por día, y el último monto que pongás es el que rige.
-                    </p>
+                    <p class="nota">@textos["cuantoApartar.notaDefinir"]</p>
                 </div>
             }
 
@@ -124,19 +119,19 @@ else
             {
                 @if (loQuePaso.QuedoSinRespaldo)
                 {
-                    <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="Quedó registrado y NO se guardó.">
+                    <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="@textos["cuantoApartar.sinRespaldo"]">
                         <p>@textos.Diga(loQuePaso.Apunte)</p>
                     </Aviso>
                 }
                 else if (loQuePaso.QuedoRegistrado)
                 {
-                    <Aviso Tono="quieta" Id="aporte-entro" Titulo="Listo, quedó tuyo.">
-                        <p>Tu reserva quedó registrada y guardada en tu carpeta.</p>
+                    <Aviso Tono="quieta" Id="aporte-entro" Titulo="@textos["cuantoApartar.entro"]">
+                        <p>@textos["cuantoApartar.entroCuerpo"]</p>
                     </Aviso>
                 }
                 else
                 {
-                    <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="No se registró, y ésta es la razón.">
+                    <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="@textos["cuantoApartar.rechazado"]">
                         <p>@(loQuePaso.Dice.Length > 0 ? loQuePaso.Dice : textos.Diga(loQuePaso.Apunte))</p>
                     </Aviso>
                 }

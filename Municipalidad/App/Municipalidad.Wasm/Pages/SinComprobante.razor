@@ -2,7 +2,7 @@
 @inject EstadoDeLaApp estado
 @inject Textos textos
 
-<PageTitle>Pagos sin comprobante · @Textos.TituloDelModulo</PageTitle>
+<PageTitle>@textos["sinComprobante.encabezado"] · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -12,12 +12,10 @@ else
 {
     <div class="fondo-noche">
         <div class="titulo-con-volver">
-            <a class="volver" href="" aria-label="Volver a Inicio">&larr;</a>
-            <h1>Pagos sin comprobante</h1>
+            <a class="volver" href="" aria-label="@textos["nav.volverAInicio"]">&larr;</a>
+            <h1>@textos["sinComprobante.encabezado"]</h1>
         </div>
-        <p class="subtitulo-pagina">
-            Pagos que aparecen saldados, pero cuyo comprobante aún no llegó a esta app.
-        </p>
+        <p class="subtitulo-pagina">@textos["sinComprobante.subtitulo"]</p>
 
         @if (!cotejo.HayAlgunaConsulta)
         {
@@ -28,7 +26,7 @@ else
             <details class="disclosure-secundaria">
                 <summary class="disclosure-secundaria__resumen">
                     <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
-                    <span class="disclosure-secundaria__texto">¿Qué significa no poder cotejar?</span>
+                    <span class="disclosure-secundaria__texto">@textos["sinComprobante.queSignificaNoPoderCotejar"]</span>
                     <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                 </summary>
                 <div class="disclosure-secundaria__contenido">
@@ -41,12 +39,12 @@ else
             <div class="aviso-tranquilo">
                 <p class="estado-vacio">
                     <span class="estado-vacio__marca">✓</span>
-                    Ningún pago aparece sin comprobante
+                    @textos["sinComprobante.ningunPagoSinComprobante"]
                 </p>
                 <p class="explicacion-menor">@cotejo.Dice</p>
             </div>
 
-            <p class="nota">Cotejado con el portal · @NombreLegible.Fecha(cotejo.DiaDeLaConsulta)</p>
+            <p class="nota">@textos["sinComprobante.cotejadoConElPortal"] @NombreLegible.Fecha(cotejo.DiaDeLaConsulta)</p>
         }
         else
         {
@@ -54,14 +52,11 @@ else
                 <span class="tarjeta-estado__icono"><IconoSprite Nombre="calendario-chico" /></span>
                 <span class="tarjeta-estado__texto">
                     <span class="tarjeta-estado__estado">@ResumenTitulo()</span>
-                    <span class="tarjeta-estado__detalle">
-                        Estos pagos aparecen saldados en el portal municipal, pero su comprobante
-                        todavía no llegó a esta app.
-                    </span>
+                    <span class="tarjeta-estado__detalle">@textos["sinComprobante.pagosApareceSaldados"]</span>
                 </span>
             </div>
 
-            <h2>Pagos encontrados</h2>
+            <h2>@textos["sinComprobante.pagosEncontrados"]</h2>
             <div class="rubros-cambio">
                 @foreach (var periodo in cotejo.Periodos)
                 {
@@ -74,12 +69,12 @@ else
                                     <span class="periodo" style="margin:0">@NombreLegible.Periodo(periodo.Periodo)</span>
                                 </span>
                                 <span class="comprobante-estados">
-                                    <span class="comprobante-estado comprobante-estado--pagado">✓ Pagado según el portal</span>
-                                    <span class="comprobante-estado comprobante-estado--pendiente">Comprobante pendiente en la app</span>
+                                    <span class="comprobante-estado comprobante-estado--pagado">@textos["sinComprobante.pagadoSegunPortal"]</span>
+                                    <span class="comprobante-estado comprobante-estado--pendiente">@textos["sinComprobante.comprobantePendiente"]</span>
                                 </span>
                                 <span class="rubro-cambio__toggle">
-                                    <span class="rubro-cambio__toggle-abrir">Ver detalle</span>
-                                    <span class="rubro-cambio__toggle-cerrar">Ocultar detalle</span>
+                                    <span class="rubro-cambio__toggle-abrir">@textos["sinComprobante.verDetalle"]</span>
+                                    <span class="rubro-cambio__toggle-cerrar">@textos["sinComprobante.ocultarDetalle"]</span>
                                     <span class="rubro-cambio__toggle-chevron" aria-hidden="true">&rsaquo;</span>
                                 </span>
                             </span>
@@ -92,16 +87,13 @@ else
             </div>
 
             <section class="bloque" id="pagos-aparecen-pagados">
-                <h2>Estos pagos aparecen como pagados</h2>
-                <p class="explicacion-menor">
-                    El portal los registra como saldados. Lo único pendiente es que el comprobante
-                    llegue a esta app.
-                </p>
+                <h2>@textos["sinComprobante.estosPagosAparecen"]</h2>
+                <p class="explicacion-menor">@textos["sinComprobante.explicacionPagados"]</p>
 
                 <details class="disclosure-secundaria">
                     <summary class="disclosure-secundaria__resumen">
                         <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
-                        <span class="disclosure-secundaria__texto">¿Por qué puede pasar?</span>
+                        <span class="disclosure-secundaria__texto">@textos["sinComprobante.porQuePuedePasar"]</span>
                         <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
                     </summary>
                     <div class="disclosure-secundaria__contenido">
@@ -110,10 +102,10 @@ else
                 </details>
             </section>
 
-            <p class="nota">Cotejado con el portal · @NombreLegible.Fecha(cotejo.DiaDeLaConsulta)</p>
+            <p class="nota">@textos["sinComprobante.cotejadoConElPortal"] @NombreLegible.Fecha(cotejo.DiaDeLaConsulta)</p>
 
             <details class="plomeria">
-                <summary>¿Qué significa esta fecha?</summary>
+                <summary>@textos["sinComprobante.queSignificaEstaFecha"]</summary>
                 <p class="item__frase">@textos.Con("sinComprobante.fotoConFecha", ("dia", cotejo.DiaDeLaConsulta))</p>
             </details>
         }

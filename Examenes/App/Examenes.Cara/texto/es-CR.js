@@ -47,6 +47,7 @@ window.TextoDeLaCara['es-CR'] = {
     },
     sinTendencia: {
         rotulo: 'todavía no podemos ver la tendencia',
+        intro: 'Todavía tienen pocas mediciones. Con la próxima de cada uno vamos a poder empezar a mostrarte cómo vienen cambiando.',
         conUna: 'Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando.',
         conVarias: 'Todavía no hay datos suficientes para mostrar cómo viene cambiando.'
     },

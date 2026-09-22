@@ -73,7 +73,7 @@
            ninguna ruta ni funcionalidad se pierde. *@
         @if (estado.EstaArriba)
         {
-            <a class="capo-icono" href="mi-carro" aria-label="Mi carro" title="Mi carro">
+            <a class="capo-icono" href="mi-carro" aria-label="@texto["miCarro.titulo"]" title="@texto["miCarro.titulo"]">
                 @* Ícono del sprite oficial de Faro -reemplaza al SVG dibujado a mano-. *@
                 <span class="faro-icon faro-icon--carro" aria-hidden="true"></span>
             </a>
@@ -111,8 +111,8 @@
                 </NavLink>
 
                 <button type="button" class="pestana-mas" @onclick="MostrarQueFaltaRegistrar"
-                        aria-label="Registrar carga" title="Registrar carga">
-                    <span class="solo-para-lectores">Registrar carga</span>
+                        aria-label="@texto["comun.registrarCarga"]" title="@texto["comun.registrarCarga"]">
+                    <span class="solo-para-lectores">@texto["comun.registrarCarga"]</span>
                 </button>
 
                 <NavLink class="pestana" href="cargas">

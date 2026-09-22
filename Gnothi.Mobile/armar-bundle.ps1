@@ -188,8 +188,8 @@ $catalogo = @{
     'dealership' = @{
         Proyecto    = "$raiz/Concesionario/App/Concesionario.Wasm/Concesionario.Wasm.csproj"
         Titulo      = 'Mi plan de mantenimiento'
-        Institucion = 'Sotavento Motors'
-        Marca       = 'Sotavento Motors'
+        Institucion = 'Sotaventos Motors'
+        Marca       = 'Sotaventos Motors'
         Slogan      = 'Tu carro, siempre listo'
         Color       = '#1f3a5f'
         Fuente      = @{ family = 'Sora'; file = 'web/brand/Sora-600.woff2' }
@@ -198,7 +198,7 @@ $catalogo = @{
         NoHace      = ''
         Idioma      = 'es-CR'
         Dominio     = 'sotavento.com'
-        RazonSocial = 'Sotavento Motors Inc.'
+        RazonSocial = 'Sotaventos Motors Inc.'
         Cedula      = ''
         Version     = '3.1.0'
         Retencion   = '10 anos'
@@ -461,7 +461,7 @@ $manifiesto = [ordered]@{
         # LA TIPOGRAFIA SE DECLARA SOLO SI VIAJA, por la misma razon que el banner: la fila la
         # nombra, pero si el archivo no quedo en web/ la aduana del Host lo anota como problema
         # y la marca sale sin letra. Antes esto se declaraba a ciegas y la forma hibrida de Faro
-        # y Sotavento nombraba una fuente que no llevaba.
+        # y Sotaventos nombraba una fuente que no llevaba.
         font      = if ($m.Fuente -and $traeCara -and -not (Test-Path "$armado/$($m.Fuente.file)")) {
                         Write-Warning "la fila declara la tipografia $($m.Fuente.file) y no esta en el paquete: sale sin ella"
                         $null

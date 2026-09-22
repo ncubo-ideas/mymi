@@ -66,7 +66,7 @@ const superficies = {
                    frases: { dir: "Cargas/App/Cargas.App/Frases", es: "CatalogoEnEspanol.cs", en: "CatalogoEnIngles.cs", pide: "Diga" } },
   compras:       { marca: "La Guaria",  dir: "Compras/App/Compras.Wasm",             catalogo: "wwwroot/texto", idiomas: ["es-CR", "en"],
                    frases: { dir: "Compras/App/Compras.App/Frases", es: "CatalogoEnEspanol.cs", en: "CatalogoEnIngles.cs", pide: "Diga" } },
-  dealership:    { marca: "Sotavento", dir: "Concesionario/App/Concesionario.Wasm", catalogo: "wwwroot/text",  idiomas: ["es-CR", "en"],
+  dealership:    { marca: "Sotaventos", dir: "Concesionario/App/Concesionario.Wasm", catalogo: "wwwroot/text",  idiomas: ["es-CR", "en"],
                    frases: { dir: "Concesionario/App/Concesionario.App/Wording", es: "TheSpanishCatalogue.cs", en: "TheEnglishCatalogue.cs", pide: "Say" } },
   examenes:      { marca: "Delfos",     dir: "Examenes/App/Examenes.Wasm",           catalogo: "wwwroot/texto", idiomas: ["es-CR", "en"],
                    frases: { dir: "Examenes/App/Examenes.App/Frases", es: "CatalogoEnEspanol.cs", en: "CatalogoEnIngles.cs", pide: "Diga" } },
@@ -85,7 +85,7 @@ const perdonadas = {
   "Compras/App/Compras.Wasm/Layout/MainLayout.razor|La Guaria": "nombre corto de la institucion",
   "Compras/App/Compras.Wasm/Layout/MainLayout.razor|Su barrio, su despensa, desde 1992": "el lema de la institucion",
   "Compras/App/Compras.Wasm/Pages/MisCompras.razor|La Guaria": "nombre corto de la institucion",
-  "Concesionario/App/Concesionario.Wasm/Layout/SotaventoMark.razor|[atributo aria-label] Sotavento Motors": "nombre de la institucion",
+  "Concesionario/App/Concesionario.Wasm/Layout/SotaventoMark.razor|[atributo alt] Sotaventos Motors": "nombre de la institucion",
   "Gnothi.Desktop/Components/Root.razor|Mymi": "el nombre del producto, como el lema: no se traduce",
 
   // NOMBRES PROPIOS DE TERCEROS.

@@ -11,7 +11,7 @@
    vuelve a Inicio, que es de donde sale ese ícono. Es el mismo faro-icon--flecha que ya
    usa "ver en Mis cargas", solo rotado. *@
 <div class="pantalla-cabeza">
-    <a href="" class="pantalla-volver" aria-label="Volver a Inicio" title="Volver a Inicio">
+    <a href="" class="pantalla-volver" aria-label="@Texto["comun.volverAInicio"]" title="@Texto["comun.volverAInicio"]">
         <span class="faro-icon faro-icon--flecha pantalla-volver-flecha" aria-hidden="true"></span>
     </a>
     <h1 class="pantalla-titulo">@Texto["miCarro.titulo"]</h1>
@@ -73,11 +73,11 @@ else
        CompletarFicha de siempre, mismos parámetros, mismo camino. *@
     <div class="tarjeta-grupo">
         <div class="tarjeta-grupo-cabeza">
-            <h3 class="seccion-titulo seccion-titulo--en-grupo">Identidad del vehículo</h3>
+            <h3 class="seccion-titulo seccion-titulo--en-grupo">@Texto["miCarro.identidadTitulo"]</h3>
             @if (!editandoFicha)
             {
                 <button type="button" class="tecla tecla--texto" @onclick="() => editandoFicha = true">
-                    Editar información
+                    @Texto["miCarro.editarInformacion"]
                 </button>
             }
         </div>
@@ -134,10 +134,7 @@ else
         {
             @if (!enFoco.TieneFicha)
             {
-                <p class="apunte" style="margin-top:4px">
-                    Todavía no le pusiste nombre a este carro. Con eso alcanza para empezar
-                    -lo demás es opcional y lo podés completar cuando quieras.
-                </p>
+                <p class="apunte" style="margin-top:4px">@Texto["miCarro.sinFichaTodavia"]</p>
             }
             <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
                 <label class="ficha-campo ficha-campo--ancho">

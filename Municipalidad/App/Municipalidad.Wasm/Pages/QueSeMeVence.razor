@@ -3,7 +3,7 @@
 @inject Textos textos
 @using System.Linq
 
-<PageTitle>Pagos y vencimientos · @Textos.TituloDelModulo</PageTitle>
+<PageTitle>@textos["queSeMeVence.encabezado"] · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -12,16 +12,16 @@
 else
 {
     <div class="fondo-noche">
-        <h1>Pagos y vencimientos</h1>
-        <p class="subtitulo-pagina">Lo que está por vencer y lo que ya venció.</p>
+        <h1>@textos["queSeMeVence.encabezado"]</h1>
+        <p class="subtitulo-pagina">@textos["queSeMeVence.subtitulo"]</p>
 
         <section class="bloque" id="por-vencer">
             <div class="seccion-cabeza">
-                <h2>Por vencer@(vence.PorVencer.Count > 0 ? $" ({vence.PorVencer.Count})" : "")</h2>
+                <h2>@textos["queSeMeVence.porVencer"]@(vence.PorVencer.Count > 0 ? $" ({vence.PorVencer.Count})" : "")</h2>
                 @if (vence.PorVencer.Count > 0)
                 {
                     <div class="seccion-total-bloque">
-                        <span class="seccion-total-etiqueta">Total por vencer</span>
+                        <span class="seccion-total-etiqueta">@textos["queSeMeVence.totalPorVencer"]</span>
                         <span class="seccion-total-cifra">@Colones.Formatear(textos, vence.PorVencer.Sum(p => p.Monto))</span>
                     </div>
                 }
@@ -32,10 +32,10 @@ else
                 <div class="aviso-tranquilo">
                     <p class="estado-vacio">
                         <span class="estado-vacio__marca">✓</span>
-                        Nada vence en los próximos @textos.Dias(vence.DiasDeAviso)
+                        @textos["queSeMeVence.nadaVenceEnLosProximos"] @textos.Dias(vence.DiasDeAviso)
                     </p>
                     <p class="explicacion-menor">
-                        Podés tener otros pagos más adelante. Este aviso solo contempla los próximos
+                        @textos["queSeMeVence.avisoLimitado"]
                         @textos.Dias(vence.DiasDeAviso).
                     </p>
                 </div>
@@ -50,7 +50,7 @@ else
                                 <span class="obligacion__icono"><IconoSprite Nombre="calendario-chico" /></span>
                                 <span class="obligacion__info">
                                     <span class="obligacion__rubro"><LlaveDelRubro Rubro="@periodo.Rubro" /></span>
-                                    <span class="obligacion__fecha">Vence @periodo.Vence</span>
+                                    <span class="obligacion__fecha">@textos["queSeMeVence.vence"] @periodo.Vence</span>
                                     <SelloDeUrgencia Urgencia="@periodo.Urgencia" />
                                 </span>
                                 <span class="obligacion__lado">
@@ -60,16 +60,16 @@ else
                             </summary>
                             <div class="obligacion__detalle">
                                 <dl class="renglones">
-                                    <dt>Período</dt>
+                                    <dt>@textos["queSeMeVence.periodo"]</dt>
                                     <dd>@periodo.Periodo</dd>
-                                    <dt>Vence</dt>
+                                    <dt>@textos["queSeMeVence.vence"]</dt>
                                     <dd>@periodo.Vence</dd>
-                                    <dt>Faltan</dt>
+                                    <dt>@textos["queSeMeVence.faltan"]</dt>
                                     <dd>@textos.Dias(periodo.Faltan)</dd>
-                                    <dt>Monto</dt>
+                                    <dt>@textos["queSeMeVence.monto"]</dt>
                                     <dd>@Colones.Formatear(textos, periodo.Monto)</dd>
                                 </dl>
-                                <span class="obligacion__detalle__titulo">Cómo se calcula</span>
+                                <span class="obligacion__detalle__titulo">@textos["queSeMeVence.comoSeCalcula"]</span>
                                 <p class="item__frase">@periodo.Dice</p>
                             </div>
                         </details>
@@ -80,11 +80,11 @@ else
 
         <section class="bloque" id="vencidos">
             <div class="seccion-cabeza">
-                <h2>Vencidos@(vence.Vencidos.Count > 0 ? $" ({vence.Vencidos.Count})" : "")</h2>
+                <h2>@textos["queSeMeVence.vencidosTitulo"]@(vence.Vencidos.Count > 0 ? $" ({vence.Vencidos.Count})" : "")</h2>
                 @if (vence.Vencidos.Count > 0)
                 {
                     <div class="seccion-total-bloque">
-                        <span class="seccion-total-etiqueta">Total vencido</span>
+                        <span class="seccion-total-etiqueta">@textos["queSeMeVence.totalVencido"]</span>
                         <span class="seccion-total-cifra">@Colones.Formatear(textos, vence.Vencidos.Sum(p => p.Monto))</span>
                     </div>
                 }
@@ -94,12 +94,9 @@ else
             {
                 <p class="estado-vacio">
                     <span class="estado-vacio__marca">✓</span>
-                    No hay nada vencido sin pagar en lo que esta app ha visto
+                    @textos["queSeMeVence.nadaVencidoTitulo"]
                 </p>
-                <p class="explicacion-menor">
-                    Eso no es una constancia de estar al día con la municipalidad: tu portal es la
-                    autoridad sobre eso.
-                </p>
+                <p class="explicacion-menor">@textos["queSeMeVence.nadaVencidoCuerpo"]</p>
             }
             else
             {
@@ -111,8 +108,8 @@ else
                                 <span class="obligacion__icono"><IconoSprite Nombre="calendario-chico" /></span>
                                 <span class="obligacion__info">
                                     <span class="obligacion__rubro"><LlaveDelRubro Rubro="@periodo.Rubro" /></span>
-                                    <span class="obligacion__fecha">Venció @periodo.Vencio</span>
-                                    <span class="obligacion__atraso">@textos.Dias(periodo.Dias) de atraso</span>
+                                    <span class="obligacion__fecha">@textos["queSeMeVence.vencio"] @periodo.Vencio</span>
+                                    <span class="obligacion__atraso">@textos.Dias(periodo.Dias) @textos["queSeMeVence.deAtrasoSufijo"]</span>
                                 </span>
                                 <span class="obligacion__lado">
                                     <span class="obligacion__monto">@Colones.Formatear(textos, periodo.Monto)</span>
@@ -121,18 +118,18 @@ else
                             </summary>
                             <div class="obligacion__detalle">
                                 <dl class="renglones">
-                                    <dt>Período</dt>
+                                    <dt>@textos["queSeMeVence.periodo"]</dt>
                                     <dd>@periodo.Periodo</dd>
-                                    <dt>Venció</dt>
+                                    <dt>@textos["queSeMeVence.vencio"]</dt>
                                     <dd>@periodo.Vencio</dd>
-                                    <dt>De atraso</dt>
+                                    <dt>@textos["queSeMeVence.deAtraso"]</dt>
                                     <dd>@textos.Dias(periodo.Dias)</dd>
-                                    <dt>Monto</dt>
+                                    <dt>@textos["queSeMeVence.monto"]</dt>
                                     <dd>@Colones.Formatear(textos, periodo.Monto)</dd>
-                                    <dt>Proyección de mora</dt>
+                                    <dt>@textos["queSeMeVence.proyeccionDeMora"]</dt>
                                     <dd>@Colones.Formatear(textos, periodo.CostoProyectado)</dd>
                                 </dl>
-                                <span class="obligacion__detalle__titulo">Cómo se calcula</span>
+                                <span class="obligacion__detalle__titulo">@textos["queSeMeVence.comoSeCalcula"]</span>
                                 <p class="item__frase">@periodo.Dice</p>
                             </div>
                         </details>
@@ -144,15 +141,11 @@ else
         <details class="disclosure-secundaria">
             <summary class="disclosure-secundaria__resumen">
                 <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
-                <span class="disclosure-secundaria__texto">Sobre los vencimientos</span>
+                <span class="disclosure-secundaria__texto">@textos["queSeMeVence.sobreLosVencimientos"]</span>
                 <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
             </summary>
             <div class="disclosure-secundaria__contenido">
-                <p class="item__frase">
-                    Un período por vencer y uno vencido son situaciones distintas, y un total que los mezcle
-                    no es un número que nadie haya calculado. Si querés saber cuánto debés en total, eso lo
-                    dice tu portal.
-                </p>
+                <p class="item__frase">@textos["queSeMeVence.noSeSumanCuerpo"]</p>
                 <NumeroSinFirmar Dicho="@textos.Con("queSeMeVence.umbrales", ("dias", textos.Dias(vence.DiasDeAviso)), ("tasa", textos.Porcentaje(vence.TasaConQueSeProyecto)))" />
             </div>
         </details>

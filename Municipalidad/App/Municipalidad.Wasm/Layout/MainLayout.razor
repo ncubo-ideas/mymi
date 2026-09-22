@@ -12,10 +12,10 @@
         </a>
 
         <nav class="marco__nav">
-            <NavLink href="por-que-pago-mas">Cambios en mis cobros</NavLink>
-            <NavLink href="que-se-me-vence">Pagos y vencimientos</NavLink>
-            <NavLink href="cuanto-apartar">Mi presupuesto</NavLink>
-            <NavLink href="sin-comprobante">Pagos sin comprobante</NavLink>
+            <NavLink href="por-que-pago-mas">@textos["porQuePagoMas.encabezado"]</NavLink>
+            <NavLink href="que-se-me-vence">@textos["queSeMeVence.encabezado"]</NavLink>
+            <NavLink href="cuanto-apartar">@textos["cuantoApartar.encabezado"]</NavLink>
+            <NavLink href="sin-comprobante">@textos["sinComprobante.encabezado"]</NavLink>
             <NavLink href="cuanto-he-pagado">@textos["cuantoHePagado.titulo"]</NavLink>
             <NavLink href="que-tan-al-dia-esta">@textos["queTanAlDia.tituloCorto"]</NavLink>
         </nav>
@@ -26,17 +26,17 @@
     @Body
 </main>
 
-<nav class="pie-nav" aria-label="Navegación principal">
+<nav class="pie-nav" aria-label="@textos["nav.navegacionPrincipal"]">
     <NavLink href="" Match="NavLinkMatch.All">
         <span class="pie-nav__icono"><img src="images/mi-muni-t.png" alt="" class="pie-nav__logo" /></span>
-        <span>Inicio</span>
+        <span>@textos["nav.inicio"]</span>
     </NavLink>
     <NavLink href="que-se-me-vence">
         <span class="pie-nav__icono"><IconoSprite Nombre="calendario-chico" /></span>
-        <span>Pagos</span>
+        <span>@textos["nav.pagos"]</span>
     </NavLink>
     <NavLink href="cuanto-apartar">
         <span class="pie-nav__icono"><IconoSprite Nombre="presupuesto-chico" /></span>
-        <span>Mi presupuesto</span>
+        <span>@textos["cuantoApartar.encabezado"]</span>
     </NavLink>
 </nav>

@@ -58,7 +58,7 @@
                         @if (tono == "warn" || tono == "danger")
                         {
                             <div class="d-svc__falta" id="@("falta-" + kind)">
-                                <span class="d-svc__falta-label">Lo que falta</span>
+                                <span class="d-svc__falta-label">@Texts["services.remainingLabel"]</span>
                                 <div class="@("d-svc__now d-svc__now--" + tono)">
                                     <Glyph Name="@ComoSeLee.DibujoOperacion(kind)" Size="17" Stroke="2.2" />
                                     @(tono == "danger" ? "VENCIDO" : "AHORA")
@@ -75,14 +75,14 @@
                                 {
                                     <div class="d-svc__col" id="@("resto-km-" + kind)">
                                         <span class="d-svc__col-value">@Texts.Grouped(parada.DistanceRemaining) @parada.DistanceUnit</span>
-                                        <span class="d-svc__col-label">por distancia</span>
+                                        <span class="d-svc__col-label">@Texts["services.byDistance"]</span>
                                     </div>
                                 }
                                 @if (parada.DaysCanBeSaid)
                                 {
                                     <div class="d-svc__col" id="@("resto-dias-" + kind)">
                                         <span class="d-svc__col-value">@Texts.Days(parada.DaysRemaining)</span>
-                                        <span class="d-svc__col-label">por tiempo</span>
+                                        <span class="d-svc__col-label">@Texts["services.byTime"]</span>
                                     </div>
                                 }
                             </div>

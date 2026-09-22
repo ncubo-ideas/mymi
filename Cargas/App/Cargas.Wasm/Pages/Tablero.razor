@@ -24,13 +24,13 @@
         </svg>
         @if (Estado.Refrescando)
         {
-            <h2>Buscando tus cargas…</h2>
-            <p>Ya estamos preguntándole a la estación por tu historial.</p>
+            <h2>@Texto["tablero.buscandoTitulo"]</h2>
+            <p>@Texto["tablero.buscandoCuerpo"]</p>
         }
         else
         {
-            <h2>Bienvenida a Estaciones Faro</h2>
-            <p>Todavía no vemos ninguna carga tuya. Apretá <em>Actualizar</em> arriba para buscarlas.</p>
+            <h2>@Texto["tablero.bienvenidaTitulo"]</h2>
+            <p>@((MarkupString)Texto["tablero.bienvenidaCuerpo"])</p>
         }
     </div>
 }
@@ -54,7 +54,7 @@ else
            decoración: es la misma jerarquía que ya da el eyebrow, con un apoyo visual. *@
         <span class="hero-titulo">
             <span class="faro-icon faro-icon--rendimiento" aria-hidden="true"></span>
-            Tu rendimiento
+            @Texto["tablero.tuRendimiento"]
         </span>
         @if (rendimiento.Actual > 0)
         {
@@ -188,7 +188,7 @@ else
                        equivalente y este ya cumple, sin inventar uno nuevo. *@
                     <span class="checklist-item checklist-item--hecho">
                         <span class="faro-icon faro-icon--confirmado" aria-hidden="true"></span>
-                        Carga registrada
+                        @Texto["tablero.checklistCargaRegistrada"]
                     </span>
                     <span class="checklist-item @(tieneKm ? "checklist-item--hecho" : "checklist-item--falta")">
                         @if (tieneKm)
@@ -199,7 +199,7 @@ else
                         {
                             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.5" /></svg>
                         }
-                        Kilometraje
+                        @Texto["tablero.checklistKilometraje"]
                     </span>
                     <span class="checklist-item @(!cargaTieneTanquePendiente ? "checklist-item--hecho" : "checklist-item--falta")">
                         @if (!cargaTieneTanquePendiente)
@@ -210,7 +210,7 @@ else
                         {
                             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.5" /></svg>
                         }
-                        Tanque confirmado
+                        @Texto["tablero.checklistTanqueConfirmado"]
                     </span>
                 </div>
             }
@@ -219,7 +219,7 @@ else
             {
                 @* Progreso real del dominio -CompletitudDeDatos.Expresada, "2 de 3 cargas
                    con kilometraje · 1 tramo calculable"-, no un conteo inventado acá. *@
-                <p class="pendiente-resto">@completitud.Expresada &middot; <a href="cargas">ver en Mis cargas<span class="faro-icon faro-icon--flecha" aria-hidden="true"></span></a></p>
+                <p class="pendiente-resto">@completitud.Expresada &middot; <a href="cargas">@Texto["tablero.verEnMisCargas"]<span class="faro-icon faro-icon--flecha" aria-hidden="true"></span></a></p>
             }
         </div>
     }
@@ -255,7 +255,7 @@ else
                 <span class="faro-icon faro-icon--ultimacarga" aria-hidden="true"></span>
             </span>
             <div class="tarjeta-acceso-cuerpo">
-                <span class="tarjeta-acceso-rotulo">Última carga &middot; @ultimaCarga.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</span>
+                <span class="tarjeta-acceso-rotulo">@Texto["tablero.ultimaCargaRotulo"] &middot; @ultimaCarga.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</span>
                 <div class="tarjeta-acceso-valor">@Simbolo(ultimaCarga.Moneda)@Plata(ultimaCarga.Total)</div>
                 <p class="tarjeta-acceso-pie ultima-carga-datos">
                     <span><span class="n">@ultimaCarga.Volumen</span> @Texto["ruta.de"] @ultimaCarga.Tipo</span>
@@ -272,7 +272,7 @@ else
                     }
                     @if (ultimaCarga.TieneFoto)
                     {
-                        <span>con foto del tablero</span>
+                        <span>@Texto["tablero.conFotoDelTablero"]</span>
                     }
                 </p>
             </div>
@@ -290,18 +290,18 @@ else
             <span class="faro-icon faro-icon--carnet" aria-hidden="true"></span>
         </span>
         <div class="tarjeta-acceso-cuerpo">
-            <span class="tarjeta-acceso-rotulo">Mi carnet Faro</span>
+            <span class="tarjeta-acceso-rotulo">@Texto["tablero.miCarnetFaro"]</span>
             <div class="tarjeta-acceso-valor">
-                @Entero(lealtad.Saldo)<span class="unidad">puntos</span>
+                @Entero(lealtad.Saldo)<span class="unidad">@Texto["tablero.puntos"]</span>
             </div>
             <p class="tarjeta-acceso-pie">
                 @if (lealtad.Nivel.Length > 0)
                 {
-                    <text>nivel <b>@Texto.ComoSeDice(lealtad.Nivel)</b></text>
+                    <text>@Texto["tablero.nivelPrefijo"] <b>@Texto.ComoSeDice(lealtad.Nivel)</b></text>
                 }
                 else
                 {
-                    <text>Todavía no entró ningún punto de la estación.</text>
+                    <text>@Texto["tablero.sinPuntosTodavia"]</text>
                 }
             </p>
         </div>
@@ -354,7 +354,7 @@ else
                             ~@proxima.DiasEstimados<span class="unidad">@Texto[proxima.DiasEstimados == 1 ? "comun.dia" : "comun.dias"]</span>
                         </div>
                         <p class="resumen-pie">
-                            según tu ritmo &middot; andás <b>@Cifra(proxima.KilometrosPorDia) km</b> por día
+                            @((MarkupString)Texto["tablero.ritmoPrefijo"]) <b>@Cifra(proxima.KilometrosPorDia) km</b> @Texto["tablero.ritmoSufijo"]
                         </p>
                     </div>
                 </div>

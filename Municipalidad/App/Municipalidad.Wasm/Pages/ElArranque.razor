@@ -110,14 +110,14 @@ else
         <div class="panel-inicio__hero">
             <button type="button" class="panel-inicio__sync @(refrescando ? "panel-inicio__sync--girando" : "")"
                     id="refrescar" @onclick="RefrescarAsync" disabled="@refrescando"
-                    title="@(refrescando ? "Actualizando…" : "Actualizar mi cuenta")"
-                    aria-label="@(refrescando ? "Actualizando tu cuenta" : "Actualizar mi cuenta")">
+                    title="@(refrescando ? textos["panelInicio.actualizando"] : textos["panelInicio.actualizar"])"
+                    aria-label="@(refrescando ? textos["panelInicio.actualizandoTuCuenta"] : textos["panelInicio.actualizar"])">
                 <span aria-hidden="true">↻</span>
             </button>
 
             <div class="panel-inicio__hero-texto">
-                <h1>Tu cuenta municipal</h1>
-                <p>Más clara y en un solo lugar.</p>
+                <h1>@textos["panelInicio.tituloHero"]</h1>
+                <p>@textos["panelInicio.subtituloHero"]</p>
             </div>
             <IconoSprite Nombre="ilustracion" />
         </div>
@@ -130,7 +130,7 @@ else
                     <IconoSprite Nombre="@EstadoDeLaCuenta.Icono" />
                 </span>
                 <span class="tarjeta-estado__texto">
-                    <span class="tarjeta-estado__etiqueta">Estado de tu cuenta</span>
+                    <span class="tarjeta-estado__etiqueta">@textos["panelInicio.estadoDeCuenta"]</span>
                     <span class="tarjeta-estado__estado">@EstadoDeLaCuenta.Titulo</span>
                     @if (EstadoDeLaCuenta.Clase == "vencido")
                     {
@@ -148,37 +148,37 @@ else
             </a>
         }
 
-        <h2 class="panel-inicio__titulo">Lo más importante</h2>
+        <h2 class="panel-inicio__titulo">@textos["panelInicio.loMasImportante"]</h2>
         <nav class="accesos-principales">
             <a class="acceso" href="que-se-me-vence">
                 <IconoSprite Nombre="calendario" />
                 <span class="acceso__nombre">
-                    Pagos y vencimientos
+                    @textos["queSeMeVence.encabezado"]
                     <span class="acceso__dato">@MicrofraseVencimientos()</span>
                 </span>
             </a>
             <a class="acceso" href="cuanto-apartar">
                 <IconoSprite Nombre="presupuesto" />
                 <span class="acceso__nombre">
-                    Mi presupuesto
+                    @textos["cuantoApartar.encabezado"]
                     <span class="acceso__dato">@MicrofrasePresupuesto()</span>
                 </span>
             </a>
             <a class="acceso acceso--ancho accesos-principales__ancho" href="por-que-pago-mas">
                 <IconoSprite Nombre="tendencia" />
                 <span class="acceso__nombre">
-                    Cambios en mis cobros
+                    @textos["porQuePagoMas.encabezado"]
                     <span class="acceso__dato">@MicrofraseCambios()</span>
                 </span>
             </a>
         </nav>
 
         <section class="otras-opciones">
-            <h2 class="panel-inicio__titulo">Otras opciones</h2>
+            <h2 class="panel-inicio__titulo">@textos["panelInicio.otrasOpciones"]</h2>
             <div class="otras-opciones__lista">
                 <a class="opcion-menor" href="sin-comprobante">
                     <IconoSprite Nombre="doc-x" />
-                    <span class="opcion-menor__nombre">Pagos sin comprobante</span>
+                    <span class="opcion-menor__nombre">@textos["sinComprobante.encabezado"]</span>
                 </a>
                 <a class="opcion-menor" href="cuanto-he-pagado">
                     <IconoSprite Nombre="doc-x" />
@@ -195,11 +195,8 @@ else
     <div class="nota-info">
         <span class="nota-info__icono" aria-hidden="true">ⓘ</span>
         <span>
-            <span class="nota-info__titulo">Información de tu cuenta</span>
-            <p class="nota-info__texto">
-                Tu portal municipal es la fuente oficial de tus cobros y deudas. Acá te ayudamos a
-                entenderlos y organizarlos.
-            </p>
+            <span class="nota-info__titulo">@textos["panelInicio.infoTitulo"]</span>
+            <p class="nota-info__texto">@textos["panelInicio.infoCuerpo"]</p>
         </span>
     </div>
 

@@ -49,6 +49,7 @@ window.TextoDeLaCara['en'] = {
     },
     sinTendencia: {
         rotulo: 'no trend to show yet',
+        intro: "They still have few measurements. With each one's next result we'll be able to start showing you how they're changing.",
         conUna: 'With your next result we can start showing you how it is changing.',
         conVarias: 'There is not enough data yet to show how it is changing.'
     },

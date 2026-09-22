@@ -35,7 +35,7 @@
 @if (hoja == "informacion")
 {
     <section class="d-card" id="informacion">
-        <span class="d-card__title" id="datos-titulo">Datos de tu vehículo</span>
+        <span class="d-card__title" id="datos-titulo">@Texts["vehicle.infoTitle"]</span>
         <div class="d-rows" style="margin-top:10px">
             <div class="d-row">
                 <span class="d-row__label"><Glyph Name="car" Size="15" Stroke="2.1" /><span class="d-row__k">@Texts["vehicle.rowModel"]</span></span>
@@ -55,7 +55,7 @@
                 </div>
                 @if (Placa is null || !Placa.PlatePublished)
                 {
-                    <p class="d-row__note">Tu concesionario aún no la ha publicado.</p>
+                    <p class="d-row__note">@Texts["vehicle.plateNotPublished"]</p>
                 }
             </div>
 
@@ -99,10 +99,7 @@
 
     <p class="d-note d-note--home" style="margin-top:12px">
         <Glyph Name="info" Size="14" Stroke="2" />
-        <span>
-            Estos son los datos que tu concesionario ha publicado sobre este vehículo. Lo que no
-            aparece aún no ha sido publicado.
-        </span>
+        <span>@Texts["vehicle.infoNote"]</span>
     </p>
 }
 else if (hoja == "garantia")
@@ -151,15 +148,13 @@ else
             }
             else
             {
-                <span class="d-pill d-pill--mute">Aún no publicada</span>
+                <span class="d-pill d-pill--mute">@Texts["vehicle.manualPillNone"]</span>
             }
         </div>
 
         @if (Sheet is null || !Sheet.HasASealedRevision)
         {
-            <p class="d-state-card__body">
-                Tu concesionario aún no ha publicado la ficha de este vehículo.
-            </p>
+            <p class="d-state-card__body">@Texts["vehicle.manualNotPublished"]</p>
         }
         else
         {
@@ -205,7 +200,7 @@ else
         <section class="d-card" id="precios-publicados" style="margin-top:12px">
             <div class="d-card__head">
                 <span class="d-state-card__icon d-state-card__icon--amber"><Glyph Name="tag" Size="20" Stroke="2" /></span>
-                <span class="d-card__title" style="flex:1">Precios</span>
+                <span class="d-card__title" style="flex:1">@Texts["vehicle.pricesTitleShort"]</span>
                 @if (Costs.AnyPriceOnRecord)
                 {
                     <span class="d-pill d-pill--info">
@@ -214,7 +209,7 @@ else
                 }
                 else
                 {
-                    <span class="d-pill d-pill--mute">Aún no publicados</span>
+                    <span class="d-pill d-pill--mute">@Texts["vehicle.pricesPillNone"]</span>
                 }
             </div>
 
@@ -236,9 +231,7 @@ else
             }
             else
             {
-                <p class="d-state-card__body" id="sin-precios">
-                    Tu concesionario aún no ha publicado precios para este vehículo.
-                </p>
+                <p class="d-state-card__body" id="sin-precios">@Texts["vehicle.pricesNotPublished"]</p>
             }
         </section>
     }
