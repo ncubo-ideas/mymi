@@ -37,7 +37,7 @@
                     <circle class="d-ring__track" cx="50" cy="50" r="42" />
                     <circle class="@("d-ring__fill d-ring__fill--" + Tono)" cx="50" cy="50" r="42"
                             pathLength="100"
-                            style="stroke-dasharray:@Texts.Grouped(AlDiaPorCiento) 100" />
+                            style="stroke-dasharray:@AlDiaPorCiento 100" />
                 </svg>
                 <div class="d-ring__label">
                     <span class="d-ring__unit">
@@ -265,6 +265,12 @@
     /// (MaintenanceSchedule.CountUpToDatePerHundred) y no esta pantalla: dividir AlDia entre
     /// Programadas acá sería la caratula decidiendo algo que el registro ya decidió, que es lo que
     /// las dos cuentas prohíben por escrito en el dominio y en la puerta.
+    ///
+    /// NO PASA POR EL RENDERIZADOR, y es el unico numero de esta pantalla que no lo hace: no es un
+    /// numero que alguien lea, es la longitud de un trazo. Agruparlo seria aplicar la regla donde
+    /// no aplica, y ademas plantaria una trampa -- si la escala pasara de cien a mil, el
+    /// separador de es-CR escribiria "1.000" adentro del valor de css y el aro se romperia sin que
+    /// nada lo dijera. Por construccion va de 0 a 100.
     /// </summary>
     [Parameter] public int AlDiaPorCiento { get; set; }
 
