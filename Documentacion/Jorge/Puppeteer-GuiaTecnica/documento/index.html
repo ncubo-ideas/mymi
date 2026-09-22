@@ -411,13 +411,14 @@ print mesa.Pulse <span class="s">'pulse'</span>;        <span class="c">// query
       <div class="h"><span class="mark">✕</span> No hagas</div>
       <p>No leas <code>DateTime.Now</code> (ni un aleatorio) dentro de un script. Al reproducir el diario mañana, ese “ahora” sería otro y el estado reconstruido no coincidiría. La hora se inyecta desde afuera y se guarda en el diario, de modo que el replay use exactamente la misma.</p>
     </div>
-    <p>El mismo principio explica un detalle que verás en las reacciones del bingo: el <code>once</code>. Cuando el organizador canta, una reacción emite un aviso (<em>tell</em>) a los jugadores, y le pone una identidad estable con <code>once</code> para que reproducir el diario no genere dos veces el mismo aviso ni descarte uno legítimo:</p>
+    <p>El mismo principio explica un detalle que verás en las reacciones del bingo: el <code>once</code>. No te detengas en la mecánica de la reacción de abajo —<code>Cue</code>, <code>Seek</code>, <code>OnMatch</code>…, que se explica completa en el Cap. 9—; <strong>fíjate solo en la línea resaltada</strong>. Cuando el organizador canta, una reacción emite un aviso (<em>tell</em>) a los jugadores; el <code>once</code> le da a ese aviso una identidad estable para que reproducir el diario no lo genere dos veces ni descarte uno legítimo:</p>
     <pre><span class="tag real">C# · real</span><code>live.Journal.Reactions.DefineReaction(<span class="s">"Cantar"</span>)
     .Cue().DirectorOnly().WithSharedHydration()
     .Seek(<span class="s">"Bolita"</span>).OnMatch(<span class="s">"[_:BingoGame].RegisterDraw($numero, $ronda)"</span>)
     .Causation.Continue(
         <span class="s">"tell Bolita with @numero, @ronda to &lt;rol-jugador&gt; "</span> +
-        <span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span>);</code></pre>
+        <span style="background:rgba(210,154,92,.28);border-radius:3px;padding:1px 3px"><span class="s">"once 'bolita-' + @ronda + '-' + @numero;"</span></span>);</code></pre>
+    <p>De todo ese bloque, lo único que ejemplifica el determinismo es ese <code>once</code>: fija la identidad del aviso a partir de <strong>sus propios datos</strong> (la ronda y el número), no del reloj ni del azar. Por eso, al reproducir el diario, el “7 de la ronda 2” es siempre el mismo aviso — ni se duplica ni se pierde.</p>
     <aside class="note">
       <div class="h">✎ Nota del diseñador</div>
       <p>Puppeteer te da la hora determinista servida: dentro de un script usas <code>@Now</code>, que el framework fija una sola vez al ejecutar el comando y guarda en el diario. En vivo es el reloj real; en el replay es el que quedó anotado. Así, <code>@Now</code> vale lo mismo en la ejecución original y en cada reproducción — el determinismo sin que tengas que pensarlo.</p>
@@ -479,7 +480,7 @@ actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();</
     <span class="k">private bool</span> _desbloqueado;
     <span class="k">private int</span> _pasos;
 
-    <span class="k">public void</span> Moneda()  { _desbloqueado = <span class="k">true</span>; }
+    <span class="k">public void</span> InsertarMoneda() { _desbloqueado = <span class="k">true</span>; }
 
     <span class="k">public void</span> Empujar()
     {
@@ -496,7 +497,7 @@ actor.Using(<span class="s">"counter = counter + 1;"</span>).PerformCommand();</
 
     <p>Desde el DSL, lo construimos y lo dejamos en el estado raíz; luego llamamos sus verbos en comandos separados:</p>
     <pre><span class="tag">DSL</span><code>t = Torniquete();   <span class="c">// se queda en el estado raiz del actor</span>
-t.Moneda();
+t.InsertarMoneda();
 t.Empujar();</code></pre>
 
     <p>Y consultamos su estado con una query que emite dos valores:</p>
@@ -507,7 +508,7 @@ t.Empujar();</code></pre>
 
     <div class="call do">
       <div class="h"><span class="mark">✓</span> Haz</div>
-      <p>Expón el dominio como <strong>verbos que representan operaciones</strong> (<code>Moneda</code>, <code>Empujar</code>) y <strong>queries totales</strong> que siempre responden (<code>Pasos</code>). Deja que cada objeto proteja sus propias reglas.</p>
+      <p>Expón el dominio como <strong>verbos que representan operaciones</strong> (<code>InsertarMoneda</code>, <code>Empujar</code>) y <strong>queries totales</strong> que siempre responden (<code>Pasos</code>). Deja que cada objeto proteja sus propias reglas.</p>
     </div>
     <div class="call avoid">
       <div class="h"><span class="mark">!</span> Evita</div>
@@ -598,6 +599,14 @@ foreach (n in festival.NumbersUpForSale()) { print n <span class="s">'c'</span>;
 { print festival.RoundAt(1).Playing f;
   print festival.RoundAt(1).HowItStands s;
   print festival.RoundAt(1).PromiseCount q; }</code></pre>
+    <p>¿Y qué resuelve cada consulta? La primera <strong>enumera los cartones que siguen en venta</strong> (cada uno bajo la etiqueta <code>c</code>); la segunda trae el <strong>estado de la ronda 1</strong> en un solo objeto. Así se verían en una velada real:</p>
+    <pre class="out"><span class="tag">Salida ilustrativa</span><code><span class="c">// cartones aun disponibles (ya se vendieron el 1, 2 y 3):</span>
+{"n":[{"c":4},{"c":5},{"c":6}, … ,{"c":100}]}
+
+<span class="c">// estado de la ronda 1:</span>
+{"f":"AnyRow,FullCard", "s":"Playing", "q":2}
+<span class="c">//   f = figuras en juego · s = como va la ronda · q = premios prometidos</span></code></pre>
+    <p>Fíjate en las dos formas: el <code>foreach</code> agrupa sus elementos bajo la variable del bucle (<code>n</code>), como una lista de objetos <code>{"c":…}</code>; el bloque de varios <code>print</code> produce un objeto plano con una clave por etiqueta.</p>
 
     <h3>3.5 · Estado raíz vs. variables locales</h3>
     <p>Dónde colocas una asignación decide qué es. Esta es la regla completa:</p>
@@ -622,14 +631,13 @@ print total <span class="s">'total'</span>;                     <span class="c">
     </div>
 
     <h3>3.6 · <code>@Now</code>: el tiempo determinista</h3>
-    <p>Dentro de un script nunca lees el reloj del sistema. Usas <code>@Now</code>, un <code>DateTime</code> real que el framework <strong>inyecta</strong> y fija una sola vez por invocación. No hay que declararlo:</p>
-    <pre><span class="tag">DSL</span><code>print @Now.Year <span class="s">'anio'</span>;
-agenda.Programar(@Now.AddDays(1));   <span class="c">// es un DateTime real: opera con sus miembros</span></code></pre>
-    <pre class="out"><span class="tag">Salida real</span><code>{"anio":2026}</code></pre>
-    <p>Como vimos en el Capítulo 1, esto es lo que hace posible el replay: en vivo, <code>@Now</code> es el reloj real y queda anotado en el diario; al reproducir, se reinyecta ese mismo instante. La hora original y cada reproducción coinciden, siempre.</p>
+    <p>Dentro de un script <strong>nunca lees el reloj del sistema</strong>. ¿Por qué? Si un comando hiciera <code>DateTime.Now</code>, al reproducir el diario mañana ese “ahora” sería otro y el estado reconstruido no coincidiría con el original. Para evitarlo, el framework te <strong>sirve el tiempo ya fijado</strong>: <code>@Now</code>, un <code>DateTime</code> real disponible en cualquier comando o query <strong>sin declararlo</strong> —piénsalo como un parámetro que el framework ya te pasó—. Se fija una sola vez por <em>invocación</em> (una invocación = un <code>PerformCommand</code> o <code>PerformQuery</code>) y, como es un <code>DateTime</code> de verdad, operas con sus miembros:</p>
+    <pre><span class="tag">DSL</span><code>{ print @Now.Year <span class="s">'anio'</span>; print @Now.AddDays(1) <span class="s">'manana'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"anio":2026,"manana":"09/22/2026 12:22:01"}</code></pre>
+    <p>La primera línea lee el año; la segunda, un día después — ambas del <em>mismo</em> instante. En vivo, ese instante es el reloj real y queda anotado en el diario; al reproducir, se reinyecta idéntico. Por eso la hora original y cada reproducción coinciden siempre: es el determinismo del Capítulo 1, servido sin que tengas que pensarlo.</p>
     <aside class="note">
       <div class="h">✎ Nota del diseñador</div>
-      <p>Todos los <code>@Now</code> de una misma invocación valen exactamente lo mismo: se muestrea una vez, en el borde de la invocación. Y para <code>ActorV2</code>, <code>@Now</code> es el único “ahora” correcto — el mecanismo antiguo <code>ExecutionContext.Current.Now</code> lanza si lo usas en V2.</p>
+      <p>Todos los <code>@Now</code> de una misma invocación valen exactamente lo mismo: se muestrea una vez, en el borde de la invocación. Así, dos usos de <code>@Now</code> en el mismo comando nunca quedan a caballo entre un segundo y el siguiente.</p>
     </aside>
 
     <h3>3.7 · <code>upgrade</code>: inicializar una sola vez</h3>
@@ -1444,7 +1452,7 @@ Estado -> {"desbloqueado":false,"pasos":1}
 A. literales/promocion -> {"x":2.25,"y":4000000000}
 B. local en bloque -> {"doble":10}
 B. raiz persiste -> {"total":5}
-C. @Now -> {"anio":2026}
+C. @Now -> {"anio":2026,"manana":"09/22/2026 12:22:01"}
 D. upgrade una vez -> {"saldo":100}
 
 == Cap. 4 - Parametros y contratos ==

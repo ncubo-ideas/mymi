@@ -1,78 +1,92 @@
 @using Concesionario.Wasm.Parts
 
 <div class="d-top">
+    <img class="d-top__photo" src="img/vehiculo.png" alt="" aria-hidden="true" />
+    <div class="d-top__scrim" aria-hidden="true"></div>
+
     <div class="d-top__bar">
         <div class="d-top__brand">
-            <span class="d-top__mark"><SotaventosMark /></span>
+            <span class="d-top__mark"><SotaventoMark /></span>
             <span>
                 <span class="d-top__name">@Agencia</span>
                 <span class="d-top__kicker">@Texts["home.kicker"]</span>
             </span>
         </div>
-        <AppearanceToggle />
+        <AppearanceToggle OnNight="true" />
     </div>
 
-    <h1 class="d-top__hello">@Saludo</h1>
-    <p class="d-top__sub">
-        @Texts["home.sub"]
-    </p>
+    <div class="d-top__content">
+        <p class="d-top__hello-kicker">@HeroVehiculo</p>
+        <h1 class="d-top__hello">@HeroEstado</h1>
+    </div>
 </div>
 
-<div class="d-lift d__pad d__gap">
+<div class="d__pad d__gap">
 
-    <section class="d-card" id="estado">
-        <div class="d-card__head">
-            <span class="d-card__title">@Texts["home.stateTitle"]</span>
-            <span class="@("d-pill d-pill--" + Tono)">@Titular</span>
+    <section class="d-estado d-estado--after-hero" id="estado">
+        <div class="d-estado__deco" aria-hidden="true"></div>
+
+        <div class="d-estado__head">
+            <span class="d-sec__title">@Texts["home.stateTitle"]</span>
+            <span class="@("d-pill d-pill--" + Tono + " d-pill--chip")">@Titular</span>
         </div>
 
         <div class="d-health">
-            <div class="d-health__score">
-                <span class="d-health__n">@Texts.Grouped(AlDia)</span>
-                <span class="d-health__of">/@Texts.Grouped(Programadas)</span>
+            <div class="d-ring" id="anillo-estado">
+                <svg class="d-ring__svg" viewBox="0 0 100 100" aria-hidden="true">
+                    <circle class="d-ring__track" cx="50" cy="50" r="42" />
+                    <circle class="@("d-ring__fill d-ring__fill--" + Tono)" cx="50" cy="50" r="42"
+                            style="stroke-dasharray:@RingLargo;stroke-dashoffset:@RingRestante" />
+                </svg>
+                <div class="d-ring__label">
+                    <span class="d-ring__unit">
+                        <span class="d-ring__n">@Texts.Grouped(AlDia)</span>
+                        <span class="d-ring__of">/@Texts.Grouped(Programadas)</span>
+                    </span>
+                </div>
             </div>
             <div class="d-health__body">
-                <p class="d-health__what">
-                    @Texts["home.healthWhat"]
-                </p>
-            </div>
-        </div>
+                <p class="d-health__what">@ResumenEstado</p>
 
-        <div class="d-health__counts">
-            @if (Overdue > 0)
-            {
-                <span class="d-pill d-pill--danger" id="cuenta-vencidos">
-                    @Texts.With(Overdue == 1 ? "home.overdueOne" : "home.overdueMany",
-                        ("count", Texts.Grouped(Overdue)))
-                </span>
-            }
-            @if (Due > 0)
-            {
-                <span class="d-pill d-pill--warn" id="cuenta-tocan">
-                    @Texts.With(Due == 1 ? "home.dueOne" : "home.dueMany", ("count", Texts.Grouped(Due)))
-                </span>
-            }
-            @if (Missed > 0)
-            {
-                <span class="d-pill d-pill--mute" id="cuenta-no-hechos">
-                    @Texts.With("home.missed", ("count", Texts.Grouped(Missed)))
-                </span>
-            }
-            @if (AlDia > 0)
-            {
-                <span class="d-pill d-pill--ok" id="cuenta-al-dia">
-                    @Texts.With("home.upToDate", ("count", Texts.Grouped(AlDia)))
-                </span>
-            }
+                <div class="d-health__counts">
+                    @if (Overdue > 0)
+                    {
+                        <span class="d-pill d-pill--danger d-pill--chip" id="cuenta-vencidos">
+                            @Texts.With(Overdue == 1 ? "home.overdueOne" : "home.overdueMany", ("count", Texts.Grouped(Overdue)))
+                        </span>
+                    }
+                    @if (Due > 0)
+                    {
+                        <span class="d-pill d-pill--warn d-pill--chip" id="cuenta-tocan">
+                            @Texts.With(Due == 1 ? "home.dueOne" : "home.dueMany", ("count", Texts.Grouped(Due)))
+                        </span>
+                    }
+                    @if (Missed > 0)
+                    {
+                        <span class="d-pill d-pill--mute d-pill--chip" id="cuenta-no-hechos">
+                            @Texts.With("home.missed", ("count", Texts.Grouped(Missed)))
+                        </span>
+                    }
+                    @if (AlDia > 0)
+                    {
+                        <span class="d-pill d-pill--ok d-pill--chip" id="cuenta-al-dia">
+                            @Texts.With("home.upToDate", ("count", Texts.Grouped(AlDia)))
+                        </span>
+                    }
+                </div>
+            </div>
         </div>
     </section>
 
-    <section class="@("d-next d-next--" + Tono)" id="lo-que-sigue">
+    <section class="@("d-next d-next--" + Tono + " d-next--after-estado")" id="lo-que-sigue">
         <span class="d-next__icon">
-            <Glyph Name="@(HayAlgo ? ComoSeLee.Dibujo(Board[Siguiente]) : "check")" Size="22" Stroke="2.4" />
+            <Glyph Name="@(HayAlgo ? ComoSeLee.Dibujo(Board[Siguiente]) : "check")" Size="19" Stroke="2.4" />
         </span>
         <div>
-            <div class="d-next__kicker">@(HayAlgo ? Texts["home.nextKicker"] : Texts["home.nothingPending"])</div>
+            <div class="d-next__kicker">
+                <span class="d-next__dot" aria-hidden="true"></span>
+                @(HayAlgo ? Texts["home.nextKicker"] : Texts["home.nothingPending"])
+            </div>
             <div class="d-next__title">
                 @(HayAlgo ? ComoSeLee.Operacion(Texts.ThePhrases, Siguiente) : Texts["home.allGood"])
             </div>
@@ -98,8 +112,9 @@
                 {
                     <a class="d-cta" id="agendar-whatsapp" href="@EnlaceParaAgendar"
                        target="_blank" rel="noopener noreferrer">
-                        <Glyph Name="calendar" Size="18" Stroke="2.2" />
-                        @Texts["home.schedule"]
+                        <Glyph Name="calendar" Size="17" Stroke="2.2" />
+                        <span class="d-cta__label">@Texts["home.schedule"]</span>
+                        <span class="d-cta__chevron"><Glyph Name="chevron" Size="16" Stroke="2.4" /></span>
                     </a>
                 }
             }
@@ -114,97 +129,99 @@
         </div>
     </section>
 
-    <div class="d-tiles" id="numeros">
+    <div class="d-tiles d-tiles--next" id="numeros">
         <div class="d-tile" id="tile-odometro">
+            <span class="d-tile__icon"><Glyph Name="gauge" Size="14" Stroke="2.2" /></span>
             <div>
                 <span class="d-tile__v">@Odometro</span><span class="d-tile__u">@OdometroUnidad</span>
             </div>
             <div class="d-tile__k">@Texts["home.odometerTile"]</div>
         </div>
         <div class="d-tile" id="tile-lectura">
-            <div class="d-tile__v" style="font-size:15px;letter-spacing:-.2px">
-                @(ObservadoEl.Length > 0
-                    ? ComoSeLee.DiaCorto(Texts.ThePhrases, ObservadoEl)
-                    : Texts["home.noReading"])
+            <span class="d-tile__icon"><Glyph Name="calendar" Size="14" Stroke="2.2" /></span>
+            <div class="d-tile__v" style="font-size:18px;letter-spacing:-.3px">
+                @(ObservadoEl.Length > 0 ? ComoSeLee.DiaCorto(Texts.ThePhrases, ObservadoEl) : Texts["home.noReading"])
             </div>
             <div class="d-tile__k">@Texts["home.readingTile"]</div>
         </div>
     </div>
 
-    <div class="d-sec">
+    <div class="d-sec d-sec--home">
         <span class="d-sec__title">@Texts["home.glance"]</span>
         <button class="d-link" type="button" id="ir-a-servicios" @onclick="VerServicios">@Texts["home.seeAll"]</button>
     </div>
 
-    <section class="d-card" id="vistazo">
-        <div class="d-dots">
-            @foreach (string kind in Nueve)
-            {
-                string estado = Board.TryGetValue(kind, out string s) ? s : "";
-                string tono = ComoSeLee.Tono(estado);
+    <div class="d-dots" id="vistazo">
+        @foreach (string kind in Nueve)
+        {
+            string estado = Board.TryGetValue(kind, out string s) ? s : "";
+            string tono = ComoSeLee.Tono(estado);
 
-                <div class="d-dot" id="@("punto-" + kind)" title="@ComoSeLee.Estado(Texts.ThePhrases, estado)">
-                    <span class="@("d-dot__ring d-dot__ring--" + tono)">
-                        <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="18" Stroke="2.6" />
-                    </span>
-                    <span class="d-dot__k">@ComoSeLee.OperacionCorta(Texts.ThePhrases, kind)</span>
-                </div>
-            }
-        </div>
-    </section>
+            <div class="d-dot" id="@("punto-" + kind)" title="@ComoSeLee.Estado(Texts.ThePhrases, estado)">
+                <span class="@("d-dot__ring d-dot__ring--" + tono)">
+                    <Glyph Name="@ComoSeLee.DibujoOperacion(kind)" Size="19" Stroke="2.2" />
+                    @if (tono == "ok")
+                    {
+                        <span class="d-dot__badge" aria-hidden="true">
+                            <Glyph Name="check" Size="10" Stroke="3" />
+                        </span>
+                    }
+                </span>
+                <span class="d-dot__k">@ComoSeLee.OperacionCorta(Texts.ThePhrases, kind)</span>
+            </div>
+        }
+    </div>
 
     @if (HayContacto)
     {
-        <div class="d-sec">
+        <div class="d-sec d-sec--home">
             <span class="d-sec__title">@Texts["home.contactTitle"]</span>
         </div>
 
         <div class="d-tiles" id="contacto">
             @if (Contacto.Whatsapp.Length > 0)
             {
-                <a class="d-tile" id="wa" href="@("https://wa.me/" + Contacto.Whatsapp)"
-                   target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
-                    <span class="d-cover__icon" style="width:38px;height:38px;border-radius:12px">
-                        <Glyph Name="chat" Size="18" Stroke="2.2" />
+                <a class="d-contact" id="wa" href="@("https://wa.me/" + Contacto.Whatsapp)"
+                   target="_blank" rel="noopener noreferrer">
+                    <span class="d-contact__icon d-contact__icon--wa">
+                        <img class="d-contact__icon-img" src="img/whatsapp.webp" alt="" aria-hidden="true" />
                     </span>
-                    <span>
-                        <span style="display:block;font-weight:800;font-size:14px">WhatsApp</span>
-                        <span class="d-tile__k" style="margin:0">@Agencia</span>
+                    <span class="d-contact__body">
+                        <span class="d-contact__label">WhatsApp</span>
+                        <span class="d-contact__value">@Agencia</span>
                     </span>
                 </a>
             }
             @if (Contacto.Phone.Length > 0)
             {
-                <a class="d-tile" id="tel" href="@("tel:" + Contacto.Phone)"
-                   style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
-                    <span class="d-cover__icon" style="width:38px;height:38px;border-radius:12px">
-                        <Glyph Name="phone" Size="18" Stroke="2.2" />
+                <a class="d-contact" id="tel" href="@("tel:" + Contacto.Phone)">
+                    <span class="d-contact__icon d-contact__icon--tel">
+                        <Glyph Name="phone" Size="16" Stroke="2.2" />
                     </span>
-                    <span>
-                        <span style="display:block;font-weight:800;font-size:14px">@Texts["home.call"]</span>
-                        <span class="d-tile__k" style="margin:0">@Contacto.Phone</span>
+                    <span class="d-contact__body">
+                        <span class="d-contact__label">@Texts["home.call"]</span>
+                        <span class="d-contact__value">@Contacto.Phone</span>
                     </span>
                 </a>
             }
         </div>
     }
 
-    <p class="d-note" id="de-donde-sale" style="margin-top:6px">
-        <Glyph Name="info" Size="14" Stroke="2" />
-        <span>
-            @Texts.With("home.source",
-                ("where", DondeVive),
-                ("evaluated", EvaluadoHasta.Length > 0
-                    ? Texts.With("home.evaluated", ("instant", EvaluadoHasta))
-                    : Texts["home.notEvaluated"]))
-        </span>
-    </p>
+    <div class="d-footer-group">
+        <p class="d-note d-note--home" id="de-donde-sale">
+            <Glyph Name="info" Size="14" Stroke="2" />
+            <span>
+                @Texts.With("home.source",
+                    ("where", DondeVive),
+                    ("evaluated", EvaluadoHasta.Length > 0
+                        ? Texts.With("home.evaluated", ("instant", EvaluadoHasta))
+                        : Texts["home.notEvaluated"]))
+            </span>
+        </p>
 
-    <div style="margin-top:10px">
-        <button class="btn btn--ghost" type="button" id="traer-novedades" @onclick="Actualizar"
+        <button class="btn btn--ghost btn--subtle" type="button" id="traer-novedades" @onclick="Actualizar"
                 disabled="@(Trayendo || Migrada)">
-            <Glyph Name="sync" Size="18" />
+            <Glyph Name="sync" Size="16" />
             @(Migrada
                 ? Texts["home.refreshMigrated"]
                 : Trayendo ? Texts["home.refreshFetching"] : Texts["home.refresh"])
@@ -308,19 +325,39 @@
         ? Texts["home.headlineAttention"]
         : Due > 0 ? Texts["home.headlineSomething"] : Texts["home.headlineOk"];
 
-    private string Saludo
-    {
-        get
-        {
-            string carro = Modelo.Length > 0
-                ? Texts.With("home.yourModel", ("model", Modelo))
-                : Texts["home.yourCar"];
+    /// <summary>
+    /// La frase junto al aro. Dice los mismos dos numeros que el aro ya dibuja -- AlDia y
+    /// Programadas -- porque el aro es la lectura rapida y esta frase es la que confirma con
+    /// palabras lo que el aro muestra con color.
+    /// </summary>
+    private string ResumenEstado =>
+        AlDia + " operacion" + (AlDia == 1 ? "" : "es") + " " + (AlDia == 1 ? "está" : "están")
+        + " al día de las " + Programadas + " programadas";
 
-            return Overdue > 0
-                ? Texts.With("home.greetingAttention", ("car", carro))
-                : Due > 0
-                    ? Texts.With("home.greetingSomething", ("car", carro))
-                    : Texts.With("home.greetingOk", ("car", carro));
-        }
-    }
+    /// <summary>La primera linea del encabezado: de que carro se habla.</summary>
+    private string HeroVehiculo => Modelo.Length > 0 ? "Tu " + Modelo : "Tu carro";
+
+    /// <summary>
+    /// La segunda linea, la que de verdad importa: el mismo estado que decide Tono y Titular, dicho
+    /// como una frase que sigue a HeroVehiculo.
+    /// </summary>
+    private string HeroEstado =>
+        Overdue > 0 ? "necesita atención" : Due > 0 ? "tiene algo por hacer" : "está al día";
+
+    /// <summary>
+    /// El anillo de "Estado de tu vehiculo" es SVG, no una imagen: un circulo de radio 42 mide
+    /// 2*pi*42 de contorno, y ese mismo numero es el stroke-dasharray completo.
+    /// </summary>
+    private const double RingRadio = 42;
+
+    private static readonly double RingContorno = 2 * System.Math.PI * RingRadio;
+
+    private double RingFraccion =>
+        Programadas > 0 ? System.Math.Clamp((double)AlDia / Programadas, 0, 1) : 0;
+
+    private string RingLargo =>
+        RingContorno.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string RingRestante =>
+        (RingContorno * (1 - RingFraccion)).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 }

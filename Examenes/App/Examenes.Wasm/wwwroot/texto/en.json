@@ -75,6 +75,12 @@
     "sinCarpeta": "<strong>No folder:</strong> the record lives only in memory and is lost when you close."
   },
 
+  "resumen": {
+    "titulo": "Your results at a glance",
+    "paraSeguir": "to follow up",
+    "fueraDeRango": "out of range"
+  },
+
   "atencion": {
     "rotulo": "worth attention",
     "conteo": "1 result",
@@ -122,6 +128,7 @@
 
   "sinTendencia": {
     "rotulo": "no trend to show yet",
+    "intro": "They still have few measurements. With each one's next result we'll be able to start showing you how they're changing.",
     "conUna": "With your next result we can start showing you how it is changing.",
     "conVarias": "There is not enough data yet to show how it is changing."
   },

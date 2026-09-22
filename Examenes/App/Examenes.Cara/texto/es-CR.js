@@ -51,6 +51,7 @@ window.TextoDeLaCara['es-CR'] = {
     },
     sinTendencia: {
         rotulo: 'todavía no podemos ver la tendencia',
+        intro: 'Todavía tienen pocas mediciones. Con la próxima de cada uno vamos a poder empezar a mostrarte cómo vienen cambiando.',
         conUna: 'Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando.',
         conVarias: 'Todavía no hay datos suficientes para mostrar cómo viene cambiando.'
     },
@@ -81,8 +82,9 @@ window.TextoDeLaCara['es-CR'] = {
         sinPuente: 'esta página solo corre dentro de Mymi, en la forma híbrida: no hay puente, y sin puente no tiene a quién preguntarle',
         sinPuenteCorto: 'sin puente: esta pantalla no corre dentro de Mymi',
         pidiendo: 'pidiéndole a Mymi que traiga lo nuevo…',
-        alDia: 'al día, en {ms} ms · {dicho}',
-        noSePudo: 'no se pudo traer lo nuevo ({ms} ms): {porque}',
-        tiro: 'pull tiró: {porque}'
+        alDia: 'al día',
+        alDiaCon: 'al día · {dicho}',
+        noAlcance: 'no se pudo llegar a tu institución: revisá tu conexión y volvé a intentar',
+        noSePudo: 'no se pudo traer lo nuevo: volvé a intentar en un momento'
     }
 };

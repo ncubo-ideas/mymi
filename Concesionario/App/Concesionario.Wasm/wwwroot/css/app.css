@@ -179,7 +179,7 @@ h1:focus, h2:focus { outline: none; }
 
 .app__body {
     flex: 1 1 auto;
-    padding-bottom: 118px;
+    padding-bottom: 24px;
 }
 
 .iconbtn {

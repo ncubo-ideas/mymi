@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Concesionario.App.Wording;
 
 namespace Concesionario.Wasm.Parts
@@ -90,6 +91,27 @@ namespace Concesionario.Wasm.Parts
 			"Deferred" => "calendar",
 			_ => "check",
 		};
+
+		private static readonly Dictionary<string, string> DibujosDeOperacion = new()
+		{
+			["Inspection"] = "wrench",
+			["FluidChange"] = "drop",
+			["FilterChange"] = "filter",
+			["WearPartReplacement"] = "tyre",
+			["TimedComponent"] = "clock",
+			["SoftwareUpdate"] = "chip",
+			["RecallRemedy"] = "phone",
+			["Diagnostic"] = "pulse",
+			["Repair"] = "wrench",
+		};
+
+		/// <summary>
+		/// El dibujo que representa QUE es la operacion (no en que estado esta). Es lo que va adentro
+		/// del punto en "Un vistazo a tu carro": el tono del punto ya dice si esta al dia o no, asi que
+		/// el icono queda libre para decir de que operacion se trata.
+		/// </summary>
+		public static string DibujoOperacion(string kind) =>
+			DibujosDeOperacion.TryGetValue(kind, out string dibujo) ? dibujo : "check";
 
 		/// <summary>Un numero entero con el separador de miles del idioma. Es formato, no una cuenta.</summary>
 		public static string Miles(Phrases phrases, int value) => phrases.Grouped(value);

@@ -54,6 +54,7 @@ window.TextoDeLaCara['en'] = {
     },
     sinTendencia: {
         rotulo: 'no trend to show yet',
+        intro: "They still have few measurements. With each one's next result we'll be able to start showing you how they're changing.",
         conUna: 'With your next result we can start showing you how it is changing.',
         conVarias: 'There is not enough data yet to show how it is changing.'
     },
@@ -83,8 +84,9 @@ window.TextoDeLaCara['en'] = {
         sinPuente: 'this page only runs inside Mymi, in the hybrid form: there is no bridge, and without one it has no one to ask',
         sinPuenteCorto: 'no bridge: this screen is not running inside Mymi',
         pidiendo: 'asking Mymi to bring what is new…',
-        alDia: 'up to date, in {ms} ms · {dicho}',
-        noSePudo: 'could not bring what is new ({ms} ms): {porque}',
-        tiro: 'pull threw: {porque}'
+        alDia: 'up to date',
+        alDiaCon: 'up to date · {dicho}',
+        noAlcance: 'could not reach your institution: check your connection and try again',
+        noSePudo: 'could not bring what is new: try again in a moment'
     }
 };

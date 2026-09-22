@@ -40,7 +40,6 @@
     --azul-oscuro: #0b2c4e;
     --azul-claro:  #1d5c9e;
     --celeste:     #7db4e0;   /* acentos sobre oscuro: kickers, trazos, enlaces */
-    --logo:        #ffffff;   /* la gota y el círculo, sobre oscuro, van en blanco */
 
     /* El gradiente navy de la §6, y la tinta que se lee encima. */
     --fondo:       #0e2f55;   /* el navy base; --app-navy de las especificaciones */
@@ -180,14 +179,18 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* ------------------------------------------------------------- bloque de marca
 
-   Gota dentro de un circulo, 40 px, solo trazo — identico al de la pagina. El nombre va
+   RONDA 2: el logo REAL de Delfos (logo-delfos.png, PNG cuadrado con transparencia,
+   provisto por el laboratorio) reemplaza al trazo de gota+círculo dibujado a mano. Mismo
+   tamaño que el SVG que reemplaza (40px acá, 32px en el hero, ver `.inicio-hero-marca`
+   más abajo) para no alterar el ritmo ya ajustado del encabezado; `object-fit: contain`
+   conserva la proporción cuadrada del archivo sin recortarlo ni estirarlo. El nombre va
    ACA y no solo en el subtitulo: es lo que hace que la app se reconozca en un segundo. */
 
 .marca {
     display: flex; align-items: center; gap: 12px;
     margin: 0 0 26px;
 }
-.marca svg { width: 40px; height: 40px; flex: none; }
+.marca-logo { width: 40px; height: 40px; flex: none; object-fit: contain; }
 .marca-nombre {
     font-family: var(--serif);
     font-weight: 700; font-size: 1.15rem; line-height: 1.2;
@@ -1296,7 +1299,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     display: flex; align-items: center; gap: 12px;
     margin-bottom: 20px;
 }
-.inicio-hero-marca svg { width: 32px; height: 32px; flex: none; }
+.inicio-hero-marca .marca-logo { width: 32px; height: 32px; flex: none; object-fit: contain; }
 .inicio-hero-marca > div { flex: 1; min-width: 0; }
 .inicio-hero-marca .marca-nombre { font-size: 1rem; }
 .inicio-hero-marca .marca-claim { font-size: .72rem; color: rgba(255, 255, 255, .55); }
@@ -1413,6 +1416,47 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 }
 .inicio-hero-cta:hover { filter: brightness(1.12); transform: translateY(-1px); }
 .inicio-hero-cta:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+
+/* ------------------------------------------------------------- §1.5 resumen compacto
+
+   RONDA 5 — MISMO CONTENEDOR ÚNICO de siempre (panel liviano, `--carta`/`--linea`, sin
+   degradé navy ni sombra: esto es una síntesis para escanear, no otro hallazgo). El
+   sprite PNG de la ronda anterior se pixelaba al reducirlo a ícono chico -un raster no
+   puede escalar hacia abajo sin perder nitidez, y menos en pantallas Retina-, así que
+   `.inicio-resumen-icono` ahora es un `<svg>` inline (ver el markup): esta regla solo le
+   pone el tamaño final, el color y la forma viven en los atributos del propio SVG -no
+   hay `--bien`/`--ambar`/`--coral` acá porque cada ícono ya trae su color, muestreado
+   del sprite para que el componente se vea igual que antes-. Orden vertical: ícono,
+   número, etiqueta -el número sigue siendo el más grande y con más peso (700, 21px)
+   porque tiene que ser lo primero que se lea-. */
+.inicio-resumen {
+    background: var(--carta);
+    border: 1px solid var(--linea);
+    border-radius: 14px;
+    padding: 16px 16px 18px;
+    margin: 0 0 22px;
+}
+.inicio-resumen-rotulo {
+    font-family: var(--sans); font-weight: 700; font-size: 11px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--tenue-2); margin: 0 0 14px;
+}
+.inicio-resumen-fila {
+    display: flex; align-items: stretch; gap: 2px;
+}
+.inicio-resumen-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    flex: 1 1 0%; min-width: 0;
+}
+.inicio-resumen-divisor { width: 1px; align-self: stretch; margin: 2px 0; background: var(--linea); flex: none; }
+.inicio-resumen-icono { width: 24px; height: 24px; flex: none; }
+.inicio-resumen-cifra {
+    font-family: var(--sans); font-weight: 700; font-size: 21px; color: var(--tinta);
+    font-variant-numeric: tabular-nums; line-height: 1;
+}
+.inicio-resumen-etiqueta {
+    font-family: var(--sans); font-size: 12.5px; color: var(--tenue);
+    text-align: center; line-height: 1.25;
+}
 
 /* ------------------------------------------------------------- §2 lo que merece atención
 
@@ -1597,20 +1641,6 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     min-width: 0; text-align: center; white-space: nowrap;
 }
 .inicio-atencion-acciones .boton { flex: 7 1 0%; font-weight: 700; padding: 10px 8px; font-size: 13.5px; }
-/* El contorno de `.boton--contorno` está pensado para navy -tinta clara sobre línea
-   traslúcida clara-, y ahora la tarjeta volvió a ser navy: no hace falta invertirlo.
-   AJUSTE PUNTUAL: a 390px "Ver evolución" quedaba pegado al borde derecho -texto
-   más largo que "Entender este resultado →" para el mismo ~30% de ancho (flex: 3)-.
-   Se achica sólo la fuente de ESTE botón (13.5px -> 11px, el primario no se toca) y
-   sube un poco el padding horizontal (8px -> 9px) para dejarle aire real a los dos
-   lados sin ensanchar el botón -sigue siendo flex: 3, mismo ancho relativo de
-   siempre- ni bajar a dos líneas -white-space: nowrap ya estaba arriba-. */
-.inicio-atencion-acciones .boton--contorno {
-    flex: 3 1 0%;
-    color: var(--panel-navy-tinta); border-color: var(--panel-navy-borde);
-    padding: 10px 9px; font-size: 11px;
-}
-.inicio-atencion-acciones .boton--contorno:hover:not(:disabled) { background: rgba(125, 180, 224, .1); }
 
 /* Las formas que todavía viven acá adentro (trayectoria / presencia; la de progreso ya
    no se usa en esta tarjeta, ver más arriba) vuelven a leerse sobre navy -el mismo
@@ -1817,42 +1847,50 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 
 /* ------------------------------------------------------------- §6 aún no hay tendencia
 
-   RONDA 11: vuelve a ser compacto y de bajo protagonismo -no debía competir con "qué
-   cambió" ni con "tu historial"-. Una tarjeta chica y horizontal por analito, mismo
-   lenguaje de tarjeta navy que el resto de la pantalla pero SIN acento de color lateral
-   (ni ámbar ni verde: acá no hay juicio de valor, solo falta de datos), con un ícono
-   puramente decorativo -el mismo path del pulso que ya usa "merece atención", reutilizado
-   tal cual, en tono neutro- que no representa ningún dato. */
+   RONDA 2 — GRILLA, no ocho tarjetas verticales idénticas. La explicación ("con tu
+   próximo resultado...") bajó a UNA intro de sección (`.inicio-sintendencia-intro`), así
+   que cada celda solo necesita lo que cambia de un analito a otro -nombre, valor y su
+   chip de mediciones-, y eso cabe en una celda chica: 2 columnas en mobile
+   (`grid-template-columns: 1fr 1fr`), sin el ícono de pulso repetido que antes sumaba
+   ruido ocho veces seguidas. Sigue siendo navy-sobre-navy y SIN acento de color lateral
+   -ni ámbar ni verde: acá no hay juicio de valor, solo falta de datos-, un escalón más
+   liviano que las tarjetas de §2/§3 (radio más chico, sin sombra) para que se lea como
+   un archivador compacto y no como otra sección "importante". El grid se pasa solo a
+   una columna si una celda no entra -`minmax(0, 1fr)` nunca fuerza un ancho mínimo que
+   desborde-, así que nombres largos como "Nitrógeno ureico" nunca se cortan. */
 
 .inicio-sintendencia { margin: 0 0 22px; }
 .inicio-sintendencia-rotulo {
     font-family: var(--sans); font-weight: 700; font-size: 11px; letter-spacing: .05em;
     text-transform: uppercase; color: var(--tenue-2); margin: 0 0 10px;
 }
-.inicio-sintendencia-tarjeta {
-    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+.inicio-sintendencia-intro {
+    margin: 0 0 14px; font-size: 13.5px; line-height: 1.45; color: var(--tenue);
+    max-width: 46ch;
+}
+.inicio-sintendencia-grid {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+}
+.inicio-sintendencia-item {
     background: var(--panel-navy);
     border: 1px solid var(--panel-navy-borde);
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
+    border-radius: 12px;
+    padding: 12px 13px;
+    min-width: 0;
 }
-.inicio-sintendencia-tarjeta:last-child { margin-bottom: 0; }
-.inicio-sintendencia-cuerpo { flex: 1 1 auto; min-width: 0; }
-.inicio-sintendencia-nombre { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--panel-navy-tinta); }
-.inicio-sintendencia-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.inicio-sintendencia-nombre {
+    margin: 0 0 6px; font-size: 13.5px; font-weight: 600; line-height: 1.3;
+    color: var(--panel-navy-tinta);
+    /* Deja que nombres largos ("Nitrógeno ureico", "Proteínas totales") bajen a una
+       segunda línea en vez de recortarse: a 2 columnas en 390px no siempre entran en una. */
+    overflow-wrap: break-word;
+}
 .inicio-sintendencia-valor {
-    font-family: var(--sans); font-weight: 700; font-size: 20px; color: var(--panel-navy-tinta);
+    margin: 0 0 8px;
+    font-family: var(--sans); font-weight: 700; font-size: 17px; color: var(--panel-navy-tinta);
     font-variant-numeric: tabular-nums;
 }
-.inicio-sintendencia-valor span { font-size: 12.5px; font-weight: 400; color: var(--panel-navy-tenue); margin-left: 2px; }
-.inicio-sintendencia-texto { margin: 8px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--panel-navy-tenue); }
-.inicio-sintendencia-icono {
-    flex: none; width: 28px; height: 28px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--panel-navy-borde); margin-top: 2px;
-}
-.inicio-sintendencia-icono svg { width: 14px; height: 14px; stroke: var(--panel-navy-tenue); }
+.inicio-sintendencia-valor span { font-size: 11.5px; font-weight: 400; color: var(--panel-navy-tenue); margin-left: 2px; }
 
 /* ------------------------------------------------------------- §7 tu historial
 

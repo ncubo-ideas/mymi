@@ -6,56 +6,69 @@
         <span class="d-sec__title">@Texts["history.doneTitle"]</span>
     </div>
 
-    @if (Operations.WhatHasBeenDone.Count > 0)
+    @if (Operations.WhatHasBeenDone.Count == 0)
+    {
+        <div class="d-state d-state--mute" id="sin-historial">
+            <span class="d-state__icon d-state__icon--mute">
+                <Glyph Name="history" Size="26" Stroke="2" />
+            </span>
+            <div class="d-state__title">@Texts["history.emptyTitle"]</div>
+            <p class="d-state__body">@Texts["history.emptyBody"]</p>
+        </div>
+    }
+    else
     {
         <section class="d-card" id="linea-completaciones">
-            <div class="d-line">
+            <div class="d-hist-done-list">
                 @foreach (AThingThatWasDone hecho in Operations.WhatHasBeenDone)
                 {
-                    <div class="d-step" id="@("hecho-" + hecho.CompletedAt)">
-                        <span class="d-step__bullet d-step__bullet--ok">
-                            <Glyph Name="check" Size="11" Stroke="3" />
+                    <div class="d-hist-done" id="@("hecho-" + hecho.CompletedAt)">
+                        <span class="d-hist-done__check">
+                            <Glyph Name="check" Size="13" Stroke="3" />
                         </span>
-                        <div class="d-step__when">@hecho.CompletedAt</div>
-
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
-                            <span class="d-pill d-pill--info">@hecho.Reading</span>
+                        <div class="d-hist-done__body">
+                            <div class="d-hist-done__date">@ComoSeLee.DiaCorto(Texts.ThePhrases, hecho.CompletedAt)</div>
+                            <div class="d-hist-done__title">@ComoSeLee.Operacion(Texts.ThePhrases, hecho.Kind)</div>
+                            <span class="d-hist-done__km">@hecho.Reading</span>
+                            <p class="d-hist-done__desc">@hecho.Says</p>
                         </div>
-
-                        <div class="d-says">@hecho.Says</div>
                     </div>
                 }
             </div>
         </section>
-    }
-    else
-    {
-        <div class="d-empty" id="sin-completaciones">
-            <span class="d-empty__title">@Texts["history.doneNoneTitle"]</span>
-            @Texts["history.doneNoneBody"]
-        </div>
-    }
 
-    @if (Operations.Operations.Any(parada => !parada.HasBeenCompleted))
-    {
-        <div class="d-sec">
-            <span class="d-sec__title">@Texts["history.nothingTitle"]</span>
-        </div>
+        @if (Operations.Operations.Any(parada => !parada.HasBeenCompleted))
+        {
+            <div class="d-sec">
+                <span class="d-sec__title">@Texts["history.pendingTitle"]</span>
+                <span class="d-pill d-pill--mute">@Operations.Operations.Count(parada => !parada.HasBeenCompleted)</span>
+            </div>
 
-        <section class="d-card" id="operaciones-sin-registro">
-            @foreach (HowOneOperationStands parada in Operations.Operations)
-            {
-                @if (!parada.HasBeenCompleted)
-                {
-                    <div class="d-says" id="@("nada-de-" + parada.Kind)">@parada.CompletionsSays</div>
-                }
-            }
-        </section>
+            <section class="d-card" id="operaciones-sin-registro">
+                <div class="d-hist-empty-list">
+                    @foreach (HowOneOperationStands parada in Operations.Operations)
+                    {
+                        @if (!parada.HasBeenCompleted)
+                        {
+                            <div class="d-hist-empty-row" id="@("nada-de-" + parada.Kind)" title="@parada.CompletionsSays">
+                                <span class="d-hist-empty-row__icon">
+                                    <Glyph Name="@ComoSeLee.DibujoOperacion(parada.Kind)" Size="17" Stroke="2.1" />
+                                </span>
+                                <div>
+                                    <div class="d-hist-empty-row__title">@ComoSeLee.Operacion(Texts.ThePhrases, parada.Kind)</div>
+                                    <div class="d-hist-empty-row__value">@Texts["history.pendingRowNone"]</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </section>
 
-        <p class="d-note" style="margin-top:10px">
-            <Glyph Name="info" Size="14" Stroke="2" />
-            <span>@Texts[TheOwnerIsTold.TheCompletionsAreRecordedByTheWorkshopThatDoesTheWork]</span>
-        </p>
+            <p class="d-note" style="margin-top:10px">
+                <Glyph Name="info" Size="14" Stroke="2" />
+                <span>@Texts["history.pendingNote"]</span>
+            </p>
+        }
     }
 }
 
@@ -70,16 +83,20 @@ else
     </div>
 
     <section class="d-card" id="dias-en-el-taller">
-        <div class="d-cover d-cover--mute" style="padding:0;background:none;grid-template-columns:1fr">
-            <div class="d-cover__body" style="margin:0" id="periodo-dice">@Stays.Says</div>
+        <div class="d-hist-days">
+            <span class="d-hist-days__icon">
+                <Glyph Name="calendar" Size="19" Stroke="2" />
+            </span>
+            <div>
+                <div class="d-hist-days__count">@Texts.Days(Stays.DayCount)</div>
+                <div class="d-hist-days__period">@Stays.Says</div>
+            </div>
         </div>
 
         @if (Stays.InsideRightNow)
         {
-            <div class="d-says" id="adentro-ahora">
-                <span class="d-says__label">
-                    @Texts.With("history.staysRightNow", ("instant", Stays.AskedAt))
-                </span>
+            <div class="d-says" id="adentro-ahora" style="margin-top:14px">
+                <span class="d-says__label">@Texts.With("history.staysRightNow", ("instant", Stays.AskedAt))</span>
                 @Stays.TheStayRightNowSays
             </div>
 
@@ -89,6 +106,11 @@ else
             </p>
         }
     </section>
+
+    <p class="d-note" style="margin-top:10px">
+        <Glyph Name="info" Size="14" Stroke="2" />
+        <span>@Texts["history.staysExplain"]</span>
+    </p>
 
     @if (Stays.AnyStayInThePeriod)
     {
@@ -122,13 +144,6 @@ else
                 }
             </div>
         </section>
-    }
-    else
-    {
-        <div class="d-empty" id="sin-estadias">
-            <span class="d-empty__title">@Texts["history.staysNoneTitle"]</span>
-            @Texts[TheOwnerIsTold.TheStaysAreRecordedByTheWorkshopThatReceivesTheCar]
-        </div>
     }
 }
 

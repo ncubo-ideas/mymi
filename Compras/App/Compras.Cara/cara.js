@@ -695,24 +695,24 @@
         // de estado, la rutina, el carrito y el habitual salen todos de la MISMA lectura. Partirlo
         // en seis pedidos serian seis saltos del puente para pintar una pantalla.
         P.pedir('portada', EN_SU_IDIOMA).then(pintarPortada)
-            .catch(function (e) { $('cifras').textContent = e.message; });
+            .catch(function (e) { $('cifras').textContent = P.porQue(e); });
 
         P.pedir('cabecera', EN_SU_IDIOMA).then(pintarFirma)
-            .catch(function (e) { P.apunte(cuerpo('firma'), e.message, true); });
+            .catch(function (e) { P.apunte(cuerpo('firma'), P.porQue(e), true); });
 
         P.pedir('canasta', EN_SU_IDIOMA).then(pintarMes)
-            .catch(function (e) { P.apunte(cuerpo('mes'), e.message, true); });
+            .catch(function (e) { P.apunte(cuerpo('mes'), P.porQue(e), true); });
 
         P.pedir('movimientos', EN_SU_IDIOMA).then(pintarMovimientos)
-            .catch(function (e) { P.apunte(cuerpo('movimientos'), e.message, true); });
+            .catch(function (e) { P.apunte(cuerpo('movimientos'), P.porQue(e), true); });
 
         P.pedir('proxima', EN_SU_IDIOMA).then(pintarProxima)
-            .catch(function (e) { P.apunte(cuerpo('proxima'), e.message, true); });
+            .catch(function (e) { P.apunte(cuerpo('proxima'), P.porQue(e), true); });
 
         // SIN IDIOMA, y no es un olvido: `compras` devuelve fechas, sucursales y totales, que son
         // del registro del supermercado. No hay ninguna frase que componer.
         P.pedir('compras').then(pintarCompras)
-            .catch(function (e) { P.apunte(cuerpo('compras'), e.message, true); });
+            .catch(function (e) { P.apunte(cuerpo('compras'), P.porQue(e), true); });
     }
 
     function releer() {

@@ -8,21 +8,16 @@
 
 <PageTitle>@Textos.TituloDelModulo</PageTitle>
 
-@* EL BLOQUE DE MARCA, SOLO PARA EL ARRANQUE. La gota por la muestra, el círculo por el
-   oráculo; solo trazo, nunca relleno. Una vez que el expediente está arriba (`else` de
-   más abajo) la marca se repite ADENTRO del hero -es contenido suyo en la referencia
-   nueva, no un encabezado aparte-, así que acá queda condicionada a antes de abrir: no
-   hay forma de compartir el mismo markup entre los dos fondos sin un componente nuevo,
-   y esta ronda es solo el hero. *@
+@* EL BLOQUE DE MARCA, SOLO PARA EL ARRANQUE. RONDA 2: el trazo de gota+círculo dibujado a
+   mano se reemplaza por el logo real (logo-delfos.png, provisto por el laboratorio, sin
+   redibujar). Una vez que el expediente está arriba (`else` de más abajo) la marca se
+   repite ADENTRO del hero -es contenido suyo en la referencia nueva, no un encabezado
+   aparte-, así que acá queda condicionada a antes de abrir: no hay forma de compartir el
+   mismo markup entre los dos fondos sin un componente nuevo, y esta ronda es solo el hero. *@
 @if (!estado.EstaArriba)
 {
     <div class="marca">
-        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
-             fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
-            <circle cx="20" cy="20" r="18" />
-            <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
-                     0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
-        </svg>
+        <img src="logo-delfos.png" alt="" class="marca-logo" aria-hidden="true" />
         <div>
             <div class="marca-nombre">@Textos.NombreDeLaInstitucion</div>
             <div class="marca-claim">@Textos.LemaDeLaInstitucion</div>
@@ -257,19 +252,14 @@ else
             </svg>
         </div>
 
-        @*  LA MARCA — RONDA 6: MÁS PRESENCIA. Mismo SVG y mismas clases `marca-nombre`/
-            `marca-claim` que el bloque de arranque de más arriba (ver el
-            `@if (!estado.EstaArriba)` guardado al principio del archivo); lo que cambia es
-            puramente CSS -logo e tipografía más grandes, más aire arriba del hero (el
-            "safe-area" de la referencia: NO se simula una status bar falsa, solo se respeta
-            ese espacio con padding) y más separación antes del saludo-. *@
+        @*  LA MARCA — RONDA 6: MÁS PRESENCIA. RONDA 2 (siguiente): el mismo logo real
+            (logo-delfos.png) del bloque de arranque, mismas clases `marca-nombre`/
+            `marca-claim`; lo que cambia sigue siendo puramente CSS -logo y tipografía más
+            grandes, más aire arriba del hero (el "safe-area" de la referencia: NO se simula
+            una status bar falsa, solo se respeta ese espacio con padding) y más separación
+            antes del saludo-. *@
         <div class="inicio-hero-marca">
-            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
-                 fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
-                <circle cx="20" cy="20" r="18" />
-                <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
-                         0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
-            </svg>
+            <img src="logo-delfos.png" alt="" class="marca-logo" aria-hidden="true" />
             <div>
                 <div class="marca-nombre">@Textos.NombreDeLaInstitucion</div>
                 <div class="marca-claim">@Textos.LemaDeLaInstitucion</div>
@@ -333,6 +323,79 @@ else
         <a class="inicio-hero-cta" href="#valores">@textos["portada.verMiChequeo"]</a>
     </section>
 
+    @* §1.5 TUS RESULTADOS EN RESUMEN — RONDA 3: sigue siendo UNA sola pieza compacta y
+       las mismas tres cifras de la ronda 2, derivadas del dominio y ninguna hardcodeada:
+         - "en rango"       estado.LoQueEstaEnRango() (enRango.EnSuRango) -la misma
+                            consulta que ya alimenta enRango.ParaSonia en el hero-. Se
+                            deja de mostrar el denominador (antes "15/15"): cuando
+                            EnSuRango == Analitos, el "/15" solo repetía el número de al
+                            lado sin decir nada nuevo -exactamente la misma redundancia
+                            que ya se corrigió para los chips "NEGATIVO" en §3-, así que
+                            acá se muestra sólo el numerador, IGUAL que las otras dos
+                            cifras (misma lógica tipográfica en las tres, a pedido).
+         - "para seguir"    CuantosMerecenAtencion(), la MISMA suma que ya arma el
+                            encabezado de §2 (PideAlgo == true en las tres puertas).
+         - "fuera de rango" fueraDeRango (estado.AnalitosFueraDeRango()), el conteo de
+                            HALLAZGOS que Releer() ya calculaba desde la ronda 1.
+       LAS TRES CIFRAS SIGUEN SIN SER EXCLUYENTES Y SIN SUMAR UN TOTAL -ver la nota larga
+       de la ronda 2 más abajo en el historial de este archivo si hace falta el detalle-:
+       un colesterol puede estar en rango y a la vez pedir seguimiento, así que "fuera de
+       rango" es un subconjunto de "para seguir", no una tercera porción de una torta.
+
+       LO QUE CAMBIA ESTA RONDA (§ RONDA 5) ES SOLO VISUAL: el sprite PNG
+       (`icono-resultado-resumen.png`) se pixelaba al reducirlo a un ícono chico -un
+       raster no puede escalar hacia abajo sin perder nitidez, y menos en pantallas
+       Retina-, así que los tres íconos vuelven a ser SVG inline, vectoriales, nítidos a
+       cualquier densidad. Los tres colores (relleno pastel + anillo + glifo) están
+       MUESTREADOS pixel a pixel del propio sprite -no inventados- para que el
+       componente se vea igual que antes, solo que ahora en vector: verde/menta para "en
+       rango" (check), amarillo/dorado para "para seguir" (ojo) y coral para "fuera de
+       rango" (signo de exclamación, no una X). El coral es intencional y estable -no
+       depende de que hoy valga 0-, y es un color de icono propio de este componente, NO
+       el `--rojo` reservado del semáforo clínico (esa regla de dominio sigue intacta:
+       `--rojo` es solo para "urgente"). Mismo viewBox 24×24 y mismo lenguaje en los
+       tres -círculo + glifo lineal, sin degradés ni sombras-, así que el diámetro y el
+       grosor visual son idénticos entre los tres estados. *@
+    @if (enRango.Analitos > 0)
+    {
+        int cuantosParaSeguir = CuantosMerecenAtencion();
+        <section class="inicio-resumen" aria-label="@textos["resumen.titulo"]" @key="@($"resumen-{estado.Refrescos}")">
+            <p class="inicio-resumen-rotulo">@textos["resumen.titulo"]</p>
+            <div class="inicio-resumen-fila">
+                <div class="inicio-resumen-item">
+                    <svg class="inicio-resumen-icono" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="11" fill="#d4fae6" stroke="#03a171" stroke-width="1.5" />
+                        <path d="M7.5 12.6l3 3 6-6.7" fill="none" stroke="#004541" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span class="inicio-resumen-cifra">@enRango.EnSuRango</span>
+                    <span class="inicio-resumen-etiqueta">@textos["tranquilo.enRango"]</span>
+                </div>
+                <span class="inicio-resumen-divisor" aria-hidden="true"></span>
+                <div class="inicio-resumen-item">
+                    <svg class="inicio-resumen-icono" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="11" fill="#fceaae" stroke="#f8b602" stroke-width="1.5" />
+                        <path d="M5.5 12s2.8-4.4 6.5-4.4 6.5 4.4 6.5 4.4-2.8 4.4-6.5 4.4-6.5-4.4-6.5-4.4z"
+                              fill="none" stroke="#1b1b1a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="1.6" fill="#1b1b1a" stroke="none" />
+                    </svg>
+                    <span class="inicio-resumen-cifra">@cuantosParaSeguir</span>
+                    <span class="inicio-resumen-etiqueta">@textos["resumen.paraSeguir"]</span>
+                </div>
+                <span class="inicio-resumen-divisor" aria-hidden="true"></span>
+                <div class="inicio-resumen-item">
+                    <svg class="inicio-resumen-icono" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="11" fill="#fcd8da" stroke="#fd362f" stroke-width="1.5" />
+                        <line x1="12" y1="7.3" x2="12" y2="13.3" stroke="#fc2824" stroke-width="2.2" stroke-linecap="round" />
+                        <circle cx="12" cy="16.6" r="1.15" fill="#fc2824" stroke="none" />
+                    </svg>
+                    <span class="inicio-resumen-cifra">@fueraDeRango</span>
+                    <span class="inicio-resumen-etiqueta">@textos["resumen.fueraDeRango"]</span>
+                </div>
+            </div>
+        </section>
+    }
+
     @* §2 LO QUE MERECE ATENCIÓN — la pieza de mayor jerarquía. Un analito entra acá
        SOLO si su propia Interpretacion dice PideAlgo -nunca por su nombre-, así que si
        mañana es la hemoglobina la que pide algo y el colesterol se calma, este bloque
@@ -341,7 +404,7 @@ else
        que ya grafica la forma, dichos también en números-. *@
     @if (atencionAnalitos.Count > 0 || atencionPresencias.Count > 0)
     {
-        int cuantosMerecenAtencion = atencionAnalitos.Count + atencionPresencias.Count + atencionConstancias.Count;
+        int cuantosMerecenAtencion = CuantosMerecenAtencion();
         <section class="inicio-atencion" @key="@($"atencion-{estado.Refrescos}")">
             @* ENCABEZADO — RONDA 7: rótulo de siempre + un indicador contado, no una frase
                genérica. Se pidió explícitamente NO agregar algo como "hay resultados que
@@ -453,9 +516,12 @@ else
                             </p>
                         </div>
                     }
+                    @* UN SOLO CTA: "Ver evolución" y "Entender este resultado" navegaban los dos a
+                       VerSerie(t.Analito) -la misma ruta, analito/{nombre}-, así que el segundo
+                       botón era la misma acción dicha dos veces. Se conserva "Entender este
+                       resultado →", sin tocar destino ni lógica. *@
                     <div class="inicio-atencion-acciones">
                         <button class="boton" @onclick="() => VerSerie(t.Analito)">@textos["atencion.entenderEsteResultado"]</button>
-                        <button class="boton boton--contorno" @onclick="() => VerSerie(t.Analito)">@textos["atencion.verEvolucion"]</button>
                     </div>
                 </div>
             }
@@ -753,7 +819,16 @@ else
                                         {
                                             <span>@relatoP</span>
                                         }
-                                        <span class="chip @Insignia(p)">@p.UltimoResultado</span>
+                                        @* EL CHIP SE OMITE cuando repetiría la misma palabra que ya dice el
+                                           valor de arriba (Nitritos/sangre en heces/sangre en orina: "negativo"
+                                           arriba, "NEGATIVO" abajo, mismo dato dos veces). No es una regla por
+                                           nombre de analito -no hay ninguno en este if-: es que ESTE valor en
+                                           particular ya es lo que el chip diría. Un binario cuyo valor esperado
+                                           fuera otra palabra seguiría mostrando las dos. *@
+                                        @if (!ElChipRepiteElValor(p.UltimoResultado))
+                                        {
+                                            <span class="chip @Insignia(p)">@p.UltimoResultado</span>
+                                        }
                                     </div>
                                 </div>
                             </button>
@@ -912,64 +987,45 @@ else
        casos con el mismo texto genérico, y esta oración es más clara para Sonia sin
        sonar a alerta ni a indicación médica. El conteo de mediciones sigue siendo el
        real de cada vista (t.Mediciones/p.Mediciones/c.Mediciones), nunca inventado. *@
+    @* RONDA 2 — GRILLA COMPACTA, no ocho tarjetas idénticas. La explicación
+       ("con tu próximo resultado podemos...") se decía UNA VEZ por analito -8 veces en
+       pantalla, siempre la misma frase-; ahora se dice UNA VEZ a nivel de sección, como
+       intro, y cada celda se queda solo con lo que cambia de un analito a otro: nombre,
+       valor+unidad y su propio conteo de mediciones (t.Mediciones/p.Mediciones/
+       c.Mediciones, nunca inventado). Se retira también el ícono de pulso repetido -era
+       puramente decorativo y, ocho veces seguidas en una grilla chica, sumaba ruido en
+       vez de jerarquía-. TextoSinTendencia() se retira con sus tres únicos llamados. *@
     @if (sinTendenciaAnalitos.Count > 0 || sinTendenciaPresencias.Count > 0 || sinTendenciaConstancias.Count > 0)
     {
         <section class="inicio-sintendencia">
             <p class="inicio-sintendencia-rotulo">@textos["sinTendencia.rotulo"]</p>
-            @foreach (TendenciaDeAnalito t in sinTendenciaAnalitos)
-            {
-                <div class="inicio-sintendencia-tarjeta">
-                    <div class="inicio-sintendencia-cuerpo">
+            <p class="inicio-sintendencia-intro">@textos["sinTendencia.intro"]</p>
+            <div class="inicio-sintendencia-grid">
+                @foreach (TendenciaDeAnalito t in sinTendenciaAnalitos)
+                {
+                    <div class="inicio-sintendencia-item">
                         <p class="inicio-sintendencia-nombre">@t.ParaMostrar</p>
-                        <div class="inicio-sintendencia-fila">
-                            <span class="inicio-sintendencia-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></span>
-                            <span class="chip chip--repetir">@Mediciones(t.Mediciones)</span>
-                        </div>
-                        <p class="inicio-sintendencia-texto">@TextoSinTendencia(t.Mediciones)</p>
+                        <p class="inicio-sintendencia-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></p>
+                        <span class="chip chip--repetir">@Mediciones(t.Mediciones)</span>
                     </div>
-                    <span class="inicio-sintendencia-icono" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M2 12h4l2.5-7 4 14 2.5-7H22" />
-                        </svg>
-                    </span>
-                </div>
-            }
-            @foreach (PresenciaDeAnalito p in sinTendenciaPresencias)
-            {
-                <div class="inicio-sintendencia-tarjeta">
-                    <div class="inicio-sintendencia-cuerpo">
+                }
+                @foreach (PresenciaDeAnalito p in sinTendenciaPresencias)
+                {
+                    <div class="inicio-sintendencia-item">
                         <p class="inicio-sintendencia-nombre">@p.ParaMostrar</p>
-                        <div class="inicio-sintendencia-fila">
-                            <span class="inicio-sintendencia-valor">@p.UltimoResultado</span>
-                            <span class="chip chip--repetir">@Mediciones(p.Mediciones)</span>
-                        </div>
-                        <p class="inicio-sintendencia-texto">@TextoSinTendencia(p.Mediciones)</p>
+                        <p class="inicio-sintendencia-valor">@p.UltimoResultado</p>
+                        <span class="chip chip--repetir">@Mediciones(p.Mediciones)</span>
                     </div>
-                    <span class="inicio-sintendencia-icono" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M2 12h4l2.5-7 4 14 2.5-7H22" />
-                        </svg>
-                    </span>
-                </div>
-            }
-            @foreach (ConstanciaDeAnalito c in sinTendenciaConstancias)
-            {
-                <div class="inicio-sintendencia-tarjeta">
-                    <div class="inicio-sintendencia-cuerpo">
+                }
+                @foreach (ConstanciaDeAnalito c in sinTendenciaConstancias)
+                {
+                    <div class="inicio-sintendencia-item">
                         <p class="inicio-sintendencia-nombre">@c.ParaMostrar</p>
-                        <div class="inicio-sintendencia-fila">
-                            <span class="inicio-sintendencia-valor">@c.UltimaCategoria</span>
-                            <span class="chip chip--repetir">@Mediciones(c.Mediciones)</span>
-                        </div>
-                        <p class="inicio-sintendencia-texto">@TextoSinTendencia(c.Mediciones)</p>
+                        <p class="inicio-sintendencia-valor">@c.UltimaCategoria</p>
+                        <span class="chip chip--repetir">@Mediciones(c.Mediciones)</span>
                     </div>
-                    <span class="inicio-sintendencia-icono" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M2 12h4l2.5-7 4 14 2.5-7H22" />
-                        </svg>
-                    </span>
-                </div>
-            }
+                }
+            </div>
         </section>
     }
 
@@ -1203,6 +1259,21 @@ else
     private List<ConstanciaDeAnalito> sinTendenciaConstancias = new();
     private List<ConstanciaDeAnalito> tranquiloConstancias = new();
 
+    // EL TOTAL DE "MERECE ATENCIÓN", en un solo lugar. Es PideAlgo == true sobre las tres
+    // puertas -la misma cuenta que antes se recalculaba inline en el encabezado de §2-;
+    // ahora también la usa el resumen compacto de §1.5, así que las dos cifras no pueden
+    // desincronizarse: son literalmente la misma llamada.
+    private int CuantosMerecenAtencion() =>
+        atencionAnalitos.Count + atencionPresencias.Count + atencionConstancias.Count;
+
+    // EL CHIP DE "LO DEMÁS ESTÁ BIEN" que repetiría el valor de arriba. Sólo pasa con un
+    // binario cuyo valor esperado se lee "negativo" -Nitritos, sangre en heces, sangre en
+    // orina en el demo actual-, no con cualquier presencia: el color de la orina/heces no
+    // pasa por esta puerta porque es una ConstanciaDeAnalito con su propio chip
+    // (c.Constancia, "siempre lo esperable"), no un PresenciaDeAnalito.
+    private static bool ElChipRepiteElValor(string valor) =>
+        string.Equals(valor, "negativo", StringComparison.OrdinalIgnoreCase);
+
     // "Ver todos mis resultados" y "Ver historial completo" no navegan a una pantalla
     // nueva -esta ronda es solo Inicio, y no hay que inventar una ruta que no existe-:
     // despliegan mas de lo mismo aca abajo, con el mismo boton que ya usa el pedido de
@@ -1256,15 +1327,6 @@ else
         PuntoDeSerie actual = serie[serie.Count - 1];
         return $"{Valor(previo.Valor)} → {Valor(actual.Valor)}";
     }
-
-    // EL TEXTO DE "TODAVIA NO PODEMOS VER LA TENDENCIA" — RONDA 12: antes era una
-    // frase fija para cualquier cantidad de mediciones. Ahora depende de Mediciones:
-    // con una sola, tiene sentido decir que el PROXIMO resultado habilita la
-    // comparacion; con mas de una (y sin embargo !HaySerie, por ejemplo por dias
-    // insuficientes entre mediciones) esa frase mentiria, asi que se usa una version
-    // honesta que no promete una fecha concreta.
-    private string TextoSinTendencia(int mediciones) =>
-        textos[mediciones <= 1 ? "sinTendencia.conUna" : "sinTendencia.conVarias"];
 
     // "QUE CAMBIO DESDE TU ULTIMO CHEQUEO": el ultimo salto de CADA serie -no la serie
     // entera, que ya se ve en "lo que merece atencion" y en el detalle-. Mira los MISMOS

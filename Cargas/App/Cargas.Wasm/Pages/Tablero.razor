@@ -4,107 +4,68 @@
 
 <PageTitle>@Texto["tablero.titulo"] · @Textos.NombreDeLaMarca</PageTitle>
 
-@* El h1 existe para los lectores de pantalla y para el FocusOnNavigate del router. No se
-   dibuja: en un tablero el titulo es la marca del capo, y un titular grande arriba le
-   comeria el alto a los instrumentos. *@
+@* El h1 existe para lectores de pantalla y el FocusOnNavigate del router; no se dibuja:
+   la marca ya vive en el capó y un titular grande le comería el alto al hero. *@
 <h1 class="solo-para-lectores">@Texto["tablero.titulo"]</h1>
 
 <Problema De="Error" />
 
-@* LA FRANJA. Lo primero de la pantalla es la frase del DOMINIO -«venías rindiendo
-   12.6 y el último tramo dio 9.4»-, armada con los hechos de ella y nunca un consejo
-   de plantilla que esta pantalla no tiene de dónde sacar. El color de la luz lo
-   decide la severidad del dominio; acá solo se pinta.
+<div class="inicio">
 
-   EL @key VA EN EL CUERPO Y NO EN LA FRANJA: sube en cada Releer y obliga a Blazor a
-   recrear los nodos -sin él, Actualizar parecía no hacer nada-, pero si el bloque
-   entero se recrea, el foco del botón recién apretado se pierde. *@
-<div class="franja @Tono()">
-    <span class="franja-luz"></span>
-    <div class="franja-texto" @key="@($"franja-{Estado.Refrescos}")">
-        @if (rendimiento.ParaSonia.Length > 0)
+@if (vehiculos.Count == 0)
+{
+    @* ESTADO A — SIN CARGAS. Ni un instrumento apagado: no hay nada todavía que
+       instrumentar. Un solo mensaje y una sola cosa por hacer. *@
+    <div class="inicio-bienvenida">
+        <svg viewBox="0 0 40 40" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M16 34 L18 12 h4 L24 34 z" />
+            <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
+            <path d="M26 8 l6 -2.5 M26 11 l7 0" />
+        </svg>
+        @if (Estado.Refrescando)
         {
-            <p class="franja-frase">@Mayuscula(rendimiento.ParaSonia).</p>
-            @if (rendimiento.PideAlgo && rendimiento.Accion.Length > 0)
-            {
-                <p class="franja-accion">@Mayuscula(rendimiento.Accion).</p>
-            }
-        }
-        else if (Estado.Refrescando)
-        {
-            @* MIENTRAS SE VA A BUSCAR, la franja lo dice. Antes decía «Apretá Actualizar»
-               con la tecla del capó ya en «Actualizando…»: pedía una acción que estaba en
-               curso, y quien obedecía apretaba una tecla apagada. *@
-            <p class="franja-frase">@Texto["tablero.buscando"]</p>
+            <h2>@Texto["tablero.buscandoTitulo"]</h2>
+            <p>@Texto["tablero.buscandoCuerpo"]</p>
         }
         else
         {
-            <p class="franja-frase">@((MarkupString)Texto.Con("tablero.sinCargas", ("actualizar", "<em>" + Texto["comun.actualizar"] + "</em>")))</p>
+            <h2>@Texto["tablero.bienvenidaTitulo"]</h2>
+            <p>@((MarkupString)Texto["tablero.bienvenidaCuerpo"])</p>
         }
     </div>
-</div>
+}
+else
+{
+    @* ------------------------------------------------------------------- EL HERO
+       El rendimiento es la pregunta que trae a alguien a esta pantalla, así que es lo
+       primero que se lee. Con lectura o sin ella, la frase es siempre la del dominio
+       (rendimiento.ParaSonia): nunca se inventa un texto que la reemplace. *@
+    <div class="hero">
+        @* LA FOTO OFICIAL DE ESTACIONES FARO (wwwroot/images/faro/hero-estaciones-faro.jpg,
+           asset del repo, no una URL externa). Va como background-image de un div propio
+           -no un <img> rectangular pegado-: así se puede recortar/posicionar como
+           composición, y si el archivo no cargara, un background-image que falla
+           simplemente no pinta nada -sin ícono roto- y el hero se queda legible sobre su
+           propio degradado petróleo de base (la regla .hero de más arriba). *@
+        <div class="hero-fondo-imagen" aria-hidden="true"></div>
+        <div class="hero-velo" aria-hidden="true"></div>
 
-@* LAS CIFRAS DEL PIE VAN EN MONO, como toda cifra del tablero. Estaban en la sans en
-   negrita y el separador de miles —un espacio fino— desaparecía a 12.5 px: «~1452 km» tres
-   líneas debajo de «~1 017 km». La palabra que acompaña («plata», «cargas») sigue en la sans:
-   solo el número cambia de familia, igual que en la ruta. *@
-@* ------------------------------------------------------------- EL CUADRO
-
-   Los instrumentos, en el orden en que se preguntan: cuánto me queda, cómo viene
-   rindiendo, cuándo tengo que cargar, cuánto me cuesta andar. *@
-<div class="cuadro" @key="@($"cuadro-{Estado.Refrescos}")">
-
-    <div class="instrumento instrumento--medidor">
-        <span class="rotulo">@Texto["tablero.autonomia"]</span>
-        @if (autonomia.Hay)
-        {
-            <MedidorDeAutonomia Fraccion="proxima.FraccionRestante"
-                                Descripcion="@DescripcionDelMedidor()" />
-            <div class="cifra">
-                ~@Entero(proxima.Hay ? proxima.KilometrosRestantes : autonomia.Kilometros)<span class="unidad">km</span>
-            </div>
-            <div class="cifra-pie">
-                @if (proxima.Hay)
-                {
-                    <text>@Texto["tablero.loQueQueda"] &middot; @Texto["tablero.conTanqueLlenoSon"]
-                    <b class="mono">~@Entero(autonomia.Kilometros) km</b></text>
-                }
-                else
-                {
-                    <text>@Texto["tablero.conTanqueLleno"] &middot; @Cifra(autonomia.CapacidadEnLitros) L
-                    @Texto["tablero.a"] <b class="mono">@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b></text>
-                }
-            </div>
-        }
-        else
-        {
-            <MedidorDeAutonomia Apagado="true" Descripcion="@Texto["tablero.sinAutonomiaAria"]" />
-            <div class="cifra">—</div>
-            <div class="cifra-pie">@Texto["tablero.sinAutonomia"]</div>
-        }
-    </div>
-
-    <div class="instrumento instrumento--ancho">
-        <div class="fila">
-            <span class="rotulo crece">@Texto["tablero.rendimiento"]</span>
-            @if (rendimiento.Veredicto.Length > 0)
-            {
-                <span class="sello @Sello()">@Texto.ComoSeDice(rendimiento.Veredicto)</span>
-            }
-        </div>
-
+        @* El ícono del sprite refuerza qué mide este bloque de un vistazo -no es
+           decoración: es la misma jerarquía que ya da el eyebrow, con un apoyo visual. *@
+        <span class="hero-titulo">
+            <span class="faro-icon faro-icon--rendimiento" aria-hidden="true"></span>
+            @Texto["tablero.tuRendimiento"]
+        </span>
         @if (rendimiento.Actual > 0)
         {
-            <div class="fila">
-                <span class="cifra">@Cifra(rendimiento.ActualComoSeVe)<span class="unidad">@rendimiento.Simbolo</span></span>
+            <div class="hero-fila">
+                <span class="hero-cifra">@Cifra(rendimiento.ActualComoSeVe)<span class="unidad">@rendimiento.Simbolo</span></span>
+                @if (rendimiento.Veredicto.Length > 0)
+                {
+                    <span class="sello @Sello()">@Texto.ComoSeDice(rendimiento.Veredicto)</span>
+                }
                 @if (rendimiento.HaySerie && rendimiento.CambioPorcentualComoSeVe != 0)
                 {
-                    @* LA FLECHA SIGUE AL NÚMERO Y EL COLOR AL VEREDICTO, y no es un
-                       detalle: en L/100km la misma caída de rendimiento es un número que
-                       SUBE. Con la flecha atada al veredicto, la pantalla mostraría «▼ 33%»
-                       al lado de 7.9 → 10.6 y se contradiría sola. Así sale «▲ 33%» en
-                       ámbar: subió, y subir ahí es peor. Que la unidad invierta la flecha
-                       pero nunca el juicio es lo que DireccionDeseable ya sabía. *@
                     <span class="delta @(rendimiento.EstaMejorando ? "delta--mejor"
                         : rendimiento.EstaEmpeorando ? "delta--peor" : "delta--igual")">
                         @(rendimiento.CambioPorcentualComoSeVe > 0 ? "▲" : "▼")
@@ -113,126 +74,335 @@
                 }
             </div>
 
-            @if (rendimiento.TramosCalculados > 0)
+            @if (rendimiento.TramosCalculados > 1)
             {
                 <ChispaDeTramos Tramos="tramos" Habitual="rendimiento.Habitual"
-                                PideAlgo="rendimiento.PideAlgo"
-                                Descripcion="@rendimiento.ParaSonia" />
+                                PideAlgo="rendimiento.PideAlgo" Descripcion="@rendimiento.ParaSonia" />
             }
 
-            <div class="cifra-pie">
-                @if (rendimiento.Habitual > 0)
-                {
-                    <text>@Texto["tablero.tuNivelDeSiempre"] <b class="mono">@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b> &middot; </text>
-                }
-                @Texto.Con(rendimiento.TramosCalculados == 1 ? "tablero.sobreUnTramo" : "tablero.sobreTramos",
-                    ("cuantos", Entero(rendimiento.TramosCalculados)))@(rendimiento.TramosBloqueados > 0
-                    ? Texto.Con("tablero.sinCalcular", ("cuantos", Entero(rendimiento.TramosBloqueados))) : "")
-            </div>
+            <p class="hero-frase">@Mayuscula(rendimiento.ParaSonia).</p>
         }
         else
         {
-            <div class="cifra">—</div>
-            <div class="cifra-pie">
-                @(rendimiento.QueFalta.Length > 0
-                    ? Mayuscula(rendimiento.QueFalta) + "."
-                    : Texto["tablero.sinTramoCerrado"])
-            </div>
+            @* SIN MÉTRICA VACÍA: ni un "—" grande ni una caja apagada. Estado (el
+               titular humano) + motivo (la frase real del dominio, siempre la misma
+               -rendimiento.ParaSonia-, nunca inventada). La acción puntual -qué dato,
+               de qué fecha- vive solo en el pendiente de abajo: acá no se repite la
+               fecha ni "el kilometraje", así que ambos bloques se leen como una sola
+               narrativa y no como el mismo mensaje dos veces. *@
+            <p class="hero-vacio-rotulo">Todavía estamos aprendiendo cómo rinde tu carro.</p>
+            <p class="hero-frase">@Mayuscula(rendimiento.ParaSonia).</p>
+        }
+
+        @* La acción que pide el dominio -"revisalo con tu taller", "registrá la carga
+           que faltó"- solo cuando la severidad la pide de verdad. *@
+        @if (rendimiento.PideAlgo && rendimiento.Accion.Length > 0)
+        {
+            <span class="hero-accion">@Mayuscula(rendimiento.Accion)</span>
         }
     </div>
 
-    <div class="instrumento @(proxima.Hay ? "" : "instrumento--apagado")">
-        <span class="rotulo">@Texto["tablero.proximaCarga"]</span>
-        @if (proxima.Hay)
-        {
-            @* «~35 días» y no «en ~35 días»: el «en» en la tipografía de las cifras se leía
-               como parte del número. El rótulo ya dice de qué se trata. *@
-            <div class="cifra cifra--chica">
-                ~@proxima.DiasEstimados<span class="unidad">@Texto[proxima.DiasEstimados == 1 ? "comun.dia" : "comun.dias"]</span>
-            </div>
-            <div class="cifra-pie">
-                @Texto["tablero.estimado"] &middot; @Texto["tablero.teQuedan"] <b class="mono">~@Entero(proxima.KilometrosRestantes) km</b>
-                @Texto["tablero.yAndas"] <b class="mono">@Cifra(proxima.KilometrosPorDia) km</b> @Texto["tablero.porDia"]
-            </div>
-        }
-        else
-        {
-            <div class="cifra cifra--chica">—</div>
-            <div class="cifra-pie">@Texto["tablero.sinProximaCarga"]</div>
-        }
-    </div>
-
-    @* UN INSTRUMENTO POR MONEDA, y no el primero de la lista. El dominio reparte el
-       costo por moneda porque sumar colones con dólares no significa nada, y quedarse
-       con costos[0] escondía la otra sin decirlo: la pantalla se veía completa y
-       correcta, que es la peor forma de perder un dato. *@
-    @foreach (CostoEnLista costo in costos)
+    @* --------------------------------------------------------------- EL PENDIENTE
+       EL SIGUIENTE PASO, uno solo. Los demás faltantes no se esconden -se nombran, con
+       su cuenta, al pie- pero se resuelven en Mis cargas: acá solo vive el que sigue. *@
+    @if (proximoFaltante is not null)
     {
-        <div class="instrumento" @key="@($"costo-{costo.Moneda}")">
-            <span class="rotulo">@Texto["tablero.costoPorKilometro"]</span>
-            @* Sin «por km» pegado a la cifra: el rótulo ya lo dice, y repetirlo era la
-               unidad diciendo lo mismo que el título. El pie lo recuerda en prosa. *@
-            <div class="cifra cifra--chica">
-                @Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)
+        <div class="pendiente">
+            <div class="pendiente-cabeza">
+                @* Ícono del sprite oficial de Faro: combustible -es un dato de carga lo
+                   que falta, no una alarma-. *@
+                <span class="pendiente-icono">
+                    <span class="faro-icon faro-icon--combustible" aria-hidden="true"></span>
+                </span>
+                <div>
+                    @* LA FECHA SALE DE ACÁ -vive junto a la acción, más abajo- para no
+                       decir "tu carga del 25 ago" dos veces en el mismo bloque. *@
+                    @if (proximoFaltante.NaceDeUnaSuposicion)
+                    {
+                        <p class="pendiente-titulo">Confirmá cómo quedó el tanque</p>
+                        <p class="pendiente-texto">@Mayuscula(proximoFaltante.LaSuposicion).</p>
+                    }
+                    else
+                    {
+                        <p class="pendiente-titulo">Nos falta un dato</p>
+                        <p class="pendiente-texto">
+                            Agregá el kilometraje@(proximoFaltante.QueDesbloquea.Length > 0
+                                ? $" para poder calcular {proximoFaltante.QueDesbloquea}" : "").
+                        </p>
+                    }
+                </div>
             </div>
-            <div class="cifra-pie">
-                @Texto["tablero.porKilometro"] &middot; @Texto["tablero.sobre"] <b class="mono">@Entero(costo.Kilometros) km</b> @Texto["tablero.conKilometrajeAnotado"]
-            </div>
+
+            @if (proximoFaltante.ClaveDeLoQueFalta == ElKilometraje)
+            {
+                <div class="pendiente-campo">
+                    <div class="pendiente-campo-fila">
+                        <span class="pendiente-fecha">@proximoFaltante.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)</span>
+                        @* El ícono de odómetro vive DENTRO del campo -prefijo, como una lupa
+                           en un buscador-, así que el input se reconoce sin leer el placeholder. *@
+                        <span class="pendiente-input">
+                            <span class="faro-icon faro-icon--odometro" aria-hidden="true"></span>
+                            <input type="number" inputmode="numeric" min="1"
+                                   aria-label="@($"Kilometraje de tu carga del {proximoFaltante.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)}, en {unidades.Distancia}")"
+                                   placeholder="@($"odómetro en {unidades.Distancia}")"
+                                   value="@KilometrajeOVacio()"
+                                   @oninput="AnotarEnElCampo" />
+                        </span>
+                    </div>
+                    @* EL CTA A TODO EL ANCHO, en su propia fila: es la acción protagonista
+                       del bloque, no un botón más al lado del campo. La flecha es texto
+                       -no el ícono del sprite-: adentro de la tecla hereda el mismo color
+                       oscuro de la etiqueta, y el sprite la trae en gris, que desentonaría
+                       sobre el amarillo. *@
+                    <button class="tecla pendiente-cta" disabled="@(pendienteKilometraje <= 0)" @onclick="AgregarKilometraje">
+                        Agregar kilometraje <span aria-hidden="true">→</span>
+                    </button>
+                    @if (sugerenciaAplica)
+                    {
+                        <p class="pendiente-apunte">
+                            ¿Unos @Entero(propuesta.KilometrosComoSeVen) @propuesta.SimboloDeLaDistancia?
+                            Es lo que da tu promedio de @Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia por día.
+                        </p>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="pendiente-acciones">
+                    <span class="pendiente-fecha">@proximoFaltante.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)</span>
+                    <button class="tecla" @onclick="ConfirmarPendiente">
+                        @(SuponeLleno ? "Sí, quedó lleno" : "Así fue, cargué un monto")
+                    </button>
+                    <button class="tecla tecla--contorno" @onclick="CorregirPendiente">
+                        @(SuponeLleno ? "No, cargué solo un poco" : "No, lo llené")
+                    </button>
+                </div>
+            }
+
+            @if (mostrarChecklist && cargaDelPendiente is not null)
+            {
+                bool tieneKm = cargaDelPendiente.TieneKilometraje;
+                <div class="checklist">
+                    @* El check "hecho" es el ícono del sprite -menta, "positivo"-; "falta"
+                       se queda con el círculo vacío a mano: el sprite no tiene un hueco
+                       equivalente y este ya cumple, sin inventar uno nuevo. *@
+                    <span class="checklist-item checklist-item--hecho">
+                        <span class="faro-icon faro-icon--confirmado" aria-hidden="true"></span>
+                        @Texto["tablero.checklistCargaRegistrada"]
+                    </span>
+                    <span class="checklist-item @(tieneKm ? "checklist-item--hecho" : "checklist-item--falta")">
+                        @if (tieneKm)
+                        {
+                            <span class="faro-icon faro-icon--confirmado" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.5" /></svg>
+                        }
+                        @Texto["tablero.checklistKilometraje"]
+                    </span>
+                    <span class="checklist-item @(!cargaTieneTanquePendiente ? "checklist-item--hecho" : "checklist-item--falta")">
+                        @if (!cargaTieneTanquePendiente)
+                        {
+                            <span class="faro-icon faro-icon--confirmado" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.5" /></svg>
+                        }
+                        @Texto["tablero.checklistTanqueConfirmado"]
+                    </span>
+                </div>
+            }
+
+            @if (faltantes.Count > 1)
+            {
+                @* Progreso real del dominio -CompletitudDeDatos.Expresada, "2 de 3 cargas
+                   con kilometraje · 1 tramo calculable"-, no un conteo inventado acá. *@
+                <p class="pendiente-resto">@completitud.Expresada &middot; <a href="cargas">@Texto["tablero.verEnMisCargas"]<span class="faro-icon faro-icon--flecha" aria-hidden="true"></span></a></p>
+            }
         </div>
     }
-    @if (costos.Count == 0)
-    {
-        <div class="instrumento instrumento--apagado">
-            <span class="rotulo">@Texto["tablero.costoPorKilometro"]</span>
-            <div class="cifra cifra--chica">—</div>
-            <div class="cifra-pie">@Texto["tablero.sinCosto"]</div>
-        </div>
-    }
 
-    <div class="instrumento instrumento--medio @(propuesta.Hay ? "" : "instrumento--apagado")">
-        <span class="rotulo">@Texto["tablero.odometro"]</span>
-        @if (propuesta.Hay)
-        {
-            <TiraDeOdometro Kilometros="propuesta.KilometrosComoSeVen"
-                            Descripcion="@Texto.Con("tablero.odometroAria", ("kilometraje", Entero(propuesta.KilometrosComoSeVen) + " " + propuesta.SimboloDeLaDistancia))" />
-            <div class="cifra-pie">
-                @Texto["tablero.hoyEstimado"] &middot; <b class="mono">@Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia</b> @Texto["tablero.porDia"]
-                @Texto["tablero.desdeTuUltimaLectura"]
-                <b class="mono">@propuesta.DiasDesdeLaUltimaLectura</b> @Texto[propuesta.DiasDesdeLaUltimaLectura == 1 ? "comun.dia" : "comun.dias"]
-            </div>
-        }
-        else
-        {
-            <TiraDeOdometro Kilometros="0" Descripcion="@Texto["tablero.sinOdometroAria"]" />
-            <div class="cifra-pie">@Texto["tablero.sinOdometro"]</div>
-        }
-    </div>
-
-    @* Mismo criterio que el costo: el gasto del período viene repartido por moneda. *@
+    @* ------------------------------------------------------------------ GASTO DEL MES
+       Un ícono por moneda -sumar colones con dólares no significa nada-, con el monto
+       como protagonista: es la misma pregunta que "cuánto me está costando esto" y acá
+       se contesta primero, no como una fila más de una lista de cinco cosas distintas. *@
     @foreach (GastoEnLista gasto in gastos)
     {
-        <div class="instrumento instrumento--medio" @key="@($"gasto-{gasto.Moneda}")">
-            <span class="rotulo">@Texto["tablero.gasto"] @MesDelGasto()</span>
-            <div class="cifra cifra--chica">@Simbolo(gasto.Moneda)@Plata(gasto.Monto)</div>
-            <div class="cifra-pie">
-                <b class="mono">@gasto.Cargas</b> @Texto[gasto.Cargas == 1 ? "comun.carga" : "comun.cargas"] &middot;
-                <b class="mono">@Cifra(gasto.Litros) L</b>
+        <a class="tarjeta-acceso" href="cargas" @key="@($"gasto-{gasto.Moneda}")">
+            <span class="tarjeta-acceso-icono">
+                <span class="faro-icon faro-icon--gasto" aria-hidden="true"></span>
+            </span>
+            <div class="tarjeta-acceso-cuerpo">
+                <span class="tarjeta-acceso-rotulo">@Texto["tablero.gasto"] @MesDelGasto()</span>
+                <div class="tarjeta-acceso-valor">@Simbolo(gasto.Moneda)@Plata(gasto.Monto)</div>
+                <p class="tarjeta-acceso-pie">
+                    <b>@gasto.Cargas</b> @Texto[gasto.Cargas == 1 ? "comun.carga" : "comun.cargas"] &middot; <b>@Cifra(gasto.Litros) L</b>
+                </p>
             </div>
-        </div>
+            <span class="faro-icon faro-icon--flecha tarjeta-acceso-flecha" aria-hidden="true"></span>
+        </a>
     }
-    @if (gastos.Count == 0)
+
+    @* ---------------------------------------------------------------- ÚLTIMA CARGA
+       Compacta, con los datos reales de la carga más reciente: cuándo, cuánto, litros,
+       tanque y kilometraje si lo hay. El resto del historial vive en Mis cargas. *@
+    @if (ultimaCarga is not null)
     {
-        <div class="instrumento instrumento--medio instrumento--apagado">
-            <span class="rotulo">@Texto["tablero.gasto"]</span>
-            <div class="cifra cifra--chica">—</div>
-            <div class="cifra-pie">@Texto["tablero.sinGasto"]</div>
+        <a class="tarjeta-acceso" href="cargas">
+            <span class="tarjeta-acceso-icono">
+                <span class="faro-icon faro-icon--ultimacarga" aria-hidden="true"></span>
+            </span>
+            <div class="tarjeta-acceso-cuerpo">
+                <span class="tarjeta-acceso-rotulo">@Texto["tablero.ultimaCargaRotulo"] &middot; @ultimaCarga.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</span>
+                <div class="tarjeta-acceso-valor">@Simbolo(ultimaCarga.Moneda)@Plata(ultimaCarga.Total)</div>
+                <p class="tarjeta-acceso-pie ultima-carga-datos">
+                    <span><span class="n">@ultimaCarga.Volumen</span> @Texto["ruta.de"] @ultimaCarga.Tipo</span>
+                    <span>@Texto["ruta.surtidor"] @ultimaCarga.Surtidor</span>
+                    @if (ultimaCarga.Tanque.Length > 0)
+                    {
+                        <span class="ultima-carga-tanque @(ultimaCarga.ClaveDelTanque == "lleno" ? "" : "ultima-carga-tanque--parcial")">
+                            @Texto["ruta.tanque"] @ultimaCarga.Tanque
+                        </span>
+                    }
+                    @if (ultimaCarga.TieneKilometraje)
+                    {
+                        <span class="n aporte" title="@Texto.Con("ruta.loAnotasteVos", ("origen", Texto.ComoSeDice(ultimaCarga.OrigenDelKilometraje)))">@ultimaCarga.KilometrajeAnotado</span>
+                    }
+                    @if (ultimaCarga.TieneFoto)
+                    {
+                        <span>@Texto["tablero.conFotoDelTablero"]</span>
+                    }
+                </p>
+            </div>
+            <span class="faro-icon faro-icon--flecha tarjeta-acceso-flecha" aria-hidden="true"></span>
+        </a>
+    }
+
+    @* ------------------------------------------------------------------ MI CARNET FARO
+       Resumen real de Lealtad -Estado.Lealtad(), el mismo dato que ya muestra esa
+       pantalla, ninguno inventado acá-, como acceso compacto. La pantalla completa de
+       Lealtad -QR, socio, boletos, tómbola, historial- sigue intacta en /lealtad; esto
+       es solo la puerta de entrada desde Inicio. *@
+    <a class="tarjeta-acceso tarjeta-acceso--carnet" href="lealtad">
+        <span class="tarjeta-acceso-icono tarjeta-acceso-icono--ambar">
+            <span class="faro-icon faro-icon--carnet" aria-hidden="true"></span>
+        </span>
+        <div class="tarjeta-acceso-cuerpo">
+            <span class="tarjeta-acceso-rotulo">@Texto["tablero.miCarnetFaro"]</span>
+            <div class="tarjeta-acceso-valor">
+                @Entero(lealtad.Saldo)<span class="unidad">@Texto["tablero.puntos"]</span>
+            </div>
+            <p class="tarjeta-acceso-pie">
+                @if (lealtad.Nivel.Length > 0)
+                {
+                    <text>@Texto["tablero.nivelPrefijo"] <b>@Texto.ComoSeDice(lealtad.Nivel)</b></text>
+                }
+                else
+                {
+                    <text>@Texto["tablero.sinPuntosTodavia"]</text>
+                }
+            </p>
+        </div>
+        <span class="faro-icon faro-icon--flecha tarjeta-acceso-flecha" aria-hidden="true"></span>
+    </a>
+
+    @* --------------------------------------------------------------------- RESUMEN
+       Autonomía, próxima carga, costo por km y odómetro estimado: la misma historia
+       (capacidad + rendimiento habitual + ritmo) contada en distintas unidades. Una
+       sola lista compacta, y solo las filas que hoy tienen algo real que decir -sin
+       gauges apagados-. El gasto del mes ya se muestra arriba, como tarjeta propia. *@
+    @if (autonomia.Hay || proxima.Hay || propuesta.Hay || costos.Count > 0)
+    {
+        <div class="resumen">
+            @if (autonomia.Hay)
+            {
+                <div class="resumen-fila">
+                    <span class="resumen-icono">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="3.4" width="8.2" height="13.2" rx="1.2" /><path d="M11.8 8.2h1.6a1.4 1.4 0 0 1 1.4 1.4v4.2a1.1 1.1 0 0 0 2.2 0V8.6l-1.8-1.8" /></svg>
+                    </span>
+                    <div class="resumen-cuerpo">
+                        <span class="resumen-rotulo">@Texto["tablero.autonomia"]</span>
+                        <div class="resumen-valor">
+                            ~@Entero(proxima.Hay ? proxima.KilometrosRestantes : autonomia.Kilometros)<span class="unidad">km</span>
+                        </div>
+                        <div class="resumen-barra"><span style="width:@AnchoDeAutonomia()%"></span></div>
+                        <p class="resumen-pie">
+                            @if (proxima.Hay)
+                            {
+                                <text>@Texto["tablero.loQueQueda"] &middot; @Texto["tablero.conTanqueLlenoSon"] <b>~@Entero(autonomia.Kilometros) km</b></text>
+                            }
+                            else
+                            {
+                                <text>@Texto["tablero.conTanqueLleno"] &middot; @Cifra(autonomia.CapacidadEnLitros) L @Texto["tablero.a"] <b>@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b></text>
+                            }
+                        </p>
+                    </div>
+                </div>
+            }
+
+            @if (proxima.Hay)
+            {
+                <div class="resumen-fila">
+                    <span class="resumen-icono">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.8" y="5.6" width="14.4" height="8.8" rx="1.6" /><path d="M6.4 5.6V4M13.6 5.6V4" /></svg>
+                    </span>
+                    <div class="resumen-cuerpo">
+                        <span class="resumen-rotulo">@Texto["tablero.proximaCarga"]</span>
+                        <div class="resumen-valor">
+                            ~@proxima.DiasEstimados<span class="unidad">@Texto[proxima.DiasEstimados == 1 ? "comun.dia" : "comun.dias"]</span>
+                        </div>
+                        <p class="resumen-pie">
+                            @((MarkupString)Texto["tablero.ritmoPrefijo"]) <b>@Cifra(proxima.KilometrosPorDia) km</b> @Texto["tablero.ritmoSufijo"]
+                        </p>
+                    </div>
+                </div>
+            }
+
+            @foreach (CostoEnLista costo in costos)
+            {
+                <div class="resumen-fila" @key="@($"costo-{costo.Moneda}")">
+                    <span class="resumen-icono">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.8" /><path d="M10 6.6v6.8M8 8.2h2.8a1.5 1.5 0 0 1 0 3H8" /></svg>
+                    </span>
+                    <div class="resumen-cuerpo">
+                        <span class="resumen-rotulo">@Texto["tablero.costoPorKilometro"]</span>
+                        <div class="resumen-valor">@Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)</div>
+                        <p class="resumen-pie">@Texto["tablero.sobre"] <b>@Entero(costo.Kilometros) km</b> @Texto["tablero.conKilometrajeAnotado"]</p>
+                    </div>
+                </div>
+            }
+
+            @if (propuesta.Hay)
+            {
+                <div class="resumen-fila">
+                    <span class="resumen-icono">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 14.4a6.4 6.4 0 0 1 12.8 0" /><path d="M10 14.4 13.4 10.8" /></svg>
+                    </span>
+                    <div class="resumen-cuerpo">
+                        <span class="resumen-rotulo">@Texto["tablero.odometro"]</span>
+                        <div class="resumen-valor">
+                            ~@Entero(propuesta.KilometrosComoSeVen)<span class="unidad">@propuesta.SimboloDeLaDistancia</span>
+                        </div>
+                        <p class="resumen-pie">
+                            <b>@Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia</b> @Texto["tablero.porDia"] @Texto["tablero.desdeTuUltimaLectura"]
+                            <b>@propuesta.DiasDesdeLaUltimaLectura</b> @Texto[propuesta.DiasDesdeLaUltimaLectura == 1 ? "comun.dia" : "comun.dias"]
+                        </p>
+                    </div>
+                </div>
+            }
         </div>
     }
+}
+
 </div>
 
 @code {
     private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
+    private IReadOnlyList<CargaEnLista> cargas = new List<CargaEnLista>();
     private IReadOnlyList<TramoEnLista> tramos = new List<TramoEnLista>();
+    private IReadOnlyList<FaltanteEnLista> faltantes = new List<FaltanteEnLista>();
     private IReadOnlyList<CostoEnLista> costos = new List<CostoEnLista>();
     private IReadOnlyList<GastoEnLista> gastos = new List<GastoEnLista>();
     private RendimientoDelVehiculo rendimiento = new();
@@ -240,33 +410,34 @@
     private ProximaCargaDelVehiculo proxima = new();
     private CompletitudDelVehiculo completitud = new();
     private OdometroPropuesto propuesta = new();
+    private UnidadesElegidas unidades = new();
     private DateTime mesDelGasto;
 
-    // ------------------------------------------------------------------ presentacion
+    // LOS DOS CODIGOS CON QUE ESTA PANTALLA DECIDE que formulario dibujar. Son identidad y no
+    // prosa, igual que en Ruta.razor: decidir sobre la frase dejaria de decidir en cuanto la
+    // frase cambie de idioma.
+    private const string ElKilometraje = "kilometraje";
+    private const string LaConfirmacionDelTanque = "confirmacion-del-tanque";
 
-    // El tono de la franja lo decide el DOMINIO: la severidad del veredicto, traducida al
-    // semaforo de la marca. El rojo queda reservado y hoy nadie lo produce.
-    //
-    // Y SIN VEREDICTO, LUZ NEUTRA. «Todavía no puedo calcular tu rendimiento» salía con la luz
-    // verde, porque verde era el color por defecto: una pantalla que no sabe nada decía que
-    // todo estaba bien. El verde queda para cuando el dominio dijo «bien».
-    //
-    // Y SIN SERIE TAMBIEN. El chequeo por Veredicto vacío no alcanzaba: «sin tramo» e
-    // «indeterminado» son veredictos CON nombre, así que pasaban al default y la luz volvía
-    // a salir verde diciendo «todavía no puedo calcular». Lo que decide si hay juicio es
-    // HaySerie; sin serie nadie dijo «bien», y la luz se queda apagada.
-    private string Tono()
-    {
-        if (rendimiento.Veredicto.Length == 0) return "franja--neutra";
-        switch (rendimiento.Severidad)
-        {
-            case "urgente":         return "franja--problema";
-            case "consulte-pronto":
-            case "vigilar":         return "franja--atencion";
-        }
-        if (!rendimiento.HaySerie) return "franja--neutra";
-        return "";
-    }
+    // MI CARNET FARO: es de la cuenta, no del carro -Estado.Lealtad() no toma placa-,
+    // así que se lee siempre, incluso sin vehículos. Mismo dato que ya muestra
+    // Lealtad.razor; acá es solo el acceso.
+    private EstadoDeLealtad lealtad = new();
+
+    private CargaEnLista? ultimaCarga;
+    private FaltanteEnLista? proximoFaltante;
+    private CargaEnLista? cargaDelPendiente;
+    private bool cargaTieneTanquePendiente;
+    private bool mostrarChecklist;
+    private bool sugerenciaAplica;
+
+    // El campo del pendiente, UNO solo -Inicio muestra un pendiente a la vez, no una
+    // lista-. Se recarga cuando el pendiente CAMBIA de carga, no en cada Releer: si no,
+    // releer mientras ella teclea le borraría lo escrito.
+    private decimal pendienteKilometraje;
+    private string pendienteTransaccionCargada = "";
+
+    // ------------------------------------------------------------------ presentacion
 
     private string Sello()
     {
@@ -277,10 +448,14 @@
         return "sello--bien";
     }
 
-    private string DescripcionDelMedidor() => proxima.Hay
-        ? Texto.Con("tablero.medidorAria",
-            ("restan", Entero(proxima.KilometrosRestantes)), ("lleno", Entero(autonomia.Kilometros)))
-        : Texto.Con("tablero.medidorLlenoAria", ("lleno", Entero(autonomia.Kilometros)));
+    // FORMATEADO EN INVARIANTE, no interpolado crudo: un double interpolado directo usa
+    // la cultura del hilo, y en una cultura con coma decimal "width:98,5%" es CSS
+    // inválido. Mismo argumento que Ancho() en Mis cargas (Ruta.razor).
+    private string AnchoDeAutonomia()
+    {
+        double fraccion = proxima.Hay ? Math.Clamp((double)proxima.FraccionRestante, 0.02, 1) : 1;
+        return (fraccion * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+    }
 
     // CON EL ANIO. El periodo es el mes de la ULTIMA CARGA, no el del calendario: si esa
     // carga es de hace un anio, "gasto de agosto" se lee como el agosto de este anio y el
@@ -288,19 +463,68 @@
     private string MesDelGasto() => mesDelGasto == default
         ? "" : Texto.Con("tablero.delMes", ("mes", mesDelGasto.ToString("MMMM yyyy", Cultura)));
 
+    // Los dos botones de confirmación salen de lo que el DOMINIO supuso -corte
+    // automático supone lleno, preseteado supone parcial-, igual que en Mis cargas.
+    private bool SuponeLleno => proximoFaltante is not null
+        && proximoFaltante.LoQueSeSupone == "lleno";
+
+    private string? KilometrajeOVacio() =>
+        pendienteKilometraje > 0
+            ? pendienteKilometraje.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            : null;
+
+    private void AnotarEnElCampo(ChangeEventArgs e) =>
+        pendienteKilometraje = decimal.TryParse(e.Value?.ToString(),
+            System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture,
+            out decimal km) ? km : 0m;
+
+    // ------------------------------------------------------------------ las acciones
+
+    private Task AgregarKilometraje() => Intentar("anotar-el-kilometraje", async () =>
+    {
+        if (proximoFaltante is null || pendienteKilometraje <= 0) return;
+
+        string origen = propuesta.Hay && pendienteKilometraje == propuesta.KilometrosComoSeVen
+            ? "confirmado" : "observado";
+
+        string rechazo = await Estado.AnotarOdometro(proximoFaltante.Transaccion,
+            pendienteKilometraje, unidades.Distancia, origen);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp("kilometraje-rechazado");
+
+        pendienteKilometraje = 0;
+        pendienteTransaccionCargada = "";
+        MostrarListo("Listo: guardamos el kilometraje.");
+    });
+
+    private Task ConfirmarPendiente() => Intentar("confirmar-el-tanque", async () =>
+    {
+        if (proximoFaltante is null) return;
+        string rechazo = await Estado.ConfirmarTanque(proximoFaltante.Transaccion);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
+        MostrarListo("Confirmado.");
+    });
+
+    private Task CorregirPendiente() => Intentar("corregir-el-tanque", async () =>
+    {
+        if (proximoFaltante is null) return;
+        string contrario = proximoFaltante.LoQueSeSupone == "lleno" ? "parcial" : "lleno";
+        string rechazo = await Estado.DeclararTanque(proximoFaltante.Transaccion, contrario);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
+        MostrarListo($"Anotado: tanque {contrario}.");
+    });
+
     // ------------------------------------------------------------------ la lectura
 
-    // TODO lo que se ve sale de consultar al actor. El payload de la estacion nunca llega
-    // hasta aca: solo entra como argumento de un comando, dentro del bucle.
     protected override void Releer()
     {
         vehiculos = Estado.Vehiculos();
+        lealtad = Estado.Lealtad();
 
-        // El demo es de un vehiculo; el modelo contempla varios y este tablero, por ahora,
-        // es el del primero con toda su historia.
         if (vehiculos.Count == 0)
         {
+            cargas = new List<CargaEnLista>();
             tramos = new List<TramoEnLista>();
+            faltantes = new List<FaltanteEnLista>();
             costos = new List<CostoEnLista>();
             gastos = new List<GastoEnLista>();
             rendimiento = new RendimientoDelVehiculo();
@@ -309,33 +533,90 @@
             completitud = new CompletitudDelVehiculo();
             propuesta = new OdometroPropuesto();
             mesDelGasto = default;
+            ultimaCarga = null;
+            proximoFaltante = null;
+            cargaDelPendiente = null;
             return;
         }
 
         string placa = Estado.PlacaEnFoco(vehiculos);
+        unidades = Estado.Unidades();
+        cargas = Estado.Cargas(placa);
         tramos = Estado.Tramos(placa);
         rendimiento = Estado.Rendimiento(placa);
         autonomia = Estado.Autonomia(placa);
         completitud = Estado.Completitud(placa);
         costos = Estado.Costos(placa);
+        faltantes = Estado.Faltantes(placa);
 
-        // El "hoy" de la proyeccion lo pone ESTA caratula: el dominio no lee el reloj. Si
-        // lo hiciera, el mismo journal reproducido manana daria otra respuesta.
         propuesta = Estado.Odometro(placa, DateTime.Now);
         proxima = Estado.ProximaCarga(placa, DateTime.Now);
 
-        // EL GASTO DEL MES DE LA ULTIMA CARGA, no el del mes del calendario. Con el mes
-        // corriente el instrumento aparece vacio en cuanto pasan treinta dias sin cargar, y
-        // "0" no es la respuesta: la respuesta es cuanto llevaba gastado la ultima vez.
-        //
-        // Y ES EL DE ESTE CARRO. Antes era el de todos, conviviendo con la autonomia, el
-        // rendimiento y el costo por kilometro de UNO: con dos carros el instrumento mentia
-        // por omision y nada en la pantalla lo decia.
+        // La última carga: la de fecha más reciente entre las reales de este carro.
+        ultimaCarga = null;
+        DateTime fechaMasReciente = DateTime.MinValue;
+        foreach (CargaEnLista carga in cargas)
+            if (carga.Fecha >= fechaMasReciente) { fechaMasReciente = carga.Fecha; ultimaCarga = carga; }
+
+        // EL GASTO DEL MES DE LA ÚLTIMA CARGA, no el del mes del calendario -ver el
+        // razonamiento original: con el mes corriente el instrumento queda vacío en
+        // cuanto pasan treinta días sin cargar, y "0" no es la respuesta correcta-.
         gastos = new List<GastoEnLista>();
-        mesDelGasto = default;
-        foreach (CargaEnLista carga in Estado.Cargas(placa))
-            if (carga.Fecha > mesDelGasto) mesDelGasto = carga.Fecha;
+        mesDelGasto = fechaMasReciente == DateTime.MinValue ? default : fechaMasReciente;
         if (mesDelGasto != default)
             gastos = Estado.Gastos(placa, mesDelGasto.Year, mesDelGasto.Month);
+
+        // EL PRÓXIMO PENDIENTE. Mismo criterio que ya usa Mis cargas para elegir cuál
+        // desplegar por defecto: la carga más reciente que espera kilometraje -porque es
+        // la única a la que se le puede sugerir el odómetro de hoy-, y si ninguna espera
+        // eso, la más reciente con cualquier otro pendiente. No es un orden nuevo: es el
+        // mismo que ya decidía Ruta.razor, para que lo que Inicio ofrece resolver sea
+        // exactamente lo que aparecería abierto si en cambio se entrara por Mis cargas.
+        proximoFaltante = null;
+        FaltanteEnLista? masRecienteConKm = null;
+        FaltanteEnLista? masRecienteCualquiera = null;
+        DateTime fechaKm = DateTime.MinValue, fechaCualquiera = DateTime.MinValue;
+        foreach (FaltanteEnLista f in faltantes)
+        {
+            if (f.ClaveDeLoQueFalta == ElKilometraje && f.Fecha > fechaKm) { fechaKm = f.Fecha; masRecienteConKm = f; }
+            if (f.Fecha > fechaCualquiera) { fechaCualquiera = f.Fecha; masRecienteCualquiera = f; }
+        }
+        proximoFaltante = masRecienteConKm ?? masRecienteCualquiera;
+
+        cargaDelPendiente = null;
+        cargaTieneTanquePendiente = false;
+        mostrarChecklist = false;
+        sugerenciaAplica = false;
+
+        if (proximoFaltante is not null)
+        {
+            foreach (CargaEnLista carga in cargas)
+                if (carga.Transaccion == proximoFaltante.Transaccion) { cargaDelPendiente = carga; break; }
+
+            foreach (FaltanteEnLista f in faltantes)
+                if (f.Transaccion == proximoFaltante.Transaccion && f.ClaveDeLoQueFalta == LaConfirmacionDelTanque)
+                    cargaTieneTanquePendiente = true;
+
+            // El checklist solo dice algo cuando esta carga tiene DE VERDAD los dos
+            // pasos abiertos; con uno solo, el título de arriba ya lo cuenta entero.
+            mostrarChecklist = cargaDelPendiente is not null
+                && !cargaDelPendiente.TieneKilometraje && cargaTieneTanquePendiente;
+
+            // La sugerencia del odómetro de hoy solo vale para la carga MÁS RECIENTE de
+            // todas -ver el mismo argumento en Ruta.razor-: proponerle a una carga
+            // anterior el kilometraje de hoy es un número que el dominio va a rechazar.
+            sugerenciaAplica = propuesta.Hay && proximoFaltante.ClaveDeLoQueFalta == ElKilometraje
+                && proximoFaltante.Fecha == fechaMasReciente;
+
+            if (proximoFaltante.Transaccion != pendienteTransaccionCargada)
+            {
+                pendienteTransaccionCargada = proximoFaltante.Transaccion;
+                pendienteKilometraje = sugerenciaAplica ? propuesta.KilometrosComoSeVen : 0;
+            }
+        }
+        else
+        {
+            pendienteTransaccionCargada = "";
+        }
     }
 }

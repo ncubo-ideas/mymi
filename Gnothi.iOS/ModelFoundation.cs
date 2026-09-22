@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Gnothi.Assistant;
+using Gnothi.Host;
 
 namespace Gnothi.iOS;
 
@@ -65,7 +66,7 @@ internal sealed class ModelFoundation : IModel
 			{
 				p = NativeStep(Conversacion(conversation), Catalogo(tools), instrucciones);
 				string crudo = Marshal.PtrToStringUTF8(p) ?? "{}";
-				return Leer(crudo);
+				return Leer(crudo, conversation);
 			}
 			finally
 			{
@@ -170,24 +171,44 @@ internal sealed class ModelFoundation : IModel
 		return Json.Write(salida);
 	}
 
-	private static Said Leer(string crudo)
+	// EL TOPE DEL MODELO DE APPLE, en tokens. Medido igual en iOS 26 y en macOS 27; se le dice a
+	// la persona porque es el numero contra el que tiene que razonar, y va como valor y no
+	// escrito en la frase para que el catalogo no lo repita en dos idiomas.
+	private const string Tope = "4096";
+
+	private static Said Leer(string crudo, IReadOnlyList<Exchange> conversation)
 	{
 		JsonElement r = Json.Parse(crudo);
 
 		if (r.TryGetProperty("error", out JsonElement error))
 		{
 			string e = error.GetString() ?? "";
-			// EL CATALOGO NO ENTRA. Medido en la Mac el 2026-09-08: el modelo de Apple admite 4 096
-			// tokens de contexto y cinco modulos con 32 tools suman ~6 600 solo de costo fijo. El
-			// error crudo dice "exceededContextWindowSize(...7307 tokens...)" y nadie sabe que hacer
-			// con eso; lo que puede hacer la persona es apagar modulos o consultas, que es la
-			// palanca que el Host ya le da (installation.json).
-			if (e.Contains("exceededContextWindowSize", StringComparison.Ordinal))
-				throw new InvalidOperationException(
-					"el catalogo de tus modulos no entra en el modelo de este equipo (admite 4096 tokens). "
-					+ "Apaga modulos o consultas que no uses, en installation.json, y volve a preguntar. "
-					+ $"Detalle: {e}");
-			throw new InvalidOperationException($"el modelo del telefono fallo: {e}");
+
+			// NO ENTRA. Medido en la Mac el 2026-09-08 (32 consultas = 7 307 tokens) y de nuevo
+			// el 2026-09-21 (48 consultas = 14 730; Compras solo = 5 925; y en Cargas los hechos
+			// de una sola consulta, 4 154 caracteres, dejan la segunda vuelta en 4 097). El error
+			// crudo no le dice nada a la persona; lo que si puede hacer depende de QUE es lo que
+			// no entra, y eso lo sabe esta clase y no el Swift:
+			//
+			//   - Sin ningun Returned en la conversacion, el modelo recibio catalogo + pregunta y
+			//     ya no entro: es el CATALOGO, y la palanca es apagar consultas (el detalle de cada
+			//     institucion ya la tiene; ver detalle.consultas.apagada).
+			//   - Con un Returned, el catalogo YA ENTRO una vez -si no, el primer paso habria
+			//     reventado aca mismo-: lo que desborda es la RESPUESTA de esa consulta, y eso no
+			//     lo arregla la persona apagando nada.
+			//
+			// El texto del error lo corrobora -macOS 27 dice «Provided N tokens» en la primera y
+			// «Content contains N tokens» en la segunda-, pero la conversacion es el hecho.
+			if (NoEntra(e))
+			{
+				string? consulta = UltimaConsulta(conversation);
+				throw new InvalidOperationException(consulta is null
+					? Textos.T("asistente.modelo.no-entra.catalogo", ("tope", Tope), ("detalle", e))
+					: Textos.T("asistente.modelo.no-entra.respuesta",
+						("consulta", consulta), ("tope", Tope), ("detalle", e)));
+			}
+
+			throw new InvalidOperationException(Textos.T("asistente.modelo.fallo", ("detalle", e)));
 		}
 
 		var llamadas = new List<ToolCall>();
@@ -225,9 +246,34 @@ internal sealed class ModelFoundation : IModel
 		// there is nothing to diagnose with. It really happened -- an expired ceiling returned {} -- and
 		// it cost a test and half an hour. Let it blow up here, with a name.
 		if (texto is null && llamadas.Count == 0)
-			throw new InvalidOperationException(
-				"el modelo del telefono devolvio un paso vacio: ni texto ni tool calls");
+			throw new InvalidOperationException(Textos.T("asistente.modelo.paso-vacio"));
 
 		return new Said(texto, llamadas);
+	}
+
+	// LAS TRES FORMAS EN QUE EL MODELO DICE QUE NO ENTRA, una por sistema y ninguna documentada:
+	//
+	//   iOS 26     "exceededContextWindowSize(...7307 tokens...)"
+	//   macOS 27   "GenerativeError: Provided 14,730 tokens, but the maximum allowed is 4,096."
+	//   macOS 27   "GenerationError: Content contains 4097 tokens, which exceeds the maximum
+	//               allowed context size of 4096."
+	//
+	// Se busca la FRASE y no el tipo: GenerationError tambien es como se llama el rechazo de
+	// las barandas y el de un idioma que el modelo no habla, y esos no son «no entra». El Swift
+	// arma la cadena como "\(type(of: error)): \(error)", asi que el texto viene entero.
+	private static bool NoEntra(string e) =>
+		e.Contains("exceededContextWindowSize", StringComparison.Ordinal)
+		|| e.Contains("but the maximum allowed is", StringComparison.Ordinal)
+		|| e.Contains("exceeds the maximum allowed context size", StringComparison.Ordinal);
+
+	// LA ULTIMA CONSULTA QUE CONTESTO, o null si todavia ninguna: es lo que separa «no entra el
+	// catalogo» de «no entra lo que devolvio X». Se nombra la ultima porque es la que acaba de
+	// sumarse al transcript; las anteriores ya habian entrado.
+	private static string? UltimaConsulta(IReadOnlyList<Exchange> conversation)
+	{
+		string? nombre = null;
+		foreach (Exchange e in conversation)
+			if (e is Returned r) nombre = NombreDe(conversation, r.CallId);
+		return nombre;
 	}
 }

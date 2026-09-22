@@ -471,7 +471,9 @@
      que convence es ver la cosa; el botón puede seguir siendo modesto.
      Y el color lo pone la marca -tint() sobre brand.color-, así que el bloque resalta siendo
      de ELLA y no gritando en el acento de Gnothi. */
-  .fijar-caja{display:flex;align-items:center;gap:13px;margin:0 0 14px;padding:12px;
+  /* EL AIRE ARRIBA ES PARTE DEL ARREGLO (Geaninna, 2026-09-21): sin él, moverlo abajo solo
+     cambia a qué cosa queda pegado. */
+  .fijar-caja{display:flex;align-items:center;gap:13px;margin:20px 0 14px;padding:12px;
          border-radius:14px;background:var(--card);box-shadow:var(--shadow)}
   .fijar-muestra{flex:none;width:58px;text-align:center}
   /* La misma caja de icono que la tarjeta, al tamaño en que la dibuja una pantalla de inicio. */
@@ -998,6 +1000,14 @@ const gn = {
   // se muestra, no cuando ella acepta, y en MIUI hay además un permiso propio que puede tragarse
   // el icono en silencio. Por eso el texto dice lo que Gnothi hizo -- pedirlo -- y no promete que
   // el icono esté.
+  // LO QUE EL LAUNCHER YA TIENE ANOTADO. Se pregunta dos veces por apertura del detalle -- el
+  // rótulo del botón y la nota de abajo -- y eso está bien: es un servicio del sistema leído en
+  // memoria, no una consulta al módulo, y una caché acá habría que invalidarla justo cuando la
+  // persona vuelve de la pantalla de inicio, que es el momento en que más importa acertar.
+  yaFijado(name) {
+    const r = gn.call('fijados') || {};
+    return !!(r.ok && r.ids && r.ids.indexOf('modulo:' + name) >= 0);
+  },
   fijar(name) {
     const b = document.getElementById('fijar');
     const dicho = document.getElementById('fijar-dicho');
@@ -1006,8 +1016,11 @@ const gn = {
       // «PEDIDO» Y NO «LISTO», que es lo único que se puede afirmar -- ver el comentario de
       // arriba. El botón ahora lleva glifo y texto, así que el rótulo es su <span> y no su
       // último hijo.
-      if (b) { b.disabled = true; const s = b.querySelector('span'); if (s) s.textContent = 'Pedido'; }
-      if (dicho) dicho.textContent = 'Se lo pedimos a tu pantalla de inicio. Si no aparece, fijate que acepte accesos directos.';
+      if (b) { b.disabled = true; const s = b.querySelector('span'); if (s) s.textContent = T('detalle.fijar.pedido'); }
+      // Y LA FRASE SE COMPONE DE LAS DOS QUE YA EXISTÍAN: el texto quemado era un duplicado
+      // con otra redacción de 'detalle.fijar.si-no-aparece', que ya estaba en el catálogo en los
+      // dos idiomas. Lo único que no tenía clave era la primera oración.
+      if (dicho) dicho.textContent = T('detalle.fijar.pedimos') + ' ' + T('detalle.fijar.si-no-aparece');
       return;
     }
     if (dicho) dicho.textContent = r.razon || T('detalle.fijar.fallo');
@@ -1681,31 +1694,14 @@ const gn = {
         // El icono lleva el logo y el nombre de la institución, pero lo que abre es GNOTHI: el
         // launcher le estampa su badge en la esquina y eso no se puede quitar. Está bien que
         // esté -- dice quién corre el código -- y por eso el rótulo no dice «instalar la app».
-        + (m.enabled
-            ? '<div class="fijar-caja">'
-              // LA MUESTRA, que es el argumento entero: el MISMO iconOf() de la tarjeta, a 48px
-              // y con el rótulo debajo, o sea exactamente lo que va a quedar en la pantalla de
-              // inicio. Antes esto era una frase -«un icono de Delfos»- y una frase describe;
-              // esto muestra.
-              + '<div class="fijar-muestra">' + iconOf(m)
-              + '<span>' + esc(nameOf(m)) + '</span></div>'
-              + '<div class="fijar-que">'
-              // SIN PÁRRAFO. Decía «Así se va a ver. Al tocarlo abre esta app, acá adentro», y
-              // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
-              // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
-              // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
-              + '<b>' + esc(T('detalle.fijar.lugar')) + '</b>'
-              // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
-              // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
-              // pantalla sí.
-              + '<button class="fijar" id="fijar" style="background:' + tint(colorOf(m), .11)
-              + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
-              + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
-              + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
-              + '<span>' + esc(T('detalle.fijar.agregar')) + '</span></button>'
-              + '<p class="fijar-dicho" id="fijar-dicho"></p>'
-              + '</div></div>'
-            : '')
+        // EL ACCESO DIRECTO SE FUE ABAJO (Geaninna, 2026-09-21). Estaba pegado a la cabecera y
+        // repetía el logo a 48 px justo debajo del grande: dos veces el mismo icono a dos
+        // tamaños, a un renglón de distancia, se lee como un error de la pantalla y no como una
+        // muestra. Ahora va DESPUÉS de las consultas, que es lo que la persona vino a ver.
+        //
+        // LA MUESTRA NO SE QUITA, y eso es a propósito: antes era una frase -- «un icono de
+        // Delfos» -- y se cambió porque el icono ES lo que va a quedar en su pantalla. Lo que
+        // sobraba era la cercanía, no la muestra.
 
         // The institution retired the key this module was accepted with. Said here, once, and
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
@@ -1735,9 +1731,43 @@ const gn = {
             + '</div>').join('')
         + '<p class="hint">' + T('detalle.consultas.apagada') + '</p>'
 
+
         + (m.description
             ? '<p class="desc">' + esc(m.description)
               + (m.doesNotDo ? ' <span class="noHace">' + esc(m.doesNotDo) + '</span>' : '') + '</p>'
+            : '')
+
+        + (m.enabled
+            ? '<div class="fijar-caja">'
+              // LA MUESTRA, que es el argumento entero: el MISMO iconOf() de la tarjeta, a 48px
+              // y con el rótulo debajo, o sea exactamente lo que va a quedar en la pantalla de
+              // inicio. Antes esto era una frase -«un icono de Delfos»- y una frase describe;
+              // esto muestra.
+              + '<div class="fijar-muestra">' + iconOf(m)
+              + '<span>' + esc(nameOf(m)) + '</span></div>'
+              + '<div class="fijar-que">'
+              // SIN PÁRRAFO. Decía «Así se va a ver. Al tocarlo abre esta app, acá adentro», y
+              // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
+              // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
+              // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
+              + '<b>' + esc(T('detalle.fijar.lugar')) + '</b>'
+              // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
+              // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
+              // pantalla sí.
+              + '<button class="fijar" id="fijar" style="background:' + tint(colorOf(m), .11)
+              + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
+              + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
+              + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
+              // EL VERBO CAMBIA SI YA ESTÁ. «Agregar» sobre algo que ya está agregado es lo que
+              // hacía que tocarlo pareciera roto: ahora dice volver a ponerlo, que es lo que el
+              // botón de verdad hace en ese caso.
+              + '<span>' + esc(T(gn.yaFijado(m.name) ? 'detalle.fijar.otra-vez' : 'detalle.fijar.agregar')) + '</span></button>'
+              // Y LA NOTA YA VIENE ESCRITA cuando el icono está: el mismo párrafo que después
+              // usa el resultado del pedido, para no sumar un lugar donde pueda hablar la
+              // pantalla.
+              + '<p class="fijar-dicho" id="fijar-dicho">'
+              + (gn.yaFijado(m.name) ? T('detalle.fijar.ya') : '') + '</p>'
+              + '</div></div>'
             : '')
 
         // LA PROCEDENCIA: lo que la institución DECLARA -- su dominio -- al lado de lo que
@@ -1755,16 +1785,34 @@ const gn = {
               + '><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
               + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>'
                  : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+              // LA MISMA REGLA DE DOS ZONAS QUE LA HOJA (Geaninna, 2026-09-21). Acá también
+              // estaban la IP y la versión, y acá también lo que decide es QUIÉN publica. El
+              // ícono sigue diciendo el veredicto -- comprobado, ojo, o «no hay con qué
+              // comparar» --: eso es estado y el estado no se pliega.
               + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
               + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
-              + (veredicto === 'ok'
-                  ? '<br>' + T('detalle.proc.mismo-dominio', { servido: esc(org.servedBy) })
-                  : veredicto === 'duda'
-                    ? '<br>' + T('detalle.proc.distinto', { dominio: esc(proc.domain), servido: esc(org.servedBy) })
-                    : proc.domain ? '<br>' + T('detalle.proc.archivo', { dominio: esc(proc.domain) }) : '')
-              + (org.version ? ' · v' + esc(org.version) : proc.version ? ' · v' + esc(proc.version) : '')
+              + (proc.domain
+                  ? '<br>' + esc(proc.domain)
+                  : (proc.legal ? '<br>' : '') + peq(T('hoja.proc.sin-dominio')))
               + '</span></div>'
             : '')
+
+        // Y EL DATO TÉCNICO, PLEGADO. Las mismas claves de la hoja: la llave, la versión y quien
+        // sirvió -- ése solo cuando NO es el dominio declarado, porque si coincide ya lo dijo la
+        // línea de arriba. El detalle no tiene la URL del publicador: la cáscara no la manda en
+        // el estado del módulo, y no vale inventarla desde el dominio.
+        + (function () {
+            const filas = [
+              m.signerKey ? [T('hoja.detalle.llave'), m.signerKey] : null,
+              (org.version || proc.version) ? [T('hoja.detalle.version'), org.version || proc.version] : null,
+              (org.servedBy && org.servedBy !== proc.domain) ? [T('hoja.detalle.servido'), org.servedBy] : null,
+            ].filter(Boolean);
+            return filas.length
+              ? '<details class="trace"><summary>' + T('hoja.detalles') + '</summary>'
+                + filas.map(f => '<p>' + peq(f[0]) + '<br><code>' + esc(f[1]) + '</code></p>').join('')
+                + '</details>'
+              : '';
+          })()
 
         + '<div class="master"><span>' + T('detalle.modulo-encendido') + '</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
@@ -2146,6 +2194,8 @@ function mock(op, x) {
   // En el monitor no hay pantalla de inicio donde poner nada, y decirlo es mejor que fingir
   // que se pudo: el botón queda probable en su camino de error, que es el que más se ve.
   if (op === 'fijar') return { ok: false, razon: 'Acá no hay pantalla de inicio: esto solo funciona en el teléfono.' };
+  // Y sin pantalla de inicio no hay nada anotado: la maqueta dibuja el camino de agregar.
+  if (op === 'fijados') return { ok: false, ids: [] };
 
   // LA MAQUETA NO TIENE CATALOGO, y devuelve uno vacio a proposito en vez de inventar uno.
   //

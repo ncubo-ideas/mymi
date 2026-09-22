@@ -32,7 +32,16 @@ import Foundation
 enum Instantanea {
 
     /// Tiene que coincidir con Entitlements.plist de Gnothi.iOS y con el del portal de Apple.
+    ///
+    /// EN LA MAC LLEVA EL PREFIJO DEL EQUIPO. macOS identifica los Group Containers como
+    /// «TEAMID.group.…»; con el string pelado, containerURL(...) no falla: devuelve una carpeta
+    /// propia que ninguna otra app comparte, y el sintoma seria «sin foto» sin explicacion. El
+    /// TEAMID es el DEVELOPMENT_TEAM del pbxproj y el mismo de Gnothi.mac.entitlements.
+    #if os(macOS)
+    static let grupo = "W5SWU29W6D.group.com.ncubo.gnothi"
+    #else
     static let grupo = "group.com.ncubo.gnothi"
+    #endif
 
     /// Tiene que coincidir con Instantanea.NombreDelArchivo del lado de .NET.
     static let archivo = "gnothi-instantanea.json"
@@ -66,7 +75,13 @@ enum Instantanea {
 
         var fecha: Date? = nil
         if let texto = raiz["escritaEn"] as? String {
-            fecha = ISO8601DateFormatter().date(from: texto)
+            // El Host escribe DateTimeOffset con fracciones de segundo
+            // («2026-09-21T21:35:45.03653+00:00»), y el formateador por omision NO las admite:
+            // devolvia nil y la foto salia «sin fecha» aunque la fecha estuviera ahi. Se prueban
+            // las dos formas porque el formateador con fracciones rechaza un texto sin ellas.
+            let conFraccion = ISO8601DateFormatter()
+            conFraccion.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            fecha = conFraccion.date(from: texto) ?? ISO8601DateFormatter().date(from: texto)
         }
 
         return .foto(json: String(decoding: data, as: UTF8.self), escritaEn: fecha)

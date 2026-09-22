@@ -4,16 +4,7 @@
 <header class="marco">
     <div class="marco__banda">
         <a class="marco__marca" href="">
-            <span class="marco__sello">
-                <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-                    <path d="M24 4 2 17v5h44v-5L24 4Z" />
-                    <rect x="5" y="25" width="5" height="13" rx="1" />
-                    <rect x="16" y="25" width="5" height="13" rx="1" />
-                    <rect x="27" y="25" width="5" height="13" rx="1" />
-                    <rect x="38" y="25" width="5" height="13" rx="1" />
-                    <rect x="2" y="41" width="44" height="4" rx="1.5" />
-                </svg>
-            </span>
+            <img src="images/mi-muni-t.png" alt="" class="marco__logo" />
             <span class="marco__titulos">
                 <span class="marco__nombre">@Textos.TituloDelModulo</span>
                 <span class="marco__apunte">@textos["app.apunte"]</span>
@@ -21,10 +12,10 @@
         </a>
 
         <nav class="marco__nav">
-            <NavLink href="por-que-pago-mas">@textos["porQuePagoMas.titulo"]</NavLink>
-            <NavLink href="que-se-me-vence">@textos["queSeMeVence.titulo"]</NavLink>
-            <NavLink href="cuanto-apartar">@textos["cuantoApartar.titulo"]</NavLink>
-            <NavLink href="sin-comprobante">@textos["sinComprobante.tituloCorto"]</NavLink>
+            <NavLink href="por-que-pago-mas">@textos["porQuePagoMas.encabezado"]</NavLink>
+            <NavLink href="que-se-me-vence">@textos["queSeMeVence.encabezado"]</NavLink>
+            <NavLink href="cuanto-apartar">@textos["cuantoApartar.encabezado"]</NavLink>
+            <NavLink href="sin-comprobante">@textos["sinComprobante.encabezado"]</NavLink>
             <NavLink href="cuanto-he-pagado">@textos["cuantoHePagado.titulo"]</NavLink>
             <NavLink href="que-tan-al-dia-esta">@textos["queTanAlDia.tituloCorto"]</NavLink>
         </nav>
@@ -34,3 +25,18 @@
 <main class="hoja">
     @Body
 </main>
+
+<nav class="pie-nav" aria-label="@textos["nav.navegacionPrincipal"]">
+    <NavLink href="" Match="NavLinkMatch.All">
+        <span class="pie-nav__icono"><img src="images/mi-muni-t.png" alt="" class="pie-nav__logo" /></span>
+        <span>@textos["nav.inicio"]</span>
+    </NavLink>
+    <NavLink href="que-se-me-vence">
+        <span class="pie-nav__icono"><IconoSprite Nombre="calendario-chico" /></span>
+        <span>@textos["nav.pagos"]</span>
+    </NavLink>
+    <NavLink href="cuanto-apartar">
+        <span class="pie-nav__icono"><IconoSprite Nombre="presupuesto-chico" /></span>
+        <span>@textos["cuantoApartar.encabezado"]</span>
+    </NavLink>
+</nav>

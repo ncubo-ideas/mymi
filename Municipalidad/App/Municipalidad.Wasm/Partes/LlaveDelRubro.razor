@@ -1,10 +1,27 @@
-<span class="llave">@Rubro</span>
+@if (esConocido)
+{
+    <span class="nombre-rubro">@nombre</span>
+}
+else
+{
+    <span class="llave">@Rubro</span>
+}
 
 @code {
     /// <summary>
-    /// El nombre del rubro tal como lo escribe el registro. Se muestra como llave y no como titulo
-    /// porque nadie ha decidido todavia como se llama un rubro delante de una persona.
+    /// El nombre del rubro tal como lo escribe el registro. Si es uno de los cinco del catalogo se
+    /// muestra legible (NombreLegible.DelRubro); si no se reconoce -- por ejemplo un numero de finca,
+    /// que usa este mismo componente -- se muestra como llave, tal cual llega.
     /// </summary>
     [Parameter, EditorRequired]
     public string Rubro { get; set; } = "";
+
+    private bool esConocido;
+    private string nombre = "";
+
+    protected override void OnParametersSet()
+    {
+        nombre = NombreLegible.DelRubro(Rubro);
+        esConocido = nombre != Rubro;
+    }
 }

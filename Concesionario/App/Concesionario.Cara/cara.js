@@ -417,12 +417,12 @@
                         pintarNumeros(s.vehicle);
                         pintarVistazo(s.operations, s.dueStates || {});
                     })
-                    .catch(function (e) { P.apunte($('estado'), e.message, true); });
+                    .catch(function (e) { P.apunte($('estado'), P.porQue(e), true); });
             })
-            .catch(function (e) { P.apunte($('estado'), e.message, true); });
+            .catch(function (e) { P.apunte($('estado'), P.porQue(e), true); });
 
         P.pedir('history', enSuIdioma).then(pintarHistorial)
-            .catch(function (e) { P.apunte($('historial'), e.message, true); });
+            .catch(function (e) { P.apunte($('historial'), P.porQue(e), true); });
     }
 
     function releer() {

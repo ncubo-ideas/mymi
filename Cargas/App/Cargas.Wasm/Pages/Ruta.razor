@@ -5,7 +5,7 @@
 
 <PageTitle>@Texto["ruta.titulo"] · @Textos.NombreDeLaMarca</PageTitle>
 
-<h1 class="solo-para-lectores">@Texto["ruta.titulo"]</h1>
+<h1 class="ruta-titulo">@Texto["ruta.titulo"]</h1>
 
 @* EL ERROR VA DONDE ESTABA LA MANO. Con veintiocho cargas, anotar en la de abajo y que el
    dominio rechace el número mostraba el parte arriba de todo, fuera de pantalla: el mismo
@@ -26,22 +26,16 @@
    baches— y sigue en los nombres del CSS, pero como título le sonaba a GPS y a puntos
    visitados. Lo que hay acá son las cargas, una por parada. *@
 <div class="ruta-cabeza">
-    <span class="rotulo">@Texto["ruta.tusCargas"]</span>
+    @* «Leído hasta el evento N» no va acá: es un dato de la app sobre sí misma, no del
+       carro. Vive en Mi carro, con «dónde vive tu bitácora», que es donde se habla de la app. *@
     @if (completitud.TotalDeCargas > 0)
     {
-        <span class="apunte">@completitud.Expresada</span>
+        <p class="ruta-resumen">
+            @completitud.TotalDeCargas @(completitud.TotalDeCargas == 1 ? "carga registrada" : "cargas registradas")
+        </p>
     }
-    @* «Leído hasta el evento N» ya no va acá: es un dato de la app sobre sí misma, no del
-       carro, y en teléfono se llevaba una línea entera de la cabeza. Vive en Mi carro, con
-       «dónde vive tu bitácora», que es donde se habla de la app. *@
 </div>
 
-@* CONFIRMAR LOS TANQUES DE UNA VEZ. Cada carga nace con el tanque INFERIDO por la forma de
-   corte y solo se pide el visto bueno; con nueve cargas eran nueve visto buenos iguales, uno
-   por uno. Si en todas quedó como dice, se confirman juntas; si alguna no, se entra a esa.
-   Va debajo de la cabeza y no dentro: la cabeza es un rótulo. Y va en contorno, no en ámbar:
-   el atajo confirma N suposiciones de un golpe, así que el camino cuidadoso —carga por
-   carga— se queda con el color de atención. *@
 @* EL ÉXITO DEL LOTE, en el lugar de la barra que acaba de desaparecer: la persona mira ahí
    cuando apretó, y ahí tiene que estar la respuesta. Se va solo (ver AvisoDeListo). *@
 @if (Listo.Texto.Length > 0 && listoEn.Length == 0)
@@ -49,18 +43,36 @@
     <div class="parte parte--listo parte--pasajero" role="status">@Listo.Texto</div>
 }
 
-@if (tanquesEstimados.Count >= 2)
+@* EL RESUMEN DE PENDIENTES, compacto y AL INICIO -no compite con el historial completo
+   de abajo-. @completitud.Expresada (el string del dominio) y @tanquesEstimados.Count
+   (real, ya calculado en Releer) no se pierden: se leen acá, más chico, con el atajo de
+   confirmar-todos como control secundario y no como protagonista de la pantalla. *@
+@if (faltantesPorCarga.Count > 0)
 {
-    <div class="ruta-acciones">
-        <span class="crece">
-            @((MarkupString)Texto.Con("ruta.loteExplicacion",
-                ("cuantas", "<b>" + Texto.Con("ruta.nCargas", ("cuantas", Entero(tanquesEstimados.Count))) + "</b>")))
-        </span>
-        <button class="tecla tecla--contorno" @onclick="ConfirmarTodosLosTanques" disabled="@(confirmando > 0)">
-            @(confirmando > 0
-                ? Texto.Con("ruta.confirmandoLote", ("cual", Entero(confirmando)), ("cuantas", Entero(tanquesEstimados.Count)))
-                : Texto.Con("ruta.confirmarLote", ("cuantas", Entero(tanquesEstimados.Count))))
-        </button>
+    <div class="ruta-pendientes">
+        <div class="ruta-pendientes-texto">
+            <p class="ruta-pendientes-titulo">
+                @faltantesPorCarga.Count @(faltantesPorCarga.Count == 1 ? "carga necesita" : "cargas necesitan") @Texto["ruta.necesitaRevision"]
+            </p>
+            @if (completitud.Expresada.Length > 0)
+            {
+                <p class="ruta-pendientes-pie">@completitud.Expresada</p>
+            }
+        </div>
+        @* CONFIRMAR LOS TANQUES DE UNA VEZ. Cada carga nace con el tanque INFERIDO por la
+           forma de corte y solo se pide el visto bueno; con nueve cargas eran nueve visto
+           buenos iguales, uno por uno. Si en todas quedó como dice, se confirman juntas; si
+           alguna no, se entra a esa. En contorno, no en ámbar: el atajo confirma N
+           suposiciones de un golpe, así que el camino cuidadoso -carga por carga- se queda
+           con el color de atención. *@
+        @if (tanquesEstimados.Count >= 2)
+        {
+            <button class="tecla tecla--contorno ruta-pendientes-cta" @onclick="ConfirmarTodosLosTanques" disabled="@(confirmando > 0)">
+                @(confirmando > 0
+                    ? Texto.Con("ruta.confirmandoLote", ("cual", Entero(confirmando)), ("cuantas", Entero(tanquesEstimados.Count)))
+                    : Texto.Con("ruta.confirmarLote", ("cuantas", Entero(tanquesEstimados.Count))))
+            </button>
+        }
     </div>
 }
 
@@ -82,11 +94,23 @@ else
     <ol class="ruta">
         @{
             List<CargaEnLista> camino = Recientes();
+            DateTime mesAbierto = DateTime.MinValue;
         }
         @for (int i = 0; i < camino.Count; i++)
         {
             CargaEnLista parada = camino[i];
             List<FaltanteEnLista> pendientes = FaltantesDe(parada.Transaccion);
+            bool detalleAbierto = filasAbiertas.Contains(parada.Transaccion);
+
+            @* AGRUPADO POR MES, con el mismo dato real -parada.Fecha- que ya ordena la
+               ruta: nada nuevo que calcular fuera de esta pantalla, solo un rótulo cuando
+               el mes cambia respecto de la carga anterior. *@
+            DateTime mesDeEsta = new DateTime(parada.Fecha.Year, parada.Fecha.Month, 1);
+            if (mesDeEsta != mesAbierto)
+            {
+                mesAbierto = mesDeEsta;
+                <li class="ruta-mes" @key="@($"mes-{mesDeEsta:O}")">@mesDeEsta.ToString("MMMM yyyy", Cultura)</li>
+            }
 
             @* tabindex=-1: la parada recibe el foco por programa cuando la tecla que lo tenía
                desaparece (ver Enfocar), y no entra en el orden de tabulación. *@
@@ -95,189 +119,192 @@ else
                 @ref="paradas[parada.Transaccion]">
                 <div class="eslabon-riel"><span class="parada-punto"></span></div>
                 <div class="eslabon-cuerpo">
-                    <div class="parada-cabeza">
-                        <span class="parada-fecha">@parada.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</span>
-                        @if (parada.Tanque.Length > 0)
+                    @* EL RESUMEN, SIEMPRE VISIBLE Y SIEMPRE COMPACTO: fecha+monto, litros/tipo/
+                       surtidor, y el único chip que hace falta para escanear -tanque, o qué
+                       falta-. Todo lo demás -precio/L, kilometraje anotado, cambiar tanque, la
+                       foto, y el formulario de lo que falta- vive en el detalle, que se abre al
+                       tocar. Con nueve cargas sin aportes, nueve formularios SIEMPRE abiertos
+                       hacían que la pantalla entera pareciera un formulario; ahora son nueve
+                       resúmenes de tres líneas, y quien quiere trabajar una la abre. *@
+                    <button type="button" class="parada-resumen" aria-expanded="@(detalleAbierto ? "true" : "false")"
+                            @onclick="() => AlternarDetalle(parada.Transaccion)">
+                        <span class="parada-resumen-fila">
+                            <span class="parada-fecha">@parada.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)</span>
+                            <span class="parada-monto">@Simbolo(parada.Moneda)@Plata(parada.Total)</span>
+                        </span>
+                        @* EL PRECIO/L VIVE ACÁ, chico y de siempre -no como protagonista al
+                           abrir la carga-: es la misma jerarquía que litros/tipo/surtidor, ni
+                           más ni menos, y así nunca compite con la tarea del detalle. *@
+                        <span class="parada-resumen-datos">@parada.Volumen @Texto["ruta.de"] @parada.Tipo &middot; @Texto["ruta.surtidor"] @parada.Surtidor &middot; @Simbolo(parada.Moneda)@Plata(parada.Precio)/L</span>
+                        @if (parada.Tanque.Length > 0 || pendientes.Count > 0)
                         {
-                            <span class="parada-tanque">@Texto["ruta.tanque"] @parada.Tanque</span>
+                            <span class="parada-resumen-chips">
+                                @if (parada.Tanque.Length > 0)
+                                {
+                                    <span class="parada-tanque @(parada.ClaveDelTanque == "lleno" ? "" : "parada-tanque--parcial")">@Texto["ruta.tanque"] @parada.Tanque</span>
+                                }
+                                @if (pendientes.Count > 0)
+                                {
+                                    <span class="parada-alerta">@TextoDePendiente(pendientes)</span>
+                                }
+                            </span>
                         }
-                        @* CAMBIAR UN TANQUE YA DICHO. «Confirmar los 28 tanques» confirma
-                           veintiocho suposiciones de un golpe, y una que estaba mal no tenía
-                           vuelta: la UI solo ofrecía «No, cargué solo un poco» mientras la
-                           carga estaba pendiente. DeclararTanque siempre sobreescribió con la
-                           palabra de ella (origen observado); acá solo se le pone una puerta.
-                           Discreta a propósito —es la corrección, no el camino— y no aparece
-                           mientras la pregunta de confirmar sigue abierta, que ya la incluye. *@
-                        @if (parada.Tanque.Length > 0 && !EsperaConfirmacion(pendientes))
-                        {
-                            <button type="button" class="parada-cambiar"
-                                    aria-label="@Texto.Con("ruta.cambiarTanqueAria",
-                                        ("fecha", parada.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)),
-                                        ("quedo", Texto.ComoSeDice(parada.ClaveDelTanque)),
-                                        ("pasaA", Texto.ComoSeDice(Contrario(parada.ClaveDelTanque))))"
-                                    @onclick="() => CorregirTanque(parada.Transaccion)">@Texto["ruta.cambiar"]</button>
-                        }
-                    </div>
+                        <span class="faro-icon faro-icon--flecha parada-chevron" aria-hidden="true"></span>
+                    </button>
 
-                    <div class="parada-datos">
-                        <span><span class="n">@parada.Volumen</span> @Texto["ruta.de"] @parada.Tipo</span>
-                        <span>@Texto["ruta.surtidor"] @parada.Surtidor</span>
-                        <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Total)</span>
-                        <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Precio)/L</span>
-                        @if (parada.TieneKilometraje)
-                        {
-                            @* El número solo. «observado» y «confirmado» son palabras del
-                               dominio que ella no eligió y en la parada sobraban; la
-                               procedencia queda en el title para quien la quiera mirar. *@
-                            @* EN COBRE: es el único dato de la fila que puso ELLA. La tesis del
-                               negocio es que una carga tiene dos procedencias en el mismo hecho, y
-                               con el kilometraje del mismo color que los litros y el precio la
-                               pantalla no lo mostraba. El cobre ya significa «lo tuyo» en esta app:
-                               es el color de las agujas, los trazos y las teclas. *@
-                            <span class="n aporte" title="@Texto.Con("ruta.loAnotasteVos", ("origen", Texto.ComoSeDice(parada.OrigenDelKilometraje)))">@parada.KilometrajeAnotado</span>
-                        }
-                    </div>
-
-                    @* LA FOTO DEL TABLERO. El input NO otorga cámara -el selector es del
-                       sistema y en móvil ya ofrece «tomar foto»-, así que el sandbox del
-                       FAQ #5 queda intacto. El archivo va a la carpeta; el journal guarda
-                       el nombre.
-
-                       Y AHORA SE PUEDE VOLVER A MIRAR, que es lo que la hacía servir para
-                       algo. Antes decía «foto guardada» y ahí terminaba: la foto no
-                       llenaba nada y no había forma de verla. El valor real es partir el
-                       trabajo en dos —sacás la foto en la bomba, anotás el número después,
-                       en el sillón—, y para eso la foto tiene que estar ahí cuando te
-                       sentás. Se lee bajo demanda y no al abrir: son varios MB cada una.
-
-                       NO HAY OCR, y el spike recomendó descartarlo: 4/6 en el caso más
-                       fácil, con fallos de un dígito. Un dígito de más plausible entra en
-                       silencio y envenena la línea base. La foto no reemplaza a la persona:
-                       le quita la necesidad de acordarse. *@
-                    @* LA FOTO QUE YA EXISTE se puede volver a mirar desde la parada, con el
-                       icono dibujado de la casa y no un emoji: el emoji cae en otra familia
-                       tipográfica y se lee como un adorno. Sacar la foto vive más abajo, en la
-                       fila del kilometraje, que es el trabajo para el que existe. *@
-                    @if (parada.TieneFoto && !fotoPorCarga.ContainsKey(parada.Transaccion))
+                    @if (detalleAbierto)
                     {
-                        <div class="parada-datos">
-                            <button class="tecla tecla--texto tecla--icono"
+                    @* LA TAREA PRINCIPAL ES LA PRIMERA PENDIENTE, EN EL MISMO ORDEN DEL DOMINIO.
+                       Vehiculo.Faltantes() agrega, por carga, primero "el kilometraje" y después
+                       "la confirmación del tanque" -es el mismo orden que ya usaba Tablero.razor
+                       para elegir el próximo pendiente de Inicio-, así que pendientes[0] YA ES la
+                       prioridad real, sin inventar una regla nueva acá. Cuando se resuelve, Releer
+                       vuelve a correr (Avisar → Cambio → Releer) y pendientes[0] pasa sola a ser
+                       la siguiente: es progressive disclosure sin wizard, el detalle no guarda en
+                       qué paso está, solo mira qué falta HOY. *@
+                    FaltanteEnLista? tarea = pendientes.Count > 0 ? pendientes[0] : null;
+                    <div class="parada-detalle">
+                        @* EL RECAP: lo que ya se sabe de esta carga y no es la tarea de hoy -el
+                           kilometraje si ya está, el tanque si ya no espera confirmación-. Chico y
+                           al principio, nunca compitiendo con la tarea. *@
+                        @if (parada.TieneKilometraje || (parada.Tanque.Length > 0 && !EsperaConfirmacion(pendientes)))
+                        {
+                            <div class="parada-recap">
+                                @if (parada.TieneKilometraje)
+                                {
+                                    @* EN COBRE (turquesa): es el único dato de la fila que puso
+                                       ELLA -la otra procedencia del mismo hecho-. *@
+                                    <span class="n aporte" title="@Texto.Con("ruta.loAnotasteVos", ("origen", Texto.ComoSeDice(parada.OrigenDelKilometraje)))">@parada.KilometrajeAnotado @unidades.Distancia</span>
+                                }
+                                @* CORREGIR UN TANQUE YA DICHO. «Confirmar los 28 tanques» confirma
+                                   veintiocho suposiciones de un golpe, y una que estaba mal no
+                                   tenía vuelta. Ahora es una frase legible -no un link aislado- con
+                                   su corrección al lado; no aparece mientras la pregunta de
+                                   confirmar sigue abierta, que ya la incluye como tarea. *@
+                                @if (parada.Tanque.Length > 0 && !EsperaConfirmacion(pendientes))
+                                {
+                                    <span class="parada-recap-tanque">
+                                        @Texto["ruta.tanque"] @parada.Tanque.
+                                        <button type="button" class="parada-corregir"
+                                                aria-label="@Texto.Con("ruta.cambiarTanqueAria",
+                                                    ("fecha", parada.Fecha.ToString(Texto["comun.formatoDeDiaYMes"], Cultura)),
+                                                    ("quedo", Texto.ComoSeDice(parada.ClaveDelTanque)),
+                                                    ("pasaA", Texto.ComoSeDice(Contrario(parada.ClaveDelTanque))))"
+                                                @onclick="() => CorregirTanque(parada.Transaccion)">@Texto["ruta.cambiar"]</button>
+                                    </span>
+                                }
+                            </div>
+                        }
+
+                        @* LA FOTO QUE YA EXISTE se puede volver a mirar desde la parada. NO HAY
+                           OCR -el spike lo descartó, 4/6 en el caso más fácil-, así que la foto no
+                           reemplaza a la persona, le quita la necesidad de acordarse. Se lee bajo
+                           demanda y no al abrir: son varios MB cada una. *@
+                        @if (parada.TieneFoto && !fotoPorCarga.ContainsKey(parada.Transaccion))
+                        {
+                            <button class="tecla tecla--texto tecla--icono parada-ver-foto"
                                     @onclick="() => VerLaFoto(parada.Transaccion, parada.Foto)">
                                 <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
                                 @Texto["ruta.verLaFoto"]
                             </button>
-                        </div>
-                    }
-
-                    @* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una
-                       insignia. El premio es información sobre su carro. Y se muestra ACÁ,
-                       donde estaba el campo que acaba de llenar: arriba de la página quedaba
-                       fuera de vista para quien anotó la carga de abajo, y se quedaba ahí
-                       hasta la próxima acción sin que nadie lo viera. *@
-                    @if (desbloqueado.Length > 0 && desbloqueadoEn == parada.Transaccion)
-                    {
-                        @* VERDE Y SIN APAGARSE: es información sobre el carro, no un «ok». *@
-                        <div class="parte parte--listo parada-logro" role="status"><strong>@Texto["ruta.seDesbloqueo"]</strong> @desbloqueado</div>
-                    }
-
-                    @* EL ÉXITO DE UN TANQUE, en la parada que lo recibió. Antes confirmar solo
-                       cambiaba «(estimado)» por «(confirmado)» en la versalita, y el bloque se
-                       plegaba: parecía que la tecla no había hecho nada. *@
-                    @if (Listo.Texto.Length > 0 && listoEn == parada.Transaccion)
-                    {
-                        <div class="parte parte--listo parte--pasajero parada-logro" role="status">@Listo.Texto</div>
-                    }
-
-                    @if (Error.Hay && errorEn == parada.Transaccion)
-                    {
-                        <div class="parada-logro"><Problema De="Error" /></div>
-                    }
-
-                    @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
-                    {
-                        <figure class="foto">
-                            <img src="@laFoto" alt="@Texto.Con("ruta.fotoAria", ("fecha", parada.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)))" />
-                            @if (!parada.TieneKilometraje)
-                            {
-                                <figcaption>@Texto["ruta.leeElOdometro"]</figcaption>
-                            }
-                        </figure>
-                    }
-
-                    @* LO QUE FALTA, en la carga que lo debe. El kilometraje llega
-                       PRELLENADO con la proyección -«¿unos 42 900?»- para que
-                       confirmar sea más fácil que recordar y teclear: si ella lo
-                       acepta tal cual entra confirmado, si lo edita, observado. Nunca
-                       se escribe solo.
-
-                       UN CAMPO POR CARGA, y no uno compartido. Con un solo campo para
-                       toda la lista, los nueve formularios mostraban el mismo número y
-                       el que se tecleaba para una carga aparecía en las otras ocho: es
-                       la invitación a apretar «Agregar» en la fila equivocada. *@
-                    @if (pendientes.Count > 0 && Desplegada != parada.Transaccion)
-                    {
-                        @* PLEGADA: una línea por dato, con el verbo que la abre. Con nueve
-                           cargas sin aportes, nueve formularios abiertos eran dieciocho teclas
-                           ámbar y ninguna decía por dónde empezar. Se despliega UNA sola: por
-                           defecto la más reciente que espera kilometraje —que es la única a la
-                           que se le puede proponer el odómetro de hoy— y, si ella toca otra,
-                           esa. El punto ámbar de la parada sigue diciendo que está incompleta. *@
-                        @foreach (FaltanteEnLista pendiente in pendientes)
-                        {
-                            <button type="button" class="falta-plegada" aria-expanded="false"
-                                    @key="@($"plegada-{pendiente.Transaccion}-{pendiente.ClaveDeLoQueFalta}")"
-                                    @onclick="() => Desplegar(parada.Transaccion)">
-                                @if (pendiente.ClaveDeLoQueFalta == ElKilometraje)
-                                {
-                                    <span>@Texto["ruta.faltaElKilometraje"]</span><span class="accion">@Texto["ruta.anotar"]</span>
-                                }
-                                else
-                                {
-                                    <span>@Texto["ruta.tanqueEstimado"] @Texto.ComoSeDice(pendiente.LoQueSeSupone)</span><span class="accion">@Texto["ruta.confirmar"]</span>
-                                }
-                            </button>
                         }
-                    }
-                    else
-                    {
-                    foreach (FaltanteEnLista pendiente in pendientes)
-                    {
-                        <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.ClaveDeLoQueFalta}")">
-                            @if (pendiente.ClaveDeLoQueFalta == ElKilometraje)
-                            {
-                                @* VACÍO ES VACÍO, no «0». El campo sin valor mostraba un cero,
-                                   y «Agregar» con cero no hacía nada y no decía nada. Ahora el
-                                   valor nulo omite el atributo, el placeholder dice qué va, y la
-                                   tecla se apaga hasta que haya un número. Es @oninput y no
-                                   @onchange para que la tecla se prenda mientras se teclea, no
-                                   al salir del campo. *@
-                                <div class="fila">
-                                    <input class="campo" type="number" inputmode="numeric" min="1"
+
+                        @* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una
+                           insignia. El premio es información sobre su carro. *@
+                        @if (desbloqueado.Length > 0 && desbloqueadoEn == parada.Transaccion)
+                        {
+                            <div class="parte parte--listo parada-logro" role="status"><strong>@Texto["ruta.seDesbloqueo"]</strong> @desbloqueado</div>
+                        }
+
+                        @if (Listo.Texto.Length > 0 && listoEn == parada.Transaccion)
+                        {
+                            <div class="parte parte--listo parte--pasajero parada-logro" role="status">@Listo.Texto</div>
+                        }
+
+                        @if (Error.Hay && errorEn == parada.Transaccion)
+                        {
+                            <div class="parada-logro"><Problema De="Error" /></div>
+                        }
+
+                        @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
+                        {
+                            <figure class="foto">
+                                <img src="@laFoto" alt="@Texto.Con("ruta.fotoAria", ("fecha", parada.Fecha.ToString(Texto["comun.formatoDeFechaCorta"], Cultura)))" />
+                                @if (!parada.TieneKilometraje)
+                                {
+                                    <figcaption>@Texto["ruta.leeElOdometro"]</figcaption>
+                                }
+                            </figure>
+                        }
+
+                        @* LA TAREA: QUÉ FALTA → POR QUÉ → QUÉ HACER → lo secundario, en ese
+                           orden y con ese peso. El kilometraje llega PRELLENADO con la proyección
+                           -«¿unos 42 900?»- para que confirmar sea más fácil que recordar y
+                           teclear: si ella lo acepta tal cual entra confirmado, si lo edita,
+                           observado. Nunca se escribe solo. *@
+                        @if (tarea is not null)
+                        {
+                            <div class="parada-tarea" @key="@($"tarea-{tarea.Transaccion}-{tarea.ClaveDeLoQueFalta}")">
+                                <span class="parada-tarea-eyebrow">@Texto["ruta.completaEstaCarga"]</span>
+                                @if (tarea.ClaveDeLoQueFalta == ElKilometraje)
+                                {
+                                    <p class="parada-tarea-titulo">@Texto["ruta.faltaElKilometrajeTitulo"]</p>
+                                    <p class="parada-tarea-texto">
+                                        @Texto["ruta.ingresaElKilometraje"]@(tarea.QueDesbloquea.Length > 0
+                                            ? $" para poder calcular {tarea.QueDesbloquea}" : "").
+                                    </p>
+                                    @* VACÍO ES VACÍO, no «0». El campo sin valor mostraba un cero,
+                                       y «Agregar» con cero no hacía nada y no decía nada. Ahora el
+                                       valor nulo omite el atributo, el placeholder dice qué va, y
+                                       la tecla se apaga hasta que haya un número. Es @oninput y no
+                                       @onchange para que la tecla se prenda mientras se teclea, no
+                                       al salir del campo. *@
+                                    <input class="campo parada-tarea-campo" type="number" inputmode="numeric" min="1"
                                            aria-label="@Texto.Con("ruta.campoAria", ("unidad", unidades.Distancia))"
                                            placeholder="@Texto.Con("ruta.campoPlaceholder", ("unidad", unidades.Distancia))"
-                                           value="@KilometrajeOVacio(pendiente.Transaccion)"
-                                           @oninput="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
-                                    <button class="tecla tecla--alerta"
-                                            disabled="@(Kilometraje(pendiente.Transaccion) <= 0)"
-                                            @onclick="() => AgregarKilometraje(pendiente.Transaccion)">
-                                        @Texto["ruta.agregarKilometraje"]
+                                           value="@KilometrajeOVacio(tarea.Transaccion)"
+                                           @oninput="e => AnotarEnElCampo(tarea.Transaccion, e)" />
+                                    <button class="tecla parada-tarea-cta"
+                                            disabled="@(Kilometraje(tarea.Transaccion) <= 0)"
+                                            @onclick="() => AgregarKilometraje(tarea.Transaccion)">
+                                        @Texto["ruta.agregarKilometraje"] <span aria-hidden="true">→</span>
                                     </button>
-                                    @* LA FOTO, al lado del campo que llena. Es la otra forma de
-                                       traer el número: sacás la foto en la bomba y lo tecleás
-                                       después, en el sillón. Solo mientras falta el kilometraje y
-                                       hay DESTINO donde guardarla: la carpeta elegida en el modo
-                                       suelto, o los archivos de Gnothi hospedada. HayCarpeta era
-                                       solo lo primero y hospedada el botón no existía (medido el
-                                       2026-09-11 en un iPhone). El input NO otorga cámara: el
-                                       selector es del sistema y en móvil ya ofrece «tomar foto». *@
+                                    @* La sugerencia SOLO donde se puede proyectar: la carga más
+                                       reciente que espera kilometraje. Ver Releer(). Ponerla en
+                                       todas sería sugerir el kilometraje de hoy para una carga de
+                                       hace ocho meses. *@
+                                    @if (propuesta.Hay && tarea.Transaccion == transaccionConPropuesta)
+                                    {
+                                        <p class="apunte parada-tarea-apunte">@Texto.Con("ruta.sugerencia",
+                                            ("odometro", Entero(propuesta.KilometrosComoSeVen) + " " + propuesta.SimboloDeLaDistancia),
+                                            ("promedio", Cifra(propuesta.PorDiaComoSeVe) + " " + propuesta.SimboloDeLaDistancia))</p>
+                                    }
+                                    @* LO QUE DESTRABA. Un mismo kilometraje puede bloquear dos
+                                       tramos -el que termina en esta carga y el que arranca en
+                                       ella-. Singular y plural explícitos. *@
+                                    @if (tramosQueDestraba.TryGetValue(tarea.Transaccion, out int destraba) && destraba > 0)
+                                    {
+                                        <p class="bache-desbloquea">
+                                            @Texto.Con(destraba == 1 ? "ruta.destrabaUnTramo" : "ruta.destrabaTramos",
+                                                ("cuantos", Entero(destraba)))
+                                        </p>
+                                    }
+                                    @* LA FOTO, ACCIÓN SECUNDARIA: es la otra forma de traer el
+                                       número -sacás la foto en la bomba y lo tecleás después, en
+                                       el sillón-, no otra tarea del mismo peso. Solo mientras falta
+                                       el kilometraje y hay DESTINO donde guardarla: la carpeta
+                                       elegida en el modo suelto, o los archivos de Gnothi
+                                       hospedada. HayCarpeta era solo lo primero y hospedada el
+                                       botón no existía (medido el 2026-09-11 en un iPhone). El
+                                       input NO otorga cámara: el selector es del sistema y en
+                                       móvil ya ofrece «tomar foto». *@
                                     @if (!parada.TieneFoto && Estado.HayDestino)
                                     {
-                                        @* UN <label> NO LLEGA POR TECLADO: no entra en el orden de tabulación y
-                                           Enter no lo activa. tabindex lo mete en el orden y el onkeydown
-                                           traduce Enter y Espacio al click del input escondido, que es lo que
-                                           hace el mouse. Y la explicación deja de vivir en un title —que en
-                                           touch no existe— para decirse en la etiqueta. *@
-                                        <label class="tecla tecla--contorno tecla--icono" tabindex="0" role="button"
+                                        @* UN <label> NO LLEGA POR TECLADO: no entra en el orden de
+                                           tabulación y Enter no lo activa. tabindex lo mete en el
+                                           orden y el onkeydown traduce Enter y Espacio al click del
+                                           input escondido, que es lo que hace el mouse. *@
+                                        <label class="tecla tecla--contorno tecla--icono parada-tarea-secundaria" tabindex="0" role="button"
                                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.querySelector('input').click(); }">
                                             <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
                                             @Texto["ruta.fotoDelOdometro"]
@@ -285,64 +312,31 @@ else
                                                        accept="image/*" style="display:none" />
                                         </label>
                                     }
-                                    @* La sugerencia SOLO donde se puede proyectar: la
-                                       carga más reciente que espera kilometraje. Ver
-                                       Releer(). Ponerla en todas sería sugerir el
-                                       kilometraje de hoy para una carga de hace ocho
-                                       meses. *@
-                                    @if (propuesta.Hay && pendiente.Transaccion == transaccionConPropuesta)
+                                }
+                                else if (tarea.ClaveDeLoQueFalta == LaConfirmacionDelTanque)
+                                {
+                                    @* ENUNCIAR, Y DESPUÉS PREGUNTAR. La suposición la hace el
+                                       dominio (FormaDeCorte), así que la frase viene de ahí; acá
+                                       solo se le agrega la pregunta que la sigue. *@
+                                    <p class="parada-tarea-titulo">@Mayuscula(tarea.LaSuposicion). ¿Fue así?</p>
+                                    @if (tarea.QueDesbloquea.Length > 0)
                                     {
-                                        <span class="apunte crece">@Texto.Con("ruta.sugerencia",
-                                            ("odometro", Entero(propuesta.KilometrosComoSeVen) + " " + propuesta.SimboloDeLaDistancia),
-                                            ("promedio", Cifra(propuesta.PorDiaComoSeVe) + " " + propuesta.SimboloDeLaDistancia))</span>
+                                        <p class="parada-tarea-texto">@Texto.Con("ruta.siEsAsi", ("desbloqueo", tarea.QueDesbloquea))</p>
                                     }
-                                </div>
-                                @* LO QUE DESTRABA, dicho en la carga que lo debe y no en los
-                                   baches. Un mismo kilometraje puede bloquear dos tramos -el que
-                                   termina en esta carga y el que arranca en ella-, y antes cada
-                                   bache lo anunciaba por su cuenta: el mismo faltante dos veces,
-                                   arriba y abajo del campo. Singular y plural explícitos. *@
-                                @if (tramosQueDestraba.TryGetValue(pendiente.Transaccion, out int destraba) && destraba > 0)
-                                {
-                                    <p class="bache-desbloquea">
-                                        @Texto.Con(destraba == 1 ? "ruta.destrabaUnTramo" : "ruta.destrabaTramos",
-                                            ("cuantos", Entero(destraba)))
-                                    </p>
+                                    <div class="parada-tarea-acciones">
+                                        <button class="tecla parada-tarea-cta"
+                                                @onclick="() => ConfirmarTanque(tarea.Transaccion)">
+                                            @Texto[SuponeLleno(tarea) ? "ruta.siQuedoLleno" : "ruta.asiFueUnMonto"]
+                                        </button>
+                                        <button class="tecla tecla--contorno"
+                                                @onclick="() => CorregirTanque(tarea.Transaccion)">
+                                            @Texto[SuponeLleno(tarea) ? "ruta.noSoloUnPoco" : "ruta.noLoLlene"]
+                                        </button>
+                                    </div>
                                 }
-                            }
-                            else if (pendiente.ClaveDeLoQueFalta == LaConfirmacionDelTanque)
-                            {
-                                @* ENUNCIAR, Y DESPUÉS PREGUNTAR. Acá se pedía confirmar una
-                                   afirmación que nunca se decía —«necesito la confirmación
-                                   del tanque de tu carga del 25/08/2026 para calcular el
-                                   tramo que esta carga abre o cierra»— y se ofrecía «Sí,
-                                   quedó así» sin decir qué era «así». Encima los dos botones
-                                   eran los mismos tanto si la inferencia decía lleno como
-                                   parcial, así que ni siquiera podían derivarse.
-
-                                   La suposición la hace el dominio (FormaDeCorte), así que la
-                                   frase viene de ahí y los rótulos salen de LO QUE SE SUPONE,
-                                   no escritos fijos. *@
-                                <p class="suposicion">@Mayuscula(pendiente.LaSuposicion).</p>
-                                @if (pendiente.QueDesbloquea.Length > 0)
-                                {
-                                    <p class="bache-desbloquea">
-                                        @Texto.Con("ruta.siEsAsi", ("desbloqueo", pendiente.QueDesbloquea))
-                                    </p>
-                                }
-                                <div class="fila">
-                                    <button class="tecla tecla--alerta"
-                                            @onclick="() => ConfirmarTanque(pendiente.Transaccion)">
-                                        @Texto[SuponeLleno(pendiente) ? "ruta.siQuedoLleno" : "ruta.asiFueUnMonto"]
-                                    </button>
-                                    <button class="tecla tecla--contorno"
-                                            @onclick="() => CorregirTanque(pendiente.Transaccion)">
-                                        @Texto[SuponeLleno(pendiente) ? "ruta.noSoloUnPoco" : "ruta.noLoLlene"]
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    }
+                            </div>
+                        }
+                    </div>
                     }
                 </div>
             </li>
@@ -437,16 +431,27 @@ else
     private OdometroPropuesto propuesta = new();
     private UnidadesElegidas unidades = new();
 
-    // LA PARADA DESPLEGADA, y es una sola. Lo que ella toco sobrevive a Releer; lo que la
-    // lectura propone se recalcula en cada Releer. Si lo que toco ya no tiene pendientes
-    // -acaba de anotarlo-, se cae al default: la siguiente se abre sola.
-    private string desplegadaPorElla = "";
-    private string desplegadaPorDefecto = "";
+    // QUÉ PARADAS TIENEN EL DETALLE ABIERTO -litros/precio/kilometraje, foto, cambiar
+    // tanque, y el formulario de lo que falta-. Cualquier número a la vez, no una sola:
+    // a diferencia del viejo acordeón de "la pendiente desplegada", acá quien abre una
+    // carga para trabajarla no le cierra la puerta a la que ya tenía abierta. No se
+    // reinicia en Releer -sobrevive a que la lectura se actualice, igual que el
+    // kilometraje que se está tecleando-.
+    private readonly HashSet<string> filasAbiertas = new();
 
-    private string Desplegada =>
-        faltantesPorCarga.ContainsKey(desplegadaPorElla) ? desplegadaPorElla : desplegadaPorDefecto;
+    private void AlternarDetalle(string transaccion)
+    {
+        if (!filasAbiertas.Add(transaccion)) filasAbiertas.Remove(transaccion);
+    }
 
-    private void Desplegar(string transaccion) => desplegadaPorElla = transaccion;
+    // EL CHIP DEL RESUMEN: un estado, no una lista. Con más de un faltante a la vez
+    // -pasa: falta el kilometraje Y la confirmación del tanque- decir los dos en un
+    // chip de tres palabras es imposible sin mentir por omisión, así que el resumen dice
+    // "faltan datos" y el detalle, que ya lista cada FaltanteEnLista por separado, cuenta
+    // el resto.
+    private static string TextoDePendiente(List<FaltanteEnLista> pendientes) =>
+        pendientes.Count > 1 ? "faltan datos"
+            : EsperaConfirmacion(pendientes) ? "falta confirmar el tanque" : "falta el kilometraje";
 
     // El prellenado, UNO POR CARGA (llave: el numero de transaccion). Si ella manda la
     // propuesta tal cual, su origen es "confirmado" -miro el numero y dijo que si-; si la
@@ -883,24 +888,5 @@ else
                     break;
                 }
         }
-
-        // EL DEFAULT DEL PLIEGUE: la carga mas reciente que espera kilometraje; si ninguna, la
-        // mas reciente con cualquier pendiente. Se compara por fecha y no se confia en el
-        // orden de la lista: si el dominio alguna vez la devolviera al reves, esto no cambia.
-        desplegadaPorDefecto = "";
-        DateTime masReciente = DateTime.MinValue;
-        foreach (FaltanteEnLista faltante in faltantes)
-            if (faltante.ClaveDeLoQueFalta == ElKilometraje && faltante.Fecha > masReciente)
-            {
-                masReciente = faltante.Fecha;
-                desplegadaPorDefecto = faltante.Transaccion;
-            }
-        if (desplegadaPorDefecto.Length == 0)
-            foreach (FaltanteEnLista faltante in faltantes)
-                if (faltante.Fecha > masReciente)
-                {
-                    masReciente = faltante.Fecha;
-                    desplegadaPorDefecto = faltante.Transaccion;
-                }
     }
 }

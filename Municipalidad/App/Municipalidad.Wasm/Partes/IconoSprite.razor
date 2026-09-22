@@ -1,0 +1,11 @@
+<span class="icono-sprite icono-sprite--@Nombre" aria-hidden="true"></span>
+
+@code {
+    /// <summary>
+    /// Que pieza del sprite mostrar: el nombre coincide con una clase `.icono-sprite--NOMBRE`
+    /// definida en app.css, ya recortada y escalada desde sprite-mi-muni.png. No dibuja nada por su
+    /// cuenta: si el nombre no tiene clase, no se ve icono, y eso hay que arreglarlo en el CSS, no aca.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Nombre { get; set; } = "";
+}

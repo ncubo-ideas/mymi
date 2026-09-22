@@ -85,7 +85,7 @@ const perdonadas = {
   "Compras/App/Compras.Wasm/Layout/MainLayout.razor|La Guaria": "nombre corto de la institucion",
   "Compras/App/Compras.Wasm/Layout/MainLayout.razor|Su barrio, su despensa, desde 1992": "el lema de la institucion",
   "Compras/App/Compras.Wasm/Pages/MisCompras.razor|La Guaria": "nombre corto de la institucion",
-  "Concesionario/App/Concesionario.Wasm/Layout/SotaventosMark.razor|[atributo aria-label] Sotaventos Motors": "nombre de la institucion",
+  "Concesionario/App/Concesionario.Wasm/Layout/SotaventoMark.razor|[atributo alt] Sotaventos Motors": "nombre de la institucion",
   "Gnothi.Desktop/Components/Root.razor|Mymi": "el nombre del producto, como el lema: no se traduce",
 
   // NOMBRES PROPIOS DE TERCEROS.

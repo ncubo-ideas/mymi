@@ -1,11 +1,9 @@
 @page "/que-se-me-vence"
 @inject EstadoDeLaApp estado
 @inject Textos textos
+@using System.Linq
 
-<PageTitle>@textos["queSeMeVence.titulo"] · @Textos.TituloDelModulo</PageTitle>
-
-<h1>@textos["queSeMeVence.titulo"]</h1>
-<p class="bajada">@textos["queSeMeVence.bajada"]</p>
+<PageTitle>@textos["queSeMeVence.encabezado"] · @Textos.TituloDelModulo</PageTitle>
 
 @if (!estado.EstaArriba)
 {
@@ -13,79 +11,147 @@
 }
 else
 {
-    <NumeroSinFirmar Dicho="@textos.Con("queSeMeVence.umbrales", ("dias", textos.Dias(vence.DiasDeAviso)), ("tasa", textos.Porcentaje(vence.TasaConQueSeProyecto)))" />
+    <div class="fondo-noche">
+        <h1>@textos["queSeMeVence.encabezado"]</h1>
+        <p class="subtitulo-pagina">@textos["queSeMeVence.subtitulo"]</p>
 
-    <section class="bloque" id="por-vencer">
-        <h2>@textos["queSeMeVence.porVencer"]</h2>
+        <section class="bloque" id="por-vencer">
+            <div class="seccion-cabeza">
+                <h2>@textos["queSeMeVence.porVencer"]@(vence.PorVencer.Count > 0 ? $" ({vence.PorVencer.Count})" : "")</h2>
+                @if (vence.PorVencer.Count > 0)
+                {
+                    <div class="seccion-total-bloque">
+                        <span class="seccion-total-etiqueta">@textos["queSeMeVence.totalPorVencer"]</span>
+                        <span class="seccion-total-cifra">@Colones.Formatear(textos, vence.PorVencer.Sum(p => p.Monto))</span>
+                    </div>
+                }
+            </div>
 
-        @if (vence.PorVencer.Count == 0)
-        {
-            <p class="nota">@textos.Con("queSeMeVence.nadaPorVencer",
-                ("dia", vence.PreguntadoEl),
-                ("dias", textos.Dias(vence.DiasDeAviso)))</p>
-        }
-
-        @foreach (var periodo in vence.PorVencer)
-        {
-            <article class="tarjeta">
-                <div class="tarjeta__cabeza">
-                    <LlaveDelRubro Rubro="@periodo.Rubro" />
-                    <span class="periodo">@periodo.Periodo</span>
-                    <SelloDeUrgencia Urgencia="@periodo.Urgencia" />
+            @if (vence.PorVencer.Count == 0)
+            {
+                <div class="aviso-tranquilo">
+                    <p class="estado-vacio">
+                        <span class="estado-vacio__marca">✓</span>
+                        @textos["queSeMeVence.nadaVenceEnLosProximos"] @textos.Dias(vence.DiasDeAviso)
+                    </p>
+                    <p class="explicacion-menor">
+                        @textos["queSeMeVence.avisoLimitado"]
+                        @textos.Dias(vence.DiasDeAviso).
+                    </p>
                 </div>
-
-                <Frase Dice="@periodo.Dice" />
-
-                <dl class="renglones">
-                    <dt>@textos["queSeMeVence.vence"]</dt>
-                    <dd>@periodo.Vence</dd>
-                    <dt>@textos["queSeMeVence.faltan"]</dt>
-                    <dd>@textos.Dias(periodo.Faltan)</dd>
-                    <dt>@textos["queSeMeVence.monto"]</dt>
-                    <dd>@textos.Monto(periodo.Monto)</dd>
-                </dl>
-            </article>
-        }
-    </section>
-
-    <section class="bloque" id="vencidos">
-        <h2>@textos["queSeMeVence.yaVencidos"]</h2>
-
-        @if (vence.Vencidos.Count == 0)
-        {
-            <p class="nota">@textos["queSeMeVence.nadaVencido"]</p>
-        }
-
-        @foreach (var periodo in vence.Vencidos)
-        {
-            <article class="tarjeta">
-                <div class="tarjeta__cabeza">
-                    <LlaveDelRubro Rubro="@periodo.Rubro" />
-                    <span class="periodo">@periodo.Periodo</span>
-                    <SelloDeUrgencia Urgencia="@periodo.Urgencia" />
+            }
+            else
+            {
+                <div class="obligaciones">
+                    @foreach (var periodo in vence.PorVencer)
+                    {
+                        <details class="obligacion">
+                            <summary class="obligacion__resumen">
+                                <span class="obligacion__icono"><IconoSprite Nombre="calendario-chico" /></span>
+                                <span class="obligacion__info">
+                                    <span class="obligacion__rubro"><LlaveDelRubro Rubro="@periodo.Rubro" /></span>
+                                    <span class="obligacion__fecha">@textos["queSeMeVence.vence"] @periodo.Vence</span>
+                                    <SelloDeUrgencia Urgencia="@periodo.Urgencia" />
+                                </span>
+                                <span class="obligacion__lado">
+                                    <span class="obligacion__monto">@Colones.Formatear(textos, periodo.Monto)</span>
+                                    <span class="obligacion__chevron" aria-hidden="true">&rsaquo;</span>
+                                </span>
+                            </summary>
+                            <div class="obligacion__detalle">
+                                <dl class="renglones">
+                                    <dt>@textos["queSeMeVence.periodo"]</dt>
+                                    <dd>@periodo.Periodo</dd>
+                                    <dt>@textos["queSeMeVence.vence"]</dt>
+                                    <dd>@periodo.Vence</dd>
+                                    <dt>@textos["queSeMeVence.faltan"]</dt>
+                                    <dd>@textos.Dias(periodo.Faltan)</dd>
+                                    <dt>@textos["queSeMeVence.monto"]</dt>
+                                    <dd>@Colones.Formatear(textos, periodo.Monto)</dd>
+                                </dl>
+                                <span class="obligacion__detalle__titulo">@textos["queSeMeVence.comoSeCalcula"]</span>
+                                <p class="item__frase">@periodo.Dice</p>
+                            </div>
+                        </details>
+                    }
                 </div>
+            }
+        </section>
 
-                <Frase Dice="@periodo.Dice" />
+        <section class="bloque" id="vencidos">
+            <div class="seccion-cabeza">
+                <h2>@textos["queSeMeVence.vencidosTitulo"]@(vence.Vencidos.Count > 0 ? $" ({vence.Vencidos.Count})" : "")</h2>
+                @if (vence.Vencidos.Count > 0)
+                {
+                    <div class="seccion-total-bloque">
+                        <span class="seccion-total-etiqueta">@textos["queSeMeVence.totalVencido"]</span>
+                        <span class="seccion-total-cifra">@Colones.Formatear(textos, vence.Vencidos.Sum(p => p.Monto))</span>
+                    </div>
+                }
+            </div>
 
-                <dl class="renglones">
-                    <dt>@textos["queSeMeVence.vencio"]</dt>
-                    <dd>@periodo.Vencio</dd>
-                    <dt>@textos["queSeMeVence.deAtraso"]</dt>
-                    <dd>@textos.Dias(periodo.Dias)</dd>
-                    <dt>@textos["queSeMeVence.monto"]</dt>
-                    <dd>@textos.Monto(periodo.Monto)</dd>
-                    <dt>@textos["queSeMeVence.proyeccionDeMora"]</dt>
-                    <dd>@textos.Monto(periodo.CostoProyectado)</dd>
-                </dl>
-            </article>
-        }
-    </section>
+            @if (vence.Vencidos.Count == 0)
+            {
+                <p class="estado-vacio">
+                    <span class="estado-vacio__marca">✓</span>
+                    @textos["queSeMeVence.nadaVencidoTitulo"]
+                </p>
+                <p class="explicacion-menor">@textos["queSeMeVence.nadaVencidoCuerpo"]</p>
+            }
+            else
+            {
+                <div class="obligaciones">
+                    @foreach (var periodo in vence.Vencidos)
+                    {
+                        <details class="obligacion">
+                            <summary class="obligacion__resumen">
+                                <span class="obligacion__icono"><IconoSprite Nombre="calendario-chico" /></span>
+                                <span class="obligacion__info">
+                                    <span class="obligacion__rubro"><LlaveDelRubro Rubro="@periodo.Rubro" /></span>
+                                    <span class="obligacion__fecha">@textos["queSeMeVence.vencio"] @periodo.Vencio</span>
+                                    <span class="obligacion__atraso">@textos.Dias(periodo.Dias) @textos["queSeMeVence.deAtrasoSufijo"]</span>
+                                </span>
+                                <span class="obligacion__lado">
+                                    <span class="obligacion__monto">@Colones.Formatear(textos, periodo.Monto)</span>
+                                    <span class="obligacion__chevron" aria-hidden="true">&rsaquo;</span>
+                                </span>
+                            </summary>
+                            <div class="obligacion__detalle">
+                                <dl class="renglones">
+                                    <dt>@textos["queSeMeVence.periodo"]</dt>
+                                    <dd>@periodo.Periodo</dd>
+                                    <dt>@textos["queSeMeVence.vencio"]</dt>
+                                    <dd>@periodo.Vencio</dd>
+                                    <dt>@textos["queSeMeVence.deAtraso"]</dt>
+                                    <dd>@textos.Dias(periodo.Dias)</dd>
+                                    <dt>@textos["queSeMeVence.monto"]</dt>
+                                    <dd>@Colones.Formatear(textos, periodo.Monto)</dd>
+                                    <dt>@textos["queSeMeVence.proyeccionDeMora"]</dt>
+                                    <dd>@Colones.Formatear(textos, periodo.CostoProyectado)</dd>
+                                </dl>
+                                <span class="obligacion__detalle__titulo">@textos["queSeMeVence.comoSeCalcula"]</span>
+                                <p class="item__frase">@periodo.Dice</p>
+                            </div>
+                        </details>
+                    }
+                </div>
+            }
+        </section>
 
-    <Aviso Tono="quieta" Id="las-dos-no-se-suman" Titulo="@textos["queSeMeVence.noSeSuman"]">
-        <p>@textos["queSeMeVence.noSeSumanCuerpo"]</p>
-    </Aviso>
+        <details class="disclosure-secundaria">
+            <summary class="disclosure-secundaria__resumen">
+                <span class="disclosure-secundaria__icono" aria-hidden="true">ⓘ</span>
+                <span class="disclosure-secundaria__texto">@textos["queSeMeVence.sobreLosVencimientos"]</span>
+                <span class="disclosure-secundaria__chevron" aria-hidden="true">&rsaquo;</span>
+            </summary>
+            <div class="disclosure-secundaria__contenido">
+                <p class="item__frase">@textos["queSeMeVence.noSeSumanCuerpo"]</p>
+                <NumeroSinFirmar Dicho="@textos.Con("queSeMeVence.umbrales", ("dias", textos.Dias(vence.DiasDeAviso)), ("tasa", textos.Porcentaje(vence.TasaConQueSeProyecto)))" />
+            </div>
+        </details>
 
-    <p class="nota">@textos.Con("comun.contestadoAl", ("dia", vence.PreguntadoEl))</p>
+        <p class="nota">@textos.Con("comun.contestadoAl", ("dia", vence.PreguntadoEl))</p>
+    </div>
 }
 
 @code {
@@ -96,6 +162,8 @@ else
 	/// <summary>La unica pasada de lectura de esta pantalla: las dos listas del mismo momento.</summary>
 	private void Releer()
 	{
-		if (estado.EstaArriba) vence = estado.LeerLoQueSeVence();
+		if (!estado.EstaArriba) return;
+
+		vence = estado.LeerLoQueSeVence();
 	}
 }
