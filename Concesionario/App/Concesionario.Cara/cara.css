@@ -2,7 +2,7 @@
  *
  * `app.css` y `dueno.css` VIAJAN TAL CUAL, sin tocar una regla. Antes esta hoja tenia copiados a
  * mano los bloques de `dueno.css` que me parecia que hacian falta, y elegir cuales era decidir
- * como se ve Sotavento. Copiar los archivos enteros saca esa decision de aca.
+ * como se ve Sotaventos. Copiar los archivos enteros saca esa decision de aca.
  *
  * SON LAS DOS, y no solo la del dueño: `dueno.css` da el vocabulario `d-*` de esta pantalla, pero
  * el reset, el cuerpo y la tipografia los pone `app.css`. Llevar una sola dejaba la pantalla sin

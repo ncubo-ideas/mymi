@@ -53,7 +53,7 @@ namespace Concesionario.Dominio.Pruebas
 		// EL NOMBRE ENTERO, que es el declarado seguido de quien lo publica. La institucion se escribe
 		// aqui como la escriben las dos superficies que la nombran, y NO se compara contra el
 		// manifiesto del modulo: ahi va con su parentesis de mock, que es otra cosa.
-		private const string TheWholeName = "Mi plan de mantenimiento · Sotavento Motors";
+		private const string TheWholeName = "Mi plan de mantenimiento · Sotaventos Motors";
 
 		// EL QUE CABE DEBAJO DEL ICONO. Es una abreviatura del declarado y no un nombre aparte, que es
 		// lo que afirma la relacion de la segunda prueba.
@@ -133,8 +133,8 @@ namespace Concesionario.Dominio.Pruebas
 		public void TheSweepSeesATitleThatDoesNotQuoteTheDeclarationAndSeesOneThatDoes()
 		{
 			Assert.That(
-				TheTitleIn("<head><title>Mi carro · Sotavento Motors</title></head>"),
-				Is.EqualTo("Mi carro · Sotavento Motors"),
+				TheTitleIn("<head><title>Mi carro · Sotaventos Motors</title></head>"),
+				Is.EqualTo("Mi carro · Sotaventos Motors"),
 				"El extractor no lee el titulo del documento, asi que el censo de arriba esta verde por "
 				+ "no haber mirado. Ese es el nombre que el <title> decia de verdad.");
 

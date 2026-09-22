@@ -82,7 +82,7 @@ window.Language = (function () {
     // THE STATIC TEXT, painted once. Everything the markup carries in Spanish is a fallback for a
     // reader that gets the page before this runs -- the attribute is what decides.
     //
-    // THE TITLE IS NOT HERE: "Mi plan de mantenimiento · Sotavento Motors" is the institution's
+    // THE TITLE IS NOT HERE: "Mi plan de mantenimiento · Sotaventos Motors" is the institution's
     // voice, declared once and not translated, and it stays written in the document.
     function paintTheStaticText() {
         var said = document.querySelectorAll('[data-text]');

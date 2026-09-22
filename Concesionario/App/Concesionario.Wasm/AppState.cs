@@ -685,7 +685,7 @@ namespace Concesionario.Wasm
 		/// agencia es quien reparte esta app, asi que su propio nombre lo trae la app y no un
 		/// evento del feed.
 		/// </summary>
-		public string Name { get; set; } = "Sotavento Motors";
+		public string Name { get; set; } = "Sotaventos Motors";
 
 		/// <summary>
 		/// Por donde se le habla a la agencia. Vale la misma razon que <see cref="Name"/>: es un
