@@ -48,6 +48,13 @@
      recorta: si no es cuadrado, se le respeta la forma. */
   .marca{width:42px;height:42px;flex:none;object-fit:contain}
   .marca.sinlogo{display:grid;place-items:center;font-size:24px;background:var(--panel)}
+  /* LA MISMA MARCA, AL LADO DE UN TITULO. En la hoja del alta y en el encabezado de la
+     institucion el logo acompaña un nombre en linea, no encabeza una tarjeta, asi que va a la
+     altura de la mayuscula en vez de a 42 px. `vertical-align:middle` porque ahi convive con
+     texto inline; el `inline-grid` es para que el fallback del rubro siga centrando su dibujo. */
+  .marca.chica{width:28px;height:28px;vertical-align:middle;margin-right:8px}
+  .marca.chica.sinlogo{display:inline-grid;font-size:17px}
+  h1.conmarca{display:flex;align-items:center;gap:0}
   .lema{color:var(--soft);font-size:13px;margin-top:1px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
   .title{font-weight:600}

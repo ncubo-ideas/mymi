@@ -31,18 +31,41 @@ el terreno no existía. Cada cosa lleva su fecha.
 
 ## Pendientes, en orden de lo que desbloquea
 
-### P1 · El guard de hilos por capacidad — **y no es código nuestro**
+### P1 · El guard de hilos por capacidad — ~~y no es código nuestro~~ · **CERRADO, verificado el 2026-09-16**
 
-Cambiar la pregunta «¿estoy en un browser?» por una pregunta sobre **capacidad del hospedaje**. Un flag
-inyectable, o el conteo de procesadores como default con override explícito del Host.
+**Ya está hecho en el motor, y nadie se enteró de este lado.** El pedido era cambiar la pregunta
+«¿estoy en un browser?» por una sobre **capacidad del hospedaje**. El motor hoy pregunta exactamente
+eso, con ese nombre, y cubre WASI:
 
-**Por qué primero.** Bloquea toda la etapa de WASI: sin esto, un módulo con el motor no arranca fuera del
-browser. Y es barato ahora — si entra con forma de plataforma, cada hospedaje nuevo agrega una condición más
-a esa línea.
+```csharp
+// The probes name the capability, not a preference: a threaded wasm build also
+// takes the one-thread flow, correctly if without the parallelism.
+internal static bool HasNoWorkerThreads =>
+    OperatingSystem.IsBrowser() || OperatingSystem.IsWasi();
+```
 
-**Criterio:** el replay secuencial se activa en un hospedaje sin hilos que **no** sea el browser.
+Está en los dos lugares que hacían falta —`ActorHandler.cs:1351` (la rehidratación) y
+`Dispatch.cs:59` (la reducción)— y trae los dos overrides para que un host con hilos ejercite el
+mismo camino (`ForceSequentialRehydration`, `DispatchOptions.ForceInlineReduction`). Los commits son
+del 25 y 26 de agosto de 2026, **antes del corte de este tablero**, y sus comentarios dicen
+*«Measured on standalone WASI»*: el equipo del motor ya lo corrió ahí.
 
-**Va reportado, no parcheado.**
+**PERO OJO CON LA VERSIÓN, que es la parte que sí nos toca.** Verificado abriendo los `.nupkg` de la
+caché local:
+
+| versión | `ActorHandler` (rehidratación) | `Choreography` (reducción) |
+|---|---|---|
+| `3.0.0-beta.10027` | no | no |
+| **`3.0.0-beta.10029`** — con la que armamos todo | **sí** | **NO** |
+| `3.0.0-beta.10029-lector.4` | sí | **sí** |
+
+La mitad de `Choreography` entró un día después de la 10029 y **no viajó en ella**. O sea: con la
+versión que usamos hoy, un módulo bajo WASI arrancaría la rehidratación y moriría en el despacho.
+**No hay nada que reportar: hay que subir de versión.** La `lector.4` ya está en la caché local; la
+rama pide la `10044`, que el feed no entrega (403).
+
+**Consecuencia para el tablero:** `P8` deja de estar bloqueado. Y el argumento *«el camino de wasm
+depende de código ajeno»* —que se repitió en esta misma sesión— **es falso desde hace tres semanas**.
 
 ### P2 · El fixture del grafo de referencias
 
@@ -745,8 +768,9 @@ que el bundle del módulo traiga únicamente sus propios DLLs. Eso:
 
 **`P8` (el módulo como `.wasm`) pasa a ser el camino crítico**, y por una razón nueva: es la única
 arquitectura que baja la memoria **y** encaja en el texto de Google —*«a virtual machine or an
-interpreter … indirect access»*— con una sola decisión. Sigue bloqueado por `P1`, que no es código
-nuestro.
+interpreter … indirect access»*— con una sola decisión. **Y ya no está bloqueado**: `P1` está cerrado
+en el motor desde el 26 de agosto; lo único que falta de ese lado es subir de versión, porque la
+mitad del guard no viajó en la `10029` con la que armamos todo. Ver `P1`.
 
 ### Lo que ninguna arquitectura arregla
 
@@ -760,3 +784,675 @@ cualquier decisión técnica:
   módulos con su hoja, su firma y su actualización se le parece.
 
 Esas dos sólo se contestan **preguntando**, no diseñando. Van a la sonda.
+
+---
+
+## P19 · La caja de wasm — la propuesta, con el porqué primero · 2026-09-16
+
+**Qué se propone, en una línea:** que el dominio de la institución corra **adentro de una caja de
+wasm que maneja Gnothi**, en vez de como un DLL suelto cargado en el proceso de Gnothi.
+
+**Lo que NO cambia**, para que el alcance quede claro: la cara sigue siendo HTML/JS en el WebView,
+las tres puertas del Host siguen igual, el journal sigue siendo del módulo. **Cambia una sola cosa:
+quién ejecuta el C# de la institución y qué puede alcanzar desde ahí.**
+
+### El porqué, en orden de peso
+
+**1 · Porque hoy la contención es una promesa, y debería ser un mecanismo.**
+
+Es la razón de fondo y no tiene nada que ver con las tiendas. `A1` dice que el dato es de la
+persona y que las autoridades están repartidas. Pero el DLL de La Guaria corre **con los permisos de
+Gnothi**: podría abrir la carpeta de otro módulo, podría salir a la red, podría leer el journal del
+laboratorio. **Nada en el sistema se lo impide. Lo único que lo impide es que no lo hace.**
+
+En la caja no es disciplina: **no tiene syscalls**. Si Gnothi no le pasa la carpeta, la carpeta no
+existe para él. `D2` ya pide que la contención sea **falsable** —que se pueda intentar romperla y
+verla fallar— y hoy no lo es: no hay nada que intentar, porque no hay cerca.
+
+Esta razón es nuestra. Las otras dependen de reglas ajenas que pueden cambiar; ésta no.
+
+**2 · ~~Sin esto no hay teléfono~~ → sin esto el teléfono sale caro. REBAJADO el 2026-09-16.**
+
+Esta razón decía dos cosas de más, y las dos las corrigió un compañero el mismo día. **Se deja el
+texto viejo tachado porque circuló como argumento.**
+
+**Lo que decía:** que la caja era *«la única arquitectura que pasa el texto»* y que sin ella *«no hay
+teléfono»*, con la hospedada costando *«~200 MB por módulo vivo»*.
+
+**Lo que es cierto:**
+
+- **No es la única que pasa.** Apple exime a **cualquier** intérprete desde junio de 2017, no sólo a
+  WebKit — con precedente vivo en Roblox, que corre Lua en su propia VM y está publicado (`B11`).
+  Contra el texto de Play, pasan la hospedada y la caja; lo que **no** pasa es cargar un DLL en el
+  proceso, que es acceso directo a las APIs. **Un revisor de seguridad refuta la exclusividad en
+  cinco minutos, y con razón.**
+- **Y la hospedada no cuesta 200 MB por módulo vivo**: cuesta **+58,8 MB** en este teléfono, y un
+  compañero midió **82 MB totales con 42 privados** para exámenes hospedado en un A54 y un emulador.
+  Con esos números **la hospedada es cara pero vive**; con 200 MB no viviría. Es la diferencia entre
+  «condición de existencia» y «la mejor mejora disponible».
+
+**Lo que queda de esta razón, dicho bien:** entre las formas que **además** resuelven el tamaño
+—cargo, híbrida, Blazor— **la caja es la única que pasa el texto de Play**. La hospedada pasa el
+texto y **es** el problema de tamaño. Eso sigue siendo cierto y sigue siendo un motivo. **No es el
+pilar: el pilar es la razón 1.**
+
+**3 · Porque baja la memoria por módulo vivo — EN PIE, medido en el teléfono, con condiciones.**
+
+**Esta razón se dio por caída y después se midió bien.** Se deja la historia entera porque las tres
+versiones circularon:
+
+- **se afirmaba sin medir** que la hospedada costaba *«~200 MB por módulo vivo»*. **Falso**: eran
+  238,7 MB de base, **+58,8 MB el primer módulo** y entre +2,2 y +7,7 MB los módulos 2 a 5. Los
+  199 MB eran el total con cuatro instalados.
+- **se midió en la laptop** —+72 MB por instancia de memoria privada— y con eso se declaró **caída**.
+- **se midió en el teléfono**, con `dumpsys meminfo`, que es el mismo instrumento con el que se midió
+  la hospedada: **+~16 MB por instancia viva**, estable en cinco corridas.
+
+- **y se precompiló el componente**, que era la condición que faltaba: **+29 MB por instancia viva y
+  costo fijo ~0**.
+
+| en el mismo teléfono, mismo instrumento | primer módulo vivo | vivos a la vez | costo fijo |
+|---|---|---|---|
+| hospedada | **+58,8 MB** | **uno**, por la regla de desalojo | — |
+| caja, compilando en cada arranque | +~16 MB *(lectura sucia)* | tres | **+163 MB** |
+| **caja, precompilada** | **+29 MB** | tres, y la serie es lineal | **~0** |
+
+**Con el precompilado la caja gana desde el primer módulo**: la mitad de memoria por módulo vivo, sin
+costo fijo y sin la regla de «uno vivo a la vez». `wasmtime_component_serialize` baja el arranque de
+**1 109 ms a 4 ms** y el PSS con cero instancias de **249 MB a 80 MB**, porque el artefacto se
+**mapea desde disco** en vez de generarse en memoria anónima.
+
+**Y el ahorro se multiplica:** el artefacto es del **runtime**, no del módulo — `dotnet.wasm` es
+idéntico para todas las instituciones. Son **11 MB en disco una vez, para todos los módulos**, que es
+exactamente el sustrato compartido de `P10`.
+
+*(El +16 MB de la serie anterior era una lectura sucia: midiendo con el componente recién compilado,
+Android reclamaba páginas del código generado y el PSS oscilaba entre 243 y 321 MB. Con el
+precompilado la serie sale monótona y repetible al megabyte: 80 · 113 · 142 · 171 MB.)*
+
+La medición de la laptop no estaba mal: medía otra cosa —memoria privada en Windows contra PSS en
+Android, con otro sistema de páginas compartidas—. **La que vale para decidir es la del teléfono,
+porque el teléfono es el destino.** Todo en `F8`.
+
+**4 · Porque le devuelve sentido a piezas que ya escribimos y hoy no valen nada.**
+
+`substrate.range` está declarado en el manifiesto de los cinco módulos y **nadie lo valida** — no por
+descuido, sino porque no hay sustrato compartido cuya versión negociar (`P10`). Con un motor del
+Host, lo hay. Y el módulo vuelve a pesar lo que es: `examenes` mide **188 KB** en proceso contra los
+13 MB de su bundle hospedado. Eso no es vanidad: es lo que hace que *«la institución te entrega un
+módulo»* sea un acto plausible y no una descarga.
+
+**5 · Porque quita el argumento que más caro nos sale defender.**
+
+Toda conversación seria sobre Gnothi termina en el mismo punto: *«estás cargando código nativo de un
+tercero en tu proceso»*. Lo dice la tienda, lo va a decir una revisión de seguridad, y lo va a decir
+el área legal de la primera institución grande. Hoy la respuesta es *«confiamos en él»*. Con la caja
+la respuesta es *«no puede»*.
+
+### Y por qué ahora y no después
+
+**Porque el contrato está a punto de crecer.** Hoy el Host encuentra los cinco marcadores por
+reflexión sobre un `Type` de .NET. Cruzar a wasm obliga a declarar esa interfaz y serializar en el
+borde — **y cada marcador nuevo que se agregue por reflexión encarece esa mudanza.** Ya hay cinco
+instituciones publicando contra ese contrato; en seis meses habrá más y una versión del contrato que
+mantener.
+
+### Lo que costaría, dicho antes de empezar
+
+- **Toca `Gnothi.Contract`**, que es la pieza más cara de cambiar: es lo que las instituciones ya
+  compilan contra.
+- **`wasi-wasm` es experimental en .NET.** No es lo mismo que el wasm del navegador, que sí está
+  probado.
+- **La latencia no está medida**, y en iOS no hay JIT: wasmtime correría interpretado o AOT.
+
+### Los cuatro pasos, y qué mata cada uno
+
+| paso | pregunta | dónde | costo |
+|---|---|---|---|
+| **0** | ¿arranca el motor bajo WASI con un módulo real? | laptop, sin Gnothi | 1 día |
+| **1** | ¿se puede hablar con él sin reflexión? — una consulta cruzando el borde | laptop | 2-3 días |
+| **2** | ¿la contención es falsable? — salir de la carpeta falla y queda registrado | laptop | 2 días |
+| **3** | ¿cuánto cuesta? — memoria, tamaño, latencia contra los 153 ms del Binder | teléfono | por medir |
+
+**Requisito del paso 0:** la versión del motor tiene que ser al menos `3.0.0-beta.10029-lector.4`.
+La `10029` con la que armamos todo **no trae la mitad del guard de hilos** — ver `P1`.
+
+**Cuándo se para:** si el paso 0 falla y la causa está en el motor, **ahí** sale un reporte, con una
+corrida reproducible detrás. No antes: un reporte sin corrida es una molestia, no un hallazgo.
+
+### Paso 0 · HECHO y en verde · 2026-09-16
+
+**El motor arranca bajo WASI, y reproduce un journal real.** `ExamenesApp.Start()` completa en
+wasmtime con `ProcessorCount=1`, y sobre el journal del fixture -89 entradas escritas por .NET
+nativo en Windows- devuelve **exactamente la misma respuesta** que el nativo: 19 exámenes, 1 fuera
+de rango, cursor 303. **2,2× más lento**, con un costo marginal de **0,6 ms por entrada**. Y el
+módulo pesa **227 KB** contra los 12,4 MB de su bundle hospedado.
+
+La evidencia completa, con las cuatro trampas que costó y lo que NO prueba, está en
+[`F8`](F8-el-paso-0-de-la-caja-de-wasm.md). El spike, en `Spikes/Lab.WasiCaja`.
+
+### Paso 1 · HECHO y en verde · 2026-09-16
+
+**Gnothi le habla a un módulo que no cargó.** El lado de afuera (`Spikes/Lab.WasiCaja.Host`, 138
+líneas) no declara UNA referencia ni menciona `Assembly`, `Type` o `MethodInfo`. El módulo declara
+lo que ofrece —2 consultas, 7 vistas, entrega y cursor— y el Host llama por nombre.
+
+**El hallazgo de diseño: la reflexión no desaparece, se muda adentro del módulo.** Hoy el Host mira
+adentro del DLL ajeno; en la caja el módulo dice lo que ofrece y el Host le cree o no. Es el reparto
+de autoridad de `A1` aplicado al único lugar donde no estaba.
+
+**El borde cuesta ~1 ms** — contra los 153 ms de la puerta Binder que la cara híbrida ya cruza hoy.
+Y **las tres puertas de `B8` siguen aislando**: una vista pedida por la puerta del asistente no se
+deniega, no existe.
+
+Costó dos cosas, y una es vieja conocida: **`stdout` es el protocolo y el motor no lo sabe** (541
+bytes de ruido, la trampa de `E2` en sitio nuevo), y **serializar pasa a ser del módulo**.
+
+**Sigue el paso 2: la contención falsable.**
+
+### Paso 2 · HECHO · verde con dos huecos nombrados · 2026-09-16
+
+**El mismo binario, dos anfitriones.** Un módulo que se porta mal —nueve intentos, ninguno un
+ataque— corrido en proceso y adentro de la caja:
+
+| intento | en proceso (hoy) | en la caja |
+|---|---|---|
+| leer/escribir la carpeta de **otro módulo** | **PUDO** | NO PUDO |
+| listar el disco de la persona | **PUDO** · 31 entradas de `C:` | NO PUDO |
+| salir a la red | **PUDO** · HTTP 200 | NO PUDO |
+
+**Siete de ocho funcionan en proceso.** Hoy el módulo del supermercado puede leer el journal del
+laboratorio, escribir en él y salir a Internet; lo único que lo impide es que no lo hace.
+
+**Los dos huecos, con dueño:** `..` desde la carpeta concedida cae en el propio paquete del módulo
+—porque el `dotnet.wasm` precompilado obliga a montarlo en `/`— y desde ahí **puede reescribir sus
+propios DLLs**; y la red falló **por falta de hilos, no por política**, así que la contención de red
+no está demostrada.
+
+**Y la mitad que no se cumplió:** los intentos fallan pero **Gnothi no los ve**. wasmtime los niega
+en silencio. El equivalente de `WebModule.Violations` —el watchdog de la CSP— necesita wasmtime como
+librería embebida.
+
+**Tres cosas distintas apuntan al mismo trabajo** y eso es lo más útil que dejó el paso: wasmtime
+embebido cierra el hueco del paquete, quita el proceso por módulo y habilita el contador de
+intentos. **Ése es el paso 3, antes que el teléfono.**
+
+### Paso 3 · SONDADO, no construido · 2026-09-16
+
+**Se puede, y no por el camino que parecía.**
+
+- **`wasmtime-dotnet` 44.0.0 NO sirve**, medido: `expected a WebAssembly module but was given a
+  WebAssembly component`. El .NET de WASI produce un **componente**, y el soporte de component model
+  sigue siendo un issue **abierto** en esas bindings.
+- **La C API de wasmtime v48 SÍ**, con las cinco funciones que hacen falta: `add_wasip2`,
+  `add_wasi_http` (**separada**, o sea WASI sin red), `define_unknown_imports_as_traps`,
+  `instance_add_func` y `instantiate`. El camino es **P/Invoke desde C#**, que además es el mismo
+  que haría falta en Android.
+
+**Y resuelve dos problemas de los pasos anteriores:** la red deja de depender de la falta de hilos
+(`add_wasi_http` aparte + trampa en el import), y el borde deja de viajar por `stdout`
+(`instance_add_func` da un canal propio) — que es la respuesta de verdad a la trampa de `E2`.
+
+**Lo que falta es construirlo**, y es el trabajo más grande de `P19`: el envoltorio de P/Invoke
+sobre `component.h`, el `.wasm` de un solo archivo (necesita el `wasi-sdk`) y el módulo como
+*reactor* con funciones exportadas en vez de un `main`.
+
+**Sin saber todavía:** si `dotnet.wasm` arranca como reactor sin `wasi:cli/run`, cuánta memoria
+ocupa una instancia frente a los ~200 MB de un WebView, y cómo se porta wasmtime en Android e iOS,
+donde no hay JIT.
+
+### Condición del paso 3 · El borde y el contrato los PRESTA el Host · 2026-09-16
+
+**Salió de una pregunta de un compañero —*«¿y Gnothi no se lo puede prestar a la caja?»*— y cambia
+el diseño del reactor, así que va escrito antes de construirlo.**
+
+**Por qué el préstamo de hoy no sirve tal cual.** Hoy funciona por el cargador de ensamblados: el
+módulo referencia `Gnothi.Contract` con `ExcludeAssets="runtime"` —compila contra él y **no lo
+empaqueta**—, y en ejecución el `AssemblyLoadContext` del módulo cae al contexto por omisión, **donde
+ya está la copia del Host**. Una sola copia, un solo `Type`.
+
+En la caja eso no existe. El módulo corre sobre **su propio runtime de .NET** (Mono compilado a
+wasm), dentro de la memoria lineal; el CLR del Host está afuera. **No comparten cargador, ni sistema
+de tipos, ni heap.** El DLL del Host no llega por ahí.
+
+**Pero por el sistema de archivos sí, y queda mejor que hoy.** En la caja **Gnothi compone la carpeta
+que el módulo ve**: de los 18 MB montados, sólo **227 KB** son de la institución — el runtime, el
+BCL y el motor ya los pone Gnothi. Prestar el contrato es **un archivo más de 4,6 KB** en una carpeta
+que Gnothi ya arma entera. `ExcludeAssets="runtime"` se queda como está.
+
+**Y presta también el lector de marcas**, que es lo que importa. Si `ElBorde` viene de Gnothi,
+entonces **el que reflexiona adentro de la caja es código de Gnothi**, leyendo los atributos reales
+del DLL de la institución. El módulo no *declara* una lista: **se la extraen**, igual que hoy, sólo
+que el extractor está adentro.
+
+| pieza | de quién |
+|---|---|
+| las marcas sobre los métodos | **la institución**, en su código |
+| el lector de marcas (`ElBorde`) | **Gnothi**, prestado |
+| el paquete donde vive | **Gnothi**, compuesto y montado **de solo lectura** |
+
+**Las dos condiciones, y una ya está medida:**
+
+1. **El paquete montado de solo lectura** — `wasi_config_preopen_dir(..., fs_mutable: false)`,
+   **medido en el paso 3**. Sin esto el módulo sustituye el `ElBorde.dll` de Gnothi por el suyo.
+2. **El módulo como *reactor*, con las funciones exportadas puestas por el borde de Gnothi**, no como
+   `command` con su propio `Main`. **No construido.** Ahora tiene una segunda razón para hacerse.
+
+**Lo que esto corrige de lo dicho antes.** Se escribió que en la caja *«la comprobación se debilita
+porque el Host compara contra lo que el módulo dice»*. **Con el préstamo eso es mucho menos cierto**:
+el privilegio de mirar adentro no se pierde, **se muda adentro con el lector**. Lo que sigue siendo
+irreducible es que el módulo puede mentir sobre **lo que hace**, no sobre lo que declara — y para eso
+está la segunda mitad de la comprobación, *«y que conteste de verdad»*, que no depende de dónde esté
+el lector.
+
+**Y el estado real, que hay que decir:** en lo que **corrió**, `ElBorde` está compilado **dentro** del
+módulo. Sin el préstamo, la declaración la produce código de la institución. **El spike de hoy está
+del lado de creerle al módulo, no de leerlo.**
+
+---
+
+## P20 · El tablero de la tienda — qué falta de verdad para publicar · 2026-09-16
+
+Con la decisión de `P18` tomada —**teléfono de la persona, bajado de la tienda**— y los textos
+leídos en [`B11`](../B-arquitectura/B11-lo-que-dicen-las-tiendas.md), esto es lo que queda entre
+Gnothi y una ficha publicada. **Siete bloqueantes, y no pesan lo que parecía.**
+
+### La corrección que este tablero necesitó el mismo día
+
+Su primera versión decía *«Android ya está desbloqueado hoy: la forma hospedada pasa el texto de
+Play»*, y de ahí sacaba que publicar hospedado era un paso del plan. **Es cierto sobre la regla e
+inútil como plan, porque se olvida del problema que originó toda esta investigación.**
+
+**La forma hospedada ES el problema.** Pesa 12,4–14,1 MB por módulo y se lleva ~200 MB de memoria
+por módulo vivo, tanto que «un módulo vivo a la vez» dejó de ser precaución y pasó a ser requisito.
+La forma **híbrida** (74 KB) y la de **Blazor en el Host** (227 KB) se construyeron exactamente para
+escapar de eso. Publicar hospedado no resuelve nada: publica lo que veníamos rechazando.
+
+**Son DOS restricciones a la vez, y hay que satisfacer las dos.**
+
+| forma | disco por módulo | memoria por módulo | ¿pasa Play? | Apple §4.7.2 |
+|---|---|---|---|---|
+| **hospedada** | **12,4 MB** | **+58,8 MB** por módulo vivo, y **uno vivo a la vez** | sí | no |
+| híbrida | 74 KB | comparte el motor del Host | **no** | no |
+| Blazor en el Host | 227 KB | comparte el motor del Host | **no** | no |
+| hospedada con **motor compartido** (`P10`) | ~300 KB *(sin medir)* | igual que hospedada | sí | no |
+| **caja de wasm** (`P19`) | **227 KB** + su cara (~240 KB) | **+29 MB** por instancia viva, costo fijo **~0** con el componente precompilado | **sí** | no, pero con el mejor argumento |
+
+**Todo lo de esta tabla está medido en el mismo teléfono con el mismo instrumento** (`dumpsys
+meminfo`), el 2026-09-16. La columna de memoria se reescribió **dos veces** ese día: primero decía
+«~200 MB por módulo vivo» para la hospedada, que era el total con cuatro instalados; después una
+medición en la laptop dio +72 MB por instancia y pareció hundir a la caja. La buena es ésta.
+
+**Lectura, con el componente precompilado — medido, no proyectado.** La caja gana **desde el primer
+módulo**: **+29 MB por módulo vivo contra +58,8 MB**, costo fijo ~0, y **sin la regla de «uno vivo a
+la vez»**. `wasmtime_component_serialize` baja el arranque de 1 109 ms a **4 ms** y el PSS con cero
+instancias de 249 MB a **80 MB**, porque el artefacto se **mapea desde disco**.
+
+Y el artefacto es del **runtime**, no del módulo: **11 MB en disco una vez para todas las
+instituciones**, que es el sustrato compartido que `P10` pedía.
+
+**La caja de wasm es la única que satisface las dos.** No es «lo que hace bueno el producto después
+de publicar»: es **la única forma que resuelve el problema original Y pasa la regla de la tienda**.
+Por eso es el camino crítico, y por eso `P19` va primero y no cuarto.
+
+**El motor compartido (`P10`) sigue valiendo como paso intermedio**, y hay que ser honesto sobre qué
+compra: baja el **disco** de 12,4 MB a la fracción que es el módulo, mantiene la posición frente a
+Play, y **no toca la memoria** — cada WebView carga su propio runtime igual. Es mucho más barato que
+la caja y arregla la mitad del problema.
+
+**Y el §4.7.2 de Apple es ortogonal:** le pega a las cinco filas. Ninguna decisión técnica lo mueve,
+es lo único que bloquea todo en iOS, y tarda semanas de calendario. Por eso preguntar arranca **en
+paralelo**, no después.
+
+### Los siete, con dueño
+
+| | bloqueante | tienda | dueño | qué lo cierra | estado |
+|---|---|---|---|---|---|
+| **T1** | código nativo de un tercero corriendo en el proceso | Play · Apple 2.5.2 | **nosotros** | la caja de wasm (`P19`) — o publicar hospedado | **Play: resuelto hoy con la hospedada.** La caja: sondada, falta construir |
+| **T2** | **§4.7.2** — exponer APIs nativas al software que no viene en el binario | Apple | **Apple** | permiso previo, o argumentar que el puente no expone APIs nativas | **sin preguntar** — es el bloqueante real de iOS |
+| **T3** | **§3.3.1(B)(c)** — no crear una tienda o escaparate | Apple | producto | no tener catálogo adentro | **ya estamos del lado bueno** (verificado hoy) |
+| **T4** | **§4.7.4** — índice del software con universal links | Apple | nosotros | chico | a medias |
+| **T5** | **§4.7.5** — control de edad | Apple | nosotros | chico | no existe |
+| **T6** | iOS no tiene JIT | técnico | nosotros | wasmtime interpretado (Pulley) | sin medir, y sólo importa si se va a la caja |
+| **T7** | §2.5.2 es más estricto que §3.3.1(B) y es lo que aplica el revisor | Apple | **Apple** | preguntar | **sin preguntar** |
+
+### T3 · La buena noticia, y hay que protegerla
+
+**Gnothi no tiene catálogo, y eso ya es cierto hoy.** Verificado en `Gnothi.Mobile/Assets/ui.html`:
+el botón `+ Agregar` abre **tres vías y ninguna ofrece nada**:
+
+- **escanear el QR** de la página de la institución,
+- **pegar el enlace** que le llegó por correo o WhatsApp,
+- **elegir archivos** de su propio teléfono.
+
+La única lista que existe —*«Esto encontré en lo que elegiste»*— enumera los módulos hallados
+**entre archivos que la persona ya eligió**, no una oferta. **No hay directorio, no hay búsqueda, no
+hay listado servido por red.** La institución le entrega el enlace a la persona; Gnothi instala lo
+que la persona trae.
+
+**Contra el texto de Apple —*«does not create a store or storefront for other Applications»*— esa es
+la mejor posición posible, y se tiene sin hacer nada.** Lo que hay que hacer es **no perderla**:
+
+> **REGLA DE PRODUCTO: Gnothi no lleva catálogo de módulos.** Ni lista de instituciones disponibles,
+> ni búsqueda, ni destacados, ni «también te puede interesar». El descubrimiento es de la
+> institución, afuera. El día que alguien proponga una pantalla de «explorar módulos», esta línea es
+> la razón por la que no.
+
+### T2 · El bloqueante real, y lo que se puede argumentar
+
+> **4.7.2** Your app may not extend or expose native platform APIs or technologies to the software
+> without prior permission from Apple.
+
+El puente de Gnothi expone `listar`, `leer`, `escribir` y `pull`. Hay que ir con un argumento, no con
+una negación:
+
+- **`pull` ya está del lado correcto.** El módulo **no** sale a la red: le pide a Gnothi que traiga,
+  y Gnothi trae. No se le expone ninguna API de red — se le entrega un resultado.
+- **`listar`/`leer`/`escribir` no son APIs de plataforma: son el contenedor de Gnothi.** No hay
+  selector de carpetas, no hay SAF, no hay acceso al sistema de archivos del aparato. Es una carpeta
+  que Gnothi creó, dentro de su propio contenedor, y que concede por módulo.
+- **Y en la caja de wasm el argumento es más fuerte todavía**, porque deja de ser una promesa: el
+  módulo importa las funciones que Gnothi define y **no tiene syscalls** (`F8`, paso 2 — medido).
+- **El §4.7.3 lo cumplimos de sobra** y es lo que se pone al lado: consentimiento por módulo y por
+  consulta, carpeta concedida por módulo, y la consulta apagada **desaparece** en vez de denegarse.
+
+**Eso no lo decide nadie de este lado.** Va en las notas de revisión y por «Contact App Review».
+
+### El orden que propone este tablero
+
+**En paralelo, porque tienen dueños distintos y uno de los dos no depende de nosotros:**
+
+**Camino A — construir (nosotros)**
+
+1. **La caja de wasm, `P19` paso 3.** Es el camino crítico: la única forma que baja el módulo a
+   227 KB **y** pasa Play. El envoltorio de P/Invoke sobre `component.h`, el `.wasm` de un solo
+   archivo y el módulo como *reactor*.
+2. ~~Medir la memoria de una instancia~~ **— HECHO en el teléfono el 2026-09-16: +~16 MB por
+   instancia viva, contra +58,8 MB de un módulo hospedado.** La caja cuesta la cuarta parte por
+   módulo vivo y permite varios. **Pero paga 163 MB para compilar el componente**, así que con UN
+   módulo vivo la hospedada todavía gana. Lo siguiente es **precompilar el componente**
+   (`wasmtime_component_serialize`): si eso baja el costo fijo, la caja gana desde el primer módulo.
+3. **`T4` y `T5`**, chicos, desactivan dos renglones del 4.7 sin discusión.
+4. **`P10`, el motor compartido**, si la caja se demora: baja el disco sin tocar la memoria, y es
+   mucho más barato.
+5. **`T6`**, wasmtime sin JIT — **en Android ya está contestado**: Cranelift compiló 12 MB de wasm
+   a arm64 en 1,2 s y lo ejecutó. Queda **iOS**, que es donde no hay JIT.
+
+**Camino B — preguntar (Apple)**
+
+1. **`T2` (§4.7.2) y `T7` (§2.5.2 contra §3.3.1(B))**, con el argumento del puente y el §4.7.3 al
+   lado. Tarda semanas de calendario y **bloquea iOS entero pase lo que pase con el camino A**.
+2. **La regla del catálogo escrita**, para que `T3` siga ganado el día que alguien diseñe la
+   pantalla que lo rompe. *(Hecha, acá arriba.)*
+
+**Lo que NO está en el plan:** publicar Android hospedado. Pasa la regla y publica los 12,4 MB y los
+200 MB que esta investigación existe para eliminar.
+
+---
+
+## P21 · Una sola línea base de memoria, antes de seguir comparando · 2026-09-16
+
+**Lo pidió un compañero y tiene toda la razón:** el paso 3 de `P19` promete comparar la caja *«contra
+los ~200 MB de hoy»*, y ese número estaba inflado. Si la línea base está inflada, la comparación
+también.
+
+### Las tres cifras que existen hoy para lo mismo
+
+| quién | aparato | qué midió | número |
+|---|---|---|---|
+| nosotros | Xiaomi 2407FPN8EG | PSS total del proceso, `dumpsys meminfo`, delta al abrir el primer módulo hospedado | **+58,8 MB** |
+| un compañero | Galaxy A54 + emulador | exámenes hospedado | **82 MB totales, 42 privados** |
+| un compañero | — | cada Blazor abierto | **~45 MB** |
+| nosotros | Xiaomi 2407FPN8EG | PSS total, delta por instancia de la caja de wasm | **+~16 MB** |
+
+**Las tres primeras pueden ser la misma cosa contada distinto** —PSS incluye la parte proporcional de
+lo compartido, «privado» no; y no está claro si alguna incluye el proceso del WebView, que en Android
+es **otro proceso**—. Hasta saberlo, **ninguna comparación entre ellas vale**.
+
+### El protocolo que hace falta acordar
+
+Antes de seguir midiendo, las cuatro decisiones que hacen comparables dos números:
+
+1. **Qué métrica.** Propuesta: **TOTAL PSS de `dumpsys meminfo`**, porque es lo que el sistema usa
+   para decidir a quién mata y porque es la que ya tienen las mediciones viejas.
+2. **Qué procesos entran.** En Android el WebView corre en un proceso aparte: **hay que sumar el del
+   módulo**, o la hospedada sale barata por contabilidad. `dumpsys meminfo <paquete>` no lo trae.
+3. **En qué momento.** Propuesta: proceso **fresco por cada N**, con un `GC` y unos segundos de
+   asiento, y **tres repeticiones** — se midió que con tres instancias el PSS oscila entre 243 y
+   321 MB según cuándo se mire.
+4. **Contra qué cero.** La app vacía, o la app con el motor ya compilado. Son dos preguntas
+   distintas y dan respuestas opuestas: la caja paga **163 MB una vez** y **16 MB por módulo**.
+
+### Y una advertencia que ya se pagó hoy
+
+La misma caja midió **+72 MB por instancia en la laptop** (memoria privada, Windows) y **+16 MB en el
+teléfono** (PSS, Android). Las dos mediciones eran correctas. **Con la de la laptop se declaró caída
+una razón entera de `P19`, y con la del teléfono se la volvió a levantar, el mismo día.**
+
+**Ningún número de memoria vale sin decir con qué instrumento y en qué aparato se tomó.**
+
+---
+
+## P22 · El borde con argumentos, cerrado — y los tres defectos que destapó · 2026-09-16
+
+**Cerrado.** `ElBorde.Llamar`/`Ligar` ligan los parámetros desde el sobre `{"args":…,"accepts":…}`
+que arma el Host, con `accepts` leído **antes** que los argumentos —la misma regla que
+`InProcessShell.Bind`—. Verificado en el teléfono contra el journal real: **la pantalla en caja quedó
+igual a la híbrida, tarjeta por tarjeta** (`MERECE ATENCIÓN` pasó de 8 a 9, y volvieron la cabecera
+y el «17 de tus 18 valores»). Detalle en F8 y C10.
+
+### Lo que se arregló de paso, y es la misma lección dos veces
+
+| | comparaba | mentía porque | ahora |
+|---|---|---|---|
+| `CajaDeWasm` | nada: el `.cwasm` no estaba atado a su fuente | un wasm nuevo con un precompilado viejo y sano corría **el código anterior** | el artefacto se llama `sustrato-<huella16>.cwasm` |
+| `LaCaja` | **el largo** del asset del APK | el build nuevo salió con **los mismos 6 583 761 bytes** | huella SHA-256 escrita al lado de la copia |
+
+**El largo no identifica un contenido.** Se arregló en `CajaDeWasm` y se volvió a cometer en
+`LaCaja` el mismo día, un eslabón más arriba de la misma cadena. Costó una corrida entera.
+
+### Dos cosas que parecían de la caja y no lo son
+
+**1 · `Color de la orina` y `Color de las heces` pintan `undefined`.** Se comprobó apagando la caja:
+**en híbrida sale idéntico**. `cara.js:264` tiene dos ramas —`presencia` y `hechos`— y la vista
+`tendencia` devuelve tres formas: la tercera, «categoría en el tiempo», trae `constancia` y no tiene
+rama. El valor existe (`constancia.ultimaCategoria` = `"ámbar"`). **Arreglado el mismo día.** `tarjetaAtencion` tiene ahora la tercera rama: dibuja la tira sobre
+`observaciones` -- marcando «se salió de lo esperable» en vez de «positivo» -- y la cifra sale de
+`constancia.ultimaCategoria`. Verificado en el teléfono en las DOS formas: «Color de la orina →
+ámbar», «Color de las heces → marrón», con su «4 de 4 dentro de lo esperable». Detalle en E4 §2.
+
+Y al empaquetarlo apareció otro, que es de la cadena y no de la cara: el arreglo del «212 → 212»
+estaba escrito desde el 14 y **nunca se había armado el bundle**, así que se seguía viendo en el
+teléfono el 16. Va como E4 §7.
+
+**2 · `no se pudo traer lo nuevo: Connection refused (127.0.0.1:8095)`** al pie de la pantalla. Es el
+**cartero**, que es de Gnothi, y faltaba el túnel al publicador de prueba. Al runbook:
+
+```
+adb reverse tcp:8095 tcp:8095   # el publicador, para el cartero
+adb reverse tcp:8096 tcp:8096   # la pagina de la institucion, para el alta
+```
+
+Y vale distinguirlo de su vecino, porque se leen parecido y no son lo mismo:
+`Permission denied (127.0.0.1:8095)` es **INTERNET sin declarar** en el manifiesto —documentado en
+`MainActivity`—; `Connection refused` es que el socket abrió bien y **no había nadie** del otro lado.
+
+### Lo que sigue en la caja, por prioridad
+
+**`1` Separar el sustrato del módulo — y esto subió a primero por un filo que apareció el
+2026-09-16.** El `.wasm` lleva exámenes adentro, y el `.gmod` **también** trae sus DLL, que en modo
+caja **no se usan nunca**: `Cage.Build` monta un solo preopen y el paquete no se monta. O sea que hay
+**dos copias del código del módulo** y la que corre es la del wasm.
+
+> **Actualizar el módulo NO actualiza lo que corre en la caja.** Ese día se pasó exámenes de 3.9.0 a
+> 3.10.0 y la caja siguió ejecutando la copia del wasm. No se notó porque lo que cambió fue la cara,
+> que sí viaja en el bundle; **si hubiera cambiado el dominio, la caja habría corrido el viejo**.
+
+Es la misma familia que los cuatro defectos del día: dos copias, una comparación que no se hace, y
+falla en silencio. Hoy está contenido porque hay **un** módulo en caja y quien toque su dominio
+rearma el wasm a mano — que no es una salvaguarda, es alguien acordándose. Separarlo deja **una sola
+copia** y la pregunta desaparece. Toca `PackageInspector`, `ModuleEnrollment` y el alta.
+
+`2` **el canario adentro de Gnothi** — escrito y compilando (`Cage.cs`, `Canary.cs`, la compuerta en
+`WasmBox.Open`); falta correrlo en el teléfono en las dos condiciones · `3` **iOS**, sin probar ·
+`4` **cuánto cuesta pintar la pantalla** — bajado de prioridad, el número no existe y conviene que se
+sepa que no existe.
+
+## P23 · Los dos primeros de la caja, cerrados en el teléfono · 2026-09-17
+
+**`1` y `2` de la lista de P22 quedaron cerrados en la misma corrida**, porque van en el mismo
+arranque.
+
+**El sustrato ya no lleva el módulo adentro.** `Gnothi.Mobile/Assets/sustrato.wasm` es el runtime de
+.NET, el BCL, el motor y el borde —uno para todos— y exámenes entra desde su bundle por un segundo
+preopen, `/modulo`, montado de **sólo lectura**. En el teléfono abrió en 34 ms y la cara pintó igual
+que en híbrida. **Con eso se va el filo**: ya no hay dos copias del dominio, y actualizar el módulo
+actualiza lo que corre.
+
+**El canario cantó en el aparato, en las dos condiciones.** Normal: 8 de 8 fugas cerradas, 2 de 2
+puertas abiertas. Con la jaula mal armada a propósito (`--ez jaulamala true`): la vio, nombró las dos
+fugas que se abrían y **cerró la caja**; y el canario normal siguió funcionando después, porque la
+prueba de control no toca el veredicto real. Eso es lo que separa un canario que funciona de uno que
+siempre dice «cerrada»: hasta que no se comprueba que **ve** una jaula rota, los dos se leen igual.
+
+**Y el canario encontró algo que no buscaba.** El listado que imprime para probar la fuga mostró dos
+artefactos precompilados del esquema de nombres anterior, que el barrido no borraba por buscar
+`sustrato-*` con guion. Corregido a `sustrato*`. **Tercera vez en este set que una comparación
+escrita contra el estado de ese día deja de servir el día que el estado cambia** — el largo que
+mentía, el artefacto viejo que corría, el barrido que no barría.
+
+Y se verificó con el mismo instrumento: se reinstaló, exámenes logueó `artefacto viejo borrado
+(sustrato.cwasm)`, y la jaula mala volvió a listar la raíz — **de 15 renglones a 13**. El listado que
+prueba la contención sirve además de inventario de la carpeta privada.
+
+### Una piedra del día, y no es del código
+
+El build quedó bloqueado un rato: el feed privado devolvió **403** y `Ncubo.Puppeteer
+3.0.0-beta.10044` ya no estaba en la caché local. Dos cosas que conviene dejar escritas porque
+cuestan tiempo y no se deducen del mensaje:
+
+- **No hay proveedor de credenciales de Azure Artifacts instalado** (`~/.nuget/plugins` no existe).
+  El `nuget.config` ya avisa que la autenticación va por ahí; mientras el paquete esté en caché no se
+  nota, y el día que no está, sí.
+- **Un restore fallido pisa `obj/project.assets.json`.** Queda un stub de 5 KB, así que después del
+  403 tampoco funciona `--no-restore`: se pierden las dos salidas de una vez.
+
+### Lo que queda de la lista
+
+`3` **iOS** — no hay JIT, wasmtime tendría que ir interpretado; sin probar. · `4` **cuánto cuesta
+pintar la pantalla entera contra la híbrida** — bajado de prioridad, el número no existe y conviene
+que se sepa que no existe.
+
+## P24 · Lo que queda abierto de la caja al cambiar de frente · 2026-09-17
+
+Se cierra la medición de memoria y se pasa a investigar iOS. Esto es lo que queda atrás, para que no
+se pierda por el cambio de tema.
+
+### De la caja
+
+**`1` Cuánto cuesta PINTAR LA PANTALLA, y es el único término sin medir de la cuenta.** La memoria ya
+está contestada —ver `F8`, «La escalera de los cinco módulos»—; lo que falta es el tiempo. «La
+pantalla» no es una pregunta sino **~42 idas y vueltas por apertura**: `cara.js` pide `historial`,
+`alertas` y `analitos`, y después una `tendencia` **por analito, de a una y en orden**, y todo se
+pinta dos veces. En proceso cada una es una llamada a un método; en la caja es el FIFO, despertar el
+hilo del invitado, reflexión, serializar y salir por el callback, **con `SemaphoreSlim(1,1)`, una a la
+vez**. A 1 ms nadie se entera; a 30 ms son 600 ms de pantalla en blanco.
+
+**`2` `Gnothi.Mobile/bundles/` en la raíz está MEZCLADA y hay que decidir qué se hace.** Tenía cuatro
+paquetes híbridos y `municipalidad.gmod` **hospedado** (12,7 MB), más un `compras.gmod` viejo. Hoy se
+reemplazaron por los de `bundles/hibrida/`, pero **el problema no era el contenido sino que haya dos
+carpetas**: la página de la institución sirve la raíz, y mientras las dos existan alguien va a
+instalar la equivocada. O se borra la raíz, o se regenera desde `hibrida/` en cada armado.
+
+**`3` iOS** — es el frente que arranca ahora. No hay JIT y wasmtime tendría que ir interpretado.
+
+### De municipalidad, que vive en otra rama
+
+En `trim/modulos-hinridos`, commit `d92be12`. **No está en `trim/spike-wasm-mobile`**, así que quien
+mire sólo esta rama no lo ve:
+
+- El choque de `Textos` quedó resuelto: las seis frases que dice una Vista cuando no hay con qué
+  contestar se mudaron al catálogo de `Municipalidad.App`, las Vistas reciben `string idioma`, y
+  `Textos` **no se movió** — sigue en `Municipalidad.Wasm` con su JSInterop, que es donde tiene que
+  estar para que el paquete de carga no arrastre el navegador.
+- **Y quedó una prueba en rojo que NO es de ese cambio: `AskingThroughTheSurfaceLeavesTheJournalWithoutANewEntry`.**
+  Sólo llama a las dos `[Query]`. Lo que afirma es serio y hay que mirarlo: *«Una pregunta del Host
+  dejó una entrada en el journal de la persona. Eso es un segundo escritor sobre el mismo actor.»*
+  **Una lectura está escribiendo.** 212 de 213 pasan.
+
+### Fuera del código
+
+**La lámina de «Caja en Gnothi documentation» quedó publicada mintiendo y huérfana.** Dice «compila,
+APK armado, falta el cable» —falso desde hoy—, y probablemente lleva los 163 MB y los nombres de
+archivo en español. La sesión que la republicaba desapareció. El volcado con todo lo nuevo lo tiene la
+sesión coordinadora.
+
+**Y nada de esto está commiteado.**
+
+## P25 · El SIGSEGV de compras — diagnosticado, NO reproducido · 2026-09-22
+
+**Visto una vez, el 2026-09-18.** Secuencia: la app corriendo con compras abierto en proceso → se
+actualiza municipalidad, y esa actualización le **cambia la forma** (híbrida → hospedada) → se reabre
+compras → **la app se muere**.
+
+Y no se murió con una excepción: **crash nativo**.
+
+```
+F libc : Fatal signal 11 (SIGSEGV), code 2 (SEGV_ACCERR), fault addr 0x7b53ada6a0
+         in tid 1866 (.NET TP Worker), pid 32433 (ubo.gnothi.host)
+#00 EmbeddedAssemblies::open_from_bundles   (libmonodroid.so)
+#02 mono_assembly_request_byname
+#03 mono_assembly_load_reference
+#04 mono_class_from_typeref_checked
+...
+#09 mono_class_init_internal
+```
+
+### Las dos puntas, leídas en el código
+
+**1 · Los módulos viejos se descartan SIN ESPERAR.** `ModuleCatalog.Publish` cambia la lista y manda
+los salientes a `DisposeAsync` en un `Task.Run` que nadie awaitea. El comentario del propio método lo
+dice y da la razón:
+
+> *«OUTSIDE THE PUBLICATION AND WITHOUT WAITING: … Closing can take a while — the Unload is
+> COOPERATIVE and the actor also has to be given a GracefulExit — and this is called by a screen right
+> after an enrolment.»*
+
+**2 · Y la carga nueva entra por el mismo lugar que el crash.** Cada módulo se carga en su propio
+`AssemblyLoadContext(isCollectible: true)`, y su `Resolving` **empieza preguntándole al contexto
+Default**:
+
+```csharp
+ctx.Resolving += (c, n) => {
+    try { _ = AssemblyLoadContext.Default.LoadFromAssemblyName(n); return null; }
+    catch { /* private to the module */ }
+```
+
+En Android `Default.LoadFromAssemblyName` baja a **`EmbeddedAssemblies::open_from_bundles`**, que es
+**el frame #00 del crash**.
+
+**La hipótesis, entonces:** un `Unload` cooperativo en curso contra una carga que consulta el mismo
+lookup, las dos en hilos del pool. Encaja con el hilo (`.NET TP Worker`), con la pila y con el
+disparador (cualquier alta, actualización o rollback descarta los actores de **todos** los módulos,
+porque `Publish` compara por referencia y `Load()` los reconstruye todos).
+
+### Lo que NO se logró, y hay que decirlo
+
+**No se reprodujo.** Un intento válido el 2026-09-22: compras cargado en proceso, actualización de
+cargas `2.1.0 → 9.0.0` completada, catálogo recargado, compras reabierto. **Sin crash.** Un segundo
+intento quedó inconcluso —la secuencia de toques se desvió y el alta no llegó a ocurrir—, así que no
+cuenta ni a favor ni en contra.
+
+**Y hay una diferencia entre el caso original y el intento que puede ser la que importa:** el 18 el
+módulo actualizado **cambió de forma** (híbrida → hospedada), lo que además desarma su WebView y su
+cáscara y alarga el cierre; el intento de hoy fue híbrida → híbrida. **La próxima receta a probar es
+con cambio de forma**, no con una actualización cualquiera.
+
+### Por qué no se arregló
+
+Porque sin reproducción no se puede comprobar que un arreglo arregla. Lo que habría que hacer —
+serializar el `Unload` contra la carga del mismo módulo, o esperar el descarte antes de reconstruir —
+es sincronización en un camino caliente, y ponerla a ciegas deja un cambio que nadie puede falsar.
+
+**Queda abierto, con la receta afilada y el diagnóstico escrito.** Es un crash del proceso entero
+sobre la app de una persona, así que no es cosmético.

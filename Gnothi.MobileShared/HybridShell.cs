@@ -1,72 +1,76 @@
-
-
+using System.Diagnostics;
 namespace Gnothi.Host;
 
-// LA CASCARA HIBRIDA: la cara de la institucion en el WebView, su superficie cargada EN
-// PROCESO, y el motor prestado por Gnothi.
+// THE HYBRID SHELL: the institution's face in the WebView, its surface loaded IN PROCESS, and the
+// engine lent by Gnothi.
 //
-// POR QUE EXISTE. Las otras dos son medias respuestas para el telefono:
+// WHY IT EXISTS. The other two are half answers for the phone:
 //
-//   cargo     presta el motor pero no trae pantalla -- el Host renderiza view.json
-//   hospedada trae la pantalla pero carga su propio motor: medido sobre examenes, correr .NET
-//             en un navegador es el 88,8% del bundle y el motor otro 8,6%, contra 188 KB del
-//             mismo modulo en proceso
+//   cargo   lends the engine but brings no screen -- the Host renders view.json
+//   hosted  brings the screen but loads its own engine: measured over exámenes, running .NET in a
+//           browser is 88.8% of the bundle and the engine another 8.6%, against 188 KB for the same
+//           module in process
 //
-// El hibrido es las dos mitades que nunca se habian dejado juntar. Y lo que gana no es peso:
-// es que hay UN SOLO MOTOR sobre el journal, o sea un solo juego de semaforos y un solo dueno.
+// The hybrid is the two halves nobody had let sit together. And what it gains is not weight: it is
+// that there is ONE SINGLE ENGINE over the journal, meaning one set of semaphores and one owner.
 //
-// QUIEN CONTESTA Y QUIEN PINTA, y es toda la decision de esta clase:
+// WHO ANSWERS AND WHO PAINTS, and that is this class's entire decision:
 //
-//   al asistente le contesta LA SUPERFICIE en proceso  -> Invoke y ActualTools delegan ahi
-//   a la persona le pinta LA CARA en el WebView        -> vive, pero no contesta nada
+//   the assistant is answered by THE SURFACE in process -> Invoke and ActualTools delegate there
+//   the person is painted for by THE FACE in the WebView -> it lives, but answers nothing
 //
-// Es exactamente al reves que en la hospedada, donde la pagina es la que contesta. Aca la
-// pagina PREGUNTA, por el verbo `consultar` del puente, y la respuesta sale de la misma
-// superficie que contesta por las otras puertas. Una sola implementacion, tres puertas.
+// It is exactly the other way round from the hosted form, where the page is the one that answers.
+// Here the page ASKS, through the bridge's `consultar` verb, and the answer comes from the same
+// surface that answers through the other doors. One implementation, three doors.
 //
-// LOS ARGUMENTOS, Y SU ORDEN NO ES EL QUE UNO ESCRIBIRIA PRIMERO.
+// THE ARGUMENTS, AND THEIR ORDER IS NOT THE ONE YOU WOULD WRITE FIRST.
 //
-//   [0]  la carpeta del bundle        lo que se sirve
-//   [1]  el endpoint del publicador   `baseUrl|resource|id`
-//   [2]  el dll de entrada            lo que se carga
+//   [0]  the bundle folder            what gets served
+//   [1]  the publisher's endpoint     `baseUrl|resource|id`
+//   [2]  the entry dll                what gets loaded
 //
-// La convencion de las otras cascaras es que Arguments[0] es "la cosa", y aca la cosa deberia
-// ser el dll porque es lo que contesta. Pero [0] y [1] ya los lee todo el lado web -- y sobre
-// todo WebModuleHost.Open, que abre la pantalla desde el catalogo y no sabe de formas. Poner
-// el dll ahi haria que abrir el modulo intentara servir un .dll como carpeta, y fallaria lejos
-// de aca. El consumidor nuevo es el que se acomoda.
+// The other shells' convention is that Arguments[0] is "the thing", and here the thing ought to be
+// the dll because it is what answers. But [0] and [1] are already read by the whole web side -- and
+// above all by WebModuleHost.Open, which opens the screen from the catalogue and knows nothing about
+// forms. Putting the dll there would make opening the module try to serve a .dll as a folder, and it
+// would fail far from here. The new consumer is the one that adapts.
 //
-// ATENCION -- ESTO NO ESTA MEDIDO EN ANDROID. InProcessShell se compila dentro del APK y el
-// stub de Android apunta a el ("Use \"type\": \"in-process\""), pero no hay ninguna corrida
-// que demuestre que Mono carga un ensamblado ajeno en el telefono. Es justamente lo que este
-// camino existe para averiguar.
+// CAREFUL -- THIS IS NOT MEASURED ON ANDROID. InProcessShell is compiled into the APK and Android's
+// stub points at it ("Use \"type\": \"in-process\""), but there is no run that shows Mono loading
+// somebody else's assembly on the phone. That is precisely what this path exists to find out.
 //
-// Y HAY UNA OBJECION QUE ESTA CLASE NO RESUELVE: un dll de la institucion ejecutandose nativo
-// es codigo que llega de afuera. Contra el texto de Google Play -leido el 2026-09-16, ver B11-
-// eso da acceso DIRECTO a las APIs de Android, y la excepcion de la politica es justamente para
-// lo que da acceso INDIRECTO ("JavaScript in a webview"). El hibrido hereda esa objecion entera.
+// AND THERE IS AN OBJECTION THIS CLASS DOES NOT ANSWER: an institution's dll executing natively is
+// code arriving from outside. Against Google Play's text -- read on 2026-09-16, see B11 -- that
+// gives DIRECT access to Android's APIs, and the policy's exception is precisely for what gives
+// INDIRECT access ("JavaScript in a webview"). The hybrid inherits that objection whole.
 //
-// Lo que la caja de wasm (F5) haria distinto es exactamente esto: un intermediario que solo
-// concede los imports que Gnothi decide. Eso SI encaja en el texto.
+// What the wasm box (F5) would do differently is exactly this: an intermediary that grants only the
+// imports Gnothi decides on. That one DOES fit the text.
 internal sealed class HybridShell : IShell
 {
 	private readonly InProcessShell surface;
+	private readonly string moduleName;
+
+	// EL MISMO ENGANCHE QUE LA CAJA. Lo pone la plataforma al arrancar, no esta clase.
+	internal static Action<string> Log { get; set; } = _ => { };
 	private readonly WebViewShell face;
 
 	public HybridShell(string name, Shell shell, string grantedFolder)
 	{
-		// La cara lee [0] y [1] tal cual: para WebViewShell este Shell es indistinguible del de
-		// un modulo hospedado, y esa es la idea -- no se entera de que es hibrido.
+		moduleName = name;
+
+		// The face reads [0] and [1] as they are: to WebViewShell this Shell is indistinguishable
+		// from a hosted module's, and that is the idea -- it never finds out it is hybrid.
 		face = new WebViewShell(name, shell, grantedFolder);
 
-		// Y la superficie recibe el dll movido a la primera posicion, que es la unica que
-		// InProcessShell lee. Ninguna de las dos sabe de la otra.
+		// And the surface gets the dll moved into first position, which is the only one
+		// InProcessShell reads. Neither of the two knows about the other.
 		//
-		// keepLoaded: la cara pregunta varias veces seguidas mientras la persona mira, y recibe
-		// entregas en el medio. Descargar el ensamblado entre pintadas pone dos actores sobre el
-		// mismo journal -- el Unload es cooperativo y no completa si el anterior dejo referencias
-		// vivas -- y eso se ve como `FileNotFoundException: Temp file not found`. El modulo queda
-		// cargado mientras la cara esta abierta, y se suelta al desalojarla.
+		// keepLoaded: the face asks several times in a row while the person watches, and receives
+		// deliveries in between. Unloading the assembly between paints puts two actors over the same
+		// journal -- the Unload is cooperative and does not complete if the previous one left live
+		// references -- and that shows up as `FileNotFoundException: Temp file not found`. The module
+		// stays loaded while the face is open, and is released when the face is evicted.
 		surface = new InProcessShell(name, SoloElDll(shell), grantedFolder, keepLoaded: true);
 	}
 
@@ -77,9 +81,9 @@ internal sealed class HybridShell : IShell
 		Arguments = shell.Arguments.Count > 2 ? [shell.Arguments[2]] : [],
 	};
 
-	// CORRE SI CORRE LA SUPERFICIE. La cara puede no estar viva -la persona no abrio la
-	// pantalla- y el modulo sigue contestando: es la diferencia con la hospedada, donde sin
-	// WebView no hay quien conteste.
+	// IT RUNS IF THE SURFACE RUNS. The face may not be alive -- the person did not open the screen --
+	// and the module keeps answering: that is the difference from the hosted form, where with no
+	// WebView there is nobody to answer.
 	public bool IsRunning => surface.IsRunning;
 
 	public Task<object> Invoke(
@@ -88,34 +92,60 @@ internal sealed class HybridShell : IShell
 
 	public Task<IReadOnlyList<string>> ActualTools(CancellationToken ct) => surface.ActualTools(ct);
 
-	// LA ENTREGA VA A LA SUPERFICIE, y es la unica de las tres cascaras donde hace falta decirlo.
+	// THE DELIVERY GOES TO THE SURFACE, and this is the only one of the three shells where it needs
+	// saying.
 	//
-	// En la hospedada el cartero le entrega a la PAGINA -- `window.gnothi.deliver` -- porque la
-	// pagina lleva el motor. Aca la cara no tiene ninguno, asi que el sobre va al unico lado que
-	// puede asentarlo. Es el mismo cartero, el mismo sobre y el mismo endpoint fijado al instalar:
-	// lo unico que cambia es quien lo recibe.
+	// In the hosted form the postman delivers to the PAGE -- `window.gnothi.deliver` -- because the
+	// page carries the engine. Here the face has none, so the envelope goes to the only place that
+	// can record it. It is the same postman, the same envelope and the same endpoint pinned at
+	// install time: the only thing that changes is who receives it.
 	public Task<string> Deliver(string envelopeJson, CancellationToken ct) =>
 		surface.Deliver(envelopeJson, ct);
 
-	// Y HASTA DONDE YA LEYO, que sale del mismo actor que asienta. Es lo que hace que el cartero
-	// pida de ahi en adelante: la cara no tiene con que saberlo, y tampoco con que moverlo.
-	public Task<long> Cursor(CancellationToken ct) => surface.Cursor(ct);
+	// AND HOW FAR IT HAS ALREADY READ, which comes from the same actor that does the recording. It is
+	// what makes the postman ask from there onwards: the face has no way of knowing it, and no way of
+	// moving it either.
+	public Task<long> Cursor(CancellationToken ct) => Counting("cursor", "", () => surface.Cursor(ct));
 
-	// Y LO QUE PIDE LA CARA. Va a la misma superficie que contesta al asistente, pero a OTRO
-	// conjunto de metodos: los marcados [View]. Una sola implementacion del dominio, dos
-	// publicos, y ninguno puede entrar por la puerta del otro.
+	// AND WHAT THE FACE ASKS FOR. It goes to the same surface that answers the assistant, but to
+	// ANOTHER set of methods: the ones marked [View]. One implementation of the domain, two publics,
+	// and neither can come in through the other's door.
 	public Task<object> View(
 		string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct) =>
-		surface.View(name, arguments, accepts);
+		Counting("consultar", name, () => surface.View(name, arguments, accepts));
 
-	// La cara, para quien tenga que abrirla. No la abre esta clase: abrirla es un acto de la
-	// persona, no del despacho.
+	// THE SAME INSTRUMENT AS THE BOX'S, on purpose, and that is the whole point of it being here.
+	//
+	// `BoxedInstance.Ask` counts and times every round trip through the border. Without the same
+	// count on THIS side, the box's figure answers nothing: painting the exámenes screen costs what
+	// it costs because the domain has work to do, and the question was never «how long does the box
+	// take» but «how much MORE than in process». A number measured on one side only invites exactly
+	// the mistake this project keeps making -- a figure that looks like evidence and is half a
+	// comparison.
+	//
+	// It is the same shape of line so the two logs can be read side by side, and grepped the same.
+	private int trips;
+
+	private async Task<T> Counting<T>(string verb, string name, Func<Task<T>> ask)
+	{
+		long started = Stopwatch.GetTimestamp();
+		int mine = ++trips;
+		try { return await ask().ConfigureAwait(false); }
+		finally
+		{
+			Log($"hibrida: {moduleName} borde #{mine} {verb}/{name}"
+				+ $" {(Stopwatch.GetTimestamp() - started) * 1000 / Stopwatch.Frequency} ms");
+		}
+	}
+
+	// The face, for whoever has to open it. This class does not open it: opening it is an act of the
+	// person's, not of the dispatcher's.
 	internal WebViewShell Face => face;
 
 	public async ValueTask DisposeAsync()
 	{
-		// Las dos, y la cara primero: desalojar un WebView con el runtime adentro libera ~150 MB
-		// de PSS, y no tiene sentido sostenerlo mientras se descarga el contexto del dll.
+		// Both of them, and the face first: evicting a WebView with the runtime inside frees ~150 MB
+		// of PSS, and there is no point holding it up while the dll's context is unloaded.
 		await face.DisposeAsync();
 		await surface.DisposeAsync();
 	}

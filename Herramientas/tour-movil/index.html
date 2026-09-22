@@ -1,0 +1,1214 @@
+<title>Mymi en el teléfono</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --pagina:#ece9f4; --pagina-tinta:#241F3D; --pagina-tenue:#6F6B85; --pagina-borde:#ddd8ec;
+  --pagina-panel:#fff; --pagina-hundido:#e4dff2;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+
+  /* LA PALETA DEL TELÉFONO, tal cual sale de Gnothi.Mobile/Assets/ui.html. NO es la del
+     escritorio: el papel es más claro (#F5F3FB contra #F8F6FD) y hay dos tonos que el escritorio
+     no tiene -- `--off` y `--off-soft` --, que son los de una consulta apagada. */
+  --paper:#F5F3FB; --card:#FFFFFF; --ink:#241F3D; --muted:#6F6B85; --line:#E7E4F2;
+  --accent:#6C4BD9; --accent-soft:#EEE9FC; --accent-ink:#4A2FB0;
+  --off:#C0442E; --off-soft:#F9E7E2;
+  --sombra:0 1px 2px rgba(36,31,61,.04), 0 6px 20px rgba(36,31,61,.07);
+  --guia:#c2410c;
+}
+[hidden] { display:none !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pagina:#120f1c; --pagina-tinta:#EDEAF6; --pagina-tenue:#A29DBA; --pagina-borde:#2b2540;
+    --pagina-panel:#1b1729; --pagina-hundido:#171327;
+  }
+}
+:root[data-theme="dark"] {
+  --pagina:#120f1c; --pagina-tinta:#EDEAF6; --pagina-tenue:#A29DBA; --pagina-borde:#2b2540;
+  --pagina-panel:#1b1729; --pagina-hundido:#171327;
+}
+
+* { box-sizing:border-box; }
+body { margin:0; background:var(--pagina); color:var(--pagina-tinta);
+  font:15px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+.marco { max-width:1180px; margin:0 auto; padding-inline:16px; padding-block:18px 30px; }
+
+.titulo-fila { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin-bottom:14px; }
+h1.pag { font-size:18px; font-weight:700; letter-spacing:-.2px; margin:0; }
+.titulo-fila .sub { font-size:13px; color:var(--pagina-tenue); }
+.titulo-fila .sello { margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--pagina-tenue); white-space:nowrap; }
+/* EL SELECTOR ES DE LA LÁMINA, no del producto: el Host de verdad NEGOCIA con la persona y no
+   tiene un botón de idioma. */
+.idioma { font:inherit; font-size:12px; font-weight:600; padding:4px 12px; border-radius:999px;
+  border:1px solid var(--pagina-borde); background:var(--pagina-panel); color:var(--pagina-tenue);
+  cursor:pointer; }
+.idioma:hover { color:var(--pagina-tinta); border-color:var(--pagina-tenue); }
+
+/* ============================================================ la escena
+   EL TELÉFONO AL MEDIO Y EL GUÍA A SU DERECHA, en dos columnas que no se pisan. Es la misma
+   decisión que en el tour de escritorio: calcular un lado libre alrededor de cada objetivo no
+   funciona, y una columna fija siempre está en el mismo lugar. */
+.escena { display:grid; grid-template-columns:1fr 300px; gap:26px; align-items:start;
+  justify-items:center; }
+@media (max-width:820px) { .escena { grid-template-columns:1fr; } }
+
+/* ------------------------------------------------ el aparato */
+.aparato { position:relative; width:390px; height:844px; flex:none;
+  border-radius:44px; padding:10px; background:#141019;
+  box-shadow:0 0 0 2px #2a2336, 0 2px 6px rgba(20,12,40,.3), 0 40px 80px -30px rgba(20,12,40,.7); }
+/* A pantalla chica el teléfono se achica en bloque, sin rehacer la UI: lo que se está mostrando
+   ES un teléfono, y reflowear su contenido lo convertiría en otra cosa. */
+@media (max-width:460px) { .aparato { transform:scale(.82); transform-origin:top center;
+  margin-bottom:-152px; } }
+
+.pantalla { position:relative; width:100%; height:100%; border-radius:35px; overflow:hidden;
+  background:var(--paper); color:var(--ink); display:flex; flex-direction:column;
+  font-size:15px; }
+
+/* La isla del frente. No es decoración: sin ella el rectángulo no se lee como un teléfono. */
+.isla { position:absolute; top:9px; left:50%; transform:translateX(-50%); width:104px; height:26px;
+  border-radius:14px; background:#141019; z-index:40; }
+
+.estado { flex:none; height:44px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 26px; font-size:12.5px; font-weight:600; color:var(--ink); letter-spacing:.2px; }
+.estado .senal { display:flex; gap:4px; align-items:center; }
+.estado svg { width:15px; height:15px; }
+
+/* ------------------------------------------------ las vistas */
+.vista { flex:1; min-height:0; overflow:auto; display:none; flex-direction:column; }
+.vista.on { display:flex; }
+.hoja-scroll { flex:1; min-height:0; overflow:auto; padding:0 16px 18px; }
+
+.top { display:flex; align-items:center; gap:10px; padding:6px 16px 14px; flex:none; }
+.top .logo { width:34px; height:34px; border-radius:10px; overflow:hidden; flex:none; }
+.top .logo img { width:100%; height:100%; display:block; }
+.top .tt { font-size:19px; font-weight:800; letter-spacing:-.3px; }
+.top .ava { margin-left:auto; width:31px; height:31px; border-radius:50%; background:var(--accent-soft);
+  color:var(--accent-ink); display:grid; place-items:center; font-weight:700; font-size:13px; }
+
+.hola { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin:2px 0 12px; }
+.hola .t b { display:block; font-size:21px; letter-spacing:-.3px; }
+.hola .t small { color:var(--muted); font-size:12.5px; }
+.addbtn { display:flex; align-items:center; gap:5px; border:0; border-radius:999px;
+  background:var(--accent); color:#fff; font:inherit; font-size:13px; font-weight:700;
+  padding:8px 14px; cursor:default; box-shadow:0 4px 12px rgba(108,75,217,.24); }
+.addbtn[data-vivo="1"] { cursor:pointer; }
+.addbtn span:first-child { font-size:16px; line-height:1; }
+
+/* ------------------------------------------------ la tarjeta de una institución
+   ES LA DE ui.html, campo por campo: el nombre en DOS NIVELES -- lo que la institución tiene
+   antes, chico, sobre `brand.shortName`, grande --, el lema debajo, y abajo dos acciones: el
+   candado con la cuenta de permisos, y «Abrir». En el escritorio el nombre va en un solo nivel;
+   acá no, y esa diferencia es de `tiers()` en ui.html. */
+.grid { display:grid; gap:12px; }
+.mod { position:relative; border-radius:18px; padding:14px 15px 12px; background:var(--card);
+  border:1px solid var(--line); box-shadow:var(--sombra); overflow:hidden;
+  --brand:var(--accent); --brand-soft:var(--accent-soft); }
+.mod::before { content:""; position:absolute; inset:0 0 auto 0; height:3px; background:var(--brand); }
+.mod .head { display:flex; align-items:center; gap:11px; }
+.mod .ic { width:44px; height:44px; border-radius:13px; flex:none; object-fit:contain;
+  background:var(--brand-soft); padding:5px; }
+.mod .nm { min-width:0; }
+.mod .nm .pre { display:block; font-size:11.5px; color:var(--muted); line-height:1.15; }
+.mod .nm b { display:block; font-size:21px; letter-spacing:-.4px; line-height:1.15;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mod > small { display:block; color:var(--muted); font-size:12.5px; margin:8px 0 0; }
+.mod .acts { display:flex; align-items:center; gap:8px; margin-top:12px; }
+.mod .perm { display:flex; align-items:center; gap:5px; border:1px solid var(--line);
+  background:var(--paper); color:var(--muted); border-radius:999px; padding:6px 11px;
+  font:inherit; font-size:11.5px; font-weight:600; cursor:default; }
+.mod .perm[data-vivo="1"] { cursor:pointer; }
+.mod .perm svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; }
+.mod .abrir { margin-left:auto; border:0; border-radius:999px; background:var(--brand); color:#fff;
+  font:inherit; font-size:12.5px; font-weight:700; padding:7px 14px; cursor:default; }
+.mod .abrir[data-vivo="1"] { cursor:pointer; }
+
+/* ------------------------------------------------ el detalle */
+.volver { display:flex; align-items:center; gap:6px; background:none; border:0; padding:6px 0;
+  color:var(--accent); font:inherit; font-size:13.5px; font-weight:700; cursor:default; }
+.volver[data-vivo="1"] { cursor:pointer; }
+.det-marca { display:flex; align-items:center; gap:12px; margin:6px 0 4px; }
+.det-marca img { width:48px; height:48px; border-radius:14px; object-fit:contain;
+  background:var(--brand-soft,var(--accent-soft)); padding:6px; }
+.det-marca .pre { display:block; font-size:12px; color:var(--muted); }
+.det-marca b { display:block; font-size:23px; letter-spacing:-.4px; }
+.det-lema { color:var(--muted); font-size:13px; margin:0 0 16px; }
+
+.bloque { background:var(--card); border:1px solid var(--line); border-radius:16px;
+  padding:14px 15px; margin-bottom:12px; box-shadow:var(--sombra); }
+.bloque .cap { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+  font-weight:700; margin:0 0 4px; }
+.master { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;
+  background:none; border:0; padding:0; font:inherit; text-align:left; color:inherit; cursor:default; }
+.master[data-vivo="1"] { cursor:pointer; }
+.master b { display:block; font-size:15px; }
+.master small { display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }
+.master .flecha { color:var(--accent); font-size:18px; flex:none; }
+
+h3.cap { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+  font-weight:700; margin:20px 0 2px; }
+p.lead { color:var(--muted); font-size:13px; margin:0 0 10px; }
+
+.consulta { display:flex; align-items:flex-start; gap:12px; background:var(--card);
+  border:1px solid var(--line); border-radius:16px; padding:13px 15px; margin-bottom:10px;
+  box-shadow:var(--sombra); }
+.consulta .txt { flex:1; min-width:0; }
+.consulta .txt b { display:block; font-size:14.5px; }
+.consulta .txt small { display:block; color:var(--muted); font-size:12.5px; margin-top:3px; line-height:1.45; }
+
+/* EL INTERRUPTOR, con las medidas exactas de `.sw` en ui.html: 46x28, perilla de 22 que corre
+   18px, pista #D4D0E3 y el violeta de la marca al encender. Allá es un <label> con un
+   <input type=checkbox>; acá es un <button role="switch">, así que el estado se lee de
+   `aria-checked` en vez de `:checked`.
+
+   ESTE CONTROL EXISTE DE VERDAD, y es la diferencia con el escritorio: `ModuleScreen.razor`
+   recorre `EnabledTools()` y no ofrece nada para apagar. El tour de escritorio tuvo que quitar
+   el interruptor que había dibujado; éste lo puede mostrar porque acá está. */
+.sw { position:relative; width:46px; height:28px; flex:none; margin-top:2px; padding:0; border:0;
+  border-radius:99px; background:none; cursor:default; }
+.sw[data-vivo="1"] { cursor:pointer; }
+.sw i { position:absolute; inset:0; border-radius:99px; background:#D4D0E3; transition:.18s; }
+.sw i::before { content:""; position:absolute; width:22px; height:22px; border-radius:50%;
+  background:#fff; top:3px; left:3px; transition:.18s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+.sw[aria-checked="true"] i { background:var(--accent); }
+.sw[aria-checked="true"] i::before { transform:translateX(18px); }
+@media (prefers-reduced-motion:reduce) { .sw i, .sw i::before { transition:none; } }
+
+.apagada-nota { color:var(--muted); font-size:12.5px; margin:2px 2px 14px; }
+
+/* ------------------------------------------------ el asistente, que acá es de Mymi */
+.chat-cab { flex:none; display:flex; align-items:center; gap:10px; padding:10px 16px 12px; }
+.chat-cab b { display:block; font-size:17px; letter-spacing:-.2px; }
+.chat-cab small { display:block; color:var(--muted); font-size:12px; }
+.msgs { flex:1; min-height:0; overflow-y:auto; padding:8px 14px 14px; display:flex;
+  flex-direction:column; gap:10px; }
+.msgs .vacio { margin:auto; text-align:center; color:var(--muted); font-size:13px; padding:0 20px; }
+.burb { max-width:85%; padding:10px 13px; border-radius:16px; font-size:14px; line-height:1.5; }
+.burb.yo { align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:5px; }
+.burb.bot { align-self:flex-start; background:var(--card); border:1px solid var(--line);
+  border-bottom-left-radius:5px; }
+.burb.bot.mal { border-left:3px solid var(--off); background:var(--off-soft); }
+.pensando { align-self:flex-start; color:var(--muted); font-size:13px; font-style:italic; }
+.traza { align-self:flex-start; max-width:88%; font-family:var(--mono); font-size:10.5px;
+  color:var(--muted); background:var(--paper); border:1px solid var(--line); border-radius:9px;
+  padding:7px 9px; white-space:pre-wrap; word-break:break-word; }
+.traza b { color:var(--ink); font-weight:600; }
+.pregunta { flex:none; display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--line);
+  background:var(--card); }
+.pregunta input { flex:1; min-width:0; border:1px solid var(--line); border-radius:999px;
+  padding:9px 14px; font:inherit; font-size:13.5px; background:var(--paper); color:var(--ink); }
+.sug { display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; }
+.sug button { border:1px solid var(--line); background:var(--card); color:var(--muted);
+  border-radius:999px; padding:7px 12px; font:inherit; font-size:12px; cursor:default; }
+.sug button[data-vivo="1"] { cursor:pointer; color:var(--ink); }
+
+/* ------------------------------------------------ la cara, a pantalla completa */
+.carabar { flex:none; display:flex; align-items:center; gap:10px; padding:9px 14px;
+  border-bottom:1px solid var(--line); background:var(--card); }
+.carabar .volver { padding:0; }
+.carabar .quien { font-weight:700; font-size:14px; }
+iframe.cara { display:block; width:100%; flex:1; min-height:0; border:0; background:#fff; }
+
+/* ------------------------------------------------ la hoja que sube desde abajo */
+.velo { position:absolute; inset:0; background:rgba(12,8,24,.42); z-index:30; }
+.hoja { position:absolute; left:0; right:0; bottom:0; z-index:31; background:var(--card);
+  border-radius:22px 22px 0 0; padding:8px 18px 22px; max-height:82%; overflow:auto;
+  box-shadow:0 -10px 40px -10px rgba(0,0,0,.4); animation:subir .24s cubic-bezier(.2,.9,.3,1.05); }
+@keyframes subir { from { transform:translateY(100%); } to { transform:none; } }
+@media (prefers-reduced-motion:reduce) { .hoja { animation:none; } }
+.hoja .agarre { width:38px; height:4px; border-radius:2px; background:var(--line); margin:0 auto 14px; }
+.hoja h2 { margin:0 0 4px; font-size:19px; letter-spacing:-.3px; }
+.hoja .lead { color:var(--muted); font-size:13px; margin:0 0 14px; }
+.hoja input[type=text] { width:100%; border:1px solid var(--line); border-radius:11px;
+  padding:11px 13px; font:inherit; font-size:13.5px; background:var(--paper); color:var(--ink);
+  margin-bottom:10px; }
+.hoja .o { text-align:center; color:var(--muted); font-size:12px; margin:10px 0; }
+.btn { display:block; width:100%; border:0; border-radius:13px; background:var(--accent);
+  color:#fff; font:inherit; font-size:14.5px; font-weight:700; padding:13px; cursor:default;
+  box-shadow:0 5px 16px rgba(108,75,217,.24); }
+.btn[data-vivo="1"] { cursor:pointer; }
+.btn.ghost { background:var(--paper); color:var(--accent); border:1px solid var(--accent);
+  box-shadow:none; }
+.revision { border:1px solid var(--line); border-radius:14px; background:var(--paper);
+  padding:13px 15px; margin-bottom:14px; }
+.revision .quien { display:flex; align-items:center; gap:11px; margin-bottom:11px; }
+.revision .quien img { width:40px; height:40px; border-radius:12px; object-fit:contain;
+  background:#fff; padding:4px; }
+.revision dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:5px 12px; font-size:12.5px; }
+.revision dt { color:var(--muted); }
+.revision dd { margin:0; font-weight:600; text-align:right; }
+.revision dd code { font-family:var(--mono); font-size:11.5px; font-weight:400; }
+.firmado { display:inline-flex; align-items:center; gap:4px; background:var(--accent-soft);
+  color:var(--accent-ink); border-radius:999px; padding:3px 9px; font-size:11px; font-weight:700; }
+
+/* ------------------------------------------------ la barra de abajo */
+nav.tabs { flex:none; height:62px; display:flex; background:var(--card);
+  border-top:1px solid var(--line); padding-bottom:6px; }
+nav.tabs button { flex:1; border:0; background:none; color:var(--muted); font:inherit;
+  font-size:10.5px; font-weight:700; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:3px; cursor:default; padding:0; }
+nav.tabs button[data-vivo="1"] { cursor:pointer; }
+nav.tabs button.on { color:var(--accent); }
+nav.tabs svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8;
+  stroke-linecap:round; stroke-linejoin:round; }
+
+/* ------------------------------------------------ el guía */
+.halo { position:absolute; z-index:50; border-radius:12px; pointer-events:none;
+  box-shadow:0 0 0 3px var(--guia), 0 0 0 10px rgba(194,65,12,.26); animation:latir 1.5s ease-in-out infinite; }
+@keyframes latir { 0%,100% { box-shadow:0 0 0 3px var(--guia), 0 0 0 9px rgba(194,65,12,.3); }
+                   50% { box-shadow:0 0 0 3px var(--guia), 0 0 0 16px rgba(194,65,12,0); } }
+@media (prefers-reduced-motion:reduce) { .halo { animation:none; } }
+
+.globo { width:300px; background:#1c1430; color:#fff; border-radius:12px; padding:14px 16px;
+  font-size:13px; line-height:1.5; box-shadow:0 12px 34px -8px rgba(0,0,0,.5); }
+@media (max-width:820px) { .globo { width:min(390px,100%); } }
+.globo b { color:#c4b5fd; font-weight:600; }
+.globo code { font-family:var(--mono); font-size:11.5px; background:rgba(255,255,255,.12);
+  padding:1px 4px; border-radius:3px; }
+.globo .accion { display:block; margin-top:10px; font-size:11px; color:#c4b5fd; font-weight:700;
+  letter-spacing:.04em; text-transform:uppercase; }
+.globo .seguir { display:block; margin-top:12px; font-size:12.5px; font-weight:700; padding:8px 16px;
+  border-radius:999px; border:0; background:#c4b5fd; color:#231544; cursor:pointer; }
+
+/* ------------------------------------------------ pie */
+.debajo { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-top:18px; }
+.progreso { display:flex; gap:5px; }
+.progreso i { width:20px; height:4px; border-radius:2px; background:var(--pagina-borde); display:block; }
+.progreso i.hecho { background:var(--accent); }
+.reiniciar { font:inherit; font-size:12.5px; color:var(--pagina-tenue); background:none; border:0;
+  cursor:pointer; text-decoration:underline; padding:4px; }
+.nota-pie { flex:1; min-width:260px; font-size:11.5px; color:var(--pagina-tenue); }
+.nota-pie b { color:var(--pagina-tinta); }
+.nota-pie code { font-family:var(--mono); font-size:11px; background:var(--pagina-hundido);
+  padding:1px 4px; border-radius:3px; }
+</style>
+
+<div class="marco">
+
+  <div class="titulo-fila">
+    <h1 class="pag" id="pag-titulo">Mymi on the phone</h1>
+    <span class="sub" id="pag-sub">from the module handover to the question</span>
+    <button class="idioma" id="idioma" type="button">Español</button>
+    <span class="sello">UI según trim/spike-wasm-mobile · 83b68be+ · 21/9/2026</span>
+  </div>
+
+  <div class="escena">
+    <div class="aparato" id="aparato">
+      <div class="isla"></div>
+      <div class="pantalla" id="pantalla">
+
+        <div class="estado">
+          <span id="reloj">9:41</span>
+          <span class="senal">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 17h3v4H2zM7 13h3v8H7zM12 9h3v12h-3zM17 4h3v17h-3z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="10" rx="2.5"/><path d="M20 10.5v3"/></svg>
+          </span>
+        </div>
+
+        <!-- LAS VISTAS. Son las de ui.html: `v-home`, `v-detail`, `v-chat`, `v-set`, más la cara
+             a pantalla completa. Se prenden con la clase `on`, igual que allá. -->
+        <div class="vista on" id="v-home"></div>
+        <div class="vista" id="v-detail"></div>
+        <div class="vista" id="v-chat"></div>
+        <div class="vista" id="v-set"></div>
+        <div class="vista" id="v-cara"></div>
+
+        <div class="velo" id="velo" hidden></div>
+        <div class="hoja" id="hoja" hidden></div>
+
+        <nav class="tabs" id="tabs">
+          <button data-tab="home" class="on" type="button">
+            <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg><span data-nav="inicio">Home</span></button>
+          <button data-tab="chat" type="button">
+            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L3 20l1.1-4.1a8 8 0 0 1-1.1-4.4A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg><span data-nav="asistente">Assistant</span></button>
+          <button data-tab="set" type="button">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg><span data-nav="ajustes">Settings</span></button>
+        </nav>
+
+        <div class="halo" id="halo" hidden></div>
+      </div>
+    </div>
+
+    <div class="globo" id="globo" hidden></div>
+  </div>
+
+  <div class="debajo">
+    <div class="progreso" id="progreso"></div>
+    <button class="reiniciar" id="reiniciar" type="button">Start over</button>
+    <p class="nota-pie" id="nota-pie"></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ================================================================ LOS DOS IDIOMAS
+  //
+  // ARRANCA EN INGLÉS. Lo que se traduce y lo que no lo decide
+  // Metodologia/Guias/reglas-de-localizacion.md, regla 2 — y el reparto es el mismo que en el
+  // tour de escritorio:
+  //
+  //   UI del Host           SÍ   -> acá, con el `en` COPIADO de Gnothi.Host/textos.json
+  //   voz del narrador      SÍ   -> acá; los globos son de la lámina
+  //   voz de la institución NO   -> en `INSTITUCIONES`: nombre, lema, `title` y el título y la
+  //                                 descripción de cada consulta, en español en los dos idiomas
+  //   dato del journal      NO   -> lo que muestra la cara
+  //
+  // El teléfono agrega un caso que el escritorio no tiene: **`pre`**, la mitad chica del nombre en
+  // dos niveles. «Laboratorio Clínico», «Supermercado», «Estaciones», «Municipalidad de» salen de
+  // `institution`, que es voz de la institución — así que tampoco se traducen. Una tarjeta que
+  // dijera «Supermarket / La Guaria» sería el Host poniéndole palabras en la boca.
+  var TEXTO = {
+    es: {
+      pagTitulo:'Mymi en el teléfono', pagSub:'de la entrega del módulo a la pregunta',
+      idiomaBoton:'English', reiniciar:'Empezar de nuevo', seguir:'Seguir',
+
+      inicio:'Inicio', asistente:'Asistente', ajustes:'Ajustes',          // nav.*
+      conexionesTitulo:'Mis conexiones',                                  // inicio.titulo
+      unaConectada:'1 conectada', nConectadas:'{n} conectadas',           // inicio.una / .varias
+      conectar:'Conectar',                                                // inicio.conectar
+      unPermiso:'1 permiso activo', nPermisos:'{n} permisos activos',     // detalle.permiso.*
+      abrir:'Abrir →',                                                    // instituciones.abrir
+      volverLista:'← Todas tus instituciones',                            // nav.volver
+      abrirDe:'Abrir {quien}',                                            // detalle.abrir.de
+      abrirSub:'la app de tu institución, adentro de Mymi',               // detalle.abrir.sub
+      tuRegistro:'Tu registro',
+      registroDice:'Lo guarda {retencion}. Se actualiza {refresco}.',     // detalle.journal.*
+      registroDonde:'Vive en este teléfono, en la carpeta de {quien}.',
+      consultasDe:'Consultas de {quien}',                                 // detalle.consultas.de
+      consultasLead:'Puedes preguntarle a tu asistente sobre:',
+      consultasApagada:'Una consulta apagada desaparece del catálogo: el asistente no la ve y no ' +
+        'puede pedirla.',
+
+      asistenteSub:'Tus instituciones responden; el modelo redacta.',     // asistente.sub
+      asistenteVacio:'Pregunta algo sobre tus instituciones.',            // asistente.vacio
+      asistentePlaceholder:'Escribe tu pregunta…',                        // asistente.placeholder
+      traza:'qué pasó por debajo',                                        // asistente.traza
+      pensando:'pensando…', redactando:'redactando…',                     // asistente.pensando
+      noEstaEnCatalogo:'no está en el catálogo',
+
+      ajustesQuien:'Quién redacta',
+      ajustesLlave:'La llave es tuya y vive en este teléfono. Los hechos siguen siendo de tus ' +
+        'instituciones: el modelo sólo redacta.',
+
+      altaTitulo:'Conectar una institución',
+      altaLead:'Pega el enlace que te dio la institución, o elige el paquete que te mandó.',
+      altaPlaceholder:'https://…/modulo.gmod',
+      altaAgregar:'Agregar', altaO:'o', altaElegir:'Elegir un archivo…',
+      altaTrae:'Esto trae {archivo}.', altaFirmado:'firmado',
+      altaQuien:'Quién lo publica', altaVersion:'Versión', altaRed:'Red', altaConsultas:'Consultas',
+      altaMotor:'Motor', altaRegistro:'Tu registro', altaTamano:'Tamaño',
+      altaNo:'no', altaPrestado:'lo presta Mymi',
+
+      q1:'¿Cómo vengo con mis exámenes?', q2:'¿Mi colesterol viene subiendo?',
+      r1:'Tienes <b>{examenes} exámenes</b> registrados en este teléfono, y <b>{fuera}</b> analitos ' +
+         'fuera de rango. Tu app leyó el laboratorio hasta el evento {evento}, así que está al día.',
+      r2:'Puedo leerte lo que dice el último <b>{nombre}</b> del {fecha}: {resultado}. Pero <b>si ' +
+         'eso es una subida no te lo puedo decir</b>: la lista me da cada examen con su resultado, ' +
+         'no la serie del analito en el tiempo, ni cuál es tu nivel de siempre, ni dónde está el ' +
+         'techo esperable. Eso lo dibuja la pantalla del propio laboratorio, acá adentro.',
+      rApagada:'Esa consulta ya no está entre las que el laboratorio me ofrece. Si la apagaste vos, ' +
+         'así queda: yo no puedo volver a encenderla.',
+
+      g0:'<b>Mymi</b> ya está instalado, y ya hay <b>cuatro</b> instituciones: el súper, la ' +
+         'gasolinera, el taller y la muni. Cada una puso <b>su</b> logo, su color y su lema.' +
+         '<br><br>Ninguna te mandó una app aparte.',
+      g0a:'Mirá la lista',
+      g1:'Ahora llegó una quinta. El laboratorio te mandó un <code>.gmod</code> de <b>235 KB</b>, ' +
+         'con su pantalla adentro y <b>sin motor</b> — se lo presta Mymi.',
+      g1a:'Tocá «Conectar»',
+      g2:'Se puede pegar el enlace que dio la institución, o elegir el paquete que mandó. Vamos ' +
+         'por el archivo.',
+      g3:'Mymi revisó qué trae y lo dice antes de instalar nada: <b>quién lo publica</b>, qué ' +
+         'versión, si sale a la red, cuántas consultas y qué promete sobre tu registro. La firma ' +
+         'la verificó contra la llave de la institución.',
+      g4:'Ahí está, la quinta, con <b>su color y su lema</b>: es lo único de esta pantalla que ' +
+         'decide la institución.<br><br>Su nombre y su lema siguen en español, y eso no es un ' +
+         'olvido: <b>el Host no traduce a la institución</b>.<br><br>Tocala y se abre <b>su</b> ' +
+         'app, acá adentro.',
+      g5:'Esto lo dibujó <b>el laboratorio</b>, no Mymi: se queda con el teléfono entero y Mymi lo ' +
+         'sostiene, a una flecha de distancia.<br><br>Para armarse preguntó <b>nueve veces</b> a su ' +
+         'propio dominio. Ninguna de esas nueve la va a ver el modelo.',
+      g5a:'Volvamos a Mymi.', g5b:'Volver',
+      g6:'Mymi trae <b>su propio asistente</b>. No es otra app pidiendo permiso: es el mismo ' +
+         'aparato, preguntándole a tus instituciones y dejando que el modelo redacte.',
+      g6a:'Tocá «Asistente»',
+      g7:'El asistente ve <b>diez consultas</b>: dos por cada institución. Nadie le mandó tu ' +
+         'expediente — <b>lo lee de este teléfono</b>.',
+      g7a:'Preguntale',
+      g8:'Los conteos salieron de tu carpeta; la frase la escribió el modelo. Mirá la <b>traza</b>: ' +
+         'dice qué consulta se usó.<br><br>Ahora pedile algo que <b>ninguna de las dos contesta</b>.',
+      g9:'Falta lo que el escritorio <b>no puede mostrar</b>, porque ahí no existe: el candado.' +
+         '<br><br>Acá es donde decidís qué le dejás preguntar al asistente.',
+      g9a:'Tocá el candado',
+      gInterruptor:'Cada consulta con <b>su interruptor</b>. <b>Apagá</b> «Mis examenes» y mirá qué ' +
+         'le pasa al asistente.',
+      gApagala:'Apagala',
+      gRemate:'Apagada. La tarjeta ya dice <b>1 permiso activo</b>, no dos.<br><br>Y el asistente ' +
+         'ahora ve <b>nueve</b> consultas, no diez: la que apagaste no está en su catálogo. No es ' +
+         'que se la nieguen cuando la pide — <b>no la puede pedir</b>.',
+      gOtraVez:'Pedile lo mismo que antes.',
+      gCierre:'El asistente quedó <b>afuera</b> de esa consulta, y no porque alguien se la negara ' +
+         'en el momento: esa herramienta ya no existe para él.<br><br>Pero la pantalla del ' +
+         'laboratorio <b>sigue entera</b>. Decidir qué puede preguntar <b>un asistente</b> sobre ' +
+         'vos no es prohibirle a la institución mostrarte lo tuyo. Son dos decisiones distintas, y ' +
+         'por eso hay <b>dos puertas</b>.',
+      gComprueba:'Compruébalo.', gIntacto:'Todo tu expediente, intacto.',
+
+      pie:'<b>Acá no corre nada de Mymi</b> — el teléfono y sus pantallas son una recreación de ' +
+        '<code>Gnothi.Mobile/Assets/ui.html</code>, con su paleta, su distribución y sus textos de ' +
+        '<code>Gnothi.Host/textos.json</code>; los datos son inventados. Lo único real es la ' +
+        'pantalla del laboratorio: el <code>web/</code> entero del <code>examenes.gmod</code> del ' +
+        '21/9/2026, copiado sin tocar salvo las líneas que cargan el puente falso y el idioma del ' +
+        'aparato. <b>El nombre, el lema y las consultas de cada institución no se traducen</b>: son ' +
+        'su voz, y el Host no le pone palabras en la boca a nadie.'
+    },
+
+    en: {
+      pagTitulo:'Mymi on the phone', pagSub:'from the module handover to the question',
+      idiomaBoton:'Español', reiniciar:'Start over', seguir:'Next',
+
+      inicio:'Home', asistente:'Assistant', ajustes:'Settings',
+      conexionesTitulo:'My Connections',
+      unaConectada:'1 connected', nConectadas:'{n} connected',
+      conectar:'Connect',
+      unPermiso:'1 permission on', nPermisos:'{n} permissions on',
+      abrir:'Open →',
+      volverLista:'← All your institutions',
+      abrirDe:'Open {quien}',
+      abrirSub:'your institution’s app, inside Mymi',
+      tuRegistro:'Your record',
+      registroDice:'They keep it {retencion}. It updates {refresco}.',
+      registroDonde:'It lives on this phone, in {quien}’s folder.',
+      consultasDe:'{quien} queries',
+      consultasLead:'You can ask your assistant about:',
+      consultasApagada:'A query you switch off disappears from the catalog: the assistant does not ' +
+        'see it and cannot ask for it.',
+
+      asistenteSub:'Your institutions answer; the model writes.',
+      asistenteVacio:'Ask something about your institutions.',
+      asistentePlaceholder:'Type your question…',
+      traza:'what happened underneath',
+      pensando:'thinking…', redactando:'writing…',
+      noEstaEnCatalogo:'not in the catalog',
+
+      ajustesQuien:'Who writes',
+      ajustesLlave:'The key is yours and lives on this phone. The facts still belong to your ' +
+        'institutions: the model only writes.',
+
+      altaTitulo:'Connect an institution',
+      altaLead:'Paste the link your institution gave you, or pick the package they sent.',
+      altaPlaceholder:'https://…/module.gmod',
+      altaAgregar:'Add', altaO:'or', altaElegir:'Pick a file…',
+      altaTrae:'This brings {archivo}.', altaFirmado:'signed',
+      altaQuien:'Who publishes it', altaVersion:'Version', altaRed:'Network', altaConsultas:'Queries',
+      altaMotor:'Engine', altaRegistro:'Your record', altaTamano:'Size',
+      altaNo:'no', altaPrestado:'on loan from Mymi',
+
+      q1:'How am I doing with my lab work?', q2:'Is my cholesterol going up?',
+      r1:'You have <b>{examenes} exams</b> on record on this phone, and <b>{fuera}</b> analytes out ' +
+         'of range. Your app has read the lab up to event {evento}, so it is up to date.',
+      r2:'I can read you what the latest <b>{nombre}</b> from {fecha} says: {resultado}. But <b>I ' +
+         'cannot tell you whether that is a rise</b>: the list gives me each exam with its result, ' +
+         'not the analyte’s series over time, nor what your usual level is, nor where the ' +
+         'expected ceiling sits. That is drawn by the lab’s own screen, right here.',
+      rApagada:'That query is no longer among the ones the lab offers me. If you switched it off, ' +
+         'that is how it stays: I cannot turn it back on.',
+
+      g0:'<b>Mymi</b> is already installed, and there are <b>four</b> institutions already: the ' +
+         'supermarket, the petrol station, the garage and the town hall. Each one supplied <b>its ' +
+         'own</b> logo, colour and tagline.<br><br>None of them sent you a separate app.',
+      g0a:'Look at the list',
+      g1:'Now a fifth has arrived. The lab sent you a <code>.gmod</code> of <b>235 KB</b>, with its ' +
+         'screen inside and <b>no engine</b> — Mymi lends it one.',
+      g1a:'Tap «Connect»',
+      g2:'You can paste the link the institution gave you, or pick the package they sent. Let us go ' +
+         'with the file.',
+      g3:'Mymi checked what it brings and says so before installing anything: <b>who publishes ' +
+         'it</b>, which version, whether it reaches the network, how many queries and what it ' +
+         'promises about your record. The signature was verified against the institution’s key.',
+      g4:'There it is, the fifth, with <b>its colour and its tagline</b>: the only thing on this ' +
+         'screen the institution decides.<br><br>Its name and tagline are still in Spanish, and that ' +
+         'is not an oversight: <b>the Host does not translate the institution</b>.<br><br>Tap it and ' +
+         '<b>its own</b> app opens, right here.',
+      g5:'The <b>lab</b> drew this, not Mymi: it takes the whole phone and Mymi holds it up, one ' +
+         'arrow away.<br><br>To put itself together it asked its own domain <b>nine times</b>. The ' +
+         'model will see none of those nine.',
+      g5a:'Let us go back to Mymi.', g5b:'Back',
+      g6:'Mymi brings <b>an assistant of its own</b>. It is not another app asking for permission: ' +
+         'it is the same device, asking your institutions and letting the model write.',
+      g6a:'Tap «Assistant»',
+      g7:'The assistant sees <b>ten queries</b>: two from each institution. Nobody sent it your ' +
+         'record — <b>it reads it from this phone</b>.',
+      g7a:'Ask it',
+      g8:'The counts came out of your folder; the sentence was written by the model. Look at the ' +
+         '<b>trace</b>: it says which query was used.<br><br>Now ask it for something <b>neither of ' +
+         'the two answers</b>.',
+      g9:'What is missing is the thing the desktop <b>cannot show</b>, because it does not exist ' +
+         'there: the padlock.<br><br>This is where you decide what you let the assistant ask.',
+      g9a:'Tap the padlock',
+      gInterruptor:'Each query with <b>its own switch</b>. <b>Switch off</b> «Mis examenes» and ' +
+         'watch what happens to the assistant.',
+      gApagala:'Switch it off',
+      gRemate:'Off. The card already says <b>1 permission on</b>, not two.<br><br>And the assistant ' +
+         'now sees <b>nine</b> queries, not ten: the one you switched off is not in its catalog. It ' +
+         'is not that it gets denied when it asks — <b>it cannot ask</b>.',
+      gOtraVez:'Ask it the same as before.',
+      gCierre:'The assistant was left <b>outside</b> that query, and not because anyone denied it ' +
+         'in the moment: that tool no longer exists for it.<br><br>But the lab’s screen is ' +
+         '<b>still whole</b>. Deciding what <b>an assistant</b> may ask about you is not forbidding ' +
+         'the institution to show you what is yours. Two different decisions, and that is why there ' +
+         'are <b>two doors</b>.',
+      gComprueba:'See for yourself.', gIntacto:'Your whole record, intact.',
+
+      pie:'<b>Nothing of Mymi runs here</b> — the phone and its screens are a recreation of ' +
+        '<code>Gnothi.Mobile/Assets/ui.html</code>, with its palette, layout and texts from ' +
+        '<code>Gnothi.Host/textos.json</code>; the data is made up. The only real thing is the ' +
+        'lab’s screen: the entire <code>web/</code> of the <code>examenes.gmod</code> of 21 Sep ' +
+        '2026, copied untouched except for the lines that load the fake bridge and the device ' +
+        'language. <b>Each institution’s name, tagline and queries are not translated</b>: they ' +
+        'are its voice, and the Host does not put words in anyone’s mouth.'
+    }
+  };
+
+  var IDIOMA = 'en';
+  function t(clave) {
+    var d = TEXTO[IDIOMA] || TEXTO.en;
+    return (clave in d) ? d[clave] : (TEXTO.en[clave] !== undefined ? TEXTO.en[clave] : clave);
+  }
+  function con(clave, huecos) {
+    return t(clave).replace(/\{(\w+)\}/g, function (todo, k) {
+      return huecos && (k in huecos) ? huecos[k] : todo;
+    });
+  }
+
+  // ================================================================ LAS CINCO INSTITUCIONES
+  //
+  // Los mismos manifiestos que el tour de escritorio: Gnothi.Mobile/bundles/hibrida/<modulo>/
+  // manifest.json. Lo que cambia acá es CÓMO se muestran.
+  //
+  // `pre` + `identidad` son los DOS NIVELES de `tiers()` (ui.html:925): el grande es
+  // `brand.shortName` y el chico es lo que el nombre completo tiene ANTES. El escritorio no los
+  // parte -- muestra `Manifest.Identity` a secas --, y por eso las dos tarjetas no son iguales.
+  var INSTITUCIONES = {
+    examenes: {
+      pre:'Laboratorio Clínico', identidad:'Delfos', titulo:'Tus examenes, al dia',
+      lema:'Tu salud, en tus manos', color:'#0e2f55', logo:'logo-delfos.png',
+      dominio:'delfos.cr', version:'2.4.0', retencion:'5 años', refresco:'al abrir la app',
+      tamano:'235 KB', carpeta:'examenes',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuántos exámenes hay registrados en este aparato, cuántos analitos están fuera de ' +
+               'rango, y hasta qué evento del laboratorio leyó tu app.' },
+        { nombre:'lista_de_examenes', titulo:'Mis examenes',
+          desc:'La lista de exámenes registrados en este aparato, con su fecha y su resultado.' }
+      ]
+    },
+    compras: {
+      pre:'Supermercado', identidad:'La Guaria', titulo:'La Guaria y vos',
+      lema:'Tu canasta, más cerca de vos', color:'#2f6b3f', logo:'logo-laguaria.png',
+      dominio:'laguaria.cr', version:'1.2.0', retencion:'5 años', refresco:'al abrir la app',
+      tamano:'1,5 MB', carpeta:'compras',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuánto llevás gastado según lo registrado en este aparato, cuántas compras hay, y ' +
+               'hasta qué evento del supermercado leyó tu app.' },
+        { nombre:'lista_de_compras', titulo:'Mis compras',
+          desc:'La lista de compras registradas en este aparato, con su fecha y su total.' }
+      ]
+    },
+    cargas: {
+      pre:'Estaciones', identidad:'Faro', titulo:'Tus cargas',
+      lema:'Rendimiento real, tramo a tramo', color:'#0B3C49', logo:'logo-faro.png',
+      dominio:'faro.cr', version:'1.0.3', retencion:'2 años', refresco:'al abrir la app',
+      tamano:'192 KB', carpeta:'cargas',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuántas cargas de combustible hay registradas en este aparato, cuántos vehículos, ' +
+               'y hasta qué evento de la estación leyó tu app.' },
+        { nombre:'lista_de_vehiculos', titulo:'Mis vehiculos',
+          desc:'Los vehículos que la bitácora conoce, con su placa y cuántas cargas tiene cada uno.' }
+      ]
+    },
+    dealership: {
+      pre:'', identidad:'Sotaventos Motors', titulo:'Mi plan de mantenimiento',
+      lema:'Tu carro, siempre listo', color:'#1f3a5f', logo:'logo-sotaventos.png',
+      dominio:'sotavento.com', version:'3.1.0', retencion:'10 años', refresco:'al abrir la app',
+      tamano:'306 KB', carpeta:'dealership',
+      consultas:[
+        { nombre:'resumen', titulo:'Como va mi carro',
+          desc:'Cuántas operaciones de mantenimiento están por vencer, cuántas vencidas y no ' +
+               'hechas, y hasta qué evento del concesionario leyó la app.' },
+        { nombre:'hasta_donde_leyo', titulo:'Que tan al dia esta esto',
+          desc:'Hasta dónde leyó la app el registro del concesionario y hasta qué instante se ' +
+               'evaluó el plan.' }
+      ]
+    },
+    municipalidad: {
+      pre:'Municipalidad de', identidad:'Monteverde', titulo:'MONTEVERDE Municipal Services',
+      lema:'Lo que el portal no te dice', color:'#2C306C', logo:'logo-monteverde.png',
+      dominio:'monteverde.example', version:'1.0.0', retencion:'5 años', refresco:'al abrir la app',
+      tamano:'142 KB', carpeta:'municipalidad',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuántas fincas y cuántos rubros con historia hay registrados en este aparato, ' +
+               'cuántos períodos están por vencer y cuántos vencidos, y hasta qué evento de la ' +
+               'municipalidad leyó tu app.' },
+        { nombre:'lista_de_vencimientos', titulo:'Que se me vence',
+          desc:'Los períodos que se te vencen y los que ya se te vencieron, con su rubro, su monto ' +
+               'y cuántos días faltan o lleva de atraso. Son dos listas y no se suman.' }
+      ]
+    }
+  };
+
+  var ESTA = 'examenes';
+  function inst(id) { return INSTITUCIONES[id || ESTA]; }
+  function llave(id, tool) { return id + '.' + tool; }
+
+  // ---------------------------------------------------------------- estado
+  var instaladas = ['compras', 'cargas', 'dealership', 'municipalidad'];
+  var apagadas = {};
+  var vista = 'home';
+  var abierto = null;
+  var marco = null;
+  var turnos = [];
+
+  function vivas(id) {
+    return inst(id).consultas.filter(function (c) { return !apagadas[llave(id, c.nombre)]; });
+  }
+
+  // ---------------------------------------------------------------- el guía
+  var vivo = null;
+
+  function apagar() {
+    if (vivo) { vivo.removeAttribute('data-vivo'); vivo.onclick = null; vivo = null; }
+    $('halo').hidden = true; $('globo').hidden = true;
+  }
+
+  // TRAERLO A LA VISTA. La pantalla del teléfono scrollea por dentro y es alta: un botón de más
+  // abajo existe y no se ve, y señalarlo sin esto deja el halo fuera de cuadro.
+  function traerAlaVista(el) {
+    var caja = el.parentNode;
+    while (caja && caja.nodeType === 1) {
+      var ov = getComputedStyle(caja).overflowY;
+      if ((ov === 'auto' || ov === 'scroll') && caja.scrollHeight > caja.clientHeight + 4) {
+        var r = el.getBoundingClientRect(), c = caja.getBoundingClientRect();
+        caja.scrollTop += (r.top - c.top) - (c.height / 2) + (r.height / 2);
+        return;
+      }
+      caja = caja.parentNode;
+    }
+  }
+
+  function halo(el) {
+    var p = $('pantalla').getBoundingClientRect(), r = el.getBoundingClientRect();
+    var h = $('halo');
+    h.hidden = false;
+    h.style.left = (r.left - p.left - 4) + 'px';
+    h.style.top = (r.top - p.top - 4) + 'px';
+    h.style.width = (r.width + 8) + 'px';
+    h.style.height = (r.height + 8) + 'px';
+  }
+
+  function señalar(el, texto, accion, alHacer) {
+    apagar();
+    if (!el) return;
+    vivo = el;
+    el.setAttribute('data-vivo', '1');
+    el.onclick = function (e) { if (e) e.stopPropagation(); apagar(); alHacer(); };
+    traerAlaVista(el);
+    var g = $('globo');
+    g.hidden = false;
+    g.innerHTML = texto + (accion ? '<span class="accion">' + accion + '</span>' : '');
+    halo(el);
+  }
+
+  function contar(texto, alSeguir) {
+    apagar();
+    var g = $('globo');
+    g.hidden = false;
+    g.innerHTML = texto + '<button class="seguir" type="button">' + t('seguir') + '</button>';
+    g.querySelector('.seguir').onclick = function () { apagar(); alSeguir(); };
+  }
+
+  // ---------------------------------------------------------------- pintar
+
+  function ir(v) {
+    vista = v;
+    Array.prototype.forEach.call(document.querySelectorAll('.vista'), function (x) {
+      x.classList.toggle('on', x.id === 'v-' + v);
+    });
+    // Las pantallas de Ajustes encienden su pestaña; la cara no enciende ninguna, porque no es
+    // una pestaña: es la app de la institución tomando el aparato.
+    var pest = v === 'detail' ? 'home' : v;
+    Array.prototype.forEach.call($('tabs').children, function (b) {
+      b.classList.toggle('on', b.getAttribute('data-tab') === pest);
+    });
+  }
+
+  function pintar() {
+    if (vista === 'cara') { pintarCara(); return; }
+    pintarHome(); pintarDetalle(); pintarChat(); pintarSet();
+  }
+
+  function cuantas(n) { return n === 1 ? t('unaConectada') : con('nConectadas', { n: n }); }
+  function permisos(n) { return n === 1 ? t('unPermiso') : con('nPermisos', { n: n }); }
+
+  var CANDADO = '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/>' +
+                '<path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+  function pintarHome() {
+    $('v-home').innerHTML =
+      '<div class="hoja-scroll">' +
+        '<div class="top">' +
+          '<div class="logo"><img src="mymi-mark.png" alt=""></div>' +
+          '<div class="tt">Mymi</div>' +
+          '<div class="ava">S</div>' +
+        '</div>' +
+        '<div class="hola">' +
+          '<div class="t"><b>' + t('conexionesTitulo') + '</b><small>' +
+          cuantas(instaladas.length) + '</small></div>' +
+          '<button class="addbtn" id="conectar" type="button"><span>+</span><span>' +
+          t('conectar') + '</span></button>' +
+        '</div>' +
+        '<div class="grid">' + instaladas.map(tarjeta).join('') + '</div>' +
+      '</div>';
+  }
+
+  function tarjeta(id) {
+    var m = inst(id);
+    return '<div class="mod" style="--brand:' + m.color + ';--brand-soft:' + m.color + '1f">' +
+      '<div class="head"><img class="ic" src="' + m.logo + '" alt="">' +
+        '<div class="nm">' + (m.pre ? '<span class="pre">' + m.pre + '</span>' : '') +
+        '<b>' + m.identidad + '</b></div></div>' +
+      '<small>' + m.lema + '</small>' +
+      '<div class="acts">' +
+        '<button class="perm" data-perm="' + id + '" type="button">' + CANDADO +
+        permisos(vivas(id).length) + '</button>' +
+        '<button class="abrir" data-abrir="' + id + '" type="button">' + t('abrir') + '</button>' +
+      '</div></div>';
+  }
+
+  function pintarDetalle() {
+    if (!abierto) { $('v-detail').innerHTML = ''; return; }
+    var m = inst(abierto);
+    $('v-detail').innerHTML =
+      '<div class="hoja-scroll">' +
+        '<button class="volver" id="volver-lista" type="button">' + t('volverLista') + '</button>' +
+        '<div class="det-marca" style="--brand-soft:' + m.color + '1f">' +
+          '<img src="' + m.logo + '" alt="">' +
+          '<div>' + (m.pre ? '<span class="pre">' + m.pre + '</span>' : '') +
+          '<b>' + m.identidad + '</b></div>' +
+        '</div>' +
+        '<p class="det-lema">' + m.lema + '</p>' +
+
+        '<div class="bloque"><button class="master" id="abrir-cara" type="button">' +
+          '<span><b>' + con('abrirDe', { quien: m.identidad }) + '</b>' +
+          '<small>' + t('abrirSub') + '</small></span>' +
+          '<span class="flecha">→</span></button></div>' +
+
+        // `m.retencion` y `m.refresco` NO pasan por `t()`: son la promesa que la institución
+        // declaró en su manifiesto, y el Host no la traduce. El marco de la frase sí.
+        '<div class="bloque"><div class="cap">' + t('tuRegistro') + '</div>' +
+          '<div style="font-size:13px;color:var(--muted);line-height:1.5">' +
+          con('registroDice', { retencion: m.retencion, refresco: m.refresco }) + '<br>' +
+          con('registroDonde', { quien: m.identidad }) + '</div></div>' +
+
+        '<h3 class="cap">' + con('consultasDe', { quien: m.identidad }) + '</h3>' +
+        '<p class="lead">' + t('consultasLead') + '</p>' +
+        m.consultas.map(function (c) { return consulta(abierto, c); }).join('') +
+        '<p class="apagada-nota">' + t('consultasApagada') + '</p>' +
+      '</div>';
+  }
+
+  // UNA CONSULTA CON SU INTERRUPTOR, que acá SÍ existe. En el teléfono el detalle muestra las dos
+  // -- encendidas y apagadas -- porque es donde se deciden; en el escritorio `ModuleScreen.razor`
+  // recorre `EnabledTools()` y la apagada ni aparece.
+  function consulta(id, c) {
+    var on = !apagadas[llave(id, c.nombre)];
+    return '<div class="consulta">' +
+      '<div class="txt"><b>' + c.titulo + '</b><small>' + c.desc + '</small></div>' +
+      '<button class="sw" data-tool="' + c.nombre + '" role="switch" aria-checked="' + on + '" ' +
+      'aria-label="' + c.titulo + '" type="button"><i></i></button>' +
+    '</div>';
+  }
+
+  function pintarChat() {
+    var cuerpo = turnos.length
+      ? turnos.join('')
+      : '<div class="vacio">' + t('asistenteVacio') + '</div>';
+    $('v-chat').innerHTML =
+      '<div class="chat-cab"><div><b>' + t('asistente') + '</b>' +
+        '<small>' + t('asistenteSub') + '</small></div></div>' +
+      '<div class="msgs" id="msgs">' + cuerpo + '</div>' +
+      '<div class="sug">' +
+        '<button data-q="resumen" type="button">' + t('q1') + '</button>' +
+        '<button data-q="tendencia" type="button">' + t('q2') + '</button>' +
+      '</div>' +
+      '<div class="pregunta"><input type="text" placeholder="' + t('asistentePlaceholder') +
+      '" disabled></div>';
+    var m = $('msgs'); if (m) m.scrollTop = m.scrollHeight;
+  }
+
+  function pintarSet() {
+    $('v-set').innerHTML =
+      '<div class="hoja-scroll">' +
+        '<div class="top"><div class="tt">' + t('ajustes') + '</div></div>' +
+        '<div class="bloque"><div class="cap">' + t('ajustesQuien') + '</div>' +
+          '<div style="font-weight:700;font-size:15px;margin-top:2px">Claude</div>' +
+          '<div style="color:var(--muted);font-size:12.5px;margin-top:2px">' +
+          '<code style="font-family:var(--mono);font-size:11.5px">claude-sonnet-5</code> · ' +
+          'api.anthropic.com</div>' +
+          '<div style="color:var(--muted);font-size:12.5px;margin-top:8px;line-height:1.5">' +
+          t('ajustesLlave') + '</div></div>' +
+      '</div>';
+  }
+
+  function pintarCara() {
+    var m = inst(ESTA);
+    $('v-cara').innerHTML =
+      '<div class="carabar">' +
+        '<button class="volver" id="volver-cara" type="button">←</button>' +
+        '<span class="quien">' + m.identidad + '</span>' +
+      '</div>' +
+      // EL IDIOMA VIAJA AL APARATO, no a la cara: ver `cara/idioma-del-aparato.js`.
+      '<iframe id="cara" class="cara" src="cara/index.html?lang=' + IDIOMA +
+      '" title="' + m.identidad + '"></iframe>';
+    marco = $('cara');
+  }
+
+  // ---------------------------------------------------------------- el asistente de Mymi
+  //
+  // ACÁ EL QUE PREGUNTA ES MYMI, no un programa de afuera. Ésa es la diferencia con el tour de
+  // escritorio: allá Claude es otra app hablándole al Host por MCP; acá el bucle es de Mymi y el
+  // modelo sólo redacta con lo que las instituciones contestaron. La traza -- «qué pasó por
+  // debajo» -- es lo que hace visible esa diferencia.
+
+  var PREGUNTAS = {
+    resumen:   { dice: 'q1', tool: 'resumen' },
+    tendencia: { dice: 'q2', tool: 'lista_de_examenes' }
+  };
+
+  var DE_RESERVA = {
+    resumen: function () {
+      return { hayDatos:true, examenes:16, analitosFueraDeRango:3, ultimoEventoLeido:1284 };
+    },
+    lista_de_examenes: function () {
+      return { hayDatos:true, examenes:[
+        { nombre:'Perfil lipídico', fecha:'2026-09-10',
+          resultado:'Colesterol total 214 mg/dL · Colesterol LDL 96 mg/dL', aportaSerieContinua:true },
+        { nombre:'Urianálisis', fecha:'2026-09-10',
+          resultado:'Sangre en la orina positivo · Color de la orina ámbar oscuro',
+          aportaSerieContinua:false },
+        { nombre:'Hemograma', fecha:'2026-09-10',
+          resultado:'Hemoglobina 14.1 g/dL', aportaSerieContinua:true }
+      ] };
+    }
+  };
+
+  function superficie(t) {
+    try { var x = marco && marco.contentWindow.__tools; if (x && x[t]) return x[t]; } catch (e) {}
+    return DE_RESERVA[t];
+  }
+
+  // LA FECHA VIAJA CON EL RENDER (regla 8): el JSON la trae ISO, y quien redacta la dice como se
+  // dice en su idioma.
+  function fechaLegible(iso) {
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString(IDIOMA === 'en' ? 'en-GB' : 'es-CR',
+      { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function redacta(cual, d) {
+    if (cual === 'resumen')
+      return con('r1', { examenes: d.examenes, fuera: d.analitosFueraDeRango,
+                         evento: d.ultimoEventoLeido });
+
+    // LA PUERTA SE ABRE Y AUN ASÍ NO ALCANZA. La lista trae filas de EXAMEN -- nombre, fecha,
+    // resultado --; no la serie del analito en el tiempo, ni su unidad, ni el techo esperable, ni
+    // el «nivel de siempre». Eso es `InterpretacionDeAnalito`, que es [View]: la dibuja la
+    // pantalla del laboratorio y el modelo no la ve nunca.
+    // `ultimo.nombre` y `ultimo.resultado` son dato del registro (regla 3) y NO se traducen: se
+    // ven en español dentro de la frase inglesa, que es lo que pasa de verdad.
+    var ultimo = d.examenes.reduce(function (a, b) { return b.fecha > a.fecha ? b : a; });
+    return con('r2', { nombre: ultimo.nombre, fecha: fechaLegible(ultimo.fecha),
+                       resultado: ultimo.resultado });
+  }
+
+  function preguntar(cual, alTerminar) {
+    var q = PREGUNTAS[cual];
+    turnos.push('<div class="burb yo">' + t(q.dice) + '</div>');
+    turnos.push('<div class="pensando" id="pensando">' + t('pensando') + '</div>');
+    pintarChat();
+
+    setTimeout(function () {
+      turnos.pop();
+
+      if (apagadas[llave(ESTA, q.tool)]) {
+        turnos.push('<div class="traza"><b>' + t('traza') + '</b>\n✕ examenes_' + q.tool +
+          ' — ' + t('noEstaEnCatalogo') + '</div>');
+        turnos.push('<div class="burb bot mal">' + t('rApagada') + '</div>');
+        pintarChat();
+        if (alTerminar) setTimeout(alTerminar, 900);
+        return;
+      }
+
+      var d = superficie(q.tool)();
+      turnos.push('<div class="traza"><b>' + t('traza') + '</b>\n⚒ examenes_' + q.tool +
+        ' · local\n' + JSON.stringify(d).slice(0, 150) + (JSON.stringify(d).length > 150 ? '…' : '') +
+        '</div>');
+      turnos.push('<div class="pensando">' + t('redactando') + '</div>');
+      pintarChat();
+
+      setTimeout(function () {
+        turnos.pop();
+        turnos.push('<div class="burb bot">' + redacta(cual, d) + '</div>');
+        pintarChat();
+        if (alTerminar) setTimeout(alTerminar, 900);
+      }, 800);
+    }, 700);
+  }
+
+  // ---------------------------------------------------------------- la hoja del alta
+
+  function abrirHoja() {
+    $('velo').hidden = false;
+    var h = $('hoja');
+    h.hidden = false;
+    h.innerHTML =
+      '<div class="agarre"></div>' +
+      '<h2>' + t('altaTitulo') + '</h2>' +
+      '<p class="lead">' + t('altaLead') + '</p>' +
+      '<input type="text" placeholder="' + t('altaPlaceholder') + '" disabled>' +
+      '<button class="btn" type="button">' + t('altaAgregar') + '</button>' +
+      '<p class="o">' + t('altaO') + '</p>' +
+      '<button class="btn ghost" id="elegir" type="button">' + t('altaElegir') + '</button>';
+  }
+
+  // LA HOJA QUE MÁS DICE DE TODO EL PRODUCTO: qué trae, quién lo publica, qué promete sobre tu
+  // registro y qué NO puede hacer. Todo del manifiesto que viaja adentro del .gmod.
+  function revisar() {
+    var m = inst(ESTA);
+    $('hoja').innerHTML =
+      '<div class="agarre"></div>' +
+      '<h2>' + t('altaTitulo') + '</h2>' +
+      '<p class="lead">' + con('altaTrae', { archivo:
+        '<code style="font-family:var(--mono);font-size:12px">' + m.carpeta + '.gmod</code>' }) + '</p>' +
+      '<div class="revision">' +
+        '<div class="quien"><img src="' + m.logo + '" alt="">' +
+          '<div>' + (m.pre ? '<span style="display:block;font-size:11.5px;color:var(--muted)">' +
+          m.pre + '</span>' : '') +
+          '<b style="font-size:18px">' + m.identidad + '</b>' +
+          '<div style="color:var(--muted);font-size:12px">' + m.lema + '</div></div>' +
+          '<span class="firmado" style="margin-left:auto">✓ ' + t('altaFirmado') + '</span>' +
+        '</div>' +
+        '<dl>' +
+          '<dt>' + t('altaQuien') + '</dt><dd><code>' + m.dominio + '</code></dd>' +
+          '<dt>' + t('altaVersion') + '</dt><dd>' + m.version + '</dd>' +
+          '<dt>' + t('altaRed') + '</dt><dd>' + t('altaNo') + '</dd>' +
+          '<dt>' + t('altaConsultas') + '</dt><dd>' + m.consultas.length + '</dd>' +
+          '<dt>' + t('altaMotor') + '</dt><dd>' + t('altaPrestado') + '</dd>' +
+          '<dt>' + t('altaRegistro') + '</dt><dd>' + m.retencion + '</dd>' +
+          '<dt>' + t('altaTamano') + '</dt><dd>' + m.tamano + '</dd>' +
+        '</dl>' +
+      '</div>' +
+      '<button class="btn" id="agregar" type="button">' + t('altaAgregar') + '</button>';
+  }
+
+  function cerrarHoja() { $('hoja').hidden = true; $('velo').hidden = true; }
+
+  // ---------------------------------------------------------------- el recorrido
+
+  var paso = 0, TOTAL = 10;
+
+  function avanzar(n) {
+    paso = n;
+    Array.prototype.forEach.call($('progreso').children, function (i, k) {
+      i.className = k < n ? 'hecho' : '';
+    });
+    ESCENA[n]();
+  }
+
+  function q(sel) { return $('pantalla').querySelector(sel); }
+
+  var ESCENA = {
+    // LAS CUATRO QUE YA ESTABAN, igual que en el tour de escritorio: cuatro rubros que no se
+    // parecen en nada y una sola app sosteniéndolos. Acá se ve todavía mejor, porque en el
+    // teléfono cada tarjeta ocupa el ancho entero y lleva su color arriba.
+    0: function () {
+      señalar(q('[data-perm="compras"]').closest('.mod'),
+        t('g0'), t('g0a'), function () { avanzar(1); });
+    },
+
+    1: function () {
+      señalar($('conectar'),
+        t('g1'), t('g1a'), function () { abrirHoja(); avanzar(2); });
+    },
+
+    2: function () {
+      señalar($('elegir'),
+        t('g2'), t('altaElegir'), function () { revisar(); avanzar(3); });
+    },
+
+    3: function () {
+      señalar($('agregar'),
+        t('g3'), t('altaAgregar'), function () {
+          cerrarHoja();
+          if (instaladas.indexOf(ESTA) < 0) instaladas.unshift(ESTA);
+          pintar();
+          avanzar(4);
+        });
+    },
+
+    // EN EL TELÉFONO LA TARJETA SE TOCA Y ABRE LA APP. No hay un paso intermedio: `gn.abrir` sale
+    // del `onclick` de la tarjeta entera (ui.html:1604). El candado de al lado es el que lleva al
+    // detalle, y ése es el camino del consentimiento -- viene después.
+    4: function () {
+      señalar(q('[data-abrir="' + ESTA + '"]'),
+        t('g4'), t('abrir'), function () { ir('cara'); pintarCara(); avanzar(5); });
+    },
+
+    5: function () {
+      contar(t('g5'),
+        function () {
+          señalar(q('#volver-cara'), t('g5a'), t('g5b'), function () {
+            ir('home'); avanzar(6);
+          });
+        });
+    },
+
+    // Y ACÁ ESTÁ LA DIFERENCIA CON EL ESCRITORIO. Allá el que pregunta es Claude, otra app, por
+    // MCP. Acá el asistente es de Mymi: mismo bucle, mismo Dispatcher, misma superficie -- pero
+    // adentro. El modelo redacta; los hechos siguen siendo de las instituciones.
+    6: function () {
+      señalar(q('[data-tab="chat"]'),
+        t('g6'), t('g6a'), function () { ir('chat'); avanzar(7); });
+    },
+
+    7: function () {
+      señalar(q('[data-q="resumen"]'),
+        t('g7'), t('g7a'), function () {
+          preguntar('resumen', function () { avanzar(8); });
+        });
+    },
+
+    8: function () {
+      señalar(q('[data-q="tendencia"]'),
+        t('g8'), t('g7a'), function () {
+          preguntar('tendencia', function () { avanzar(9); });
+        });
+    },
+
+    // EL CONSENTIMIENTO, Y ACÁ SÍ HAY DÓNDE TOCARLO. El tour de escritorio tuvo que sacar este
+    // paso -- `ModuleScreen.razor` no tiene ningún control y en todo Gnothi.Desktop no hay un
+    // `setTool` --. En el teléfono vive acá, en el detalle de la institución, con un interruptor
+    // por consulta: `gn.setTool(modulo, tool, checked)` en ui.html.
+    9: function () {
+      ir('home');
+      señalar(q('[data-perm="' + ESTA + '"]'),
+        t('g9'), t('g9a'), function () {
+          abierto = ESTA; pintarDetalle(); ir('detail');
+          setTimeout(interruptor, 260);
+        });
+    }
+  };
+
+  function interruptor() {
+    var sw = q('.sw[data-tool="lista_de_examenes"]');
+    señalar(sw,
+      t('gInterruptor'), t('gApagala'), function () {
+        apagadas[llave(ESTA, 'lista_de_examenes')] = true;
+        pintar();
+        setTimeout(remate, 420);
+      });
+  }
+
+  function remate() {
+    contar(t('gRemate'),
+      function () {
+        ir('chat');
+        señalar(q('[data-q="tendencia"]'), t('gOtraVez'), t('g7a'),
+          function () { preguntar('tendencia', cierre); });
+      });
+  }
+
+  function cierre() {
+    contar(t('gCierre'),
+      function () {
+        ir('home');
+        señalar(q('[data-abrir="' + ESTA + '"]'), t('gComprueba'), t('abrir'), function () {
+          ir('cara'); pintarCara();
+          Array.prototype.forEach.call($('progreso').children, function (i) { i.className = 'hecho'; });
+          setTimeout(function () {
+            contar(t('gIntacto'), function () {});
+          }, 1400);
+        });
+      });
+  }
+
+  // ---------------------------------------------------------------- cableado
+
+  // LOS CLICS VAN POR DELEGACIÓN, y tiene que ser así: cada `pintar()` reemplaza el HTML entero
+  // de la vista, y un `onclick` puesto sobre un nodo viejo se va con él. El guía pone el suyo
+  // sobre el nodo que señala en ese momento; esto es para todo lo demás.
+  $('pantalla').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-tab]');
+    if (t && t.getAttribute('data-vivo') === '1') return;   // lo maneja el guía
+  });
+
+  for (var i = 0; i < TOTAL; i++) $('progreso').appendChild(document.createElement('i'));
+
+  function desdeCero() {
+    apagar();
+    instaladas = ['compras', 'cargas', 'dealership', 'municipalidad'];
+    apagadas = {}; abierto = null; marco = null; turnos = [];
+    cerrarHoja();
+    pintar(); ir('home');
+    avanzar(0);
+  }
+
+  $('reiniciar').addEventListener('click', desdeCero);
+
+  // LO QUE ESTÁ FUERA DEL TELÉFONO también cambia: título, pie, botones y las tres pestañas de la
+  // barra de abajo, que son marcado fijo y no las repinta `pintar()`.
+  function pintarPagina() {
+    document.documentElement.lang = IDIOMA;
+    document.title = t('pagTitulo');
+    $('pag-titulo').textContent = t('pagTitulo');
+    $('pag-sub').textContent = t('pagSub');
+    $('idioma').textContent = t('idiomaBoton');
+    $('reiniciar').textContent = t('reiniciar');
+    $('nota-pie').innerHTML = t('pie');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-nav]'), function (s) {
+      s.textContent = t(s.getAttribute('data-nav'));
+    });
+  }
+
+  // CAMBIAR DE IDIOMA REINICIA EL RECORRIDO: los globos ya dichos quedarían en el idioma viejo, y
+  // media conversación del asistente traducida a mitad de camino sería un aparato que no existe.
+  $('idioma').addEventListener('click', function () {
+    IDIOMA = IDIOMA === 'en' ? 'es' : 'en';
+    pintarPagina();
+    desdeCero();
+  });
+
+  // EL RELOJ SIGUE AL IDIOMA DEL APARATO (regla 8): el formato viaja con el render.
+  function hora() {
+    var d = new Date();
+    $('reloj').textContent = d.toLocaleTimeString(IDIOMA === 'en' ? 'en-GB' : 'es-CR',
+      { hour:'2-digit', minute:'2-digit' });
+  }
+  hora(); setInterval(hora, 20000);
+
+  pintarPagina();
+  pintar();
+  avanzar(0);
+})();
+</script>

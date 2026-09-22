@@ -714,7 +714,26 @@
                     pintarPedido(a);
                 });
             })
-            .catch(function () { /* el hero se queda con su frase por omision */ });
+            // NO SE PUDO ARMAR EL HERO, y hay que decirlo.
+            //
+            // Antes esto no hacia nada, con un comentario que afirmaba que «el hero se queda con
+            // su frase por omision». NO HAY tal frase por omision: el titular se queda con el
+            // texto de CARGA -«Preguntandole a Mymi...»- presentado como si fuera el resultado.
+            // Una pantalla que quedaba preguntando para siempre, sin una linea en la consola.
+            //
+            // Lo que NO se puede hacer es caer a «en general, tus resultados vienen bien»: eso
+            // seria afirmar algo sobre un expediente que no se leyo, y es la unica mentira que
+            // esta pantalla no se puede permitir. Por eso `portada.noSePudoLeer` es una cuarta
+            // frase y no una de las tres.
+            //
+            // La guarda de pasada es la misma de arriba: una pasada vieja que falla tarde no
+            // puede pisar el hero que ya pinto la nueva.
+            .catch(function (e) {
+                if (pasada !== ultimaPasada) return;
+                $('saludo').textContent = I.texto('portada.noSePudoLeer');
+                $('secundario').textContent = '';
+                contar((e && e.message) || String(e), true);
+            });
 
         // LAS SERIES, DE A UNA Y EN ORDEN. Cada una es una pregunta al Host; se juntan TODAS antes
         // de repartir, porque una tarjeta no puede saber a que seccion va sin ver al resto.

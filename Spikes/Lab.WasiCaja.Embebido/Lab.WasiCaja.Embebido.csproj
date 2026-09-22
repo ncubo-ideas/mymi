@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- PASO 3 · SONDA: wasmtime COMO LIBRERIA, no como proceso. (F2 · P19)
+       Tres cosas distintas necesitan esto y por eso vale la pena averiguarlo antes que nada:
+         - cerrar el hueco del paquete montado en / (paso 2)
+         - quitar el proceso por modulo, que es lo que hace real el ahorro de memoria
+         - contar los intentos que el anfitrion niega, que es la mitad que falta de D2
+       Esta sonda no construye nada: averigua si se PUEDE. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Lab.WasiCaja.Embebido</AssemblyName>
+    <RootNamespace>Lab.WasiCaja.Embebido</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SIN el paquete `Wasmtime`: solo carga modulos core y el .NET de WASI produce un
+         COMPONENTE. La sonda que lo midio esta en la historia de este spike; el envoltorio de
+         P/Invoke sobre la C API esta en Wasmtime.cs. -->
+  </ItemGroup>
+
+</Project>

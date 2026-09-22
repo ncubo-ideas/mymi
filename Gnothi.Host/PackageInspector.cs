@@ -114,6 +114,30 @@ public static class PackageInspector
 		if (declaresLoad && !files.Any(f => f.Path.Equals(manifest.Load!.Entry.Replace('\\', '/'), OIC)))
 			rejections.Add($"'load.entry' names {manifest.Load!.Entry}, which is not in the package");
 
+		// AND FOR A HYBRID IT HAS TO SIT DIRECTLY IN dominio/, not in a folder under it. This used
+		// to be tidiness; with the wasm box it is containment and loading, both.
+		//
+		// LOADING: whoever opens the entry resolves its dependencies BY ADJACENCY -- the .deps.json
+		// does not travel in a bundle, and AssemblyDependencyResolver needs hostpolicy, which mobile
+		// does not have. So `dominio/a/entry.dll` next to `dominio/b.dll` cannot find b: it looks in
+		// `dominio/a`. That break is not new -- InProcessShell had it too -- but nothing said so.
+		//
+		// CONTAINMENT: in the box that folder is not just where lookups happen, it is WHAT GETS
+		// MOUNTED (Cage.Package, read only). The entry's path therefore decides the module's own
+		// read scope. The rule below is what makes that scope always exactly dominio/ -- known in
+		// advance, the same for every module, and never something the manifest can move around.
+		//
+		// The five POC modules already declare `dominio/<X>.App.dll`, so this rejects nothing that
+		// exists today; it stops the shape that would fail later and far from here.
+		if (form == PackageForm.Hybrid && declaresLoad)
+		{
+			string entry = manifest.Load!.Entry.Replace('\\', '/');
+			if (!entry.StartsWith("dominio/", OIC) || entry.IndexOf('/', "dominio/".Length) >= 0)
+				rejections.Add(
+					$"'load.entry' = '{entry}': a hybrid module's entry has to sit directly in dominio/, "
+					+ "because that folder is what the Host mounts for it and where its dependencies are looked up");
+		}
+
 		if (carriesWeb && !files.Any(f => f.Path.Equals("web/index.html", OIC)))
 			rejections.Add("carries a web/ folder with no web/index.html: the app cannot start");
 

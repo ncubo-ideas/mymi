@@ -12,18 +12,17 @@ namespace Gnothi.Host;
 // is a Host that hands a third party the availability of every other module.
 public sealed class ModuleCatalog : IAsyncDisposable
 {
-	// LA LISTA SE REEMPLAZA, NO SE VACIA. Y no es un detalle de estilo: es lo que hace que
-	// recorrerla sea seguro mientras el catalogo se recarga.
+	// THE LIST IS REPLACED, NOT EMPTIED. And this is not a matter of style: it is what makes walking
+	// it safe while the catalogue reloads.
 	//
-	// Load() hacia Clear() y volvia a llenar ESTA MISMA lista, asi que cualquiera que la
-	// estuviera recorriendo -- la pantalla armando su estado, VerifyNewModules con sus await
-	// adentro -- se llevaba un `InvalidOperationException: Collection was modified`. Medido en
-	// el emulador el 2026-09-08: aceptar un alta recarga el catalogo, y la pagina pedia su
-	// estado en ese mismo instante.
+	// Load() used to Clear() and refill THIS SAME list, so anyone walking it -- the screen assembling
+	// its state, VerifyNewModules with its awaits inside -- got an `InvalidOperationException:
+	// Collection was modified`. Measured on the emulator on 2026-09-08: accepting an enrolment
+	// reloads the catalogue, and the page was asking for its state at that very instant.
 	//
-	// Con el reemplazo, quien tomo la referencia vieja termina de recorrerla completa y sin
-	// excepcion -- una lista inmutable de hecho -- y el que llega despues ve la nueva. Cuesta
-	// una asignacion y cierra la clase entera de bugs, en vez de un recorrido a la vez.
+	// With the replacement, whoever took the old reference finishes walking it whole and without an
+	// exception -- an immutable list in practice -- and whoever arrives later sees the new one. It
+	// costs one assignment and closes the whole class of bugs, instead of one walk at a time.
 	private List<Module> modules = [];
 
 	public IReadOnlyList<Module> Modules => modules;
@@ -37,17 +36,17 @@ public sealed class ModuleCatalog : IAsyncDisposable
 
 	public IReadOnlyList<string> Load()
 	{
-		// SE LLENA UNA LISTA NUEVA y al final se publica de un tiro. Ver el comentario de
-		// `modules`: mientras esto corre, quien este recorriendo la anterior no se entera.
+		// A NEW LIST IS FILLED and published in one go at the end. See the comment on `modules`:
+		// while this runs, whoever is walking the previous one never finds out.
 		List<Module> cargados = [];
 		List<string> warnings = [];
 
 		if (!Directory.Exists(Root))
 		{
-			// LA LISTA VACIA SE PUBLICA IGUAL. Antes este camino salia despues del Clear(), asi
-			// que dejaba el catalogo vacio; con el reemplazo hay que decirlo explicitamente o
-			// una carpeta que desaparece dejaria en pie la lista anterior -- modulos que ya no
-			// estan, contestando.
+			// THE EMPTY LIST GETS PUBLISHED ALL THE SAME. This path used to run after the Clear(),
+			// so it left the catalogue empty; with the replacement it has to be said explicitly, or
+			// a folder that disappears would leave the previous list standing -- modules that are no
+			// longer there, answering.
 			Publish(cargados);
 			warnings.Add($"the modules directory does not exist: {Root}");
 			return warnings;
@@ -114,21 +113,23 @@ public sealed class ModuleCatalog : IAsyncDisposable
 				if (excesses.Length > 0)
 					warnings.Add($"{m.Module}: declares excess capabilities ({string.Join(", ", excesses)})");
 
-				// Y lo mismo con los topes de lo que la institucion declara de si misma -- el
-				// nombre corto, el logo, el color, los textos. NO tumban el modulo: dejar a la
-				// persona sin su laboratorio porque a alguien se le fue un renglon seria peor
-				// que el renglon. Se dicen, y se dicen aca, que es donde ya se dicen estas cosas.
+				// And the same for the limits on what the institution declares about itself -- the
+				// short name, the logo, the colour, the texts. They do NOT bring the module down:
+				// leaving the person without their laboratory because somebody overran a line would
+				// be worse than the line. They are said, and said here, which is where these things
+				// already get said.
 				foreach (string problem in m.Problems())
 					warnings.Add($"{m.Module}: {problem}");
 
-				// Y EL LOGO, QUE ES EL UNICO QUE HAY QUE ABRIR PARA REVISAR. Se hace aca a
-				// proposito, aunque el catalogo se arma leyendo json: sin esto, un logo
-				// rechazado es un SILENCIO -- la institucion ve la caja del rubro, cree que su
-				// archivo no llego, y no tiene forma de saber que llego y no paso.
+				// AND THE LOGO, WHICH IS THE ONLY ONE THAT HAS TO BE OPENED TO BE CHECKED. It is
+				// done here on purpose, even though the catalogue is assembled by reading json:
+				// without this, a rejected logo is SILENCE -- the institution sees the sector's box,
+				// believes its file never arrived, and has no way of knowing it arrived and did not
+				// pass.
 				//
-				// El costo es leer un archivo de pocos KB por modulo, y no es lo que la regla
-				// del arranque perezoso protege: eso es no DESPERTAR veinte modulos. Un stat y
-				// un read de 8 KB no despiertan nada.
+				// The cost is reading a file of a few KB per module, and that is not what the lazy
+				// start-up rule protects: that rule is about not WAKING twenty modules. A stat and an
+				// 8 KB read wake nothing.
 				if (Manifest.Txt(m.Brand?.Logo).Length > 0)
 				{
 					Module.LogoDataUri(m, dir, out string logoProblem);
@@ -146,25 +147,25 @@ public sealed class ModuleCatalog : IAsyncDisposable
 		return warnings;
 	}
 
-	// LA PUBLICACION, y es la unica linea que el resto del programa ve: hasta aca la lista vieja
-	// seguia siendo la buena.
+	// THE PUBLICATION, and it is the only line the rest of the program sees: up to here the old list
+	// was still the good one.
 	//
-	// Y LOS QUE SALIERON SE SUELTAN, que es lo que faltaba. Reemplazar la lista los sacaba de
-	// circulacion pero no los cerraba: un Module hibrido tiene adentro el AssemblyLoadContext de
-	// la institucion y, con `keepLoaded`, su actor abierto sobre la carpeta del journal. Sin esto,
-	// ACTUALIZAR UN MODULO dejaba el DLL viejo cargado con su actor encima del MISMO journal que
-	// el nuevo acababa de abrir -- la carpeta concedida se conserva entre versiones a proposito --,
-	// que es exactamente el caso de dos actores sobre un journal que `keepLoaded` existe para
-	// evitar.
+	// AND THE ONES THAT LEFT GET RELEASED, which is what was missing. Replacing the list took them
+	// out of circulation but did not close them: a hybrid Module holds the institution's
+	// AssemblyLoadContext inside and, with `keepLoaded`, its actor open over the journal folder.
+	// Without this, UPDATING A MODULE left the old DLL loaded with its actor on top of the SAME
+	// journal the new one had just opened -- the granted folder is deliberately kept across versions
+	// --, which is exactly the two-actors-over-one-journal case `keepLoaded` exists to avoid.
 	//
-	// COMPARADOS POR REFERENCIA, no por nombre: una recarga construye Module nuevos aunque la
-	// carpeta no haya cambiado, asi que TODOS los anteriores se sueltan. Es el mismo precio que ya
-	// se paga por releer el catalogo entero, y la alternativa -- adivinar cuales siguen siendo «el
-	// mismo» -- es como empiezan las dos verdades.
+	// COMPARED BY REFERENCE, not by name: a reload builds new Modules even when the folder has not
+	// changed, so ALL the previous ones are released. It is the same price already paid for re-reading
+	// the whole catalogue, and the alternative -- guessing which ones are still «the same» -- is how
+	// two truths get started.
 	//
-	// FUERA DE LA PUBLICACION Y SIN ESPERAR: la lista nueva ya es la buena y quien tomo la vieja
-	// termina de recorrerla. Cerrar puede tardar -- el Unload es COOPERATIVO y ademas hay que
-	// darle GracefulExit al actor -- y a esto lo llama una pantalla justo despues de un alta.
+	// OUTSIDE THE PUBLICATION AND WITHOUT WAITING: the new list is already the good one and whoever
+	// took the old one finishes walking it. Closing can take a while -- the Unload is COOPERATIVE and
+	// the actor also has to be given a GracefulExit -- and this is called by a screen right after an
+	// enrolment.
 	private void Publish(List<Module> cargados)
 	{
 		List<Module> salientes = modules;
@@ -177,7 +178,7 @@ public sealed class ModuleCatalog : IAsyncDisposable
 		{
 			foreach (Module m in cerrando)
 			{
-				try { await m.DisposeAsync(); } catch { /* ya se estaba yendo */ }
+				try { await m.DisposeAsync(); } catch { /* it was already leaving */ }
 			}
 		});
 	}

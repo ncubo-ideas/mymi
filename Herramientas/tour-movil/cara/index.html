@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!-- SIN lang ESCRITO A MANO: el documento se sirve igual para los dos idiomas, asi que una
+     etiqueta fija seria falsa para la mitad de quienes lo abren. La pone idioma.js despues de
+     negociar con el aparato, que es lo que leen el lector de pantalla y el guionado. -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- EL TITULO ENTERO ES VOZ DE LA INSTITUCION -- su titulo y su nombre -- y ninguna de las dos
+     mitades se traduce, asi que esta escrito una sola vez. idioma.js lo repone tal cual despues
+     de negociar, para las dos lenguas. -->
+<title>Mis exámenes · Laboratorio Clínico Delfos</title>
+<!-- LA HOJA DE LA INSTITUCION, TAL CUAL, y la estructura de carpetas tambien: `app.css` pide sus
+     cuatro pesos por `../fuentes/PlusJakartaSans-*.woff2`, asi que aplanarla dejaria la pantalla
+     en la tipografia de sistema sin que nada lo dijera. -->
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="cara.css">
+<!-- EL IDIOMA SE NEGOCIA ANTES QUE NADA: el catalogo tiene que estar antes de que cara.js
+     pinte la primera letra. Los dos viajan en el bundle porque el modulo no tiene red. -->
+<!-- EL IDIOMA DEL APARATO SIMULADO, agregado por la lámina. Va antes que el catálogo y que
+     idioma.js, porque idioma.js resuelve el idioma al cargarse. -->
+<script src="idioma-del-aparato.js"></script>
+<script src="texto/es-CR.js"></script>
+<script src="texto/en.js"></script>
+<script src="idioma.js"></script>
+</head>
+<body>
+
+<!--
+  LA CARA DEL LABORATORIO EN LA FORMA HIBRIDA, y lo importante es lo que NO tiene.
+
+  No trae motor: la aduana del Host lo rechaza incluso adentro de web/, y esa es la promesa entera
+  de la forma. Tampoco trae dominio ni superficie: viajan al lado, en dominio/*.dll, y corren sobre
+  el motor que presta Gnothi.
+
+  ESTA CARA SE REHIZO. La primera version portaba el diseño ANTERIOR de la app -- `portada`,
+  `veredicto`, `serie`, `visita` --, y el merge del 2026-09-14 rediseño la pantalla entera:
+  `MisExamenes.razor` paso de 1284 a 1968 lineas, `app.css` de 858 a 1968, y la app dejo de ser
+  «cero webfonts» para traer Plus Jakarta Sans en cuatro pesos. Una cara portada del diseño viejo
+  no es una cara vieja: es OTRA institucion.
+
+  EL MARKUP ES EL NUEVO, con sus clases reales: `inicio-hero`, `inicio-atencion`,
+  `inicio-tranquilo`, `inicio-cambios`, `inicio-sintendencia`, `inicio-historial`. Ninguna
+  renombrada -- si se renombrara, la hoja dejaria de alcanzarlas.
+
+  LO QUE NO SE TRAJO: el elegidor de almacenamiento, los avisos de migracion y las pantallas de
+  detalle por analito. En la forma hibrida la carpeta la concede Gnothi, y esta cara es el inicio.
+-->
+
+<!-- EL ENVOLTORIO, Y FALTABA. `MainLayout.razor` de la app suelta abre con `<main class="hoja">`
+     y yo no lo puse: se veia como una omision inofensiva y no lo era.
+     `.hoja` lleva `padding: 44px 26px 80px`, y `.inicio-hero` lleva `margin: -44px -26px` para
+     SANGRAR exactamente ese padding y tocar los bordes. Sin la `.hoja`, esos margenes negativos
+     no cancelan nada: tiran el hero 44px arriba del borde de la pagina y 26px afuera a cada lado.
+     Medido en el telefono el 2026-09-14: el titulo «Laboratorio Clinico Delfos» quedaba mordido
+     por la barra de estado y el conteo de «MERECE ATENCION» se cortaba contra el borde derecho.
+     Dos sintomas, una sola causa. -->
+<main class="hoja">
+
+<section class="inicio-hero">
+    <div class="inicio-hero-marca">
+        <!-- La gota dentro de un circulo, solo trazo. El mismo SVG de la app. -->
+        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+             fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+            <circle cx="20" cy="20" r="18" />
+            <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                     0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+        </svg>
+        <div>
+            <!-- EL NOMBRE Y EL LEMA, LOS DOS SIN data-texto: son voz de la institucion y no se
+                 traducen, y lo que no tiene clave no lo puede traducir nadie por descuido. -->
+            <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+            <div class="marca-claim">Al servicio de su salud desde 1987</div>
+        </div>
+
+        <!-- LA TECLA QUE VA A BUSCAR DATOS. Aca significa otra cosa que en la app suelta: no sale
+             a la red -- no puede -- sino que le pide a GNOTHI que traiga lo nuevo. -->
+        <button class="inicio-hero-actualizar" id="releer" aria-busy="false"
+                data-texto-aria="app.actualizar">↻</button>
+    </div>
+
+    <p class="inicio-hero-kicker"><strong data-texto="app.saludo">Hola, Sonia.</strong>
+       <span data-texto="app.kicker">Entendé cómo venís, no solo cómo saliste hoy.</span></p>
+
+    <div class="inicio-hero-chequeo" id="chequeo" hidden>
+        <span class="inicio-hero-chequeo-label" data-texto="app.ultimoChequeo">Tu último chequeo</span>
+        <span class="inicio-hero-chequeo-linea" aria-hidden="true"></span>
+        <span class="inicio-hero-chequeo-fecha" id="chequeo-fecha"></span>
+    </div>
+
+    <h1 class="inicio-hero-titular" id="saludo" data-texto="app.preguntando">Preguntándole a Mymi…</h1>
+    <p class="inicio-hero-secundario" id="secundario"></p>
+</section>
+
+<!-- LO QUE MERECE ATENCION VA PRIMERO, antes que cualquier otra cosa: si algo pide accion, es lo
+     primero que la persona tiene que ver. -->
+<section class="inicio-atencion" id="atencion" hidden></section>
+
+<!-- LO DEMAS ESTA BIEN. Va despues, y el orden no es estetico: un «todo en orden» arriba de algo
+     que pide atencion se contradice solo. -->
+<section class="inicio-tranquilo" id="tranquilo" hidden></section>
+
+<!-- QUE CAMBIO DESDE EL ULTIMO CHEQUEO. -->
+<section class="inicio-cambios" id="cambios" hidden></section>
+
+<!-- LO QUE TODAVIA NO TIENE TENDENCIA. Una sola medicion no es una serie, y el dominio lo dice
+     mejor que cualquier frase de plantilla. -->
+<section class="inicio-sintendencia" id="sintendencia" hidden></section>
+
+<!-- LA TARJETA ES LA DE LA APP. Esto decia `inicio-historial`, una clase que ninguna hoja
+     define, asi que el historial salia sobre el fondo de la pagina mientras en la app suelta va
+     en un panel navy con borde y respiro (MisExamenes.razor:1029). -->
+<section class="inicio-historial-tarjeta">
+    <h2 class="seccion inicio-historial-titulo" id="historial" data-texto="historial.titulo">Tu historial</h2>
+    <div id="historial-cuerpo"><p class="apunte">…</p></div>
+</section>
+
+<!-- EL DATO QUE EL MODULO PIDE. En la app suelta esto es editable; aca no, y no es un olvido:
+     declarar el sexo es una ESCRITURA, y `consultar` solo alcanza [View]. -->
+<div id="pedido"></div>
+
+</main>
+
+<footer>
+    <p data-texto="app.pie">El registro vive en este dispositivo. Esta pantalla no sale a la red:
+       le pregunta a Mymi, y Mymi responde con el motor que le presta.</p>
+    <p class="apunte mono" id="conexion">—</p>
+</footer>
+
+<!-- EL PUENTE LO PONE EL HOST, no la institución: `armar-bundle.ps1` lo copia a web/ al armar
+     cualquier paquete híbrido. -->
+<!-- EL PUENTE FALSO, lo único que esta demostración agrega. Va ANTES de puente.js porque el
+     real busca `window.gnothiPuente` al cargarse. -->
+<script src="simulador.js"></script>
+<script src="puente.js"></script>
+<script src="cara.js"></script>
+</body>
+</html>

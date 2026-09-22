@@ -141,7 +141,7 @@
          dejan de coincidir, las dos plataformas dejan de correr el mismo Host · que es
          justamente lo que la suite de conformance existe para impedir. -->
     <Compile Include="..\Gnothi.Host\*.cs"
-             Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs" />
+             Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs;..\Gnothi.Host\BoxShellStub.cs" />
 
     <!-- El stub del shell de stdio se REUSA, no se copia, y la razon de fondo es la misma en
          las dos plataformas: no hay exec() desde la carpeta de datos y no hay dotnet CLI. El

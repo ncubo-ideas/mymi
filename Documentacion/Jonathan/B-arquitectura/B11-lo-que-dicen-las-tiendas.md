@@ -25,6 +25,16 @@ Esto no es una opinión sobre si nos van a aceptar. Es **el texto**, y qué dice
 antiguo §3.3.2— decía que *«las únicas excepciones son scripts y código descargados y ejecutados
 por el WebKit o el JavaScriptCore de Apple»*. Hoy dice **«interpreted code»**, sin nombrar motor.
 
+**El cambio es de junio de 2017**, aportado por un compañero el 2026-09-16 y corroborado en
+[The Register](https://www.theregister.com/2017/06/07/apple_relaxes_developer_rules/). O sea que la
+cita que este set repetía llevaba **más de nueve años muerta**.
+
+**Y hay precedente vivo, que es lo que convierte la lectura en algo defendible:** **Roblox** descarga
+scripts Lua y los ejecuta en **su propia máquina virtual**, no en WebKit, y está en el App Store.
+Un intérprete que no es el del navegador, corriendo código bajado después de la revisión, aprobado y
+a escala. *(Aportado por el mismo compañero; no verificado por nosotros contra el binario de Roblox,
+pero el hecho es público y comprobable.)*
+
 Es **más ancho** de lo que creíamos: nada en esta cláusula obliga a que el intérprete sea el del
 navegador. Pero trae tres condiciones, y la tercera no tiene nada que ver con ejecutar código:
 
@@ -32,12 +42,23 @@ navegador. Pero trae tres condiciones, y la tercera no tiene nada que ver con ej
 |---|---|
 | (a) no cambia el propósito principal ni lo anunciado | **a favor si se declara honesto**: hospedar módulos **es** el propósito anunciado |
 | (b) no evade firma, sandbox ni otras defensas del SO | **es el nudo** — ver abajo |
-| (c) **no crea una tienda o escaparate para otras aplicaciones** | **el riesgo más grande, y no lo habíamos visto** |
+| (c) **no crea una tienda o escaparate para otras aplicaciones** | parecía el riesgo más grande; **verificado, ya estamos del lado bueno** — ver abajo |
 
-**Sobre (c):** Gnothi es un catálogo donde instituciones publican módulos que la persona instala por
-un enlace, con hoja de consentimiento, versión, firma y actualización. **Eso se parece mucho a un
-escaparate.** Es un riesgo de *forma del producto*, no de forma del módulo: le pega igual a las
-cuatro. Nunca lo habíamos nombrado.
+**Sobre (c), y esto se corrigió el mismo día verificándolo en el código.** La primera lectura de este
+documento decía que *«Gnothi es un catálogo … eso se parece mucho a un escaparate»*. **Es falso, y
+verificarlo costó dos minutos** (`Gnothi.Mobile/Assets/ui.html:640-665`).
+
+El botón `+ Agregar` abre **tres vías, y ninguna ofrece nada**: escanear el QR de la página de la
+institución, pegar el enlace que le llegó por correo o WhatsApp, o elegir archivos del propio
+teléfono. La única lista que existe —*«Esto encontré en lo que elegiste»*— enumera los módulos
+hallados **entre archivos que la persona ya eligió**, no una oferta. **No hay directorio, no hay
+búsqueda, no hay listado servido por red.**
+
+**Contra el texto —*«does not create a store or storefront for other Applications»*— ésa es la mejor
+posición posible, y se tiene sin hacer nada.** Lo que hay que hacer es no perderla; la regla está
+escrita en [`F2` · `P20`](../F-evidencia/F2-estado-y-pendientes.md): **Gnothi no lleva catálogo de
+módulos**, y el día que alguien proponga una pantalla de «explorar módulos», ésta es la razón por la
+que no.
 
 ## 2 · Apple — las guías de revisión
 
@@ -121,7 +142,21 @@ los permisos de Gnothi—, con una sola decisión.
 | **3 · híbrida** | no pasa | igual que 1, más el 4.7.2 por la cara |
 | **4 · Blazor en el Host** | no pasa | igual que 1 |
 | **wasm confinado (`F5`)** | **pasa por el texto** | 4.7.2 sigue aplicando al puente |
-| **y a las cuatro** | — | **3.3.1(B)(c): ¿es Gnothi un escaparate?** |
+| **y a las cuatro** | — | 3.3.1(B)(c): **no**, Gnothi no lleva catálogo (verificado) |
+
+### Y lo que Apple NO exime, que es donde queda el nudo
+
+El §3.3.1(B) exime al **intérprete**, sea cual sea — eso está claro y con precedente. **El §4.7.2 es
+otra cláusula y no la toca**: *no exponer APIs nativas al software que no viene en el binario, sin
+permiso previo de Apple*.
+
+Y ahí el precedente de Roblox **no ayuda**: los scripts Lua de Roblox hablan con el motor del juego,
+no con el sistema de archivos del aparato. El puente de Gnothi entrega `listar`, `leer` y `escribir`
+sobre una carpeta. **Es la diferencia entre prestar un mundo y prestar una puerta.**
+
+**Conclusión, con las dos piezas juntas:** en Apple **el problema no es ejecutar código de otro —eso
+está resuelto— sino darle acceso a datos del aparato.** Ése es el renglón que hay que preguntar, y
+es el mismo para las cinco formas.
 
 ## Lo que cambia respecto de lo que teníamos escrito
 
@@ -131,7 +166,9 @@ los permisos de Gnothi—, con una sola decisión.
 2. **La forma hospedada NO estaba a salvo.** `4.7.2` le pega al puente, que es justo lo que la hace
    útil. Decíamos *«la única publicable sin discusión»*; lo correcto es **«la única que pasa el
    texto de Google»**.
-3. **Apareció un riesgo que no era de código**: el escaparate (3.3.1(B)(c)). Le pega al producto, no
+3. **Apareció un riesgo que no era de código** -- el escaparate (3.3.1(B)(c)) -- **y al verificarlo
+   resultó estar ya resuelto**: Gnothi no tiene catálogo, verificado en `ui.html`. Le pega al
+   producto, no
    a la forma, y es el único que podría hundir las cuatro a la vez.
 4. **La caja de wasm subió de categoría.** Pasó de experimento de contención a **la arquitectura que
    el texto de Google describe**.
@@ -148,6 +185,13 @@ los permisos de Gnothi—, con una sola decisión.
 - **Y nada de esto es un veredicto.** Son textos leídos, no una revisión pasada. Lo único que los
   convierte en hecho es una sonda — ver el plan de las dos apps mínimas, que sigue vigente y ahora
   tiene una tercera pregunta que hacerle a Apple: el 4.7.2.
+
+---
+
+**El tablero de lo que falta para publicar está en [`F2` · `P20`](../F-evidencia/F2-estado-y-pendientes.md).**
+Ahí están los siete bloqueantes con dueño, y las dos cosas que este documento no decía: que
+**Android ya está desbloqueado hoy** con la forma hospedada, y que **el escaparate ya lo tenemos
+ganado** porque Gnothi no lleva catálogo.
 
 ---
 

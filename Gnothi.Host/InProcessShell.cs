@@ -24,9 +24,9 @@ internal sealed class InProcessShell : IShell
 	private static readonly string[] ClassMarks = ["McpServerToolTypeAttribute", "ModuleSurfaceAttribute"];
 	private static readonly string[] ToolMarks = ["McpServerToolAttribute", "QueryAttribute"];
 
-	// Y EL OTRO PUBLICO. Lo que pide la pantalla de la institucion, que no es lo mismo que lo
-	// que se publica hacia el asistente: medido sobre examenes, 2 tools declaradas contra 21
-	// lecturas del dominio. Ver ViewAttribute en Gnothi.Contract.
+	// AND THE OTHER PUBLIC. What the institution's screen asks for, which is not the same as what is
+	// published towards the assistant: measured over exámenes, 2 declared tools against 21 reads of
+	// the domain. See ViewAttribute in Gnothi.Contract.
 	private static readonly string[] ViewMarks = ["ViewAttribute"];
 
 	private readonly string name;
@@ -37,34 +37,33 @@ internal sealed class InProcessShell : IShell
 	private AssemblyLoadContext? context;
 	private Type? marked;
 
-	// LA SUPERFICIE, UNA SOLA, VIVA MIENTRAS EL ENSAMBLADO LO ESTE -- y esto es una correccion,
-	// no una optimizacion. Antes se hacia `Build(t, 0)` EN CADA LLAMADA: la clase de la
-	// institucion se reconstruia para contestar cada pregunta.
+	// THE SURFACE, ONE ONLY, ALIVE FOR AS LONG AS THE ASSEMBLY IS -- and this is a correction, not an
+	// optimisation. It used to do `Build(t, 0)` ON EVERY CALL: the institution's class was rebuilt to
+	// answer each question.
 	//
-	// Y ESO LE COSTABA UN CANDADO A CADA INSTITUCION. Si la instancia no sobrevive entre
-	// llamadas, lo que si tiene que sobrevivir -- el actor, porque arrancarlo es rehidratar el
-	// journal entero -- esta obligado a ser `static`. Un `static` construido perezosamente desde
-	// varios hilos obliga a un doble chequeo con candado, y las CINCO superficies terminaron
-	// copiando el mismo parche a mano. Que se copiara cinco veces es la prueba de que no era
-	// decision de nadie: era un hueco de esta cascara.
+	// AND THAT COST EVERY INSTITUTION A LOCK. If the instance does not survive between calls, what
+	// does have to survive -- the actor, because starting it means rehydrating the whole journal --
+	// is forced to be `static`. A `static` built lazily from several threads forces a double-checked
+	// lock, and ALL FIVE surfaces ended up copying the same patch by hand. That it got copied five
+	// times is the proof it was nobody's decision: it was a hole in this shell.
 	//
-	// Con la instancia aca, una superficie vuelve a ser un objeto normal con campos normales, y
-	// no escribe una sola linea de concurrencia. Lo que queda repartido queda donde corresponde:
-	// esta cascara decide que hay UNA superficie, y el actor se defiende de sus llamadores con su
-	// propio ReaderWriterLockSlim, que ya existe (Puppeteer, ActorHandler).
+	// With the instance here, a surface goes back to being an ordinary object with ordinary fields,
+	// and writes not a single line of concurrency. What is still divided sits where it belongs: this
+	// shell decides there is ONE surface, and the actor defends itself from its callers with its own
+	// ReaderWriterLockSlim, which already exists (Puppeteer, ActorHandler).
 	private object? live;
 
-	// QUEDARSE CARGADO MIENTRAS LA CARA ESTA ABIERTA, y solo la forma hibrida lo pide.
+	// STAYING LOADED WHILE THE FACE IS OPEN, and only the hybrid form asks for it.
 	//
-	// Por omision este shell evicta despues de contestar, igual que stdio: un modulo vivo tiene
-	// la carpeta del journal abierta, y el asistente pregunta de a ratos. Pero una cara hibrida
-	// pregunta VARIAS VECES SEGUIDAS mientras la persona mira la pantalla, y ademas recibe
-	// entregas en el medio. Cargar y descargar entre cada pintada es caro y, peor, pone dos
-	// actores sobre el mismo journal: el Unload es COOPERATIVO -- no completa si el anterior dejo
-	// referencias vivas --, asi que el lector nuevo abre mientras el viejo todavia no solto.
+	// By default this shell evicts after answering, just like stdio: a live module holds the journal
+	// folder open, and the assistant asks now and then. But a hybrid face asks SEVERAL TIMES IN A ROW
+	// while the person watches the screen, and receives deliveries in between. Loading and unloading
+	// between paints is expensive and, worse, puts two actors over the same journal: the Unload is
+	// COOPERATIVE -- it does not complete if the previous one left live references --, so the new
+	// reader opens while the old one has still not let go.
 	//
-	// Sintoma medido el 2026-09-11 en el telefono: `FileNotFoundException: Temp file not found`
-	// justo despues de una entrega, en la consulta siguiente.
+	// Symptom measured on 2026-09-11 on the phone: `FileNotFoundException: Temp file not found` right
+	// after a delivery, on the next query.
 	private readonly bool keepLoaded;
 
 	public InProcessShell(string name, Shell shell, string grantedFolder, bool keepLoaded = false)
@@ -144,19 +143,19 @@ internal sealed class InProcessShell : IShell
 		finally { gate.Release(); }
 	}
 
-	// LA INSTANCIA SE PUBLICA UNA SOLA VEZ, y esa es la parte que hay que no hacer mal: si se
-	// construyera perezosamente SIN el candado, la carrera del primer uso -- dos llamadas
-	// simultaneas sobre un modulo recien abierto, construyendo dos superficies y con ellas dos
-	// actores sobre un journal -- no desapareceria del sistema: se mudaria del modulo a esta
-	// clase, que es peor, porque aca ya nadie la esta mirando.
+	// THE INSTANCE IS PUBLISHED EXACTLY ONCE, and that is the part not to get wrong: if it were built
+	// lazily WITHOUT the lock, the first-use race -- two simultaneous calls on a freshly opened
+	// module, building two surfaces and with them two actors over one journal -- would not disappear
+	// from the system: it would move out of the module and into this class, which is worse, because
+	// here nobody is looking at it any more.
 	//
-	// Mismo doble chequeo que `Start()` y el MISMO candado, sin anidarlos: `Start()` ya lo solto
-	// cuando esto corre.
+	// Same double check as `Start()` and the SAME lock, without nesting them: `Start()` has already
+	// released it by the time this runs.
 	//
-	// NO SE CONSTRUYE ADENTRO DE `Start()`, a proposito. `ActualTools` tambien llama a `Start()`,
-	// y es lo que corre la comprobacion de modulos al instalar y al arrancar: construir ahi haria
-	// que LISTAR LOS NOMBRES DE LAS TOOLS rehidratara el journal de cada modulo hibrido. La
-	// instancia nace cuando alguien pregunta de verdad.
+	// IT IS NOT BUILT INSIDE `Start()`, on purpose. `ActualTools` also calls `Start()`, and that is
+	// what runs the module check at install and at start-up: building there would make LISTING THE
+	// TOOL NAMES rehydrate every hybrid module's journal. The instance is born when somebody actually
+	// asks.
 	private object Instance(Type t)
 	{
 		if (live is not null) return live;
@@ -182,11 +181,11 @@ internal sealed class InProcessShell : IShell
 	public Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
 		=> Ask(tool, arguments, accepts, ToolMarks);
 
-	// LO QUE PIDE LA CARA, y es OTRO CONJUNTO: los metodos marcados [View].
+	// WHAT THE FACE ASKS FOR, and it is ANOTHER SET: the methods marked [View].
 	//
-	// Mismo camino, distinto marcador. No se mezcla con Invoke a proposito: si las dos puertas
-	// buscaran en el mismo conjunto, una consulta de pantalla podria llegar por la puerta del
-	// asistente -- y al reves, que es peor -- sin que nada lo impidiera.
+	// Same path, different marker. It is not merged with Invoke on purpose: if both doors searched
+	// the same set, a screen query could arrive through the assistant's door -- and the other way
+	// round, which is worse -- with nothing to stop it.
 	public Task<object> View(string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts)
 		=> Ask(name, arguments, accepts, ViewMarks);
 
@@ -220,14 +219,14 @@ internal sealed class InProcessShell : IShell
 		finally { if (!keepLoaded) Evict(); }
 	}
 
-	// LA ENTREGA, POR EL MISMO CAMINO QUE UNA CONSULTA: se busca el metodo marcado, se arma la
-	// instancia con la carpeta concedida, se invoca. Lo unico distinto es el marcador y que la
-	// firma es fija -- (string) -> string -- asi que no hay nada que ligar.
+	// THE DELIVERY, BY THE SAME PATH AS A QUERY: the marked method is found, the instance is built
+	// with the granted folder, it is invoked. The only differences are the marker and that the
+	// signature is fixed -- (string) -> string -- so there is nothing to bind.
 	//
-	// Y NO SE EVICTA AL TERMINAR, a diferencia de Invoke y ActualTools. Ahi descargar el
-	// contexto despues de contestar es correcto: la pregunta termino. Una entrega deja el
-	// journal escrito y lo mas probable es que enseguida venga una consulta a leerlo; descargar
-	// el ensamblado en el medio haria pagar la carga dos veces por una sola interaccion.
+	// AND IT DOES NOT EVICT WHEN IT FINISHES, unlike Invoke and ActualTools. There, unloading the
+	// context after answering is right: the question is over. A delivery leaves the journal written
+	// and the likeliest next thing is a query coming to read it; unloading the assembly in between
+	// would make one single interaction pay for the load twice.
 	public Task<string> Deliver(string envelopeJson, CancellationToken ct)
 	{
 		ArgumentNullException.ThrowIfNull(envelopeJson);
@@ -250,17 +249,17 @@ internal sealed class InProcessShell : IShell
 		return Task.FromResult(raw as string ?? "");
 	}
 
-	// HASTA DONDE YA LEYO, por el mismo camino que la entrega: se busca el metodo marcado, se arma
-	// la instancia con la carpeta concedida, se invoca. La firma es fija -- () -> long -- asi que
-	// tampoco hay nada que ligar.
+	// HOW FAR IT HAS ALREADY READ, by the same path as the delivery: the marked method is found, the
+	// instance is built with the granted folder, it is invoked. The signature is fixed -- () -> long
+	// -- so there is nothing to bind here either.
 	//
-	// CERO CUANDO NO HAY MARCADOR, y no es un error: un modulo que no declara su cursor recibe el
-	// historial entero, que es exactamente lo que pasaba antes de que esto existiera. Lo mismo
-	// cuando el journal esta vacio y el propio modulo contesta cero.
+	// ZERO WHEN THERE IS NO MARKER, and that is not an error: a module that does not declare its
+	// cursor receives the whole history, which is exactly what happened before this existed. Same
+	// when the journal is empty and the module itself answers zero.
 	//
-	// Y TAMPOCO EVICTA, por la misma razon que Deliver: preguntar el cursor es el primer paso de
-	// un refresco, y lo que sigue es la entrega. Descargar el ensamblado en el medio haria pagar
-	// la carga dos veces por una sola interaccion.
+	// AND IT DOES NOT EVICT EITHER, for the same reason as Deliver: asking for the cursor is the
+	// first step of a refresh, and what follows is the delivery. Unloading the assembly in between
+	// would make one single interaction pay for the load twice.
 	public Task<long> Cursor(CancellationToken ct)
 	{
 		Type t = Start();
@@ -282,11 +281,11 @@ internal sealed class InProcessShell : IShell
 	private const BindingFlags Everything =
 		BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-	// EL NOMBRE BAJO EL QUE VIAJA, para el conjunto de marcadores que se le pase.
+	// THE NAME IT TRAVELS UNDER, for whichever set of markers it is given.
 	//
-	// Que reciba los marcadores en vez de mirarlos todos es lo que mantiene separados los dos
-	// publicos: ActualTools y el asistente preguntan por ToolMarks, la cara por ViewMarks, y una
-	// consulta de pantalla NO puede llegar por la puerta del asistente ni al reves.
+	// That it takes the markers instead of looking at all of them is what keeps the two publics
+	// apart: ActualTools and the assistant ask through ToolMarks, the face through ViewMarks, and a
+	// screen query CANNOT arrive through the assistant's door nor the other way round.
 	private static string? NameUnder(MethodInfo m, string[] marks)
 	{
 		object? mark = m.GetCustomAttributes(false).FirstOrDefault(a => marks.Contains(a.GetType().Name));
@@ -362,19 +361,19 @@ internal sealed class InProcessShell : IShell
 		Type t = v.GetType();
 		if (v is Enum) return v.ToString();
 		if (t.IsPrimitive || v is string || v is decimal || v is DateTime || v is DateTimeOffset) return v;
-		// UN DICCIONARIO ES UN OBJETO, NO UNA LISTA -- y va ANTES del IEnumerable de abajo, que es
-		// donde caia. Un Dictionary<K,V> implementa IEnumerable<KeyValuePair<K,V>>, asi que la
-		// linea siguiente lo proyectaba como una LISTA DE PARES: `[{key:"Inspection",
-		// value:"Due"}, ...]` en vez de `{Inspection:"Due", ...}`.
+		// A DICTIONARY IS AN OBJECT, NOT A LIST -- and it goes BEFORE the IEnumerable below, which is
+		// where it used to land. A Dictionary<K,V> implements IEnumerable<KeyValuePair<K,V>>, so the
+		// next line projected it as a LIST OF PAIRS: `[{key:"Inspection", value:"Due"}, ...]` instead
+		// of `{Inspection:"Due", ...}`.
 		//
-		// Y falla en silencio, que es lo peor que tiene. Medido en el telefono el 2026-09-14: la
-		// cara del concesionario buscaba `dueStates[nextDueKind]`, encontraba `undefined`, y su
-		// respaldo pintaba el VISTO VERDE al lado de una pildora que decia «1 te toca ahora». Un
-		// dato que no llega se ve igual que un dato que dice «todo bien».
+		// And it fails in silence, which is the worst thing about it. Measured on the phone on
+		// 2026-09-14: the dealership's face looked for `dueStates[nextDueKind]`, found `undefined`,
+		// and its fallback painted the GREEN TICK next to a pill saying «1 due now». A value that
+		// never arrives looks exactly like a value saying «all good».
 		//
-		// Las llaves NO se camelCasean. Las de abajo son NOMBRES DE PROPIEDAD -- del programador,
-		// y la politica del serializador es suya --; estas son DATOS: «Inspection» es un miembro
-		// del conjunto cerrado del dominio, y bajarle la inicial seria reescribir un valor.
+		// The keys are NOT camelCased. The ones below are PROPERTY NAMES -- the programmer's, and the
+		// serializer's policy is theirs --; these are DATA: «Inspection» is a member of the domain's
+		// closed set, and lowering its initial would be rewriting a value.
 		if (v is System.Collections.IDictionary map)
 		{
 			Dictionary<string, object?> porLlave = [];
@@ -414,19 +413,20 @@ internal sealed class InProcessShell : IShell
 		gate.Wait();
 		try
 		{
-			// Y LA SUPERFICIE SE CIERRA ANTES, porque esta cascara es su duena: la construyo, la
-			// guardo entre llamadas, y soltarla es parte de desalojar. Sin esto, «desalojar» no
-			// descargaba nada -- el Unload es cooperativo y el ACTOR de la institucion es justo
-			// quien deja las referencias vivas.
+			// AND THE SURFACE IS CLOSED FIRST, because this shell owns it: it built it, it kept it
+			// between calls, and letting go of it is part of evicting. Without this, «evicting»
+			// unloaded nothing -- the Unload is cooperative and the institution's ACTOR is precisely
+			// what leaves the live references.
 			//
-			// Por IDisposable y no por un marcador nuevo del contrato: una institucion que tiene
-			// algo que cerrar ya sabe como decirlo en C#, y la que no, no implementa nada. El
-			// contrato de Gnothi no crece por esto.
+			// Through IDisposable and not through a new contract marker: an institution that has
+			// something to close already knows how to say so in C#, and one that does not implements
+			// nothing. Gnothi's contract does not grow for this.
 			//
-			// Y NO TIRA: se esta yendo igual. Un Dispose que falla no puede impedir la descarga.
+			// AND IT DOES NOT THROW: it is going away anyway. A Dispose that fails cannot stop the
+			// unload.
 			if (live is IDisposable cerrable)
 			{
-				try { cerrable.Dispose(); } catch { /* ya se estaba yendo */ }
+				try { cerrable.Dispose(); } catch { /* it was already leaving */ }
 			}
 			live = null;
 
@@ -437,10 +437,10 @@ internal sealed class InProcessShell : IShell
 		finally { gate.Release(); }
 	}
 
-	// Y SE PUEDE LLAMAR DOS VECES, que ahora pasa de verdad: una actualizacion cierra el modulo
-	// ANTES de mover su carpeta, y despues el catalogo relee y suelta lo que salio de la lista --
-	// el mismo objeto. Sin esta guarda el segundo `Evict()` haria `gate.Wait()` sobre un semaforo
-	// ya dispuesto y saldria un ObjectDisposedException por una llamada que no hace nada.
+	// AND IT CAN BE CALLED TWICE, which now genuinely happens: an update closes the module BEFORE
+	// moving its folder, and afterwards the catalogue re-reads and releases whatever left the list --
+	// the same object. Without this guard the second `Evict()` would do `gate.Wait()` on an already
+	// disposed semaphore and an ObjectDisposedException would come out of a call that does nothing.
 	private bool disposed;
 
 	public ValueTask DisposeAsync()

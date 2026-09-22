@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- GNOTHI, DEL LADO DE AFUERA DE LA CAJA. Paso 1 de F2 · P19.
+
+       LO QUE ESTE PROYECTO NO TIENE ES LO QUE LO HACE LA PRUEBA:
+         - ninguna referencia a Examenes: ni al dominio, ni a la superficie, ni al portador;
+         - ninguna referencia a Gnothi.Contract;
+         - ningun Assembly.Load, ningun Type, ningun MethodInfo.
+
+       Si compila y contesta, el Host puede hablarle a un modulo sin cargarlo. Y si alguien
+       agrega una ProjectReference aca, la prueba deja de probar. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Lab.WasiCaja.Host</AssemblyName>
+    <RootNamespace>Lab.WasiCaja.Host</RootNamespace>
+  </PropertyGroup>
+
+</Project>

@@ -55,31 +55,33 @@ internal sealed class IosSecretStore : ISecretStore
 	{
 		using NSData data = NSData.FromString(json, NSStringEncoding.UTF8);
 
-		// ADD, Y SI YA ESTABA, BORRAR Y AGREGAR. NO SecKeyChain.Update, y no es preferencia.
+		// ADD, AND IF IT WAS ALREADY THERE, DELETE AND ADD. NOT SecKeyChain.Update, and that is not a
+		// preference.
 		//
-		// El diccionario de atributos-a-actualizar de `SecItemUpdate` NO admite `kSecClass`, y
-		// `SecRecord` no se puede construir sin una `SecKind`: la clase viaja adentro siempre.
-		// Asi que todo Update falla con `NoSuchAttribute` (errSecNoSuchAttr), y como el unico
-		// codigo tolerado antes de caer al Add era `ItemNotFound`, EL PRIMER GUARDADO SIEMPRE
-		// TIRABA. MEDIDO en el simulador el 2026-09-07: los cuatro modulos del paquete cayeron
-		// con "the Keychain could not update 'gnothi.credential.<modulo>': NoSuchAttribute", el
-		// cartero no pudo pedir nada, y los cuatro journals quedaron en 0 B.
+		// `SecItemUpdate`'s attributes-to-update dictionary does NOT admit `kSecClass`, and `SecRecord`
+		// cannot be built without a `SecKind`: the class always travels inside. So every Update fails
+		// with `NoSuchAttribute` (errSecNoSuchAttr), and since the only code tolerated before falling
+		// through to the Add was `ItemNotFound`, THE FIRST SAVE ALWAYS THREW. MEASURED on the simulator
+		// on 2026-09-07: all four modules in the package fell over with "the Keychain could not update
+		// .gnothi.credential.<module>.: NoSuchAttribute", the postman could ask for nothing, and all four
+		// journals stayed at 0 B.
 		//
-		// Tolerar el NoSuchAttribute no alcanzaba: en un RENEWAL -el caso comun- el item existe,
-		// el Update falla igual, y el Add de despues devuelve `DuplicateItem` y tira. Por eso se
-		// invierte el orden y el duplicado deja de ser un error: es una rama esperada.
+		// Tolerating the NoSuchAttribute was not enough: on a RENEWAL -- the common case -- the item
+		// exists, the Update fails all the same, and the Add afterwards returns `DuplicateItem` and
+		// throws. So the order is inverted and the duplicate stops being an error: it is an expected
+		// branch.
 		//
-		// Y HAY UNA GANANCIA QUE NO ES CASUAL: por aca TODA escritura pasa por el registro
-		// completo, asi que `WhenUnlockedThisDeviceOnly` se reafirma en cada renovacion. El
-		// Update no lo tocaba, asi que la accesibilidad quedaba fijada por el primer guardado.
+		// AND THERE IS A GAIN THAT IS NOT ACCIDENTAL: through here EVERY write goes through the complete
+		// record, so `WhenUnlockedThisDeviceOnly` is reasserted on every renewal. The Update did not
+		// touch it, so the accessibility stayed fixed by the first save.
 		SecStatusCode added = Add(alias, data);
 		if (added == SecStatusCode.Success) return;
 
 		if (added != SecStatusCode.DuplicateItem)
 			throw new InvalidOperationException($"the Keychain could not save '{alias}': {added}");
 
-		// Ya habia una credencial de este modulo: se reemplaza. La ventana en que no existe es
-		// de una llamada, dentro de este proceso y de un solo escritor.
+		// There was already a credential for this module: it gets replaced. The window in which it does
+		// not exist is one call long, inside this process and with a single writer.
 		using (SecRecord query = Query(alias))
 		{
 			SecStatusCode removed = SecKeyChain.Remove(query);
@@ -110,8 +112,8 @@ internal sealed class IosSecretStore : ISecretStore
 		Account = alias,
 	};
 
-	// El registro COMPLETO, que es el unico que se escribe. La accesibilidad va aca y no en el
-	// query, porque es un atributo del item que se guarda, no del que se busca.
+	// The COMPLETE record, which is the only one ever written. The accessibility goes here and not in
+	// the query, because it is an attribute of the item being saved, not of the one being looked for.
 	private static SecStatusCode Add(string alias, NSData data)
 	{
 		using var fresh = new SecRecord(SecKind.GenericPassword)

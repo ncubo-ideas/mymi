@@ -1,0 +1,62 @@
+/* LO POCO QUE LA CARA AGREGA A LA HOJA DE LA INSTITUCION.
+ *
+ * `css/app.css` VIAJA TAL CUAL, sin tocar una regla, y con su carpeta `fuentes/` al lado porque
+ * la hoja pide sus cuatro pesos por ruta relativa. Antes esta hoja tenia copiados a mano los
+ * bloques que me parecia que hacian falta, y elegir cuales era decidir como se ve Delfos.
+ *
+ * Lo unico que va aca es lo que la app suelta no necesita porque lo resuelve de otro modo: el pie
+ * con el estado del cartero -- alla la app sabe sola si pudo o no -- y el bloque del dato que
+ * falta, que aca no es editable. */
+
+/* EL PIE CON LO QUE HIZO EL CARTERO. Sin decir como le fue, «no hay examenes» y «el cartero no
+   pudo» se ven exactamente igual, y son cosas muy distintas para quien mira. */
+footer {
+    max-width: 46rem; margin: 0 auto; padding: 8px 20px 40px;
+    color: var(--tenue-2); font-size: 12.5px;
+}
+footer p { margin: 0 0 6px; max-width: 60ch; }
+footer .malo { color: var(--rojo); }
+
+/* La tecla de refresco gira mientras espera. En la app suelta la clase la pone Blazor; aca la
+   pone el JS, y la animacion es la misma. */
+@keyframes gira-cara { to { transform: rotate(360deg); } }
+.inicio-hero-actualizar.gira { animation: gira-cara .9s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+    .inicio-hero-actualizar.gira { animation: none; }
+}
+
+/* QUE `hidden` GANE, y esto es el arreglo de un defecto real, no una precaucion.
+ *
+ * `[hidden] { display: none }` vive en la hoja del navegador, que es la de MENOR precedencia.
+ * Cualquier regla de la institucion que fije `display` en esa misma clase le gana, y el nodo
+ * se sigue viendo con el atributo puesto. Medido en el telefono el 2026-09-14: `.placa` es
+ * `inline-flex` en cargas, asi que la placa salia DOS VECES -- la fija y el selector, los dos
+ * marcados como escondidos, los dos visibles.
+ *
+ * La app suelta no tiene este problema porque Blazor no esconde: con un `@if` el nodo que no
+ * toca NO SE DIBUJA. Una cara hibrida es HTML estatico, los dos nodos existen siempre, y
+ * esconder es la unica herramienta. Entonces la herramienta tiene que funcionar.
+ *
+ * Va en `cara.css` -- que carga despues de la hoja de la institucion -- y no en la de ella:
+ * esto es una consecuencia de COMO pinta esta cara, no una opinion sobre su diseno.
+ *
+ * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
+ * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
+[hidden] { display: none !important; }
+
+/* EL AIRE DE LA BARRA DE ESTADO, que la app suelta no necesita y esta cara si.
+ *
+ * `index.html` de la app pide `width=device-width, initial-scale=1.0` a secas, asi que su pagina
+ * nunca se mete debajo de la barra de estado. Esta cara pide `viewport-fit=cover` -- lo mismo que
+ * las otras cuatro, y lo que deja que la portada de compras sangre su foto hasta el borde --, y
+ * con eso la coordenada cero del documento queda TAPADA por la barra.
+ *
+ * El laboratorio ya penso en ese aire: `.inicio-hero` lleva `padding-top: 30px` y su comentario
+ * dice que es «el aire equivalente al safe-area superior». Es suficiente en un navegador y no en
+ * un WebView a pantalla completa, donde el aire de verdad lo dice el aparato.
+ *
+ * Se le suma a `.hoja` y no al hero: el hero lo cancela con `margin-top: -44px`, asi que subirle
+ * el padding a la hoja baja el conjunto entero sin desarmar esa resta. Donde no hay muesca,
+ * `env()` da 0 y no cambia nada. */
+.hoja { padding-top: calc(44px + env(safe-area-inset-top)); }

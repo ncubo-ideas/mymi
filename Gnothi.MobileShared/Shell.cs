@@ -4,78 +4,77 @@ using System.Text.Json;
 
 namespace Gnothi.MobileShared;
 
-// LA CASCARA DEL TELEFONO, COMPARTIDA POR ANDROID Y POR iOS.
+// THE PHONE'S SHELL, SHARED BY ANDROID AND BY iOS.
 //
-// DE DONDE SALE. Todo esto vivia dentro de MainActivity.cs, y ahi funcionaba. Se saco cuando
-// hubo que hacer la version de iOS: la alternativa era copiar 250 lineas y mantenerlas en dos
-// lados, que es exactamente como se desincronizan.
+// WHERE IT COMES FROM. All of this used to live inside MainActivity.cs, and it worked there. It was
+// taken out when the iOS version had to be written: the alternative was copying 250 lines and
+// maintaining them in two places, which is exactly how they go out of sync.
 //
-// EL CORTE, y es el mismo criterio que separa al Dispatcher de la Puerta 1: aca esta lo que NO
-// depende de la plataforma -el estado que la pagina necesita, el consentimiento, la llave, el
-// proveedor, y el switch que atiende lo que la pagina pide- y afuera queda solo lo que sabe de
-// WebView, de hilos de UI y de logs del sistema. Medido en lineas: la parte de cada plataforma
-// quedo en ~60.
+// THE DIVIDING LINE, and it is the same criterion that separates the Dispatcher from Door 1: here is
+// what does NOT depend on the platform -- the state the page needs, the consent, the key, the
+// provider, and the switch that serves what the page asks for -- and outside is only what knows about
+// WebViews, UI threads and system logs. Measured in lines: each platform's part came out at ~60.
 //
-// POR QUE NO MAUI, que es la pregunta natural. MainActivity.cs ya trae la respuesta escrita:
-// el workload de MAUI se instala en Program Files -administrador en esta maquina- y reescribe
-// el proyecto. Pero hay una razon mas fuerte, y es de diseño: LA CARA DE GNOTHI ES UN HTML.
-// Un solo Assets/ui.html, el MISMO archivo en los dos telefonos, renderizado por un WebView.
-// MAUI compartiria su propio framework de UI -que aca no se usa- y NO compartiria el puente
-// del WebView, que es API nativa de cada plataforma igual. O sea: costo alto por compartir lo
-// que ya estaba compartido, sin resolver lo que de verdad difiere.
+// WHY NOT MAUI, which is the natural question. MainActivity.cs already carries the answer written
+// down: the MAUI workload installs into Program Files -- administrator on this machine -- and
+// rewrites the project. But there is a stronger reason, and it is a design one: GNOTHI'S FACE IS AN
+// HTML. One single Assets/ui.html, the SAME file on both phones, rendered by a WebView. MAUI would
+// share its own UI framework -- which is not used here -- and would NOT share the WebView bridge,
+// which is each platform's native API anyway. Which means: a high price for sharing what was already
+// shared, without solving what actually differs.
 //
-// LO QUE SE COMPARTE, CONTADO:
+// WHAT IS SHARED, COUNTED:
 //
-//     Gnothi.Host/*.cs      el nucleo         identico, ya se compartia
-//     Gnothi.Assistant/*.cs la Puerta 2       identico, ya se compartia
-//     Gnothi.MobileShared/Shell.cs esta cascara      identico, NUEVO
-//     Assets/ui.html        la cara           identico, un solo archivo
+//     Gnothi.Host/*.cs      the core          identical, already shared
+//     Gnothi.Assistant/*.cs Door 2            identical, already shared
+//     Gnothi.MobileShared/Shell.cs this shell        identical, NEW
+//     Assets/ui.html        the face          identical, one single file
 //     ---------------------------------------------------------------
-//     MainActivity.cs       WebView Android   ~60 lineas
-//     ViewController.cs     WKWebView iOS     ~60 lineas
+//     MainActivity.cs       Android WebView   ~60 lines
+//     ViewController.cs     iOS WKWebView     ~60 lines
 public sealed class Shell : IDisposable
 {
-	// LAS DOS CARPETAS, Y LA PLATAFORMA LAS ELIGE. Es el mismo principio que el grantedFolder
-	// de un modulo: quien otorga no es quien usa.
+	// THE TWO FOLDERS, AND THE PLATFORM CHOOSES THEM. It is the same principle as a module's
+	// grantedFolder: the one who grants is not the one who uses.
 	//
-	//   Files      el area privada de la app. Nadie de afuera escribe aca, y eso es correcto:
-	//              nadie de afuera instala un modulo.
-	//   Incoming   donde cae lo que se bajo, para que el Host lo instale al arrancar.
+	//   Files      the app's private area. Nobody from outside writes here, and that is right:
+	//              nobody from outside installs a module.
+	//   Incoming   where what was downloaded lands, for the Host to install at start-up.
 	//
-	// En Android son FilesDir y GetExternalFilesDir(null)/incoming.
-	// En iOS son Library/Application Support y Documents/incoming -- y ahi hay una ventaja
-	// que Android no tiene: Documents/ SE VE en la app Archivos, asi que la persona puede
-	// dejar el paquete ella misma, sin cable y sin adb.
+	// On Android they are FilesDir and GetExternalFilesDir(null)/incoming.
+	// On iOS they are Library/Application Support and Documents/incoming -- and there is an advantage
+	// there that Android does not have: Documents/ IS VISIBLE in the Files app, so the person can drop
+	// the package in themselves, with no cable and no adb.
 	/// <param name="ReescribirRutas">
-	/// Si el installation.json que viene en Incoming trae rutas de OTRA maquina y hay que
-	/// hacerlas locales al copiarlo.
+	/// Whether the installation.json arriving in Incoming carries paths from ANOTHER machine and they
+	/// have to be made local while copying it.
 	///
-	/// ANDROID: false. armar-paquete.ps1 ya escribio las rutas buenas, porque en Android el
-	/// area privada de una app es predecible: /data/user/0/&lt;applicationId&gt;/files. Se sabe
-	/// al armar el paquete.
+	/// ANDROID: false. armar-paquete.ps1 already wrote the right paths, because on Android an app's
+	/// private area is predictable: /data/user/0/&lt;applicationId&gt;/files. It is known when the
+	/// package is assembled.
 	///
-	/// iOS: true, y no es un capricho. El contenedor es
-	/// /var/mobile/Containers/Data/Application/&lt;GUID&gt;/... y ESE GUID CAMBIA EN CADA
-	/// INSTALACION. No hay ninguna ruta que se pueda dejar escrita de antemano: la unica que
-	/// existe es la que el proceso averigua cuando ya esta corriendo.
+	/// iOS: true, and it is not a whim. The container is
+	/// /var/mobile/Containers/Data/Application/&lt;GUID&gt;/... and THAT GUID CHANGES ON EVERY
+	/// INSTALL. There is no path that can be written down in advance: the only one that exists is the
+	/// one the process finds out once it is already running.
 	/// </param>
 	/// <param name="Instantaneas">
-	/// El contenedor COMPARTIDO donde el Host le deja la foto a la caratula, o null si esta
-	/// plataforma no la necesita.
+	/// The SHARED container where the Host leaves the snapshot for the caratula, or null if this
+	/// platform does not need it.
 	///
-	/// ANDROID: null. Alla la caratula es un APK aparte que llama al Host EN VIVO por binder,
-	/// con la compuerta de identidad de por medio. No hay nada que dejar escrito.
+	/// ANDROID: null. Over there the caratula is a separate APK that calls the Host LIVE over binder,
+	/// with the identity gate in between. There is nothing to write down.
 	///
-	/// iOS: el contenedor del App Group. Alla los App Intents solo existen en Swift y el Host
-	/// esta en .NET, asi que no se tocan: el Host deja la foto y la caratula la lee. Ver
+	/// iOS: the App Group's container. Over there App Intents only exist in Swift and the Host is in
+	/// .NET, so they never touch: the Host leaves the snapshot and the caratula reads it. See
 	/// Snapshot.cs.
 	/// </param>
 	/// <param name="FotoLocal">
-	/// Si ademas hay que dejar la foto en la carpeta PROPIA de la app, en Files/instantanea/.
+	/// Whether the snapshot also has to be left in the app's OWN folder, in Files/instantanea/.
 	///
-	/// Es para una intent que viva DENTRO de esta misma app (Gnothi.iOS/Intents/): ahi no hace
-	/// falta App Group, ni entitlement, ni portal de Apple · es un archivo en la carpeta de uno.
-	/// Android lo deja en false: alla la caratula es un APK aparte que pregunta en vivo.
+	/// It is for an intent living INSIDE this very app (Gnothi.iOS/Intents/): there,
+	/// no App Group is needed, nor entitlement, nor Apple portal · it is a file in one's own folder.
+	/// Android leaves it false: over there the caratula is a separate APK that asks live.
 	/// </param>
 	public sealed record Paths(
 		string Files,
@@ -99,31 +98,31 @@ public sealed class Shell : IDisposable
 	private ModuleCatalog? catalog;
 	private ConsentWatch? watch;
 
-	/// La cola de escrituras de la foto. Existe para SERIALIZARLAS: dos Fotografiar() a la vez
-	/// pelean por el mismo archivo temporal. Ver SetConsent.
+	/// The queue of snapshot writes. It exists to SERIALISE them: two Fotografiar() at once fight over
+	/// the same temporary file. See SetConsent.
 	private Task fotos = Task.CompletedTask;
 
-	// DONDE VIVE EL MODELO. Dos constantes, porque cambiar de proveedor tiene que seguir
-	// siendo asi de barato -- ese es todo el argumento de que IModel sea una interfaz.
+	// WHERE THE MODEL LIVES. Two constants, because changing provider has to stay this cheap -- that is
+	// the whole argument for IModel being an interface.
 	//
-	//   Groq        https://api.groq.com/openai/v1     free tier, sin tarjeta
+	//   Groq        https://api.groq.com/openai/v1     free tier, no card
 	//   Cerebras    https://api.cerebras.ai/v1
 	//   OpenRouter  https://openrouter.ai/api/v1
-	//   LM Studio   http://<IP de la maquina>:1234/v1  SIN llave -- nada sale de la LAN
+	//   LM Studio   http://<machine IP>:1234/v1        NO key -- nothing leaves the LAN
 	//
-	// 'localhost' NO sirve desde el telefono: ahi localhost es el telefono.
+	// 'localhost' does NOT work from the phone: there, localhost is the phone.
 	private const string ModelUrl = "https://api.groq.com/openai/v1";
 	private const string ModelName = "openai/gpt-oss-120b";
 
 	/// <param name="push">
-	/// Como se le empuja algo a la pagina. La plataforma se encarga de meterlo en el hilo de
-	/// UI: en Android es RunOnUiThread + EvaluateJavascript, en iOS InvokeOnMainThread +
-	/// EvaluateJavaScript. La cascara no quiere saber cual.
+	/// How something gets pushed to the page. The platform takes care of putting it on the UI thread:
+	/// on Android that is RunOnUiThread + EvaluateJavascript, on iOS InvokeOnMainThread +
+	/// EvaluateJavaScript. The shell does not want to know which.
 	/// </param>
-	// LA FABRICA DEL MODELO LOCAL LA PONE LA CASCARA, y por eso es opcional. El modelo del
-	// telefono se habla por DllImport contra simbolos del propio ejecutable, asi que solo iOS
-	// puede construirlo: Android pasa null y ese proveedor no se ofrece. Este archivo se compila
-	// en las dos plataformas y no debe saber cual es cual.
+	// THE LOCAL MODEL'S FACTORY IS PROVIDED BY THE SHELL, which is why it is optional. The phone's
+	// model is spoken to through DllImports against symbols in the executable itself, so only iOS can
+	// build it: Android passes null and that provider is not offered. This file compiles on both
+	// platforms and must not know which is which.
 	public Shell(Paths paths, Action<string> log, Action<string, string, string> push,
 		Func<string, IModel>? modeloLocal = null)
 	{
@@ -135,58 +134,54 @@ public sealed class Shell : IDisposable
 
 	private readonly Func<string, IModel>? modeloLocal;
 
-	/// <summary>El proveedor que corre en el aparato, sin url y sin llave.</summary>
-	///
-	/// ES UNA IDENTIDAD, NO UNA ETIQUETA: se guarda en model.cfg y es lo que `Modelo()` compara
-	/// para construir ModelFoundation. La cara lo MUESTRA traducido -- ver ajustes.proveedor.local
-	/// en textos.json --, pero lo que viaja y se guarda es esta cadena.
+	/// <summary>The provider that runs on the device, with no url and no key.</summary>
 	public const string ProveedorLocal = "En este teléfono";
 
 	/// <summary>Como se llama el modelo del aparato en la pantalla y en model.cfg.</summary>
 	public const string ModeloLocal = "apple-on-device";
 
-	// EL ICONO POR RUBRO, no por nombre de modulo.
+	// THE ICON BY SECTOR, not by module name.
 	//
-	// ESTE SWITCH DECIA ANTES 'examenes', 'facturas' y 'compras', con un comentario que aclaraba
-	// que el icono NO venia del manifiesto a proposito, porque era asunto del Host. La posicion
-	// era defendible y el costo se veia: el Host tenia que CONOCER a cada institucion por nombre
-	// para pintarla, asi que un modulo de una institucion nueva entraba anonimo -- y eso
-	// contradice el alta dinamica, donde agregar un modulo son dos json y no dos json y un
-	// release del Host. El concesionario y la estacion de servicio, que ya estaban en el repo,
-	// caian los dos a la misma caja.
+	// THIS SWITCH USED TO SAY 'examenes', 'facturas' and 'compras', with a comment explaining that the
+	// icon deliberately did NOT come from the manifest, because it was the Host's business. The
+	// position was defensible and the cost was visible: the Host had to KNOW every institution by name
+	// in order to paint it, so a module from a new institution came in anonymous -- and that
+	// contradicts dynamic enrolment, where adding a module is two json files and not two json files
+	// and a Host release. The dealership and the petrol station, which were already in the repo, both
+	// fell into the same box.
 	//
-	// EL CORTE NUEVO: la institucion declara su RUBRO -una lista cerrada, en About.Known- y el
-	// Host elige el dibujo. La institucion no elige el icono; elige de que negocio es, que es un
-	// hecho sobre ella y no una decision de diseno. Y el que sigue eligiendo el dibujo es el
-	// Host, que es lo que la posicion anterior queria proteger.
+	// THE NEW DIVIDING LINE: the institution declares its SECTOR -- a closed list, in About.Known --
+	// and the Host picks the drawing. The institution does not pick the icon; it picks what kind of
+	// business it is, which is a fact about it and not a design decision. And the one still picking the
+	// drawing is the Host, which is what the previous position wanted to protect.
 	//
-	// SIGUE SIENDO UN EMOJI porque su unico consumidor es la FOTO -- la instantanea que lee el
-	// intent de Siri, que no puede pintar un svg. La cara del telefono usa el logo de la
-	// institucion si lo hay, y si no un dibujo propio por rubro.
+	// IT IS STILL AN EMOJI because its only consumer is the SNAPSHOT -- the one Siri's intent reads,
+	// which cannot paint an svg. The phone's face uses the institution's logo if there is one, and
+	// otherwise a drawing of its own by sector.
 	public static string Icon(Gnothi.Host.Manifest m) => (m.About?.Category ?? "") switch
 	{
-		"laboratorio" or "salud"        => "\U0001FA7A",   // estetoscopio
-		"supermercado"                  => "\U0001F6D2",   // carrito
-		"comercio"                      => "\U0001F9FE",   // recibo
-		"banca" or "seguros"            => "\U0001F3E6",   // banco
-		"combustible"                   => "⛽",       // surtidor
-		"taller"                        => "\U0001F527",   // llave
-		"telecom"                       => "\U0001F4F1",   // telefono
-		"educacion"                     => "\U0001F393",   // birrete
-		"gobierno"                      => "\U0001F3DB",   // edificio
-		_                               => "\U0001F4E6",   // caja
+		"laboratorio" or "salud"        => "\U0001FA7A",   // stethoscope
+		"supermercado"                  => "\U0001F6D2",   // trolley
+		"comercio"                      => "\U0001F9FE",   // receipt
+		"banca" or "seguros"            => "\U0001F3E6",   // bank
+		"combustible"                   => "⛽",       // pump
+		"taller"                        => "\U0001F527",   // spanner
+		"telecom"                       => "\U0001F4F1",   // phone
+		"educacion"                     => "\U0001F393",   // mortarboard
+		"gobierno"                      => "\U0001F3DB",   // building
+		_                               => "\U0001F4E6",   // box
 	};
 
-	// ── el arranque ─────────────────────────────────────────────────────────────────────
+	// ── the start-up ────────────────────────────────────────────────────────────────────
 
 	public async Task Run()
 	{
-		// 1 - CICLO DE VIDA: el Host instala lo que se bajo.
+		// 1 - LIFECYCLE: the Host installs whatever was downloaded.
 		string root = Path.Combine(paths.Files, "Modulos");
 		string journals = Path.Combine(paths.Files, "journals");
 
-		// Migracion: la llave vivia en un archivo para un solo proveedor quemado. Si ese
-		// archivo viejo esta y el por-proveedor no, pasa a ser la llave de Groq.
+		// Migration: the key used to live in a file for a single hardcoded provider. If that old file is
+		// there and the per-provider one is not, it becomes Groq's key.
 		string old = Path.Combine(paths.Files, "model.key");
 		if (File.Exists(old) && !File.Exists(KeyPath)) File.Move(old, KeyPath);
 
@@ -201,13 +196,13 @@ public sealed class Shell : IDisposable
 			if (paths.ReescribirRutas) Localizar(root, journals);
 		}
 
-		// 2 - DESCUBRIR. El mismisimo codigo que corre el Host de escritorio.
+		// 2 - DISCOVER. The very same code the desktop Host runs.
 		catalog = new ModuleCatalog(root);
 		IReadOnlyList<string> warnings = catalog.Load();
-		// ESTA PUERTA PAGA SUS PROPIOS TOKENS. La llave es de Sonia, asi que cada caracter con
-		// que un modulo envuelve sus hechos sale de su bolsillo -- por eso esta es la puerta
-		// que declara que tambien lee TOON. Lo que no hace es EXIGIRLO: el modulo contesta en
-		// el que le sirva a esa respuesta, y JSON sigue valiendo.
+		// THIS DOOR PAYS ITS OWN TOKENS. The key is Sonia's, so every character a module wraps its facts
+		// in comes out of her pocket -- which is why this is the door that declares it also reads TOON.
+		// What it does not do is DEMAND it: the module answers in whichever suits that answer, and JSON
+		// still counts.
 		dispatcher = new Dispatcher(catalog, new Meter(), Accepts.JsonOrToon);
 
 		foreach (string w in warnings) log($"warning: {w}");
@@ -216,23 +211,43 @@ public sealed class Shell : IDisposable
 		PushState();
 		await Fotografiar();
 
-		// LA COMPROBACION DE LOS MODULOS NUEVOS. Va DESPUES de PushState para que la pantalla
-		// ya este pintada: en movil comprobar un modulo web cuesta levantar su WebView.
+		// THE CHECK ON NEW MODULES. It goes AFTER PushState so the screen is already painted: on mobile,
+		// checking a web module costs bringing up its WebView.
 		await VerifyNewModules(stop.Token);
 
 		// THE KEYS OF WHAT IS INSTALLED, against what their origins say now. In the background: it
 		// is network, it is a warning, and the screen is already painted.
 		_ = Task.Run(() => ReviewOrigins(stop.Token));
 
-		// 3 - EL INTERRUPTOR DE LA PERSONA, VIGILADO. Los switches de la UI escriben
-		//     installation.json y esto es lo que los hace efectivos; y una edicion de AFUERA
-		//     (adb, otra herramienta) repinta la pantalla por el mismo camino. Una sola
-		//     fuente de verdad: su archivo.
+		// AND THE REHYDRATION, MOVED OFF THE PERSON'S WAIT.
 		//
-		//     LA FOTO SE REHACE ACA TAMBIEN, y es lo que cierra el agujero de consentimiento:
-		//     si la persona apaga un modulo, la foto se reescribe SIN el, asi que la caratula
-		//     deja de poder contestar por ese modulo. Sin esta linea quedaria una foto vieja
-		//     contestando algo que ella ya revoco.
+		// A module's actor rebuilds itself from the journal the first time anybody asks it anything,
+		// behind a `Lazy<T>` -- and that is right, because listing a module's tools must not cost
+		// reading its history. But it puts the cost on the FIRST QUESTION, which is the moment the
+		// person is looking at an empty screen.
+		//
+		// Measured on the phone, 2026-09-17: exámenes ~694 ms, compras ~337 ms. Once per launch, not
+		// per opening -- reopening a module costs nothing. And it is not the journal's length: compras
+		// has 390 events against exámenes' 225 and takes half the time, so what costs is what each
+		// domain REBUILDS, not what it reads.
+		//
+		// So this does not make it faster. It makes it EARLIER: between Gnothi opening and somebody
+		// tapping «Abrir» there are seconds going spare, and the screen is already painted by now.
+		//
+		// WHY IT IS A LIST AND NOT «ALL OF THEM». A live module costs ~26 MB, and Gnothi with the five
+		// reached 482 MB: warming everything makes the process bigger and more killable by Android --
+		// and when the system kills it, the rehydration comes back. Warming too much can cost exactly
+		// what it means to save. Who goes on the list is a product decision and it is not made here.
+		if (WarmUp.Count > 0) _ = Task.Run(() => Rehydrate(stop.Token));
+
+		// 3 - THE PERSON'S SWITCH, WATCHED. The UI's switches write installation.json and this is what
+		//     makes them effective; and an edit from OUTSIDE (adb, another tool) repaints the screen by
+		//     the same path. One single source of truth: their file.
+		//
+		//     THE SNAPSHOT IS REMADE HERE TOO, and that is what closes the consent hole: if the person
+		//     switches a module off, the snapshot is rewritten WITHOUT it, so the caratula stops being
+		//     able to answer for that module. Without this line a stale snapshot would be left answering
+		//     something she had already revoked.
 		watch = new ConsentWatch(dispatcher)
 		{
 			Changed = async (_, _) => { PushState(); await Fotografiar(); },
@@ -240,21 +255,21 @@ public sealed class Shell : IDisposable
 		await watch.Run(log, stop.Token);
 	}
 
-	// GNOTHI COMPRUEBA UN MODULO LA PRIMERA VEZ QUE LO VE, y deja constancia.
+	// GNOTHI CHECKS A MODULE THE FIRST TIME IT SEES IT, and leaves a record.
 	//
-	// Por que al instalar y no cuando Sonia pregunta: un modulo que declara tools y despues no
-	// contesta es un modulo roto, y el momento de descubrirlo es antes de ofrecerselas al
-	// asistente, no cuando ella ya pregunto. Es el cuarto pilar aplicado a si mismo -Mymi
-	// responde lo que ningun modulo puede responder de si- y es la conformance que la
-	// especificacion pide (11 §15.7).
+	// Why at install time and not when Sonia asks: a module that declares tools and then does not
+	// answer is a broken module, and the moment to discover that is before offering them to the
+	// assistant, not once she has already asked. It is the fourth pillar applied to itself -- Gnothi
+	// answers what no module can answer about itself -- and it is the conformance the specification
+	// asks for (11 §15.7).
 	//
-	// Por que UNA VEZ: en movil un modulo web cuesta un WebView con el runtime adentro, medido
-	// en 216-248 MB. Comprobarlo en cada arranque seria pagar eso por nada. La marca queda en
-	// la carpeta del modulo, asi que reinstalarlo vuelve a comprobarlo.
+	// Why ONCE: on mobile a web module costs a WebView with the runtime inside, measured at
+	// 216-248 MB. Checking it on every start-up would be paying that for nothing. The mark stays in the
+	// module's folder, so reinstalling it checks it again.
 	//
-	// ESTABA EN MainActivity Y NO USABA NADA DE ANDROID -- Dispatcher, catalogo, archivos y
-	// json-. Al traerlo aca, iOS tambien comprueba sus modulos al instalarlos, sin escribir
-	// una linea de mas.
+	// IT USED TO BE IN MainActivity AND USED NOTHING OF ANDROID -- Dispatcher, catalogue, files and
+	// json. Bringing it here means iOS also checks its modules when installing them, without a single
+	// extra line.
 	private async Task VerifyNewModules(CancellationToken ct)
 	{
 		if (dispatcher is null || catalog is null) return;
@@ -271,14 +286,14 @@ public sealed class Shell : IDisposable
 
 			try
 			{
-				// 1. LO QUE DICE CONTRA LO QUE HACE. Esto ya lo sabe hacer el Host.
+				// 1. WHAT IT SAYS AGAINST WHAT IT DOES. The Host already knows how to do this.
 				var verify = new Request(Dispatcher.HostModule, "verify_module",
 					new Dictionary<string, object?> { ["module"] = m.Manifest.Module });
 				Response said = await dispatcher.Serve(verify, ct);
 				log($"comprobación de {m.Manifest.Module}: {JsonSerializer.Serialize(said.Content)}");
 
-				// 2. Y QUE CONTESTE DE VERDAD. Declarar bien y fallar al primer pedido es otra
-				//    forma de estar roto, y no la detecta comparar listas.
+				// 2. AND THAT IT REALLY ANSWERS. Declaring correctly and failing on the first request is
+				//    another way of being broken, and comparing lists does not detect it.
 				DeclaredTool? first = m.Manifest.Tools.FirstOrDefault(t => t.ReadOnly && t.Input.Count == 0);
 				if (first is not null)
 				{
@@ -291,13 +306,13 @@ public sealed class Shell : IDisposable
 			}
 			catch (Exception ex)
 			{
-				// Un modulo que no pasa la comprobacion NO se desinstala solo: eso es decision
-				// de Sonia. Queda dicho, y sin marca, asi que se vuelve a intentar.
+				// A module that fails the check does NOT uninstall itself: that is Sonia's decision. It is
+				// said out loud, and left unmarked, so it gets tried again.
 				log($"comprobación de {m.Manifest.Module} FALLÓ: {ex.GetType().Name}: {ex.Message}");
 
-				// SALVO que sea una version nueva con la anterior todavia al lado: entonces la
-				// que no contesta se va y vuelve la que contestaba. La comprobacion de la que
-				// vuelve ya esta hecha (su marca viajo con la carpeta), asi que no se repite.
+				// UNLESS it is a new version with the previous one still parked next to it: then the one
+				// that does not answer goes and the one that did comes back. The check on the one coming
+				// back is already done (its mark travelled with the folder), so it is not repeated.
 				if (ModuleEnrollment.Rollback(catalog.Root, m.Manifest.Module, log))
 				{
 					CloseModule?.Invoke(m.Manifest.Module);
@@ -325,8 +340,8 @@ public sealed class Shell : IDisposable
 	//
 	// AND, WITH THE SAME ANSWER, WHETHER THE ORIGIN PUBLISHES SOMETHING NEWER (NotasGnothiHost/44
 	// §4): the list carries each module's seal and version; when the published one is newer than
-	// what is installed the note goes into installation.json and the card says "hay una versión
-	// nueva". A note, never an action: nothing downloads or installs until she taps it. When the
+	// what is installed, the note goes into installation.json and the card says «hay una versión
+	// nueva». A note, never an action: nothing downloads or installs until she taps it. When the
 	// installed package matches what is published again, the note is cleared.
 	private async Task ReviewOrigins(CancellationToken ct)
 	{
@@ -457,16 +472,16 @@ public sealed class Shell : IDisposable
 		return "\"ok\"";
 	}
 
-	// ---------------------------------------------------------------- el alta desde el enlace
+	// ---------------------------------------------------------------- enrolment from the link
 
-	// LA PROPUESTA EN CURSO, esperando que la persona diga si o no. UNA sola a la vez: si llega
-	// otro enlace mientras hay una en pantalla, la anterior se descarta -- no se acumulan
-	// decisiones que ella no vio.
+	// THE PROPOSAL IN FLIGHT, waiting for the person to say yes or no. ONE at a time: if another link
+	// arrives while one is on screen, the previous one is discarded -- decisions she never saw do not
+	// pile up.
 	//
-	// ESTO VIVE ACA Y NO EN LA PLATAFORMA porque nada de esto es de una plataforma: bajar un
-	// zip, leer un manifiesto, mostrar una propuesta y esperar. Estuvo en MainActivity hasta
-	// que hubo que hacer la version de iOS, y ahi se vio: el ViewController tuvo que copiarlo
-	// entero. Dos copias de la pantalla mas importante que Mymi le muestra a la persona.
+	// THIS LIVES HERE AND NOT IN THE PLATFORM because none of it belongs to a platform: downloading a
+	// zip, reading a manifest, showing a proposal and waiting. It was in MainActivity until the iOS
+	// version had to be written, and then it showed: the ViewController had to copy it whole. Two
+	// copies of the most important screen Gnothi shows the person.
 	private EnrollmentProposal? proposal;
 	private ModuleEnrollment? enrolling;
 
@@ -476,11 +491,12 @@ public sealed class Shell : IDisposable
 	/// one-; the Shell only names it, so that this file compiles wherever the suite compiles it.
 	public Func<string, bool>? CloseModule { get; set; }
 
-	/// LO QUE LLEGA DEL ENLACE DE LA INSTITUCION. Baja el bundle y lee su manifiesto; NO
-	/// instala nada. La persona decide despues, y hasta entonces el bundle vive en un temporal.
+	/// WHAT ARRIVES FROM THE INSTITUTION'S LINK. It downloads the bundle and reads its manifest; it
+	/// installs NOTHING. The person decides afterwards, and until then the bundle lives in a temporary
+	/// folder.
 	///
-	/// Lo llaman las dos plataformas cuando su enlace aterriza: un App Link en Android, un
-	/// universal link en iOS. Lo unico que cambia es como llega la URL.
+	/// Both platforms call it when their link lands: an App Link on Android, a universal link on iOS.
+	/// The only thing that changes is how the URL arrives.
 	public Task Enroll(string url, CancellationToken ct = default)
 	{
 		// The platforms hand over the link as it landed -go.gnothi.app/alta?bundle=…&h=…- or
@@ -618,8 +634,8 @@ public sealed class Shell : IDisposable
 				Path.Combine(paths.Files, "journals"),
 				log);
 
-			// BAJAR NO ES INSTALAR. Esto trae el bundle, lo inspecciona y lee su manifiesto; el
-			// modulo todavia no ocupa ningun lugar en el aparato.
+			// DOWNLOADING IS NOT INSTALLING. This fetches the bundle, inspects it and reads its manifest;
+			// the module still takes up no space at all on the device.
 			proposal = await examine(enrolling);
 
 			log($"alta: propuesta de '{proposal.Manifest.Module}' servida por {proposal.ServedBy}");
@@ -627,16 +643,16 @@ public sealed class Shell : IDisposable
 		}
 		catch (Exception ex)
 		{
-			// UN ALTA QUE FALLA TIENE QUE DECIRLO, Y EN LA PANTALLA. Cuando esto solo escribia
-			// en el log, la persona tocaba el boton de su institucion, volvia a Mymi y no
-			// pasaba nada, sin ninguna pista de por que.
+			// AN ENROLMENT THAT FAILS HAS TO SAY SO, AND ON THE SCREEN. When this only wrote to the log,
+			// the person tapped their institution's button, came back to Gnothi and nothing happened,
+			// with no hint at all as to why.
 			log($"alta: no se pudo leer el módulo de {what}: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
 			PickedResolved(installed: false, refusal: InPlainWords(ex));
 		}
 	}
 
-	// LA PERSONA ACEPTO. Recien aca el modulo existe.
+	// THE PERSON ACCEPTED. Only here does the module exist.
 	// `acceptNewPublisher`: on an update whose manifest moved the publisher's endpoint, whether she
 	// said yes to the new one on the sheet. Otherwise the endpoint Mymi fixed stays.
 	private string AcceptEnrollment(bool acceptNewPublisher = false)
@@ -648,15 +664,15 @@ public sealed class Shell : IDisposable
 			// ON AN UPDATE the module may be open: its WebView sits on the folder about to move
 			// aside. It is evicted first; opening it again loads the new version (44 §3.6).
 			//
-			// Y LA CARA NO ES TODO EL MODULO, que es lo que faltaba. `CloseModule` desarma el
-			// WebView; en la forma HIBRIDA lo que esta encima de esa carpeta tambien es el
-			// AssemblyLoadContext con el dll de la institucion -- y, con `keepLoaded`, su actor
-			// abierto sobre el journal. Cerrar solo la cara dejaba el ensamblado viejo cargado
-			// mientras la carpeta se movia debajo.
+			// AND THE FACE IS NOT THE WHOLE MODULE, which is what was missing. `CloseModule` takes the
+			// WebView apart; in the HYBRID form what sits on top of that folder is also the
+			// AssemblyLoadContext with the institution's dll -- and, with `keepLoaded`, its actor open
+			// over the journal. Closing only the face left the old assembly loaded while the folder
+			// moved out from under it.
 			//
-			// Se cierra ANTES del movimiento y se ESPERA, a diferencia del desalojo que hace el
-			// catalogo al republicar: aca no se puede seguir hasta que el modulo solto lo que
-			// tenia abierto, porque lo que sigue es mover su carpeta.
+			// It is closed BEFORE the move and it is AWAITED, unlike the eviction the catalogue does
+			// when republishing: here nothing can go on until the module has let go of what it had
+			// open, because what comes next is moving its folder.
 			enrolling.BeforeReplacing = m =>
 			{
 				bool cerroLaCara = CloseModule?.Invoke(m) == true;
@@ -675,7 +691,7 @@ public sealed class Shell : IDisposable
 			string module = enrolling.Accept(proposal, acceptNewPublisher);
 			proposal = null;
 
-			// El catalogo se relee entero -- y con eso se comprueba el modulo nuevo.
+			// The catalogue is re-read whole -- and with that the new module gets checked.
 			foreach (string w in ReloadAfterInstall()) log($"warning: {w}");
 			log($"alta: '{module}' quedó instalado; {ModuleCount} módulos");
 
@@ -692,7 +708,7 @@ public sealed class Shell : IDisposable
 		return "\"ok\"";
 	}
 
-	// LA PERSONA DIJO QUE NO. No queda nada: ni carpeta, ni journal, ni entrada en el catalogo.
+	// THE PERSON SAID NO. Nothing is left: no folder, no journal, no entry in the catalogue.
 	private string DiscardEnrollment()
 	{
 		if (proposal is not null)
@@ -726,9 +742,9 @@ public sealed class Shell : IDisposable
 		return "\"ok\"";
 	}
 
-	// COMO SE CUENTA EL ALTA EN LA PANTALLA. Es lo primero que la persona ve hacer a Mymi por
-	// ella -toco un boton en la pagina de su institucion y volvio aca- y era un silencio de
-	// 12 MB. Cuatro estados: trabajando, listo, error, nada.
+	// HOW THE ENROLMENT IS TOLD ON THE SCREEN. It is the first thing the person sees Gnothi do for them
+	// -- they tapped a button on their institution's page and came back here -- and it used to be a
+	// 12 MB silence. Four states: working, done, error, nothing.
 	private void PushEnrollment(string estado, string detalle) =>
 		Push("alta", "", JsonSerializer.Serialize(new { estado, detalle }));
 
@@ -739,14 +755,14 @@ public sealed class Shell : IDisposable
 	private void PushEnrollment(EnrollmentProgress step) =>
 		Push("alta", "", JsonSerializer.Serialize(new { estado = "trabajando", detalle = step.Text, progreso = step.Fraction, bytes = step.Bytes, total = step.Total }));
 
-	// LO QUE LA INSTITUCION PROPONE, mas las dos cosas que decide Mymi y ella tiene derecho a
-	// saber antes de aceptar: donde va a vivir el journal y contra que endpoint va a hablar.
-	// LA CARA DE LA INSTITUCION EN LA FORMA QUE LA PANTALLA ESPERA: un objeto con logo y color,
-	// o null cuando no declaro ninguno de los dos -- y entonces la tarjeta cae al dibujo de su
-	// rubro, que es un modulo sin marca y es legitimo.
+	// WHAT THE INSTITUTION PROPOSES, plus the two things Gnothi decides and she has a right to know
+	// before accepting: where the journal is going to live and which endpoint it is going to talk to.
+	// THE INSTITUTION'S FACE IN THE SHAPE THE SCREEN EXPECTS: an object with a logo and a colour, or
+	// null when it declared neither -- and then the card falls back to its sector's drawing, which is
+	// an unbranded module and is legitimate.
 	//
-	// EXISTE PARA LA PROPUESTA DEL ALTA, donde el modulo todavia no esta instalado: el bundle
-	// esta desempaquetado en una carpeta temporal y no hay ningun Module al que preguntarle.
+	// IT EXISTS FOR THE ENROLMENT PROPOSAL, where the module is not installed yet: the bundle is
+	// unpacked into a temporary folder and there is no Module to ask.
 	private static string InstalledAt(Module m)
 	{
 		string at = m.Installation.Provenance?.At ?? "";
@@ -782,20 +798,20 @@ public sealed class Shell : IDisposable
 		titulo = p.Manifest.Title,
 		institucion = p.Manifest.Institution,
 
-		// EL LOGO SE LEE DE LA CARPETA TEMPORAL, que es donde el bundle ya esta desempaquetado y
-		// esperando la decision de la persona. Pasa por la MISMA aduana que despues de instalado
-		// -- no hay una version relajada para la pantalla del alta, que seria justo la peor de
-		// las dos donde relajarla.
+		// THE LOGO IS READ FROM THE TEMPORARY FOLDER, which is where the bundle already sits unpacked and
+		// waiting for the person's decision. It goes through the SAME customs house as after installing
+		// -- there is no relaxed version for the enrolment screen, which would be exactly the worse of
+		// the two places to relax it.
 		marca = Marca(p.Manifest, p.Folder),
 		eslogan = p.Manifest.Brand?.Slogan ?? "",
 		categoria = p.Manifest.About?.Category ?? "",
 		descripcion = p.Manifest.About?.Description ?? "",
 		noHace = p.Manifest.About?.DoesNotDo ?? "",
 
-		// LA PROCEDENCIA, Y LA UNICA COMPROBACION QUE GNOTHI PUEDE HACER SOLO. 'servido' es un
-		// dato OBSERVADO -- de que host bajo el bundle -- y 'dominio' es lo que la institucion
-		// DECLARA. Compararlos es el mismo patron que gnothi_verify_module: declarado contra
-		// real. Cuando no coinciden, la pantalla lo dice ANTES del si.
+		// THE PROVENANCE, AND THE ONLY CHECK GNOTHI CAN MAKE ON ITS OWN. 'servido' is an OBSERVED fact --
+		// which host the bundle came down from -- and 'dominio' is what the institution DECLARES.
+		// Comparing them is the same pattern as gnothi_verify_module: declared against real. When they
+		// do not match, the screen says so BEFORE the yes.
 		razonSocial = p.Manifest.Publisher?.Legal ?? "",
 		cedula = p.Manifest.Publisher?.TaxId ?? "",
 		dominio = p.Manifest.Publisher?.Domain ?? "",
@@ -808,9 +824,9 @@ public sealed class Shell : IDisposable
 		publicador = p.Publisher,
 		journal = p.JournalGoesTo,
 
-		// LO QUE LA PANTALLA NO PODIA CONTESTAR: ya decia DONDE va a vivir el registro, y no
-		// cuanto va a pesar, cada cuanto se actualiza ni por cuanto tiempo lo guardan -- que es
-		// lo que la persona pregunta antes de aceptar.
+		// WHAT THE SCREEN COULD NOT ANSWER: it already said WHERE the record is going to live, and not how
+		// much it is going to weigh, how often it updates or how long they keep it -- which is what the
+		// person asks before accepting.
 		retencion = p.Manifest.Journal?.Retention ?? "",
 		tamano = p.Manifest.Journal?.ExpectedSize ?? "",
 		refresco = p.Manifest.Journal?.Updates ?? "",
@@ -903,18 +919,8 @@ public sealed class Shell : IDisposable
 		},
 	}));
 
-	// EL FALLO, DICHO EN PALABRAS Y NO EN .NET. La persona no tiene por que leer el nombre de
-	// una excepcion para entender que su institucion movio el archivo.
-	//
-	// Las frases salen del catalogo del Host -Gnothi.Host/textos.json- y no estan escritas aca:
-	// esta pantalla la ven los dos telefonos, y la misma frase escrita dos veces es la que
-	// diverge. El idioma lo resolvio la cascara al arrancar.
-	//
-	// LOS DOS ULTIMOS BRAZOS PEGAN ex.Message, QUE SIGUE EN INGLES, y es deliberado: lo que se
-	// pega ahi son los rechazos de PackageInspector -«carries the engine», «carries an
-	// installation.json»- que describen la ESTRUCTURA del paquete. Eso lo arregla quien lo
-	// empaqueto, no quien lo instala, igual que los avisos de Manifest.Problems(). Lo que la
-	// persona SI puede accionar es la frase que los envuelve, y esa si esta en su idioma.
+	// THE FAILURE, SAID IN PLAIN SPANISH AND NOT IN .NET. The person has no reason to read the name of
+	// an exception in order to understand that their institution moved the file.
 	private static string InPlainWords(Exception ex) => ex switch
 	{
 		HttpRequestException http when http.StatusCode == System.Net.HttpStatusCode.NotFound =>
@@ -949,9 +955,12 @@ public sealed class Shell : IDisposable
 			? "alta.error.otro-origen"
 			: "alta.error.no-reconocido"),
 
-		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
-		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
-		_ => Textos.T("alta.error.no-se-pudo", ("detalle", ex.Message)),
+		// What ModuleEnrollment throws -- a bundle with no manifest, an invalid name, a zip that writes
+		// outside, a size ceiling -- already comes written to be read. It is passed through as it is.
+		InvalidOperationException =>
+			"No se pudo instalar el módulo: " + ex.Message,
+
+		_ => "No se pudo instalar el módulo. " + ex.Message,
 	};
 
 	/// El nombre de una institucion, o como se la nombra cuando el paquete no lo dice. El
@@ -960,26 +969,65 @@ public sealed class Shell : IDisposable
 	private static string UnaInstitucion(string nombre) =>
 		nombre.Length > 0 ? nombre : Textos.T("alta.error.otra-institucion");
 
-	/// Un modulo del catalogo por nombre, o null. Lo necesita la pantalla que pone un modulo
-	/// web en pantalla, que es lo unico de esto que sigue siendo de la plataforma.
+	/// A module from the catalogue by name, or null. It is needed by the screen that puts a web module
+	/// on screen, which is the only part of this that is still the platform's.
+	/// <summary>
+	/// QUÉ MÓDULOS SE REHIDRATAN ANTES DE QUE ALGUIEN PREGUNTE. Vacío = ninguno, que es lo de siempre.
+	/// Lo pone quien arma la plataforma, no esta clase: cuáles vale la pena calentar depende del
+	/// aparato y de a qué entra la persona, y eso el núcleo no lo sabe.
+	/// </summary>
+	public IReadOnlyList<string> WarmUp { get; set; } = [];
+
+	/// <summary>
+	/// Les pregunta el cursor, que es lo más barato que fuerza el arranque del actor — y es la misma
+	/// pregunta que el cartero hace después, así que no inventa trabajo: lo adelanta.
+	/// <para>
+	/// UNO A LA VEZ, a propósito: rehidratar dos actores en paralelo compite por el disco justo
+	/// cuando la pantalla de inicio todavía se está armando, y lo que se busca es que no se note.
+	/// </para>
+	/// <para>
+	/// Nada de esto puede tumbar Gnothi: un módulo que falla al calentarse se salta, y la persona lo
+	/// abre como siempre — pagando el arranque, que es exactamente lo que pasaba antes.
+	/// </para>
+	/// </summary>
+	private async Task Rehydrate(CancellationToken ct)
+	{
+		foreach (string name in WarmUp)
+		{
+			if (ct.IsCancellationRequested) return;
+
+			Module? m = catalog?.Find(name);
+			if (m is null) { log($"calentado: '{name}' no está instalado; se salta"); continue; }
+
+			long started = System.Diagnostics.Stopwatch.GetTimestamp();
+			try
+			{
+				await m.Cursor(ct);
+				log($"calentado: {name} listo en "
+					+ $"{(System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000 / System.Diagnostics.Stopwatch.Frequency} ms");
+			}
+			catch (Exception e) { log($"calentado: {name} no se pudo ({e.GetType().Name}); se abre como siempre"); }
+		}
+	}
+
 	public Module? Find(string name) => catalog?.Find(name);
 
-	/// Los modulos instalados, para que la plataforma pueda recorrerlos sin ver el catalogo.
+	/// The installed modules, so the platform can walk them without seeing the catalogue.
 	public IReadOnlyList<Module> Modules => catalog?.Modules ?? [];
 
-	/// La foto para la caratula, si esta plataforma la pide. Android pasa null y esto no hace
-	/// nada -- alla la caratula pregunta en vivo.
+	/// The snapshot for the caratula, if this platform asks for it. Android passes null and this does
+	/// nothing -- over there the caratula asks live.
 	private async Task Fotografiar()
 	{
 		if (dispatcher is null) return;
 
-		// LOCAL: para la intent que vive dentro de esta app. Sin App Group. La ruta tiene que
-		// coincidir con FotoLocal.ruta en Intents/GnothiIntents.swift.
+		// LOCAL: for the intent that lives inside this app. No App Group. The path has to match
+		// FotoLocal.ruta in Intents/GnothiIntents.swift.
 		if (paths.FotoLocal)
 			await Snapshot.Write(dispatcher, Path.Combine(paths.Files, "instantanea"), log, stop.Token);
 
-		// COMPARTIDA: para una app hermana (el spike de Swift). Puede no existir si el App Group
-		// no esta aprovisionado, y eso no impide la local.
+		// SHARED: for a sibling app (the Swift spike). It may not exist if the App Group is not
+		// provisioned, and that does not stop the local one.
 		if (paths.Instantaneas is not null)
 			await Snapshot.Write(dispatcher, paths.Instantaneas, log, stop.Token);
 	}
@@ -991,10 +1039,10 @@ public sealed class Shell : IDisposable
 		stop.Dispose();
 	}
 
-	// ── EL PUENTE, del lado que no sabe de plataforma ───────────────────────────────────
+	// ── THE BRIDGE, on the side that knows nothing about platforms ──────────────────────
 	//
-	// La pagina llama window.prompt('gnothi', json). Quien traduce ese prompt a una llamada
-	// es la plataforma; QUE se hace con el pedido es esto, y es identico en los dos.
+	// The page calls window.prompt('gnothi', json). Who translates that prompt into a call is the
+	// platform; WHAT is done with the request is this, and it is identical on both.
 	public string Handle(string json)
 	{
 		try
@@ -1037,9 +1085,9 @@ public sealed class Shell : IDisposable
 				"clearKey" => ClearKey(),
 				"ask" => RunAsk(req),
 
-				// LOS DOS VERBOS DEL ALTA. Estaban interceptados en cada plataforma porque la
-				// propuesta era estado de su pantalla; ahora que vive aca, los puentes se
-				// quedan con lo que de verdad necesita pantalla y nada mas.
+				// THE TWO ENROLMENT VERBS. They used to be intercepted in each platform because the
+				// proposal was state of its screen; now that it lives here, the bridges keep only what
+				// really needs a screen and nothing else.
 				"altaAceptar" => AcceptEnrollment(req.TryGetProperty("publicadorNuevo", out JsonElement pn) && pn.ValueKind == JsonValueKind.True),
 				"altaDescartar" => DiscardEnrollment(),
 
@@ -1078,25 +1126,24 @@ public sealed class Shell : IDisposable
 		return "\"ok\"";
 	}
 
-	// ── lo que la pagina pide ───────────────────────────────────────────────────────────
+	// ── what the page asks for ──────────────────────────────────────────────────────────
 
-	// El estado como la UI lo necesita: los modulos, su prosa, donde esta cada switch, y el
-	// peso real del journal -- medido desde afuera, que es el verbo propio del Host.
+	// The state as the UI needs it: the modules, their prose, where each switch stands, and the real
+	// weight of the journal -- measured from outside, which is the Host's own verb.
 	public string StateJson()
 	{
 		if (catalog is null) return "{\"loading\":true}";
 
-		// SOBRE UNA COPIA DE LA LISTA, Y NO SOBRE LA LISTA.
+		// OVER A COPY OF THE LIST, AND NOT OVER THE LIST.
 		//
-		// Medido en el emulador el 2026-09-08: `bridge: InvalidOperationException: Collection
-		// was modified; enumeration operation may not execute`. Aceptar un alta recarga el
-		// catalogo -- ModuleCatalog.Load hace Clear() y vuelve a llenar la lista -- y si la
-		// pagina pide el estado en ese instante, este recorrido estalla y la pantalla se queda
-		// sin modulos.
+		// Measured on the emulator on 2026-09-08: `bridge: InvalidOperationException: Collection was
+		// modified; enumeration operation may not execute`. Accepting an enrolment reloads the catalogue
+		// -- ModuleCatalog.Load used to Clear() and refill the list -- and if the page asks for the state
+		// at that instant, this walk blows up and the screen is left with no modules.
 		//
-		// La carrera existia antes y era estrecha. Este metodo ahora LEE EL LOGO DE CADA MODULO
-		// del disco, asi que tarda mas y la ventana se agrando: el sintoma aparecio recien
-		// cuando la marca entro. Copiar la lista cuesta cuatro punteros y la cierra.
+		// The race existed before and was narrow. This method now READS EVERY MODULE'S LOGO off the
+		// disk, so it takes longer and the window got wider: the symptom only showed up once the
+		// branding came in. Copying the list costs four pointers and closes it.
 		var modules = catalog.Modules.ToArray().Select(m =>
 		{
 			long bytes = 0; int files = 0;
@@ -1108,26 +1155,26 @@ public sealed class Shell : IDisposable
 			}
 			catch { /* un modulo sin journal todavia no pesa nada */ }
 
-			// LA CARA DE LA INSTITUCION, resuelta una vez por modulo: su `brand` si lo declaro,
-			// y si no el manifest.webmanifest que su PWA ya trae en el bundle. Los dos caminos
-			// pasan por la misma aduana.
+			// THE INSTITUTION'S FACE, resolved once per module: its `brand` if it declared one, and
+			// otherwise the manifest.webmanifest its PWA already carries in the bundle. Both paths go
+			// through the same customs house.
 			Module.BrandLook look = Module.LookOf(m.Manifest, m.Directory, out _);
 
-			// LO QUE LA INSTITUCION DECLARO DE SI MISMA, para la pantalla.
+			// WHAT THE INSTITUTION DECLARED ABOUT ITSELF, for the screen.
 			//
-			// 'identity' es LA LINEA GRANDE y la resuelve el manifiesto -- Manifest.Identity --
-			// y no esta pagina, porque hay tres caras y un fallback implementado tres veces es
-			// un fallback que diverge. Antes esta linea la decidia un mapa NOMBRE del propio
-			// html, que TAPABA a la institucion cuando el Host la conocia y la dejaba cruda
-			// cuando no.
+			// 'identity' is THE BIG LINE and it is resolved by the manifest -- Manifest.Identity -- and
+			// not by this page, because there are three faces and a fallback implemented three times is a
+			// fallback that diverges. This line used to be decided by a NAME map inside the html itself,
+			// which COVERED the institution when the Host knew it and left it raw when it did not.
 			//
-			// 'logo' viaja como data: URI ya validado por la aduana del Host -- Module.LogoDataUri
-			// --, no como ruta: la pagina se sirve como file:// y no puede leer otros file://, y
-			// darle una ruta del modulo seria dejar que el modulo elija que archivo se abre.
+			// 'logo' travels as a data: URI already validated by the Host's customs house --
+			// Module.LogoDataUri --, not as a path: the page is served as file:// and cannot read other
+			// file://, and giving it a path of the module's would be letting the module choose which file
+			// gets opened.
 			//
-			// EL PESO DEL LOGO SE PAGA EN CADA REPINTADO, porque el estado se pide entero. Con
-			// el tope de 64 KB y cuatro modulos son unos 350 KB en el peor caso y ~40 en el
-			// tipico. Es la razon practica del tope, ademas de la de seguridad.
+			// THE LOGO'S WEIGHT IS PAID ON EVERY REPAINT, because the state is requested whole. With the
+			// 64 KB limit and four modules that is around 350 KB in the worst case and ~40 in the typical
+			// one. It is the practical reason for the limit, on top of the security one.
 			return new Dictionary<string, object?>
 			{
 				["name"] = m.Name,
@@ -1136,9 +1183,9 @@ public sealed class Shell : IDisposable
 				["institution"] = m.Manifest.Institution,
 				["icon"] = Icon(m.Manifest),
 				["category"] = m.Manifest.About?.Category ?? "",
-				// La cara de la institucion, resuelta por el Host: su `brand` si lo declaro, y
-				// si no el manifest.webmanifest que su PWA ya trae en el bundle. Los dos
-				// caminos pasan por la misma aduana.
+				// The institution's face, resolved by the Host: its `brand` if it declared one, and
+				// otherwise the manifest.webmanifest its PWA already carries in the bundle. Both paths
+				// go through the same customs house.
 				["shortName"] = m.Manifest.Brand?.ShortName ?? "",
 				["slogan"] = m.Manifest.Brand?.Slogan ?? "",
 				["brand"] = BrandOf(look),
@@ -1153,12 +1200,12 @@ public sealed class Shell : IDisposable
 					["released"] = m.Manifest.Publisher?.Released ?? "",
 				},
 
-				// EL ACTA DEL ALTA, para que el detalle pueda CONTRASTAR y no solo repetir.
+				// THE ENROLMENT RECORD, so the detail can CONTRAST and not merely repeat.
 				//
-				// 'matches' viene en tres estados y no en dos: true, false y NULL cuando no hay
-				// con que comparar -- un .gmod importado de un archivo no tiene servidor--. La
-				// pantalla tiene que poder decir "no se puede saber" en vez de pintar un visto
-				// bueno, que es exactamente el bug que esto arregla.
+				// 'matches' comes in three states and not two: true, false and NULL when there is nothing
+				// to compare against -- a .gmod imported from a file has no server. The screen has to be
+				// able to say "it cannot be known" instead of painting a tick, which is exactly the bug
+				// this fixes.
 				// WHEN IT ARRIVED, for the order of the home: the most recently added module is the hero
 				// and stays there until the next one arrives (Geaninna, 2026-09-09). The enrollment act
 				// says when; a module that came in by other means falls back to its installation file.
@@ -1203,10 +1250,10 @@ public sealed class Shell : IDisposable
 		});
 	}
 
-	// EL SWITCH ESCRIBE EL ARCHIVO DE LA PERSONA. No una bandera en memoria: el mismo
-	// installation.json que lee el Host de escritorio, que vigila el watcher y desde el que
-	// recarga el catalogo. La UI no tiene estado propio -- repinta desde lo que diga el
-	// archivo, que es por lo que una edicion externa tambien aparece en pantalla.
+	// THE SWITCH WRITES THE PERSON'S FILE. Not a flag in memory: the very installation.json the desktop
+	// Host reads, the watcher watches, and the catalogue reloads from. The UI has no state of its own
+	// -- it repaints from whatever the file says, which is why an external edit also shows up on the
+	// screen.
 	private string SetConsent(string module, string? tool, bool enabled)
 	{
 		Module? m = catalog?.Modules.FirstOrDefault(x => x.Name == module);
@@ -1228,29 +1275,29 @@ public sealed class Shell : IDisposable
 			Path.Combine(m.Directory, "installation.json"),
 			JsonSerializer.Serialize(updated, HostJson.Legible.Installation));
 
-		// Aplicado YA, no cuando se calme la rafaga de 300ms del watcher: el switch que la
-		// persona acaba de mover tiene que contestar de inmediato. El watcher dispara igual --
-		// ReloadConsent no encuentra nada mas que cambiar y se queda callado.
+		// Applied NOW, not when the watcher's 300 ms burst settles: the switch the person has just moved
+		// has to answer immediately. The watcher fires all the same -- ReloadConsent finds nothing else
+		// to change and stays quiet.
 		catalog!.ReloadConsent();
 		log($"consent: {module}{(tool is null ? "" : "." + tool)} -> {(enabled ? "on" : "off")}");
 
-		// Y LA FOTO SE REESCRIBE DESDE ACA. Esta linea parecia redundante -- ConsentWatch.Changed
-		// ya llama a Fotografiar() -- y no lo es: es la unica que corre cuando la persona mueve el
-		// switch DENTRO de la app, que es el caso normal.
+		// AND THE SNAPSHOT IS REWRITTEN FROM HERE. This line looked redundant -- ConsentWatch.Changed
+		// already calls Fotografiar() -- and it is not: it is the only one that runs when the person moves
+		// the switch INSIDE the app, which is the normal case.
 		//
-		// Por que el watcher no alcanza, y cuesta verlo: la linea de arriba ya consumio el cambio.
-		// Cuando el watcher despierta vuelve a llamar ReloadConsent(), que ahora devuelve CERO
-		// cambios, y ConsentWatch corta ahi -- «if (changes.Count == 0) continue» --. O sea que
-		// Changed no dispara y Fotografiar() no corre. La foto quedaba con lo de antes hasta el
-		// siguiente arranque de la app, y Siri y el Atajo seguian contestando por una tool que la
-		// persona ya habia apagado. El watcher sigue haciendo falta para el otro caso: que el
-		// archivo lo edite algo de afuera.
+		// Why the watcher is not enough, and it takes some seeing: the line above has already consumed
+		// the change. When the watcher wakes it calls ReloadConsent() again, which now returns ZERO
+		// changes, and ConsentWatch stops there -- «if (changes.Count == 0) continue». Which means Changed
+		// does not fire and Fotografiar() does not run. The snapshot was left with the old state until the
+		// app's next start-up, and Siri and the Shortcut went on answering for a tool the person had
+		// already switched off. The watcher is still needed for the other case: the file being edited by
+		// something outside.
 		//
-		// EN SEGUNDO PLANO a proposito: Fotografiar() pide cada hecho por Dispatcher.Serve, o sea
-		// que despierta modulos, y el switch tiene que contestar ya.
+		// IN THE BACKGROUND on purpose: Fotografiar() asks for every fact through Dispatcher.Serve, which
+		// means it wakes modules, and the switch has to answer now.
 		//
-		// Y ENCADENADA, no suelta: tres switches seguidos serian tres escrituras peleando por el
-		// mismo archivo temporal. Encadenarlas las serializa sin bloquear a nadie.
+		// AND CHAINED, not loose: three switches in a row would be three writes fighting over the same
+		// temporary file. Chaining them serialises them without blocking anybody.
 		fotos = fotos.ContinueWith(_ => Fotografiar(), TaskScheduler.Default).Unwrap();
 
 		return StateJson();
@@ -1262,16 +1309,16 @@ public sealed class Shell : IDisposable
 		return new Dictionary<string, object?>
 		{
 			["name"] = name,
-			// SIN URL NO HAY HOST, y el proveedor de este aparato no tiene servidor. `new Uri("")`
-			// lanza, y como esto se serializa DENTRO de la respuesta que la pagina espera, la
-			// excepcion no se veia como error: la pagina solo repinta si le vuelve estado, asi
-			// que elegir el modelo local guardaba bien y no se reflejaba nunca. Y TryCreate
-			// tambien cubre la url que la persona escribe a mano en "Otro".
+			// WITH NO URL THERE IS NO HOST, and this device's provider has no server. `new Uri("")` throws,
+			// and since this is serialised INSIDE the response the page is waiting for, the exception did
+			// not look like an error: the page only repaints if state comes back, so choosing the local
+			// model saved correctly and was never reflected. And TryCreate also covers the url the person
+			// types by hand under "Otro".
 			["provider"] = string.IsNullOrWhiteSpace(url)
 				? "este aparato"
 				: Uri.TryCreate(url, UriKind.Absolute, out Uri? u) ? u.Host : url,
 
-			// Para que la pagina no pida llave donde no hace falta.
+			// So the page does not ask for a key where none is needed.
 			["local"] = name == ProveedorLocal,
 
 			// Y PARA QUE SE PUEDA VOLVER. El del aparato era el default cuando no habia model.cfg,
@@ -1286,22 +1333,21 @@ public sealed class Shell : IDisposable
 				["model"] = ModeloLocal,
 			},
 			["model"] = model,
-			// SI HAY llave para ESTE proveedor, nunca la llave.
+			// WHETHER there is a key for THIS provider, never the key itself.
 			["keyPresent"] = File.Exists(KeyPath),
 			["root"] = catalog?.Root ?? "",
 		};
 	}
 
-	// EL PROVEEDOR, ELEGIDO POR LA PERSONA. Todos los presets hablan la forma de OpenAI, que es
-	// lo que habla ModelOpenAiCompatible -- asi que "usa ChatGPT en vez de eso" es un archivo
-	// con una URL y un nombre de modelo, no codigo. Las constantes de arriba quedan solo como
-	// el default cuando no se eligio nada.
+	// THE PROVIDER, CHOSEN BY THE PERSON. Every preset speaks OpenAI's shape, which is what
+	// ModelOpenAiCompatible speaks -- so "use ChatGPT instead of that" is a file with a URL and a model
+	// name, not code. The constants above are left only as the default when nothing was chosen.
 	private string CfgPath => Path.Combine(paths.Files, "model.cfg");
 
-	// QUIEN DECIDE LA IMPLEMENTACION. Antes no la decidia nadie: se construia siempre
-	// ModelOpenAiCompatible y `Provider()` solo cambiaba la url. Elegir "Claude (Anthropic)" en
-	// Ajustes mandaba un cuerpo con forma de OpenAI a una API que no la habla, y ModelClaude
-	// -que existe- no se usaba nunca desde la app.
+	// WHO DECIDES THE IMPLEMENTATION. Before, nobody did: ModelOpenAiCompatible was always built and
+	// `Provider()` only changed the url. Choosing "Claude (Anthropic)" in Settings sent an
+	// OpenAI-shaped body to an API that does not speak it, and ModelClaude -- which exists -- was never
+	// used from the app at all.
 	private IModel Modelo(string proveedor, string url, string model)
 	{
 		if (proveedor == ProveedorLocal)
@@ -1309,25 +1355,23 @@ public sealed class Shell : IDisposable
 				? modeloLocal(Encuadre)
 				: throw new InvalidOperationException("este aparato no ofrece modelo propio");
 
-		// Por nombre y no por url: la url la puede editar la persona, el proveedor lo eligio.
+		// By name and not by url: the url can be edited by the person, the provider is what they chose.
 		if (proveedor.Contains("Anthropic", StringComparison.OrdinalIgnoreCase))
 			return new ModelClaude(KeyPath, model);
 
 		return new ModelOpenAiCompatible(url, model, KeyPath);
 	}
 
-	// EL ENCUADRE, en un solo lugar y EN EL IDIOMA DE LA PERSONA. Viaja tal cual hasta el modelo:
-	// no es documentacion, es lo unico que separa "te leo tus numeros" de "te diagnostico".
-	// Medido: un modelo capaz lo respeta 7 de 7; el del telefono se le escapa 2 de 4 -ver
-	// Spikes/Lab.Cruce-.
-	//
-	// ESTABA QUEMADO EN CASTELLANO, y eso se veia en la cara del producto: el 2026-09-17, en un
-	// iPhone en ingles, con la UI en ingles y una pregunta escrita en ingles, el asistente
-	// contesto EN ESPANOL y con la gramatica rota -«mis ultimos compras»-. Decia «contestale en
-	// su idioma» adentro de una instruccion en castellano, y el modelo chico sigue el idioma en
-	// el que se le habla, no el que se le describe. Por la regla 1 de la guia de localizacion el
-	// idioma del Host sigue a LA PERSONA, asi que el encuadre tambien.
-	private static string Encuadre => Textos.T("asistente.encuadre");
+	// THE FRAMING, in one single place. It travels to the model exactly as it is: it is not
+	// documentation, it is the only thing separating "I read you your numbers" from "I diagnose you".
+	// Measured: a capable model respects it 7 out of 7; the phone's slips out of it 2 out of 4 -- see
+	// Spikes/Lab.Cruce.
+	private const string Encuadre =
+		"Sos el asistente de Gnothi. Los datos que devuelven las herramientas son los datos REALES " +
+		"de la persona que te pregunta, leidos de los registros que sus instituciones le entregaron " +
+		"y que viven en su propio telefono. No vienen de ningun servidor. Contestale sobre SUS " +
+		"numeros, en su idioma, en prosa corrida y sin markdown. El veredicto clinico ya viene hecho " +
+		"y no es tuyo: no diagnostiques ni recomendes tratamiento.";
 
 	private (string name, string url, string model) Provider()
 	{
@@ -1341,11 +1385,11 @@ public sealed class Shell : IDisposable
 						e.GetProperty("model").GetString() ?? ModelName);
 			}
 		}
-		catch { /* una eleccion ilegible cae al default */ }
+		catch { /* an unreadable choice falls through to the default */ }
 
-		// EL DEFAULT ES EL APARATO cuando el aparato puede. Es el unico proveedor donde el dato
-		// no sale del telefono, asi que arrancar en otro seria elegir por la persona la opcion
-		// menos privada. Si no hay modelo propio, el de siempre.
+		// THE DEFAULT IS THE DEVICE whenever the device can. It is the only provider where the data never
+		// leaves the phone, so starting on another one would be choosing the less private option on the
+		// person's behalf. If there is no model of its own, the usual one.
 		return modeloLocal is not null
 			? (ProveedorLocal, "", ModeloLocal)
 			: ("Groq", ModelUrl, ModelName);
@@ -1361,17 +1405,16 @@ public sealed class Shell : IDisposable
 		return StateJson();
 	}
 
-	// LA LLAVE, ADMINISTRADA POR LA PERSONA. Esto es lo que hace real el BYOK: hasta ahora el
-	// archivo lo ponia un desarrollador por un cable, que no es "trae tu propia llave" -- es
-	// trae LA MIA. Cualquier llave del proveedor elegido sirve, free tier o paga: el archivo
-	// no nota la diferencia.
+	// THE KEY, MANAGED BY THE PERSON. This is what makes BYOK real: until now the file was put there by
+	// a developer over a cable, which is not "bring your own key" -- it is bring MINE. Any key from the
+	// chosen provider works, free tier or paid: the file does not notice the difference.
 	//
-	// POR PROVEEDOR, a proposito: una llave de Groq no es una de OpenAI. Cambiar de proveedor
-	// cambia cual archivo de llave se lee, asi que ir a ChatGPT y volver no pierde nada.
+	// PER PROVIDER, on purpose: a Groq key is not an OpenAI one. Changing provider changes which key
+	// file gets read, so going to ChatGPT and back loses nothing.
 	//
-	// Tres reglas, y se cumplen aca: vive SOLO en el area privada de la app, NUNCA se le manda
-	// de vuelta a la pagina (StateJson lleva un booleano, no el valor), y el log registra el
-	// evento sin la llave.
+	// Three rules, and they are honoured here: it lives ONLY in the app's private area, it is NEVER
+	// sent back to the page (StateJson carries a boolean, not the value), and the log records the event
+	// without the key.
 	private string KeyPath
 	{
 		get
@@ -1399,9 +1442,8 @@ public sealed class Shell : IDisposable
 		return StateJson();
 	}
 
-	// UNA PREGUNTA, contestada por la Puerta 2: el mismo AgentLoop, el mismo dispatcher, el
-	// mismo archivo de llave. Corre suelto; la traza y la respuesta caen en la pagina a
-	// medida que pasan.
+	// ONE QUESTION, answered by Door 2: the same AgentLoop, the same dispatcher, the same key file. It
+	// runs loose; the trace and the answer land on the page as they happen.
 	private void Ask(string id, string question)
 	{
 		_ = Task.Run(async () =>
@@ -1424,70 +1466,69 @@ public sealed class Shell : IDisposable
 
 	public void PushState() => Push("state", "", StateJson());
 
-	/// DESPUES DE INSTALAR UN MODULO, y lo hacen las dos plataformas llamando aca.
+	/// AFTER INSTALLING A MODULE, and both platforms do it by calling in here.
 	///
-	/// El catalogo se relee ENTERO: es la misma ruta por la que un cambio hecho desde afuera
-	/// repinta la pantalla. Una sola fuente de verdad, sus archivos -- y no un catalogo al que
-	/// se le agrega una entrada a mano, que es como las dos verdades empiezan.
+	/// The catalogue is re-read WHOLE: it is the same path by which a change made from outside repaints
+	/// the screen. One single source of truth, their files -- and not a catalogue somebody adds an entry
+	/// to by hand, which is how two truths get started.
 	///
-	/// Devuelve los warnings de la carga para que quien llame los escriba en SU log, que es lo
-	/// unico que cambia entre Android y iOS.
+	/// It returns the load's warnings so the caller writes them to ITS log, which is the only thing that
+	/// differs between Android and iOS.
 	public IReadOnlyList<string> ReloadAfterInstall()
 	{
 		IReadOnlyList<string> warnings = catalog?.Load() ?? [];
 		PushState();
 
-		// Y SE COMPRUEBA EL MODULO NUEVO, en segundo plano. Sin esta linea un modulo recien
-		// instalado no se comprobaria hasta el siguiente arranque de la app -- que es justo
-		// cuando MENOS sirve, porque el momento de descubrir que declara mal es antes de
-		// ofrecerselo al asistente.
+		// AND THE NEW MODULE GETS CHECKED, in the background. Without this line a freshly installed module
+		// would not be checked until the app's next start-up -- which is exactly when it helps LEAST,
+		// because the moment to discover it declares wrongly is before offering it to the assistant.
 		_ = Task.Run(() => VerifyNewModules(stop.Token));
 
 		return warnings;
 	}
 
-	/// Cuantos modulos ve el Host ahora mismo. Para poder decirlo en el log despues de un alta.
+	/// How many modules the Host sees right now. So it can be said in the log after an enrolment.
 	public int ModuleCount => catalog?.Modules.Count ?? 0;
 
-	/// El titulo que la persona leyo en la propuesta, para poder nombrarlo al confirmar.
+	/// The title the person read on the proposal, so it can be named when confirming.
 	public string TitleOf(string module) =>
 		catalog?.Modules.FirstOrDefault(m => m.Name == module)?.Manifest.Title ?? module;
 
 	private void Push(string kind, string id, string payload) => push(kind, id, payload);
 
-	/// El javascript que la plataforma tiene que evaluar para empujarle algo a la pagina.
-	/// Se arma aca -y no en cada plataforma- porque el que serializa mal las comillas rompe
-	/// la pagina sin un error visible en ningun lado.
+	/// The javascript the platform has to evaluate in order to push something to the page. It is
+	/// assembled here -- and not in each platform -- because whoever serialises the quotes wrongly
+	/// breaks the page with no error visible anywhere.
 	public static string PushScript(string kind, string id, string payload) =>
 		$"gn.push({Json.Write(kind)},{Json.Write(id)},{Json.Write(payload)})";
 
-	// HACER LOCALES LAS RUTAS DEL installation.json. Solo donde la plataforma lo pide.
+	// MAKING THE installation.json PATHS LOCAL. Only where the platform asks for it.
 	//
-	// EL PROBLEMA, y es de iOS nada mas: armar-paquete.ps1 escribe rutas absolutas de Android
-	// -/data/user/0/com.ncubo.gnothi.host/files/...- porque ahi se pueden saber al armar el
-	// paquete. En iOS el contenedor lleva un GUID que CAMBIA EN CADA INSTALACION, asi que no
-	// existe ninguna ruta que se pueda dejar escrita: la unica valida es la que el proceso
-	// averigua ya corriendo.
+	// THE PROBLEM, and it is iOS's alone: armar-paquete.ps1 writes absolute Android paths
+	// -- /data/user/0/com.ncubo.gnothi.host/files/... -- because over there they can be known when the
+	// package is assembled. On iOS the container carries a GUID that CHANGES ON EVERY INSTALL, so there
+	// is no path that can be written down at all: the only valid one is what the process finds out once
+	// it is running.
 	//
-	// SE TOCAN DOS CAMPOS Y NADA MAS, y los dos son del Host, no del modulo:
+	// TWO FIELDS ARE TOUCHED AND NOTHING ELSE, and both belong to the Host, not to the module:
 	//
-	//   shell.arguments[0]   donde esta lo que se carga  se conserva la HOJA de la ruta, y el
-	//                                                  molde depende del tipo de cascara:
-	//                                                  <dir>/bin/<dll> un modulo cargo
-	//                                                  <dir>/web       uno hospedado
-	//   grantedFolder        que carpeta se le otorga  se conserva el negocio
+	//   shell.arguments[0]   where the thing to load is   the path's LEAF is kept, and the mould
+	//                                                  depends on the shell type:
+	//                                                  <dir>/bin/<dll> a cargo module
+	//                                                  <dir>/web       a hosted one
+	//   grantedFolder        which folder it is granted  the business name is kept
 	//
-	// Los argumentos DESPUES del primero no se tocan: no son direcciones de esta maquina.
+	// The arguments AFTER the first are not touched: they are not addresses on this machine.
 	//
-	// El manifiesto NO se toca nunca: eso es lo que declara la institucion. Y de la instalacion
-	// se toca solo lo que es una direccion de esta maquina; el interruptor, las tools apagadas
-	// y la caratula quedan exactamente como venian, porque esas son decisiones de la persona.
+	// The manifest is NEVER touched: that is what the institution declares. And of the installation,
+	// only what is an address on this machine gets touched; the switch, the disabled tools and the
+	// caratula stay exactly as they came, because those are the person's decisions.
 	//
-	// SERIA MEJOR QUE ESTO NO EXISTIERA. La solucion de fondo es que installation.json admita
-	// rutas RELATIVAS y que el Host las resuelva contra la carpeta del modulo -- ahi el archivo
-	// de la persona deja de tener adentro una direccion de una maquina, que es una propiedad
-	// que vale en las tres plataformas. Se dejo para despues a proposito: cambia el nucleo, y
-	// el nucleo hay que volver a correrlo en el A54 antes de darlo por bueno.
+	// IT WOULD BE BETTER IF THIS DID NOT EXIST. The underlying fix is for installation.json to admit
+	// RELATIVE paths and for the Host to resolve them against the module's folder -- then the person's
+	// file stops carrying a machine's address inside it, which is a property that holds on all three
+	// platforms. It was deliberately left for later: it changes the core, and the core has to be run on
+	// the A54 again before being called good.
 	private void Localizar(string root, string journals)
 	{
 		if (!Directory.Exists(root)) return;
@@ -1502,25 +1543,26 @@ public sealed class Shell : IDisposable
 				string negocio = Path.GetFileName(dir);
 				Installation vieja = JsonSerializer.Deserialize(File.ReadAllText(file), HostJson.Default.Installation)!;
 
-				// La HOJA de la ruta vieja es lo unico que se rescata: QUE se carga lo decidio
-				// quien armo el paquete, y eso no cambia por mudarse de aparato. Donde esta, si.
+				// The old path's LEAF is the only thing rescued: WHAT gets loaded was decided by whoever
+				// assembled the package, and that does not change by moving to another device. Where it is,
+				// does.
 				string hoja = vieja.Shell.Arguments.Count > 0 ? Path.GetFileName(vieja.Shell.Arguments[0]) : "";
 				if (hoja.Length == 0) { log($"localizar: {negocio} no declara que cargar; se deja como esta"); continue; }
 
-				// DOS FORMAS, Y CONFUNDIRLAS DEJA LA PANTALLA EN BLANCO SIN UN SOLO ERROR. Un
-				// modulo cargo guarda un dll bajo bin/; uno HOSPEDADO guarda su bundle publicado
-				// en web/, al lado del installation.json. Componer bin/web da una ruta que no
-				// existe, BundleServer.BaseOf no encuentra el index.html y devuelve "/" por
-				// omision, y el bundle -publicado para /app/- se sirve en la raiz: 404 en todo,
-				// window.gnothi nunca se define, y la pantalla queda en blanco. Medido en el
-				// simulador el 2026-09-07 con los cuatro modulos del paquete.
+				// TWO FORMS, AND CONFUSING THEM LEAVES THE SCREEN BLANK WITHOUT A SINGLE ERROR. A cargo
+				// module keeps a dll under bin/; a HOSTED one keeps its published bundle in web/, next to
+				// the installation.json. Composing bin/web gives a path that does not exist,
+				// BundleServer.BaseOf cannot find the index.html and returns "/" by default, and the bundle
+				// -- published for /app/ -- gets served at the root: 404 on everything, window.gnothi never
+				// gets defined, and the screen stays blank. Measured on the simulator on 2026-09-07 with all
+				// four modules in the package.
 				bool esWeb = string.Equals(vieja.Shell.Type, "webview", StringComparison.OrdinalIgnoreCase);
 				string local = esWeb ? Path.Combine(dir, hoja) : Path.Combine(dir, "bin", hoja);
 
-				// Y LO QUE SIGUE AL PRIMERO SE PASA TAL CUAL. En un modulo hospedado el segundo
-				// argumento es "<url del publicador>|<recurso>|<id>", que no es una direccion de
-				// esta maquina sino lo que la institucion metio en su manifiesto. Reemplazar el
-				// array entero se lo comia, y el cartero quedaba sin publicador al que pedirle.
+				// AND WHATEVER FOLLOWS THE FIRST IS PASSED THROUGH AS IT IS. In a hosted module the second
+				// argument is "<publisher url>|<resource>|<id>", which is not an address on this machine but
+				// what the institution put in its manifest. Replacing the whole array swallowed it, and the
+				// postman was left with no publisher to ask.
 				Installation nueva = vieja with
 				{
 					Shell = vieja.Shell with { Arguments = [local, .. vieja.Shell.Arguments.Skip(1)] },
@@ -1532,15 +1574,15 @@ public sealed class Shell : IDisposable
 			}
 			catch (Exception e)
 			{
-				// Un modulo que no se pudo localizar va a contestar "no hay datos", y eso se ve
-				// en pantalla. Tumbar el arranque entero por uno solo seria peor.
+				// A module that could not be localised is going to answer "no data", and that shows up on
+				// the screen. Bringing the whole start-up down over one of them would be worse.
 				log($"localizar: {Path.GetFileName(dir)} FALLO {e.GetType().Name}: {e.Message}");
 			}
 		}
 	}
 
-	// Copiar del area de descarga a la privada. Tonto a proposito: el Host no interpreta nada
-	// de lo que copia.
+	// Copying from the download area into the private one. Deliberately dumb: the Host interprets
+	// nothing of what it copies.
 	private static int Copy(string source, string target)
 	{
 		int n = 0;

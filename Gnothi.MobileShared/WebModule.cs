@@ -41,7 +41,7 @@ internal abstract class WebModule : IWebModule
 	private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> pending = new();
 	private int next;
 
-	// Los verbos que entraron por el puente, como conjunto. Ver Serve y Faltó.
+	// The verbs that came in through the bridge, as a set. See Serve and Faltó.
 	private readonly ConcurrentDictionary<string, byte> oídas = new();
 
 	// While it is on screen it is not evicted, even at its ~200 MB. It is the one concession to
@@ -92,9 +92,9 @@ internal abstract class WebModule : IWebModule
 		string root = BundleServer.BaseOf(Bundle);
 		Log($"{Name}: the bundle declares its base at {root}");
 
-		// El 404 sale por el log del Host, prefijado con el modulo. Es la mitad que el watchdog
-		// de la CSP no cubre: aquel dice que se RECHAZO algo, este que NO ESTA. Ver
-		// BundleServer.Serve.
+		// The 404 goes out through the Host's log, prefixed with the module. It is the half the CSP's
+		// watchdog does not cover: that one says something was REJECTED, this one that it IS NOT THERE.
+		// See BundleServer.Serve.
 		var server = new BundleServer(Bundle, root) { NotFound = m => Log($"{Name}: {m}") };
 		await Create(server, OriginFor(root), ct);
 
@@ -110,17 +110,19 @@ internal abstract class WebModule : IWebModule
 		}
 	}
 
-	// QUE FALTO, dicho con lo unico que el Host sabe de verdad: cuanto sirvio y que entro por el
-	// puente. No adivina la causa; parte el silencio en los tres casos que antes se veian igual.
+	// WHAT WAS MISSING, said with the only things the Host really knows: how much it served and what
+	// came in through the bridge. It does not guess the cause; it splits the silence into the three
+	// cases that used to look the same.
 	//
-	// POR QUE EXISTE. El 2026-09-16 un modulo hospedado dejo de abrir y el Host solo supo decir
-	// «could not query the module: TimeoutException». Encontrar la causa costo parchar el interop
-	// del modulo EN EL TELEFONO para ver que la app cargaba entera -227 archivos- y nunca llamaba
-	// al puente: le preguntaba al navegador donde guardar en vez de preguntarle a Gnothi si estaba
-	// hospedada. Ese renglon -«cargo N archivos y no llamo al puente»- es exactamente lo que el
-	// Host tenia delante y no decia.
+	// WHY IT EXISTS. On 2026-09-16 a hosted module stopped opening and all the Host could say was
+	// «could not query the module: TimeoutException». Finding the cause cost patching the module`s
+	// interop ON THE PHONE to see that the app loaded whole -- 227 files -- and never called the
+	// bridge: it was asking the browser where to store instead of asking Gnothi whether it was hosted.
+	// That one line -- «it loaded N files and never called the bridge» -- is exactly what the Host had
+	// in front of it and did not say.
 	//
-	// LO QUE NO HACE: culpar. «No llamo al puente» es un hecho; por que no lo llamo es de la app.
+	// WHAT IT DOES NOT DO: blame. «It never called the bridge» is a fact; why it did not is the app's
+	// business.
 	private string Faltó(BundleServer server)
 	{
 		if (server.Documents == 0)
@@ -192,20 +194,20 @@ internal abstract class WebModule : IWebModule
 
 	internal void Ready() => ready.TrySetResult();
 
-	// LA SUPERFICIE DE ESTE MODULO, cuando corre en proceso. La pone quien abre la cara, y
-	// queda null en un modulo hospedado -- ahi la pagina es la superficie y preguntarle a
-	// Gnothi seria pedirle que se conteste a si misma.
+	// THIS MODULE'S SURFACE, when it runs in process. It is set by whoever opens the face, and stays
+	// null in a hosted module -- there the page IS the surface, and asking Gnothi would be asking it to
+	// answer itself.
 	//
-	// Es un delegado y no una referencia al despacho a proposito: WebModule no conoce ni al
-	// Dispatcher ni a Module, y no tiene por que. Recibe una funcion que contesta.
+	// It is a delegate and not a reference to the dispatcher on purpose: WebModule knows neither the
+	// Dispatcher nor Module, and has no reason to. It receives a function that answers.
 	internal Func<string, string, CancellationToken, Task<string>>? Surface { get; set; }
 
-	// Y DONDE SE DEJA LO QUE EL CARTERO TRAE. Null en un modulo hospedado: ahi la pagina lleva
-	// el motor y asienta ella, que es lo que hace `window.gnothi.deliver`.
+	// AND WHERE WHAT THE POSTMAN BRINGS GETS DROPPED OFF. Null in a hosted module: there the page
+	// carries the engine and records it itself, which is what `window.gnothi.deliver` does.
 	internal Func<string, CancellationToken, Task<string>>? Entrega { get; set; }
 
-	// HASTA DONDE YA LEYO LA SUPERFICIE. Solo lo cablea la forma hibrida: en la hospedada la
-	// pagina tiene su propio actor y manda su cursor, que es correcto porque ahi SI lo sabe.
+	// HOW FAR THE SURFACE HAS ALREADY READ. Only the hybrid form wires it: in the hosted one the page
+	// has its own actor and sends its cursor, which is correct because there it DOES know.
 	internal Func<CancellationToken, Task<long>>? Cursor { get; set; }
 
 	private Task<string> Consultar(string tool, string argsJson)
@@ -235,10 +237,11 @@ internal abstract class WebModule : IWebModule
 	// module's API. Two copies would be two APIs the day one of them grows a verb.
 	internal void Serve(string op, string id, string? a, string? b)
 	{
-		// QUE VERBOS SE OYERON, y nada mas: sin cuentas, sin argumentos, sin orden. Es para que
-		// el timeout pueda decir «habló por el puente y no dijo listo» en vez de «no contestó».
-		// `violation` NO cuenta: lo manda el watchdog que Gnothi inyecta, no el bundle, y si
-		// contara, un modulo que no llamo al puente parecería que sí. Ver Faltó.
+		// WHICH VERBS WERE HEARD, and nothing else: no counts, no arguments, no order. It is so the
+		// timeout can say «it spoke through the bridge and never said listo» instead of «it did not
+		// answer». `violation` does NOT count: it is sent by the watchdog Gnothi injects, not by the
+		// bundle, and if it counted, a module that never called the bridge would look as if it had. See
+		// Faltó.
 		if (op != "violation") oídas[op] = 0;
 
 		switch (op)
@@ -389,21 +392,21 @@ internal abstract class WebModule : IWebModule
 		if (!long.TryParse(after, out long from) || from < 0)
 			throw new ArgumentException($"invalid cursor: {after}");
 
-		// EN LA FORMA HIBRIDA EL CURSOR NO LO PONE LA PAGINA, Y NO ES UNA OPTIMIZACION.
+		// IN THE HYBRID FORM THE CURSOR IS NOT SET BY THE PAGE, AND THAT IS NOT AN OPTIMISATION.
 		//
-		// La cara no tiene motor ni actor: no PUEDE saber por donde iba, asi que mandaba cero y el
-		// cartero se bajaba el historial entero en cada refresco. Medido en el telefono el
-		// 2026-09-14 sobre cargas: `leidos=114 aplicados=0 rechazados=114`. La guarda Check hacia
-		// que no se duplicara nada, y por eso el sintoma no era un dato malo -- era trafico y
-		// bateria, que es la clase de defecto que no se ve mirando la pantalla.
+		// The face has neither engine nor actor: it CANNOT know how far it had got, so it sent zero and
+		// the postman pulled the whole history on every refresh. Measured on the phone on 2026-09-14
+		// over cargas: `leidos=114 aplicados=0 rechazados=114`. The Check guard meant nothing got
+		// duplicated, which is why the symptom was not bad data -- it was traffic and battery, the kind
+		// of defect you cannot see by looking at the screen.
 		//
-		// Y LA RAZON DE FONDO ES DE CONTENCION, no de eficiencia: si el cursor viniera de la cara,
-		// SERIA DE LA CARA. Una pagina podria pedir desde cero -- bajarse todo -- o desde un numero
-		// alto -- saltearse eventos que nunca se aplicarian, y quedarse con un registro incompleto
-		// sin que nada lo dijera. Preguntandoselo a la superficie, la cara pide «traeme lo nuevo» y
-		// que es lo nuevo lo decide quien lleva el registro.
+		// AND THE UNDERLYING REASON IS CONTAINMENT, not efficiency: if the cursor came from the face, it
+		// WOULD BELONG TO THE FACE. A page could ask from zero -- pulling everything -- or from a high
+		// number -- skipping events that would never be applied, and keeping an incomplete record with
+		// nothing to say so. By asking the surface, the face asks «bring me what is new» and what is new
+		// is decided by whoever keeps the record.
 		//
-		// `Cursor` es opcional: un modulo que no lo declare contesta cero y se comporta como antes.
+		// `Cursor` is optional: a module that does not declare it answers zero and behaves as before.
 		if (Cursor is not null)
 		{
 			long suyo = await Cursor(CancellationToken.None);
@@ -419,13 +422,13 @@ internal abstract class WebModule : IWebModule
 
 		string sobre = await courier.Pull(from);
 
-		// EN LA FORMA HIBRIDA EL SOBRE NO VUELVE A LA PAGINA, y es la unica diferencia de este
-		// camino entre las dos formas.
+		// IN THE HYBRID FORM THE ENVELOPE DOES NOT GO BACK TO THE PAGE, and that is the only difference
+		// this path has between the two forms.
 		//
-		// La cara no tiene motor: devolverle los eventos seria darle algo que no puede asentar.
-		// Asi que se entregan a la superficie -- el mismo sobre, el mismo cartero, el mismo
-		// endpoint fijado al instalar -- y a la cara se le contesta CUANTO entro, que es lo
-		// unico que necesita para saber si le conviene volver a preguntar.
+		// The face has no engine: handing it the events would be giving it something it cannot record. So
+		// they are delivered to the surface -- the same envelope, the same postman, the same endpoint
+		// pinned at install time -- and the face is told HOW MUCH came in, which is the only thing it
+		// needs in order to know whether asking again is worth it.
 		if (Entrega is null) return sobre;
 
 		string resultado = await Entrega(sobre, CancellationToken.None);
@@ -470,15 +473,15 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 
 	public bool IsLive(string module) => live.ContainsKey(module);
 
-	// `cablear` CORRE ENTRE Create Y Start, Y ESE ORDEN ES EL PUNTO.
+	// `cablear` RUNS BETWEEN Create AND Start, AND THAT ORDER IS THE POINT.
 	//
-	// Start espera a que la pagina diga `listo()`, y una cara hibrida dice listo y PREGUNTA en el
-	// mismo tick -- no tiene actor que hidratar, asi que no hay nada que la demore. Si la
-	// superficie se cableara despues de Start, esas primeras preguntas llegarian con el delegado
-	// todavia en null y la pantalla abriria con "este modulo no tiene superficie en proceso".
-	// Medido en el telefono el 2026-09-11: las dos tarjetas mostraban justamente eso.
-	// La de la interfaz, para quien no tiene nada que cablear: la cascara, cuando el asistente
-	// pregunta y la cara ni siquiera esta abierta.
+	// Start waits for the page to say `listo()`, and a hybrid face says listo and ASKS in the same
+	// tick -- it has no actor to hydrate, so there is nothing to hold it up. If the surface were wired
+	// after Start, those first questions would arrive with the delegate still null and the screen would
+	// open with "this module has no in-process surface". Measured on the phone on 2026-09-11: both
+	// cards showed exactly that.
+	// The interface one, for whoever has nothing to wire: the shell, when the assistant asks and the
+	// face is not even open.
 	public Task<IWebModule> Live(
 		string module, string bundle, string journal, string publisher, CancellationToken ct)
 		=> Live(module, bundle, journal, publisher, ct, null);
@@ -514,49 +517,71 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 		string bundle = args.Count > 0 ? Path.GetFullPath(args[0]) : "";
 		string publisher = args.Count > 1 ? args[1] : "";
 
-		bool hibrida = m.Installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase);
+		// THE FACE ASKS IN BOTH FORMS THAT CARRY NO ENGINE: the hybrid and the box. The only thing that
+		// changes between them is WHERE the question lands -- in the Host's process or inside a wasm --
+		// and the face neither knows that nor needs to. See B12.
+		// AND SE DECIDE POR LA FORMA DEL MÓDULO, NO POR SI LA CAJA ESTÁ PRENDIDA. Acá había un
+		// `|| BoxShell.Preferred` —entró con la caja, en `dac6af6`— y hacía que con `--ez caja true`
+		// TODO módulo recibiera el cableado de la híbrida, incluida una HOSPEDADA. Medido en el
+		// teléfono el 2026-09-18, municipalidad hospedada con la caja prendida:
+		//
+		//     municipalidad: la cara pidio desde 23; la superficie va en 0
+		//     municipalidad: pull after=0 -> 3126 bytes
+		//     NotSupportedException: this shell does not take deliveries
+		//
+		// Dos daños de una: el cursor de la cara (23) se reemplazaba por el 0 que devuelve el default
+		// de `IShell.Cursor` —o sea el cartero volvía a traer el historial entero en cada refresco, que
+		// es exactamente el defecto que el comentario de `Pull` dice haber arreglado— y después el sobre
+		// se le entregaba a una cáscara que no recibe entregas, con la excepción a la vista de la
+		// persona. Sin la caja prendida el mismo módulo hacía `pull after=23 -> 23 bytes` y no fallaba.
+		//
+		// Y el disyunto no hacía falta: un módulo EN CAJA sigue declarando `hybrid` en su
+		// installation.json —la caja es el anfitrión, no una forma del paquete, ver C10— así que la
+		// primera cláusula ya lo cubre.
+		string forma = m.Installation.Shell.Type;
+		bool preguntona = forma.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
+			|| forma.Equals("caja", StringComparison.OrdinalIgnoreCase);
 
-		// SE CABLEA ANTES DE ARRANCAR, no despues: una cara hibrida dice `listo()` y pregunta en
-		// el mismo tick, porque no tiene actor que hidratar. Ver Live.
+		// IT IS WIRED BEFORE STARTING, not after: a hybrid face says `listo()` and asks in the same tick,
+		// because it has no actor to hydrate. See Live.
 		await Live(m.Manifest.Module, bundle, m.Installation.GrantedFolder, publisher, ct,
-			fresco => { if (hibrida) Cablear(fresco, m); });
+			fresco => { if (preguntona) Cablear(fresco, m); });
 
 		return live[m.Manifest.Module];
 	}
 
-	// LO QUE UNA CARA HIBRIDA PUEDE PEDIRLE AL HOST, y son dos cosas distintas con reglas
-	// distintas: preguntar por sus vistas, y pedir que el cartero traiga lo nuevo.
+	// WHAT A HYBRID FACE MAY ASK THE HOST FOR, and they are two different things with different rules:
+	// asking for its views, and asking the postman to bring what is new.
 	private static void Cablear(TModule abierto, Gnothi.Host.Module m)
 	{
 		abierto.Surface = async (vista, argsJson, c) =>
 			{
-				// VA POR View Y NO POR Invoke, y esa es la correccion que mas importa de todo
-				// este camino: las tools declaradas son lo que el ASISTENTE puede preguntar
-				// -gruesas, y apagables una por una-, mientras que una pantalla necesita series,
-				// puntos y lineas de referencia. Medido sobre examenes: 2 tools contra 21
-				// lecturas del dominio. Ruteando por Invoke, la cara solo podria pedir las dos, y
-				// jamas podria dibujar una tendencia.
+				// IT GOES THROUGH View AND NOT THROUGH Invoke, and that is the most important correction on
+				// this whole path: the declared tools are what the ASSISTANT may ask -- coarse, and
+				// switchable off one by one -- whereas a screen needs series, points and reference lines.
+				// Measured over exámenes: 2 tools against 21 reads of the domain. Routed through Invoke, the
+				// face could only ask for the two, and could never draw a trend.
 				//
-				// Y NO PASA POR Allows: apagar una consulta decide que puede preguntar el
-				// asistente, no le prohibe a la institucion mostrarle a la persona su propio
-				// expediente en la pantalla que ella abrio.
+				// AND IT DOES NOT GO THROUGH Allows: switching off a query decides what the assistant may
+				// ask, it does not forbid the institution from showing the person their own file on the
+				// screen they opened.
 				//
-				// JsonOnly y no lo que la pagina pida: una cara pinta json, y dejarla elegir el
-				// formato le daria una palanca que las otras puertas no le dan.
+				// JsonOnly and not whatever the page asks for: a face paints json, and letting it choose the
+				// format would give it a lever the other doors do not.
 				object answer = await m.View(vista, Argumentos(argsJson), Accepts.JsonOnly, c);
 				return answer as string ?? JsonSerializer.Serialize(answer);
 			};
 
-		// Y LA ENTREGA, que NO pasa por Allows y es a proposito: apagar una consulta es decidir
-		// QUE SE CONTESTA, no dejar de recibir lo que la institucion ya publico. Un modulo con
-		// todas sus consultas apagadas sigue siendo el registro de la persona, y seguir
-		// llenandolo es lo que hace que encenderlas de nuevo sirva de algo.
+		// AND THE DELIVERY, which does NOT go through Allows, and that is on purpose: switching off a
+		// query is deciding WHAT GETS ANSWERED, not stopping what the institution already published from
+		// arriving. A module with every query switched off is still the person's record, and going on
+		// filling it is what makes switching them back on worth anything.
 		abierto.Entrega = (sobre, c) => m.Deliver(sobre, c);
 		abierto.Cursor = c => m.Cursor(c);
 	}
 
-	// Los argumentos llegan como el json que la página escribió. Un objeto vacío y un json roto
-	// son lo mismo para el despacho: ninguna tool recibe nada.
+	// The arguments arrive as the json the page wrote. An empty object and a broken json are the same
+	// thing to the dispatcher: no tool receives anything.
 	private static IReadOnlyDictionary<string, object?>? Argumentos(string argsJson)
 	{
 		if (string.IsNullOrWhiteSpace(argsJson)) return null;

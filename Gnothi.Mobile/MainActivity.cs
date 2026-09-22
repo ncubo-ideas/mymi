@@ -9,72 +9,72 @@ using Textos = Gnothi.Host.Textos;
 using Gnothi.MobileShared;
 using System.Text.Json;
 
-// QUE PUEDE HABLAR GNOTHI EN CLARO: solo el loopback, que es donde aterriza un tunel de
-// desarrollo. Todo lo demas exige HTTPS, que es lo que Android impone desde API 28 y que el
-// cartero cumple. Ver Resources/xml/network_security_config.xml.
+// WHAT GNOTHI MAY SPEAK IN THE CLEAR: the loopback only, which is where a development tunnel lands.
+// Everything else demands HTTPS, which is what Android imposes from API 28 and what the postman
+// complies with. See Resources/xml/network_security_config.xml.
 [assembly: Android.App.Application(NetworkSecurityConfig = "@xml/network_security_config")]
 
 // THE CAMERA, for reading the institution's code from inside Mymi. The page asks for it
 // through getUserMedia, and the WebView will not even ask the person unless the app declares
 // the permission. Not required: a phone without a camera pastes the link instead.
-// LA RED DEL HOST, DECLARADA A MANO, y hay que declararla aunque "ya funcionaba".
+// THE HOST'S NETWORK, DECLARED BY HAND, and it has to be declared even though "it already worked".
 //
-// El SDK de .NET Android agrega INTERNET SOLO EN DEBUG, para que el depurador pueda conectarse.
-// En Release no lo agrega, y entonces el cartero -- que es el unico que habla con publicadores --
-// se queda sin red en el build que de verdad se entrega.
+// The .NET Android SDK adds INTERNET ONLY IN DEBUG, so the debugger can connect. In Release it does
+// not, and then the postman -- the only thing that talks to publishers -- is left with no network in
+// the build that actually ships.
 //
-// COMO SE VE CUANDO FALTA, medido el 2026-09-11 en un Xiaomi con Android 16: el pedido a
-// 127.0.0.1 muere con `HttpRequestException: Permission denied (127.0.0.1:8095)`. Loopback y
-// todo, Android exige INTERNET para abrir CUALQUIER socket. Y el mensaje se lee como una
-// restriccion del fabricante -- MIUI tiene fama de cortarle la red a las apps -- asi que se
-// buscan permisos de runtime que no existen: INTERNET es un permiso normal y no sale en la
-// pantalla de permisos de la app. El unico lugar donde se ve es `dumpsys package`.
+// HOW IT LOOKS WHEN IT IS MISSING, measured on 2026-09-11 on a Xiaomi with Android 16: the request to
+// 127.0.0.1 dies with `HttpRequestException: Permission denied (127.0.0.1:8095)`. Loopback and all,
+// Android demands INTERNET to open ANY socket. And the message reads like a manufacturer restriction
+// -- MIUI is famous for cutting apps off the network -- so people go looking for runtime permissions
+// that do not exist: INTERNET is a normal permission and never shows up on the app's permissions
+// screen. The only place it can be seen is `dumpsys package`.
 [assembly: Android.App.UsesPermission(Android.Manifest.Permission.Internet)]
 [assembly: Android.App.UsesPermission(Android.Manifest.Permission.Camera)]
 [assembly: Android.App.UsesFeature("android.hardware.camera", Required = false)]
 
 namespace Gnothi.Mobile;
 
-// EL HOST DE GNOTHI EN UN TELEFONO, con cara. LA MITAD DE ANDROID Y NADA MAS.
+// GNOTHI'S HOST ON A PHONE, with a face. THE ANDROID HALF AND NOTHING ELSE.
 //
-// La cara es UN html en Assets, renderizado por un WebView. Por que no Blazor/MAUI, que era la
-// sugerencia natural: Blazor de verdad en Android necesita el workload de MAUI, que se instala
-// en Program Files -administrador en esta maquina- y reescribe el proyecto. El WebView da lo
-// que se le pedia (UI de calidad web, y el markdown del modelo con tablas de verdad, que un
-// TextView nativo no puede) mientras el codigo del Host queda intacto.
+// The face is ONE html in Assets, rendered by a WebView. Why not Blazor/MAUI, which was the natural
+// suggestion: real Blazor on Android needs the MAUI workload, which installs into Program Files
+// -- administrator on this machine -- and rewrites the project. The WebView gives what was asked for
+// (web-quality UI, and the model's markdown with real tables, which a native TextView cannot) while
+// the Host's code stays untouched.
 //
-// Y esa decision se pago sola el dia de iOS: como la cara es un HTML, es EL MISMO archivo alla.
-// Lo unico que cambia entre plataformas es quien monta el WebView y como se traduce
-// window.prompt(). Todo lo demas -el estado, el consentimiento, la llave, el proveedor, la
-// pregunta- vive en Gnothi.MobileShared/Shell.cs y se comparte tal cual.
+// And that decision paid for itself the day iOS arrived: because the face is an HTML, it is THE SAME
+// FILE over there. The only thing that changes between platforms is who mounts the WebView and how
+// window.prompt() is translated. Everything else -- the state, the consent, the key, the provider,
+// the question -- lives in Gnothi.MobileShared/Shell.cs and is shared as it is.
 //
 // WHAT THIS FILE OWNS: the screen and the lifecycle (installing what was downloaded). The
 // catalog, the consent and the dispatch are the Host's -- the same files the desktop runs.
-// EL ALTA DESDE LA PAGINA DE LA INSTITUCION. En produccion el dominio ademas sirve un
-// assetlinks.json con la huella de firma, y con eso Android abre Mymi sin dialogo de
-// desambiguacion (especificacion 13 §7).
+// ENROLMENT FROM THE INSTITUTION'S PAGE. In production the domain also serves an assetlinks.json
+// with the signing fingerprint, and with that Android opens Gnothi without a disambiguation dialogue
+// (specification 13 §7).
 //
-// AutoVerify NO ES OPCIONAL, y no solo para produccion. Sin el, Android ni siquiera registra
-// el dominio como candidato: `pm get-app-links` no devuelve NADA, y Chrome -- que solo entrega
-// un https a una app cuando esa app es un handler verificado -- navega el mismo y muestra
-// DNS_PROBE_FINISHED_NXDOMAIN. El boton de la institucion no hace nada. Medido el 2026-09-04.
+// AutoVerify IS NOT OPTIONAL, and not only for production. Without it Android does not even register
+// the domain as a candidate: `pm get-app-links` returns NOTHING, and Chrome -- which only hands an
+// https to an app when that app is a verified handler -- navigates it itself and shows
+// DNS_PROBE_FINISHED_NXDOMAIN. The institution's button does nothing. Measured on 2026-09-04.
 //
-// En una prueba local el dominio no se puede verificar de verdad (haria falta servir
-// assetlinks.json desde go.gnothi.app con la huella de firma), pero CON AutoVerify se puede
-// aprobar a mano, que es lo que hace escenario-webview.ps1:
+// In a local test the domain cannot really be verified (it would take serving assetlinks.json from
+// go.gnothi.app with the signing fingerprint), but WITH AutoVerify it can be approved by hand, which
+// is what escenario-webview.ps1 does:
 //
 //     adb shell pm set-app-links-user-selection --user 0 --package <paquete> true go.gnothi.app
 [IntentFilter(new[] { Android.Content.Intent.ActionView },
 	Categories = new[] { Android.Content.Intent.CategoryDefault, Android.Content.Intent.CategoryBrowsable },
 	DataScheme = "https", DataHost = "go.gnothi.app", DataPathPrefix = "/alta",
 	AutoVerify = true)]
-// EL ENLACE DE VUELTA de la instalacion suelta: trae las aserciones de Sonia (13 §6.1).
+// THE LINK BACK from the standalone install: it carries Sonia's assertions (13 §6.1).
 [IntentFilter(new[] { Android.Content.Intent.ActionView },
 	Categories = new[] { Android.Content.Intent.CategoryDefault, Android.Content.Intent.CategoryBrowsable },
 	DataScheme = "https", DataHost = "go.gnothi.app", DataPathPrefix = "/abrir",
 	AutoVerify = true)]
-// LA HOJA DE COMPARTIR, para cuando las aserciones no caben en un enlace. text/plain y no
-// application/json porque Web Share rechaza JSON: su lista de tipos permitidos es cerrada.
+// THE SHARE SHEET, for when the assertions do not fit in a link. text/plain and not
+// application/json because Web Share rejects JSON: its list of allowed types is closed.
 [IntentFilter(new[] { Android.Content.Intent.ActionSend },
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeType = "text/plain")]
@@ -91,13 +91,16 @@ namespace Gnothi.Mobile;
 [IntentFilter(new[] { Android.Content.Intent.ActionSend },
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
-[Activity(Label = "Mymi", MainLauncher = true, Icon = "@mipmap/ic_launcher", Theme = "@android:style/Theme.Material.Light.NoActionBar")]
-public class MainActivity : Activity
+[Activity(Label = "Gnothi", MainLauncher = true, Icon = "@mipmap/ic_launcher", Theme = "@android:style/Theme.Material.Light.NoActionBar")]
+// PARTIAL PORQUE LA CAJA VIVE EN TheBox.cs, que es la otra mitad de esta clase. El merge del
+// 2026-09-21 se llevó esta palabra y con ella la compilación entera: `TheBox.cs` declara
+// `public partial class MainActivity` y sin este `partial` son dos tipos con el mismo nombre.
+public partial class MainActivity : Activity
 {
 	private WebView? web;
 
-	// La raiz de la pantalla, para poder poner el modulo encima; el anfitrion, para pedirselo;
-	// y cual esta a la vista, que es lo que el boton atras tiene que cerrar primero.
+	// The screen's root, so the module can be put on top of it; the host, to ask it for one; and which
+	// one is in view, which is what the back button has to close first.
 	private Android.Widget.FrameLayout? raiz;
 	private AndroidWebModuleHost? anfitrion;
 	private AndroidWebModule? enPantalla;
@@ -108,7 +111,7 @@ public class MainActivity : Activity
 	{
 		base.OnCreate(savedInstanceState);
 
-		// Si Mymi se abrio POR un enlace de alta, el enlace ENTERO va a la cascara -con su
+		// Si Gnothi se abrio POR un enlace de alta, el enlace ENTERO va a la cascara -con su
 		// sello, si trae- y ella lo desarma. Antes viajaba solo ?bundle=, y el sello se perdia.
 		altaPendiente = Intent?.Data?.GetQueryParameter("bundle") is { Length: > 0 } ? Intent!.Data!.ToString() : null;
 		// Or by a file -opened, shared- which is read now and enrolled once the Host is up. A
@@ -116,7 +119,7 @@ public class MainActivity : Activity
 		// standalone app, read below.
 		archivoPendiente = LeerArchivoDeModulo(Intent, strict: true);
 		if (archivoPendiente is null) LeerTraspasoDe(Intent);
-		// Y el icono de la pantalla de inicio, que pide abrir un modulo por su nombre.
+		// And the home-screen icon, which asks for a module to be opened by name.
 		LeerAperturaDe(Intent);
 
 		web = new WebView(this);
@@ -124,18 +127,16 @@ public class MainActivity : Activity
 		// The camera preview is a <video> the page plays as soon as the stream arrives; without
 		// this the WebView would wait for a gesture that already happened, on the button.
 		web.Settings.MediaPlaybackRequiresUserGesture = false;
-		// La pagina detecta la app por esta marca y NUNCA llama prompt() fuera de ella: en un
-		// browser comun ese dialogo es modal y congela la pagina -- medido en el panel de
-		// vista previa.
+		// The page detects the app by this mark and NEVER calls prompt() outside it: in an ordinary
+		// browser that dialogue is modal and freezes the page -- measured in the preview pane.
 		web.Settings.UserAgentString += " GnothiHost";
 		web.SetBackgroundColor(Android.Graphics.Color.ParseColor("#F5F3FB"));
 		web.SetWebChromeClient(new Bridge(this));
 
-		// targetSdk 36 hace el edge-to-edge OBLIGATORIO: la pagina se extenderia debajo de la
-		// barra de estado y de la de gestos, y la navegacion de abajo termina bajo la del
-		// sistema. El arreglo es nativo y en un solo lugar -padding por las barras del
-		// sistema- PERO el padding va en un CONTENEDOR, no en el WebView: un WebView ignora su
-		// propio padding, lo cual costo una captura de pantalla descubrirlo.
+		// targetSdk 36 makes edge-to-edge MANDATORY: the page would extend under the status bar and the
+		// gesture bar, and the bottom navigation ends up beneath the system's. The fix is native and in
+		// one place -- padding for the system bars -- BUT the padding goes on a CONTAINER, not on the
+		// WebView: a WebView ignores its own padding, which cost a screenshot to discover.
 		var frame = new Android.Widget.FrameLayout(this);
 		frame.SetBackgroundColor(Android.Graphics.Color.ParseColor("#F5F3FB"));
 		frame.AddView(web);
@@ -162,19 +163,23 @@ public class MainActivity : Activity
 
 		web.LoadUrl("file:///android_asset/ui.html");
 
+		// EL CONTADOR DEL BORDE DE LA HIBRIDA, enganchado SIEMPRE y no dentro de PrepareTheBox: la
+		// mitad que hace falta para comparar es justamente la de la caja APAGADA, y ahi ese metodo
+		// se sale en la primera linea. Ver el comentario en HybridShell.Counting.
+		Gnothi.Host.HybridShell.Log = Log;
+
+		// Y LA CAJA. Sin esta llamada el extra `--ez caja true` no hace nada: no se copia el
+		// sustrato, no se prende BoxShell.Preferred y ningun modulo entra en caja.
+		//
+		// LAS TRES LINEAS DE ACA -- el partial de arriba, este enganche y esta llamada -- las
+		// perdio el merge del 2026-09-21 (83b68be) y se restauran el 2026-09-22. Conviene saber por
+		// que importan JUNTAS: sin `PrepareTheBox` la caja no existe, asi que una prueba de la
+		// forma hospedada daria verde SIN PROBAR NADA -- no porque el arreglo del `preguntona`
+		// funcione, sino porque `BoxShell.Preferred` nunca se prendio. Un falso verde.
+		PrepareTheBox();
+
 		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, no la cascara. adb no puede escribir en el
 		// area privada, y eso es correcto: nadie de afuera instala un modulo.
-		// EL IDIOMA DE LA PERSONA, RESUELTO UNA VEZ Y AQUI, antes de que la cascara componga su
-		// primera frase. Sale del APARATO: no hay selector adentro de Mymi.
-		//
-		// CurrentUICulture sirve porque este proceso es NATIVO -- la advertencia de
-		// Municipalidad.Wasm, que dice de no leer la cultura del proceso, es para wasm, donde
-		// esa cultura es la del runtime y no la de quien usa el telefono. Aca no.
-		//
-		// Y la pagina NO lo resuelve por su cuenta: se lo dice la cascara. Dos resolutores
-		// serian dos fuentes de verdad.
-		Textos.Idioma = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-
 		shell = new Shell(
 			new Shell.Paths(
 				Files: FilesDir!.AbsolutePath,
@@ -183,28 +188,38 @@ public class MainActivity : Activity
 			(kind, id, payload) => RunOnUiThread(() =>
 				web?.EvaluateJavascript(Shell.PushScript(kind, id, payload), null)));
 
+		// A QUIEN CALENTAR, desde afuera y no compilado, porque lo que se esta midiendo es si vale la
+		// pena -- y para eso hace falta correr el MISMO build con y sin:
+		//
+		//     adb shell am start -n ... --es calentar examenes
+		//     adb shell am start -n ... --es calentar examenes,compras
+		//
+		// Sin el extra no se calienta nada, que es como venia. Ver Shell.Rehydrate.
+		if (Intent?.GetStringExtra("calentar") is { Length: > 0 } aCalentar)
+			shell.WarmUp = [.. aCalentar.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+
 		_ = Task.Run(Start);
 	}
 
 
-	// EL ARRANQUE. Lo que quedo aca despues de que el refactor de master mudara el nucleo a
-	// Gnothi.MobileShared/Shell.cs: alla viven instalar, descubrir, el dispatcher, el vigilante del
-	// consentimiento y la comprobacion de los modulos nuevos. Aca solo lo que sabe de Android,
-	// y lo que tiene que pasar DESPUES de que el Host levante.
+	// THE START-UP. What was left here after master's refactor moved the core into
+	// Gnothi.MobileShared/Shell.cs: installing, discovery, the dispatcher, the consent watcher and the
+	// check on new modules all live over there. Here, only what knows about Android, and what has to
+	// happen AFTER the Host comes up.
 	private async Task Start()
 	{
 		if (shell is null) return;
 
-		// QUIEN SABE CREAR WEBVIEWS. ChooseShell es estatico y no tiene Context, asi que la
-		// cascara de webview no puede construir el anfitrion: se lo registra la Activity, que
-		// si lo tiene. Sin esto, un modulo con "type": "webview" falla diciendo exactamente eso.
+		// WHO KNOWS HOW TO CREATE WEBVIEWS. ChooseShell is static and has no Context, so the webview
+		// shell cannot build the host: the Activity registers it, because the Activity does have one.
+		// Without this, a module with "type": "webview" fails saying exactly that.
 		anfitrion = new AndroidWebModuleHost(
 			this, new AndroidSecretStore(FilesDir!.AbsolutePath),
 			s => global::Android.Util.Log.Info("gnothi", s));
 		Gnothi.Host.WebViewShell.Host = anfitrion;
 
-		// Y QUIEN SABE CERRARLOS: una actualizacion mueve la carpeta del modulo mientras su
-		// WebView puede estar encima (44 §3.6). El Shell solo nombra el gancho; aca se cumple.
+		// AND WHO KNOWS HOW TO CLOSE THEM: an update moves the module's folder while its WebView may be
+		// on top of it (44 §3.6). The Shell only names the hook; here it is honoured.
 		shell.CloseModule = modulo =>
 		{
 			if (!anfitrion.IsLive(modulo)) return false;
@@ -212,11 +227,11 @@ public class MainActivity : Activity
 			return true;
 		};
 
-		// Run() es el bucle del Host y no termina: se arranca UNA vez y se espera al final.
+		// Run() is the Host's loop and never ends: it is started ONCE and awaited at the end.
 		Task corriendo = shell.Run();
 
-		// Si la app se abrio POR un enlace, recien ahora hay a donde instalar o a quien
-		// entregarle. Es la misma forma que ViewController usa en iOS.
+		// If the app was opened BY a link, only now is there somewhere to install into or somebody to hand
+		// it to. It is the same shape ViewController uses on iOS.
 		if (altaPendiente is { Length: > 0 } pendiente)
 		{
 			altaPendiente = null;
@@ -241,9 +256,9 @@ public class MainActivity : Activity
 			await EntregarTraspaso(t.Modulo, t.Aserciones, stop.Token);
 		}
 
-		// EL ICONO VA AL FINAL, y no es un detalle de orden: si en el mismo arranque llegó
-		// además un alta o un traspaso, primero tiene que quedar instalado y asentado lo que
-		// vino -- abrir la cara antes sería mostrarle a la persona el expediente viejo.
+		// THE ICON GOES LAST, and it is not a detail of ordering: if an enrolment or a handoff also
+		// arrived in the same start-up, whatever came in has to be installed and recorded first --
+		// opening the face before that would show the person the old file.
 		if (aperturaPendiente is { } cual)
 		{
 			aperturaPendiente = null;
@@ -259,13 +274,13 @@ public class MainActivity : Activity
 		base.OnDestroy();
 	}
 
-	// EL BOTON ATRAS le pregunta a la pagina primero: una hoja se cierra, un detalle vuelve al
-	// inicio. Solo cuando la pagina contesta false -ya esta en el inicio- la app se hace a un
-	// lado, al FONDO y no a la muerte: terminar tiraria el catalogo cargado sin razon.
+	// THE BACK BUTTON asks the page first: a sheet closes, a detail goes back to the home screen. Only
+	// when the page answers false -- it is already at home -- does the app step aside, to the
+	// BACKGROUND and not to death: finishing would throw away the loaded catalogue for no reason.
 	//
 	// OnBackPressed is the deprecated path, and it is chosen on purpose: the modern
 	// OnBackInvokedCallback only takes over when the manifest opts in, which this app does not.
-	// ATRAS: primero el modulo en pantalla, despues la pagina de Mymi. El orden importa:
+	// ATRAS: primero el modulo en pantalla, despues la pagina de Gnothi. El orden importa:
 	// si el modulo esta tapando todo, el boton tiene que sacarlo a el, no navegar por debajo.
 	// El enlace de alta con la app YA abierta.
 	protected override void OnNewIntent(Android.Content.Intent? intento)
@@ -273,7 +288,7 @@ public class MainActivity : Activity
 		base.OnNewIntent(intento);
 
 		// EL INTENT NUEVO ES EL QUE MANDA. Sin esto, `Intent` sigue devolviendo el que abrió la
-		// actividad, y un segundo enlace -otra institución, con Mymi ya abierto- se pierde.
+		// actividad, y un segundo enlace -otra institución, con Gnothi ya abierto- se pierde.
 		if (intento is not null) Intent = intento;
 
 		string? bundle = intento?.Data?.GetQueryParameter("bundle");
@@ -294,7 +309,8 @@ public class MainActivity : Activity
 			_ = EntregarTraspaso(t.Modulo, t.Aserciones, stop.Token);
 		}
 
-		// El icono con Gnothi ya abierta. Acá el catálogo YA está, así que se abre de una.
+		// The icon with Gnothi already open. Here the catalogue is ALREADY there, so it opens straight
+		// away.
 		LeerAperturaDe(intento);
 		if (aperturaPendiente is { } cual)
 		{
@@ -332,23 +348,23 @@ public class MainActivity : Activity
 		}
 	}
 
-	// ── EL TRASPASO QUE LLEGA DE LA INSTALACIÓN SUELTA ───────────────────────────────────
+	// ── THE HANDOFF ARRIVING FROM THE STANDALONE INSTALL ─────────────────────────────────
 
-	// Lo que trajo el enlace o la hoja de compartir, esperando a que haya catálogo.
+	// What the link or the share sheet brought, waiting for there to be a catalogue.
 	private (string? Modulo, string Aserciones)? traspasoPendiente;
 
-	// DOS PUERTAS PARA LO MISMO (especificación 13 §5.2 y §6.1):
+	// TWO DOORS FOR THE SAME THING (specification 13 §5.2 and §6.1):
 	//
-	//   el enlace     go.gnothi.app/abrir?modulo=…&aserciones=…   cuando son pocas y caben en la URL
-	//   compartir     ACTION_SEND con un archivo de texto          cuando no caben
+	//   the link      go.gnothi.app/abrir?modulo=…&aserciones=…   when there are few and they fit in the URL
+	//   sharing       ACTION_SEND with a text file                 when they do not fit
 	//
-	// Hoy en Exámenes las aserciones de Sonia son UNA —el sexo que declaró— y entran en el
-	// enlace de sobra. La segunda puerta existe porque otras instituciones van a esperar más.
+	// Today in Exámenes, Sonia's assertions are ONE -- the sex she declared -- and fit in the link with
+	// room to spare. The second door exists because other institutions are going to expect more.
 	private void LeerTraspasoDe(Android.Content.Intent? intento)
 	{
 		if (intento is null) return;
 
-		// Puerta 1: el enlace de vuelta que armó la app suelta.
+		// Door 1: the link back that the standalone app assembled.
 		string? porEnlace = intento.Data?.GetQueryParameter("aserciones");
 		if (porEnlace is { Length: > 0 })
 		{
@@ -357,9 +373,9 @@ public class MainActivity : Activity
 			return;
 		}
 
-		// Puerta 2: la hoja de compartir. El archivo viaja como text/plain y NO como
-		// application/json, porque Web Share rechaza JSON: su lista de tipos permitidos es
-		// cerrada y no lo incluye. El nombre .txt es envoltorio; lo que importa es el contenido.
+		// Door 2: the share sheet. The file travels as text/plain and NOT as application/json, because
+		// Web Share rejects JSON: its list of allowed types is closed and does not include it. The .txt
+		// name is wrapping; what matters is the contents.
 		if (intento.Action != Android.Content.Intent.ActionSend) return;
 
 		try
@@ -378,7 +394,7 @@ public class MainActivity : Activity
 
 	private string? LeerLoCompartido(Android.Content.Intent intento)
 	{
-		// Un share puede traer el archivo o, si era chico, el texto pelado. Se aceptan los dos.
+		// A share can bring the file or, if it was small, the bare text. Both are accepted.
 		if (intento.GetParcelableExtra(Android.Content.Intent.ExtraStream) is Android.Net.Uri archivo)
 		{
 			using System.IO.Stream? cuerpo = ContentResolver!.OpenInputStream(archivo);
@@ -391,9 +407,9 @@ public class MainActivity : Activity
 		return intento.GetStringExtra(Android.Content.Intent.ExtraText);
 	}
 
-	// A QUÉ MÓDULO LE CORRESPONDE. El enlace lo dice; la hoja de compartir no, así que se
-	// deduce del publicador que las aserciones declaran. Si aun así no se puede saber, se dice:
-	// asentar las aserciones de una persona en el módulo equivocado sería peor que no asentarlas.
+	// WHICH MODULE IT BELONGS TO. The link says so; the share sheet does not, so it is deduced from the
+	// publisher the assertions declare. If it still cannot be known, it is said out loud: recording a
+	// person's assertions into the wrong module would be worse than not recording them.
 	private Gnothi.Host.Module? ADondeVan(string? nombrado, string asercionesJson)
 	{
 		if (shell is null) return null;
@@ -442,8 +458,8 @@ public class MainActivity : Activity
 
 	// ── EL ALTA DESDE UN ENLACE ──────────────────────────────────────────────────────────
 
-	// Lo que trajo el enlace de alta, esperando a que el catálogo exista. No se puede instalar
-	// antes: el Host todavía no sabe dónde viven los módulos.
+	// What the enrolment link brought, waiting for the catalogue to exist. It cannot be installed
+	// before that: the Host does not yet know where the modules live.
 	private string? altaPendiente;
 
 	// ── EL ALTA DESDE UN ARCHIVO ─────────────────────────────────────────────────────────
@@ -587,22 +603,21 @@ public class MainActivity : Activity
 		else _ = shell.EnrollFiles(archivos, stop.Token);
 	}
 
-	// ── EL MÓDULO EN PANTALLA ────────────────────────────────────────────────────────────
+	// ── THE MODULE ON SCREEN ─────────────────────────────────────────────────────────────
 
 	// LA PWA DE LA INSTITUCIÓN SE DIBUJA A SÍ MISMA (especificación 11 §8). Sonia abre el
-	// módulo y ve el tablero del laboratorio: su marca, su Blazor, sus gráficos. Mymi no lo
+	// módulo y ve el tablero del laboratorio: su marca, su Blazor, sus gráficos. Gnothi no lo
 	// describe ni lo pinta.
 	//
-	// Y ES EL MISMO WebView que contesta las preguntas del asistente. No hay dos: uno solo,
-	// que a veces está en pantalla y a veces solo responde. Por eso abrirlo es rápido si ya
-	// estaba vivo.
+	// AND IT IS THE SAME WebView that answers the assistant's questions. There are not two: just one,
+	// which is sometimes on screen and sometimes only answering. That is why opening it is fast if it
+	// was already alive.
 	//
-	// LA REGLA QUE CAMBIA AL MOSTRARLO: mientras esté en pantalla NO se puede desalojar,
-	// aunque cueste sus 200 MB. Esa es la única concesión; en cuanto ella sale, vuelve a ser
-	// desalojable.
+	// THE RULE THAT CHANGES WHEN IT IS SHOWN: while it is on screen it CANNOT be evicted, even at its
+	// 200 MB. That is the only concession; the moment she leaves, it becomes evictable again.
 	//
 	// Lo que NO cambia es la contención: sigue sin red, sin service worker y sin proceso
-	// propio, y deja de existir cuando Mymi lo desaloja. "No despierta, no notifica, no
+	// propio, y deja de existir cuando Gnothi lo desaloja. "No despierta, no notifica, no
 	// interrumpe" se sostiene por incapacidad, no porque el módulo se porte bien.
 	private string AbrirModulo(string nombre)
 	{
@@ -625,8 +640,8 @@ public class MainActivity : Activity
 		return "{\"ok\":true}";
 	}
 
-	// El WebView del módulo entra ARRIBA del de Mymi, tapándolo. No se reemplaza la vista:
-	// la de Mymi sigue viva detrás, con su estado y su conversación intactos.
+	// El WebView del módulo entra ARRIBA del de Gnothi, tapándolo. No se reemplaza la vista:
+	// la de Gnothi sigue viva detrás, con su estado y su conversación intactos.
 	private void Mostrar(AndroidWebModule vivo)
 	{
 		Android.Views.View? vista = vivo.View;
@@ -640,8 +655,8 @@ public class MainActivity : Activity
 			Android.Views.ViewGroup.LayoutParams.MatchParent, Android.Views.ViewGroup.LayoutParams.MatchParent));
 	}
 
-	// Sacarlo de la pantalla NO lo mata: el módulo sigue vivo y contestando preguntas del
-	// asistente. Solo deja de verse, y vuelve a ser desalojable.
+	// Taking it off the screen does NOT kill it: the module stays alive and goes on answering the
+	// assistant's questions. It just stops being visible, and becomes evictable again.
 	private bool Cerrar()
 	{
 		if (enPantalla is null) return false;
@@ -654,28 +669,28 @@ public class MainActivity : Activity
 		return true;
 	}
 
-	// ── EL ACCESO DIRECTO EN LA PANTALLA DE INICIO ──────────────────────────────────────
+	// ── THE SHORTCUT ON THE HOME SCREEN ─────────────────────────────────────────────────
 	//
-	// UN ICONO QUE PARECE LA APP DE LA INSTITUCIÓN Y ABRE GNOTHI. Es lo más cerca que se puede
-	// estar de «su app» sin que la institución publique una: el icono lleva su logo y su nombre,
-	// y al tocarlo Gnothi levanta su módulo. El proceso, la carpeta y el motor siguen siendo de
-	// Gnothi, y eso no se disimula -- el launcher le estampa el badge de Gnothi en la esquina y
-	// no hay forma de quitarlo. Está bien que esté: dice quién corre el código.
+	// AN ICON THAT LOOKS LIKE THE INSTITUTION'S APP AND OPENS GNOTHI. It is as close as it is possible
+	// to get to «their app» without the institution publishing one: the icon carries its logo and its
+	// name, and tapping it makes Gnothi bring its module up. The process, the folder and the engine are
+	// still Gnothi's, and that is not disguised -- the launcher stamps Gnothi's badge in the corner and
+	// there is no way to remove it. It is right that it is there: it says who runs the code.
 	//
-	// NO ES UNA APP, Y LA DIFERENCIA IMPORTA: no aparece en el cajón de aplicaciones -- ahí solo
-	// van paquetes instalados --, no tiene proceso propio, no despierta, no notifica, y si Gnothi
-	// se desinstala el icono deja de servir. Es exactamente la contención que ya tiene el módulo,
-	// con una puerta más corta.
+	// IT IS NOT AN APP, AND THE DIFFERENCE MATTERS: it does not appear in the app drawer -- only
+	// installed packages go there --, it has no process of its own, it does not wake, it does not
+	// notify, and if Gnothi is uninstalled the icon stops working. It is exactly the containment the
+	// module already has, with a shorter door.
 	//
-	// EL INTENT ES EXPLÍCITO Y NO UN ENLACE. `go.gnothi.app/abrir?modulo=…` existe y sería lo
-	// natural, pero un https sin assetlinks.json verificado saca el diálogo de «¿con qué app
-	// abro esto?», depende de DNS, y cualquiera puede registrar un handler para ese dominio.
-	// Un intent contra esta clase no sale del teléfono ni pasa por el resolvedor.
+	// THE INTENT IS EXPLICIT AND NOT A LINK. `go.gnothi.app/abrir?modulo=…` exists and would be the
+	// natural thing, but an https with no verified assetlinks.json brings up the «which app should I
+	// open this with?» dialogue, depends on DNS, and anybody can register a handler for that domain. An
+	// intent against this class never leaves the phone nor goes through the resolver.
 	internal const string ExtraModulo = "gnothi.modulo";
 
-	// El módulo que el icono pidió, esperando a que haya catálogo -- igual que el alta y el
-	// traspaso. Tocar el icono con Gnothi cerrado llega a OnCreate ANTES de que el Host esté
-	// arriba, y abrirlo ahí no encontraría nada que abrir.
+	// The module the icon asked for, waiting for there to be a catalogue -- just like the enrolment and
+	// the handoff. Tapping the icon with Gnothi closed reaches OnCreate BEFORE the Host is up, and
+	// opening it there would find nothing to open.
 	private string? aperturaPendiente;
 
 	private void LeerAperturaDe(Android.Content.Intent? intento)
@@ -684,26 +699,26 @@ public class MainActivity : Activity
 		if (modulo is { Length: > 0 }) aperturaPendiente = modulo;
 	}
 
-	// LO QUE LA PÁGINA PIDE. Contesta con `ok` y, cuando no se pudo, con la razón EN PALABRAS:
-	// un botón que no hace nada y no dice por qué es peor que no tener el botón.
+	// WHAT THE PAGE ASKS FOR. It answers with `ok` and, when it could not be done, with the reason IN
+	// WORDS: a button that does nothing and does not say why is worse than not having the button.
 	private string FijarAcceso(string nombre)
 	{
 		Gnothi.Host.Module? m = shell?.Find(nombre);
 		if (m is null) return Respuesta(false, "no encuentro ese módulo");
 
-		// API 26, y la guarda se escribe con OperatingSystem y no con Build.VERSION.SdkInt: el
-		// analizador de compatibilidad entiende esta forma y no la otra, así que con la otra
-		// quedaba un CA1416 en cada línea de acá abajo. Por debajo de 26 existía el broadcast
-		// com.android.launcher.action.INSTALL_SHORTCUT, que Android 8 dejó de atender: no hay a
-		// qué caer. El mínimo de Gnothi es 24, así que esto pasa de verdad.
+		// API 26, and the guard is written with OperatingSystem and not with Build.VERSION.SdkInt: the
+		// compatibility analyser understands this shape and not the other one, so with the other one a
+		// CA1416 was left on every line below here. Below 26 there was the
+		// com.android.launcher.action.INSTALL_SHORTCUT broadcast, which Android 8 stopped serving: there
+		// is nothing to fall back to. Gnothi's minimum is 24, so this really happens.
 		if (!OperatingSystem.IsAndroidVersionAtLeast(26))
 			return Respuesta(false, "este Android no sabe poner accesos directos");
 
 		var gestor = (Android.Content.PM.ShortcutManager?)GetSystemService(ShortcutService);
 		if (gestor is null) return Respuesta(false, "este teléfono no ofrece accesos directos");
 
-		// El launcher puede no saber recibirlos -- y en MIUI además hay un permiso propio, que
-		// esto NO puede pedir: si está apagado, el pin se acepta y el icono nunca aparece.
+		// The launcher may not know how to receive them -- and on MIUI there is also a permission of its
+		// own, which this CANNOT request: if it is off, the pin is accepted and the icon never appears.
 		if (!gestor.IsRequestPinShortcutSupported)
 			return Respuesta(false, "la pantalla de inicio de este teléfono no acepta accesos directos");
 
@@ -714,11 +729,10 @@ public class MainActivity : Activity
 			abrir.PutExtra(ExtraModulo, m.Name);
 			abrir.AddFlags(Android.Content.ActivityFlags.NewTask | Android.Content.ActivityFlags.SingleTop);
 
-			// EL RÓTULO ES EL NOMBRE DE LA INSTITUCIÓN, en los DOS campos. El largo empezó siendo
-			// el título del módulo -«Tus exámenes, al día»- que es lo que uno escribiría, y en el
-			// teléfono el icono salió diciendo «Tus examenes,…»: MIUI prefiere el largo y lo corta
-			// a la mitad. Un icono lleva un NOMBRE, no un eslogan, y los dos campos tienen que
-			// poder leerse cortados.
+			// THE LABEL IS THE INSTITUTION'S NAME, in BOTH fields. The long one started out as the module's
+			// title -- «Tus exámenes, al día» -- which is what anybody would write, and on the phone the
+			// icon came out saying «Tus examenes,…»: MIUI prefers the long one and cuts it in half. An icon
+			// carries a NAME, not a slogan, and both fields have to be readable when cut short.
 			string rotulo = Primero(m.Manifest.Identity, m.Manifest.Institution, m.Manifest.Title, m.Name);
 
 			var info = new Android.Content.PM.ShortcutInfo.Builder(this, "modulo:" + m.Name)
@@ -730,11 +744,11 @@ public class MainActivity : Activity
 
 			Android.Content.PM.ShortcutInfo hecho = info.Build()!;
 
-			// PRIMERO ACTUALIZAR Y DESPUÉS PEDIR. Si ya está fijado, `RequestPinShortcut` no le
-			// cambia nada: el icono viejo se queda con el rótulo y el logo del día que se puso.
-			// `UpdateShortcuts` sí alcanza a los fijados, y es lo que hace que una institución que
-			// cambia de nombre o de logo en una versión nueva se vea en la pantalla de inicio. No
-			// hace nada si no había ninguno, así que no hace falta preguntar.
+			// UPDATE FIRST AND ASK AFTERWARDS. If it is already pinned, `RequestPinShortcut` changes nothing
+			// about it: the old icon keeps the label and the logo from the day it was put there.
+			// `UpdateShortcuts` does reach the pinned ones, and it is what makes an institution that
+			// changes its name or its logo in a new version show up on the home screen. It does nothing if
+			// there were none, so there is no need to ask.
 			gestor.UpdateShortcuts([hecho]);
 
 			gestor.RequestPinShortcut(hecho, null);
@@ -795,13 +809,13 @@ public class MainActivity : Activity
 	private static string Respuesta(bool ok, string razon) =>
 		JsonSerializer.Serialize(new { ok, razon });
 
-	// EL ICONO SE COMPONE, no se usa el logo tal cual. Un icono adaptativo recorta todo lo que
-	// queda fuera del 66% central -- círculo, cuadrado redondeado, lo que el launcher decida --
-	// así que un logo puesto a sangre pierde los bordes. Se dibuja sobre el color de la marca y
-	// al 52% del lienzo, que entra entero en cualquier máscara.
+	// THE ICON IS COMPOSED, the logo is not used as it is. An adaptive icon clips everything outside the
+	// central 66% -- circle, rounded square, whatever the launcher decides -- so a logo laid out
+	// full-bleed loses its edges. It is drawn over the branding colour and at 52% of the canvas, which
+	// fits whole inside any mask.
 	//
-	// Devuelve null -- y el launcher pone el icono de Gnothi -- cuando el logo es un SVG: Android
-	// no los decodifica, y la aduana del Host sí los admite.
+	// It returns null -- and the launcher puts up Gnothi's icon -- when the logo is an SVG: Android does
+	// not decode those, and the Host's customs house does admit them.
 	private Android.Graphics.Drawables.Icon? IconoDe(Gnothi.Host.Module m)
 	{
 		if (!OperatingSystem.IsAndroidVersionAtLeast(26)) return null;
@@ -838,8 +852,8 @@ public class MainActivity : Activity
 		}
 	}
 
-	// El color que la institución declaró, y el navy del Host cuando no declaró ninguno. El
-	// fondo del icono NO puede ser transparente: en una máscara circular se vería el recorte.
+	// The colour the institution declared, and the Host's navy when it declared none. The icon's
+	// background CANNOT be transparent: in a circular mask the clipping would show.
 	private static Android.Graphics.Color ColorDeMarca(Gnothi.Host.Module m)
 	{
 		string declarado = Gnothi.Host.Module.LookOf(m.Manifest, m.Directory, out _).Color;
@@ -848,7 +862,7 @@ public class MainActivity : Activity
 		return Android.Graphics.Color.ParseColor("#241F3D");
 	}
 
-	// ── LA CÁMARA, PARA LEER EL CÓDIGO ──────────────────────────────────────────────────
+	// ── THE CAMERA, FOR READING THE CODE ────────────────────────────────────────────────
 
 	// The page's pending camera request while Android asks the person. One at a time: a second
 	// request while the dialog is up replaces the first, which is denied.
@@ -894,9 +908,10 @@ public class MainActivity : Activity
 
 	// ── the bridge itself ───────────────────────────────────────────────────────────────
 	//
-	// Lo unico que hace este tipo es TRADUCIR: saca el json del dialogo y entrega la respuesta
-	// por result.Confirm. Que se hace con el pedido es de Shell.Handle, y es identico en iOS
-	// -- alla el mismo json llega por WKUIDelegate y la respuesta sale por un completionHandler.
+	// All this type does is TRANSLATE: it takes the json out of the dialogue and hands the answer back
+	// through result.Confirm. What is done with the request belongs to Shell.Handle, and is identical on
+	// iOS -- over there the same json arrives through WKUIDelegate and the answer goes out through a
+	// completionHandler.
 	private sealed class Bridge : WebChromeClient
 	{
 		private readonly MainActivity host;
@@ -914,12 +929,12 @@ public class MainActivity : Activity
 			host.GrantCameraOrAsk(request);
 		}
 
-		// LO QUE LA PAGINA PIDE lo atiende Shell.Handle, que es el MISMO archivo en las dos
-		// plataformas: el estado, el consentimiento, la llave, el proveedor y la pregunta.
+		// WHAT THE PAGE ASKS FOR is served by Shell.Handle, which is the SAME file on both platforms: the
+		// state, the consent, the key, the provider and the question.
 		//
-		// LOS TRES VERBOS QUE SE INTERCEPTAN ACA son los que necesitan pantalla: abrir un modulo
-		// pone su WebView encima, y la propuesta de alta en curso es estado de esta Activity.
-		// iOS hace lo mismo con los dos suyos en ViewController.Bridge.
+		// THE THREE VERBS INTERCEPTED HERE are the ones that need a screen: opening a module puts its
+		// WebView on top, and the enrolment proposal in flight is state of this Activity. iOS does the
+		// same with its two in ViewController.Bridge.
 		public override bool OnJsPrompt(WebView? view, string? url, string? message, string? defaultValue, JsPromptResult? result)
 		{
 			if (message != "gnothi" || defaultValue is null || result is null)
@@ -933,9 +948,9 @@ public class MainActivity : Activity
 				result.Confirm(op switch
 				{
 					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
-					// EL ICONO EN LA PANTALLA DE INICIO. Necesita esta Activity porque el intent
-					// que se fija apunta a ELLA, y porque el diálogo que Android muestra es del
-					// sistema y hay que estar en primer plano para verlo.
+					// THE ICON ON THE HOME SCREEN. It needs this Activity because the intent being pinned
+					// points at IT, and because the dialogue Android shows is the system's and you have
+					// to be in the foreground to see it.
 					"fijar" => host.FijarAcceso(req.GetProperty("module").GetString() ?? ""),
 					// Y LO QUE EL LAUNCHER YA TIENE ANOTADO, que el detalle pregunta antes de
 					// dibujar el botón. También necesita la Activity, porque el ShortcutManager
