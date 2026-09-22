@@ -4,7 +4,7 @@
   "manifiesto": "1.0",
   "modulo": "concesionario",
   "titulo": "Mi plan de mantenimiento",
-  "institucion": "Sotaventos Motors (mock del POC)",
+  "institucion": "Sotavento Motors (mock del POC)",
 
   "//idioma": "LAS LLAVES VAN EN ESPANOL, como en el resto del set del equipo, porque el esquema es compartido y no es de este modulo. TODO LO QUE LEE LA IA O LA PERSONA VA EN ESPANOL -titulo, institucion, y cada descripcion- porque este modulo habla espanol de punta a punta: la app se llama 'Mi plan de mantenimiento' y el servidor MCP entrega sus instrucciones en espanol. Cada descripcion de tool esta copiada TAL CUAL del [Description] del codigo, con sus acentos: no es documentacion de este archivo, es el mismo texto que viaja. ASI QUE ESTE ARCHIVO CAMBIA CADA VEZ QUE CAMBIA LA VOZ DEL CODIGO, y quedarse atras no es una imprecision: ya paso una vez, el modulo paso a espanol y aca quedaron siete descripciones en ingles que ninguna tool decia. Lo unico que NO es copia son las dos descripciones del parametro 'operation', y abajo esta por que. El nombre de cada tool, los miembros del enum y los campos del json se quedan en ingles porque son identidad y no prosa. Estas notas van en espanol sin acentos, igual que los /// del codigo.",
 
