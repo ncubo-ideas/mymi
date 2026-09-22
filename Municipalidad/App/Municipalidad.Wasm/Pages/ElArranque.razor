@@ -4,10 +4,13 @@
 
 <PageTitle>@Textos.TituloDelModulo</PageTitle>
 
-<header class="portada">
-    <h1>@Textos.TituloDelModulo</h1>
-    <p class="bajada">@textos["arranque.bajada"]</p>
-</header>
+@if (!estado.EstaArriba)
+{
+    <header class="portada">
+        <h1>@Textos.TituloDelModulo</h1>
+        <p class="bajada">@textos["arranque.bajada"]</p>
+    </header>
+}
 
 @if (estado.NoSeEstaGuardando.HayQueDecirlo)
 {
@@ -103,40 +106,102 @@
 }
 else
 {
-    <div class="botones">
-        <button type="button" id="refrescar" @onclick="RefrescarAsync" disabled="@refrescando">
-            @(refrescando ? textos["arranque.trayendo"] : textos["arranque.traer"])
-        </button>
+    <div class="fondo-noche panel-inicio" id="panel-inicio">
+        <div class="panel-inicio__hero">
+            <button type="button" class="panel-inicio__sync @(refrescando ? "panel-inicio__sync--girando" : "")"
+                    id="refrescar" @onclick="RefrescarAsync" disabled="@refrescando"
+                    title="@(refrescando ? "Actualizando…" : "Actualizar mi cuenta")"
+                    aria-label="@(refrescando ? "Actualizando tu cuenta" : "Actualizar mi cuenta")">
+                <span aria-hidden="true">↻</span>
+            </button>
+
+            <div class="panel-inicio__hero-texto">
+                <h1>Tu cuenta municipal</h1>
+                <p>Más clara y en un solo lugar.</p>
+            </div>
+            <IconoSprite Nombre="ilustracion" />
+        </div>
+
+        @if (vence is not null)
+        {
+            <a class="tarjeta-estado tarjeta-estado--@EstadoDeLaCuenta.Clase" href="que-se-me-vence"
+               id="estado-de-la-cuenta">
+                <span class="tarjeta-estado__icono">
+                    <IconoSprite Nombre="@EstadoDeLaCuenta.Icono" />
+                </span>
+                <span class="tarjeta-estado__texto">
+                    <span class="tarjeta-estado__etiqueta">Estado de tu cuenta</span>
+                    <span class="tarjeta-estado__estado">@EstadoDeLaCuenta.Titulo</span>
+                    @if (EstadoDeLaCuenta.Clase == "vencido")
+                    {
+                        <span class="tarjeta-estado__indicador tarjeta-estado__indicador--coral">
+                            <span aria-hidden="true">●</span>
+                            <span>@EstadoDeLaCuenta.Detalle</span>
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="tarjeta-estado__detalle">@EstadoDeLaCuenta.Detalle</span>
+                    }
+                </span>
+                <span class="tarjeta-estado__flecha" aria-hidden="true">&rsaquo;</span>
+            </a>
+        }
+
+        <h2 class="panel-inicio__titulo">Lo más importante</h2>
+        <nav class="accesos-principales">
+            <a class="acceso" href="que-se-me-vence">
+                <IconoSprite Nombre="calendario" />
+                <span class="acceso__nombre">
+                    Pagos y vencimientos
+                    <span class="acceso__dato">@MicrofraseVencimientos()</span>
+                </span>
+            </a>
+            <a class="acceso" href="cuanto-apartar">
+                <IconoSprite Nombre="presupuesto" />
+                <span class="acceso__nombre">
+                    Mi presupuesto
+                    <span class="acceso__dato">@MicrofrasePresupuesto()</span>
+                </span>
+            </a>
+            <a class="acceso acceso--ancho accesos-principales__ancho" href="por-que-pago-mas">
+                <IconoSprite Nombre="tendencia" />
+                <span class="acceso__nombre">
+                    Cambios en mis cobros
+                    <span class="acceso__dato">@MicrofraseCambios()</span>
+                </span>
+            </a>
+        </nav>
+
+        <section class="otras-opciones">
+            <h2 class="panel-inicio__titulo">Otras opciones</h2>
+            <div class="otras-opciones__lista">
+                <a class="opcion-menor" href="sin-comprobante">
+                    <IconoSprite Nombre="doc-x" />
+                    <span class="opcion-menor__nombre">Pagos sin comprobante</span>
+                </a>
+                <a class="opcion-menor" href="cuanto-he-pagado">
+                    <IconoSprite Nombre="doc-x" />
+                    <span class="opcion-menor__nombre">@textos["cuantoHePagado.titulo"]</span>
+                </a>
+                <a class="opcion-menor" href="que-tan-al-dia-esta">
+                    <IconoSprite Nombre="doc-x" />
+                    <span class="opcion-menor__nombre">@textos["queTanAlDia.titulo"]</span>
+                </a>
+            </div>
+        </section>
     </div>
 
-    <nav class="preguntas" id="las-preguntas">
-        <a href="por-que-pago-mas">
-            <strong>@textos["porQuePagoMas.titulo"]</strong>
-            <span>@textos["arranque.enlace.porQuePagoMas"]</span>
-        </a>
-        <a href="que-se-me-vence">
-            <strong>@textos["queSeMeVence.titulo"]</strong>
-            <span>@textos["arranque.enlace.queSeMeVence"]</span>
-        </a>
-        <a href="cuanto-apartar">
-            <strong>@textos["cuantoApartar.titulo"]</strong>
-            <span>@textos["arranque.enlace.cuantoApartar"]</span>
-        </a>
-        <a href="sin-comprobante">
-            <strong>@textos["sinComprobante.titulo"]</strong>
-            <span>@textos["arranque.enlace.sinComprobante"]</span>
-        </a>
-        <a href="cuanto-he-pagado">
-            <strong>@textos["cuantoHePagado.titulo"]</strong>
-            <span>@textos["arranque.enlace.cuantoHePagado"]</span>
-        </a>
-        <a href="que-tan-al-dia-esta">
-            <strong>@textos["queTanAlDia.titulo"]</strong>
-            <span>@textos["arranque.enlace.queTanAlDia"]</span>
-        </a>
-    </nav>
-
-    <p class="nota">@textos["arranque.loQueContestaElPortal"]</p>
+    <div class="nota-info">
+        <span class="nota-info__icono" aria-hidden="true">ⓘ</span>
+        <span>
+            <span class="nota-info__titulo">Información de tu cuenta</span>
+            <p class="nota-info__texto">
+                Tu portal municipal es la fuente oficial de tus cobros y deudas. Acá te ayudamos a
+                entenderlos y organizarlos.
+            </p>
+        </span>
+    </div>
 
     <details class="plomeria">
         <summary>@textos["arranque.plomeria"]</summary>
@@ -213,6 +278,10 @@ else
 	private long ultimoEvento;
 	private string dispositivo = "";
 	private bool hayCredencial;
+
+	private LoQueSeVence vence;
+	private LaReservaDeEsteAnio reserva;
+	private LaVariacionDeCadaRubro variacion;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -310,11 +379,74 @@ else
 		ultimoEvento = estado.UltimoEventoAplicado();
 		dispositivo = estado.ClaveDeDispositivo();
 		hayCredencial = estado.HayCredencial();
+
+		vence = estado.LeerLoQueSeVence();
+		reserva = estado.LeerLaReserva();
+		variacion = estado.LeerLaVariacionDeCadaRubro();
 	}
 
 	private string ElModoDicho() => estado.EnCarpetaPropia
 		? textos["arranque.modoCarpeta"]
 		: estado.EnElNavegador ? textos["arranque.modoNavegador"] : textos["arranque.modoMemoria"];
+
+	/// <summary>
+	/// "Al dia" / "proximo" / "vencido" salen de las MISMAS dos listas que usa Pagos y vencimientos:
+	/// es el mismo resumen, para que Inicio y esa pantalla nunca digan cosas distintas.
+	/// </summary>
+	private (string Clase, string Icono, string Titulo, string Detalle) EstadoDeLaCuenta
+	{
+		get
+		{
+			var (clase, icono, titulo) = ResumenDeVencimientos.Estado(vence);
+
+			string detalle = clase switch
+			{
+				"vencido" => "Requieren tu atención",
+				"proximo" => "Tocá para ver cuáles.",
+				_ => "No tenés períodos vencidos.",
+			};
+
+			return (clase, icono, titulo, detalle);
+		}
+	}
+
+	/// <summary>Microfrase de un dato real para el acceso de Pagos y vencimientos. Nada hardcodeado.</summary>
+	private string MicrofraseVencimientos()
+	{
+		if (vence is null) return "";
+
+		if (vence.Vencidos.Count > 0)
+			return vence.Vencidos.Count == 1 ? "1 pago vencido" : $"{vence.Vencidos.Count} pagos vencidos";
+
+		if (vence.PorVencer.Count > 0)
+			return vence.PorVencer.Count == 1 ? "1 por vencer" : $"{vence.PorVencer.Count} por vencer";
+
+		return "Nada vence pronto";
+	}
+
+	/// <summary>Microfrase de un dato real para el acceso de Mi presupuesto. Nada hardcodeado.</summary>
+	private string MicrofrasePresupuesto()
+	{
+		if (reserva is null) return "";
+
+		if (reserva.HayReservaAdoptada) return $"{textos.Monto(reserva.AdoptadoPorMes)} al mes";
+		if (reserva.SePuedeProponer) return $"{textos.Monto(reserva.PropuestoPorMes)} al mes (propuesto)";
+
+		return "Aún sin datos";
+	}
+
+	/// <summary>Microfrase de un dato real para el acceso de Cambios en mis cobros. Nada hardcodeado.</summary>
+	private string MicrofraseCambios()
+	{
+		if (variacion is null) return "";
+
+		int saltos = variacion.Rubros.Count(r => r.SePuedeVer && r.EsSalto);
+		if (saltos > 0) return saltos == 1 ? "1 cobro cambió" : $"{saltos} cobros cambiaron";
+
+		if (variacion.AlgunoSePuedeVer) return "Sin cambios grandes";
+
+		return "Aún sin datos";
+	}
 
 	/// <summary>
 	/// Corre un paso y, si falla, deja DOS cosas: la frase que dice cual paso fallo, en el idioma de la

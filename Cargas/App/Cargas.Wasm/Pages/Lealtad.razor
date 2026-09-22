@@ -17,9 +17,16 @@
 
 <Carnet lealtad="@lealtad" />
 
-<div class="cuadro">
-    <div class="instrumento instrumento--medio @(lealtad.Nivel.Length > 0 ? "" : "instrumento--apagado")">
-        <span class="rotulo">@Texto["lealtad.puntos"]</span>
+@* PUNTOS Y BOLETOS, EN UN SOLO BLOQUE. Eran dos instrumentos -dos cajas casi idénticas,
+   cada una con su propio borde y fondo- entre el carnet y el primer sorteo real; acá
+   la jerarquía la da el tamaño y el peso de la cifra, no una caja más. Nada del dato se
+   pierde: mismo saldo, mismo nivel, mismos boletos vigentes, mismo umbral apagado cuando
+   no hay nada que contar todavía. *@
+<div class="tarjeta-grupo cuadro-puntos">
+    <div class="cuadro-puntos-col @(lealtad.Nivel.Length > 0 ? "" : "cuadro-puntos-col--apagado")">
+        <span class="rotulo cuadro-puntos-rotulo">
+            <span class="faro-icon faro-icon--estrella" aria-hidden="true"></span> @Texto["lealtad.puntos"]
+        </span>
         <div class="cifra">@Entero(lealtad.Saldo)</div>
         <div class="cifra-pie">
             @if (lealtad.Nivel.Length > 0)
@@ -40,8 +47,10 @@
     @* LOS VIGENTES EN LA CIFRA. «16 boletos en 2 sorteos» sumaba los diez de una tómbola que
        ya se rifó, y un titular que cuenta boletos que ya no juegan promete de más. La cifra
        son los que juegan; los pasados se dicen aparte, porque tampoco se esfuman. *@
-    <div class="instrumento instrumento--medio @(BoletosVigentes > 0 || BoletosPasados > 0 ? "" : "instrumento--apagado")">
-        <span class="rotulo">@Texto["lealtad.boletos"]</span>
+    <div class="cuadro-puntos-col @(BoletosVigentes > 0 || BoletosPasados > 0 ? "" : "cuadro-puntos-col--apagado")">
+        <span class="rotulo cuadro-puntos-rotulo">
+            <span class="faro-icon faro-icon--boleto" aria-hidden="true"></span> @Texto["lealtad.boletos"]
+        </span>
         <div class="cifra">@Entero(BoletosVigentes)</div>
         <div class="cifra-pie">
             @if (BoletosVigentes > 0)
@@ -104,6 +113,7 @@
                había acá venía copiado del gasto -que sí dice "en N cargas"- y sobre esta
                cadena no cortaba nunca. Una cirugía sobre prosa ajena que un día corta. *@
             <p class="sorteo-premio">
+                <span class="faro-icon faro-icon--premio" aria-hidden="true"></span>
                 @Texto["lealtad.seRifa"] <b>@sorteo.Premio</b>@(sorteo.MontoPorBoleto.Length > 0
                     ? Texto.Con("lealtad.unBoletoPorCada", ("monto", sorteo.MontoPorBoleto)) : "").
             </p>

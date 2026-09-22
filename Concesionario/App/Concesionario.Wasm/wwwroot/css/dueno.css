@@ -49,6 +49,17 @@
 	--d-shadow-lg: 0 2px 6px rgba(10, 42, 87, .08), 0 22px 48px rgba(10, 42, 87, .14);
 	--d-radius: 18px;
 	--d-radius-sm: 12px;
+
+	/* Un segundo nivel de superficie, mas claro que --d-card, para que Inicio
+	   pueda distinguir "fondo", "tarjeta" y "tarjeta prioritaria" sin que las
+	   demas pantallas -- que solo conocen --d-card -- se enteren de que esto
+	   existe. */
+	--d-card-2: #ffffff;
+	--d-hairline: rgba(10, 42, 87, .05);
+	--d-ring-track: var(--d-line-soft);
+	--d-chip-ok-bg: var(--d-ok-tint);
+	--d-chip-blue-bg: var(--d-blue-tint);
+	--d-tabbar-bg: rgba(255, 255, 255, .86);
 }
 
 :root[data-theme="dark"] {
@@ -80,6 +91,15 @@
 
 	--d-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 24px rgba(0, 0, 0, .34);
 	--d-shadow-lg: 0 2px 6px rgba(0, 0, 0, .45), 0 22px 48px rgba(0, 0, 0, .45);
+
+	/* En oscuro es donde de verdad hace falta el segundo nivel: --d-card por si
+	   sola queda casi pegado a --d-bg, y ahi es donde Inicio se ve "plano". */
+	--d-card-2: #132443;
+	--d-hairline: rgba(255, 255, 255, .06);
+	--d-ring-track: rgba(255, 255, 255, .16);
+	--d-chip-ok-bg: rgba(52, 196, 106, .16);
+	--d-chip-blue-bg: rgba(91, 150, 255, .18);
+	--d-tabbar-bg: rgba(14, 25, 41, .82);
 }
 
 /* --------------------------------------------------------------------------
@@ -92,7 +112,7 @@
 	background: var(--d-bg);
 	color: var(--d-ink);
 	min-height: 100dvh;
-	padding-bottom: 96px;
+	padding-bottom: 82px;
 }
 
 .d__pad {
@@ -102,26 +122,88 @@
 .d__gap {
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: 24px;
+}
+
+/* El bloque de arriba de Inicio no usa un solo ritmo: el hero entrega a
+   "Estado" con poco aire (15px) porque son la misma idea -- como esta el
+   carro --; "Estado" entrega a "Lo que sigue" con algo mas (18px, restando
+   del gap base de 24) porque ahi cambia de lectura a accion; y "Lo que
+   sigue" entrega a las metricas con menos aire todavia (12px) porque
+   kilometraje y ultima lectura son detalle de lo mismo. El gap de 24px de
+   .d__gap sigue siendo el que separa TODO lo de mas abajo, sin tocarlo. */
+.d-estado--after-hero {
+	margin-top: 15px;
+}
+
+.d-next--after-estado {
+	margin-top: -6px;
+}
+
+.d-tiles--next {
+	margin-top: -12px;
+}
+
+/* Nota y boton de actualizar son UNA sola unidad de jerarquia (la 7 de la
+   lista): 24-30px la separan de "Contacto", pero entre ellas dos el ritmo es
+   el de elementos relacionados. */
+.d-footer-group {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 }
 
 /* --------------------------------------------------------------------------
-   La cabecera de la agencia. Azul noche, ancho completo, y el nombre de quien
-   lleva el registro -- que es el concesionario y no el dueno.
+   El hero. Una portada del vehiculo, no un encabezado con una estampilla de
+   auto atras: la foto es el fondo completo del bloque, a ancho completo, y el
+   texto vive sobre la esquina que el velo oscurece -- no al reves.
    ----------------------------------------------------------------------- */
 
 .d-top {
-	background: linear-gradient(160deg, var(--d-navy) 0%, var(--d-navy-2) 100%);
+	box-sizing: border-box;
+	position: relative;
+	overflow: hidden;
+	height: 188px;
+	background: var(--d-navy);
 	color: #fff;
-	padding: 18px 16px 62px;
-	border-radius: 0 0 26px 26px;
+	border-radius: 0 0 22px 22px;
+}
+
+.d-top__photo {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: 68% 55%;
+}
+
+/* Dos velos, no uno: el de la izquierda abre lugar para el texto: el de abajo
+   ancla el titular contra algo legible sin importar donde caiga el horizonte
+   de la foto. Juntos dejan el auto completo y reconocible del lado derecho. */
+.d-top__scrim {
+	position: absolute;
+	inset: 0;
+	background:
+		linear-gradient(100deg,
+			rgba(5, 11, 22, .94) 0%,
+			rgba(5, 11, 22, .82) 32%,
+			rgba(5, 11, 22, .38) 56%,
+			transparent 78%),
+		linear-gradient(to top,
+			rgba(5, 11, 22, .88) 0%,
+			rgba(5, 11, 22, .4) 34%,
+			transparent 62%);
 }
 
 .d-top__bar {
+	position: relative;
+	z-index: 1;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
+	padding: 16px 16px 0;
 }
 
 .d-top__brand {
@@ -131,19 +213,25 @@
 	min-width: 0;
 }
 
+/* Placa blanca real, no un chip translucido: el logo tiene tonos oscuros que
+   se pierden contra la foto del hero, y solo un blanco de verdad los separa. */
 .d-top__mark {
-	width: 34px;
-	height: 34px;
-	border-radius: 10px;
-	background: rgba(255, 255, 255, .12);
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
+	background: #fff;
+	padding: 4px;
 	display: grid;
 	place-items: center;
 	flex: none;
+	box-sizing: border-box;
 }
 
-.d-top__mark svg {
-	width: 17px;
-	height: 17px;
+.d-top__mark img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
 }
 
 .d-top__brand > span:last-child {
@@ -167,25 +255,32 @@
 	color: rgba(255, 255, 255, .62);
 }
 
-.d-top__hello {
-	margin: 20px 0 0;
-	font-size: 25px;
-	font-weight: 800;
-	letter-spacing: -.4px;
-	line-height: 1.18;
-}
-
-.d-top__sub {
-	margin: 6px 0 0;
-	font-size: 14px;
-	color: rgba(255, 255, 255, .72);
-}
-
-/* El bloque de contenido monta sobre la cabecera. */
-.d-lift {
-	margin-top: -48px;
-	position: relative;
+/* El texto ancla abajo, no lo empuja el flujo -- asi "necesita atencion" y
+   "tiene algo por hacer" (una y dos lineas) nunca cambian donde empieza el
+   bloque, y jamas hay riesgo de que algo de mas abajo se lo coma. */
+.d-top__content {
+	position: absolute;
 	z-index: 1;
+	left: 16px;
+	right: 30%;
+	bottom: 18px;
+}
+
+.d-top__hello-kicker {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: .1px;
+	color: rgba(255, 255, 255, .7);
+}
+
+.d-top__hello {
+	margin: 3px 0 0;
+	font-size: 22px;
+	font-weight: 800;
+	letter-spacing: -.3px;
+	line-height: 1.2;
+	text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
 }
 
 /* --------------------------------------------------------------------------
@@ -207,7 +302,6 @@
 .d-card__head {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
 	gap: 10px;
 	margin-bottom: 12px;
 }
@@ -235,6 +329,62 @@
 .d-sec__note {
 	font-size: 12px;
 	color: var(--d-muted);
+}
+
+/* En Inicio el espacio ENTRE secciones ya lo da el gap de .d__gap; el margen
+   propio de .d-sec sumaria un segundo salto encima del primero. */
+.d-sec--home {
+	margin: 0 0 12px;
+}
+
+/* --------------------------------------------------------------------------
+   "Un vistazo" sigue viviendo directo sobre el fondo -- esto es lo unico que
+   queda de la idea de secciones sin tarjeta.
+   ----------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   Estado de tu vehiculo: una superficie contenida otra vez, pero no la
+   tarjeta azul plana de antes. El degradado se apaga hacia --d-bg en vez de
+   ser un rectangulo solido, y .d-estado__deco es el lugar reservado para una
+   imagen automotriz sutil el dia que haya un asset apropiado: mientras tanto
+   no pinta nada.
+   ----------------------------------------------------------------------- */
+
+.d-estado {
+	position: relative;
+	overflow: hidden;
+	border-radius: var(--d-radius);
+	padding: 18px;
+	background: linear-gradient(155deg, var(--d-card-2) 0%, var(--d-bg) 130%);
+	box-shadow: inset 0 1px 0 var(--d-hairline);
+}
+
+.d-estado > * {
+	position: relative;
+	z-index: 1;
+}
+
+/* Va despues de ".d-estado > *" a proposito: la misma especificidad, pero
+   esta regla es la ultima, asi que es la que gana y la deja atras. */
+.d-estado__deco {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	background-image: var(--d-estado-photo, none);
+	background-size: cover;
+	background-position: right center;
+	opacity: .18;
+	-webkit-mask-image: linear-gradient(to left, #000 35%, transparent 82%);
+	mask-image: linear-gradient(to left, #000 35%, transparent 82%);
+	pointer-events: none;
+}
+
+.d-estado__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 18px;
 }
 
 /* --------------------------------------------------------------------------
@@ -278,6 +428,14 @@
 	color: var(--d-muted);
 }
 
+/* Los conteos de "Estado de tu vehiculo" son chips de lectura, no botones:
+   mas chicos y sin tanto peso de letra que el titular de la tarjeta. */
+.d-pill--chip {
+	padding: 4px 9px;
+	font-size: 11px;
+	font-weight: 700;
+}
+
 /* --------------------------------------------------------------------------
    Estado del vehiculo: la tarjeta que contesta "como esta mi carro".
 
@@ -293,34 +451,95 @@
 	align-items: center;
 }
 
-.d-health__score {
+/* El anillo es SVG puro: el contorno (stroke-dasharray) y lo que falta por
+   llenar (stroke-dashoffset) los calcula el code-behind a partir de AlDia y
+   Programadas, asi que el mismo dibujo sirve para 0/4, 3/4 o 4/4 sin tocar
+   ni un pixel de esta hoja. Es el elemento protagonista de la seccion, asi
+   que va grande. */
+.d-ring {
+	position: relative;
+	width: 96px;
+	height: 96px;
+	flex: none;
+}
+
+.d-ring__svg {
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+}
+
+.d-ring__track {
+	fill: none;
+	stroke: var(--d-ring-track);
+	stroke-width: 8;
+}
+
+.d-ring__fill {
+	fill: none;
+	stroke-width: 8;
+	stroke-linecap: round;
+	transition: stroke-dashoffset .5s ease;
+}
+
+.d-ring__fill--ok {
+	stroke: var(--d-ok);
+}
+
+.d-ring__fill--warn {
+	stroke: var(--d-warn);
+}
+
+.d-ring__fill--danger {
+	stroke: var(--d-danger);
+}
+
+/* El label ocupa el circulo entero y CENTRA la unidad "3/4" dentro de el --
+   asi nunca se sale, sin importar cuantas lineas mida el numero. Adentro,
+   .d-ring__unit es la unidad de verdad: un flex chico (no estirado) donde
+   "3" y "/4" comparten linea de base, que es lo que hace que "/4" se lea
+   pegado a la parte baja de "3" y no flotando a media altura. */
+.d-ring__label {
+	position: absolute;
+	inset: 0;
 	display: flex;
-	align-items: baseline;
-	gap: 2px;
+	align-items: center;
+	justify-content: center;
 	font-variant-numeric: tabular-nums;
 }
 
-.d-health__n {
-	font-size: 46px;
-	font-weight: 800;
-	letter-spacing: -2px;
+.d-ring__unit {
+	display: flex;
+	align-items: baseline;
 	line-height: 1;
 }
 
-.d-health__of {
-	font-size: 17px;
-	font-weight: 700;
+.d-ring__n {
+	font-size: 42px;
+	font-weight: 800;
+	letter-spacing: -1.5px;
+	line-height: 1;
+}
+
+.d-ring__of {
+	font-size: 18px;
+	font-weight: 600;
 	color: var(--d-muted-2);
+	margin-left: 2px;
 }
 
 .d-health__body {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 	min-width: 0;
 }
 
 .d-health__what {
-	font-size: 13px;
+	font-size: 12.5px;
+	line-height: 1.4;
 	color: var(--d-muted);
-	margin: 0 0 8px;
+	margin: 0;
 }
 
 .d-bar {
@@ -349,50 +568,105 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
-	margin-top: 12px;
 }
 
 /* --------------------------------------------------------------------------
    Lo que sigue. Una sola cosa, grande, con el color de su urgencia.
    ----------------------------------------------------------------------- */
 
+/* La foto del taller es el fondo real de la tarjeta -- no una <img> adentro.
+   El degradado va EN LA MISMA declaracion, encima de la foto, y es lo que
+   mantiene la izquierda legible sin importar el tema de la app: esta
+   tarjeta es siempre "de noche", como el hero, asi que sus colores de tinta
+   tambien se fijan aca abajo en vez de seguir al tema. */
 .d-next {
+	position: relative;
+	overflow: hidden;
 	border-radius: var(--d-radius);
 	padding: 16px;
 	display: grid;
-	grid-template-columns: 46px 1fr;
+	grid-template-columns: 40px 1fr;
 	gap: 14px;
 	align-items: start;
+	background-image:
+		linear-gradient(100deg,
+			rgba(5, 11, 22, .93) 0%,
+			rgba(5, 11, 22, .8) 38%,
+			rgba(5, 11, 22, .45) 66%,
+			rgba(5, 11, 22, .18) 92%),
+		url("../img/fondo-lo-que-sigue.png");
+	background-size: cover, cover;
+	background-position: center right, center right;
+	background-repeat: no-repeat, no-repeat;
+	box-shadow: var(--d-shadow), inset 0 1px 0 rgba(255, 255, 255, .06);
+	border-left: 3px solid transparent;
+	color: #f4f7fb;
+	--d-warn-ink: #ffc46b;
+	--d-warn-tint: rgba(240, 167, 51, .16);
+	--d-ok-ink: #6bdc95;
+	--d-ok-tint: rgba(52, 196, 106, .16);
+	--d-danger-ink: #ff9086;
+	--d-danger-tint: rgba(255, 106, 94, .16);
 }
 
 .d-next--ok {
-	background: var(--d-ok-tint);
+	border-left-color: var(--d-ok);
 }
 
 .d-next--warn {
-	background: var(--d-warn-tint);
+	border-left-color: var(--d-warn);
+	box-shadow: var(--d-shadow), inset 0 1px 0 rgba(255, 255, 255, .06), 0 0 20px -12px rgba(224, 138, 11, .6);
 }
 
 .d-next--danger {
-	background: var(--d-danger-tint);
+	border-left-color: var(--d-danger);
+	box-shadow: var(--d-shadow), inset 0 1px 0 rgba(255, 255, 255, .06), 0 0 20px -12px rgba(229, 52, 42, .6);
 }
 
 .d-next__icon {
-	width: 46px;
-	height: 46px;
-	border-radius: 14px;
+	position: relative;
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
 	display: grid;
 	place-items: center;
-	background: var(--d-card);
+	background: rgba(255, 255, 255, .08);
 	box-shadow: var(--d-shadow);
 }
 
+.d-next--ok .d-next__icon {
+	background: var(--d-ok-tint);
+}
+
+.d-next--warn .d-next__icon {
+	background: var(--d-warn-tint);
+}
+
+.d-next--danger .d-next__icon {
+	background: var(--d-danger-tint);
+}
+
+.d-next > div {
+	position: relative;
+}
+
 .d-next__kicker {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 	font-size: 11px;
 	font-weight: 800;
 	letter-spacing: 1.4px;
 	text-transform: uppercase;
-	margin-bottom: 3px;
+	margin-bottom: 4px;
+}
+
+.d-next__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	flex: none;
 }
 
 .d-next--ok .d-next__kicker,
@@ -411,10 +685,10 @@
 }
 
 .d-next__title {
-	font-size: 20px;
+	font-size: 21px;
 	font-weight: 800;
 	letter-spacing: -.5px;
-	line-height: 1.2;
+	line-height: 1.15;
 }
 
 .d-next__more {
@@ -448,18 +722,18 @@
 .d-cta {
 	display: flex;
 	align-items: center;
-	justify-content: center;
 	gap: 9px;
 	margin-top: 14px;
-	padding: 13px 16px;
-	border-radius: 14px;
+	min-height: 45px;
+	padding: 0 14px;
+	border-radius: 12px;
 	background: var(--d-blue);
 	color: #fff;
-	font-size: 15px;
+	font-size: 14.5px;
 	font-weight: 800;
 	letter-spacing: -.1px;
 	text-decoration: none;
-	box-shadow: 0 8px 20px rgba(31, 111, 255, .28);
+	box-shadow: 0 8px 18px rgba(31, 111, 255, .3);
 }
 
 .d-cta:hover {
@@ -469,6 +743,15 @@
 
 .d-cta svg {
 	color: #fff;
+}
+
+.d-cta__label {
+	flex: 1;
+	text-align: center;
+}
+
+.d-cta__chevron {
+	opacity: .8;
 }
 
 .d-link {
@@ -497,44 +780,126 @@
 }
 
 .d-tile {
-	background: var(--d-card);
+	background: var(--d-card-2);
 	border-radius: var(--d-radius-sm);
-	padding: 13px 14px;
-	box-shadow: var(--d-shadow);
+	padding: 10px 12px;
+	box-shadow: var(--d-shadow), inset 0 1px 0 var(--d-hairline);
+}
+
+.d-tile__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 7px;
+	background: var(--d-chip-blue-bg);
+	color: var(--d-blue-dark);
+	margin-bottom: 6px;
 }
 
 .d-tile__v {
 	font-size: 22px;
 	font-weight: 800;
-	letter-spacing: -.8px;
+	color: var(--d-ink);
+	letter-spacing: -.7px;
 	font-variant-numeric: tabular-nums;
 	line-height: 1.1;
 }
 
 .d-tile__u {
-	font-size: 12px;
-	font-weight: 700;
+	font-size: 11.5px;
+	font-weight: 600;
 	color: var(--d-muted-2);
 	margin-left: 3px;
 }
 
+/* Texto secundario de las tarjetas de numeros ("han recorrido juntos",
+   "ultima lectura..."): --d-muted se lee bien sobre --d-card en claro, pero
+   sobre el navy oscuro de --d-card-2 pierde demasiado contraste. --d-ink-2
+   es el mismo azul grisaceo claro que ya usan las etiquetas de "Un vistazo",
+   asi que reusarlo aqui no agrega un tono nuevo al sistema. */
 .d-tile__k {
-	font-size: 12px;
-	color: var(--d-muted);
-	margin-top: 4px;
+	font-size: 11.5px;
+	color: var(--d-ink-2);
+	margin-top: 3px;
 	line-height: 1.35;
+}
+
+/* Las dos formas de hablar con el taller. Compactas, con el color como unico
+   acento -- verde para WhatsApp, azul para llamar -- y nada mas grande que
+   "Lo que sigue", que es la accion que de verdad hay que atender. */
+.d-contact {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: var(--d-card-2);
+	border-radius: var(--d-radius-sm);
+	padding: 15px 14px;
+	box-shadow: inset 0 1px 0 var(--d-hairline);
+	text-decoration: none;
+	color: inherit;
+}
+
+.d-contact__icon {
+	flex: none;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	display: grid;
+	place-items: center;
+}
+
+/* El logo real de WhatsApp ya trae su propio verde -- ponerlo encima de un
+   chip tambien verde son dos verdes compitiendo. Sin fondo, el logo se
+   reconoce solo. */
+.d-contact__icon--wa {
+	background: transparent;
+}
+
+.d-contact__icon-img {
+	width: 30px;
+	height: 30px;
+	object-fit: contain;
+	display: block;
+}
+
+.d-contact__icon--tel {
+	background: var(--d-chip-blue-bg);
+	color: var(--d-blue-dark);
+}
+
+.d-contact__body {
+	min-width: 0;
+}
+
+.d-contact__label {
+	display: block;
+	font-size: 13.5px;
+	font-weight: 800;
+}
+
+.d-contact__value {
+	display: block;
+	font-size: 11.5px;
+	color: var(--d-ink-2);
+	margin-top: 1px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
    Las nueve. Cada una con su punto de color: sin porcentaje, porque no hay.
    ----------------------------------------------------------------------- */
 
-/* Tres por fila: las nueve caben justas en un 3x3 y a cada nombre le queda
-   sitio para no partirse por la mitad. */
+/* Tres por fila, sueltas sobre el fondo -- sin tarjeta que las encierre. Mas
+   aire entre columnas que entre filas: es un resumen que se lee de corrido,
+   no una lista. */
 .d-dots {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	gap: 14px 8px;
+	gap: 14px 10px;
 }
 
 .d-dot {
@@ -543,38 +908,65 @@
 }
 
 .d-dot__ring {
-	width: 46px;
-	height: 46px;
-	margin: 0 auto 6px;
+	position: relative;
+	width: 40px;
+	height: 40px;
+	margin: 0 auto 7px;
 	border-radius: 50%;
 	display: grid;
 	place-items: center;
-	border: 2.5px solid var(--d-line);
-	background: var(--d-card);
+	border: 2px solid var(--d-line);
+}
+
+/* Los estados con identidad de color (al dia, pendiente, vencido) se pintan
+   solidos -- fondo del tono y el icono en blanco -- para que el punto se lea
+   de lejos sin depender de un trazo fino de 2px. "mute" (sin dato) se queda
+   con el aro hueco de siempre: no tiene un tono que rellenar. */
+.d-dot__ring--ok,
+.d-dot__ring--warn,
+.d-dot__ring--danger {
+	border-color: transparent;
+	color: #fff;
 }
 
 .d-dot__ring--ok {
-	border-color: var(--d-ok);
-	color: var(--d-ok);
+	background: var(--d-ok);
 }
 
 .d-dot__ring--warn {
-	border-color: var(--d-warn);
-	color: var(--d-warn);
+	background: var(--d-warn);
 }
 
 .d-dot__ring--danger {
-	border-color: var(--d-danger);
-	color: var(--d-danger);
+	background: var(--d-danger);
 }
 
 .d-dot__ring--mute {
 	color: var(--d-muted-2);
 }
 
+/* El check que confirma "al dia" ademas del color -- para que verde no sea
+   el unico indicador y el punto se entienda aunque alguien no distinga
+   verde de ambar. Solo aparece en --ok; Revision y el resto de pendientes
+   nunca lo llevan. */
+.d-dot__badge {
+	position: absolute;
+	right: -2px;
+	bottom: -2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--d-ok);
+	border: 2px solid var(--d-bg);
+	display: grid;
+	place-items: center;
+	color: #fff;
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
+}
+
 .d-dot__k {
-	font-size: 10.5px;
-	font-weight: 700;
+	font-size: 11.5px;
+	font-weight: 600;
 	color: var(--d-ink-2);
 	line-height: 1.2;
 	overflow-wrap: anywhere;
@@ -669,6 +1061,320 @@
 	font-size: 12.5px;
 	line-height: 1.5;
 	color: var(--d-muted);
+}
+
+/* Solo esta pantalla: el tabbar fijo (ver .d-tabbar mas abajo) tapaba la
+   ultima operacion y su "¿Por qué?". .d ya reserva 82px de padding-bottom,
+   calibrados para el alto del tabbar SIN area segura (82px ~= la altura real
+   del tabbar con su offset minimo de 12px) -- lo que le falta es sumar
+   env(safe-area-inset-bottom), que en un telefono con home indicator no
+   esta contado ahi. Subir el padding-bottom de .d correria el fondo de
+   Inicio/Cobertura/Historial tambien, asi que el faltante se agrega aca,
+   encima del que .d ya da, solo para Servicios. */
+.d-svc-page {
+	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+}
+
+/* --------------------------------------------------------------------------
+   Servicios: lista propia (NO .d-line/.d-step, que Historial ya usa con su
+   propio timeline) -- "lo que falta" es el protagonista de cada bloque, asi
+   que esto es una lista simple con divisores, no una linea de tiempo.
+   ----------------------------------------------------------------------- */
+.d-svc-list {
+	display: flex;
+	flex-direction: column;
+}
+
+.d-svc {
+	padding: 18px 0;
+	border-bottom: 1px solid var(--d-line-soft);
+}
+
+.d-svc:first-child {
+	padding-top: 2px;
+}
+
+.d-svc:last-child {
+	padding-bottom: 2px;
+	border-bottom: 0;
+}
+
+.d-svc__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: .7px;
+	text-transform: uppercase;
+	color: var(--d-muted);
+}
+
+.d-svc__badge--ok { color: var(--d-ok-ink); }
+.d-svc__badge--warn { color: var(--d-warn-ink); }
+.d-svc__badge--danger { color: var(--d-danger-ink); }
+
+.d-svc__title {
+	font-size: 15.5px;
+	font-weight: 800;
+	color: var(--d-ink);
+	letter-spacing: -.2px;
+	margin: 4px 0 5px;
+}
+
+/* Nivel SECUNDARIO de esta pantalla: --d-ink-2 (no --d-muted, que aca queda
+   reservado para terciario -- ver .d-svc__falta-label). */
+.d-svc__sub {
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--d-ink-2);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.d-svc__detail-extra {
+	color: var(--d-muted);
+}
+
+/* "Lo que falta": el bloque protagonista. Un solo titulo pequeno arriba y
+   despues los valores grandes -- nunca la frase del dominio y los mismos
+   numeros otra vez debajo. */
+.d-svc__falta {
+	margin-top: 12px;
+}
+
+/* Nivel TERCIARIO: --d-muted, no --d-muted-2 -- ese queda por debajo del
+   piso de contraste legible sobre el navy de esta pantalla. */
+.d-svc__falta-label {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--d-muted);
+	margin-bottom: 7px;
+}
+
+.d-svc__falta-note {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--d-ink-2);
+}
+
+.d-svc__cols {
+	display: flex;
+	gap: 18px;
+}
+
+.d-svc__col {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding-left: 18px;
+	border-left: 1px solid var(--d-line-soft);
+}
+
+.d-svc__col:first-child {
+	padding-left: 0;
+	border-left: 0;
+}
+
+.d-svc__col-value {
+	font-size: 20px;
+	font-weight: 800;
+	color: var(--d-ink);
+	letter-spacing: -.3px;
+	font-variant-numeric: tabular-nums;
+}
+
+.d-svc__col-label {
+	font-size: 11.5px;
+	line-height: 1.3;
+	color: var(--d-ink-2);
+	margin-top: 1px;
+}
+
+/* "AHORA" (o "VENCIDO"): reemplaza los dos valores cuando la operacion no
+   tiene limite de distancia NI de tiempo. Es una etiqueta visual del estado
+   que ya existe -- nunca un dato nuevo -- por eso lleva el mismo tono que
+   ya decide .d-svc__badge para ese renglon. Superficie tenue (tint), no
+   solida: es un DATO, no una accion, y no debe leerse como boton -- sin
+   sombra, sin el color solido de estado que un CTA usaria para si mismo. */
+.d-svc__now {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border-radius: 12px;
+	font-size: 18px;
+	font-weight: 800;
+	letter-spacing: .4px;
+}
+
+.d-svc__now--warn {
+	background: var(--d-warn-tint);
+	color: var(--d-warn-ink);
+}
+
+.d-svc__now--danger {
+	background: var(--d-danger-tint);
+	color: var(--d-danger-ink);
+}
+
+.d-svc__why {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 12px;
+	font-weight: 500;
+	margin-top: 10px;
+	color: var(--d-blue);
+}
+
+/* --------------------------------------------------------------------------
+   Historial: "lo que le han hecho" -- clases propias (NO .d-line/.d-step,
+   que "Cada estadia"/"Cada lectura"/"Cada gasto" siguen usando tal cual, y
+   NO .d-says, que Inicio tambien usa) para poder simplificar esta lista sin
+   arriesgar esas otras.
+   ----------------------------------------------------------------------- */
+.d-hist-done-list {
+	display: flex;
+	flex-direction: column;
+}
+
+.d-hist-done {
+	display: flex;
+	gap: 12px;
+	padding: 14px 0;
+	border-bottom: 1px solid var(--d-line-soft);
+}
+
+.d-hist-done:first-child { padding-top: 2px; }
+.d-hist-done:last-child { padding-bottom: 2px; border-bottom: 0; }
+
+.d-hist-done__check {
+	flex: none;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	background: var(--d-ok);
+	color: #fff;
+	margin-top: 2px;
+}
+
+.d-hist-done__body {
+	min-width: 0;
+}
+
+.d-hist-done__date {
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--d-ink-2);
+}
+
+.d-hist-done__title {
+	font-size: 15.5px;
+	font-weight: 800;
+	color: var(--d-ink);
+	letter-spacing: -.2px;
+	margin: 3px 0 6px;
+}
+
+.d-hist-done__km {
+	display: inline-block;
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--d-ink);
+	background: var(--d-chip-blue-bg);
+	padding: 3px 10px;
+	border-radius: 8px;
+	font-variant-numeric: tabular-nums;
+}
+
+.d-hist-done__desc {
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--d-muted);
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* Filas compactas para lo que no tiene registro -- una sola superficie, sin
+   tarjeta por operacion. Tratamiento neutral a proposito: "sin registros"
+   no es una alerta. */
+.d-hist-empty-list {
+	display: flex;
+	flex-direction: column;
+}
+
+.d-hist-empty-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 0;
+	border-bottom: 1px solid var(--d-line-soft);
+}
+
+.d-hist-empty-row:first-child { padding-top: 2px; }
+.d-hist-empty-row:last-child { padding-bottom: 2px; border-bottom: 0; }
+
+.d-hist-empty-row__icon {
+	flex: none;
+	color: var(--d-ink-2);
+	display: grid;
+	place-items: center;
+}
+
+.d-hist-empty-row__title {
+	font-size: 14.5px;
+	font-weight: 700;
+	color: var(--d-ink);
+}
+
+.d-hist-empty-row__value {
+	font-size: 12px;
+	color: var(--d-muted);
+	margin-top: 1px;
+}
+
+/* "Dias en el taller": el numero manda, sin duplicar con una segunda
+   tarjeta que diga lo mismo en palabras. */
+.d-hist-days {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.d-hist-days__icon {
+	flex: none;
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
+	display: grid;
+	place-items: center;
+	background: var(--d-chip-blue-bg);
+	color: var(--d-blue-dark);
+}
+
+.d-hist-days__count {
+	font-size: 21px;
+	font-weight: 800;
+	color: var(--d-ink);
+	letter-spacing: -.3px;
+	font-variant-numeric: tabular-nums;
+}
+
+.d-hist-days__period {
+	font-size: 12px;
+	color: var(--d-ink-2);
+	margin-top: 2px;
 }
 
 /* --------------------------------------------------------------------------
@@ -790,24 +1496,49 @@
 
 .d-row {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	justify-content: space-between;
 	gap: 14px;
 	padding: 11px 0;
 	border-bottom: 1px solid var(--d-line-soft);
-	font-size: 14px;
+	font-size: 13px;
 }
 
 .d-row:last-child {
 	border-bottom: 0;
 }
 
-.d-row__k {
+/* Icono + etiqueta, agrupados a la izquierda -- el mismo tratamiento de chip
+   que ya usan los numeros de Inicio (.d-tile__icon), para que un icono
+   pequeno se sienta parte del mismo sistema y no una adicion suelta. */
+.d-row__label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
 	color: var(--d-muted);
 }
 
+.d-row__label svg {
+	flex: none;
+	width: 22px;
+	height: 22px;
+	padding: 4px;
+	border-radius: 7px;
+	background: var(--d-chip-blue-bg);
+	color: var(--d-blue-dark);
+	box-sizing: border-box;
+}
+
+.d-row__k {
+	color: var(--d-muted);
+	font-size: 12.5px;
+}
+
 .d-row__v {
-	font-weight: 700;
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--d-ink);
 	text-align: right;
 	overflow-wrap: anywhere;
 }
@@ -840,6 +1571,30 @@
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-size: 12.5px;
 	font-weight: 600;
+}
+
+/* Una fila que ademas necesita una aclaracion corta debajo (hoy solo Placa
+   cuando no esta registrada). El grupo entero lleva el divisor que .d-row
+   normalmente lleva solo; la fila interna lo pierde para no duplicarlo. */
+.d-row-group {
+	padding: 11px 0;
+	border-bottom: 1px solid var(--d-line-soft);
+}
+
+.d-row-group:last-child {
+	border-bottom: 0;
+}
+
+.d-row-group .d-row--noline {
+	padding: 0;
+	border-bottom: 0;
+}
+
+.d-row__note {
+	margin: 5px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--d-muted);
 }
 
 /* Garantia resumida. */
@@ -900,6 +1655,96 @@
 }
 
 /* --------------------------------------------------------------------------
+   Garantia: una sola idea, centrada -- clase propia (no .d-cover, que
+   Cobertura e Historial ya usan con su propio layout) para que esta pantalla
+   pueda ser un estado ilustrado sin arriesgar las otras dos.
+   ----------------------------------------------------------------------- */
+.d-state {
+	border-radius: var(--d-radius);
+	padding: 28px 20px 20px;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.d-state--ok { background: var(--d-ok-tint); }
+.d-state--warn,
+.d-state--danger { background: var(--d-warn-tint); }
+.d-state--mute { background: var(--d-line-soft); }
+
+.d-state__icon {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	background: var(--d-card);
+	box-shadow: var(--d-shadow);
+	margin-bottom: 16px;
+}
+
+.d-state__icon--ok { color: var(--d-ok); }
+.d-state__icon--warn,
+.d-state__icon--danger { color: var(--d-warn); }
+.d-state__icon--mute { color: var(--d-muted-2); }
+
+.d-state__title {
+	font-size: 17px;
+	font-weight: 800;
+	letter-spacing: -.2px;
+}
+
+.d-state__body {
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--d-ink-2);
+	margin-top: 8px;
+	max-width: 320px;
+}
+
+.d-state__body--muted {
+	color: var(--d-muted);
+	font-size: 12.5px;
+	margin-top: 4px;
+}
+
+.d-state__action {
+	margin-top: 18px;
+	width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Manual: el icono circular que va en la cabecera de cada tarjeta (Ficha,
+   Precios). Azul neutro para Ficha; ambar solo como diferenciacion visual
+   en Precios -- ninguno de los dos es una alerta.
+   ----------------------------------------------------------------------- */
+.d-state-card__icon {
+	flex: none;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	display: grid;
+	place-items: center;
+}
+
+.d-state-card__icon--blue {
+	background: var(--d-chip-blue-bg);
+	color: var(--d-blue-dark);
+}
+
+.d-state-card__icon--amber {
+	background: var(--d-warn-tint);
+	color: var(--d-warn-ink);
+}
+
+.d-state-card__body {
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--d-ink-2);
+}
+
+/* --------------------------------------------------------------------------
    Aviso honesto: lo que el concesionario todavia no publico.
    ----------------------------------------------------------------------- */
 
@@ -937,6 +1782,31 @@
 	color: var(--d-muted-2);
 }
 
+/* En Inicio esta nota es metadata, la ultima prioridad de lectura: mas
+   chica que el .d-note que usan las otras pantallas. Ya no le resta
+   opacidad encima de --d-muted -- las dos cosas juntas la dejaban ilegible
+   en navy sin ganar nada en jerarquia, que ya la da el tamano. */
+.d-note--home {
+	font-size: 11px;
+	line-height: 1.45;
+}
+
+/* "Traer lo que haya nuevo" es una utilidad, no una decision: angosta,
+   centrada, y bastante mas baja que el CTA azul de "Lo que sigue". El borde
+   de .btn--ghost (--line-strong) es del set claro de app.css y casi
+   desaparece sobre el navy de esta pantalla; --d-muted-2 es el mismo tono
+   que ya usa el resto de Inicio para bordes/iconos discretos. */
+.btn--subtle {
+	align-self: center;
+	width: auto;
+	min-height: 40px;
+	padding: 0 16px;
+	font-size: 13px;
+	font-weight: 700;
+	border-color: var(--d-muted-2);
+	opacity: .9;
+}
+
 /* --------------------------------------------------------------------------
    La barra de abajo, con las cinco.
    ----------------------------------------------------------------------- */
@@ -945,38 +1815,55 @@
 	position: fixed;
 	left: 50%;
 	transform: translateX(-50%);
-	bottom: 12px;
+	bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px));
 	width: min(calc(100% - 24px), 452px);
 	display: grid;
 	grid-auto-flow: column;
 	grid-auto-columns: 1fr;
-	background: var(--d-card);
+	background: var(--d-tabbar-bg);
+	-webkit-backdrop-filter: saturate(180%) blur(16px);
+	backdrop-filter: saturate(180%) blur(16px);
 	border-radius: 20px;
 	box-shadow: var(--d-shadow-lg);
-	padding: 8px 4px;
+	padding: 9px 4px 11px;
 	z-index: 40;
 }
 
 .d-tabbar__item {
+	position: relative;
 	background: none;
 	border: 0;
-	padding: 5px 2px;
+	padding: 5px 2px 9px;
 	font: inherit;
 	font-size: 10px;
 	font-weight: 700;
-	color: var(--d-muted-2);
+	color: var(--d-muted);
 	cursor: pointer;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 4px;
 	border-radius: 13px;
-	line-height: 1.15;
+	line-height: 1.2;
 	text-align: center;
 }
 
 .d-tabbar__item--on {
 	color: var(--d-blue);
+}
+
+/* Un indicador discreto bajo la pestana activa, para que "seleccionado" se
+   vea de un vistazo y no solo por el color del icono. */
+.d-tabbar__item--on::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	bottom: 2px;
+	transform: translateX(-50%);
+	width: 14px;
+	height: 2.5px;
+	border-radius: 999px;
+	background: var(--d-blue);
 }
 
 .d-tabbar__item:hover {
