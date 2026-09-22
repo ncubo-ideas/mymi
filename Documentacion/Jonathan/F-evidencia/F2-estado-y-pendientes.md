@@ -1388,3 +1388,71 @@ archivo en español. La sesión que la republicaba desapareció. El volcado con 
 sesión coordinadora.
 
 **Y nada de esto está commiteado.**
+
+## P25 · El SIGSEGV de compras — diagnosticado, NO reproducido · 2026-09-22
+
+**Visto una vez, el 2026-09-18.** Secuencia: la app corriendo con compras abierto en proceso → se
+actualiza municipalidad, y esa actualización le **cambia la forma** (híbrida → hospedada) → se reabre
+compras → **la app se muere**.
+
+Y no se murió con una excepción: **crash nativo**.
+
+```
+F libc : Fatal signal 11 (SIGSEGV), code 2 (SEGV_ACCERR), fault addr 0x7b53ada6a0
+         in tid 1866 (.NET TP Worker), pid 32433 (ubo.gnothi.host)
+#00 EmbeddedAssemblies::open_from_bundles   (libmonodroid.so)
+#02 mono_assembly_request_byname
+#03 mono_assembly_load_reference
+#04 mono_class_from_typeref_checked
+...
+#09 mono_class_init_internal
+```
+
+### Las dos puntas, leídas en el código
+
+**1 · Los módulos viejos se descartan SIN ESPERAR.** `ModuleCatalog.Publish` cambia la lista y manda
+los salientes a `DisposeAsync` en un `Task.Run` que nadie awaitea. El comentario del propio método lo
+dice y da la razón:
+
+> *«OUTSIDE THE PUBLICATION AND WITHOUT WAITING: … Closing can take a while — the Unload is
+> COOPERATIVE and the actor also has to be given a GracefulExit — and this is called by a screen right
+> after an enrolment.»*
+
+**2 · Y la carga nueva entra por el mismo lugar que el crash.** Cada módulo se carga en su propio
+`AssemblyLoadContext(isCollectible: true)`, y su `Resolving` **empieza preguntándole al contexto
+Default**:
+
+```csharp
+ctx.Resolving += (c, n) => {
+    try { _ = AssemblyLoadContext.Default.LoadFromAssemblyName(n); return null; }
+    catch { /* private to the module */ }
+```
+
+En Android `Default.LoadFromAssemblyName` baja a **`EmbeddedAssemblies::open_from_bundles`**, que es
+**el frame #00 del crash**.
+
+**La hipótesis, entonces:** un `Unload` cooperativo en curso contra una carga que consulta el mismo
+lookup, las dos en hilos del pool. Encaja con el hilo (`.NET TP Worker`), con la pila y con el
+disparador (cualquier alta, actualización o rollback descarta los actores de **todos** los módulos,
+porque `Publish` compara por referencia y `Load()` los reconstruye todos).
+
+### Lo que NO se logró, y hay que decirlo
+
+**No se reprodujo.** Un intento válido el 2026-09-22: compras cargado en proceso, actualización de
+cargas `2.1.0 → 9.0.0` completada, catálogo recargado, compras reabierto. **Sin crash.** Un segundo
+intento quedó inconcluso —la secuencia de toques se desvió y el alta no llegó a ocurrir—, así que no
+cuenta ni a favor ni en contra.
+
+**Y hay una diferencia entre el caso original y el intento que puede ser la que importa:** el 18 el
+módulo actualizado **cambió de forma** (híbrida → hospedada), lo que además desarma su WebView y su
+cáscara y alarga el cierre; el intento de hoy fue híbrida → híbrida. **La próxima receta a probar es
+con cambio de forma**, no con una actualización cualquiera.
+
+### Por qué no se arregló
+
+Porque sin reproducción no se puede comprobar que un arreglo arregla. Lo que habría que hacer —
+serializar el `Unload` contra la carga del mismo módulo, o esperar el descarte antes de reconstruir —
+es sincronización en un camino caliente, y ponerla a ciegas deja un cambio que nadie puede falsar.
+
+**Queda abierto, con la receta afilada y el diagnóstico escrito.** Es un crash del proceso entero
+sobre la app de una persona, así que no es cosmético.

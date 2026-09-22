@@ -15,7 +15,11 @@ window.TextoDeLaCara['es-CR'] = {
     portada: {
         urgente: 'Hay algo que conviene revisar pronto.',
         consultePronto: 'Conviene comentar un resultado con tu médico.',
-        enGeneralBien: 'En general, tus resultados vienen bien.'
+        enGeneralBien: 'En general, tus resultados vienen bien.',
+        // LA CUARTA, y es la que faltaba: cuando el expediente NO SE PUDO LEER. No es una de las
+        // tres de arriba —ninguna se puede afirmar sin haber leído— ni es el texto de carga, que
+        // dice que todavía se está preguntando. Dice lo único cierto: que no se pudo.
+        noSePudoLeer: 'No se pudo leer tu expediente ahora.'
     },
     atencion: {
         rotulo: 'merece atención',

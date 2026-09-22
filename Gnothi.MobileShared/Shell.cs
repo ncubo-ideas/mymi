@@ -137,6 +137,9 @@ public sealed class Shell : IDisposable
 	/// <summary>The provider that runs on the device, with no url and no key.</summary>
 	public const string ProveedorLocal = "En este teléfono";
 
+	/// <summary>Como se llama el modelo del aparato en la pantalla y en model.cfg.</summary>
+	public const string ModeloLocal = "apple-on-device";
+
 	// THE ICON BY SECTOR, not by module name.
 	//
 	// THIS SWITCH USED TO SAY 'examenes', 'facturas' and 'compras', with a comment explaining that the
@@ -956,6 +959,9 @@ public sealed class Shell : IDisposable
 		// outside, a size ceiling -- already comes written to be read. It is passed through as it is.
 		InvalidOperationException =>
 			"No se pudo instalar el módulo: " + ex.Message,
+
+		_ => "No se pudo instalar el módulo. " + ex.Message,
+	};
 
 	/// El nombre de una institucion, o como se la nombra cuando el paquete no lo dice. El
 	/// nombre en si es VOZ DE LA INSTITUCION y pasa de largo sin traducir; lo unico que sale

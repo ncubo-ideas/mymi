@@ -17,7 +17,12 @@ window.TextoDeLaCara['en'] = {
     portada: {
         urgente: 'There is something worth looking at soon.',
         consultePronto: 'It is worth mentioning a result to your doctor.',
-        enGeneralBien: 'Overall, your results are doing fine.'
+        enGeneralBien: 'Overall, your results are doing fine.',
+        // THE FOURTH ONE, the one that was missing: when the record COULD NOT BE READ. It is not
+        // one of the three above -none of them can be asserted without having read- and it is not
+        // the loading text, which says the question is still in flight. It says the only true
+        // thing: that it could not be read.
+        noSePudoLeer: 'Your record could not be read right now.'
     },
     atencion: {
         rotulo: 'worth attention',

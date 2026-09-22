@@ -17,10 +17,11 @@ comprimido).
 |---|---|
 | Base | **Ubuntu 24.04 LTS** con XFCE |
 | Host | Mymi (`Gnothi.Desktop` + `Gnothi.Host`) en `/opt/mymi` |
-| Módulos | los cinco `.gmod` híbridos, con el alta ya hecha |
+| Módulos | los cinco `.gmod` híbridos, **entregados en `~/Entregas`** sin dar de alta |
+| Publicador | el mock de Delfos corriendo en `127.0.0.1:8091`, con la historia adentro |
 | Cliente de chat | Claude Desktop, con el conector MCP registrado |
 | Arranque | autologin, y Mymi abre sola |
-| Escritorio | un `LEEME.txt` con tres cosas que probar |
+| Escritorio | un `LEEME.txt` con qué probar y cómo inyectar un examen en vivo |
 
 **Ubuntu 24.04 y no Debian** porque es la única base que cubre los dos clientes de chat a la
 vez: Claude Desktop pide Ubuntu 22.04+ o Debian 12+, y ChatGPT Desktop pide Ubuntu 24.04/26.04
@@ -46,15 +47,21 @@ El `.deb` de Claude no se descarga solo a propósito: la URL cambia y no vamos a
 baja de `claude.ai/download` y se pasa como tercer argumento. Sin él la VM queda igual, y el
 cliente se instala después corriendo `Gnothi.Host --install`.
 
-## El alta va en la construcción, no en el arranque
+## El alta la hace la persona, y los paquetes la esperan en `~/Entregas`
 
-Es la diferencia con el sandbox de contenedor (`Herramientas/sandbox/`), y es deliberada.
+Es la diferencia con el sandbox de contenedor (`Herramientas/sandbox/`), donde el alta corre en
+el arranque porque cada caja es **una persona nueva** y cada visitante tiene que ver su propia
+alta, con su carpeta concedida y el consentimiento en su estado inicial.
 
-En el sandbox cada caja es **una persona nueva**, así que el alta corre al arrancar: cada
-visitante ve su propia alta, con su carpeta concedida y el consentimiento en su estado inicial.
+Acá se dejó del otro lado, y **a pedido**: los cinco `.gmod` van en `~/Entregas` y la persona los
+elige desde *«Elegir el archivo…»*. La razón es que el alta **es la demostración**: es donde se
+ve qué declara el manifiesto, qué carpeta se le concede y qué consultas quedan encendidas. Una
+VM que abre con las cinco instituciones ya puestas esconde justamente el momento que hay que
+mostrar.
 
-Acá la VM **es de una persona**. La baja, la abre y espera encontrar sus instituciones ya
-puestas. Si el alta fuera en el arranque, la primera impresión sería una ventana vacía.
+Hay una razón técnica que lo confirma: los cinco son **híbridos**, y el `--install-module` de la
+CLI no los da de alta —el `ShellFactory` sólo tiene su implementación real dentro de
+`Gnothi.Desktop`—. El alta de un híbrido pasa por la ventana o no pasa.
 
 ## Formato y a quién le sirve
 
@@ -80,6 +87,39 @@ imagen, no una conversión.
 
 El paso 7 del script llena de ceros el espacio libre antes de exportar. Sin eso la imagen
 arrastra todo lo que se borró durante la construcción y el OVA no comprime.
+
+## Las cuatro trampas de armar la imagen
+
+Ninguna es de Mymi; son de armar imágenes, y las cuatro cuestan una tarde si no se saben.
+Encontradas el 2026-09-21 armando la primera.
+
+**1 · `qemu-img resize` no agranda el filesystem.** Estira el disco virtual y deja la partición
+como estaba, así que adentro sigue habiendo 2,5 GB y XFCE se topa con `No space left on
+device` a mitad del `dpkg`. En una VM que arranca, `cloud-init` lo expande con `growpart`; si
+provisionás **sin arrancar**, eso no pasa nunca. Lo correcto:
+
+```bash
+qemu-img create -f qcow2 mymi-demo.qcow2 16G
+virt-resize --expand /dev/sda1 ubuntu-24.04.qcow2 mymi-demo.qcow2   # expande partición Y ext4
+virt-df -h -a mymi-demo.qcow2                                        # comprobarlo
+```
+
+**2 · En WSL2, libguestfs no arranca sin un kernel instalado.** `supermin` necesita uno para
+construir su appliance y WSL no trae `/boot/vmlinuz` porque usa el suyo. El síntoma es
+`supermin exited with error status 1`. Se resuelve con `apt install linux-image-generic`, que
+no cambia con qué arranca WSL. Y conviene `export LIBGUESTFS_BACKEND=direct`.
+
+**3 · `TMPDIR` tiene que estar en el mismo filesystem que el destino.** El alta termina moviendo
+el módulo del temporal a su carpeta, y un move entre filesystems falla con `EXDEV` — *Invalid
+cross-device link*. Con `/tmp` en tmpfs y `/opt` en ext4, el alta baja el bundle, lo examina
+bien, y muere al instalar.
+
+**4 · El conector de Claude sólo se registra si su archivo ya existe.** `HostInstaller` busca
+`~/.config/Claude/claude_desktop_config.json` y lo agrega con `if (File.Exists(...))`, porque en
+una máquina normal lo crea la app en su primer arranque. En una imagen recién provisionada Claude
+nunca se abrió, así que hay que crearlo con `{ "mcpServers": {} }` **antes** de correr
+`--install`. Sin eso la VM sale sin conector, con el síntoma clásico: *"configuré Gnothi y el
+asistente no lo ve"*.
 
 ## Reproducible: la receta antes que la imagen
 
@@ -127,13 +167,56 @@ framework-dependent queda atado a qué versión trajo Canonical ese año. (Para 
 avisos de `libEGL` y `MESA: ZINK` y cae a software. En un contenedor con Xvfb va a pasar lo
 mismo. No impide que funcione, pero hay que ver cómo se siente antes de prometer una demo.
 
+## El publicador vive adentro, y no hay que sembrar nada
+
+Resuelto el 2026-09-21, y la resolución fue más simple que el plan.
+
+El plan era sembrar el journal durante la construcción. **No hace falta, y hacerlo estaba mal.**
+`EndPointDeEventos` —el mock del laboratorio— **ya nace con la historia adentro**: 20 eventos en
+memoria, con la serie de colesterol que sube 182 → 188 → **212** y un perfil lipídico de 2021
+que es lo único que sale vencido. Así que alcanza con que el publicador esté corriendo:
+
+```ini
+# /etc/systemd/system/delfos-mock.service
+ExecStart=/opt/mocks/mock/EventosMock
+Environment=ASPNETCORE_URLS=http://127.0.0.1:8091
+Environment=DOTNET_ROLL_FORWARD=Major
+User=demo
+```
+
+El bundle de `examenes.gmod` se rearmó apuntando a ese `:8091`. La persona da el alta, aprieta
+actualizar, y el expediente se llena **por el camino real**: el cartero sale con la credencial
+de la app, pide el sobre al publicador y el `[Deliver]` lo escribe. Nada precocinado.
+
+**El inyector va aparte, para usarlo en vivo.** Queda en `/opt/mocks/inyector` y el `LEEME.txt`
+del escritorio lo explica. Sirve para agregar un examen mientras alguien mira y que aparezca al
+actualizar. El **antígeno prostático no está en la historia a propósito**: inyectarlo y después
+declarar que la persona es mujer es lo que muestra que la app lo esconde.
+
+**Y una unidad de semilla es un error, no una mejora.** La primera versión de esta imagen traía
+un `delfos-semilla.service` que corría `InyectorDeEventosDemo historia`. Eso **postea el mismo
+guion** que el mock ya tiene de fábrica, con Ids nuevos: duplicaba los siete exámenes. Y su
+`sexo --sexo hombre` rompía un diseño deliberado —los analitos sembrados tienen rango
+independiente del sexo justamente para que la app funcione sin que la persona declare nada—.
+La unidad se quitó.
+
+Un detalle que se paga al reiniciar: el mock guarda en `ConcurrentDictionary`, o sea **en
+memoria**. Lo inyectado en vivo se pierde al apagar la VM; la historia de fábrica vuelve
+siempre. Para la demo es la conducta que se quiere.
+
+## El locale no es cosmético: es de dónde sale el idioma del Host
+
+`Gnothi.Host/Textos.cs` resuelve el idioma **del aparato** y una sola vez
+(`CultureInfo.CurrentUICulture`), porque la decisión es que no haya selector dentro de Gnothi.
+En una imagen recién provisionada eso es `C`/`en_US`, así que **Mymi abre en inglés** aunque
+todo lo demás esté bien. De ahí el paso del `language-pack-es` y el `/etc/environment`: no es un
+adorno, es lo que hace que la cara hable español. Las reglas están en
+`Metodologia/Guias/reglas-de-localizacion.md`.
+
 ## Lo que falta decidir o probar
 - **La cuenta de Claude es del visitante.** La sesión no viaja en la imagen, y está bien que no
   viaje. Conviene decirlo en la página de descarga para que nadie se sorprenda.
-- **El expediente sembrado.** Los módulos quedan dados de alta pero sin datos si el cartero no
-  puede salir a buscarlos. Falta sembrar el journal en la construcción — `demo-datos.ps1` es
-  PowerShell, así que hay que llamar a `Examenes.Consola refrescar` o traer `pwsh`.
-- **Los mocks del publicador.** Si se quiere que el botón de actualizar traiga algo, hay que
-  meter los `docker-compose` de cada negocio dentro de la VM, o dejar el expediente fijo.
-- **Dónde se publica el OVA.** Son 1,5 GB por descarga; conviene un objeto en R2 o similar
-  detrás de Cloudflare, no el servidor de los stages.
+- **Sólo Delfos trae datos.** Los cinco `.gmod` van en `~/Entregas`, pero el único publicador
+  que corre adentro es el del laboratorio. Los otros cuatro dan de alta, pintan su cara y se
+  quedan vacíos. Ponerles datos son cuatro servicios más del mismo patrón, cada uno en su
+  puerto, y el bundle de cada uno rearmado contra él.

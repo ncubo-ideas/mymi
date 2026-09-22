@@ -40,13 +40,6 @@ public sealed class Module : IAsyncDisposable
 	//
 	// Practical consequence: facturas can stay on stdio while examenes runs in-process, both
 	// over the same journals. Migrating is changing one word in a json.
-	// THE SEAM FOR A FACE THAT BRINGS ITS OWN SHELLS. The phones compile the real WebViewShell
-	// and HybridShell in place of the stubs below, by source inclusion. The desktop window keeps
-	// a ProjectReference to this assembly -it uses the public seam and nothing else- so it cannot
-	// swap a type: it registers a factory instead, before the catalog loads. Null means "not
-	// mine": the switch below decides as before. It exists so that Gnothi.Desktop can host the
-	// hybrid form without ceasing to be multiplatform.
-	internal static Func<string, Installation, IShell?>? ShellFactory;
 
 	private static IShell ChooseShell(string name, Installation installation) =>
 		// ONE SEAM FOR THE PLATFORM, and only one. It is put there by whoever assembles the Host --
@@ -97,7 +90,12 @@ public sealed class Module : IAsyncDisposable
 			_            => new StdioShell(name, installation.Shell, installation.GrantedFolder),
 		};
 
-	// See ChooseShell. Null means «I have no opinion».
+	// THE SEAM FOR A FACE THAT BRINGS ITS OWN SHELLS. The phones compile the real WebViewShell
+	// and HybridShell in place of the stubs below, by source inclusion. The desktop window keeps
+	// a ProjectReference to this assembly -it uses the public seam and nothing else- so it cannot
+	// swap a type: it registers a factory instead, before the catalog loads. Null means "not
+	// mine" -«I have no opinion»-: the switch in ChooseShell decides as before. It exists so that
+	// Gnothi.Desktop can host the hybrid form without ceasing to be multiplatform.
 	internal static Func<string, Installation, IShell?>? ShellFactory { get; set; }
 
 	public static string PublicName(string module, string tool) => $"{module}_{tool}";

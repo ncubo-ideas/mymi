@@ -46,7 +46,20 @@
         <div class="card" style="margin-top:14px">
             <div class="row">
                 <div>
-                    <span style="font-size:26px">@HostState.Icon(p.Manifest)</span>
+                    @* LA MARCA QUE VIENE EN EL PAQUETE. La propuesta ya trae la carpeta
+                       extraida -`Folder`-, asi que el logo se puede mirar ANTES de instalar
+                       nada, que es justo cuando la persona necesita reconocer quien le habla.
+                       Antes esta hoja pintaba sólo el dibujo del rubro, y en Linux ni eso: sin
+                       fuente de emoji el glifo sale como un cuadro vacio. *@
+                    @{ Module.BrandLook marca = Module.LookOf(p.Manifest, p.Folder, out _); }
+                    @if (marca.Logo.Length > 0)
+                    {
+                        <img class="marca chica" src="@marca.Logo" alt="" />
+                    }
+                    else
+                    {
+                        <span class="marca chica sinlogo">@HostState.Icon(p.Manifest)</span>
+                    }
                     <span class="title">@p.Manifest.Identity</span>
                     <div class="meta">
                         @* WHO: the institution's own words -legal name, tax id- are not translated. *@
@@ -76,13 +89,9 @@
 
             <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.donde-vive")</h3>
             <div class="meta"><code>@p.JournalGoesTo</code></div>
-            @if (p.Manifest.Journal is { } j && (j.ExpectedSize.Length > 0 || j.Updates.Length > 0 || j.Retention.Length > 0))
+            @if (p.Manifest.Journal is { } j && JournalEnUnaLinea(j) is { Length: > 0 } promesas)
             {
-                <div class="meta">
-                    @if (j.ExpectedSize.Length > 0) { <text>@T("hoja.journal.tamano", ("tamano", j.ExpectedSize)) </text> }
-                    @if (j.Updates.Length > 0) { <text>@T("hoja.journal.refresco", ("refresco", j.Updates)) </text> }
-                    @if (j.Retention.Length > 0) { <text>@T("hoja.journal.retencion", ("retencion", j.Retention))</text> }
-                </div>
+                <div class="meta">@promesas</div>
             }
 
             <h3 style="font-size:13px;margin:14px 0 6px">@T("hoja.con-quien")</h3>
@@ -212,6 +221,23 @@
         State.Enrollment.Discard(p);
         proposal = null;
     }
+
+    // THE THREE PROMISES ABOUT THE RECORD, IN ONE LINE, WITH THE SEPARATOR PUT HERE.
+    //
+    // Each phrase used to be emitted in its own <text> with a trailing space, and RAZOR TRIMS the
+    // whitespace at the END of a block: the sheet read «Unos ~2 MB al ano.Se actualiza al abrir la
+    // app.La institucion lo guarda 5 anos.» -- three whole sentences run together. Measured on
+    // 2026-09-21 in the Linux VM, and it had been shipping.
+    //
+    // A LEADING space survives, which is why the other lines of this sheet look right; but leaning
+    // on that asymmetry is what produced the bug. Joining with an explicit separator is what the
+    // phone's face already does -`.filter(Boolean).join(' ')` in ui.html- so now both agree.
+    private static string JournalEnUnaLinea(JournalDeclaration j) => string.Join(" ", new[]
+    {
+        j.ExpectedSize.Length > 0 ? T("hoja.journal.tamano", ("tamano", j.ExpectedSize)) : "",
+        j.Updates.Length > 0 ? T("hoja.journal.refresco", ("refresco", j.Updates)) : "",
+        j.Retention.Length > 0 ? T("hoja.journal.retencion", ("retencion", j.Retention)) : "",
+    }.Where(f => f.Length > 0));
 
     // A phrase that carries <b> in the catalog, with its values HTML-escaped -what esc() does on
     // the phone- and rendered as markup, not as text.

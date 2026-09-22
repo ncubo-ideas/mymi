@@ -92,7 +92,10 @@ namespace Gnothi.Mobile;
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
 [Activity(Label = "Gnothi", MainLauncher = true, Icon = "@mipmap/ic_launcher", Theme = "@android:style/Theme.Material.Light.NoActionBar")]
-public class MainActivity : Activity
+// PARTIAL PORQUE LA CAJA VIVE EN TheBox.cs, que es la otra mitad de esta clase. El merge del
+// 2026-09-21 se llevó esta palabra y con ella la compilación entera: `TheBox.cs` declara
+// `public partial class MainActivity` y sin este `partial` son dos tipos con el mismo nombre.
+public partial class MainActivity : Activity
 {
 	private WebView? web;
 
@@ -159,6 +162,21 @@ public class MainActivity : Activity
 		}
 
 		web.LoadUrl("file:///android_asset/ui.html");
+
+		// EL CONTADOR DEL BORDE DE LA HIBRIDA, enganchado SIEMPRE y no dentro de PrepareTheBox: la
+		// mitad que hace falta para comparar es justamente la de la caja APAGADA, y ahi ese metodo
+		// se sale en la primera linea. Ver el comentario en HybridShell.Counting.
+		Gnothi.Host.HybridShell.Log = Log;
+
+		// Y LA CAJA. Sin esta llamada el extra `--ez caja true` no hace nada: no se copia el
+		// sustrato, no se prende BoxShell.Preferred y ningun modulo entra en caja.
+		//
+		// LAS TRES LINEAS DE ACA -- el partial de arriba, este enganche y esta llamada -- las
+		// perdio el merge del 2026-09-21 (83b68be) y se restauran el 2026-09-22. Conviene saber por
+		// que importan JUNTAS: sin `PrepareTheBox` la caja no existe, asi que una prueba de la
+		// forma hospedada daria verde SIN PROBAR NADA -- no porque el arreglo del `preguntona`
+		// funcione, sino porque `BoxShell.Preferred` nunca se prendio. Un falso verde.
+		PrepareTheBox();
 
 		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, no la cascara. adb no puede escribir en el
 		// area privada, y eso es correcto: nadie de afuera instala un modulo.

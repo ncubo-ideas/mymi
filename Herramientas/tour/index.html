@@ -1,0 +1,1379 @@
+<title>Mymi en el escritorio</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --pagina:#ece9f4; --pagina-tinta:#241F3D; --pagina-tenue:#6F6B85; --pagina-borde:#ddd8ec;
+  --pagina-panel:#fff; --pagina-hundido:#e4dff2;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  /* La paleta de Mymi, tal cual sale de Gnothi.Desktop/wwwroot/index.html. La misma del
+     teléfono: dos violetas casi iguales se leen como un error de imprenta. */
+  --ink:#241F3D; --soft:#6F6B85; --line:#E7E4F2; --bg:#fff; --panel:#F8F6FD;
+  --brand:#6C4BD9; --brand-dark:#4A2FB0; --warn:#8a6d1f; --warn-bg:#fdf8e7; --danger:#b4232a;
+  --guia:#c2410c;
+}
+[hidden] { display:none !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pagina:#120f1c; --pagina-tinta:#EDEAF6; --pagina-tenue:#A29DBA; --pagina-borde:#2b2540;
+    --pagina-panel:#1b1729; --pagina-hundido:#171327;
+  }
+}
+:root[data-theme="dark"] {
+  --pagina:#120f1c; --pagina-tinta:#EDEAF6; --pagina-tenue:#A29DBA; --pagina-borde:#2b2540;
+  --pagina-panel:#1b1729; --pagina-hundido:#171327;
+}
+
+* { box-sizing:border-box; }
+body { margin:0; background:var(--pagina); color:var(--pagina-tinta);
+  font:15px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+.marco { max-width:1180px; margin:0 auto; padding-inline:16px; padding-block:18px 30px; }
+
+.titulo-fila { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin-bottom:12px; }
+h1.pag { font-size:18px; font-weight:700; letter-spacing:-.2px; margin:0; }
+.titulo-fila .sub { font-size:13px; color:var(--pagina-tenue); }
+.titulo-fila .sello { margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--pagina-tenue); white-space:nowrap; }
+/* EL SELECTOR ES DE LA LÁMINA, no del producto: el Host de verdad NEGOCIA con la persona y no
+   tiene un botón de idioma. Acá hace falta porque quien muestra la lámina elige en el momento. */
+.idioma { font:inherit; font-size:12px; font-weight:600; padding:4px 12px; border-radius:999px;
+  border:1px solid var(--pagina-borde); background:var(--pagina-panel); color:var(--pagina-tenue);
+  cursor:pointer; }
+.idioma:hover { color:var(--pagina-tinta); border-color:var(--pagina-tenue); }
+
+/* ============================================================ el monitor */
+.monitor { position:relative; border-radius:14px; overflow:hidden;
+  border:1px solid rgba(0,0,0,.3); box-shadow:0 2px 6px rgba(20,12,40,.2), 0 30px 64px -30px rgba(20,12,40,.62);
+  aspect-ratio:16/10; min-height:580px; }
+@media (max-width:820px) { .monitor { aspect-ratio:auto; height:80vh; min-height:540px; } }
+
+.escritorio { position:absolute; inset:0; overflow:hidden; font-size:13px;
+  background:
+    radial-gradient(120% 90% at 84% 6%, #5b3fa8 0%, rgba(91,63,168,0) 58%),
+    radial-gradient(85% 75% at 6% 96%, #2f2a6b 0%, rgba(47,42,107,0) 62%),
+    linear-gradient(152deg, #241f47 0%, #1d1938 54%, #14111f 100%); }
+.escritorio::after { content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(112deg, transparent 37%, rgba(255,255,255,.05) 38%, transparent 42%),
+    linear-gradient(112deg, transparent 57%, rgba(255,255,255,.035) 58%, transparent 60%); }
+
+/* ------------------------------------------------ íconos */
+.iconos { position:absolute; top:14px; left:14px; display:grid; gap:4px; width:100px; z-index:2; }
+.icono { display:grid; justify-items:center; gap:5px; padding:8px 4px 7px; width:100px;
+  background:none; border:1px solid transparent; border-radius:6px; cursor:default;
+  font:inherit; font-size:11.5px; color:#fff; text-align:center; line-height:1.25; }
+.icono[data-vivo="1"] { cursor:pointer; }
+.icono[data-vivo="1"]:hover, .icono:focus-visible { background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.3); outline:none; }
+.icono .glifo { width:44px; height:44px; display:block; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+.icono .nombre { text-shadow:0 1px 3px rgba(0,0,0,.8); word-break:break-all; }
+
+/* ------------------------------------------------ barra de tareas */
+.tareas { position:absolute; left:0; right:0; bottom:0; height:44px; z-index:5;
+  display:flex; align-items:center; padding:0 12px;
+  background:rgba(255,255,255,.7); backdrop-filter:blur(18px); border-top:1px solid rgba(255,255,255,.5); }
+.tareas-centro { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:6px; }
+.tarea { width:34px; height:30px; border-radius:6px; display:grid; place-items:center; border:0; background:none; cursor:default; padding:0; position:relative; box-shadow:none; }
+.tarea.abierta { background:rgba(36,31,61,.09); }
+.tarea.abierta::after { content:""; position:absolute; bottom:1px; left:50%; transform:translateX(-50%); width:14px; height:2.5px; border-radius:2px; background:var(--brand); }
+.tarea svg { width:20px; height:20px; }
+.reloj { margin-left:auto; font-size:11.5px; color:#2c2547; text-align:right; line-height:1.2; font-variant-numeric:tabular-nums; }
+
+/* ============================================================ la ventana de Mymi
+   Todo lo de acá abajo sale de Gnothi.Desktop/wwwroot/index.html y sus .razor. */
+.win { position:absolute; z-index:3; background:var(--bg); color:var(--ink); border-radius:9px; overflow:hidden;
+  border:1px solid rgba(0,0,0,.32); box-shadow:0 20px 54px -12px rgba(0,0,0,.62);
+  display:flex; flex-direction:column; animation:abrir .22s cubic-bezier(.2,.9,.3,1.1); }
+@keyframes abrir { from { opacity:0; transform:scale(.965) translateY(8px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce) { .win { animation:none; } }
+/* El escritorio tiene tres franjas y ninguna se pisa: los íconos a la izquierda (hasta ~13%),
+   las ventanas en el medio, y la columna del globo del guía a la derecha. */
+#ventana { top:4%; left:13%; width:58%; height:84%; }
+@media (max-width:820px) { #ventana { top:2%; left:2%; width:96%; height:88%; } }
+
+.crudo-titulo { display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--panel);
+  border-bottom:1px solid var(--line); flex:none; font-size:12px; color:var(--soft); }
+.crudo-titulo .botones { margin-left:auto; display:flex; gap:2px; }
+.crudo-titulo .botones span { width:28px; height:20px; display:grid; place-items:center; border-radius:4px; font-size:11px; }
+
+.win-scroll { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; }
+
+.mymi-header { border-bottom:1px solid var(--line); padding:14px 22px; display:flex; align-items:center; gap:12px; flex:none; }
+.mymi-header .cara { width:56px; height:56px; display:block; }
+.mymi-header .brand { font-weight:700; font-size:22px; letter-spacing:-.4px; }
+
+nav.tabs { display:flex; gap:4px; padding:0 22px; border-bottom:1px solid var(--line); flex:none; }
+nav.tabs button { background:none; border:none; border-bottom:2px solid transparent; color:var(--soft);
+  border-radius:0; padding:11px 14px; font:inherit; font-weight:600; font-size:14px; box-shadow:none; cursor:default; }
+nav.tabs button[data-vivo="1"] { cursor:pointer; }
+nav.tabs button[data-vivo="1"]:hover { color:var(--ink); }
+nav.tabs button.active { color:var(--brand); border-bottom-color:var(--brand); }
+
+main { padding:22px; max-width:900px; }
+h1 { font-size:22px; margin:0 0 4px; letter-spacing:-.3px; }
+p.sub { color:var(--soft); margin:0 0 20px; }
+
+.card { border:1px solid var(--line); border-radius:10px; padding:16px 18px; background:var(--panel);
+  margin-bottom:12px; border-left:4px solid var(--marca,var(--brand)); }
+.card.off { opacity:.55; }
+.query.dim { opacity:.5; }
+.row { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.quien { display:flex; align-items:center; gap:14px; min-width:0; }
+.marca { width:42px; height:42px; flex:none; object-fit:contain; border-radius:9px; }
+.title { font-weight:600; }
+.lema { color:var(--soft); font-size:13px; margin-top:1px; }
+.meta { color:var(--soft); font-size:13px; }
+.empty { color:var(--soft); text-align:center; padding:36px 20px; }
+.crumb { color:var(--soft); font-size:13px; margin:0 0 14px; }
+.crumb button.link { background:none; border:none; color:var(--brand); padding:0; font-weight:600; box-shadow:none; }
+.query { border:1px solid var(--line); border-radius:9px; padding:14px 16px; margin-bottom:12px; }
+.query .desc { color:var(--soft); font-size:13px; margin:2px 0 8px; }
+
+/* NO HAY REGLA `.switch`, y su ausencia es la corrección: la v14 dibujó un interruptor por
+   consulta en la pantalla del escritorio, y en el escritorio ese control NO EXISTE.
+   `ModuleScreen.razor` recorre `EnabledTools()` —ya filtrado— y no ofrece nada para apagar; el
+   consentimiento por consulta se cambia desde el teléfono. El CSS que lo pintaba se quitó en la
+   v17 junto con el botón. */
+.query .field { display:block; color:var(--soft); font-size:12px; margin:8px 0 4px; }
+
+button { font:inherit; font-weight:600; font-size:14px; border-radius:999px; cursor:default;
+  padding:9px 18px; border:1px solid transparent; background:var(--brand); color:#fff;
+  box-shadow:0 4px 12px rgba(108,75,217,.22); }
+button[data-vivo="1"] { cursor:pointer; }
+button[data-vivo="1"]:hover { background:var(--brand-dark); }
+button.ghost { background:transparent; color:var(--brand); border-color:var(--brand); box-shadow:none; }
+button.ghost[data-vivo="1"]:hover { background:rgba(108,75,217,.08); }
+button.small { padding:5px 11px; font-size:13px; }
+input[type=text] { font:inherit; font-size:14px; padding:6px 10px; border:1px solid var(--line);
+  border-radius:6px; background:var(--bg); color:var(--ink); min-width:190px; }
+pre { background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:11px 13px;
+  font:12px/1.5 var(--mono); white-space:pre-wrap; overflow-x:auto; margin:10px 0 0; }
+.notice { border:1px solid var(--line); border-left:3px solid var(--warn); background:var(--warn-bg);
+  border-radius:7px; padding:11px 14px; font-size:13px; margin-bottom:12px; }
+.denied { border-left-color:var(--danger); }
+
+/* la cara adentro de la ventana */
+.carabar { display:flex; gap:14px; align-items:center; padding:9px 18px; border-bottom:1px solid var(--line);
+  background:var(--panel); flex:none; }
+.carabar .meta { margin-left:auto; }
+iframe.cara { display:block; width:100%; flex:1; min-height:0; border:0; background:#fff; }
+
+/* asistente */
+.chat { display:flex; flex-direction:column; gap:8px; margin:8px 0 16px; min-height:120px; }
+.bubble { max-width:78%; padding:9px 13px; border-radius:12px; font-size:14px; white-space:pre-wrap; word-wrap:break-word; }
+.bubble.me { align-self:flex-end; background:var(--brand); color:#fff; border-bottom-right-radius:4px; }
+.bubble.bot { align-self:flex-start; background:var(--panel); border:1px solid var(--line); border-bottom-left-radius:4px; }
+.bubble.bot.fail { border-left:3px solid var(--danger); color:var(--danger); }
+.trace-label { align-self:flex-start; color:var(--soft); font-size:11px; text-transform:uppercase; letter-spacing:.04em; margin-top:4px; }
+.trace { align-self:flex-start; max-width:82%; color:var(--soft); font-size:12px; font-family:var(--mono);
+  background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:5px 9px; white-space:pre-wrap; word-wrap:break-word; }
+.ask { display:flex; gap:8px; align-items:center; }
+.ask input[type=text] { flex:1; }
+
+/* ------------------------------------------------ Claude, la app de afuera
+   Recreación sobria: lo que importa no es su estética sino que es OTRO programa, de otra gente,
+   hablándole al Host por MCP. */
+#claude { top:9%; left:19%; width:56%; height:80%; z-index:4; --cl:#d97757; }
+@media (max-width:820px) { #claude { top:5%; left:2%; width:96%; height:84%; } }
+.cl-hoja { flex:1; min-height:0; overflow:auto; background:#faf8f5; color:#2b2724; padding:16px 18px; }
+.cl-hoja .cl-vacio { color:#8a7f76; font-size:13.5px; text-align:center; padding:30px 10px; }
+.cl-turno { display:grid; gap:10px; margin-bottom:16px; }
+.cl-yo { align-self:flex-end; justify-self:end; max-width:80%; background:#efe9e2; border-radius:12px; padding:9px 13px; font-size:14px; }
+.cl-dice { font-size:14px; line-height:1.6; max-width:68ch; }
+.cl-mcp { border:1px solid #e3d9cf; border-radius:9px; background:#fff; overflow:hidden; max-width:560px; }
+.cl-mcp-cab { display:flex; align-items:center; gap:8px; padding:8px 11px; font-size:12.5px; color:#6d6259; background:#f6f1ea; }
+.cl-mcp-cab b { color:#2b2724; font-weight:600; font-family:var(--mono); font-size:12px; }
+.cl-mcp-cab .pin { margin-left:auto; font-size:11px; color:#8a7f76; }
+.cl-mcp-cuerpo { padding:9px 11px; font-family:var(--mono); font-size:11.5px; color:#6d6259; white-space:pre-wrap; word-break:break-word; border-top:1px solid #efe7de; }
+.cl-mcp.mal { border-color:#e0b4ac; }
+.cl-mcp.mal .cl-mcp-cab { background:#fbeeea; color:#a2432f; }
+.cl-pensando { color:#8a7f76; font-size:13.5px; font-style:italic; }
+.cl-pie { flex:none; border-top:1px solid #e9e1d8; background:#faf8f5; padding:10px 14px; display:grid; gap:8px; }
+.cl-caja { display:flex; gap:8px; align-items:center; border:1px solid #e0d6cb; border-radius:10px; background:#fff; padding:8px 10px; }
+.cl-caja input { flex:1; min-width:0; border:0; outline:none; font:inherit; font-size:13.5px; background:none; color:#2b2724; }
+.cl-enchufe { display:flex; align-items:center; gap:7px; font-size:11.5px; color:#6d6259; }
+.cl-enchufe .bolita { width:7px; height:7px; border-radius:50%; background:#2f9e68; flex:none; }
+.cl-enchufe b { font-family:var(--mono); font-size:11px; color:#2b2724; font-weight:600; }
+.cl-sug { display:flex; flex-wrap:wrap; gap:6px; }
+.cl-sug button { font:inherit; font-size:12px; font-weight:400; padding:6px 11px; border-radius:99px;
+  border:1px solid #e0d6cb; background:#fff; color:#6d6259; box-shadow:none; cursor:default; }
+.cl-sug button[data-vivo="1"] { cursor:pointer; color:#2b2724; }
+.cl-sug button[data-vivo="1"]:hover { border-color:var(--cl); color:var(--cl); background:#fff; }
+
+/* ------------------------------------------------ diálogo */
+.velo { position:absolute; inset:0; background:rgba(12,8,24,.45); z-index:6; }
+/* CENTRADO SIN `transform`, y no es una preferencia: la animación de apertura anima `transform`,
+   así que durante esos 200 ms el translate(-50%,-50%) del centrado NO está puesto. Medir el
+   diálogo ahí devuelve un rectángulo corrido media pantalla, y el halo del guía terminaba
+   señalando aire. `inset:0` + `margin:auto` centra sin tocar el transform. */
+.dlg { position:absolute; z-index:7; top:0; bottom:0; left:13%; right:29%; margin:auto; height:max-content;
+  width:min(430px,92%); background:var(--bg); color:var(--ink); border-radius:12px; overflow:hidden;
+  border:1px solid rgba(0,0,0,.3); box-shadow:0 24px 64px -14px rgba(0,0,0,.66);
+  animation:aparecer .2s ease-out; }
+@keyframes aparecer { from { opacity:0; } to { opacity:1; } }
+@media (prefers-reduced-motion:reduce) { .dlg { animation:none; } }
+.dlg-cuerpo { padding:18px; }
+.dlg h2 { margin:0 0 4px; font-size:18px; letter-spacing:-.3px; }
+.dlg .lead { color:var(--soft); font-size:13.5px; margin:0 0 14px; }
+.dlg .fila-alta { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.dlg .fila-alta input { flex:1; min-width:0; }
+.dlg .o { text-align:center; color:var(--soft); font-size:12px; margin:10px 0; }
+.revision { border:1px solid var(--line); border-radius:9px; padding:13px 15px; background:var(--panel); }
+.revision .quien { margin-bottom:10px; }
+.revision dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:12.5px; }
+.revision dt { color:var(--soft); }
+.revision dd { margin:0; font-weight:600; }
+.revision dd code { font-family:var(--mono); font-size:11.5px; font-weight:400; }
+.dlg-pie { display:flex; justify-content:flex-end; gap:8px; padding:13px 18px; background:var(--panel); border-top:1px solid var(--line); }
+
+/* ------------------------------------------------ el guía */
+.halo { position:absolute; z-index:20; border-radius:9px; pointer-events:none;
+  box-shadow:0 0 0 3px var(--guia), 0 0 0 10px rgba(194,65,12,.26); animation:latir 1.5s ease-in-out infinite; }
+@keyframes latir { 0%,100% { box-shadow:0 0 0 3px var(--guia), 0 0 0 9px rgba(194,65,12,.3); }
+                   50% { box-shadow:0 0 0 3px var(--guia), 0 0 0 16px rgba(194,65,12,0); } }
+@media (prefers-reduced-motion:reduce) { .halo { animation:none; } }
+.globo { position:absolute; z-index:21; width:min(270px, 26%); background:#1c1430; color:#fff; border-radius:10px;
+  padding:12px 14px; font-size:12.5px; line-height:1.45; box-shadow:0 12px 34px -8px rgba(0,0,0,.66); }
+.globo b { color:#c4b5fd; font-weight:600; }
+.globo code { font-family:var(--mono); font-size:11.5px; background:rgba(255,255,255,.12); padding:1px 4px; border-radius:3px; }
+.globo .accion { display:block; margin-top:8px; font-size:11px; color:#c4b5fd; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.globo .seguir { margin-top:10px; font-size:12px; font-weight:600; padding:6px 14px; border-radius:999px;
+  border:0; background:#c4b5fd; color:#231544; cursor:pointer; box-shadow:none; }
+.globo .punta { display:none; }
+
+/* ------------------------------------------------ pie */
+.debajo { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-top:14px; }
+.progreso { display:flex; gap:5px; }
+.progreso i { width:20px; height:4px; border-radius:2px; background:var(--pagina-borde); display:block; }
+.progreso i.hecho { background:var(--brand); }
+.reiniciar { font:inherit; font-size:12.5px; color:var(--pagina-tenue); background:none; border:0; cursor:pointer;
+  text-decoration:underline; padding:4px; box-shadow:none; border-radius:0; font-weight:400; }
+.nota-pie { flex:1; min-width:260px; font-size:11.5px; color:var(--pagina-tenue); }
+.nota-pie b { color:var(--pagina-tinta); }
+.nota-pie code { font-family:var(--mono); font-size:11px; background:var(--pagina-hundido); padding:1px 4px; border-radius:3px; }
+</style>
+
+<div class="marco">
+
+  <div class="titulo-fila">
+    <h1 class="pag" id="pag-titulo">Mymi on the desktop</h1>
+    <span class="sub" id="pag-sub">from the module handover to the question</span>
+    <button class="idioma" id="idioma" type="button">Español</button>
+    <!-- EL SELLO DEL SNAPSHOT. El `+` no es adorno: la cara copiada incluye tres archivos
+         arreglados que en ese commit todavía no están, y un sello que dijera el commit pelado
+         estaría señalando un código que no es el que se ve. -->
+    <span class="sello">UI según trim/spike-wasm-mobile · 83b68be+ · 21/9/2026</span>
+  </div>
+
+  <div class="monitor">
+    <div class="escritorio" id="escritorio">
+
+      <div class="iconos">
+        <button class="icono" id="ic-mymi" type="button">
+          <img class="glifo" src="mymi.png" alt="">
+          <span class="nombre">Mymi</span>
+        </button>
+
+        <button class="icono" id="ic-gmod" type="button">
+          <svg class="glifo" viewBox="0 0 44 44" aria-hidden="true">
+            <path d="M22 4l16 8v20l-16 8-16-8V12z" fill="#3d3568"/>
+            <path d="M22 4l16 8-16 8-16-8z" fill="#544a86"/>
+            <path d="M22 20v20l-16-8V12z" fill="#332c5a"/>
+            <path d="M14.5 26.5h15" stroke="#b9a7ff" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </svg>
+          <span class="nombre">examenes.gmod</span>
+        </button>
+
+        <button class="icono" id="ic-claude" type="button">
+          <svg class="glifo" viewBox="0 0 44 44" aria-hidden="true">
+            <rect x="2" y="2" width="40" height="40" rx="11" fill="#f6ede8"/>
+            <g stroke="#d97757" stroke-width="2.6" stroke-linecap="round">
+              <path d="M22 11v22M11 22h22M14.2 14.2l15.6 15.6M29.8 14.2L14.2 29.8"/>
+            </g>
+          </svg>
+          <span class="nombre">Claude</span>
+        </button>
+
+      </div>
+
+      <div class="velo" id="velo" hidden></div>
+      <div id="ventana" class="win" hidden></div>
+      <div id="claude" class="win" hidden></div>
+      <div id="dlg" class="dlg" hidden></div>
+
+      <div class="tareas">
+        <div class="tareas-centro">
+          <button class="tarea" type="button" aria-label="Inicio">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><g fill="#3a3161"><rect x="2" y="2" width="7.2" height="7.2" rx="1"/><rect x="10.8" y="2" width="7.2" height="7.2" rx="1"/><rect x="2" y="10.8" width="7.2" height="7.2" rx="1"/><rect x="10.8" y="10.8" width="7.2" height="7.2" rx="1"/></g></svg>
+          </button>
+          <button class="tarea" id="tarea-mymi" type="button" aria-label="Mymi">
+            <img src="mymi.png" alt="" width="20" height="20">
+          </button>
+          <button class="tarea" id="tarea-claude" type="button" aria-label="Claude">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><g stroke="#d97757" stroke-width="1.9" stroke-linecap="round"><path d="M10 3.5v13M3.5 10h13M5.4 5.4l9.2 9.2M14.6 5.4L5.4 14.6"/></g></svg>
+          </button>
+        </div>
+        <div class="reloj" id="reloj"></div>
+      </div>
+
+      <div class="halo" id="halo" hidden></div>
+      <div class="globo" id="globo" hidden></div>
+    </div>
+  </div>
+
+  <div class="debajo">
+    <div class="progreso" id="progreso"></div>
+    <button class="reiniciar" id="reiniciar" type="button">Start over</button>
+    <p class="nota-pie" id="nota-pie"></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  function hora() {
+    var d = new Date();
+    $('reloj').innerHTML = d.toLocaleTimeString('es-CR', { hour:'2-digit', minute:'2-digit' }) +
+      '<br>' + d.toLocaleDateString('es-CR');
+  }
+  hora(); setInterval(hora, 20000);
+
+  // ---------------------------------------------------------------- el guía
+  var vivo = null;
+
+  function apagar() {
+    if (vivo) { vivo.removeAttribute('data-vivo'); vivo.onclick = null; vivo = null; }
+    $('halo').hidden = true; $('globo').hidden = true;
+  }
+
+  // TRAERLO A LA VISTA PRIMERO. La ventana scrollea por dentro, así que un botón de más abajo
+  // existe pero no se ve: señalarlo sin esto deja el halo fuera de cuadro y el globo pegado al
+  // borde. Se sube por los ancestros hasta el que scrollea y se lo centra.
+  function traerAlaVista(el) {
+    var caja = el.parentNode;
+    while (caja && caja.nodeType === 1) {
+      // SOLO un contenedor que scrollea DE VERDAD. `.escritorio` es overflow:hidden y aun así
+      // acepta scrollTop por código: moverlo corría el escritorio entero y dejaba el halo
+      // apuntando a un rectángulo vacío mientras el botón seguía en su lugar.
+      var ov = getComputedStyle(caja).overflowY;
+      if ((ov === 'auto' || ov === 'scroll') && caja.scrollHeight > caja.clientHeight + 4) {
+        var r = el.getBoundingClientRect(), c = caja.getBoundingClientRect();
+        caja.scrollTop += (r.top - c.top) - (c.height / 2) + (r.height / 2);
+        return;
+      }
+      caja = caja.parentNode;
+    }
+  }
+
+  // EL GLOBO TIENE COLUMNA PROPIA, a la derecha, y las ventanas se corrieron para dejársela.
+  // Calcular un lado libre alrededor de cada objetivo no funcionó: la ventana ocupa casi todo el
+  // escritorio, así que cualquier lado que quepa tapa algo que hay que leer -- el botón de al
+  // lado, el título del bloque. Una columna fija no tapa nunca y siempre está en el mismo lugar,
+  // que además es más fácil de seguir con la vista.
+  function colocarGlobo(r, esc) {
+    var g = $('globo'), gh = g.offsetHeight;
+    var cy = (r.top - esc.top) + r.height / 2;
+    g.style.left = '';
+    g.style.right = '16px';
+    // arrimado al objetivo en vertical, pero siempre entero adentro y sin pisar la barra.
+    g.style.top = Math.max(14, Math.min(cy - gh / 2, esc.height - gh - 58)) + 'px';
+  }
+
+  function colocarGloboViejo(r, esc, lado) {
+    var g = $('globo'), gw = g.offsetWidth, gh = g.offsetHeight, punta = g.querySelector('.punta');
+    var x = r.left - esc.left, y = r.top - esc.top;
+    var pos = lado || (x + r.width + 20 + gw < esc.width ? 'der' : 'abajo');
+    if (pos === 'der') {
+      g.style.left = (x + r.width + 16) + 'px';
+      g.style.top = Math.max(8, Math.min(y + r.height/2 - gh/2, esc.height - gh - 52)) + 'px';
+      punta.style.left = '-5px'; punta.style.top = '18px';
+    } else if (pos === 'izq') {
+      g.style.left = Math.max(8, x - gw - 16) + 'px';
+      g.style.top = Math.max(8, Math.min(y + r.height/2 - gh/2, esc.height - gh - 52)) + 'px';
+      punta.style.left = (gw - 6) + 'px'; punta.style.top = '18px';
+    } else if (pos === 'arriba') {
+      g.style.left = Math.max(8, Math.min(x + r.width/2 - gw/2, esc.width - gw - 8)) + 'px';
+      g.style.top = Math.max(8, y - gh - 14) + 'px';
+      punta.style.left = (gw/2 - 5) + 'px'; punta.style.top = (gh - 6) + 'px';
+    } else {
+      g.style.left = Math.max(8, Math.min(x + r.width/2 - gw/2, esc.width - gw - 8)) + 'px';
+      g.style.top = Math.min(y + r.height + 14, esc.height - gh - 52) + 'px';
+      punta.style.left = (gw/2 - 5) + 'px'; punta.style.top = '-5px';
+    }
+
+    // EL CIERRE, y faltaba: los cuatro lados clampean lo suyo y ninguno clampeaba los dos ejes.
+    // El monitor recorta, así que un globo que se pasa no se ve "corrido": se ve mordido, con la
+    // línea de la acción cortada por el borde -- que es justo lo que hay que leer.
+    g.style.left = Math.max(8, Math.min(parseFloat(g.style.left), esc.width - gw - 8)) + 'px';
+    g.style.top  = Math.max(8, Math.min(parseFloat(g.style.top),  esc.height - gh - 52)) + 'px';
+  }
+
+  function señalar(el, texto, accion, alHacer, lado) {
+    apagar();
+    if (!el) return;
+    vivo = el;
+    el.setAttribute('data-vivo', '1');
+    el.onclick = function () { apagar(); alHacer(); };
+
+    traerAlaVista(el);
+    var esc = $('escritorio').getBoundingClientRect(), r = el.getBoundingClientRect();
+    var halo = $('halo');
+    halo.hidden = false;
+    halo.style.left = (r.left - esc.left - 4) + 'px'; halo.style.top = (r.top - esc.top - 4) + 'px';
+    halo.style.width = (r.width + 8) + 'px'; halo.style.height = (r.height + 8) + 'px';
+
+    var g = $('globo');
+    g.hidden = false;
+    g.innerHTML = texto + (accion ? '<span class="accion">' + accion + '</span>' : '') + '<span class="punta"></span>';
+    colocarGlobo(r, esc, lado);
+  }
+
+  function contar(texto, sobre, alSeguir, lado) {
+    apagar();
+    var esc = $('escritorio').getBoundingClientRect(), r = sobre.getBoundingClientRect();
+    var g = $('globo');
+    g.hidden = false;
+    g.innerHTML = texto + '<button class="seguir" type="button">' + t('seguir') + '</button><span class="punta"></span>';
+    g.querySelector('.seguir').onclick = function () { apagar(); alSeguir(); };
+    colocarGlobo(r, esc, lado);
+  }
+
+  // ---------------------------------------------------------------- estado
+  var marco = null;
+  var apagadas = {};            // lo que diga installation.json, por «modulo.tool»
+  var vista = 'conexiones';     // conexiones | asistente | ajustes | cara
+  var abierto = null;           // dentro de conexiones: el id del módulo abierto, o null
+
+  // LAS CUATRO QUE YA ESTABAN. El tour agrega la quinta -- Delfos -- y por eso `examenes` no
+  // está acá: entra durante el recorrido, con su alta y todo.
+  //
+  // Arrancar con instituciones ya puestas es lo que hace VERDADERA la primera frase del tour
+  // («es una sola app: las instituciones no te mandan un programa cada una»). Con la lista vacía
+  // había que creerle a un globo; con cuatro tarjetas de cuatro rubros distintos se ve.
+  var instaladas = ['compras', 'cargas', 'dealership', 'municipalidad'];
+
+  // ================================================================ LOS DOS IDIOMAS
+  //
+  // ARRANCA EN INGLÉS y se puede volver al español. El interruptor es de la lámina, no del
+  // producto: el Host de verdad NEGOCIA con la persona y no tiene selector.
+  //
+  // LO QUE ESTÁ ACÁ Y LO QUE NO lo decide Metodologia/Guias/reglas-de-localizacion.md, regla 2:
+  //
+  //   UI del Host          se traduce   -> está acá, y el `en` es el de Gnothi.Host/textos.json,
+  //                                        copiado, no inventado
+  //   voz del narrador     se traduce   -> está acá; los globos son de la lámina
+  //   voz de la institución NO           -> NO está acá: nombre, lema, `title` del módulo y el
+  //                                        título y la descripción de cada consulta viven en
+  //                                        `INSTITUCIONES` y se ven en español en las dos
+  //   dato del journal      NO           -> NO está acá: los valores que muestra la cara
+  //
+  // Que una pantalla en inglés muestre «Tu salud, en tus manos» NO es un defecto: es la regla 1
+  // -- «el Host se localiza a sí mismo, la institución se localiza a sí misma, y ninguno traduce
+  // al otro» --. El paso 4 lo dice en voz alta.
+  // LAS FRASES DEL HOST llevan al lado la clave de `Gnothi.Host/textos.json` de donde salen. No
+  // están traducidas acá: están COPIADAS de las dos columnas del catálogo. Si alguna vez suena
+  // raro, se arregla allá y se vuelve a copiar -- nunca al revés.
+  var TEXTO = {
+    es: {
+      pagTitulo:'Mymi en el escritorio', pagSub:'de la entrega del módulo a la pregunta',
+      idiomaBoton:'English', reiniciar:'Empezar de nuevo',
+
+      conexiones:'Conexiones', asistente:'Asistente', ajustes:'Ajustes',        // nav.*
+      conexionesTitulo:'Mis conexiones',                                        // instituciones.titulo
+      conexionesSub:'Lo que cada institución te entregó. Mymi lee lo que ya está en este aparato.',
+      abrir:'Abrir', recargar:'Recargar',                                       // instituciones.*
+      agregarInst:'Agregar una institución…',
+      releeInstall:'vuelve a leer installation.json del disco',
+      volverLista:'← Todas tus instituciones',                                  // nav.volver
+      pantallaDe:'La pantalla de {quien}',                                      // pantalla.cara.titulo
+      pantallaDesc:'La cara que la institución diseñó, corriendo dentro de Mymi con el motor prestado.',
+      pantallaAbrir:'Abrir la pantalla', pantallaFijar:'Poner un icono en el escritorio',
+      consultasDe:'Consultas de {quien}',                                       // detalle.consultas.de
+      consultasLead:'Puedes preguntarle a tu asistente sobre:',
+      consultasApagada:'Una consulta apagada desaparece del catálogo: el asistente no la ve y no ' +
+        'puede pedirla.',
+      consultar:'Consultar', unaConsulta:'1 consulta', nConsultas:'{n} consultas',
+
+      ajustesTitulo:'Ajustes', ajustesSub:'Quién redacta. Los hechos siguen siendo de tus instituciones.',
+      ajustesLlave:'api.anthropic.com · la llave es tuya y vive en este aparato',
+      ajustesModelo:'Modelo:', ajustesCargar:'Cargar modelos',
+      ajustesCambiar:'Se puede cambiar por ChatGPT, Gemini, Groq, OpenRouter o <b>LM Studio</b> ' +
+        'corriendo en esta misma máquina.',
+      asistenteSub:'Tus instituciones responden; el modelo redacta.',
+      asistenteRedacta:'Redacta <b>Claude</b> · <code>claude-sonnet-5</code> · con tu llave, desde este aparato',
+      asistenteVacio:'Pregunta algo sobre tus instituciones.',
+      asistentePlaceholder:'Escribe tu pregunta…', preguntar:'Preguntar',
+
+      altaTitulo:'Agregar una institución',
+      altaLead:'Pega el enlace que te dio la institución, o elige el paquete que te mandó.',
+      altaPlaceholder:'https://…/modulo.gmod, o el enlace de go.gnothi.app',
+      altaAgregar:'Agregar', altaO:'o', altaElegir:'Elegir el archivo…', altaCancelar:'Cancelar',
+      altaTrae:'Esto trae {archivo}.',
+      altaQuien:'Quién lo publica', altaVersion:'Versión', altaCarpeta:'Carpeta', altaRed:'Red',
+      altaConsultas:'Consultas', altaMotor:'Motor', altaRegistro:'Registro', altaTamano:'Tamaño',
+      altaNo:'no', altaPrestado:'lo presta Mymi', nArchivos:'{n} archivos',
+
+      clTitulo:'Claude', clVacio:'Una conversación cualquiera. Lo único distinto es que este ' +
+        'aparato tiene a Mymi.',
+      clConectado:'MCP conectado · <b>gnothi</b> · <span id="cl-n">{n}</span> herramientas',
+      clPlaceholder:'Preguntale a Claude…', clSeUso:'Se usó', clNoDisponible:'no disponible',
+      clLocal:'gnothi · local', clPensando:'pensando…', clEscribiendo:'escribiendo…',
+      q1:'¿Cómo vengo con mis exámenes?', q2:'¿Mi colesterol viene subiendo?',
+
+      r1:'Tenés <b>{examenes} exámenes</b> registrados en este aparato, y <b>{fuera}</b> analitos ' +
+         'fuera de rango. Tu app leyó el laboratorio hasta el evento {evento}, así que está al día.',
+      r2:'Puedo leerte lo que dice el último <b>{nombre}</b> del {fecha}: {resultado}. Pero <b>si ' +
+         'eso es una subida no te lo puedo decir</b>: la lista me da cada examen con su resultado, ' +
+         'no la serie del analito en el tiempo, ni cuál es tu nivel de siempre, ni dónde está el ' +
+         'techo esperable. Eso lo dibuja la pantalla del propio laboratorio, adentro de Mymi.',
+      rApagada:'Esa consulta ya no está entre las que el laboratorio me ofrece. Si la apagaste vos, ' +
+         'así queda: yo no puedo volver a encenderla.',
+
+      g0:'<b>Mymi</b> ya está instalado. Es <b>una sola app</b>: las instituciones no te mandan un ' +
+         'programa cada una.',
+      g0a:'Abrí Mymi',
+      g1:'Ya hay <b>cuatro</b>: el súper, la gasolinera, el taller y la muni. Cada una puso <b>su</b> ' +
+         'logo, su color y su lema, y ninguna te mandó un programa.<br><br>Ahora llegó una quinta: el ' +
+         'laboratorio te mandó un <code>.gmod</code> de <b>235 KB</b>, con su pantalla adentro y ' +
+         '<b>sin motor</b> — se lo presta Mymi.',
+      g2:'Se puede pegar el enlace que dio la institución, o elegir el paquete que mandó. Vamos por ' +
+         'el archivo.',
+      g3:'Mymi revisó qué trae. La carpeta se la <b>concede él</b>, no la pide el módulo — y el ' +
+         'paquete no trae motor, porque la aduana lo rechaza.',
+      g4:'Ahí está, la quinta, con <b>su color y su lema</b>: es lo único de esta pantalla que decide ' +
+         'la institución. Cada registro vive en <b>su</b> carpeta, en este aparato.<br><br>Fijate que ' +
+         'su nombre y su lema siguen en español: <b>el Host no traduce a la institución</b>.',
+      g5:'Delfos trae <b>su propia pantalla</b>, y va antes que las consultas: es la cara que la ' +
+         'institución diseñó, corriendo con el motor que le presta Mymi.',
+      g6:'Esto lo dibujó <b>el laboratorio</b>, no Mymi: toma la ventana entera y Mymi queda ' +
+         'sosteniéndola, a un «Volver» de distancia.<br><br>Para armarse preguntó <b>nueve veces</b> ' +
+         'al dominio. Ninguna de esas nueve la va a ver el modelo.',
+      g6a:'Volvamos a Mymi.', g6b:'Volver a Gnothi',
+      g7:'Hasta acá, todo pasó dentro de Mymi. Pero el Host es un <b>servidor MCP</b>: la app de chat ' +
+         'que ya usás puede preguntarle, sin que nadie le mande datos a nadie.',
+      g7a:'Abrí Claude',
+      g8:'Claude se conectó al Host y encontró <b>doce herramientas</b>: dos del Host y dos por cada ' +
+         'institución. <b>Cinco instituciones distintas en un solo catálogo</b>, y nadie le mandó nada ' +
+         'a nadie — lo lee todo de este aparato.',
+      g8a:'Preguntale',
+      g8b:'Los conteos salieron de tu carpeta; la frase la escribió Claude. Ahora pedile algo que ' +
+          '<b>ninguna de las dos consultas contesta</b>.',
+      g9:'Mientras tanto, en su teléfono, la persona <b>apagó «Mis examenes»</b>.<br><br>Mirá la ' +
+         'pantalla: ahora hay <b>una sola consulta</b>. La apagada no está atenuada — <b>no está</b>. ' +
+         'El escritorio no tiene el interruptor: lo lee y lo obedece.',
+      gRemate:'Y del otro lado, lo mismo: Claude ahora ve <b>once</b> herramientas, no doce. Las otras ' +
+         'cuatro instituciones no se enteraron. Pedile lo mismo que antes.',
+      gCierre:'El programa de afuera quedó <b>afuera</b>, y no porque alguien se lo negara en el ' +
+         'momento: esa herramienta ya no existe para él.<br><br>Pero la pantalla del laboratorio ' +
+         '<b>sigue entera</b>. Decidir qué puede preguntar <b>un asistente</b> sobre vos no es ' +
+         'prohibirle a la institución mostrarte lo tuyo. Son dos decisiones distintas, y por eso hay ' +
+         '<b>dos puertas</b>.',
+      gComprueba:'Compruébalo.', gMisma:'La misma pantalla, con todo adentro.',
+      gIntacto:'Todo tu expediente, intacto.', seguir:'Seguir',
+
+      pie:'<b>Acá no corre nada de Mymi</b> — el escritorio y la ventana son una recreación de ' +
+        '<code>Gnothi.Desktop</code>, con sus textos, su paleta y su distribución, y los datos son ' +
+        'inventados. Lo único real es la pantalla del laboratorio: el <code>web/</code> entero del ' +
+        '<code>examenes.gmod</code> del 21/9/2026, copiado sin tocar salvo las líneas que cargan el ' +
+        'puente falso y el idioma del aparato. Los logos de las cinco instituciones son sus ' +
+        '<code>brand/logo.png</code>. <b>El nombre, el lema y las consultas de cada institución no ' +
+        'se traducen</b>: son su voz, y el Host no le pone palabras en la boca a nadie.'
+    },
+
+    en: {
+      pagTitulo:'Mymi on the desktop', pagSub:'from the module handover to the question',
+      idiomaBoton:'Español', reiniciar:'Start over',
+
+      conexiones:'Connections', asistente:'Assistant', ajustes:'Settings',
+      conexionesTitulo:'My Connections',
+      conexionesSub:'What each institution handed you. Mymi reads what is already on this device.',
+      abrir:'Open', recargar:'Reload',
+      agregarInst:'Add an institution…',
+      releeInstall:'reads installation.json from disk again',
+      volverLista:'← All your institutions',
+      pantallaDe:'{quien}’s screen',
+      pantallaDesc:'The face the institution designed, running inside Mymi with the engine on loan.',
+      pantallaAbrir:'Open the screen', pantallaFijar:'Put an icon on the desktop',
+      consultasDe:'{quien} queries',
+      consultasLead:'You can ask your assistant about:',
+      consultasApagada:'A query you switch off disappears from the catalog: the assistant does not ' +
+        'see it and cannot ask for it.',
+      consultar:'Run', unaConsulta:'1 query', nConsultas:'{n} queries',
+
+      ajustesTitulo:'Settings', ajustesSub:'Who writes. The facts still belong to your institutions.',
+      ajustesLlave:'api.anthropic.com · the key is yours and lives on this device',
+      ajustesModelo:'Model:', ajustesCargar:'Load models',
+      ajustesCambiar:'You can switch to ChatGPT, Gemini, Groq, OpenRouter or <b>LM Studio</b> ' +
+        'running on this very machine.',
+      asistenteSub:'Your institutions answer; the model writes.',
+      asistenteRedacta:'Written by <b>Claude</b> · <code>claude-sonnet-5</code> · with your key, from this device',
+      asistenteVacio:'Ask something about your institutions.',
+      asistentePlaceholder:'Type your question…', preguntar:'Ask',
+
+      altaTitulo:'Add an institution',
+      altaLead:'Paste the link your institution gave you, or pick the package they sent.',
+      altaPlaceholder:'https://…/module.gmod, or the go.gnothi.app link',
+      altaAgregar:'Add', altaO:'or', altaElegir:'Pick the file…', altaCancelar:'Cancel',
+      altaTrae:'This brings {archivo}.',
+      altaQuien:'Who publishes it', altaVersion:'Version', altaCarpeta:'Folder', altaRed:'Network',
+      altaConsultas:'Queries', altaMotor:'Engine', altaRegistro:'Record', altaTamano:'Size',
+      altaNo:'no', altaPrestado:'on loan from Mymi', nArchivos:'{n} files',
+
+      clTitulo:'Claude', clVacio:'An ordinary conversation. The only difference is that this device ' +
+        'has Mymi on it.',
+      clConectado:'MCP connected · <b>gnothi</b> · <span id="cl-n">{n}</span> tools',
+      clPlaceholder:'Ask Claude…', clSeUso:'Used', clNoDisponible:'not available',
+      clLocal:'gnothi · local', clPensando:'thinking…', clEscribiendo:'writing…',
+      q1:'How am I doing with my lab work?', q2:'Is my cholesterol going up?',
+
+      r1:'You have <b>{examenes} exams</b> on record on this device, and <b>{fuera}</b> analytes out ' +
+         'of range. Your app has read the lab up to event {evento}, so it is up to date.',
+      r2:'I can read you what the latest <b>{nombre}</b> from {fecha} says: {resultado}. But <b>I ' +
+         'cannot tell you whether that is a rise</b>: the list gives me each exam with its result, ' +
+         'not the analyte’s series over time, nor what your usual level is, nor where the ' +
+         'expected ceiling sits. That is drawn by the lab’s own screen, inside Mymi.',
+      rApagada:'That query is no longer among the ones the lab offers me. If you switched it off, ' +
+         'that is how it stays: I cannot turn it back on.',
+
+      g0:'<b>Mymi</b> is already installed. It is <b>one single app</b>: institutions do not each ' +
+         'send you a program of their own.',
+      g0a:'Open Mymi',
+      g1:'There are <b>four</b> already: the supermarket, the petrol station, the garage and the town ' +
+         'hall. Each one supplied <b>its own</b> logo, colour and tagline, and none of them sent you a ' +
+         'program.<br><br>Now a fifth has arrived: the lab sent you a <code>.gmod</code> of <b>235 ' +
+         'KB</b>, with its screen inside and <b>no engine</b> — Mymi lends it one.',
+      g2:'You can paste the link the institution gave you, or pick the package they sent. Let us go ' +
+         'with the file.',
+      g3:'Mymi checked what it brings. The folder is <b>granted by Mymi</b>, not requested by the ' +
+         'module — and the package carries no engine, because customs rejects it.',
+      g4:'There it is, the fifth, with <b>its colour and its tagline</b>: the only thing on this ' +
+         'screen the institution decides. Each record lives in <b>its own</b> folder, on this ' +
+         'device.<br><br>Notice that its name and tagline are still in Spanish: <b>the Host does not ' +
+         'translate the institution</b>.',
+      g5:'Delfos brings <b>a screen of its own</b>, and it comes before the queries: it is the face ' +
+         'the institution designed, running on the engine Mymi lends it.',
+      g6:'The <b>lab</b> drew this, not Mymi: it takes the whole window and Mymi holds it up, one ' +
+         '«Back» away.<br><br>To put itself together it asked its domain <b>nine times</b>. The model ' +
+         'will see none of those nine.',
+      g6a:'Let us go back to Mymi.', g6b:'Back to Gnothi',
+      g7:'So far everything happened inside Mymi. But the Host is an <b>MCP server</b>: the chat app ' +
+         'you already use can ask it, without anyone sending anyone any data.',
+      g7a:'Open Claude',
+      g8:'Claude connected to the Host and found <b>twelve tools</b>: two from the Host and two from ' +
+         'each institution. <b>Five different institutions in a single catalog</b>, and nobody sent ' +
+         'anybody anything — it reads all of it from this device.',
+      g8a:'Ask it',
+      g8b:'The counts came out of your folder; the sentence was written by Claude. Now ask it for ' +
+          'something <b>neither of the two queries answers</b>.',
+      g9:'Meanwhile, on their phone, the person <b>switched «Mis examenes» off</b>.<br><br>Look at the ' +
+         'screen: there is <b>a single query</b> now. The one switched off is not dimmed — <b>it is ' +
+         'not there</b>. The desktop has no switch: it reads the decision and obeys it.',
+      gRemate:'And on the other side, the same: Claude now sees <b>eleven</b> tools, not twelve. The ' +
+         'other four institutions never found out. Ask it the same as before.',
+      gCierre:'The outside program was left <b>outside</b>, and not because anyone denied it in the ' +
+         'moment: that tool no longer exists for it.<br><br>But the lab’s screen is <b>still ' +
+         'whole</b>. Deciding what <b>an assistant</b> may ask about you is not forbidding the ' +
+         'institution to show you what is yours. Two different decisions, and that is why there are ' +
+         '<b>two doors</b>.',
+      gComprueba:'See for yourself.', gMisma:'The same screen, with everything inside.',
+      gIntacto:'Your whole record, intact.', seguir:'Next',
+
+      pie:'<b>Nothing of Mymi runs here</b> — the desktop and the window are a recreation of ' +
+        '<code>Gnothi.Desktop</code>, with its texts, palette and layout, and the data is made up. ' +
+        'The only real thing is the lab’s screen: the entire <code>web/</code> of the ' +
+        '<code>examenes.gmod</code> of 21 Sep 2026, copied untouched except for the lines that load ' +
+        'the fake bridge and the device language. The five institutions’ logos are their own ' +
+        '<code>brand/logo.png</code>. <b>Each institution’s name, tagline and queries are not ' +
+        'translated</b>: they are its voice, and the Host does not put words in anyone’s mouth.'
+    }
+  };
+
+  var IDIOMA = 'en';
+  function t(clave) {
+    var d = TEXTO[IDIOMA] || TEXTO.en;
+    return (clave in d) ? d[clave] : (TEXTO.en[clave] !== undefined ? TEXTO.en[clave] : clave);
+  }
+
+  // LOS HUECOS VAN POR NOMBRE, nunca por posición, y es la regla 7 del catálogo: el orden de las
+  // palabras cambia entre los dos idiomas, y un {0} que se mueve compila, corre y miente.
+  // Se ve en `consultasDe`: «Consultas de Delfos» contra «Delfos queries».
+  function con(clave, huecos) {
+    return t(clave).replace(/\{(\w+)\}/g, function (todo, k) {
+      return huecos && (k in huecos) ? huecos[k] : todo;
+    });
+  }
+
+  function consultasVivas(id) {
+    var n = vivas(id).length;
+    return n === 1 ? t('unaConsulta') : con('nConsultas', { n: n });
+  }
+
+  // ================================================================ LAS CINCO INSTITUCIONES
+  //
+  // TODO SALE DE LOS MANIFIESTOS QUE SE INSTALAN: Gnothi.Mobile/bundles/hibrida/<modulo>/
+  // manifest.json. Son los que viajan adentro de cada .gmod, y por eso son los que valen.
+  //
+  // HAY TRES MANIFIESTOS DE EXAMENES EN EL REPO y los otros dos son distractores. Esta lámina
+  // leyó el equivocado hasta la v13: `Modulos/examenes/manifest.json` es una copia vieja y
+  // traducida que todavía dice "Clinical laboratory (POC mock)" y declara CINCO tools que el
+  // módulo instalado no tiene. `Examenes/manifiesto.json` es el fuente en esquema español.
+  //
+  // `identidad` ES `Manifest.Identity` (Manifest.cs:85): `brand.shortName` si lo hay y
+  // `institution` si no. Los cinco declaran `shortName`, así que en el escritorio se los ve por
+  // su nombre corto -- ModuleList, ModuleScreen, Alta y Cara.razor leen todos esa misma
+  // propiedad, y por eso ninguna pantalla cae en un nombre distinto. El teléfono lo parte en dos
+  // niveles («Laboratorio Clínico» chico sobre «Delfos» grande, ui.html `tiers()`); el escritorio
+  // no, y esta lámina simula el escritorio.
+  //
+  // `titulo` es `manifest.title` y va en la línea chica, NO como lema. `lema` es `brand.slogan`.
+  // Los logos son los `brand/logo.png` reales de cada bundle.
+  //
+  // LAS DESCRIPCIONES DE LAS TOOLS del manifiesto están escritas PARA EL MODELO y son
+  // larguísimas; acá va una línea de cada una. Ninguna de las diez toma parámetros (`input: []`).
+  var INSTITUCIONES = {
+    examenes: {
+      identidad:'Delfos', institucion:'Laboratorio Clínico Delfos', titulo:'Tus examenes, al dia',
+      lema:'Tu salud, en tus manos', color:'#0e2f55', logo:'logo-delfos.png',
+      dominio:'delfos.cr', version:'2.4.0', retencion:'~2 MB al año, 5 años',
+      tamano:'235 KB', archivos:19, carpeta:'examenes',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuántos exámenes hay registrados en este aparato, cuántos analitos están fuera de ' +
+               'rango, y hasta qué evento del laboratorio leyó tu app.' },
+        { nombre:'lista_de_examenes', titulo:'Mis examenes',
+          desc:'La lista de exámenes registrados en este aparato, con su fecha y su resultado.' }
+      ]
+    },
+    compras: {
+      identidad:'La Guaria', institucion:'Supermercado La Guaria', titulo:'La Guaria y vos',
+      lema:'Tu canasta, más cerca de vos', color:'#2f6b3f', logo:'logo-laguaria.png',
+      dominio:'laguaria.cr', version:'1.2.0', retencion:'~4 MB al año, 5 años',
+      tamano:'1,5 MB', archivos:62, carpeta:'compras',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuánto llevás gastado según lo registrado en este aparato, cuántas compras hay, y ' +
+               'hasta qué evento del supermercado leyó tu app.' },
+        { nombre:'lista_de_compras', titulo:'Mis compras',
+          desc:'La lista de compras registradas en este aparato, con su fecha y su total.' }
+      ]
+    },
+    cargas: {
+      identidad:'Faro', institucion:'Estaciones Faro', titulo:'Tus cargas',
+      lema:'Rendimiento real, tramo a tramo', color:'#0B3C49', logo:'logo-faro.png',
+      dominio:'faro.cr', version:'1.0.3', retencion:'~1 MB al año, 2 años',
+      tamano:'192 KB', archivos:15, carpeta:'cargas',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuántas cargas de combustible hay registradas en este aparato, cuántos vehículos, ' +
+               'y hasta qué evento de la estación leyó tu app.' },
+        { nombre:'lista_de_vehiculos', titulo:'Mis vehiculos',
+          desc:'Los vehículos que la bitácora conoce, con su placa y cuántas cargas tiene cada uno.' }
+      ]
+    },
+    dealership: {
+      identidad:'Sotaventos Motors', institucion:'Sotaventos Motors',
+      titulo:'Mi plan de mantenimiento', lema:'Tu carro, siempre listo', color:'#1f3a5f',
+      logo:'logo-sotaventos.png', dominio:'sotavento.com', version:'3.1.0',
+      retencion:'~2 MB al año, 10 años', tamano:'306 KB', archivos:20, carpeta:'dealership',
+      consultas:[
+        { nombre:'resumen', titulo:'Como va mi carro',
+          desc:'Cuántas operaciones de mantenimiento están por vencer, cuántas vencidas y no ' +
+               'hechas, y hasta qué evento del concesionario leyó la app.' },
+        { nombre:'hasta_donde_leyo', titulo:'Que tan al dia esta esto',
+          desc:'Hasta dónde leyó la app el registro del concesionario y hasta qué instante se ' +
+               'evaluó el plan.' }
+      ]
+    },
+    municipalidad: {
+      identidad:'Monteverde', institucion:'Municipalidad de Monteverde',
+      titulo:'MONTEVERDE Municipal Services', lema:'Lo que el portal no te dice', color:'#2C306C',
+      logo:'logo-monteverde.png', dominio:'monteverde.example', version:'1.0.0',
+      retencion:'~1 MB al año, 5 años', tamano:'142 KB', archivos:14, carpeta:'municipalidad',
+      consultas:[
+        { nombre:'resumen', titulo:'Como vengo',
+          desc:'Cuántas fincas y cuántos rubros con historia hay registrados en este aparato, ' +
+               'cuántos períodos están por vencer y cuántos vencidos, y hasta qué evento de la ' +
+               'municipalidad leyó tu app.' },
+        { nombre:'lista_de_vencimientos', titulo:'Que se me vence',
+          desc:'Los períodos que se te vencen y los que ya se te vencieron, con su rubro, su monto ' +
+               'y cuántos días faltan o lleva de atraso. Son dos listas y no se suman.' }
+      ]
+    }
+  };
+
+  // LA DEL RECORRIDO. Es la única con la cara simulada: las otras cuatro entran por su tarjeta.
+  var ESTA = 'examenes';
+  function inst(id) { return INSTITUCIONES[id || ESTA]; }
+
+  // LA LLAVE DEL CONSENTIMIENTO ES «modulo.tool», no el nombre de la tool: `resumen` existe en
+  // las cinco, y apagar la de una no puede apagar las otras cuatro.
+  function llave(id, tool) { return id + '.' + tool; }
+
+  // Lo que el módulo CONTRIBUYE al catálogo, ya filtrado por consentimiento. Es
+  // `Module.EnabledTools()` (Module.cs:107), y su comentario vale la pena: «Disabled returns
+  // empty: the module never finds out, and cannot tell "I was switched off" apart from "nobody
+  // asked". That indistinguishability is the property, not a side effect.»
+  function vivas(id) {
+    return inst(id).consultas.filter(function (c) { return !apagadas[llave(id, c.nombre)]; });
+  }
+  // El parámetro se llamaba `t` y desde que existe la función `t()` de los textos eso la tapaba
+  // adentro de esta función. No mordió porque acá no se pinta nada, pero es la clase de sombra que
+  // muerde la próxima vez.
+  function superficie(tool) {
+    try { var x = marco && marco.contentWindow.__tools; if (x && x[tool]) return x[tool]; } catch (e) {}
+    return DE_RESERVA[tool];
+  }
+
+  // Las mismas respuestas, por si el marco queda en otro origen y no se lo puede leer de adentro.
+  // Son las DOS del manifiesto que se instala, con la forma de ConsultasDelModulo.cs.
+  var DE_RESERVA = {
+    // `analitosFueraDeRango` son los analitos con un hallazgo HOY -- la regla de
+    // `Expediente.AnalitosFueraDeRango` (Expediente.cs:746) --: colesterol total sobre el techo,
+    // sangre en la orina presente y color de orina fuera de lo esperable. Tres, no dos: la
+    // tendencia no entra en esta cuenta aunque la pantalla la levante.
+    resumen: function () {
+      return { hayDatos:true, examenes:16, analitosFueraDeRango:3, ultimoEventoLeido:1284 };
+    },
+    lista_de_examenes: function () {
+      return { hayDatos:true, examenes:[
+        { nombre:'Perfil lipídico', fecha:'2026-09-10',
+          resultado:'Colesterol total 214 mg/dL · Colesterol LDL 96 mg/dL', aportaSerieContinua:true },
+        { nombre:'Urianálisis', fecha:'2026-09-10',
+          resultado:'Sangre en la orina positivo · Color de la orina ámbar oscuro',
+          aportaSerieContinua:false },
+        { nombre:'Hemograma', fecha:'2026-09-10',
+          resultado:'Hemoglobina 14.1 g/dL', aportaSerieContinua:true }
+      ] };
+    }
+  };
+
+  // ---------------------------------------------------------------- la ventana
+
+
+  // La mascota real, sacada del PNG de 256 px que lleva adentro Gnothi.Desktop/mymi.ico.
+  // Va SUELTA, sin teja: en la ventana el papel ya es blanco.
+  var MASCOTA = '<img class="cara" src="mymi.png" alt="">';
+
+  // El proveedor por omisión del producto: ModelConfig.DefaultName = "Claude",
+  // DefaultModel = "claude-sonnet-5". El destello es sólo una marca de agua de la tarjeta.
+  var LOGO_CLAUDE =
+    '<svg class="marca" viewBox="0 0 44 44" aria-hidden="true">' +
+      '<rect width="44" height="44" rx="10" fill="#f6ede8"/>' +
+      '<g stroke="#d97757" stroke-width="2.6" stroke-linecap="round">' +
+        '<path d="M22 11v22M11 22h22M14.2 14.2l15.6 15.6M29.8 14.2L14.2 29.8"/>' +
+      '</g>' +
+    '</svg>';
+
+  var LOGO_CLAUDE_CHICO =
+    '<svg width="15" height="15" viewBox="0 0 44 44" aria-hidden="true" style="vertical-align:-2px">' +
+      '<g stroke="#d97757" stroke-width="3.4" stroke-linecap="round">' +
+        '<path d="M22 11v22M11 22h22M14.2 14.2l15.6 15.6M29.8 14.2L14.2 29.8"/>' +
+      '</g></svg> ';
+
+  function pintar() {
+    var v = $('ventana');
+    var barra = '<div class="crudo-titulo"><span>Mymi</span>' +
+      '<span class="botones"><span>—</span><span>▢</span><span>✕</span></span></div>';
+
+    if (vista === 'cara') {
+      v.innerHTML = barra +
+        '<div class="carabar">' +
+          '<button class="ghost small" id="volver" type="button">← Volver a Gnothi</button>' +
+          '<span class="title">' + inst().identidad + '</span>' +
+          '<span class="meta">dentro de Gnothi · tu registro queda en esta computadora</span>' +
+        '</div>' +
+        // EL IDIOMA VIAJA AL APARATO SIMULADO, no a la cara. `idioma-del-aparato.js` redefine
+        // `navigator.languages` adentro del marco y la cara negocia como negociaría de verdad:
+        // no existe un canal para pedirle un idioma (regla 11), y la lámina no lo inventa.
+        '<iframe id="cara" class="cara" src="cara/index.html?lang=' + IDIOMA +
+        '" title="' + inst().identidad + '"></iframe>';
+      marco = $('cara');
+      return;
+    }
+
+    v.innerHTML = barra +
+      '<div class="win-scroll">' +
+        '<header class="mymi-header">' + MASCOTA + '<span class="brand">Mymi</span></header>' +
+        '<nav class="tabs">' +
+          tab('conexiones', 'Conexiones') + tab('asistente', 'Asistente') + tab('ajustes', 'Ajustes') +
+        '</nav>' +
+        '<main>' + hoja() + '</main>' +
+      '</div>';
+
+    Array.prototype.forEach.call(v.querySelectorAll('[data-tab]'), function (b) {
+      b.addEventListener('click', function () {
+        if (b.getAttribute('data-vivo') !== '1') return;
+        vista = b.getAttribute('data-tab'); abierto = null; pintar();
+      });
+    });
+  }
+
+  function tab(id, txt) {
+    return '<button data-tab="' + id + '" class="' + (vista === id ? 'active' : '') + '" type="button">' + txt + '</button>';
+  }
+
+  function hoja() {
+    if (vista === 'ajustes')
+      return '<h1>' + t('ajustesTitulo') + '</h1><p class="sub">' + t('ajustesSub') + '</p>' +
+        '<div class="card" style="--marca:#d97757">' +
+          '<div class="row"><div class="quien">' + LOGO_CLAUDE +
+            '<div><span class="title">Claude</span>' +
+            '<div class="lema">' + t('ajustesLlave') + '</div>' +
+            '<div class="meta">' + t('ajustesModelo') + ' <code style="font-family:var(--mono);font-size:12px">claude-sonnet-5</code></div></div>' +
+          '</div><button class="small ghost" type="button">' + t('ajustesCargar') + '</button></div>' +
+        '</div>' +
+        '<p class="crumb">' + t('ajustesCambiar') + '</p>';
+
+    // Mymi trae SU PROPIO asistente, con el mismo bucle y el mismo Dispatcher. No es el camino
+    // que recorre esta demostración -- acá el que pregunta es un programa de afuera -- pero
+    // existe, así que se muestra.
+    if (vista === 'asistente') {
+      return '<h1>' + t('asistente') + '</h1><p class="sub">' + t('asistenteSub') + '</p>' +
+        '<p class="crumb">' + LOGO_CLAUDE_CHICO + '<span>' + t('asistenteRedacta') + '</span></p>' +
+        '<div class="chat"><div class="empty">' + t('asistenteVacio') + '</div></div>' +
+        '<div class="ask"><input type="text" placeholder="' + t('asistentePlaceholder') + '" disabled>' +
+        '<button class="small" type="button">' + t('preguntar') + '</button></div>';
+    }
+
+    if (abierto) {
+      // EL ORDEN ES EL DE ModuleScreen.razor: la pantalla de la institución PRIMERO -- sólo si el
+      // paquete es híbrido -- y debajo las consultas.
+      //
+      // SÓLO LAS ENCENDIDAS, y no es un detalle: `ModuleScreen.razor` itera
+      // `module.EnabledTools()`, que ya viene filtrado por consentimiento. Una consulta apagada
+      // NO se ve atenuada acá: no se ve. En el escritorio no hay interruptor por consulta --
+      // eso vive en el teléfono (`gn.setTool` en Gnothi.Mobile/Assets/ui.html), y este lado sólo
+      // consume la decisión. Hasta la v16 esta lámina dibujaba un interruptor que en Windows no
+      // existe; se lo sacó al confirmarlo contra el repo.
+      // `m.identidad` y `m.titulo` NO pasan por `t()`: son voz de la institución. En la pantalla
+      // en inglés se leen «Delfos» y «Tus examenes, al dia», que es lo que el producto hace.
+      var m = inst(abierto);
+      return '<p class="crumb"><button class="link" id="volver-lista" type="button">' +
+        t('volverLista') + '</button></p>' +
+        '<h1>' + m.identidad + '</h1><p class="sub">' + m.titulo + '</p>' +
+        (abierto === ESTA
+          ? '<div class="query"><div class="title">' + con('pantallaDe', { quien: m.identidad }) + '</div>' +
+            '<div class="desc">' + t('pantallaDesc') + '</div>' +
+            '<div style="margin-top:10px"><button class="small" id="abrir-cara" type="button">' +
+            t('pantallaAbrir') + '</button> ' +
+            '<button class="small ghost" type="button">' + t('pantallaFijar') + '</button></div></div>'
+          : '') +
+        '<h2 style="font-size:17px;margin:22px 0 4px">' + con('consultasDe', { quien: m.identidad }) + '</h2>' +
+        '<p class="sub" style="margin-bottom:12px">' + t('consultasLead') + '</p>' +
+        vivas(abierto).map(consulta).join('') +
+        '<p class="crumb">' + t('consultasApagada') + '</p>';
+    }
+
+    // LA LISTA. Cada tarjeta es la de ModuleList.razor, campo por campo: el logo que la
+    // institución declaró, `Manifest.Identity` arriba, `brand.slogan` debajo, y en la línea chica
+    // `manifest.title` con la cuenta de consultas encendidas. La franja de la izquierda lleva su
+    // color.
+    //
+    // Hasta la v13 la tarjeta no tenía ni logo ni lema, con un comentario que decía que el módulo
+    // «no declara brand». Sí lo declara: se estaba leyendo el manifiesto equivocado.
+    return '<h1>' + t('conexionesTitulo') + '</h1><p class="sub">' + t('conexionesSub') + '</p>' +
+      instaladas.map(tarjeta).join('') + pieLista();
+  }
+
+  function tarjeta(id) {
+    var m = inst(id);
+    return '<div class="card" style="--marca:' + m.color + '">' +
+      '<div class="row"><div class="quien">' +
+        '<img class="marca" src="' + m.logo + '" alt="">' +
+        '<div><span class="title">' + m.identidad + '</span>' +
+        '<div class="lema">' + m.lema + '</div>' +
+        '<div class="meta">' + m.titulo + ' · ' + consultasVivas(id) + '</div></div>' +
+      '</div>' +
+      '<button class="small"' + (id === ESTA ? ' id="abrir-mod"' : '') +
+      ' data-abrir="' + id + '" type="button">' + t('abrir') + '</button></div>' +
+    '</div>';
+  }
+
+  function pieLista() {
+    return '<p class="crumb" style="margin-top:18px">' +
+      '<button class="small" id="importar" type="button">' + t('agregarInst') + '</button> ' +
+      '<button class="small ghost" id="recargar" type="button">' + t('recargar') + '</button>' +
+      '<span class="meta"> &nbsp;' + t('releeInstall') + '</span></p>';
+  }
+
+  // UNA CONSULTA, como la pinta ModuleScreen.razor: el título, lo que hace, un campo por cada
+  // parámetro declarado, y el botón «Consultar». Nada más.
+  //
+  // NO LLEVA INTERRUPTOR, y eso se verificó: `ModuleScreen.razor` no tiene ningún control de
+  // consentimiento, y en todo `Gnothi.Desktop` no hay un `setTool` ni un `role="switch"`. El
+  // escritorio CONSUME el consentimiento —recorre `EnabledTools()`— y no lo edita. Lo que llega
+  // acá ya viene filtrado, así que una apagada simplemente no está.
+  //
+  // Las diez tools de los cinco módulos declaran `input: []`, así que hoy ninguna lleva campo.
+  // El soporte se deja puesto porque el esquema lo admite.
+  function consulta(c) {
+    return '<div class="query">' +
+      '<div class="title">' + c.titulo + '</div>' +
+      '<div class="desc">' + c.desc + '</div>' +
+      (c.param ? '<label class="field">' + c.param + '</label>' +
+                 '<input type="text" value="" disabled>' : '') +
+      '<div style="margin-top:10px"><button class="small" type="button">' + t('consultar') + '</button></div></div>';
+  }
+
+  // ---------------------------------------------------------------- el recorrido
+
+  var paso = 0, TOTAL = 10;
+
+  function avanzar(n) {
+    paso = n;
+    Array.prototype.forEach.call($('progreso').children, function (i, k) { i.className = k < n ? 'hecho' : ''; });
+    ESCENA[n]();
+  }
+
+  var ESCENA = {
+    0: function () {
+      señalar($('ic-mymi'),
+        t('g0'), t('g0a'), function () {
+          $('ventana').hidden = false; $('tarea-mymi').classList.add('abierta');
+          pintar(); avanzar(1);
+        }, 'der');
+    },
+
+    // LAS CUATRO QUE YA ESTABAN son el argumento, no decorado: cuatro rubros que no se parecen en
+    // nada -supermercado, gasolinera, taller, municipalidad- y una sola app sosteniéndolos.
+    1: function () {
+      señalar($('importar'),
+        t('g1'), t('agregarInst'), function () { abrirAlta(); avanzar(2); }, 'der');
+    },
+
+    2: function () {
+      señalar($('elegir'),
+        t('g2'), t('altaElegir'), function () { revisar(); avanzar(3); }, 'der');
+    },
+
+    3: function () {
+      señalar($('agregar'),
+        t('g3'), t('altaAgregar'), function () {
+          $('dlg').hidden = true; $('velo').hidden = true;
+          if (instaladas.indexOf(ESTA) < 0) instaladas.unshift(ESTA);
+          vista = 'conexiones'; abierto = null; pintar();
+          avanzar(4);
+        }, 'der');
+    },
+
+    4: function () {
+      señalar($('abrir-mod'),
+        t('g4'), t('abrir'), function () { abierto = ESTA; pintar(); avanzar(5); }, 'izq');
+    },
+
+    5: function () {
+      señalar($('abrir-cara'),
+        t('g5'), t('pantallaAbrir'), function () { vista = 'cara'; pintar(); avanzar(6); });
+    },
+
+    6: function () {
+      // NUEVE: `historial`, `alertas`, `analitos` y una `tendencia` por cada uno de los seis
+      // analitos sembrados. Decía «once», que es la cuenta de cuando había ocho.
+      contar(t('g6'),
+        $('ventana'), function () {
+          señalar($('volver'), t('g6a'), t('g6b'), function () {
+            vista = 'conexiones'; abierto = null; pintar(); avanzar(7);
+          }, 'abajo');
+        }, 'izq');
+    },
+
+    // Y acá entra el otro programa. No es una parte de Mymi: es la app que la persona YA usaba.
+    7: function () {
+      señalar($('ic-claude'),
+        t('g7'), t('g7a'), function () { abrirClaude(); avanzar(8); }, 'der');
+    },
+
+    8: function () {
+      var b = $('claude').querySelector('[data-q="resumen"]');
+      señalar(b,
+        t('g8'), t('g8a'), function () { responderClaude('resumen'); }, 'izq');
+    },
+
+    // EL CONSENTIMIENTO NO SE CAMBIA ACÁ, y ese es el punto del paso.
+    //
+    // Hasta la v16 este paso dibujaba un interruptor por consulta en la pantalla del escritorio y
+    // le pedía a la persona que lo apretara. En el escritorio ese control NO EXISTE: se verificó
+    // contra `ModuleScreen.razor`, que recorre `EnabledTools()` y no ofrece nada para apagar, y
+    // contra todo `Gnothi.Desktop`, donde no hay un `setTool` ni un `role="switch"`. El
+    // interruptor por consulta vive en el teléfono.
+    //
+    // Así que el paso muestra EL EFECTO en vez del control -- y resulta más fuerte, porque el
+    // efecto es doble y sale de una sola decisión: la consulta apagada desaparece de la pantalla
+    // de Mymi *y* del catálogo del asistente. `EnabledTools()` filtra para las dos puertas.
+    9: function () {
+      $('claude').hidden = true;
+      $('tarea-claude').classList.remove('abierta');
+      apagadas[llave(ESTA, 'lista_de_examenes')] = true;
+      vista = 'conexiones'; abierto = ESTA; pintar();
+
+      contar(t('g9'), $('ventana'), function () { remate(); }, 'izq');
+    }
+  };
+
+  // ---------------------------------------------------------------- Claude, la app de afuera
+
+  // LO QUE CLAUDE ENCUENTRA al conectarse: dos del Host, y una por cada [Query] encendida de
+  // CADA institución instalada. El nombre público es `modulo_tool` -- `Module.PublicName`
+  // (Module.cs:101) --, y por eso los cinco `resumen` no chocan entre sí.
+  //
+  // Con las cinco instituciones y sus dos consultas: 2 + 10 = doce.
+  function herramientas() {
+    var t = ['gnothi_installed_modules', 'gnothi_verify_module'];
+    instaladas.forEach(function (id) {
+      vivas(id).forEach(function (c) { t.push(id + '_' + c.nombre); });
+    });
+    return t;
+  }
+
+  function abrirClaude() {
+    $('claude').hidden = false;
+    $('tarea-claude').classList.add('abierta');
+    pintarClaude();
+  }
+
+  // La variable local se llamaba `t` -- el array de herramientas -- y desde que existe la función
+  // `t()` de los textos la tapaba entera adentro de esta función. Acá SÍ mordía: `t('clTitulo')`
+  // sobre un array revienta.
+  function pintarClaude() {
+    var tools = herramientas();
+    $('claude').innerHTML =
+      '<div class="crudo-titulo"><span>' + t('clTitulo') + '</span>' +
+        '<span class="botones"><span>—</span><span>▢</span><span>✕</span></span></div>' +
+      '<div class="cl-hoja" id="cl-hoja">' +
+        '<div class="cl-vacio">' + t('clVacio') + '</div></div>' +
+      '<div class="cl-pie">' +
+        '<div class="cl-enchufe"><span class="bolita"></span>' +
+          con('clConectado', { n: tools.length }) + '</div>' +
+        '<div class="cl-caja"><input type="text" placeholder="' + t('clPlaceholder') + '" disabled>' +
+          '<span style="color:#b9ada2">↑</span></div>' +
+        '<div class="cl-sug">' +
+          '<button data-q="resumen" type="button">' + t('q1') + '</button>' +
+          '<button data-q="tendencia" type="button">' + t('q2') + '</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // LAS DOS PREGUNTAS, y cada una con la tool que le toca. La primera cae justo adentro de lo que
+  // el laboratorio ofrece; la segunda usa la MISMA puerta y aun así se queda corta, que es el
+  // punto entero del recorrido.
+  // LO QUE LA PERSONA PREGUNTA se traduce: es la voz de quien usa el aparato, no la de nadie más.
+  var PREGUNTAS = {
+    resumen:   { dice: 'q1', tool: 'resumen' },
+    tendencia: { dice: 'q2', tool: 'lista_de_examenes' }
+  };
+
+  function responderClaude(cual) {
+    var q = PREGUNTAS[cual], h = $('cl-hoja');
+    if (h.querySelector('.cl-vacio')) h.innerHTML = '';
+
+    var turno = document.createElement('div');
+    turno.className = 'cl-turno';
+    turno.innerHTML = '<div class="cl-yo">' + t(q.dice) + '</div>' +
+      '<div class="cl-pensando">' + t('clPensando') + '</div>';
+    h.appendChild(turno);
+    h.scrollTop = h.scrollHeight;
+
+    setTimeout(function () {
+      var pensando = turno.querySelector('.cl-pensando');
+
+      // APAGADA: ni siquiera aparece en el catálogo, así que el error no es un permiso denegado
+      // sino una herramienta que no existe. La llave lleva el módulo -- `resumen` existe en las
+      // cinco instituciones y apagar la de una no puede apagar las otras cuatro.
+      if (apagadas[llave(ESTA, q.tool)]) {
+        // EL MENSAJE DE ERROR NO SE TRADUCE, y es a propósito: sale del Host en inglés, como los
+        // warnings del catálogo. La guía lo dice en su regla del catálogo -- «diagnóstico para
+        // quien empaqueta un módulo, no copy». Lo que sí se traduce es lo que Claude redacta.
+        pensando.outerHTML =
+          '<div class="cl-mcp mal"><div class="cl-mcp-cab">✕ <b>examenes_' + q.tool + '</b>' +
+          '<span class="pin">' + t('clNoDisponible') + '</span></div>' +
+          '<div class="cl-mcp-cuerpo">module \'examenes\' does not expose \'' + q.tool + '\'</div></div>' +
+          '<div class="cl-dice">' + t('rApagada') + '</div>';
+        h.scrollTop = h.scrollHeight;
+        return;
+      }
+
+      var d = superficie(q.tool)();
+      pensando.outerHTML =
+        '<div class="cl-mcp"><div class="cl-mcp-cab">⚒ ' + t('clSeUso') + ' <b>examenes_' + q.tool + '</b>' +
+        '<span class="pin">' + t('clLocal') + '</span></div>' +
+        '<div class="cl-mcp-cuerpo">{}\n\n' + JSON.stringify(d, null, 1) + '</div></div>' +
+        '<div class="cl-pensando">' + t('clEscribiendo') + '</div>';
+      h.scrollTop = h.scrollHeight;
+
+      setTimeout(function () {
+        turno.querySelector('.cl-pensando').outerHTML = '<div class="cl-dice">' + redacta(cual, d) + '</div>';
+        h.scrollTop = h.scrollHeight;
+
+        if (paso === 8 && cual === 'resumen') {
+          setTimeout(function () {
+            var b = $('claude').querySelector('[data-q="tendencia"]');
+            señalar(b, t('g8b'), t('g8a'), function () { responderClaude('tendencia'); }, 'izq');
+          }, 700);
+        }
+        if (paso === 8 && cual === 'tendencia') setTimeout(function () { avanzar(9); }, 1500);
+      }, 700);
+    }, 620);
+  }
+
+  // LA FECHA VIAJA CON EL RENDER, no con el dato: regla 8 de las reglas de localización. El JSON
+  // la trae ISO -- que es el dato -- y quien redacta la dice como se dice en su idioma. Por eso
+  // sale de `toLocaleDateString` y no de una lista de meses escrita a mano, que sólo sabía
+  // español.
+  function fechaLegible(iso) {
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString(IDIOMA === 'en' ? 'en-GB' : 'es-CR',
+      { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  // LO QUE CLAUDE ESCRIBE CON LO QUE LE DIERON, y nada más que con eso. Se traduce: es prosa del
+  // asistente para la persona, no voz de la institución. Los VALORES no se tocan.
+  function redacta(cual, d) {
+    if (cual === 'resumen')
+      return con('r1', { examenes: d.examenes, fuera: d.analitosFueraDeRango,
+                         evento: d.ultimoEventoLeido });
+
+    // LA PUERTA SE ABRIÓ Y AUN ASÍ NO ALCANZA, y ese es el remate verdadero. La lista trae filas de
+    // EXAMEN -nombre, fecha, resultado-; no trae la serie del analito, ni su unidad en el tiempo,
+    // ni el techo esperable, ni el «nivel de siempre». Un laboratorio entrega valores; la tendencia
+    // no está en los valores, y esa lectura es [View]: la dibuja la pantalla y el modelo no la ve.
+    // EL MÁS RECIENTE, buscado y no supuesto: el orden de la lista es cosa del módulo.
+    // `ultimo.nombre` y `ultimo.resultado` NO se traducen: son dato del registro (regla 3), y se
+    // ven en español dentro de la frase inglesa. Eso es lo que pasa de verdad.
+    var ultimo = d.examenes.reduce(function (a, b) { return b.fecha > a.fecha ? b : a; });
+    return con('r2', { nombre: ultimo.nombre, fecha: fechaLegible(ultimo.fecha),
+                       resultado: ultimo.resultado });
+  }
+
+  // ---------------------------------------------------------------- alta
+
+  function abrirAlta() {
+    $('velo').hidden = false;
+    var d = $('dlg');
+    d.hidden = false;
+    d.innerHTML =
+      '<div class="dlg-cuerpo">' +
+        '<h2>' + t('altaTitulo') + '</h2>' +
+        '<p class="lead">' + t('altaLead') + '</p>' +
+        '<div class="fila-alta"><input type="text" placeholder="' + t('altaPlaceholder') + '" disabled>' +
+        '<button class="small" type="button">' + t('altaAgregar') + '</button></div>' +
+        '<p class="o">' + t('altaO') + '</p>' +
+        '<div style="text-align:center"><button class="small ghost" id="elegir" type="button">' +
+        t('altaElegir') + '</button></div>' +
+      '</div>';
+  }
+
+  function revisar() {
+    $('dlg').innerHTML =
+      '<div class="dlg-cuerpo">' +
+        '<h2>' + t('altaTitulo') + '</h2>' +
+        '<p class="lead">' + con('altaTrae', { archivo:
+          '<code style="font-family:var(--mono);font-size:11.5px">' + inst().carpeta + '.gmod</code>' }) + '</p>' +
+        '<div class="revision">' +
+          '<div class="quien"><img class="marca" src="' + inst().logo + '" alt="">' +
+            '<div><span class="title">' + inst().identidad + '</span>' +
+            '<div class="lema">' + inst().lema + '</div></div></div>' +
+          // LO QUE EL ALTA PUEDE MOSTRAR SIN INVENTAR, todo del manifiesto que viaja adentro.
+          // El dominio es el único campo CONTRASTABLE de `publisher`: Gnothi ya sabe de qué host
+          // bajó el bundle y lo compara -- por eso va, y por eso va antes que la versión.
+          // TODO SALE DE `INSTITUCIONES`, ni un dato escrito dos veces. Estaba repetido acá y en
+          // la tabla, y la primera vez que cambió uno -el .gmod pasó de 234 a 235 KB al rearmarlo-
+          // el otro quedó mintiendo.
+          '<dl>' +
+            '<dt>' + t('altaQuien') + '</dt><dd><code>' + inst().dominio + '</code></dd>' +
+            '<dt>' + t('altaVersion') + '</dt><dd>' + inst().version + '</dd>' +
+            '<dt>' + t('altaCarpeta') + '</dt><dd><code>Documentos\\Gnothi\\' + inst().carpeta + '</code></dd>' +
+            '<dt>' + t('altaRed') + '</dt><dd>' + t('altaNo') + '</dd>' +
+            '<dt>' + t('altaConsultas') + '</dt><dd>' + inst().consultas.length + '</dd>' +
+            '<dt>' + t('altaMotor') + '</dt><dd>' + t('altaPrestado') + '</dd>' +
+            '<dt>' + t('altaRegistro') + '</dt><dd>' + inst().retencion + '</dd>' +
+            '<dt>' + t('altaTamano') + '</dt><dd>' + inst().tamano + ' · ' + con('nArchivos', { n: inst().archivos }) + '</dd>' +
+          '</dl>' +
+        '</div>' +
+      '</div>' +
+      '<div class="dlg-pie"><button class="small ghost" type="button">' + t('altaCancelar') + '</button>' +
+      '<button class="small" id="agregar" type="button">' + t('altaAgregar') + '</button></div>';
+  }
+
+  // ---------------------------------------------------------------- asistente
+
+
+  // ---------------------------------------------------------------- installation.json
+
+
+
+
+  function remate() {
+    $('claude').hidden = false;
+    pintarClaude();   // relee la lista: Claude ya no tiene esa herramienta
+    var b = $('claude').querySelector('[data-q="tendencia"]');
+    señalar(b, t('gRemate'), t('g8a'), function () {
+        responderClaude('tendencia');
+        setTimeout(cierreFinal, 1400);
+      }, 'izq');
+  }
+
+  function cierreFinal() {
+    contar(t('gCierre'), $('claude'), function () {
+        $('claude').hidden = true;
+        $('tarea-claude').classList.remove('abierta');
+        vista = 'conexiones'; abierto = null; pintar();
+        señalar($('abrir-mod'), t('gComprueba'), t('abrir'), function () {
+          abierto = ESTA; pintar();
+          señalar($('abrir-cara'), t('gMisma'), t('pantallaAbrir'), function () {
+            vista = 'cara'; pintar();
+            Array.prototype.forEach.call($('progreso').children, function (i) { i.className = 'hecho'; });
+            setTimeout(function () {
+              contar(t('gIntacto'), $('ventana'), function () {}, 'izq');
+            }, 900);
+          }, 'izq');
+        }, 'izq');
+      }, 'izq');
+  }
+
+  // ---------------------------------------------------------------- arranque
+
+  for (var i = 0; i < TOTAL; i++) $('progreso').appendChild(document.createElement('i'));
+
+  function desdeCero() {
+    apagar();
+    instaladas = ['compras', 'cargas', 'dealership', 'municipalidad'];
+    apagadas = {}; vista = 'conexiones'; abierto = null; marco = null;
+    $('ventana').hidden = true; $('ventana').innerHTML = '';
+    $('dlg').hidden = true; $('velo').hidden = true;
+    $('claude').hidden = true; $('claude').innerHTML = '';
+    $('tarea-claude').classList.remove('abierta');
+    $('tarea-mymi').classList.remove('abierta');
+    avanzar(0);
+  }
+
+  $('reiniciar').addEventListener('click', desdeCero);
+
+  // LO QUE ESTÁ FUERA DEL MONITOR también cambia de idioma: el título, el pie y los dos botones.
+  function pintarPagina() {
+    document.documentElement.lang = IDIOMA;
+    document.title = t('pagTitulo');
+    $('pag-titulo').textContent = t('pagTitulo');
+    $('pag-sub').textContent = t('pagSub');
+    $('idioma').textContent = t('idiomaBoton');
+    $('reiniciar').textContent = t('reiniciar');
+    $('nota-pie').innerHTML = t('pie');
+  }
+
+  // CAMBIAR DE IDIOMA REINICIA EL RECORRIDO, y es a propósito: los globos ya dichos quedarían en
+  // el idioma viejo, y media conversación de Claude traducida a mitad de camino sería un aparato
+  // que no existe. Se vuelve al paso 0, que además es donde se quiere estar para mostrarlo.
+  $('idioma').addEventListener('click', function () {
+    IDIOMA = IDIOMA === 'en' ? 'es' : 'en';
+    pintarPagina();
+    desdeCero();
+  });
+
+  pintarPagina();
+  avanzar(0);
+})();
+</script>

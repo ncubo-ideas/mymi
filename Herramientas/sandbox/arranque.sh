@@ -14,6 +14,16 @@ MINUTOS=${MINUTOS:-15}
 
 mkdir -p "$MODULOS" "$JOURNALS"
 
+# EL TEMPORAL EN EL MISMO FILESYSTEM QUE EL DESTINO, y no es una precaucion teorica: el alta
+# termina moviendo el modulo desde el temporal a su carpeta, y un move entre dos filesystems
+# falla con EXDEV -- «Invalid cross-device link». Medido el 2026-09-21 en WSL, donde /tmp es
+# tmpfs y /opt es ext4: el alta bajaba el bundle, lo examinaba bien, y moria al instalar.
+#
+# En un contenedor es la situacion NORMAL, no la excepcion: /tmp suele ser tmpfs y cada volumen
+# montado es su propio filesystem. Sin esto el alta falla en la primera caja que se levante.
+mkdir -p /opt/mymi/tmp
+export TMPDIR=/opt/mymi/tmp
+
 echo "[caja] display $DISPLAY a $PANTALLA"
 Xvfb "$DISPLAY" -screen 0 "$PANTALLA" -nolisten tcp -ac &
 # Esperar a que el display exista de verdad. Un `sleep 2` alcanza casi siempre, y "casi
