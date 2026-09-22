@@ -1109,6 +1109,17 @@ namespace Concesionario.App
 			return ACount("@scheduled = schedule.CountScheduled();", "scheduled", p => { });
 		}
 
+		/// <summary>
+		/// Que parte de lo agendado esta al dia, de cada cien. La compone la agenda y no esta
+		/// caratula: es la unica division de las dos cuentas de arriba que existe, y existe una sola
+		/// vez.
+		/// </summary>
+		public int CountUpToDatePerHundred()
+		{
+			return ACount(
+				"@perHundred = schedule.CountUpToDatePerHundred();", "perHundred", p => { });
+		}
+
 		public int DeferralsUsed(string kind)
 		{
 			return ACount("@used = schedule.DeferralsUsed(@kind);", "used", p => {
