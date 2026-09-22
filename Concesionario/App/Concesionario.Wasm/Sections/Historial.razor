@@ -27,8 +27,7 @@
                             <Glyph Name="check" Size="13" Stroke="3" />
                         </span>
                         <div class="d-hist-done__body">
-                            <div class="d-hist-done__date">@ComoSeLee.DiaCorto(Texts.ThePhrases, hecho.CompletedAt)</div>
-                            <div class="d-hist-done__title">@ComoSeLee.Operacion(Texts.ThePhrases, hecho.Kind)</div>
+                            <div class="d-hist-done__date">@hecho.CompletedAt</div>
                             <span class="d-hist-done__km">@hecho.Reading</span>
                             <p class="d-hist-done__desc">@hecho.Says</p>
                         </div>
@@ -41,7 +40,7 @@
         {
             <div class="d-sec">
                 <span class="d-sec__title">@Texts["history.pendingTitle"]</span>
-                <span class="d-pill d-pill--mute">@Operations.Operations.Count(parada => !parada.HasBeenCompleted)</span>
+                <span class="d-pill d-pill--mute">@Texts.Grouped(Operations.Operations.Count(parada => !parada.HasBeenCompleted))</span>
             </div>
 
             <section class="d-card" id="operaciones-sin-registro">
@@ -66,7 +65,7 @@
 
             <p class="d-note" style="margin-top:10px">
                 <Glyph Name="info" Size="14" Stroke="2" />
-                <span>@Texts["history.pendingNote"]</span>
+                <span>@Texts[TheOwnerIsTold.TheCompletionsAreRecordedByTheWorkshopThatDoesTheWork]</span>
             </p>
         }
     }

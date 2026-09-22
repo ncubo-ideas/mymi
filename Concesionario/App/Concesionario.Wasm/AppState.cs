@@ -477,6 +477,8 @@ namespace Concesionario.Wasm
 
 		public int CountScheduled() { Require(); return api.CountScheduled(); }
 
+		public int CountUpToDatePerHundred() { Require(); return api.CountUpToDatePerHundred(); }
+
 		public int MissedCount() { Require(); return api.MissedCount(); }
 
 		public bool HasAnythingDue() { Require(); return api.HasAnythingDue(); }

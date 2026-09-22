@@ -12,96 +12,99 @@
     </p>
 }
 
-<section class="d-card" id="linea-servicios">
-    <div class="d-svc-list">
-        @foreach (string kind in EnOrden)
-        {
-            string estado = Board.TryGetValue(kind, out string s) ? s : "";
-            string tono = ComoSeLee.Tono(estado);
-            HowOneOperationStands parada = Operations?.Of(kind);
-            bool abiertoAqui = abierto == kind;
+@if (Operations is not null)
+{
+    <section class="d-card" id="linea-servicios">
+        <div class="d-svc-list">
+            @foreach (string kind in EnOrden)
+            {
+                string estado = Board.TryGetValue(kind, out string s) ? s : "";
+                string tono = ComoSeLee.Tono(estado);
+                HowOneOperationStands parada = Operations.Of(kind);
+                bool abiertoAqui = abierto == kind;
 
-            <div class="d-svc" id="@("servicio-" + kind)">
-                <div class="@("d-svc__badge d-svc__badge--" + tono)">
-                    <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="11" Stroke="3" />
-                    @ComoSeLee.Estado(Texts.ThePhrases, estado)
-                </div>
+                <div class="d-svc" id="@("servicio-" + kind)">
+                    <div class="@("d-svc__badge d-svc__badge--" + tono)">
+                        <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="11" Stroke="3" />
+                        @ComoSeLee.Estado(Texts.ThePhrases, estado)
+                    </div>
 
-                <div class="d-svc__title">@ComoSeLee.Operacion(Texts.ThePhrases, kind)</div>
+                    <div class="d-svc__title">@ComoSeLee.Operacion(Texts.ThePhrases, kind)</div>
 
-                <div class="d-svc__sub">
-                    @if (abiertoAqui)
-                    {
-                        <span>@(Reasons.TryGetValue(kind, out string r) ? r : "")</span>
-                        @if (parada is not null && !parada.CountdownRefused && parada.Says.Length > 0)
+                    <div class="d-svc__sub">
+                        @if (abiertoAqui)
                         {
-                            <span class="d-svc__detail-extra">@parada.Says</span>
+                            <span>@(Reasons.TryGetValue(kind, out string r) ? r : "")</span>
+                            @if (parada is not null && !parada.CountdownRefused && parada.Says.Length > 0)
+                            {
+                                <span class="d-svc__detail-extra">@parada.Says</span>
+                            }
                         }
-                    }
-                    else
-                    {
-                        <span>@Resumen(estado, parada)</span>
-                    }
-                </div>
+                        else
+                        {
+                            <span>@Resumen(estado, parada)</span>
+                        }
+                    </div>
 
-                @if (parada is not null)
-                {
-                    if (parada.CountdownRefused)
+                    @if (parada is not null)
                     {
-                        <div class="d-svc__falta" id="@("rechazo-" + kind)">
-                            <span class="d-svc__falta-label">@Texts["services.refusedLabel"]</span>
-                            <p class="d-svc__falta-note">@Texts[TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom]</p>
-                        </div>
-                    }
-                    else if (!parada.DistanceCanBeSaid && !parada.DaysCanBeSaid)
-                    {
-                        @if (tono == "warn" || tono == "danger")
+                        if (parada.CountdownRefused)
+                        {
+                            <div class="d-svc__falta" id="@("rechazo-" + kind)">
+                                <span class="d-svc__falta-label">@Texts["services.refusedLabel"]</span>
+                                <p class="d-svc__falta-note">@Texts[TheOwnerIsTold.TheDealershipSetTheDateThisOperationCountsFrom]</p>
+                            </div>
+                        }
+                        else if (!parada.DistanceCanBeSaid && !parada.DaysCanBeSaid)
+                        {
+                            @if (tono == "warn" || tono == "danger")
+                            {
+                                <div class="d-svc__falta" id="@("falta-" + kind)">
+                                    <span class="d-svc__falta-label">@Texts["services.remainingLabel"]</span>
+                                    <div class="@("d-svc__now d-svc__now--" + tono)">
+                                        <Glyph Name="@ComoSeLee.DibujoOperacion(kind)" Size="17" Stroke="2.2" />
+                                        @(tono == "danger" ? "VENCIDO" : "AHORA")
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
                         {
                             <div class="d-svc__falta" id="@("falta-" + kind)">
                                 <span class="d-svc__falta-label">@Texts["services.remainingLabel"]</span>
-                                <div class="@("d-svc__now d-svc__now--" + tono)">
-                                    <Glyph Name="@ComoSeLee.DibujoOperacion(kind)" Size="17" Stroke="2.2" />
-                                    @(tono == "danger" ? "VENCIDO" : "AHORA")
+                                <div class="d-svc__cols">
+                                    @if (parada.DistanceCanBeSaid)
+                                    {
+                                        <div class="d-svc__col" id="@("resto-km-" + kind)">
+                                            <span class="d-svc__col-value">@Texts.Grouped(parada.DistanceRemaining) @parada.DistanceUnit</span>
+                                            <span class="d-svc__col-label">@Texts["services.byDistance"]</span>
+                                        </div>
+                                    }
+                                    @if (parada.DaysCanBeSaid)
+                                    {
+                                        <div class="d-svc__col" id="@("resto-dias-" + kind)">
+                                            <span class="d-svc__col-value">@Texts.Days(parada.DaysRemaining)</span>
+                                            <span class="d-svc__col-label">@Texts["services.byTime"]</span>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         }
                     }
-                    else
-                    {
-                        <div class="d-svc__falta" id="@("falta-" + kind)">
-                            <span class="d-svc__falta-label">@Texts["services.remainingLabel"]</span>
-                            <div class="d-svc__cols">
-                                @if (parada.DistanceCanBeSaid)
-                                {
-                                    <div class="d-svc__col" id="@("resto-km-" + kind)">
-                                        <span class="d-svc__col-value">@Texts.Grouped(parada.DistanceRemaining) @parada.DistanceUnit</span>
-                                        <span class="d-svc__col-label">@Texts["services.byDistance"]</span>
-                                    </div>
-                                }
-                                @if (parada.DaysCanBeSaid)
-                                {
-                                    <div class="d-svc__col" id="@("resto-dias-" + kind)">
-                                        <span class="d-svc__col-value">@Texts.Days(parada.DaysRemaining)</span>
-                                        <span class="d-svc__col-label">@Texts["services.byTime"]</span>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-                }
 
-                <button class="d-link d-svc__why" type="button" id="@("por-que-" + kind)"
-                        @onclick="@(() => abierto = abiertoAqui ? "" : kind)">
-                    @(abiertoAqui ? Texts["services.hide"] : Texts["services.why"])
-                    @if (!abiertoAqui)
-                    {
-                        <Glyph Name="chevron" Size="13" Stroke="2.6" />
-                    }
-                </button>
-            </div>
-        }
-    </div>
-</section>
+                    <button class="d-link d-svc__why" type="button" id="@("por-que-" + kind)"
+                            @onclick="@(() => abierto = abiertoAqui ? "" : kind)">
+                        @(abiertoAqui ? Texts["services.hide"] : Texts["services.why"])
+                        @if (!abiertoAqui)
+                        {
+                            <Glyph Name="chevron" Size="13" Stroke="2.6" />
+                        }
+                    </button>
+                </div>
+            }
+        </div>
+    </section>
+}
 
 <p class="d-note" style="margin-top:14px">
     <Glyph Name="info" Size="14" Stroke="2" />

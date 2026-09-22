@@ -199,12 +199,25 @@ namespace Concesionario.Dominio.Pruebas
 		// llegan a quien pregunta adentro de la frase que el dominio compuso. De eso se ocupa
 		// NoReadHandsOutABareAmountOrABareShareOrABareDelta, por tipo de retorno, por nombre y por
 		// valor con montos centinela.
+		// Y LA DE CountUpToDatePerHundred ENTRA PORQUE ES UNA RESPUESTA COMPUESTA Y NO UNA MITAD, que
+		// es justo la distincion que esta lista cuida. Las dos de las que sale -- CountUpToDate y
+		// CountScheduled -- ya salen enteras y estan arriba; la division de las dos la hace la
+		// AGENDA, que es la unica que puede dividir sus propias cuentas, y sale ya dividida. De ella
+		// no se puede rearmar ninguna frase que el dominio no haya dicho: es la misma lectura que
+		// las dos, en otra unidad.
+		//
+		// EXISTE PORQUE UNA CARATULA QUISO DIBUJARLA. El aro de "Estado de tu vehiculo" dividia las
+		// dos cuentas en el razor, que es lo que CountScheduled prohibe por escrito -- "va al lado de
+		// ella para que nadie divida una cuenta del dominio entre una lista de la caratula" --. Que
+		// la proporcion exista una sola vez, y en el dominio, es lo que impide que cada pantalla
+		// invente la suya.
 		private static readonly string[] EveryNumberTheDoorHandsOut =
 		{
 			"CountDue/0",
 			"CountOverdue/0",
 			"CountUpToDate/0",
 			"CountScheduled/0",
+			"CountUpToDatePerHundred/0",
 			"DeferralsUsed/1",
 			"MissedCount/0",
 			"LastEventApplied/0",

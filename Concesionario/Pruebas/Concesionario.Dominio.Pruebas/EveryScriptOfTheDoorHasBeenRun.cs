@@ -183,7 +183,7 @@ namespace Concesionario.Dominio.Pruebas
 			"CanTheEnvelopeBeEvaluated", "CompleteOperation",
 			"CompletionCount", "CompletionsOf", "CompletionsOfEveryKind",
 			"CountDue", "CountOverdue",
-			"CountScheduled", "CountUpToDate",
+			"CountScheduled", "CountUpToDate", "CountUpToDatePerHundred",
 			"CoverageExclusions", "CoveredSystems",
 			"DaysInTheShopBetween", "DaysInTheShopCountBetween",
 			"DeclareUsageProfile", "DeferOperation",
@@ -263,9 +263,9 @@ namespace Concesionario.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndFortyNine()
+		public void TheOperationsAreOneHundredAndFifty()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(149));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(150));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -363,6 +363,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(journal.Api.CountOverdue(), Is.EqualTo(0));
 			Assert.That(journal.Api.CountScheduled(), Is.EqualTo(1));
 			Assert.That(journal.Api.CountUpToDate(), Is.EqualTo(0));
+			Assert.That(journal.Api.CountUpToDatePerHundred(), Is.EqualTo(0));
 			Assert.That(journal.Api.DeferralsUsed("FluidChange"), Is.EqualTo(0));
 			Assert.That(journal.Api.CanBeDeferred("FluidChange"), Is.True);
 			Assert.That(journal.Api.HasAnythingDue(), Is.True);

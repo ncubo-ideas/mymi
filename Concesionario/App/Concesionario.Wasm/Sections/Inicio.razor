@@ -36,7 +36,8 @@
                 <svg class="d-ring__svg" viewBox="0 0 100 100" aria-hidden="true">
                     <circle class="d-ring__track" cx="50" cy="50" r="42" />
                     <circle class="@("d-ring__fill d-ring__fill--" + Tono)" cx="50" cy="50" r="42"
-                            style="stroke-dasharray:@RingLargo;stroke-dashoffset:@RingRestante" />
+                            pathLength="100"
+                            style="stroke-dasharray:@AlDiaPorCiento 100" />
                 </svg>
                 <div class="d-ring__label">
                     <span class="d-ring__unit">
@@ -259,6 +260,20 @@
     /// </summary>
     [Parameter] public int Programadas { get; set; }
 
+    /// <summary>
+    /// Que parte de lo agendado está al día, de cada cien. LA COMPONE LA AGENDA
+    /// (MaintenanceSchedule.CountUpToDatePerHundred) y no esta pantalla: dividir AlDia entre
+    /// Programadas acá sería la caratula decidiendo algo que el registro ya decidió, que es lo que
+    /// las dos cuentas prohíben por escrito en el dominio y en la puerta.
+    ///
+    /// NO PASA POR EL RENDERIZADOR, y es el unico numero de esta pantalla que no lo hace: no es un
+    /// numero que alguien lea, es la longitud de un trazo. Agruparlo seria aplicar la regla donde
+    /// no aplica, y ademas plantaria una trampa -- si la escala pasara de cien a mil, el
+    /// separador de es-CR escribiria "1.000" adentro del valor de css y el aro se romperia sin que
+    /// nada lo dijera. Por construccion va de 0 a 100.
+    /// </summary>
+    [Parameter] public int AlDiaPorCiento { get; set; }
+
     /// <summary>La operacion que el calendario pone de primera, o vacio si no hay ninguna.</summary>
     [Parameter] public string Siguiente { get; set; } = "";
 
@@ -326,38 +341,23 @@
         : Due > 0 ? Texts["home.headlineSomething"] : Texts["home.headlineOk"];
 
     /// <summary>
-    /// La frase junto al aro. Dice los mismos dos numeros que el aro ya dibuja -- AlDia y
-    /// Programadas -- porque el aro es la lectura rapida y esta frase es la que confirma con
-    /// palabras lo que el aro muestra con color.
+    /// La frase junto al aro. El aro dice los dos numeros -- 3/9 -- y esta linea dice DE QUE son
+    /// esos dos numeros. Sale del catalogo entera: no se arma acá con los numeros adentro.
     /// </summary>
-    private string ResumenEstado =>
-        AlDia + " operacion" + (AlDia == 1 ? "" : "es") + " " + (AlDia == 1 ? "está" : "están")
-        + " al día de las " + Programadas + " programadas";
+    private string ResumenEstado => Texts["home.healthWhat"];
 
     /// <summary>La primera linea del encabezado: de que carro se habla.</summary>
-    private string HeroVehiculo => Modelo.Length > 0 ? "Tu " + Modelo : "Tu carro";
+    private string HeroVehiculo => Modelo.Length > 0
+        ? Texts.With("home.yourModel", ("model", Modelo))
+        : Texts["home.yourCar"];
 
     /// <summary>
     /// La segunda linea, la que de verdad importa: el mismo estado que decide Tono y Titular, dicho
     /// como una frase que sigue a HeroVehiculo.
     /// </summary>
     private string HeroEstado =>
-        Overdue > 0 ? "necesita atención" : Due > 0 ? "tiene algo por hacer" : "está al día";
+        Overdue > 0 ? Texts["home.heroStateAttention"]
+        : Due > 0 ? Texts["home.heroStateSomething"]
+        : Texts["home.heroStateOk"];
 
-    /// <summary>
-    /// El anillo de "Estado de tu vehiculo" es SVG, no una imagen: un circulo de radio 42 mide
-    /// 2*pi*42 de contorno, y ese mismo numero es el stroke-dasharray completo.
-    /// </summary>
-    private const double RingRadio = 42;
-
-    private static readonly double RingContorno = 2 * System.Math.PI * RingRadio;
-
-    private double RingFraccion =>
-        Programadas > 0 ? System.Math.Clamp((double)AlDia / Programadas, 0, 1) : 0;
-
-    private string RingLargo =>
-        RingContorno.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-
-    private string RingRestante =>
-        (RingContorno * (1 - RingFraccion)).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 }

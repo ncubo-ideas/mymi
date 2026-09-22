@@ -7,6 +7,10 @@
         <div class="d-hero__model">
             <span class="d-hero__name">@(Modelo.Length > 0 ? Modelo : Texts["vehicle.yourVehicle"])</span>
         </div>
+        @if (Placa is not null && Placa.PlatePublished)
+        {
+            <div class="d-hero__placa">@Placa.AsPublished</div>
+        }
         <div class="d-hero__odo">@Odometro @OdometroUnidad</div>
     </div>
 </section>
@@ -50,7 +54,7 @@
                 <div class="d-row d-row--noline">
                     <span class="d-row__label"><Glyph Name="plate" Size="15" Stroke="2.1" /><span class="d-row__k">@Texts["vehicle.rowPlate"]</span></span>
                     <span class="d-row__v">
-                        @(Placa is not null && Placa.PlatePublished ? Placa.AsPublished : "Sin registrar")
+                        @(Placa is not null ? Placa.Says : Texts["vehicle.none"])
                     </span>
                 </div>
                 @if (Placa is null || !Placa.PlatePublished)
@@ -76,7 +80,7 @@
                 <span class="d-row__v">
                     @(Stands is not null && Stands.DeliveryRecorded
                         ? ComoSeLee.Dia(Texts.ThePhrases, Stands.DeliveredAt)
-                        : "Sin registrar")
+                        : Texts["vehicle.none"])
                 </span>
             </div>
             @if (Stands is not null && Stands.DeliveryRecorded)
@@ -336,7 +340,7 @@ else
             if (Stands is null) return Texts["vehicle.notReadYet"];
             if (Stands.RecordContradictsItself) return Texts[TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue];
             if (!Stands.EnvelopePublished)
-                return "Tu concesionario aún no ha publicado la información de garantía de este vehículo.";
+                return Texts["vehicle.warrantyNotPublished"];
             if (Stands.Says.Length > 0) return Stands.Says;
 
             return Texts[TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet];
