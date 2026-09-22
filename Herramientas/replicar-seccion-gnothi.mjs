@@ -412,8 +412,8 @@ const instituciones = [
     },
   },
   {
-    carpeta: 'Concesionario', voz: 'en', modulo: 'dealership', marca: 'Sotaventos Motors',
-    quien: 'Sotaventos Motors', registro: 'your vehicle’s record',
+    carpeta: 'Concesionario', voz: 'en', modulo: 'dealership', marca: 'Sotavento Motors',
+    quien: 'Sotavento Motors', registro: 'your vehicle’s record',
     pregunta: '“Is my car still under warranty?”',
     tema: { acento: 'var(--marca)', acentoHondo: '#16294a', sobreAcento: '#ffffff', tinta: 'var(--tinta)', tenue: 'var(--tinta-suave)', linea: 'var(--borde)', suave: 'var(--papel)', carta: 'var(--tarjeta)', radio: '7px', h2: '26px', pesoTitulo: 700,
             extra: 'background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 10px; padding: 24px; margin: 0 0 22px;' },

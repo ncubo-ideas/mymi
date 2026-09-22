@@ -64,7 +64,7 @@ $catalogo = [ordered]@{
     'cargas'        = @{ Mock = "$raiz\Cargas\EndPointDeEventos";        Pub = 8111; Web = 8112
                          Titulo = 'Estaciones Faro';            Subtitulo = 'Tus cargas' }
     'dealership'    = @{ Mock = "$raiz\Concesionario\EndPointDeEventos"; Pub = 8092; Web = 8093
-                         Titulo = 'Sotaventos Motors';           Subtitulo = 'Mi plan de mantenimiento' }
+                         Titulo = 'Sotavento Motors';           Subtitulo = 'Mi plan de mantenimiento' }
     'municipalidad' = @{ Mock = "$raiz\Municipalidad\EndPointDeEventos"; Pub = 8121; Web = 8122
                          Titulo = 'Municipalidad de Monteverde'; Subtitulo = 'MONTEVERDE Municipal Services' }
 }

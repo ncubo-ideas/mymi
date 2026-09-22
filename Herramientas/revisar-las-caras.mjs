@@ -69,7 +69,7 @@ const modulos = {
     textos: "texto", global: "TextoDeLaCara", atributo: "data-texto", llamada: "I", verbos: ["texto", "con"],
   },
   dealership: {
-    marca: "Sotaventos",
+    marca: "Sotavento",
     cara: "Concesionario/App/Concesionario.Cara",
     app: "Concesionario/App/Concesionario.Wasm/wwwroot",
     textos: "text", global: "FaceText", atributo: "data-text", llamada: "L", verbos: ["text", "fill"],

@@ -922,7 +922,7 @@ function tint(hex, a) {
 const nameOf    = m => m.shortName || m.institution || m.title;
 // THE NAME IN TWO TIERS, as the mockup reads it: «Laboratorio Clínico» small over «Delfos» big. The
 // big one is brand.shortName; the small one is what the institution's full name has before it. When
-// there is no shortName the split is at the first word -«Sotaventos» / «Motors»-, and a one-word
+// there is no shortName the split is at the first word -«Sotavento» / «Motors»-, and a one-word
 // name goes big alone.
 function tiers(m) {
   const full = (m.institution || m.title || '').trim(), short = (m.shortName || '').trim();
@@ -1641,7 +1641,7 @@ const gn = {
     // letra. NO la recorta el `overflow:hidden` de la tarjeta -- el nombre termina en 186 y la
     // tarjeta llega a 200, o sea adentro --: la recorta SU PROPIA CAJA, que es un item flex con
     // `min-width:0` al lado del icono de 44. Importa saberlo: tocar el overflow de la tarjeta no
-    // arregla nada. «La Guaria» no baja ni un píxel, y «Sotaventos Motors» tampoco: ése parte en
+    // arregla nada. «La Guaria» no baja ni un píxel, y «Sotavento Motors» tampoco: ése parte en
     // dos líneas y nunca desbordó.
     //
     // El tamaño baja de a un píxel hasta que la palabra más larga entra, nunca por debajo de 15.
@@ -2165,7 +2165,7 @@ const MOCK = { modules: [
     updateAvailable:{ version:'2.5.0', seenAt:'2026-09-09T12:00:00Z' },
     enabled:true, journalBytes:1210, journalFiles:3, tools:[
     { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
-  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'Mi plan de mantenimiento', institution:'Sotaventos Motors',
+  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'Mi plan de mantenimiento', institution:'Sotavento Motors',
     slogan:'Tu carro, siempre listo', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png', banner:'../bundles/dealership/web/brand/banner.jpg', font:{ family:'Sora', regular:'../bundles/dealership/web/brand/Sora-600.woff2', bold:'' } },
     enabled:true, journalBytes:980, journalFiles:3, tools:[
     { name:'resumen', title:'Cómo va mi carro', enabled:true, description:'Cómo está el vehículo ahora mismo.' }]},
