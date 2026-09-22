@@ -16,6 +16,13 @@ internal static class BridgeProbe
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_estado")]
 	private static extern int State();
 
+	// EL MOTIVO, y el nombre del símbolo NO es el de este método: Swift lo exporta como
+	// `gnothi_fm_razon` (Intents/Puente.swift). Faltaba esta línea y con ella Gnothi.iOS no
+	// compilaba -- `CS0103: el nombre 'Reason' no existe` --, porque la llamada entró con
+	// `77f529b` y su declaración no. Devuelve un strdup, así que se libera con Free como las demás.
+	[DllImport("__Internal", EntryPoint = "gnothi_fm_razon")]
+	private static extern IntPtr Reason();
+
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_paso")]
 	private static extern IntPtr Step(string conversacion, string tools, string instrucciones);
 
