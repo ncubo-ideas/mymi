@@ -330,19 +330,21 @@
     /// Programadas -- porque el aro es la lectura rapida y esta frase es la que confirma con
     /// palabras lo que el aro muestra con color.
     /// </summary>
-    private string ResumenEstado =>
-        AlDia + " operacion" + (AlDia == 1 ? "" : "es") + " " + (AlDia == 1 ? "está" : "están")
-        + " al día de las " + Programadas + " programadas";
+    private string ResumenEstado => Texts["home.healthWhat"];
 
     /// <summary>La primera linea del encabezado: de que carro se habla.</summary>
-    private string HeroVehiculo => Modelo.Length > 0 ? "Tu " + Modelo : "Tu carro";
+    private string HeroVehiculo => Modelo.Length > 0
+        ? Texts.With("home.yourModel", ("model", Modelo))
+        : Texts["home.yourCar"];
 
     /// <summary>
     /// La segunda linea, la que de verdad importa: el mismo estado que decide Tono y Titular, dicho
     /// como una frase que sigue a HeroVehiculo.
     /// </summary>
     private string HeroEstado =>
-        Overdue > 0 ? "necesita atención" : Due > 0 ? "tiene algo por hacer" : "está al día";
+        Overdue > 0 ? Texts["home.heroStateAttention"]
+        : Due > 0 ? Texts["home.heroStateSomething"]
+        : Texts["home.heroStateOk"];
 
     /// <summary>
     /// El anillo de "Estado de tu vehiculo" es SVG, no una imagen: un circulo de radio 42 mide
