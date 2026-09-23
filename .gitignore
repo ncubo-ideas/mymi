@@ -114,3 +114,7 @@ Modulos.local/
 
 # Configuracion local del panel de Claude Code (launch.json apunta a rutas de esta maquina).
 .claude/
+
+# El banco de la suite versiona solo su installation.json: el manifiesto lo proyecta el build
+# desde Modulos/, para que no haya dos copias que se desincronicen.
+Modulos.suite/*/manifest.json

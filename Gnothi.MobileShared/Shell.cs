@@ -1549,23 +1549,73 @@ public sealed class Shell : IDisposable
 				string hoja = vieja.Shell.Arguments.Count > 0 ? Path.GetFileName(vieja.Shell.Arguments[0]) : "";
 				if (hoja.Length == 0) { log($"localizar: {negocio} no declara que cargar; se deja como esta"); continue; }
 
-				// TWO FORMS, AND CONFUSING THEM LEAVES THE SCREEN BLANK WITHOUT A SINGLE ERROR. A cargo
-				// module keeps a dll under bin/; a HOSTED one keeps its published bundle in web/, next to
-				// the installation.json. Composing bin/web gives a path that does not exist,
-				// BundleServer.BaseOf cannot find the index.html and returns "/" by default, and the bundle
-				// -- published for /app/ -- gets served at the root: 404 on everything, window.gnothi never
-				// gets defined, and the screen stays blank. Measured on the simulator on 2026-09-07 with all
-				// four modules in the package.
-				bool esWeb = string.Equals(vieja.Shell.Type, "webview", StringComparison.OrdinalIgnoreCase);
-				string local = esWeb ? Path.Combine(dir, hoja) : Path.Combine(dir, "bin", hoja);
+				// DONDE GUARDA EL PAQUETE LO QUE `Arguments[0]` NOMBRA, Y CONFUNDIRLO DEJA LA
+				// PANTALLA EN BLANCO SIN UN SOLO ERROR. Un modulo `in-process` guarda su dll bajo
+				// bin/; `webview`, `hybrid` y `sala` guardan su cara en web/, al lado del
+				// installation.json. Componer bin/web da una ruta que no existe,
+				// BundleServer.BaseOf no encuentra el index.html y devuelve "/" por omision, y el
+				// bundle -publicado para /app/- se sirve en la raiz: 404 en todo, window.gnothi
+				// nunca se define, y la pantalla queda en blanco. Medido en el simulador el
+				// 2026-09-07 con los cuatro modulos del paquete.
+				//
+				// VOLVIO A MORDER EL 2026-09-21, con la misma ruta y el mismo sintoma:
+				//
+				//     examenes: 404 / -> .../Modulos/examenes/bin/web/index.html
+				//
+				// El arreglo de septiembre 7 preguntaba `Type == "webview"` y listo. Cuando
+				// llegaron `hybrid` y `sala` -- que traen cara igual -- cayeron en la rama de
+				// bin/. Por eso ahora se enumeran LAS QUE GUARDAN AL LADO en vez de preguntar por
+				// una sola: agregar una forma con cara y no ponerla aca la rompe, y el sintoma no
+				// dice por que.
+				//
+				// Y OJO CON LA TENTACION DE ESCRIBIRLO AL REVES -- «todo lo que no sea cargo» --,
+				// que es lo primero que se intento: la forma cargo NO se llama "cargo" en este
+				// campo, se llama **"in-process"**. Con la cadena equivocada la condicion se
+				// invierte en silencio y rompe justamente la que se queria dejar quieta.
+				//
+				// Tampoco es inofensivo porque «se arregla al reinstalar»: no se arregla. `hoja`
+				// sale de `Path.GetFileName(Arguments[0])`, asi que una vez compuesto bin/web
+				// vuelve a dar "web" y se recompone igual. El alta deja la ruta BIEN y este
+				// metodo la rompe en el arranque siguiente.
+				bool guardaSuCaraAlLado = vieja.Shell.Type.ToLowerInvariant() is "webview" or "hybrid" or "sala";
+				string local = guardaSuCaraAlLado ? Path.Combine(dir, hoja) : Path.Combine(dir, "bin", hoja);
 
-				// AND WHATEVER FOLLOWS THE FIRST IS PASSED THROUGH AS IT IS. In a hosted module the second
-				// argument is "<publisher url>|<resource>|<id>", which is not an address on this machine but
-				// what the institution put in its manifest. Replacing the whole array swallowed it, and the
-				// postman was left with no publisher to ask.
+				// EL SEGUNDO ARGUMENTO SE PASA TAL CUAL, Y ESO SI ES CORRECTO. En un modulo con
+				// cara el segundo es "<url del publicador>|<recurso>|<id>", que no es una
+				// direccion de esta maquina sino lo que la institucion metio en su manifiesto.
+				// Reemplazar el array entero se lo comia, y el cartero quedaba sin publicador al
+				// que pedirle.
+				//
+				// EL TERCERO SI ES UNA RUTA DE ESTA MAQUINA, Y SE QUEDABA VIEJO. La hibrida y la
+				// sala escriben [web, publicador, dll], y ese dll vive en el contenedor igual que
+				// el web/. Al reescribir solo el primero, el tercero seguia apuntando al
+				// contenedor ANTERIOR -- que en iOS cambia de GUID en cada instalacion, que es
+				// justamente por lo que este metodo existe.
+				//
+				// Medido el 2026-09-21, despues de reinstalar: arg0 en el contenedor nuevo, arg2
+				// en el viejo, y la sala sin nada que servir --
+				//
+				//     sala: 500 modulo/examenes/indice.json -- DirectoryNotFoundException
+				//     sala/cargar examenes: {"ok":false,"motivo":"HttpRequestException: TypeError: Load failed"}
+				//
+				// Se rescatan las DOS ultimas hojas -- la carpeta y el archivo, o sea
+				// `dominio/<X>.dll` -- por el mismo criterio que el primero: QUE se carga lo
+				// decidio quien armo el paquete, DONDE esta lo decide este aparato. Asi no hay
+				// que quemar aca el nombre de la carpeta que la convencion del paquete elige.
+				string[] args = [.. vieja.Shell.Arguments];
+				if (args.Length > 2 && args[2].Length > 0)
+				{
+					string archivo = Path.GetFileName(args[2]);
+					string carpeta = Path.GetFileName(Path.GetDirectoryName(args[2]) ?? "");
+					if (archivo.Length > 0)
+						args[2] = carpeta.Length > 0
+							? Path.Combine(dir, carpeta, archivo)
+							: Path.Combine(dir, archivo);
+				}
+
 				Installation nueva = vieja with
 				{
-					Shell = vieja.Shell with { Arguments = [local, .. vieja.Shell.Arguments.Skip(1)] },
+					Shell = vieja.Shell with { Arguments = [local, .. args.Skip(1)] },
 					GrantedFolder = Path.Combine(journals, negocio),
 				};
 

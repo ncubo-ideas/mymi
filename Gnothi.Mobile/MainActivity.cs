@@ -107,6 +107,28 @@ public partial class MainActivity : Activity
 	private Shell? shell;
 	private readonly CancellationTokenSource stop = new();
 
+	// DE DONDE SALE EL INTERRUPTOR DE MEDICION, Y POR QUE DE AHI.
+	//
+	// `files/` es la carpeta privada del paquete: ninguna otra app la ve, y adb solo entra por
+	// `run-as`, que exige un build DEPURABLE. Y aun asi se pregunta por la bandera, para que el
+	// apk que se publica no tenga forma de encenderlo aunque alguien deje el archivo puesto.
+	//
+	//     P=/data/user/0/com.ncubo.gnothi.host
+	//     adb shell run-as com.ncubo.gnothi.host sh -c "echo comprasw,examenesw > $P/files/sala"
+	//     adb shell run-as com.ncubo.gnothi.host rm $P/files/sala      # para volver atras
+	//
+	// (desde Git Bash, con MSYS_NO_PATHCONV=1, o la ruta llega reescrita a una de Windows)
+	//
+	// El archivo se lee UNA vez, en OnCreate. Cambiarlo con la app viva no hace nada: hay que
+	// reiniciar el proceso, que es lo mismo que pasaba con el extra y por el mismo motivo.
+	private string SalaForzada()
+	{
+		if ((ApplicationInfo!.Flags & Android.Content.PM.ApplicationInfoFlags.Debuggable) == 0) return "";
+
+		string ruta = System.IO.Path.Combine(FilesDir!.AbsolutePath, "sala");
+		return System.IO.File.Exists(ruta) ? System.IO.File.ReadAllText(ruta).Trim() : "";
+	}
+
 	protected override void OnCreate(Bundle? savedInstanceState)
 	{
 		base.OnCreate(savedInstanceState);
@@ -217,6 +239,35 @@ public partial class MainActivity : Activity
 			this, new AndroidSecretStore(FilesDir!.AbsolutePath),
 			s => global::Android.Util.Log.Info("gnothi", s));
 		Gnothi.Host.WebViewShell.Host = anfitrion;
+
+		// Y QUIEN SABE ABRIR LA SALA. Mismo motivo y misma costura: ChooseShell es estatico, la
+		// Activity es la que tiene Context. Es UN solo documento para todos los modulos, creado
+		// la primera vez que alguien pregunta.
+		Gnothi.Host.SalaShell.Host = new AndroidSala(
+			this, s => global::Android.Util.Log.Info("gnothi", s));
+
+		// LA SALA, FORZADA PARA MEDIR, sin tocar el installation.json de nadie. El resto del
+		// camino es el de siempre: Dispatcher, catalogo, consentimiento. Lo unico que cambia es
+		// que cascara construye el Module para esos nombres.
+		//
+		// Y NO VIENE POR EL INTENT, QUE ES UN CANAL DE CUALQUIERA. Esto lo leia de un extra
+		// (`am start -n <act> --es sala "comprasw,examenesw"`). MainActivity es EXPORTADA -- tiene
+		// filtros para los enlaces de alta y para el .gmod que llega como archivo --, asi que
+		// cualquier app instalada podia mandarle ese extra y elegirle a Gnothi con que cascara
+		// corre el dll de una institucion. El interruptor era de medicion; el canal era de todos,
+		// y un interruptor de medicion al alcance de un tercero es una decision del Host cedida.
+		//
+		// Ahora sale de un archivo en la carpeta privada del paquete. Ver `SalaForzada`.
+		string enLaSala = SalaForzada();
+		if (!string.IsNullOrWhiteSpace(enLaSala))
+		{
+			HashSet<string> nombres = [.. enLaSala.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+			Log($"sala: forzada para {string.Join(", ", nombres)}");
+
+			Gnothi.Host.Module.ShellFactory = (nombre, instalacion) => nombres.Contains(nombre)
+				? new Gnothi.Host.SalaShell(nombre, instalacion.Shell, instalacion.GrantedFolder)
+				: null;
+		}
 
 		// AND WHO KNOWS HOW TO CLOSE THEM: an update moves the module's folder while its WebView may be
 		// on top of it (44 §3.6). The Shell only names the hook; here it is honoured.

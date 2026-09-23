@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab.SustratoWeb</title>
+    <base href="/" />
+    <style>
+        body { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: #0e1116; color: #d7dde5; margin: 0; padding: 24px; }
+        h1 { font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: #7d8794; font-weight: 600; margin: 0 0 16px; }
+        pre { white-space: pre-wrap; font-size: 13px; line-height: 1.65; margin: 0; }
+    </style>
+</head>
+<body>
+    <h1>Sustrato de Gnothi en el motor web &mdash; carga de un modulo desconocido</h1>
+    <pre id="salida">arrancando el runtime...
+</pre>
+    <div id="app" hidden></div>
+    <script>
+        window.registrar = function (linea) {
+            document.getElementById('salida').textContent += linea + "\n";
+            // Cuando la sala corre adentro de un APK, cada linea va tambien a logcat. Asi se
+            // lee la corrida sin depender de que alguien mire la pantalla del telefono.
+            try { if (window.Sala) Sala.linea(linea); } catch (e) { }
+        };
+        // LA SALA ESTA HOSPEDADA cuando Gnothi registro su puente. Sin el, esto es el
+        // laboratorio suelto y corre la barrida de medicion sola.
+        window.salaHospedada = function () { return !!window.SalaPuente; };
+        window.salaLista = function () { if (window.SalaPuente) SalaPuente.lista(); };
+
+        // LO QUE GNOTHI LLAMA. El id viaja de ida y de vuelta porque el puente es asincronico
+        // en las dos plataformas, igual que el de los modulos hospedados.
+        window.sala = {
+            pedido: function (id, op, a, b) {
+                var c = arguments[4] || '{}';
+                var t = op === 'cargar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Cargar', a)
+                    : op === 'consultar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Consultar', a, b, c)
+                    : op === 'vista' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Vista', a, b, c)
+                    : op === 'entregar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Entregar', a, b)
+                    : op === 'cursor' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Cursor', a)
+                    : op === 'repertorio' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Repertorio', a)
+                    : op === 'desalojar' ? DotNet.invokeMethodAsync('Sala.Sustrato', 'Desalojar', a)
+                    : Promise.resolve(JSON.stringify({ ok: false, motivo: 'verbo desconocido: ' + op }));
+                t.then(function (r) { SalaPuente.contesta(id, r); })
+                 .catch(function (e) { SalaPuente.contesta(id, JSON.stringify({ ok: false, motivo: String(e) })); });
+            }
+        };
+
+        // La memoria lineal del wasm ES el heap de .NET. Es el numero que hay que comparar
+        // contra los ~45 MB que hoy agrega cada modulo hospedado.
+        window.memoriaWasm = function () {
+            try {
+                var r = globalThis.getDotnetRuntime && globalThis.getDotnetRuntime(0);
+                var m = r && (r.Module || r.module);
+                var h = m && (m.HEAPU8 || m.HEAP8);
+                if (h) return h.byteLength;
+            } catch (e) { }
+            return -1;
+        };
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

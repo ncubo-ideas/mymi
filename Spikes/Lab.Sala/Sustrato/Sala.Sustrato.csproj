@@ -1,0 +1,145 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <!-- EL SUSTRATO DE GNOTHI, COMPILADO PARA EL MOTOR WEB.
+       Esto es lo que en la nota 49 se llama la fila I: un solo documento, propiedad de
+       Gnothi, con el runtime .NET, el motor y el contrato adentro. El modulo NO se
+       referencia: llega despues, como bytes, y se carga en tiempo de ejecucion. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Sala.Sustrato</RootNamespace>
+
+    <!-- SIN LOS DATOS DE GLOBALIZACION, y no es gratis decirlo: apagar ICU cambia como .NET
+         formatea numeros y fechas. Aca se puede porque el que formatea para la persona es la CARA,
+         en JavaScript: la superficie devuelve numeros y fechas ISO y el cara.js los pinta con el
+         Intl del navegador. VERIFICADO el 2026-09-17 en el emulador: la respuesta es identica
+         (195830 / 7 / evento 307) y la pantalla dibuja igual, con su moneda y sus porcentajes.
+
+         Costo de tenerlo: 2,5 MB en tres archivos icudt. EN TIEMPO NO SE NOTA, y conviene decirlo
+         porque primero se creyo que si: una corrida dio 1.110 ms contra los 3.245 de antes, pero
+         repetida sobre una instalacion recien puesta vuelve a dar 3,1 a 3,5 s. Aquella era la
+         cache del motor web caliente de la corrida anterior, no la dieta. La ganancia es DISCO.
+
+         SI ALGUN DIA UNA SUPERFICIE FORMATEA PARA LA PERSONA, esto deja de ser seguro. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- LO QUE SE PROBO Y NO SIRVE, para que nadie lo vuelva a intentar creyendo que gana algo.
+         MEDIDO el 2026-09-17, los cinco a la vez:
+
+           EventSourceSupport, UseSystemResourceKeys, MetadataUpdaterSupport,
+           HttpActivityPropagationSupport, EnableUnsafeBinaryFormatterSerialization
+
+         El sustrato quedo EXACTAMENTE igual: 14,43 MB en 99 archivos. Y tiene explicacion: esos
+         interruptores le dicen al trimmer que borre codigo, y aca la lista de abajo ROOTEA una
+         veintena de ensamblados enteros. Dentro de un ensamblado rooteado el trimmer no borra
+         nada, asi que no hay sobre que actuar.
+
+         O sea: EL TAMANO DEL SUSTRATO LO DECIDE LA LISTA DE PRESTAMO, no los interruptores. Y esa
+         lista es el contrato con los modulos: lo que esta ahi es lo que un modulo va a encontrar.
+         Recortarla no es una optimizacion, es romper el contrato.
+
+         Y EL HEAP INICIAL NO SE PUEDE TOCAR DESDE ACA. `EmccInitialHeapSize` exige el workload
+         `wasm-tools-net9`, que relinka el runtime nativo y no esta instalado en esta maquina. El
+         .wasm publicado declara 512 paginas (32 MB) y en reposo la memoria lineal esta en 55,4 MB:
+         crecio porque los necesito, asi que bajar el arranque probablemente solo mueva cuando
+         crece, no cuanto. Sin medirlo, es una suposicion. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.13" PrivateAssets="all" />
+    <PackageReference Include="Ncubo.Puppeteer" Version="3.0.0-beta.10044" />
+
+    <!-- LO QUE EL MOTOR NECESITA Y NO ES DEL MODULO. Un paquete del BCL como este viene
+         COMPILADO POR PLATAFORMA: el que el modulo trae en su carpeta es el de Android y su IL
+         nombra las intrinsecas de ARM, que en el motor web no existen. MEDIDO: cargarlo desde la
+         carpeta del modulo revienta con
+           TypeLoadException: System.Runtime.Intrinsics.Arm.Crc32
+         Asi que lo presta el sustrato, en su build de browser-wasm. Es la misma regla que el
+         instalador ya hace cumplir con el motor: un paquete cargo que trae su propio sustrato se
+         RECHAZA, justamente para que no pase esto. -->
+    <PackageReference Include="System.IO.Hashing" Version="10.0.5" />
+
+    <!-- MCP NO SE PRESTA, Y SE COMPROBO ANTES DE SACARLO. Estaba aca porque se penso que los
+         modulos llevaban sus tools con los atributos de MCP y su superficie no cargaria sin la
+         libreria. Verificado el 2026-09-17: NINGUNA de las cinco superficies del repo la
+         referencia (ni Compras, ni Examenes, ni Cargas, ni Concesionario, ni Municipalidad):
+         todas usan los marcadores de Gnothi.Contract. Los nombres de MCP siguen aceptandose por
+         cadena en Borde.cs, asi que un modulo viejo que los use seria reconocido; lo que NO
+         podria es cargar, porque le faltaria el ensamblado. Si alguna vez aparece uno, esta es la
+         linea que hay que volver a poner.
+
+         Costo de tenerla: 1,7 MB entre ModelContextProtocol.Core y Microsoft.Extensions.AI. -->
+  </ItemGroup>
+
+  <!-- LO QUE EL HOST PRESTA. Se referencian sin usarse en C#, igual que en la forma cargo:
+       el modulo los nombra, este proyecto no. Por proyecto y no por dll suelto, para que el
+       sustrato preste exactamente lo que el repo compila hoy. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
+    <ProjectReference Include="..\..\..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  </ItemGroup>
+
+  <!-- Y LA PARTE QUE DECIDE EL SPIKE: si nadie lo usa en C#, el trimmer lo borra. Rootear
+       lo prestado no es un truco del laboratorio: es la definicion del sustrato. -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Gnothi.Contract" />
+    <TrimmerRootAssembly Include="Puppets.Portador" />
+    <TrimmerRootAssembly Include="Puppeteer" />
+    <TrimmerRootAssembly Include="Choreography" />
+
+    <TrimmerRootAssembly Include="System.IO.Hashing" />
+  </ItemGroup>
+
+  <!-- MEDIDO 2026-09-16, primera corrida: sin esto el modulo carga y se descubre entero, pero
+       instanciarlo revienta con TypeLoadException porque el trimmer borro System.Lazy`1: nadie
+       en el sustrato lo usaba. El trimmer recorta por app, y el modulo no es parte de la app.
+       Rootear el BCL que el modulo puede tocar ES la definicion del sustrato prestado. -->
+  <!-- LOS CINCO MODULOS, TRAIDOS DE bundles/hibrida SIN MODIFICAR. No se copian al repo: el
+       paquete de la institucion ya vive ahi, y tener dos copias es el antipatron del manifiesto.
+       Que la sala consuma el MISMO bundle que hoy consume la forma hibrida es justamente lo que
+       se quiere demostrar. -->
+  <Target Name="TraerLosModulosHibridos" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <DllDeModulo Include="$(MSBuildThisFileDirectory)..\..\..\Gnothi.Mobile\bundles\hibrida\**\dominio\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DllDeModulo)"
+          DestinationFiles="@(DllDeModulo->'$(MSBuildThisFileDirectory)wwwroot\modulos\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="System.Private.CoreLib" />
+    <TrimmerRootAssembly Include="System.Runtime" />
+    <TrimmerRootAssembly Include="System.Linq" />
+    <TrimmerRootAssembly Include="System.Collections" />
+
+    <!-- Y EL RESTO DEL BCL QUE EL SUSTRATO PRESTA. Cada uno de estos se agrego porque un modulo
+         real lo pidio y el trimmer lo habia borrado: System.Lazy primero, System.ComponentModel
+         despues. La lista no es una precaucion, es el contrato: lo que esta aca es lo que un
+         modulo va a encontrar, y lo que no esta es lo que no puede usar. -->
+    <TrimmerRootAssembly Include="System.ComponentModel" />
+    <TrimmerRootAssembly Include="System.ComponentModel.Primitives" />
+    <TrimmerRootAssembly Include="System.ComponentModel.TypeConverter" />
+    <TrimmerRootAssembly Include="System.ObjectModel" />
+    <TrimmerRootAssembly Include="System.Collections.Concurrent" />
+    <TrimmerRootAssembly Include="System.Collections.Specialized" />
+    <TrimmerRootAssembly Include="System.Linq.Expressions" />
+    <TrimmerRootAssembly Include="System.Text.RegularExpressions" />
+    <TrimmerRootAssembly Include="System.Text.Json" />
+    <TrimmerRootAssembly Include="System.Text.Encoding.Extensions" />
+    <TrimmerRootAssembly Include="System.Memory" />
+    <TrimmerRootAssembly Include="System.Threading" />
+    <TrimmerRootAssembly Include="System.Console" />
+
+    <!-- Y estos dos los pidio el MOTOR, no el dominio: su calculo de hash nombra
+         System.Runtime.Intrinsics.Arm.Crc32 aunque en wasm no se use nunca: el typeref existe
+         igual y el cargador de tipos lo resuelve antes de mirar si esta soportado. -->
+    <TrimmerRootAssembly Include="System.Runtime.Intrinsics" />
+    <TrimmerRootAssembly Include="System.Runtime.InteropServices" />
+    <TrimmerRootAssembly Include="System.Security.Cryptography" />
+  </ItemGroup>
+
+</Project>

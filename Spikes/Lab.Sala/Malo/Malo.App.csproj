@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EL MODULO QUE SE PORTA MAL, para la sala.
+       Es el mismo papel que Spikes/Lab.WasiCaja hace dentro de la caja de wasm: corre los
+       intentos de LosIntentos.cs, pero ADENTRO de la sala y como codigo de una institucion, no
+       como codigo del sustrato. Esa distincion es toda la prueba: lo que el sustrato alcanza no
+       dice nada, porque el sustrato es de Gnothi.
+
+       NO REFERENCIA NADA. Ni Gnothi.Contract, ni el motor. Los marcadores se declaran aca con el
+       nombre que el sustrato busca, porque el descubrimiento es por NOMBRE DE TIPO, y que eso
+       alcance para entrar a la sala es, en si mismo, parte de lo que se esta midiendo. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Malo.App</AssemblyName>
+    <RootNamespace>Malo.App</RootNamespace>
+    <NoWarn>$(NoWarn);CS0649</NoWarn>
+  </PropertyGroup>
+
+</Project>

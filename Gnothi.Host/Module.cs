@@ -82,6 +82,24 @@ public sealed class Module : IAsyncDisposable
 
 			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
 
+			// THE ROOM ("sala"): the same hybrid package -- its dlls and nothing else -- but the dll does
+			// not run in this process: it runs inside the web engine, in a document that belongs to
+			// Gnothi. It keeps the hybrid economy (the module weighs 200 KB because the Host lends the
+			// substrate) and does NOT fall under the objection above: what executes the institution's
+			// code is the .NET runtime compiled to wasm inside the document, and its access to the
+			// system is INDIRECT -- the deciding word in Google's text. Measured on 2026-09-17 with a
+			// probe running as a module: it cannot see the device disk, cannot leave its origin, and
+			// has no way to call the bridge.
+			//
+			// AGAINST APPLE IT IS AN OPEN QUESTION, and it is worth not overstating: B11 leaves unknown
+			// whether wasm counts as "interpreted code" and whether an IL dll run by Mono's interpreter
+			// counts. Both are the room's case. See the long comment on `SalaShell` and B11.
+			//
+			// Sibling of "caja" below, not a step towards it: the two are alternative answers to the
+			// same question -- containment by procedure here, by construction there. See
+			// NotasGnothiHost 49-51 and Gnothi.iOS/HALLAZGOS-LA-SALA-EN-IOS.md.
+			"sala"       => new SalaShell(name, installation.Shell, installation.GrantedFolder),
+
 			// THE BOX: the same hybrid package, but the surface runs inside a wasm box instead of in
 			// the Host's process. The face never finds out -- it goes on asking through `consultar` --
 			// and what changes is that the institution's dll no longer has syscalls: whatever Gnothi

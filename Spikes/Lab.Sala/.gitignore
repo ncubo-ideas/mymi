@@ -1,0 +1,5 @@
+# El publish del sustrato y las copias de los modulos: se regeneran con
+#   dotnet publish Sustrato -c Release -o Sustrato/publicado
+# y el Target TraerLosModulosHibridos trae los .dll de bundles/hibrida al construir.
+Sustrato/publicado/
+Sustrato/wwwroot/modulos/

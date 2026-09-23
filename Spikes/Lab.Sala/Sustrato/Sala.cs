@@ -1,0 +1,732 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Reflection;
+using System.Runtime.Loader;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+namespace Sala.Sustrato;
+
+// LA SALA, COMO SERVICIO. Lo mismo que el laboratorio hace de corrido, pero esperando a que
+// Gnothi pida: cargar un modulo, y contestar una consulta.
+//
+// QUIEN DICE DE QUE MODULO SE HABLA. El nombre llega como parametro de estos metodos, y eso
+// parece contradecir la regla del puente -- "no nombra un modulo, a proposito". No la
+// contradice, porque QUIEN LLAMA ES GNOTHI, no el modulo: estas funciones se invocan desde el
+// lado nativo, dentro del marco de una llamada que el Host abrio. El modulo no puede alcanzarlas
+// -- no tiene como llamar a DotNet.invokeMethodAsync desde adentro de su propio dominio, que es
+// codigo .NET corriendo bajo este runtime y no JavaScript de la pagina.
+//
+// Lo que SI hay que sostener del lado nativo, y es la pieza que Jonathan marco como critica:
+// una sola llamada en vuelo, y el journal de un solo modulo montado por vez. Esto de aca no
+// puede garantizarlo solo; ver SalaShell.
+public static class Sala
+{
+	private static readonly SemaphoreSlim UnaPorVez = new(1, 1);
+	private static readonly Dictionary<string, Modulo> Cargados = new(StringComparer.Ordinal);
+	private static readonly HttpClient Http = new();
+
+	// La raiz en MEMFS. No existe ninguna carpeta real detras: Gnothi pone los bytes aca antes
+	// de preguntar, y lo que el modulo escriba se queda en memoria.
+	private const string Raiz = "/journal";
+
+	public static void ConfigurarDireccion(Uri baseAddress) => Http.BaseAddress = baseAddress;
+
+	// `Montado` es la FOTO de lo que Gnothi puso: ruta relativa y bytes, tal como llegaron. Sirve
+	// para una sola cosa, y es la que faltaba: saber que escribio el modulo mientras estuvo aca.
+	private sealed record Modulo(
+		Type Superficie,
+		object Instancia,
+
+		// EL BORDE, Y NO UNA LISTA DE METODOS. Aca habia dos diccionarios de MethodInfo de la
+		// institucion: el sustrato se quedaba con pedazos de un ensamblado ajeno. Ahora guarda el
+		// borde, que expone NOMBRES y un solo verbo de entrada. Ver Borde.cs.
+		Borde Borde,
+
+		Dictionary<string, byte[]> Montado,
+
+		// DONDE QUEDO MONTADO, y ya no se puede deducir del nombre: ver `Neutral`. Se guarda aca
+		// porque el desalojo y la recoleccion de escrituras tienen que ir a la MISMA carpeta a la
+		// que se monto, y no a una que se recalcule.
+		string Carpeta);
+
+	// LOS CASCARONES DE LAS CARGAS ANTERIORES, RETENIDOS A PROPOSITO. Ver el comentario largo en
+	// `Desalojar`: mientras estos objetos sigan alcanzables no hay finalizador que pueda despertar
+	// a escribir en una carpeta que ya no existe, y por eso la carpeta se puede BORRAR en vez de
+	// vaciar -- que es lo unico que se lleva los nombres y el lugar donde escribir.
+	private static readonly List<object> Retenidos = [];
+
+	// EL NOMBRE DE LA CARPETA NO ES EL DEL MODULO, Y ESA ES LA CORRECCION.
+	//
+	// Antes se montaba en `/journal/<modulo>`. Como el desmontaje VACIA en vez de borrar -- borrar
+	// mata el runtime desde un finalizador, esta medido y explicado en `Desmontar` --, las
+	// carpetas de los modulos anteriores quedaban ahi, vacias pero CON SU NOMBRE. Un modulo que
+	// entraba despues listaba `/journal` y se enteraba de que la persona tiene compras, examenes,
+	// facturas. Cero bytes de contenido y toda la lista de instituciones.
+	//
+	// Lo habia dado por perdido -- "que el motor libere sus escritores de forma determinista es un
+	// pedido al equipo del motor" --, y Jonathan devolvio que no: eso es la mitad del invariante
+	// de la sala, no un problema ajeno. Tiene razon, y no hacia falta el motor: hacia falta que la
+	// carpeta no se llamara como el modulo.
+	//
+	// Ahora cada carga monta en una carpeta NUEVA y neutra. Lo que queda de las anteriores es
+	// `c1`, `c2`, `c3`: dice cuantas veces se cargo algo en esta sesion, y nada mas. Que hubo
+	// alguien antes es inevitable en un sistema de archivos compartido; QUIEN era, no.
+	//
+	// Y de yapa arregla algo que el nombre por modulo escondia: una carpeta nueva no puede traer
+	// restos de la anterior, asi que el modulo que entra no encuentra segmentos de journal vacios
+	// que su motor no escribio.
+	private static int cargas;
+
+	private static string Neutral() => $"{Raiz}/c{++cargas}";
+
+	// ---------------------------------------------------------------- lo que Gnothi llama
+
+	// CARGAR: trae los .dll del modulo y su journal, y deja la superficie instanciada. Gnothi lo
+	// llama una vez por modulo; despues las consultas encuentran todo tibio.
+	[JSInvokable]
+	public static async Task<string> Cargar(string modulo)
+	{
+		await UnaPorVez.WaitAsync();
+		try
+		{
+			if (Cargados.ContainsKey(modulo))
+				return Json(new { ok = true, yaEstaba = true, consultas = Cargados[modulo].Borde.Consultas });
+
+			// UN MODULO POR VEZ, Y LO SOSTIENE EL SUSTRATO, NO LA CASCARA.
+			//
+			// Hasta aca "uno por vez" vivia entero en un `static string` de `SalaShell`: si esa
+			// variable se equivocaba, la cascara se saltaba el desalojo y ESTE metodo cargaba el
+			// segundo modulo encima, con los dos journals montados. Justo la unica situacion que
+			// la sala no puede permitir, y sin una linea de log.
+			//
+			// Jonathan lo puso en una frase: toda la contencion de la sala colgaba de una
+			// variable. Ahora el que decide es el que tiene los journals a la vista, y ante la
+			// duda no carga: una consulta que falla es recuperable, dos journals montados no.
+			if (Cargados.Count > 0)
+				return Json(new
+				{
+					ok = false,
+					motivo = $"ya hay un modulo cargado ('{Cargados.Keys.First()}') y la sala carga uno por vez: "
+						+ $"hay que desalojarlo antes de montar '{modulo}'",
+				});
+
+			var reloj = System.Diagnostics.Stopwatch.StartNew();
+
+			// 1 · los ensamblados, que el sustrato nunca referencio
+			string indice = await Http.GetStringAsync($"modulo/{modulo}/indice.json");
+			using JsonDocument doc = JsonDocument.Parse(indice);
+			string entrada = doc.RootElement.GetProperty("entrada").GetString()!;
+
+			Assembly? app = null;
+			foreach (JsonElement a in doc.RootElement.GetProperty("archivos").EnumerateArray())
+			{
+				string nombre = a.GetString()!;
+				byte[] bytes = await Http.GetByteArrayAsync($"modulo/{modulo}/dominio/{nombre}.dll");
+				Assembly cargada = AssemblyLoadContext.Default.LoadFromStream(new MemoryStream(bytes));
+				if (string.Equals(nombre, entrada, StringComparison.Ordinal)) app = cargada;
+			}
+			if (app is null) return Json(new { ok = false, motivo = $"no llego la entrada '{entrada}'" });
+
+			// 2 · la superficie, por NOMBRE de atributo, igual que InProcessShell
+			// LOS MISMOS MARCADORES QUE InProcessShell, y por nombre de tipo. Un modulo viejo
+			// lleva los de MCP y uno nuevo los del contrato; la sala no es quien decide cual.
+			Type? superficie = app.GetTypes().FirstOrDefault(t => t.GetCustomAttributes(false)
+				.Any(x => x.GetType().Name is "ModuleSurfaceAttribute" or "McpServerToolTypeAttribute"));
+			if (superficie is null) return Json(new { ok = false, motivo = "el ensamblado no trae [ModuleSurface]" });
+
+			// (la superficie se arma mas abajo; el borde se le pone encima ahi mismo)
+
+			// 3 · SE BARRE AL ENTRAR, NO SOLO AL SALIR. Y esta es la mitad que faltaba.
+			//
+			// MEDIDO EN EL EMULADOR, y es la falla «corre tarde» que Jonathan nombro sin verla:
+			// al desalojar, la carpeta queda en 0 bytes; dos cargas despues tiene 30. Los escribe
+			// el FINALIZADOR del JournalWriter del motor, que se despierta cuando le toca -- ya
+			// vaciada la carpeta -- y vuelve a poner el encabezado del archivo. El propio §2⑤ de
+			// la nota decia que eso pasaba; lo que no decia es que esos bytes quedan a la vista
+			// del modulo que entre despues.
+			//
+			// Un vaciado al salir no puede cerrarlo, porque el escritor llega tarde por
+			// definicion. Barrer al ENTRAR si: sea cuando sea que el finalizador haya escrito,
+			// fue antes de este momento.
+			//
+			// Queda una ventana angosta -- un finalizador que se despierte con el modulo nuevo ya
+			// adentro -- y no se cierra desde aca: pide que el motor libere sus escritores de
+			// forma determinista. La diferencia con antes es que ahora esta ACOTADA y MEDIDA, y
+			// que `vecinos` la reporta en bytes para que la cascara falle si alguna vez no es
+			// cero.
+			object barrido = Barrer();
+
+			// 4 · el journal, que Gnothi deja en memoria antes de que nadie lo abra
+			string concedida = Neutral();
+			Dictionary<string, byte[]> montado = await TraerElJournal(modulo, concedida);
+
+			// 5 · la instancia. La convencion es la misma del Host: el string del constructor
+			//     recibe la carpeta concedida, que aca es una ruta de MEMFS y no un disco.
+			object instancia = Construir(superficie, concedida, 0);
+
+			// EL BORDE SE ARMA UNA VEZ, ACA, Y ES LA UNICA VEZ QUE ALGUIEN REFLEXIONA SOBRE LA
+			// SUPERFICIE DE LA INSTITUCION. De aca en adelante el sustrato habla nombres.
+			Borde borde = Borde.Para(instancia);
+
+			Cargados[modulo] = new Modulo(superficie, instancia, borde, montado, concedida);
+			reloj.Stop();
+
+			return Json(new
+			{
+				ok = true,
+				ms = reloj.ElapsedMilliseconds,
+				superficie = superficie.Name,
+				// LO QUE EL MODULO DECLARA. Ya no es lo que el sustrato encontro hurgando: es lo
+				// que el borde publica, que es lo unico que el Host va a saber de el.
+				// DE QUIEN ES EL BORDE: «propio» si el modulo lo trajo, «prestado» si se lo dio la sala.
+				borde = borde.Dueno,
+
+				consultas = borde.Consultas,
+				vistas = borde.Vistas,
+
+				// CUANTO LE LLEGO DE SU PROPIO REGISTRO. Es lo que prueba que el viaje de vuelta
+				// funciono la vez anterior: un modulo que sembro y se fue tiene que encontrar sus
+				// archivos al volver.
+				montado = new { archivos = montado.Count, bytes = montado.Values.Sum(b => (long)b.Length) },
+
+				// LA CONFORMIDAD, NO UNA PROMESA. Se reporta que queda de los OTROS modulos en el
+				// momento en que este entra. Si algun dia una de estas lineas dice mas de cero
+				// bytes, la frontera entre journals se rompio y el log lo grita.
+				//
+				// Mismo espiritu que la sonda de CSP de Lab.WebViewWasm: la contencion se
+				// afirma intentandola, no declarandola.
+				// QUE HABIA QUE BARRER AL ENTRAR. No es un detalle de limpieza: es la medida de
+				// la ventana del finalizador, y la unica forma de saber si se ensancha.
+				barrido,
+
+				// CUANTOS CASCARONES SE ESTAN RETENIENDO, que es el precio de poder borrar. Si
+				// alguna vez crece la memoria de la sala, este es el numero que hay que mirar.
+				retenidos = Retenidos.Count,
+
+				vecinos = Vecinos(concedida),
+			});
+		}
+		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
+		finally { UnaPorVez.Release(); }
+	}
+
+	// CONSULTAR: invoca una [Query] y devuelve sus hechos aplanados, que es lo que el Host ya
+	// hace hoy en InProcessShell.Project antes de que nadie serialice.
+	[JSInvokable]
+	public static Task<string> Consultar(string modulo, string tool, string argumentosJson) =>
+		Invocar(modulo, tool, argumentosJson, soloVistas: false);
+
+	private static async Task<string> Invocar(string modulo, string tool, string argumentosJson, bool soloVistas)
+	{
+		await UnaPorVez.WaitAsync();
+		try
+		{
+			if (!Cargados.TryGetValue(modulo, out Modulo? m))
+				return Json(new { ok = false, motivo = $"el modulo '{modulo}' no esta cargado" });
+
+			// TODO PASA POR EL BORDE, Y EL SUSTRATO YA NO GUARDA UN METODO DEL MODULO.
+			//
+			// Antes esto tenia los `MethodInfo` de la institucion en un diccionario y los
+			// invocaba: reflexion del sustrato sobre un ensamblado ajeno, que es exactamente lo
+			// que Jonathan marco como el borde que la sala decia dejar declarado y no dejaba. Ver
+			// `Borde.cs`.
+			//
+			// Y LAS DOS PUERTAS SE SEPARAN MEJOR QUE ANTES. Aca habia un `||`: una consulta que no
+			// aparecia entre las [Query] CAIA a buscarse entre las [View]. O sea que el asistente
+			// podia alcanzar una vista por la puerta equivocada. Ahora el verbo elige el conjunto
+			// ANTES de buscar el nombre, y no hay a donde caer.
+			string sobre = string.IsNullOrWhiteSpace(argumentosJson)
+				? """{"args":{}}"""
+				: $$"""{"args":{{argumentosJson}}}""";
+
+			var reloj = System.Diagnostics.Stopwatch.StartNew();
+			object? crudo = await m.Borde.Atender(soloVistas ? "consultar" : "preguntar", tool, sobre);
+			reloj.Stop();
+
+			return Json(new { ok = true, ms = reloj.ElapsedMilliseconds, contenido = Aplanar(crudo) });
+		}
+		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
+		finally { UnaPorVez.Release(); }
+	}
+
+	// LO QUE PIDE LA PANTALLA, que es otro conjunto que el del asistente: series, puntos, lineas
+	// de referencia. Ni se declara en el manifiesto ni le sirve al modelo. Son dos caminos y no
+	// un parametro, igual que en el contrato.
+	[JSInvokable]
+	public static Task<string> Vista(string modulo, string vista, string argumentosJson) =>
+		Invocar(modulo, vista, argumentosJson, soloVistas: true);
+
+	// EL SOBRE QUE DEJA EL CARTERO. Gnothi hizo la red; el modulo decide que asienta.
+	[JSInvokable]
+	public static async Task<string> Entregar(string modulo, string sobreJson)
+	{
+		await UnaPorVez.WaitAsync();
+		try
+		{
+			if (!Cargados.TryGetValue(modulo, out Modulo? m)) return Json(new { ok = false, motivo = $"'{modulo}' no esta cargado" });
+
+			object? r = await m.Borde.Atender("entregar", "", sobreJson);
+
+			// Y LO QUE ASENTO SE VA CON LA RESPUESTA. Sin esto el refresco parecia funcionar y se
+			// evaporaba al desalojar, que es la peor clase de falla.
+			return Json(new { ok = true, contenido = r as string ?? "", escrituras = Escrituras(modulo, m) });
+		}
+		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
+		finally { UnaPorVez.Release(); }
+	}
+
+	// HASTA DONDE YA LEYO. Cero por omision, y cero no es un error: quiere decir «traeme todo».
+	[JSInvokable]
+	public static async Task<string> Cursor(string modulo)
+	{
+		await UnaPorVez.WaitAsync();
+		try
+		{
+			if (!Cargados.TryGetValue(modulo, out Modulo? m)) return Json(new { ok = true, contenido = 0L });
+
+			return Json(new { ok = true, contenido = Convert.ToInt64(await m.Borde.Atender("cursor", "", "") ?? 0L) });
+		}
+		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
+		finally { UnaPorVez.Release(); }
+	}
+
+	// QUE QUEDA DE LOS DEMAS. Lo que este metodo ve, lo ve tambien el dominio de la institucion:
+	// corre en el mismo heap y sobre el mismo sistema de archivos en memoria. Por eso sirve como
+	// prueba y no como comentario.
+	// BARRER LO QUE DEJARON LAS CARGAS ANTERIORES, y devolver cuanto habia. Corre al ENTRAR, que
+	// es el unico momento desde el que se puede afirmar algo sobre un escritor que llega tarde.
+	//
+	// Vacia TODO lo que haya bajo la raiz. En este punto no hay ningun modulo cargado -- lo
+	// garantiza el rechazo de mas arriba -- asi que no hay nada de nadie vivo que se pueda romper.
+	private static object Barrer()
+	{
+		if (!Directory.Exists(Raiz)) return new { carpetas = 0, bytes = 0L, vaciadas = true, borradas = 0 };
+
+		string[] carpetas = Directory.GetDirectories(Raiz);
+		long bytes = 0;
+		int borradas = 0;
+		bool todas = true;
+
+		// LOS ARCHIVOS SUELTOS EN LA RAIZ TAMBIEN. Un modulo no esta obligado a escribir dentro de
+		// su carpeta: puede dejar `/journal/lo-que-vi.txt`, y eso es el mismo canal por el nombre
+		// solo que sin carpeta que lo contenga.
+		foreach (string suelto in Directory.EnumerateFiles(Raiz))
+		{
+			try { bytes += new FileInfo(suelto).Length; } catch { }
+			try { File.Delete(suelto); } catch { todas = false; }
+		}
+
+		foreach (string carpeta in carpetas)
+		{
+			foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+				try { bytes += new FileInfo(archivo).Length; } catch { }
+
+			// SE BORRA, NO SE VACIA, Y ESTE ES EL CAMBIO QUE CIERRA LOS DOS HUECOS QUE QUEDABAN.
+			//
+			// Vaciar dejaba los archivos en cero pero con su NOMBRE, y la sonda de fuga lo
+			// encontro: un modulo que entraba despues leia `c1/compras/meta.bin` -- cero bytes y
+			// el nombre de la institucion igual, porque el nombre viaja ADENTRO de la estructura
+			// del journal y neutralizar la carpeta de afuera no alcanza. Y ademas podia ESCRIBIR
+			// ahi, o sea que un nombre de archivo era un canal entre modulos que el vaciado no
+			// tocaba.
+			//
+			// POR QUE AHORA SE PUEDE BORRAR Y ANTES NO. Antes se borraba EN EL DESALOJO, con el
+			// actor recien cerrado: el finalizador del JournalWriter despertaba, no encontraba su
+			// carpeta, y una excepcion en un finalizador es FATAL -- se lleva el runtime con 255.
+			// Dos cosas cambiaron:
+			//
+			//   1 · Esto corre AL ENTRAR, no al salir. Entre el desalojo y aca paso un viaje
+			//       entero de ida y vuelta al lado nativo, y el modulo anterior ya se cerro y se
+			//       recolecto. Es el momento mas tarde posible que existe para limpiar.
+			//
+			//   2 · Y si aun asi un finalizador llega despues y se muere, YA NO ES FATAL PARA
+			//       GNOTHI: el pedido no vuelve, la cascara corta por tope y tira el documento
+			//       entero. O sea que primero construimos la recuperacion y por eso ahora se
+			//       puede pagar este riesgo; al reves no se habria podido.
+			//
+			// Si el borrado falla, se vacia -- que deja la frontera donde estaba -- y se dice que
+			// no, que hace fallar la carga del lado de la cascara.
+			try
+			{
+				Directory.Delete(carpeta, recursive: true);
+				borradas++;
+			}
+			catch
+			{
+				(bool vaciada, string _) = Desmontar(carpeta);
+				todas &= vaciada;
+			}
+		}
+
+		int afuera = Barrer(["/tmp", "/home"]);
+
+		return new { carpetas = carpetas.Length, bytes, vaciadas = todas, borradas, afuera };
+	}
+
+	// Y LO QUE EL MODULO DEJA FUERA DE LA RAIZ DE LA SALA.
+	//
+	// Lo encontro la sonda de fuga: un modulo escribe `/tmp/canal.txt` y el que entra despues lo
+	// lee tal cual. Es el mismo canal que el de los nombres, solo que en una carpeta que no es de
+	// nadie -- y por eso se pasaba por alto barriendo solo `/journal`.
+	//
+	// Se borra el CONTENIDO y no las carpetas: `/home/web_user` es el directorio de trabajo del
+	// runtime y sacarlo de abajo seria romper el piso. Lo que hay adentro no es de nadie.
+	private static int Barrer(string[] carpetas)
+	{
+		int fuera = 0;
+
+		foreach (string carpeta in carpetas)
+		{
+			if (!Directory.Exists(carpeta)) continue;
+
+			foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+				try { File.Delete(archivo); fuera++; } catch { }
+
+			foreach (string sub in Directory.GetDirectories(carpeta))
+				try { Directory.Delete(sub, recursive: true); fuera++; } catch { }
+		}
+
+		return fuera;
+	}
+
+	// Y AHORA LO QUE INFORMA ES OTRA COSA, mejor: antes decia «quedo la carpeta de compras»; ahora
+	// dice «quedaron 3 carpetas de cargas anteriores, 0 bytes». El nombre ya no esta -- ver
+	// `Neutral` --, asi que lo unico que se puede afirmar es lo unico que importa: cuanto pesa lo
+	// que quedo. Si algun dia eso no es cero, la frontera se rompio.
+	private static object[] Vecinos(string propia)
+	{
+		if (!Directory.Exists(Raiz)) return [];
+
+		var salida = new List<object>();
+		foreach (string carpeta in Directory.GetDirectories(Raiz))
+		{
+			string nombre = Path.GetFileName(carpeta);
+			if (string.Equals(carpeta, propia, StringComparison.Ordinal)) continue;
+
+			long bytes = 0;
+			int archivos = 0;
+			foreach (string f in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+			{
+				archivos++;
+				try { bytes += new FileInfo(f).Length; } catch { }
+			}
+
+			salida.Add(new { carga = nombre, archivos, bytes });
+		}
+
+		return [.. salida];
+	}
+
+	// LO QUE EL MODULO EXPONE DE VERDAD, para el contraste declarado-contra-real que el Host ya
+	// hace con las otras cascaras.
+	[JSInvokable]
+	public static Task<string> Repertorio(string modulo) =>
+		Task.FromResult(Cargados.TryGetValue(modulo, out Modulo? m)
+			? Json(new { ok = true, consultas = m.Borde.Consultas, vistas = m.Borde.Vistas })
+			: Json(new { ok = false, motivo = $"el modulo '{modulo}' no esta cargado" }));
+
+	// DESALOJAR: cierra la superficie y borra su carpeta de memoria. EL ORDEN IMPORTA y esta
+	// medido: borrar la carpeta con el actor todavia vivo mata el runtime, porque el finalizador
+	// del motor intenta escribir y una excepcion en un finalizador es fatal.
+	[JSInvokable]
+	public static async Task<string> Desalojar(string modulo)
+	{
+		await UnaPorVez.WaitAsync();
+		try
+		{
+			string cerrado = "";
+			object[] escrituras = [];
+			(bool vaciada, string detalle) desmontaje;
+
+			// SU CARPETA, SI SE SABE CUAL ES. Ya no se puede deducir del nombre del modulo, asi
+			// que la fuente es el propio `Modulo`. Y si no esta cargado -- porque un desalojo
+			// anterior fallo a la mitad, o porque la cascara se equivoco de nombre -- se vacia
+			// TODO lo que haya bajo la raiz.
+			//
+			// Vaciar de mas es seguro: lo que esta montado es de un solo modulo y ya se le
+			// recogieron las escrituras, o no hay nadie. Vaciar de menos es dejar la frontera
+			// abierta, que es lo unico que no se puede.
+			Cargados.Remove(modulo, out Modulo? m);
+			string suya = m?.Carpeta ?? Raiz;
+
+			// EL DESMONTAJE VA EN UN `finally`, Y NO ES UN DETALLE DE ESTILO.
+			//
+			// Antes iba despues de cerrar y de recoger, dentro del mismo `try`. Si cualquiera de
+			// esos dos tiraba, el `catch` de abajo devolvia un error y LA CARPETA NUNCA SE VACIABA.
+			// Como la frontera de la sala ES el vaciado, eso la dejaba abierta sin que nada lo
+			// dijera: el modulo siguiente entraba y encontraba el journal del anterior.
+			//
+			// Es el modo de falla «que no corra» que Jonathan nombro, y estaba vivo en el codigo.
+			// Cerrar y recoger pueden fallar; vaciar, no.
+			try
+			{
+				if (m is not null)
+				{
+					cerrado = Cerrar(m.Instancia);
+
+					// El orden importa: primero cerrar la superficie -- para que el motor haya
+					// volcado lo suyo --, despues recoger lo que escribio, y recien vaciar.
+					escrituras = Escrituras(modulo, m);
+
+					// LA INSTANCIA NO SE SUELTA, Y ES LO QUE HACE SEGURO BORRAR SU CARPETA.
+					//
+					// Todo el problema del desmontaje era este: el motor deja un JournalWriter con
+					// finalizador PENDIENTE aunque la superficie cierre, y ese finalizador
+					// despierta despues y escribe POR RUTA. Si la carpeta se vacio, repone 30
+					// bytes -- el canal que la sonda encontro. Si se borro, tira dentro de un
+					// finalizador, que es fatal: MEDIDO, «.NET runtime already exited with 255» en
+					// el cambio siguiente.
+					//
+					// Un finalizador solo corre si el objeto es INALCANZABLE. Reteniendo la
+					// instancia, el grafo entero -- superficie, actor, escritor -- sigue
+					// alcanzable y no hay finalizador que despertar nunca. Entonces la carpeta se
+					// puede borrar de verdad, y con ella los nombres y el lugar donde escribir.
+					//
+					// EL PRECIO ES MEMORIA, y hay que decirlo: queda el cascaron de cada carga de
+					// la sesion. Ya se le llamo Dispose(), asi que lo pesado deberia estar
+					// liberado, pero el objeto no se va. Se reporta `retenidos` para que sea un
+					// numero y no una esperanza.
+					Retenidos.Add(m.Instancia);
+				}
+
+				// NUNCA GC.WaitForPendingFinalizers() ACA. MEDIDO: el runtime se muere con 255 al
+				// cambiar de modulo. En el motor web no hay hilo finalizador -- es de un solo
+				// hilo -- asi que esperar a que otro hilo corra los finalizadores es esperar a
+				// nadie. Un GC.Collect() suelto si es seguro: encola, no espera.
+				GC.Collect();
+			}
+			finally
+			{
+				desmontaje = Desmontar(suya);
+			}
+
+			return Json(new
+			{
+				ok = true,
+
+				// `vaciada` ES LA AFIRMACION QUE LA CASCARA MIRA. Sin un booleano, el Host tenia
+				// que adivinar leyendo una frase, y no lo hacia: seguia adelante igual.
+				vaciada = desmontaje.vaciada,
+
+				cerrado,
+				desmontada = desmontaje.detalle,
+				escrituras,
+				montadas = Directory.Exists(Raiz) ? Directory.GetDirectories(Raiz) : [],
+			});
+		}
+		catch (Exception e) { return Json(new { ok = false, motivo = Motivo(e) }); }
+		finally { UnaPorVez.Release(); }
+	}
+
+	// CERRAR LA SUPERFICIE, SIN EXIGIRLE QUE SEA IDisposable. Medido: `FacturasSurface` no lo es
+	// -abre y cierra un actor por consulta- y `ExamenesSurface` si. Si se le exigiera, la mitad
+	// de los modulos quedarian con el motor vivo mientras se les desmonta la carpeta, que es
+	// justamente lo que mata el runtime.
+	private static string Cerrar(object instancia)
+	{
+		if (instancia is IDisposable d)
+		{
+			try { d.Dispose(); return "IDisposable"; }
+			catch (Exception e) { return $"IDisposable fallo: {e.GetType().Name}"; }
+		}
+
+		foreach (string nombre in new[] { "Dispose", "Cerrar", "Close", "GracefulExit" })
+		{
+			MethodInfo? m = instancia.GetType().GetMethod(nombre,
+				BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
+				null, Type.EmptyTypes, null);
+
+			if (m is null) continue;
+
+			try { m.Invoke(instancia, null); return nombre; }
+			catch (Exception e) { return $"{nombre} fallo: {Motivo(e)}"; }
+		}
+
+		return "nada que cerrar";
+	}
+
+	// DESMONTAR ES VACIAR, NO BORRAR. Y esto no es una concesion: es lo unico que se puede hacer.
+	//
+	// MEDIDO, y el rastro lo dice entero:
+	//
+	//     JournalWriter.Finalize() -> Dispose() -> UpdateFileHeader() -> Seek()
+	//     DirectoryNotFoundException: /journal/facturas/facturas/journal/journal_000001.bin
+	//     [ERROR] FATAL UNHANDLED EXCEPTION
+	//
+	// El motor deja un JournalWriter con finalizador pendiente aunque la superficie cierre su
+	// actor. En el motor web NO HAY HILO FINALIZADOR: los finalizadores corren en una
+	// recoleccion posterior, cuando les toca, y no hay forma soportada de forzarlos. Asi que
+	// entre el desalojo y el finalizador hay una ventana que no se puede cerrar -- y si en esa
+	// ventana el archivo desaparecio, la excepcion nace ADENTRO del finalizador, que es fatal y
+	// no se puede atrapar. Se lleva el runtime entero con 255.
+	//
+	// Vaciar no tiene ese problema: el finalizador encuentra el archivo, escribe su encabezado
+	// sobre un archivo de cero bytes y no tira. Y la propiedad que importa se conserva igual: el
+	// modulo que entre despues no tiene nada que leer del anterior.
+	//
+	// LO QUE SI QUEDA VISIBLE, y hay que decirlo: los NOMBRES de las carpetas. Un modulo puede
+	// enterarse de que la persona tiene otros modulos instalados, aunque no de que dicen. Cerrar
+	// eso pide que el motor libere sus escritores de forma determinista, y eso es un pedido al
+	// equipo del motor, no algo que la sala pueda resolver sola.
+	private static (bool vaciada, string detalle) Desmontar(string carpeta)
+	{
+		if (!Directory.Exists(carpeta)) return (true, "no estaba");
+
+		int vaciados = 0, fallados = 0;
+		long bytes = 0;
+
+		try
+		{
+			foreach (string archivo in Directory.EnumerateFiles(carpeta, "*", SearchOption.AllDirectories))
+			{
+				try
+				{
+					bytes += new FileInfo(archivo).Length;
+					File.WriteAllBytes(archivo, []);
+					vaciados++;
+				}
+				catch { fallados++; }
+			}
+		}
+		catch (Exception e)
+		{
+			return (false, $"NO SE PUDO RECORRER la carpeta: {e.GetType().Name}");
+		}
+
+		// UN SOLO ARCHIVO QUE NO SE PUDO VACIAR ES UNA FRONTERA ROTA, no un detalle. Se dice que
+		// no, y la cascara decide -- que es fallar la consulta, no seguir como si nada.
+		return fallados == 0
+			? (true, $"vaciada: {vaciados} archivos, {bytes} bytes que el proximo modulo ya no ve")
+			: (false, $"QUEDARON {fallados} archivos sin vaciar de {vaciados + fallados}");
+	}
+
+	// ---------------------------------------------------------------- adentro
+
+	// EL JOURNAL LLEGA, NO SE ABRE. El modulo nunca pide un archivo: Gnothi sirve el indice y los
+	// bytes por el mismo origen de la sala, y aca aterrizan en memoria. Lo que el modulo escriba
+	// despues se queda en memoria y no toca la carpeta de la persona.
+	private static async Task<Dictionary<string, byte[]>> TraerElJournal(string modulo, string concedida)
+	{
+		Directory.CreateDirectory(concedida);
+
+		var montado = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+		string listado = await Http.GetStringAsync($"modulo/{modulo}/journal/indice.json");
+		using JsonDocument doc = JsonDocument.Parse(listado);
+
+		foreach (JsonElement ruta in doc.RootElement.GetProperty("rutas").EnumerateArray())
+		{
+			string relativa = ruta.GetString()!;
+			byte[] bytes = await Http.GetByteArrayAsync($"modulo/{modulo}/journal/{relativa}");
+			string destino = Path.Combine(concedida, relativa.Replace('/', Path.DirectorySeparatorChar));
+			Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
+			File.WriteAllBytes(destino, bytes);
+			montado[relativa] = bytes;
+		}
+
+		return montado;
+	}
+
+	// EL VIAJE DE VUELTA, que es lo que faltaba para que la sala sirviera para algo mas que
+	// consultar.
+	//
+	// El modulo escribe en memoria y no sabe que hay un disco del otro lado. Asi que despues de
+	// cada operacion que pudo escribir, se compara lo que hay contra la foto de lo que Gnothi
+	// puso, y lo que cambio viaja de vuelta. Gnothi lo guarda en la carpeta de la persona, con su
+	// propio cerco de ruta: el modulo no elige donde aterriza.
+	//
+	// Se devuelve en base64 porque la respuesta es JSON. Un journal pesa kilobytes -- medido, los
+	// cuatro del telefono suman 174 KB -- asi que no hay nada que optimizar todavia.
+	private static object[] Escrituras(string modulo, Modulo m)
+	{
+		// LA CARPETA SALE DEL MODULO, NO DE SU NOMBRE. Recalcularla desde el nombre era posible
+		// cuando la carpeta SE LLAMABA como el modulo; ahora es `c7` y la unica fuente es esta.
+		string concedida = m.Carpeta;
+		if (!Directory.Exists(concedida)) return [];
+
+		var cambios = new List<object>();
+
+		foreach (string archivo in Directory.EnumerateFiles(concedida, "*", SearchOption.AllDirectories))
+		{
+			string relativa = Path.GetRelativePath(concedida, archivo).Replace(Path.DirectorySeparatorChar, '/');
+
+			byte[] ahora;
+			try { ahora = File.ReadAllBytes(archivo); }
+			catch { continue; }
+
+			if (m.Montado.TryGetValue(relativa, out byte[]? antes) && antes.AsSpan().SequenceEqual(ahora)) continue;
+
+			cambios.Add(new { ruta = relativa, contenido = Convert.ToBase64String(ahora) });
+			m.Montado[relativa] = ahora;
+		}
+
+		return [.. cambios];
+	}
+
+	// LA MISMA CONVENCION QUE InProcessShell.Build, y se copia a proposito en vez de inventar otra:
+	// cualquier string que un constructor pida recibe la carpeta concedida, y cualquier otro tipo
+	// se construye recursivamente. El Host la llama "la parte mas debil de esta cascara" porque
+	// esta adivinando, y tiene razon -- pero si la sala adivinara distinto, un modulo se
+	// comportaria de dos maneras segun donde corre, que es peor que adivinar igual.
+	private static object Construir(Type t, string concedida, int profundidad)
+	{
+		if (profundidad > 4)
+			throw new InvalidOperationException($"cadena de constructores demasiado honda en {t.Name}");
+
+		ConstructorInfo[] ctors = [.. t.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+			.OrderBy(c => c.GetParameters().Length)];
+
+		if (ctors.Length == 0)
+			throw new InvalidOperationException($"{t.Name} no tiene constructor alcanzable");
+
+		ConstructorInfo elegido = ctors[0];
+		object?[] valores = [.. elegido.GetParameters().Select(p =>
+			p.ParameterType == typeof(string) ? (object?)concedida : Construir(p.ParameterType, concedida, profundidad + 1))];
+
+		return elegido.Invoke(valores);
+	}
+
+	// El mismo aplanado que InProcessShell.Project: el grafo .NET a dict/lista/primitivo, porque
+	// el [JsonPropertyName] del modulo no es el mismo Type que conoce el serializador del Host.
+	private static object? Aplanar(object? v)
+	{
+		if (v is null) return null;
+		Type t = v.GetType();
+
+		if (t.IsPrimitive || v is string || v is decimal || v is DateTime || v is DateTimeOffset) return v;
+
+		// UN JsonElement YA ES JSON. Viene de un modulo que trae su propio borde y contesto texto;
+		// aplanarlo por reflexion lo convertiria en {"ValueKind":1}, que es basura con forma de
+		// objeto. El serializador lo escribe tal cual.
+		if (v is JsonElement) return v;
+		if (v is System.Collections.IEnumerable lista) return lista.Cast<object?>().Select(Aplanar).ToList();
+
+		var salida = new Dictionary<string, object?>(StringComparer.Ordinal);
+		foreach (PropertyInfo p in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+		{
+			string declarado = p.GetCustomAttributes(false)
+				.FirstOrDefault(a => a.GetType().Name == "JsonPropertyNameAttribute")
+				?.GetType().GetProperty("Name")?.GetValue(p.GetCustomAttributes(false)
+					.First(a => a.GetType().Name == "JsonPropertyNameAttribute")) as string ?? "";
+
+			string etiqueta = declarado.Length > 0 ? declarado : JsonNamingPolicy.CamelCase.ConvertName(p.Name);
+			try { salida[etiqueta] = Aplanar(p.GetValue(v)); }
+			catch (Exception e) { salida[etiqueta] = $"<{e.GetType().Name}>"; }
+		}
+
+		return salida;
+	}
+
+	private static string Motivo(Exception e)
+	{
+		Exception raiz = e is TargetInvocationException t && t.InnerException is not null ? t.InnerException : e;
+		return $"{raiz.GetType().Name}: {raiz.Message}";
+	}
+
+	private static string Json(object o) => JsonSerializer.Serialize(o);
+}

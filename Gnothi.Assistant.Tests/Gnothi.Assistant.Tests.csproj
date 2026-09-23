@@ -17,6 +17,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS0436</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,6 +39,25 @@
          vez de una copia. -->
     <Compile Include="..\Gnothi.MobileShared\ModuleEnrollment.cs" Link="ModuleEnrollment.cs" />
 
+    <!-- Y LA CAPA NEUTRAL DEL PUENTE, por la misma razon y con el mismo precedente: el cerco del
+         journal -que un modulo no pueda escribir en la carpeta de otro- no lo expresa ningun
+         tipo ni ninguna firma publica, asi que nada en una revision normal nota el dia que se
+         pierde. Son los seis archivos que ya compila Gnothi.Desktop, tal cual. Ver Aislamiento.cs.
+         CS0436: WebViewShell y HybridShell existen tambien como stubs en el Host; el compilador
+         prefiere estos, que son los de verdad. -->
+    <Compile Include="..\Gnothi.MobileShared\WebModule.cs" Link="WebModule.cs" />
+    <Compile Include="..\Gnothi.MobileShared\BundleServer.cs" Link="BundleServer.cs" />
+    <Compile Include="..\Gnothi.MobileShared\HybridShell.cs" Link="HybridShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\WebViewShell.cs" Link="WebViewShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\GnothiCourier.cs" Link="GnothiCourier.cs" />
+    <Compile Include="..\Gnothi.MobileShared\GnothiCredential.cs" Link="GnothiCredential.cs" />
+
+    <!-- Y LA CASCARA DE LA SALA. Se compila el archivo de verdad, no una copia: lo que Sala.cs
+         afirma son los dos invariantes que esa clase sostiene, y probarlos contra una
+         reimplementacion seria repetir el antipatron del manifiesto. `ISalaHost` es la unica
+         costura con la plataforma, asi que todo lo que decide se puede probar aca sin telefono. -->
+    <Compile Include="..\Gnothi.MobileShared\SalaShell.cs" Link="SalaShell.cs" />
+
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
   </ItemGroup>
@@ -51,6 +71,40 @@
        Se engancha ANTES del target VSTest del SDK, que es el que `dotnet test` invoca. Depende
        de Build salvo cuando se pide sin build (VSTestNoBuild), igual que VSTest. El exit code
        del ejecutable es el de la suite, asi que si una asercion falla, `dotnet test` falla. -->
+  <!-- LA SUITE COMPILA LOS MODULOS QUE VERIFICA, Y EN SU PROPIA SALIDA.
+       Antes apuntaba al bin/Debug de cada modulo, y ese bin lo tienen ABIERTO los servidores MCP
+       que la sesion levanta desde .mcp.json: el build moria con MSB3027 y nadie lo miraba, asi
+       que la suite terminaba comparando el manifiesto contra un dll viejo. Se veia como una
+       falla del modulo (compras declaraba cinco tools que "no tenia") cuando lo unico viejo era
+       el binario.
+       Compilar a bin/suite/<modulo>/ rompe ese circulo: los servidores no la tienen tomada, y la
+       suite deja de depender de que alguien se haya acordado de recompilar. -->
+  <Target Name="LaSuiteCompilaSusModulos" BeforeTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <ModuloDeLaSuite Include="..\Compras\App\Compras.Mcp\Compras.Mcp.csproj" Nombre="compras" />
+      <ModuloDeLaSuite Include="..\Examenes\App\Examenes.Mcp\Examenes.Mcp.csproj" Nombre="examenes" />
+      <ModuloDeLaSuite Include="..\HolaMundo\Facturas\App\Facturas.Mcp\Facturas.Mcp.csproj" Nombre="facturas" />
+    </ItemGroup>
+
+    <!-- PUBLISH Y NO BUILD, y la diferencia importa. Con Build, los cuatro proyectos de la cadena
+         -Mcp, App, Dominio y el contrato- escriben en la MISMA carpeta y quedan cuatro
+         .deps.json mezclados; el resolutor del Host no encuentra sus componentes y el modulo no
+         arranca. Publish deja una carpeta coherente, con un solo deps.json y todo al lado.
+         BaseOutputPath aparte: es lo que mantiene el intermedio LEJOS del bin/Debug que los
+         servidores MCP tienen tomado. -->
+    <MSBuild Projects="@(ModuloDeLaSuite)"
+             Targets="Publish"
+             Properties="Configuration=Debug;BaseOutputPath=$(MSBuildThisFileDirectory)..\bin\suite\intermedio-%(ModuloDeLaSuite.Nombre)\;PublishDir=$(MSBuildThisFileDirectory)..\bin\suite\%(ModuloDeLaSuite.Nombre)\" />
+
+    <!-- EL MANIFIESTO NO SE COPIA A MANO NI SE VERSIONA DOS VECES. Se proyecta desde Modulos/ en
+         cada build, que es la unica forma de que el banco de la suite no se desincronice del
+         que leen los servidores. Es el mismo antipatron que ya mordio una vez con los
+         manifiestos de los modulos hospedados. -->
+    <Copy SourceFiles="@(ModuloDeLaSuite->'$(MSBuildThisFileDirectory)..\Modulos\%(Nombre)\manifest.json')"
+          DestinationFiles="@(ModuloDeLaSuite->'$(MSBuildThisFileDirectory)..\Modulos.suite\%(Nombre)\manifest.json')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
   <PropertyGroup>
     <_LaSuiteDependeDe Condition="'$(VSTestNoBuild)' != 'true'">Build</_LaSuiteDependeDe>
   </PropertyGroup>

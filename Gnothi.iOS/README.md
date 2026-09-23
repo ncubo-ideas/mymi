@@ -169,6 +169,59 @@ Para elegir simulador o aparato:
 dotnet build -t:Run -f net9.0-ios -p:RuntimeIdentifier=ios-arm64
 ```
 
+### 3b · Si el build muere con «Undefined symbols», es la `.a` vieja
+
+```
+ld: Undefined symbols for architecture arm64:
+      "_gnothi_fm_razon", referenced from: <initial-undefines>
+```
+
+**No es el C#**: eso ya compiló. Es que `Intents/out/libGnothiIntents.a` quedó vieja, y el
+mensaje no dice eso por ningún lado.
+
+Pasa siempre que alguien agrega una función nativa —un `[DllImport("__Internal", EntryPoint =
+"gnothi_…")]` en C# con su `@_cdecl` en `Intents/Puente.swift`— y vos traés ese cambio sin
+recompilar el Swift. **`Intents/out/` está gitignoreado**, o sea que la `.a` no viaja con el
+commit que la necesita: un `git pull` o un merge te deja el C# nuevo contra la librería vieja.
+
+Medido el 2026-09-21 trayendo `master` a `fase0/la-sala-sustrato-en-el-motor-web`: master había
+agregado `gnothi_fm_razon` y el link murió con ese renglón.
+
+**El arreglo** es regenerar la librería. `armar-intents.sh` entero lo hace, pero su paso 1 es
+autocontenido y alcanza:
+
+```bash
+cd Gnothi.iOS
+ARCH=$(uname -m); TRIPLE="${ARCH}-apple-ios16.0-simulator"
+SDK="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+rm -rf Intents/out && mkdir -p Intents/out
+xcrun swiftc -parse-as-library -wmo -module-name GnothiIntents \
+  -target "$TRIPLE" -sdk "$SDK" \
+  -emit-library -static -o Intents/out/libGnothiIntents.a \
+  -emit-module -emit-module-path Intents/out/GnothiIntents.swiftmodule \
+  -Xfrontend -const-gather-protocols-file -Xfrontend Intents/protocolos-appintents.json \
+  -emit-const-values-path Intents/out/GnothiIntents.swiftconstvalues \
+  Intents/GnothiIntents.swift Intents/Puente.swift
+```
+
+Para comprobarlo antes de volver a compilar, sin esperar el AOT:
+
+```bash
+nm Gnothi.iOS/Intents/out/libGnothiIntents.a | grep gnothi_fm_
+```
+
+**Y ojo con la arquitectura, que es la otra cara de lo mismo.** Ese paso arma la `.a` para
+**simulador**. Si la que hay quedó de un build de aparato, el link falla distinto y sí lo dice:
+
+```
+ld: building for 'iOS-simulator', but linking in object file
+    (Intents/out/libGnothiIntents.a[2](GnothiIntents-1.o)) built for 'iOS'
+```
+
+Mover la `.a` de lugar **no es salida**: la `NativeReference` del csproj está condicionada a que
+exista, así que sin ella el link vuelve a fallar por símbolos indefinidos — los mismos
+`gnothi_fm_*`, que son los `DllImport` de `ModelFoundation.cs` y `BridgeProbe.cs`.
+
 ### 4 · Los logs — acá está el resultado
 
 El equivalente de `adb logcat -s GNOTHI`:

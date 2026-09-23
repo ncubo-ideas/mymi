@@ -157,6 +157,59 @@ public sealed class ViewController : UIViewController
 		moduleHost = new IosWebModuleHost(this, new IosSecretStore(), Log);
 		Gnothi.Host.WebViewShell.Host = moduleHost;
 
+		// Y QUIEN SABE ABRIR LA SALA. Mismo motivo y misma costura, una linea mas abajo que en
+		// MainActivity: es UN solo documento para todos los modulos, creado la primera vez que
+		// alguien pregunta. No recibe `this`, porque a diferencia del WebView de un modulo la
+		// sala no se muestra nunca -- no necesita un ViewController que la ponga en pantalla.
+		var sala = new IosSala(Log);
+		Gnothi.Host.SalaShell.Host = sala;
+
+		// LA SALA, FORZADA PARA MEDIR, sin tocar el installation.json de nadie. El resto del
+		// camino es el de siempre: Dispatcher, catalogo, consentimiento. Lo unico que cambia es
+		// que cascara construye el Module para esos nombres.
+		//
+		// DE DONDE SALE EL INTERRUPTOR, Y POR QUE DE AHI. `Library/Application Support` es del
+		// contenedor de esta app: ninguna otra la ve -- iOS no tiene el equivalente de un extra de
+		// Intent, que es el canal de cualquiera que a Android hubo que quitarle -- y, a diferencia
+		// de `Documents`, NO la expone la app Archivos, asi que tampoco la toca la persona por
+		// accidente. Se lee UNA vez, aca: cambiarla con la app viva no hace nada.
+		//
+		//     xcrun simctl get_app_container booted com.ncubo.gnothi.host data
+		//     echo comprasw,examenesw > <ese contenedor>/Library/Application\ Support/sala
+		//
+		// Y ademas va en DEBUG, para que el .app que se publica no tenga forma de encenderlo
+		// aunque alguien deje el archivo puesto. Es la misma doble guarda que Android: alla el
+		// archivo privado MAS la bandera de depurable.
+#if DEBUG
+		string interruptor = Path.Combine(files, "sala");
+		if (File.Exists(interruptor))
+		{
+			// EL ARCHIVO VACIO YA DICE ALGO, y es a proposito que diga lo menos: arranca la sala
+			// y nada mas. La pregunta que decide la forma en iOS -- si el sustrato levanta bajo
+			// `gnothi-sala://` -- se contesta con el sustrato SOLO, sin ningun modulo de por
+			// medio. Con nombres adentro, ademas, esos modulos corren por la sala.
+			//
+			// Separadas y no juntas: si se midieran en el mismo paso, un alta que fallo leeria
+			// igual que un origen que no sirve, y son dos arreglos distintos.
+			_ = Task.Run(async () =>
+			{
+				try { await sala.Calentar(CancellationToken.None); Log("sala: arranco sin modulos"); }
+				catch (Exception e) { Log($"sala: NO arranco -- {e.GetType().Name}: {e.Message}"); }
+			});
+
+			HashSet<string> nombres = [.. File.ReadAllText(interruptor)
+				.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+			if (nombres.Count > 0)
+			{
+				Log($"sala: forzada para {string.Join(", ", nombres)}");
+
+				Gnothi.Host.Module.ShellFactory = (nombre, instalacion) => nombres.Contains(nombre)
+					? new Gnothi.Host.SalaShell(nombre, instalacion.Shell, instalacion.GrantedFolder)
+					: null;
+			}
+		}
+#endif
+
 		// AND WHO CAN CLOSE THEM: an update moves the module's folder while its WebView may be
 		// sitting on it (44 §3.6). The Shell only names the hook; the platform fulfils it.
 		shell.CloseModule = module =>

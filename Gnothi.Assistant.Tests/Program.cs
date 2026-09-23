@@ -128,9 +128,23 @@ Assert("Request carries no caller identity -- Dispatcher.Serve still does not kn
 // Sin argumento busca ./Modulos, que esta versionado y apunta, RELATIVO a cada carpeta, al
 // bin/Debug de cada modulo: arranca en cualquier maquina que los haya compilado. Si no estan
 // compilados, la primera asercion de la conformance lo dice y dice que compilar.
+// Y SIN ARGUMENTO PREFIERE `Modulos.suite`, que es el banco que el csproj de arriba compila y
+// mantiene. `Modulos/` sigue existiendo y es el que leen los servidores MCP de .mcp.json --
+// justamente por eso la suite no puede usarlo: esos servidores tienen ABIERTOS sus dll, nadie los
+// puede reconstruir, y la suite terminaba comparando el manifiesto contra un binario viejo. Eso
+// se veia como un modulo que declara tools que no tiene, cuando lo unico viejo era el .dll.
 string modulos = args.Length > 0 && Directory.Exists(args[0])
 	? Path.GetFullPath(args[0])
-	: Gnothi.Conformance.Conformance.FindModules();
+	: DeLaSuiteOElVersionado();
+
+static string DeLaSuiteOElVersionado()
+{
+	string versionado = Gnothi.Conformance.Conformance.FindModules();
+	if (versionado.Length == 0) return versionado;
+
+	string propio = Path.Combine(Path.GetDirectoryName(versionado)!, "Modulos.suite");
+	return Directory.Exists(propio) && Directory.GetDirectories(propio).Length > 0 ? propio : versionado;
+}
 
 if (modulos.Length == 0)
 {
@@ -168,6 +182,26 @@ else
 Console.WriteLine();
 Console.WriteLine("=== THE PACKAGE IS INSPECTED BEFORE SHE DECIDES ===");
 Gnothi.Tests.Enrollment.Run(Assert);
+
+// ============================================================================================
+// UN MODULO NO PUEDE ESCRIBIR EN LA CARPETA DE OTRO, Y EL PUENTE NO ACEPTA QUE LE DIGAN DE
+// QUIEN HABLA. Hoy la segunda mitad se cumple sola porque hay un puente por WebView; la forma
+// que se esta evaluando (nota 49) le quita esa muleta. Ver Aislamiento.cs.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== UN MODULO NO ALCANZA EL JOURNAL DE OTRO ===");
+Gnothi.Tests.Aislamiento.Run(Assert);
+
+// ============================================================================================
+// Y EN LA SALA, DONDE TODOS LOS MODULOS COMPARTEN UN DOCUMENTO, LA SEPARACION LA SOSTIENE LA
+// CASCARA: una llamada en vuelo, un modulo cargado por vez, y la identidad sale del marco de la
+// llamada y nunca del mensaje. Ver Sala.cs.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== LA SALA SOSTIENE LA SEPARACION QUE EL PUENTE YA NO REGALA ===");
+Gnothi.Tests.Sala.Run(Assert);
 
 // ============================================================================================
 // --install WRITES THE CODEX TABLE WITHOUT TOUCHING THE REST OF config.toml.

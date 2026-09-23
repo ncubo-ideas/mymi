@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA SALA, ADENTRO DE UN APK. La medicion anterior salio de Chrome del telefono con los
+       bytes llegando por `adb reverse` desde la laptop, y eso deja dos dudas abiertas: no es el
+       WebView de una app, y los archivos no salian del aparato. Esto cierra las dos.
+
+       Lo que se mide es lo mismo que la nota 49: cuanto cuesta la primera consulta con el
+       arranque del motor adentro, cuanto cuestan las siguientes con el motor tibio, y cuanta
+       memoria ocupa el sustrato con los cinco modulos cargados.
+
+       NO DECLARA EL PERMISO DE INTERNET, y es a proposito: la sala no necesita red para nada.
+       Todo lo que la pagina pide lo atiende ShouldInterceptRequest desde los assets, antes de
+       que exista un socket. Si algo intentara salir de verdad, aca fallaria, que es la prueba
+       que se quiere y no un descuido. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.ncubo.gnothi.spike.sala</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <RootNamespace>Lab.Sala</RootNamespace>
+
+    <!-- Autocontenido, misma razon que Lab.WebViewWasm: sin Fast Deployment el apk se basta
+         solo y `pm clear` no lo rompe. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EL SUSTRATO PUBLICADO, POR REFERENCIA. Se excluyen .gz y .br: aca los bytes salen de
+         disco local y no hay servidor que negocie Content-Encoding, asi que solo inflarian el
+         apk. Lo que queda es el peso real que la sala ocupa en el aparato. -->
+    <AndroidAsset Include="..\Sustrato\publicado\wwwroot\**\*"
+                  Exclude="..\Sustrato\publicado\wwwroot\**\*.gz;..\Sustrato\publicado\wwwroot\**\*.br"
+                  Link="Assets\sala\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>
