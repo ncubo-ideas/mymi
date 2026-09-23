@@ -4,33 +4,33 @@ using System.Text.Json;
 
 namespace Gnothi.Desktop;
 
-// EL PROVEEDOR DEL MODELO Y LA LLAVE, EN EL ESCRITORIO. El espejo de lo que MainActivity guarda en
-// el telefono, pero un paso mas alla: aqui la persona ELIGE proveedor -Claude, ChatGPT (OpenAI),
-// Gemini, o cualquiera de la forma OpenAI- y, con la llave puesta, la app le PREGUNTA al proveedor
-// que modelos tiene y ella escoge cual usar. Ese modelo es el que carga cada peticion.
+// THE MODEL PROVIDER AND THE KEY, ON THE DESKTOP. The mirror of what MainActivity keeps on the
+// phone, but one step further: here the person CHOOSES a provider -Claude, ChatGPT (OpenAI),
+// Gemini, or anything in the OpenAI shape- and, with the key in place, the app ASKS the provider
+// which models it has and she picks which one to use. That model is what every request carries.
 //
-// BYOK -- la llave es de la persona: vive SOLO en un area privada por-usuario, NUNCA se le devuelve
-// a la UI (solo un booleano "hay una", y la LISTA de modelos que el proveedor responde -no la
-// llave-), y no llega a ningun log.
+// BYOK -- the key belongs to the person: it lives ONLY in a per-user private area, is NEVER handed
+// back to the UI (only a boolean "there is one", and the LIST of models the provider answers with
+// -not the key-), and reaches no log.
 //
-// DOS FAMILIAS DE API, un solo asiento de configuracion:
-//   - "anthropic": Claude. Header x-api-key, cuerpo propio -> lo habla ModelClaude.
-//   - "openai":    ChatGPT, Gemini, Groq, Cerebras, OpenRouter, LM Studio local... todos hablan la
-//                  forma OpenAI (Authorization: Bearer) -> lo habla ModelOpenAiCompatible.
-// El "kind" del proveedor es lo unico que decide que adaptador se arma y como se listan sus modelos.
+// TWO API FAMILIES, one single configuration seat:
+//   - "anthropic": Claude. x-api-key header, its own body -> ModelClaude speaks it.
+//   - "openai":    ChatGPT, Gemini, Groq, Cerebras, OpenRouter, local LM Studio... they all speak
+//                  the OpenAI shape (Authorization: Bearer) -> ModelOpenAiCompatible speaks it.
+// The provider "kind" alone decides which adapter is built and how its models are listed.
 internal sealed class ModelConfig
 {
-    // Area privada por-usuario, la misma idea que el FilesDir del telefono.
+    // A per-user private area, the same idea as the phone's FilesDir.
     private static string Dir
     {
         get
         {
             string d = Path.Combine(
-                // "Gnothi" Y NO "Mymi", aunque el producto ya se llame Mymi de cara a la persona.
-                // Esto es una RUTA EN DISCO, no un texto: renombrarla deja el model.cfg y las llaves
-                // de todo el que ya tiene la app en una carpeta que nadie vuelve a leer, y el sintoma
-                // seria «se me borro el proveedor» sin ningun error. Se renombra el dia que alguien
-                // escriba la migracion, no antes.
+                // "Gnothi" AND NOT "Mymi", even though the product is already called Mymi to the person.
+                // This is a PATH ON DISK, not a text: renaming it leaves the model.cfg and the keys
+                // of everyone who already has the app in a folder nobody reads again, and the symptom
+                // would be «my provider was deleted» with no error at all. It is renamed the day
+                // somebody writes the migration, not before.
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Gnothi");
             Directory.CreateDirectory(d);
             return d;
@@ -44,17 +44,17 @@ internal sealed class ModelConfig
     public const string DefaultUrl = "https://api.anthropic.com/v1";
     public const string DefaultModel = "claude-sonnet-5";
 
-    // Kind: "anthropic" (Claude) u "openai" (todo lo que habla la forma OpenAI).
+    // Kind: "anthropic" (Claude) or "openai" (everything that speaks the OpenAI shape).
     public sealed record Preset(string Name, string Kind, string Url, string Model);
 
-    // Presets para no tener que buscar. El ultimo es LOCAL -- sin llave, nada sale de la maquina.
-    // Cada uno trae un modelo por defecto; con la llave puesta, "Cargar modelos" lo reemplaza por lo
-    // que el proveedor realmente ofrezca.
+    // Presets so nothing has to be looked up. The last is LOCAL -- no key, nothing leaves the machine.
+    // Each brings a default model; with the key in place, "Load models" replaces it with whatever
+    // the provider actually offers.
     public static readonly IReadOnlyList<Preset> Presets =
     [
-        // EL DE ESTA MAQUINA, primero: es la puerta que importa (on-device), y las de red son el
-        // "peor es nada". Sin URL y sin llave: nada sale del equipo. Solo se ofrece si el modelo
-        // de verdad genera aca (AppleModel.Works), ver PresetsAvailable.
+        // THIS MACHINE'S OWN, first: it is the door that matters (on-device), and the network ones
+        // are the fallback. No URL and no key: nothing leaves the machine. It is only offered if
+        // the model really generates here (AppleModel.Works), see PresetsAvailable.
         new(AppleName, "apple", "", "on-device"),
         new("Claude", "anthropic", "https://api.anthropic.com/v1", "claude-sonnet-5"),
         new("ChatGPT (OpenAI)", "openai", "https://api.openai.com/v1", "gpt-4o-mini"),
@@ -65,25 +65,25 @@ internal sealed class ModelConfig
         new("LM Studio (local)", "openai", "http://localhost:1234/v1", "local-model"),
     ];
 
-    /// <summary>El proveedor que corre en esta Mac.</summary>
+    /// <summary>The provider that runs on this Mac.</summary>
     ///
-    /// ES UNA IDENTIDAD, NO UNA ETIQUETA: es lo que se guarda en model.cfg, lo que compara el
-    /// desplegable y de lo que sale KeyPath. La ventana lo MUESTRA por Display.
+    /// IT IS AN IDENTITY, NOT A LABEL: it is what is stored in model.cfg, what the dropdown
+    /// compares, and what KeyPath comes from. The window SHOWS it through Display.
     public const string AppleName = "Apple Intelligence (en esta Mac)";
 
-    /// <summary>Como se llama un proveedor EN LA PANTALLA; lo que se guarda y se compara sigue
-    /// siendo el nombre del preset.</summary>
+    /// <summary>What a provider is called ON THE SCREEN; what is stored and compared is still the
+    /// preset name.</summary>
     public static string Display(string name) =>
         name == AppleName ? Textos.T("ajustes.proveedor.apple") : name;
 
-    // Los presets que tiene sentido mostrar EN ESTA MAQUINA: el de Apple solo donde el modelo
-    // genera. En Windows, Linux o una Mac sin el puente, la lista es la de siempre.
+    // The presets worth showing ON THIS MACHINE: Apple's only where the model generates. On
+    // Windows, Linux or a Mac without the bridge, the list is the usual one.
     public IReadOnlyList<Preset> PresetsAvailable() =>
         AppleModel.Works() ? Presets : [.. Presets.Where(p => p.Kind != "apple")];
 
     public bool IsApple => Provider().Kind == "apple";
 
-    // El proveedor elegido; si no hay archivo o no se puede leer, el default.
+    // The chosen provider; if there is no file or it cannot be read, the default.
     public (string Name, string Kind, string Url, string Model) Provider()
     {
         try
@@ -103,12 +103,12 @@ internal sealed class ModelConfig
 
     public bool IsAnthropic => Provider().Kind == "anthropic";
 
-    // Elegir proveedor deja el modelo por defecto del preset; la persona lo afina con "Cargar
-    // modelos". Escribe kind para que el asistente sepa que adaptador armar.
+    // Choosing a provider leaves the preset's default model; the person refines it with "Load
+    // models". It writes kind so the assistant knows which adapter to build.
     public void SetProvider(string name, string kind, string url, string model) =>
         Write(name, kind, url, model);
 
-    // Solo cambia el modelo, conservando el proveedor. Es lo que hace el desplegable de modelos.
+    // It changes only the model, keeping the provider. It is what the models dropdown does.
     public void SetModel(string model)
     {
         (string name, string kind, string url, _) = Provider();
@@ -121,7 +121,7 @@ internal sealed class ModelConfig
             ["name"] = name, ["kind"] = kind, ["url"] = url, ["model"] = model,
         }));
 
-    // Un modelo local -el de Apple, o uno en localhost- no necesita llave.
+    // A local model -Apple's, or one on localhost- needs no key.
     public bool NeedsKey
     {
         get
@@ -132,8 +132,8 @@ internal sealed class ModelConfig
         }
     }
 
-    // PER PROVIDER, a proposito: una llave de Groq no es una de OpenAI. Cambiar de proveedor cambia
-    // que archivo de llave se lee, asi ir a otro y volver no pierde nada.
+    // PER PROVIDER, on purpose: a Groq key is not an OpenAI one. Switching provider changes which
+    // key file is read, so going to another and back loses nothing.
     public string KeyPath
     {
         get
@@ -145,7 +145,7 @@ internal sealed class ModelConfig
 
     public bool KeyPresent => File.Exists(KeyPath);
 
-    // Tres reglas: vive SOLO aca (area privada), NUNCA vuelve a la UI, y no va a ningun log.
+    // Three rules: it lives ONLY here (private area), NEVER goes back to the UI, and reaches no log.
     public void SetKey(string key)
     {
         key = key.Trim();
@@ -159,16 +159,16 @@ internal sealed class ModelConfig
 
     public sealed record ModelsResult(bool Ok, IReadOnlyList<string> Models, string? Error);
 
-    // LE PREGUNTA AL PROVEEDOR QUE MODELOS TIENE. Usa la llave de la persona (leida del archivo
-    // privado) SOLO para este GET; devuelve la lista de ids, nunca la llave. Ambas familias
-    // responden { "data": [ { "id": "..." } ] }:
-    //   - openai:    GET {base}/models        con Authorization: Bearer <llave>
-    //   - anthropic: GET {base}/models        con x-api-key + anthropic-version
+    // IT ASKS THE PROVIDER WHICH MODELS IT HAS. It uses the person's key (read from the private
+    // file) ONLY for this GET; it returns the list of ids, never the key. Both families answer
+    // { "data": [ { "id": "..." } ] }:
+    //   - openai:    GET {base}/models        with Authorization: Bearer <key>
+    //   - anthropic: GET {base}/models        with x-api-key + anthropic-version
     public async Task<ModelsResult> FetchModels(CancellationToken ct = default)
     {
         (string _, string kind, string url, string _) = Provider();
 
-        // Apple no lista modelos: hay uno, el del sistema, y no se elige.
+        // Apple lists no models: there is one, the system's, and it is not chosen.
         if (kind == "apple")
             return AppleModel.Works()
                 ? new ModelsResult(true, ["on-device"], null)

@@ -4,16 +4,16 @@ using Gnothi.iOS;
 
 namespace Gnothi.Desktop;
 
-// APPLE INTELLIGENCE EN EL ESCRITORIO, detras de la misma puerta que en el telefono.
+// APPLE INTELLIGENCE ON THE DESKTOP, behind the same door as on the phone.
 //
-// ModelFoundation.cs es EL MISMO ARCHIVO que compila Gnothi.iOS -enlazado, no copiado- y habla
-// con el Swift por DllImport("__Internal"). En iOS ese nombre existe porque la libreria entra
-// estatica al ejecutable. En CoreCLR no significa nada, asi que aca se resuelve a mano: el
-// resolver de abajo mapea "__Internal" a la dylib que armar-modelo.sh deja al lado del
-// ejecutable. Un solo ModelFoundation, dos formas de enlazarlo.
+// ModelFoundation.cs is THE SAME FILE Gnothi.iOS compiles -linked, not copied- and it talks to
+// the Swift through DllImport("__Internal"). On iOS that name exists because the library goes
+// statically into the executable. In CoreCLR it means nothing, so here it is resolved by hand:
+// the resolver below maps "__Internal" to the dylib armar-modelo.sh leaves beside the
+// executable. One ModelFoundation, two ways of linking it.
 //
-// FALLA CERRADO Y EN SILENCIO. Sin dylib (Windows, Linux, una Mac sin Xcode), sin macOS 26, o
-// con un modelo que dice estar y no genera, el preset no aparece. Nada de esto tira la ventana.
+// IT FAILS CLOSED AND IN SILENCE. With no dylib (Windows, Linux, a Mac without Xcode), without
+// macOS 26, or with a model that claims to be there and does not generate, the preset does not appear. None of this brings the window down.
 internal static class AppleModel
 {
 	private const string Dylib = "libGnothiModelo.dylib";
@@ -23,8 +23,8 @@ internal static class AppleModel
 
 	public static string Path => System.IO.Path.Combine(AppContext.BaseDirectory, Dylib);
 
-	// Se llama UNA vez desde Program: registra el resolver en el ensamblado que declara los
-	// DllImport (este, porque ModelFoundation.cs se compila aca).
+	// Called ONCE from Program: it registers the resolver on the assembly that declares the
+	// DllImports (this one, because ModelFoundation.cs is compiled here).
 	public static void Wire()
 	{
 		if (wired) return;
@@ -34,8 +34,8 @@ internal static class AppleModel
 			name == "__Internal" && File.Exists(Path) ? NativeLibrary.Load(Path) : IntPtr.Zero);
 	}
 
-	// Caro la primera vez -genera de verdad para distinguir "dice estar" de "contesta"- y por
-	// eso se cachea. En una Mac con el modelo medido: ~1 s.
+	// Expensive the first time -it really generates, to tell "claims to be there" from "answers"-
+	// and that is why it is cached. On a Mac with the model measured: ~1 s.
 	public static bool Works()
 	{
 		if (works is bool w) return w;
@@ -43,18 +43,18 @@ internal static class AppleModel
 		try { works = ModelFoundation.Works(); }
 		catch (Exception e)
 		{
-			// DllNotFound, EntryPointNotFound, una dylib de otra arquitectura: todos significan
-			// "no hay", y se dice por stderr para quien este depurando.
+			// DllNotFound, EntryPointNotFound, a dylib of another architecture: they all mean
+			// "there is none", and it is said on stderr for whoever is debugging.
 			Console.Error.WriteLine($"[gnothi.desktop] apple intelligence no disponible: {e.GetType().Name}: {e.Message}");
 			works = false;
 		}
 		return works.Value;
 	}
 
-	/// <summary>Por que no hay modelo de Apple aca, dicho en el idioma de la persona.</summary>
+	/// <summary>Why there is no Apple model here, said in the person language.</summary>
 	///
-	/// EL ESTADO ES UN CONJUNTO CERRADO y la frase la dice el catalogo: ModelFoundation.Diagnosis()
-	/// redacta para un telefono, y su texto no se puede adaptar a una Mac reemplazando palabras.
+	/// THE STATE IS A CLOSED SET and the sentence is said by the catalogue: ModelFoundation.Diagnosis()
+	/// writes for a phone, and its text cannot be adapted to a Mac by replacing words.
 	public static string Diagnosis()
 	{
 		if (!OperatingSystem.IsMacOS()) return Textos.T("ajustes.apple.solo-mac");

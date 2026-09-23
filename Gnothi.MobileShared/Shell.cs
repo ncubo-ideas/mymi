@@ -137,7 +137,7 @@ public sealed class Shell : IDisposable
 	/// <summary>The provider that runs on the device, with no url and no key.</summary>
 	public const string ProveedorLocal = "En este teléfono";
 
-	/// <summary>Como se llama el modelo del aparato en la pantalla y en model.cfg.</summary>
+	/// <summary>What the device's model is called on the screen and in model.cfg.</summary>
 	public const string ModeloLocal = "apple-on-device";
 
 	// THE ICON BY SECTOR, not by module name.
@@ -433,13 +433,13 @@ public sealed class Shell : IDisposable
 	// SHE TAPPED «HAY UNA VERSIÓN NUEVA»: the package the origin publishes is fetched from the address
 	// the note kept, with its seal, and goes through the whole examination like a link that landed.
 	// The sheet is the update sheet, and only her yes there installs anything.
-	// QUITAR UN MODULO ES DECISION DE LA PERSONA, y hasta 2026-09-11 no tenia como tomarla: podia
-	// apagarlo, pero no sacarlo del telefono, y «volver a instalar» era borrar Mymi entera. Dos
-	// cosas distintas se van o se quedan: la app de la institucion -Modulos/<modulo>, y su
-	// .anterior si quedo de una actualizacion- se va siempre; la bitacora -journals/<modulo>, que
-	// es tambien la carpeta concedida- es de la persona y se queda salvo que ella lo pida. Un alta
-	// posterior la encuentra ahi, igual que una actualizacion. El modulo vivo se cierra antes,
-	// por la misma razon que en una actualizacion: su WebView esta parado sobre la carpeta.
+	// REMOVING A MODULE IS THE PERSON'S DECISION, and until 2026-09-11 she had no way of taking it:
+	// she could switch it off, but not take it off the phone, and "install it again" meant deleting
+	// Mymi entirely. Two different things go or stay: the institution's app -Modulos/<module>, and
+	// its .anterior if one was left by an update- always goes; the journal -journals/<module>, which
+	// is also the granted folder- is the person's and stays unless she asks otherwise. A later
+	// enrolment finds it there, just as an update does. The live module is closed first, for the
+	// same reason as in an update: its WebView is standing on that folder.
 	private string RemoveModule(string module, bool journalToo)
 	{
 		Module? m = Find(module);
@@ -607,14 +607,14 @@ public sealed class Shell : IDisposable
 		PushPicked();
 	}
 
-	/// EL ARCHIVO QUE LA PLATAFORMA NO PUDO LEER, dicho en la pantalla del alta. Misma tira roja
-	/// que cualquier alta fallida.
+	/// THE FILE THE PLATFORM COULD NOT READ, said on the enrolment screen. The same red strip as
+	/// any failed enrolment.
 	///
-	/// RECIBE EL HECHO -que archivo- Y NO LA FRASE, y ese es el cambio que importa: cuando
-	/// recibia un `message`, las dos plataformas llamaban con el MISMO literal escrito dos veces,
-	/// una en MainActivity y otra en ViewController. Era el unico sitio del repo donde una
-	/// cascara de plataforma escribia texto de pantalla, y por lo tanto el unico que habria que
-	/// traducir dos veces. La frase se compone aca, una vez, desde el catalogo.
+	/// IT RECEIVES THE FACT -which file- AND NOT THE SENTENCE, and that is the change that matters:
+	/// when it took a `message`, both platforms called it with the SAME literal written twice, once
+	/// in MainActivity and once in ViewController. It was the only place in the repo where a
+	/// platform shell wrote screen text, and therefore the only one that would have to be
+	/// translated twice. The sentence is composed here, once, out of the catalogue.
 	public void ReportUnreadableFile(string fileName) =>
 		PushEnrollment("error", Textos.T("alta.no-se-pudo-leer", ("archivo", fileName)));
 
@@ -963,31 +963,31 @@ public sealed class Shell : IDisposable
 		_ => "No se pudo instalar el módulo. " + ex.Message,
 	};
 
-	/// El nombre de una institucion, o como se la nombra cuando el paquete no lo dice. El
-	/// nombre en si es VOZ DE LA INSTITUCION y pasa de largo sin traducir; lo unico que sale
-	/// del catalogo es el hueco.
+	/// An institution's name, or how it is named when the package does not say. The name itself is
+	/// THE INSTITUTION'S VOICE and passes straight through untranslated; the only thing that comes
+	/// out of the catalogue is the gap.
 	private static string UnaInstitucion(string nombre) =>
 		nombre.Length > 0 ? nombre : Textos.T("alta.error.otra-institucion");
 
 	/// A module from the catalogue by name, or null. It is needed by the screen that puts a web module
 	/// on screen, which is the only part of this that is still the platform's.
 	/// <summary>
-	/// QUÉ MÓDULOS SE REHIDRATAN ANTES DE QUE ALGUIEN PREGUNTE. Vacío = ninguno, que es lo de siempre.
-	/// Lo pone quien arma la plataforma, no esta clase: cuáles vale la pena calentar depende del
-	/// aparato y de a qué entra la persona, y eso el núcleo no lo sabe.
+	/// WHICH MODULES ARE REHYDRATED BEFORE ANYBODY ASKS. Empty = none, which is the usual case.
+	/// It is set by whoever assembles the platform, not by this class: which ones are worth warming
+	/// depends on the device and on what the person opens, and the core does not know that.
 	/// </summary>
 	public IReadOnlyList<string> WarmUp { get; set; } = [];
 
 	/// <summary>
-	/// Les pregunta el cursor, que es lo más barato que fuerza el arranque del actor — y es la misma
-	/// pregunta que el cartero hace después, así que no inventa trabajo: lo adelanta.
+	/// It asks them for the cursor, which is the cheapest thing that forces the actor to start — and
+	/// it is the same question the postman asks later, so it invents no work: it brings it forward.
 	/// <para>
-	/// UNO A LA VEZ, a propósito: rehidratar dos actores en paralelo compite por el disco justo
-	/// cuando la pantalla de inicio todavía se está armando, y lo que se busca es que no se note.
+	/// ONE AT A TIME, on purpose: rehydrating two actors in parallel competes for the disk exactly
+	/// while the home screen is still being built, and the point is that it should not show.
 	/// </para>
 	/// <para>
-	/// Nada de esto puede tumbar Gnothi: un módulo que falla al calentarse se salta, y la persona lo
-	/// abre como siempre — pagando el arranque, que es exactamente lo que pasaba antes.
+	/// None of this can bring Gnothi down: a module that fails to warm up is skipped, and the person
+	/// opens it as always — paying for the start-up, which is exactly what happened before.
 	/// </para>
 	/// </summary>
 	private async Task Rehydrate(CancellationToken ct)
@@ -1053,19 +1053,19 @@ public sealed class Shell : IDisposable
 
 			return op switch
 			{
-				// LO QUE LA PAGINA DICE CON SUS PROPIAS PALABRAS, en el idioma que la cascara ya
-				// resolvio del aparato. La pagina lo PIDE al arrancar en vez de esperar un push, y
-				// eso no es una preferencia: el puente es SINCRONO -- window.prompt devuelve ahi
-				// mismo -- asi que pidiendolo no hay un instante en que la pantalla este pintada en
-				// el idioma equivocado.
+				// WHAT THE PAGE SAYS IN ITS OWN WORDS, in the language the shell already resolved
+				// from the device. The page ASKS for it on start-up instead of waiting for a push,
+				// and that is not a preference: the bridge is SYNCHRONOUS -- window.prompt returns
+				// there and then -- so by asking there is no instant in which the screen is painted
+				// in the wrong language.
 				//
-				// Tampoco puede ir a buscar el archivo: ui.html se carga como file:// en las dos
-				// plataformas, y un fetch a otro file:// lo rechaza el navegador. El escritorio no
-				// pasa por aca: lee Textos.T directo, por referencia de proyecto.
+				// Nor can it go and fetch the file: ui.html loads as file:// on both platforms, and
+				// a fetch to another file:// is refused by the browser. The desktop does not come
+				// through here: it reads Textos.T directly, by project reference.
 				//
-				// ESTA RAMA ESTUVO DUPLICADA unas horas, con el mismo nombre y el mismo cuerpo:
-				// Geaninna la agrego para la pantalla de inicio vacio el mismo dia que esta rama la
-				// agregaba para la pagina entera. Es la misma necesidad, y ahora es una sola.
+				// THIS BRANCH WAS DUPLICATED for a few hours, with the same name and the same body:
+				// Geaninna added it for the empty home screen the same day this branch was adding it
+				// for the whole page. It is the same need, and now it is one.
 				"textos" => Textos.Json,
 
 				"modules" => StateJson(),
@@ -1321,11 +1321,11 @@ public sealed class Shell : IDisposable
 			// So the page does not ask for a key where none is needed.
 			["local"] = name == ProveedorLocal,
 
-			// Y PARA QUE SE PUEDA VOLVER. El del aparato era el default cuando no habia model.cfg,
-			// pero NO estaba en la lista del selector: quien elegia otro proveedor una vez perdia
-			// para siempre el unico donde el dato no sale del telefono, que es justamente la puerta
-			// que este producto persigue. Se manda la terna entera -identidad, url vacia y modelo-
-			// para que la pagina no tenga que saberse ninguna de las tres.
+			// AND SO THAT THERE IS A WAY BACK. The device's own was the default when there was no
+			// model.cfg, but it was NOT in the picker's list: whoever chose another provider once
+			// lost forever the only one where the data does not leave the phone, which is precisely
+			// the door this product is after. The whole triple is sent -identity, empty url and
+			// model- so the page does not have to know any of the three.
 			["proveedorLocal"] = modeloLocal is null ? null : new Dictionary<string, object?>
 			{
 				["name"] = ProveedorLocal,
@@ -1549,59 +1549,59 @@ public sealed class Shell : IDisposable
 				string hoja = vieja.Shell.Arguments.Count > 0 ? Path.GetFileName(vieja.Shell.Arguments[0]) : "";
 				if (hoja.Length == 0) { log($"localizar: {negocio} no declara que cargar; se deja como esta"); continue; }
 
-				// DONDE GUARDA EL PAQUETE LO QUE `Arguments[0]` NOMBRA, Y CONFUNDIRLO DEJA LA
-				// PANTALLA EN BLANCO SIN UN SOLO ERROR. Un modulo `in-process` guarda su dll bajo
-				// bin/; `webview`, `hybrid` y `sala` guardan su cara en web/, al lado del
-				// installation.json. Componer bin/web da una ruta que no existe,
-				// BundleServer.BaseOf no encuentra el index.html y devuelve "/" por omision, y el
-				// bundle -publicado para /app/- se sirve en la raiz: 404 en todo, window.gnothi
-				// nunca se define, y la pantalla queda en blanco. Medido en el simulador el
-				// 2026-09-07 con los cuatro modulos del paquete.
+				// WHERE THE PACKAGE KEEPS WHAT `Arguments[0]` NAMES, AND CONFUSING IT LEAVES THE
+				// SCREEN BLANK WITHOUT A SINGLE ERROR. An `in-process` module keeps its dll under
+				// bin/; `webview`, `hybrid` and `sala` keep their face in web/, beside the
+				// installation.json. Composing bin/web gives a path that does not exist,
+				// BundleServer.BaseOf does not find the index.html and returns "/" by default, and
+				// the bundle -published for /app/- is served at the root: 404 on everything,
+				// window.gnothi is never defined, and the screen stays blank. Measured on the
+				// simulator on 2026-09-07 with the package's four modules.
 				//
-				// VOLVIO A MORDER EL 2026-09-21, con la misma ruta y el mismo sintoma:
+				// IT BIT AGAIN ON 2026-09-21, with the same path and the same symptom:
 				//
 				//     examenes: 404 / -> .../Modulos/examenes/bin/web/index.html
 				//
-				// El arreglo de septiembre 7 preguntaba `Type == "webview"` y listo. Cuando
-				// llegaron `hybrid` y `sala` -- que traen cara igual -- cayeron en la rama de
-				// bin/. Por eso ahora se enumeran LAS QUE GUARDAN AL LADO en vez de preguntar por
-				// una sola: agregar una forma con cara y no ponerla aca la rompe, y el sintoma no
-				// dice por que.
+				// The 7 September fix asked `Type == "webview"` and that was that. When `hybrid`
+				// and `sala` arrived -- which bring a face just the same -- they fell into the bin/
+				// branch. That is why THE ONES THAT KEEP IT BESIDE are now enumerated instead of
+				// asking about a single one: adding a form with a face and not putting it here
+				// breaks it, and the symptom does not say why.
 				//
-				// Y OJO CON LA TENTACION DE ESCRIBIRLO AL REVES -- «todo lo que no sea cargo» --,
-				// que es lo primero que se intento: la forma cargo NO se llama "cargo" en este
-				// campo, se llama **"in-process"**. Con la cadena equivocada la condicion se
-				// invierte en silencio y rompe justamente la que se queria dejar quieta.
+				// AND BEWARE THE TEMPTATION TO WRITE IT THE OTHER WAY ROUND -- «everything that is
+				// not cargo» -- which was the first thing tried: the cargo form is NOT called
+				// "cargo" in this field, it is called **"in-process"**. With the wrong string the
+				// condition inverts in silence and breaks exactly the one it meant to leave alone.
 				//
-				// Tampoco es inofensivo porque «se arregla al reinstalar»: no se arregla. `hoja`
-				// sale de `Path.GetFileName(Arguments[0])`, asi que una vez compuesto bin/web
-				// vuelve a dar "web" y se recompone igual. El alta deja la ruta BIEN y este
-				// metodo la rompe en el arranque siguiente.
+				// Nor is it harmless because «it fixes itself on reinstall»: it does not. `hoja`
+				// comes from `Path.GetFileName(Arguments[0])`, so once bin/web is composed it gives
+				// "web" again and is recomposed the same way. The enrolment leaves the path RIGHT
+				// and this method breaks it on the next start-up.
 				bool guardaSuCaraAlLado = vieja.Shell.Type.ToLowerInvariant() is "webview" or "hybrid" or "sala";
 				string local = guardaSuCaraAlLado ? Path.Combine(dir, hoja) : Path.Combine(dir, "bin", hoja);
 
-				// EL SEGUNDO ARGUMENTO SE PASA TAL CUAL, Y ESO SI ES CORRECTO. En un modulo con
-				// cara el segundo es "<url del publicador>|<recurso>|<id>", que no es una
-				// direccion de esta maquina sino lo que la institucion metio en su manifiesto.
-				// Reemplazar el array entero se lo comia, y el cartero quedaba sin publicador al
-				// que pedirle.
+				// THE SECOND ARGUMENT IS PASSED THROUGH AS IT IS, AND THAT IS CORRECT. In a module
+				// with a face the second is "<publisher url>|<resource>|<id>", which is not an
+				// address of this machine but what the institution put in its manifest. Replacing
+				// the whole array ate it, and the postman was left with no publisher to ask.
 				//
-				// EL TERCERO SI ES UNA RUTA DE ESTA MAQUINA, Y SE QUEDABA VIEJO. La hibrida y la
-				// sala escriben [web, publicador, dll], y ese dll vive en el contenedor igual que
-				// el web/. Al reescribir solo el primero, el tercero seguia apuntando al
-				// contenedor ANTERIOR -- que en iOS cambia de GUID en cada instalacion, que es
-				// justamente por lo que este metodo existe.
+				// THE THIRD IS A PATH OF THIS MACHINE, AND IT WAS GOING STALE. The hybrid and the
+				// sala write [web, publisher, dll], and that dll lives in the container just as
+				// web/ does. Rewriting only the first left the third pointing at the PREVIOUS
+				// container -- which on iOS changes GUID on every install, which is precisely why
+				// this method exists.
 				//
-				// Medido el 2026-09-21, despues de reinstalar: arg0 en el contenedor nuevo, arg2
-				// en el viejo, y la sala sin nada que servir --
+				// Measured on 2026-09-21, after reinstalling: arg0 in the new container, arg2 in
+				// the old one, and the sala with nothing to serve --
 				//
 				//     sala: 500 modulo/examenes/indice.json -- DirectoryNotFoundException
 				//     sala/cargar examenes: {"ok":false,"motivo":"HttpRequestException: TypeError: Load failed"}
 				//
-				// Se rescatan las DOS ultimas hojas -- la carpeta y el archivo, o sea
-				// `dominio/<X>.dll` -- por el mismo criterio que el primero: QUE se carga lo
-				// decidio quien armo el paquete, DONDE esta lo decide este aparato. Asi no hay
-				// que quemar aca el nombre de la carpeta que la convencion del paquete elige.
+				// The LAST TWO leaves are rescued -- the folder and the file, that is
+				// `dominio/<X>.dll` -- by the same criterion as the first: WHAT is loaded was
+				// decided by whoever built the package, WHERE it is, is decided by this device.
+				// That way the name of the folder the package convention picks does not have to be
+				// burned in here.
 				string[] args = [.. vieja.Shell.Arguments];
 				if (args.Length > 2 && args[2].Length > 0)
 				{

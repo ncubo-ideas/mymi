@@ -46,25 +46,25 @@ public sealed class ConsentWatch : IDisposable
 		string root = dispatcher.Modules.Root;
 		if (!Directory.Exists(root)) return;
 
-		// HAY PLATAFORMAS QUE NO MIRAN ARCHIVOS, y en ellas esto NO ES UNA FALLA: es que no hay
-		// nada que mirar. iOS no implementa System.IO.FileSystemWatcher -- lanza
-		// PlatformNotSupportedException -- y hasta el 2026-09-15 eso subia hasta el arranque del
-		// shell, que lo registraba como «shell fallo». Se veia como un Host roto y no lo era.
+		// THERE ARE PLATFORMS THAT DO NOT WATCH FILES, and on them this IS NOT A FAILURE: there is
+		// nothing to watch. iOS does not implement System.IO.FileSystemWatcher -- it throws
+		// PlatformNotSupportedException -- and until 2026-09-15 that climbed all the way to the
+		// shell start-up, which logged it as «shell failed». It looked like a broken Host and was not.
 		//
-		// LO QUE SE PIERDE AHI, Y ES NADA: este watch existe para UN solo caso -- que installation
-		// .json lo edite algo de AFUERA de la app. El switch que la persona mueve DENTRO ya no
-		// pasa por aca: Shell.SetConsent escribe el archivo, llama a ReloadConsent() en el acto y
-		// rehace la foto, justamente porque esperar la rafaga de 300 ms seria un switch que tarda.
+		// WHAT IS LOST THERE, AND IT IS NOTHING: this watch exists for ONE case only -- installation
+		// .json being edited by something OUTSIDE the app. The switch the person moves INSIDE no
+		// longer comes through here: Shell.SetConsent writes the file, calls ReloadConsent() at once
+		// and rebuilds the snapshot, precisely because waiting the 300 ms burst would be a slow switch.
 		//
-		// Y en iOS el caso de afuera no existe: los modulos viven en Library/Application Support,
-		// y UIFileSharingEnabled solo expone Documents/. No hay editor, no hay adb, no hay como
-		// alcanzar ese archivo. En el escritorio si importa -- HostTools documenta editarlo a mano
-		// -- y en Android tambien, donde ademas inotify funciona.
+		// And on iOS the outside case does not exist: the modules live in Library/Application
+		// Support, and UIFileSharingEnabled only exposes Documents/. There is no editor, no adb, no
+		// way of reaching that file. On the desktop it does matter -- HostTools documents editing
+		// it by hand -- and on Android too, where inotify also works.
 		//
-		// SE PREGUNTA CAZANDO LA EXCEPCION Y NO CON OperatingSystem.IsIOS(). Que la plataforma
-		// soporte o no mirar archivos lo contesta el runtime; una lista de plataformas escrita a
-		// mano se queda vieja sin que nadie se entere, y falla en la direccion peor -- silencio
-		// donde si habia algo que vigilar.
+		// IT IS ASKED BY CATCHING THE EXCEPTION AND NOT WITH OperatingSystem.IsIOS(). Whether the platform
+		// whether it supports watching files is answered by the runtime; a platform list written by
+		// hand goes stale without anybody finding out, and fails in the worse direction -- silence
+		// where there was something to watch.
 		try
 		{
 			peephole = new FileSystemWatcher(root, "installation.json")

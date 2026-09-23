@@ -1456,3 +1456,82 @@ es sincronización en un camino caliente, y ponerla a ciegas deja un cambio que 
 
 **Queda abierto, con la receta afilada y el diagnóstico escrito.** Es un crash del proceso entero
 sobre la app de una persona, así que no es cosmético.
+
+---
+
+## P26 · Lo que queda abierto al cerrar el repaso de `master` · 2026-09-23
+
+El repaso de `master` con la sala adentro cerró varias cosas —los dos choques de la costura, la
+frontera rota de la sala, el encadenado de iOS, los comentarios y los identificadores en inglés— y
+dejó ésta lista. **Está ordenada por qué la bloquea, no por importancia**, porque lo que decide si
+algo avanza mañana es si hay con qué correrlo.
+
+### Bloqueado en la Mac, y es lo más urgente
+
+Se tocó mucho código de `Gnothi.iOS` a ciegas: los comentarios de cinco archivos, el encadenado del
+`ShellFactory`, y el renombrado entero de `IosRoom.cs`.
+
+| qué | estado |
+|---|---|
+| compilar `Gnothi.iOS` | **nunca se hizo desde Windows**: el SDK exige una versión exacta de Xcode |
+| `IosRoom.cs` con los 27 nombres nuevos | verificado **símbolo por símbolo**, no compilado |
+| `ViewController.cs` — encadenado + renombres | ídem |
+| regenerar `libGnothiIntents.a` | master agregó `gnothi_fm_razon`; receta en `Gnothi.iOS/README.md §3b` |
+
+**Y la verificación a mano YA encontró un error que el compilador habría atrapado solo:**
+`ViewController` seguía llamando `sala.Calentar` cuando `IosRoom` ya exponía `WarmUp`. Está
+arreglado. Que haya aparecido uno es la razón para no confiar en que no haya un segundo.
+
+### Bloqueado en el teléfono
+
+**1 · El encadenado de las dos fábricas, con caja Y sala prendidas a la vez.** Todo el choque A —que
+la sala borraba la fábrica de la caja mientras el log juraba que estaba encendida— es **leído del
+código, no medido**. La corrida que lo cierra: prender las dos, ver en el log la línea
+`sala: ya habia una fabrica de cascaras (la caja); la sala se encadena`, y comprobar que los módulos
+de la caja siguen en caja.
+
+**2 · Que la sala siga contestando después del renombrado.** El contrato con el sustrato se verificó
+campo por campo contra `Spikes/Lab.Sala/Sustrato/Sala.cs`, pero eso es lectura. Y el modo de falla
+de ese contrato es **silencioso**: compila, pasa las pruebas y deja de contestar en el aparato. Ver
+C10, «Y los nombres de la sala pasaron a inglés».
+
+### Decisión de producto, no de código
+
+**3 · Quién escribe `"type": "sala"` en el `installation.json`.** Hoy **nadie puede**:
+`ModuleEnrollment.WriteInstallation` deriva el tipo de lo que trae el paquete y sólo produce
+`hybrid`, `in-process` o `webview`. El PR de la sala anuncia ese tipo como la forma de activarla, y
+ese camino no tiene productor: la sala sólo se prende por el interruptor de laboratorio, que fuerza
+la cáscara **sin tocar el tipo**.
+
+Es la misma decisión que se tomó con la caja, y es del Host: **qué forma corre un paquete híbrido no
+lo elige el paquete**. Mientras no se tome, la sala no existe para nadie que no edite un archivo a
+mano en el aparato.
+
+### De antes, sin tocar
+
+**4 · El SIGSEGV de compras.** Ver `P25`: diagnosticado, receta afilada —el módulo actualizado tiene
+que **cambiar de forma**—, no reproducido, y deliberadamente no arreglado a ciegas.
+
+**5 · El dispositivo quedó alterado** por las pruebas: `cargas` en versión `10.0.0` —un número
+inventado para forzar actualizaciones— y `municipalidad` hospedada. Quien vuelva a medir ahí arranca
+de un estado que no es el de una persona.
+
+### Y uno que no es de `Gnothi.*`
+
+**6 · `Spikes/Lab.Sala/` sigue en español**, y es correcto que el renombrado no lo haya tocado: es un
+laboratorio, fuera de los proyectos del producto. **Pero su `Sustrato/Sala.cs` es el otro lado del
+contrato.** Si alguna vez se le renombra algo que cruza el borde, hay que hacerlo **en los dos a la
+vez y en el mismo commit** — porque los dos se compilan por separado y nada los ata.
+
+**Y el peligro concreto ya está ahí**, en la misma forma que costó dos roturas del lado del Host
+(ver C10): `Sustrato/Sala.cs:196` escribe
+
+```csharp
+montado = new { archivos = montado.Count, bytes = montado.Values.Sum(…) }
+```
+
+**`archivos` y `bytes` son campos del json que el Host lee** —`Neighbourhood` cuenta esos bytes para
+decidir si la frontera se rompió—, pero a los ojos de cualquier herramienta son propiedades de C#.
+**No hay nada en esa línea que diga «esto cruza».** Un renombrado automático de ese lado se los lleva
+puestos, y lo que se rompe es el chequeo de contención del otro — callado, porque el Host leería
+cero bytes y concluiría que la frontera está sana.

@@ -76,6 +76,10 @@ public partial class MainActivity : Activity
 			? []
 			: [.. only.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
+		// WHAT THERE WAS BEFORE, so a failure can put it back instead of nulling the field. See the
+		// catch at the bottom.
+		var before = Module.ShellFactory;
+
 		try
 		{
 			string privateFolder = FilesDir!.AbsolutePath;
@@ -131,11 +135,17 @@ public partial class MainActivity : Activity
 			// THE SEAM, and it is the only thing this class decides. A hybrid module -- the
 			// institution's package, without touching a byte -- runs inside the box. The others carry
 			// on as they are, which is what makes the measurement comparable.
-			Module.ShellFactory = (name, installation) =>
+			//
+			// AND IT CHAINS EVEN THOUGH TODAY IT IS FIRST. This runs from `OnCreate`, before the
+			// sala and before anybody else, so a flat assignment would break nothing right now.
+			// It is written this way because this is the file the next person adding a factory
+			// will copy from, and what they must not copy is the shape that already cost the box
+			// being switched off in silence. See Module.ChainShellFactory.
+			Module.ChainShellFactory((name, installation) =>
 				installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
 				&& GoesInTheBox(name)
 					? new BoxShell(name, installation.Shell, installation.GrantedFolder)
-					: null;
+					: null);
 
 			// THE CANARY'S OWN TEST, and it exists because a canary that always sings "shut" looks
 			// EXACTLY LIKE one that works. It is switched on separately:
@@ -160,9 +170,14 @@ public partial class MainActivity : Activity
 		{
 			// If the box cannot be prepared, Gnothi carries on as always: modules run in their usual
 			// form and nobody loses their records over an experiment.
+			//
+			// AND IT PUTS BACK WHAT IT FOUND, instead of nulling the field. Today `before` is
+			// always null -- this is the first factory to register -- so the two are the same
+			// thing. They stop being the same the day something registers earlier, and then
+			// nulling would take that one down over a failure that is not its own.
 			Log($"caja: no se pudo preparar ({ex.GetType().Name}: {ex.Message}); todo sigue igual");
 			BoxShell.Preferred = false;
-			Module.ShellFactory = null;
+			Module.ShellFactory = before;
 		}
 	}
 }

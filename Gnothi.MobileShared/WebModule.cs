@@ -520,27 +520,40 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 		// THE FACE ASKS IN BOTH FORMS THAT CARRY NO ENGINE: the hybrid and the box. The only thing that
 		// changes between them is WHERE the question lands -- in the Host's process or inside a wasm --
 		// and the face neither knows that nor needs to. See B12.
-		// AND SE DECIDE POR LA FORMA DEL MÓDULO, NO POR SI LA CAJA ESTÁ PRENDIDA. Acá había un
-		// `|| BoxShell.Preferred` —entró con la caja, en `dac6af6`— y hacía que con `--ez caja true`
-		// TODO módulo recibiera el cableado de la híbrida, incluida una HOSPEDADA. Medido en el
-		// teléfono el 2026-09-18, municipalidad hospedada con la caja prendida:
+		// AND IT IS DECIDED BY THE MODULE'S FORM, NOT BY WHETHER THE BOX IS SWITCHED ON. There used
+		// to be a `|| BoxShell.Preferred` here -it came in with the box, in `dac6af6`- and it made
+		// `--ez caja true` give EVERY module the hybrid's wiring, including a HOSTED one. Measured
+		// on the phone on 2026-09-18, municipalidad hosted with the box on:
 		//
 		//     municipalidad: la cara pidio desde 23; la superficie va en 0
 		//     municipalidad: pull after=0 -> 3126 bytes
 		//     NotSupportedException: this shell does not take deliveries
 		//
-		// Dos daños de una: el cursor de la cara (23) se reemplazaba por el 0 que devuelve el default
-		// de `IShell.Cursor` —o sea el cartero volvía a traer el historial entero en cada refresco, que
-		// es exactamente el defecto que el comentario de `Pull` dice haber arreglado— y después el sobre
-		// se le entregaba a una cáscara que no recibe entregas, con la excepción a la vista de la
-		// persona. Sin la caja prendida el mismo módulo hacía `pull after=23 -> 23 bytes` y no fallaba.
+		// Two damages in one: the face's cursor (23) was replaced by the 0 that `IShell.Cursor`'s
+		// default returns -that is, the postman went back to bringing the whole history on every
+		// refresh, which is exactly the defect `Pull`'s comment claims to have fixed- and then the
+		// envelope was handed to a shell that takes no deliveries, with the exception in plain sight
+		// of the person. With the box off, the same module did `pull after=23 -> 23 bytes` and did
+		// not fail.
 		//
-		// Y el disyunto no hacía falta: un módulo EN CAJA sigue declarando `hybrid` en su
-		// installation.json —la caja es el anfitrión, no una forma del paquete, ver C10— así que la
-		// primera cláusula ya lo cubre.
+		// And the disjunct was not needed: a module IN A BOX still declares `hybrid` in its
+		// installation.json -the box is the host, not a form of the package, see C10- so the first
+		// clause already covered it.
+		// AND `sala` IS HERE FOR THE SAME REASON AS `caja` AND NOT AS A FAVOUR: RoomShell implements
+		// View, Deliver and Cursor -- the three things `Cablear` wires -- and its own comment says
+		// that without them "la pantalla no abre", because the default of `IShell.View` throws. A
+		// module that declares `"type": "sala"` reaches ChooseShell's case (Module.cs) and would have
+		// got the hosted wiring: its face asks and gets the exception, on the person's screen.
+		//
+		// IT HAD NOT FIRED YET BY LUCK, NOT BY DESIGN. The sala is switched on today by forcing it
+		// over modules whose installation.json says `hybrid`, so the first clause covered them, and
+		// no installation declares `sala` yet. That the omission was an oversight and not a decision
+		// is settled by Shell.cs, which DOES name `sala` alongside webview and hybrid in
+		// `guardaSuCaraAlLado`: the file that saves the face knew, the file that wires it did not.
 		string forma = m.Installation.Shell.Type;
 		bool preguntona = forma.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
-			|| forma.Equals("caja", StringComparison.OrdinalIgnoreCase);
+			|| forma.Equals("caja", StringComparison.OrdinalIgnoreCase)
+			|| forma.Equals("sala", StringComparison.OrdinalIgnoreCase);
 
 		// IT IS WIRED BEFORE STARTING, not after: a hybrid face says `listo()` and asks in the same tick,
 		// because it has no actor to hydrate. See Live.

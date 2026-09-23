@@ -88,9 +88,9 @@ public static class Textos
 	{
 		get
 		{
-			// LA PRIMERA CLAVE ES EL IDIOMA MISMO. La pagina la necesita para lo que NO es una
-			// frase -- como se escribe una fecha y un numero -- y pedirsela al catalogo evita que
-			// la adivine por su cuenta, que serian dos verdades sobre lo mismo.
+			// THE FIRST KEY IS THE LANGUAGE ITSELF. The page needs it for what is NOT a sentence
+			// -- how a date and a number are written -- and asking the catalogue for it stops the
+			// page guessing on its own, which would be two truths about the same thing.
 			StringBuilder sb = new("{\"idioma\":");
 			sb.Append(JsonSerializer.Serialize(Idioma)).Append(',');
 			bool primera = true;
@@ -116,14 +116,14 @@ public static class Textos
 		}
 	}
 
-	// TODA CLAVE CUYOS DOS IDIOMAS NO PIDEN LOS MISMOS VALORES.
+	// EVERY KEY WHOSE TWO LANGUAGES DO NOT ASK FOR THE SAME VALUES.
 	//
-	// Es el error clasico de un catalogo y no lo ve ningun compilador: alguien traduce
-	// «ya tienes «{titulo}» en Mymi» y escribe «{title}», o se come el marcador. La frase sale
-	// con un {titulo} crudo en la pantalla, o peor, sale sin el dato y parece correcta.
+	// It is a catalogue classic mistake and no compiler sees it: somebody translates
+	// «ya tienes «{titulo}» en Mymi» and writes «{title}», or eats the placeholder. The sentence
+	// comes out with a raw {titulo} on the screen, or worse, without the datum and looking right.
 	//
-	// Compara CONJUNTOS y no orden: que el orden cambie entre idiomas es justamente por lo que
-	// los valores viajan con nombre.
+	// It compares SETS and not order: that the order changes between languages is precisely why
+	// the values travel by name.
 	public static IEnumerable<string> Discrepancias()
 	{
 		foreach ((string clave, (string es, string en)) in Catalogo())
@@ -140,27 +140,27 @@ public static class Textos
 		}
 	}
 
-	// TODA CLAVE CUYOS DOS IDIOMAS DICEN EXACTAMENTE LO MISMO.
+	// EVERY KEY WHOSE TWO LANGUAGES SAY EXACTLY THE SAME THING.
 	//
-	// Casi siempre es un copiar-pegar a medio terminar: alguien pego la frase en ingles en las
-	// dos columnas y tradujo una sola. Ni Faltantes() ni Discrepancias() lo ven -- las dos
-	// columnas estan llenas y ninguna tiene marcadores de menos -- asi que la frase sale en el
-	// idioma equivocado y con cara de estar hecha. Paso escribiendo este mismo catalogo.
+	// Almost always a half-finished copy-paste: somebody pasted the English sentence into both
+	// columns and translated only one. Neither Faltantes() nor Discrepancias() sees it -- both
+	// columns are full and neither is short of placeholders -- so the sentence comes out in the
+	// wrong language looking finished. It happened while writing this very catalogue.
 	//
-	// No es un error automatico: un nombre propio o un simbolo pueden ser identicos en los dos.
-	// Por eso DEVUELVE LA LISTA y no un bool: quien la lea decide.
+	// It is not automatically a mistake: a proper noun or a symbol can be identical in both. That
+	// is why it RETURNS THE LIST and not a bool: whoever reads it decides.
 	public static IEnumerable<string> Identicas()
 	{
 		foreach ((string clave, (string es, string en)) in Catalogo())
 			if (es.Length > 0 && es == en && !Declarada(clave)) yield return clave;
 	}
 
-	// UNA CLAVE PUEDE DECLARAR QUE SUS DOS IDIOMAS SON IGUALES A PROPOSITO, y lo hace con un
-	// campo "igual" cuyo VALOR ES LA RAZON: «el lema de la marca no se traduce, igual que el
-	// nombre». La excepcion vive al lado de la frase y no en una lista aparte, que es donde las
-	// excepciones se quedan viejas sin que nadie se entere.
+	// A KEY MAY DECLARE THAT ITS TWO LANGUAGES ARE THE SAME ON PURPOSE, and it does so with an
+	// "igual" field WHOSE VALUE IS THE REASON: «el lema de la marca no se traduce, igual que el
+	// nombre». The exception lives beside the sentence and not in a separate list, which is where
+	// exceptions go stale without anybody finding out.
 	//
-	// Un `true` pelado habria bastado para el compilador y no para quien lo lea en un ano.
+	// A bare `true` would have been enough for the compiler and not for whoever reads it in a year.
 	private static bool Declarada(string clave) => igualAProposito.Contains(clave);
 
 	private static readonly HashSet<string> igualAProposito = new(StringComparer.Ordinal);

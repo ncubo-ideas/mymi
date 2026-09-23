@@ -1,10 +1,10 @@
 using Android.App;
 using Android.OS;
 using Android.Webkit;
-// EL CATALOGO DE TEXTOS, por alias y no importando el namespace entero: `Gnothi.Host`
-// tambien declara un `Shell` -- el bloque de installation.json -- y este archivo usa el
-// `Shell` de Gnothi.MobileShared diez veces. Importar los dos namespaces deja el nombre ambiguo
-// y el Android deja de compilar; el alias trae lo unico que hace falta de alli.
+// THE TEXT CATALOGUE, by alias and not by importing the whole namespace: `Gnothi.Host` also
+// declares a `Shell` -- installation.json's block -- and this file uses Gnothi.MobileShared's
+// `Shell` ten times. Importing both namespaces leaves the name ambiguous and Android stops
+// compiling; the alias brings the one thing needed from there.
 using Textos = Gnothi.Host.Textos;
 using Gnothi.MobileShared;
 using System.Text.Json;
@@ -92,9 +92,9 @@ namespace Gnothi.Mobile;
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
 [Activity(Label = "Gnothi", MainLauncher = true, Icon = "@mipmap/ic_launcher", Theme = "@android:style/Theme.Material.Light.NoActionBar")]
-// PARTIAL PORQUE LA CAJA VIVE EN TheBox.cs, que es la otra mitad de esta clase. El merge del
-// 2026-09-21 se llevó esta palabra y con ella la compilación entera: `TheBox.cs` declara
-// `public partial class MainActivity` y sin este `partial` son dos tipos con el mismo nombre.
+// PARTIAL BECAUSE THE BOX LIVES IN TheBox.cs, which is this class's other half. The merge of
+// 2026-09-21 took this word away and the whole compilation with it: `TheBox.cs` declares
+// `public partial class MainActivity` and without this `partial` they are two types with one name.
 public partial class MainActivity : Activity
 {
 	private WebView? web;
@@ -107,21 +107,21 @@ public partial class MainActivity : Activity
 	private Shell? shell;
 	private readonly CancellationTokenSource stop = new();
 
-	// DE DONDE SALE EL INTERRUPTOR DE MEDICION, Y POR QUE DE AHI.
+	// WHERE THE MEASUREMENT SWITCH COMES FROM, AND WHY FROM THERE.
 	//
-	// `files/` es la carpeta privada del paquete: ninguna otra app la ve, y adb solo entra por
-	// `run-as`, que exige un build DEPURABLE. Y aun asi se pregunta por la bandera, para que el
-	// apk que se publica no tenga forma de encenderlo aunque alguien deje el archivo puesto.
+	// `files/` is the package's private folder: no other app sees it, and adb only gets in through
+	// `run-as`, which demands a DEBUGGABLE build. And even so the flag is checked, so that the apk
+	// that ships has no way of switching it on even if somebody leaves the file in place.
 	//
 	//     P=/data/user/0/com.ncubo.gnothi.host
 	//     adb shell run-as com.ncubo.gnothi.host sh -c "echo comprasw,examenesw > $P/files/sala"
-	//     adb shell run-as com.ncubo.gnothi.host rm $P/files/sala      # para volver atras
+	//     adb shell run-as com.ncubo.gnothi.host rm $P/files/sala      # to undo it
 	//
-	// (desde Git Bash, con MSYS_NO_PATHCONV=1, o la ruta llega reescrita a una de Windows)
+	// (from Git Bash, with MSYS_NO_PATHCONV=1, or the path arrives rewritten into a Windows one)
 	//
-	// El archivo se lee UNA vez, en OnCreate. Cambiarlo con la app viva no hace nada: hay que
-	// reiniciar el proceso, que es lo mismo que pasaba con el extra y por el mismo motivo.
-	private string SalaForzada()
+	// The file is read ONCE, in OnCreate. Changing it with the app alive does nothing: the process
+	// has to be restarted, which is what happened with the extra and for the same reason.
+	private string ForcedIntoTheRoom()
 	{
 		if ((ApplicationInfo!.Flags & Android.Content.PM.ApplicationInfoFlags.Debuggable) == 0) return "";
 
@@ -133,8 +133,8 @@ public partial class MainActivity : Activity
 	{
 		base.OnCreate(savedInstanceState);
 
-		// Si Gnothi se abrio POR un enlace de alta, el enlace ENTERO va a la cascara -con su
-		// sello, si trae- y ella lo desarma. Antes viajaba solo ?bundle=, y el sello se perdia.
+		// If Gnothi was opened BY an enrolment link, the WHOLE link goes to the shell -with its seal,
+		// if it brings one- and the shell takes it apart. Before, only ?bundle= travelled and the seal was lost.
 		altaPendiente = Intent?.Data?.GetQueryParameter("bundle") is { Length: > 0 } ? Intent!.Data!.ToString() : null;
 		// Or by a file -opened, shared- which is read now and enrolled once the Host is up. A
 		// share of text is the other thing a share can be: the handoff from the institution's
@@ -185,23 +185,23 @@ public partial class MainActivity : Activity
 
 		web.LoadUrl("file:///android_asset/ui.html");
 
-		// EL CONTADOR DEL BORDE DE LA HIBRIDA, enganchado SIEMPRE y no dentro de PrepareTheBox: la
-		// mitad que hace falta para comparar es justamente la de la caja APAGADA, y ahi ese metodo
-		// se sale en la primera linea. Ver el comentario en HybridShell.Counting.
+		// THE HYBRID'S BORDER COUNTER, hooked up ALWAYS and not inside PrepareTheBox: the half
+		// needed in order to compare is precisely the one with the box OFF, and there that method
+		// returns on its first line. See the comment in HybridShell.Counting.
 		Gnothi.Host.HybridShell.Log = Log;
 
-		// Y LA CAJA. Sin esta llamada el extra `--ez caja true` no hace nada: no se copia el
-		// sustrato, no se prende BoxShell.Preferred y ningun modulo entra en caja.
+		// AND THE BOX. Without this call the extra `--ez caja true` does nothing: the substrate is
+		// not copied, BoxShell.Preferred is not switched on and no module goes into a box.
 		//
-		// LAS TRES LINEAS DE ACA -- el partial de arriba, este enganche y esta llamada -- las
-		// perdio el merge del 2026-09-21 (83b68be) y se restauran el 2026-09-22. Conviene saber por
-		// que importan JUNTAS: sin `PrepareTheBox` la caja no existe, asi que una prueba de la
-		// forma hospedada daria verde SIN PROBAR NADA -- no porque el arreglo del `preguntona`
-		// funcione, sino porque `BoxShell.Preferred` nunca se prendio. Un falso verde.
+		// THE THREE LINES HERE -- the partial above, this hook and this call -- were lost by the
+		// merge of 2026-09-21 (83b68be) and restored on 2026-09-22. It is worth knowing why they
+		// matter TOGETHER: without `PrepareTheBox` the box does not exist, so a test of the hosted
+		// form would come out green WITHOUT TESTING ANYTHING -- not because the `preguntona` fix
+		// works, but because `BoxShell.Preferred` was never switched on. A false green.
 		PrepareTheBox();
 
-		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, no la cascara. adb no puede escribir en el
-		// area privada, y eso es correcto: nadie de afuera instala un modulo.
+		// THE TWO FOLDERS ARE CHOSEN BY THE PLATFORM, not by the shell. adb cannot write into the
+		// private area, and that is correct: nobody from outside installs a module.
 		shell = new Shell(
 			new Shell.Paths(
 				Files: FilesDir!.AbsolutePath,
@@ -210,13 +210,13 @@ public partial class MainActivity : Activity
 			(kind, id, payload) => RunOnUiThread(() =>
 				web?.EvaluateJavascript(Shell.PushScript(kind, id, payload), null)));
 
-		// A QUIEN CALENTAR, desde afuera y no compilado, porque lo que se esta midiendo es si vale la
-		// pena -- y para eso hace falta correr el MISMO build con y sin:
+		// WHO TO WARM UP, from outside and not compiled in, because what is being measured is
+		// whether it is worth it -- and for that the SAME build has to run with and without:
 		//
 		//     adb shell am start -n ... --es calentar examenes
 		//     adb shell am start -n ... --es calentar examenes,compras
 		//
-		// Sin el extra no se calienta nada, que es como venia. Ver Shell.Rehydrate.
+		// Without the extra nothing is warmed, which is how it was. See Shell.Rehydrate.
 		if (Intent?.GetStringExtra("calentar") is { Length: > 0 } aCalentar)
 			shell.WarmUp = [.. aCalentar.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
@@ -240,33 +240,39 @@ public partial class MainActivity : Activity
 			s => global::Android.Util.Log.Info("gnothi", s));
 		Gnothi.Host.WebViewShell.Host = anfitrion;
 
-		// Y QUIEN SABE ABRIR LA SALA. Mismo motivo y misma costura: ChooseShell es estatico, la
-		// Activity es la que tiene Context. Es UN solo documento para todos los modulos, creado
-		// la primera vez que alguien pregunta.
-		Gnothi.Host.SalaShell.Host = new AndroidSala(
+		// AND WHO KNOWS HOW TO OPEN THE SALA. Same reason and same seam: ChooseShell is static, and
+		// the Activity is the one with a Context. It is ONE document for every module, created the
+		// first time somebody asks.
+		Gnothi.Host.RoomShell.Host = new AndroidRoom(
 			this, s => global::Android.Util.Log.Info("gnothi", s));
 
-		// LA SALA, FORZADA PARA MEDIR, sin tocar el installation.json de nadie. El resto del
-		// camino es el de siempre: Dispatcher, catalogo, consentimiento. Lo unico que cambia es
-		// que cascara construye el Module para esos nombres.
+		// THE SALA, FORCED IN ORDER TO MEASURE, without touching anybody's installation.json. The
+		// rest of the path is the usual one: Dispatcher, catalogue, consent. The only thing that
+		// changes is which shell builds the Module for those names.
 		//
-		// Y NO VIENE POR EL INTENT, QUE ES UN CANAL DE CUALQUIERA. Esto lo leia de un extra
-		// (`am start -n <act> --es sala "comprasw,examenesw"`). MainActivity es EXPORTADA -- tiene
-		// filtros para los enlaces de alta y para el .gmod que llega como archivo --, asi que
-		// cualquier app instalada podia mandarle ese extra y elegirle a Gnothi con que cascara
-		// corre el dll de una institucion. El interruptor era de medicion; el canal era de todos,
-		// y un interruptor de medicion al alcance de un tercero es una decision del Host cedida.
+		// AND IT DOES NOT COME THROUGH THE INTENT, WHICH IS ANYBODY'S CHANNEL. This used to read it
+		// from an extra (`am start -n <act> --es sala "comprasw,examenesw"`). MainActivity is
+		// EXPORTED -- it has filters for the enrolment links and for the .gmod arriving as a file
+		// -- so any installed app could send it that extra and choose for Gnothi which shell runs
+		// an institution's dll. The switch was for measurement; the channel was everybody's, and a
+		// measurement switch within a third party's reach is a decision of the Host given away.
 		//
-		// Ahora sale de un archivo en la carpeta privada del paquete. Ver `SalaForzada`.
-		string enLaSala = SalaForzada();
-		if (!string.IsNullOrWhiteSpace(enLaSala))
+		// It now comes from a file in the package's private folder. See `ForcedIntoTheRoom`.
+		string inTheRoom = ForcedIntoTheRoom();
+		if (!string.IsNullOrWhiteSpace(inTheRoom))
 		{
-			HashSet<string> nombres = [.. enLaSala.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
-			Log($"sala: forzada para {string.Join(", ", nombres)}");
+			HashSet<string> names = [.. inTheRoom.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+			Log($"sala: forzada para {string.Join(", ", names)}");
 
-			Gnothi.Host.Module.ShellFactory = (nombre, instalacion) => nombres.Contains(nombre)
-				? new Gnothi.Host.SalaShell(nombre, instalacion.Shell, instalacion.GrantedFolder)
-				: null;
+			// AND IT CHAINS instead of assigning, which is the whole point of `ChainShellFactory`
+			// existing: `PrepareTheBox` runs earlier, in OnCreate, and writes to that same static
+			// field. Assigning flatly here left the box switched ON IN THE LOG and off in fact.
+			// The reasoning is in Module.ChainShellFactory; it is not repeated here on purpose --
+			// the day it changes it has to change in ONE place, not in the two that call it.
+			if (Gnothi.Host.Module.ChainShellFactory((name, installation) => names.Contains(name)
+					? new Gnothi.Host.RoomShell(name, installation.Shell, installation.GrantedFolder)
+					: null))
+				Log("sala: ya habia una fabrica de cascaras (la caja); la sala se encadena y solo contesta por sus nombres");
 		}
 
 		// AND WHO KNOWS HOW TO CLOSE THEM: an update moves the module's folder while its WebView may be
@@ -331,15 +337,15 @@ public partial class MainActivity : Activity
 	//
 	// OnBackPressed is the deprecated path, and it is chosen on purpose: the modern
 	// OnBackInvokedCallback only takes over when the manifest opts in, which this app does not.
-	// ATRAS: primero el modulo en pantalla, despues la pagina de Gnothi. El orden importa:
-	// si el modulo esta tapando todo, el boton tiene que sacarlo a el, no navegar por debajo.
-	// El enlace de alta con la app YA abierta.
+	// BACK: first the module on screen, then Gnothi page. The order matters: if the module is
+	// covering everything, the button has to take IT away, not navigate underneath.
+	// The enrolment link with the app ALREADY open.
 	protected override void OnNewIntent(Android.Content.Intent? intento)
 	{
 		base.OnNewIntent(intento);
 
-		// EL INTENT NUEVO ES EL QUE MANDA. Sin esto, `Intent` sigue devolviendo el que abrió la
-		// actividad, y un segundo enlace -otra institución, con Gnothi ya abierto- se pierde.
+		// THE NEW INTENT IS THE ONE THAT WINS. Without this, `Intent` goes on returning the one that
+		// opened the activity, and a second link -another institution, with Gnothi already open- is lost.
 		if (intento is not null) Intent = intento;
 
 		string? bundle = intento?.Data?.GetQueryParameter("bundle");
@@ -656,9 +662,9 @@ public partial class MainActivity : Activity
 
 	// ── THE MODULE ON SCREEN ─────────────────────────────────────────────────────────────
 
-	// LA PWA DE LA INSTITUCIÓN SE DIBUJA A SÍ MISMA (especificación 11 §8). Sonia abre el
-	// módulo y ve el tablero del laboratorio: su marca, su Blazor, sus gráficos. Gnothi no lo
-	// describe ni lo pinta.
+	// THE INSTITUTION PWA DRAWS ITSELF (specification 11 §8). Sonia opens the module and sees the
+	// laboratory dashboard: its brand, its Blazor, its charts. Gnothi neither describes nor paints
+	// it.
 	//
 	// AND IT IS THE SAME WebView that answers the assistant's questions. There are not two: just one,
 	// which is sometimes on screen and sometimes only answering. That is why opening it is fast if it
@@ -667,9 +673,9 @@ public partial class MainActivity : Activity
 	// THE RULE THAT CHANGES WHEN IT IS SHOWN: while it is on screen it CANNOT be evicted, even at its
 	// 200 MB. That is the only concession; the moment she leaves, it becomes evictable again.
 	//
-	// Lo que NO cambia es la contención: sigue sin red, sin service worker y sin proceso
-	// propio, y deja de existir cuando Gnothi lo desaloja. "No despierta, no notifica, no
-	// interrumpe" se sostiene por incapacidad, no porque el módulo se porte bien.
+	// What does NOT change is the containment: it still has no network, no service worker and no
+	// process of its own, and it stops existing when Gnothi evicts it. "It does not wake, does not
+	// notify, does not interrupt" holds by incapacity, not because the module behaves well.
 	private string AbrirModulo(string nombre)
 	{
 		Gnothi.Host.Module? m = shell?.Find(nombre);
@@ -691,8 +697,8 @@ public partial class MainActivity : Activity
 		return "{\"ok\":true}";
 	}
 
-	// El WebView del módulo entra ARRIBA del de Gnothi, tapándolo. No se reemplaza la vista:
-	// la de Gnothi sigue viva detrás, con su estado y su conversación intactos.
+	// The module WebView goes ON TOP of Gnothi one, covering it. The view is not replaced: Gnothi
+	// stays alive behind, with its state and its conversation intact.
 	private void Mostrar(AndroidWebModule vivo)
 	{
 		Android.Views.View? vista = vivo.View;
@@ -813,22 +819,23 @@ public partial class MainActivity : Activity
 		}
 	}
 
-	// ¿YA ESTÁ EN LA PANTALLA DE INICIO? Lo pregunta el detalle antes de dibujar el botón, porque
-	// pedir el pin de algo que ya está fijado no da error ni aviso: Android acepta el pedido y no
-	// pasa nada visible, así que la persona toca de nuevo creyendo que falló (Geaninna,
-	// 2026-09-21).
+	// IS IT ALREADY ON THE HOME SCREEN? The detail view asks before drawing the button, because
+	// asking to pin something already pinned gives neither an error nor a notice: Android accepts
+	// the request and nothing visible happens, so the person taps again thinking it failed
+	// (Geaninna, 2026-09-21).
 	//
-	// LA RESPUESTA ES DEL LAUNCHER, NO NUESTRA. `PinnedShortcuts` devuelve lo que el launcher
-	// anotó. Medido en un A54 con Android 16: borrar el icono a mano SÍ lo saca del registro, y
-	// lo que queda fijado sigue estando; ahí esto dice la verdad. Pero hay launchers -- el del
-	// Honor -- que quitan el icono sin reportarlo, y ahí el registro afirmaría uno que no está.
-	// Por eso el detalle NO deshabilita el botón cuando esto contesta que sí: dice que ya está y
-	// deja cómo volver a ponerlo, que es lo único honesto en los dos casos.
+	// THE ANSWER IS THE LAUNCHER'S, NOT OURS. `PinnedShortcuts` returns what the launcher recorded.
+	// Measured on an A54 with Android 16: deleting the icon by hand DOES take it out of the
+	// register, and what stays pinned is still there; there this tells the truth. But there are
+	// launchers -- Honor's -- that remove the icon without reporting it, and there the register
+	// would claim one that is gone. That is why the detail view does NOT disable the button when
+	// this answers yes: it says it is already there and leaves a way to put it back, which is the
+	// only honest thing in both cases.
 	private string AccesosFijados()
 	{
-		// Las mismas dos guardas que fijar, y por la misma razón: si el teléfono no sabe de
-		// accesos directos no hay registro que leer, y `ok:false` con la lista vacía deja al
-		// detalle en su camino normal en vez de afirmar nada.
+		// The same two guards as pinning, and for the same reason: if the phone knows nothing about
+		// shortcuts there is no register to read, and `ok:false` with an empty list leaves the
+		// detail view on its normal path instead of claiming anything.
 		if (!OperatingSystem.IsAndroidVersionAtLeast(26)) return SinFijados();
 
 		var gestor = (Android.Content.PM.ShortcutManager?)GetSystemService(ShortcutService);
@@ -1003,9 +1010,9 @@ public partial class MainActivity : Activity
 					// points at IT, and because the dialogue Android shows is the system's and you have
 					// to be in the foreground to see it.
 					"fijar" => host.FijarAcceso(req.GetProperty("module").GetString() ?? ""),
-					// Y LO QUE EL LAUNCHER YA TIENE ANOTADO, que el detalle pregunta antes de
-					// dibujar el botón. También necesita la Activity, porque el ShortcutManager
-					// sale de un servicio del sistema pedido con este contexto.
+					// AND WHAT THE LAUNCHER ALREADY HAS RECORDED, which the detail view asks before
+					// drawing the button. It also needs the Activity, because the ShortcutManager
+					// comes from a system service requested with this context.
 					"fijados" => host.AccesosFijados(),
 					// The document picker is the platform's: the page asks, the Activity opens it,
 					// and what she picks comes back through OnActivityResult into the enrollment.

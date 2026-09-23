@@ -51,7 +51,7 @@ internal sealed class HybridShell : IShell
 	private readonly InProcessShell surface;
 	private readonly string moduleName;
 
-	// EL MISMO ENGANCHE QUE LA CAJA. Lo pone la plataforma al arrancar, no esta clase.
+	// THE SAME HOOK AS THE BOX. It is set by the platform on start-up, not by this class.
 	internal static Action<string> Log { get; set; } = _ => { };
 	private readonly WebViewShell face;
 

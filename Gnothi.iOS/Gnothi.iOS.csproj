@@ -145,11 +145,11 @@
          `*Stub.cs` del nucleo existen para el escritorio, donde esa cascara no esta: en el
          telefono la real vive en Gnothi.MobileShared y entra por su propio glob, asi que si el
          stub tambien entra son DOS definiciones del mismo tipo en el mismo namespace -CS0101-.
-         Android excluia los tres; aca faltaban HybridShellStub y SalaShellStub, o sea que este
+         Android excluia los tres; aca faltaban HybridShellStub y RoomShellStub, o sea que este
          proyecto tenia dos HybridShell desde que la hibrida se mudo a MobileShared, y dos
-         SalaShell desde que la sala llego. No es que la lista sea larga: es que es UNA. -->
+         RoomShell desde que la sala llego. No es que la lista sea larga: es que es UNA. -->
     <Compile Include="..\Gnothi.Host\*.cs"
-             Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs;..\Gnothi.Host\BoxShellStub.cs;..\Gnothi.Host\SalaShellStub.cs" />
+             Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs;..\Gnothi.Host\HybridShellStub.cs;..\Gnothi.Host\BoxShellStub.cs;..\Gnothi.Host\RoomShellStub.cs" />
 
     <!-- El stub del shell de stdio se REUSA, no se copia, y la razon de fondo es la misma en
          las dos plataformas: no hay exec() desde la carpeta de datos y no hay dotnet CLI. El
@@ -190,7 +190,7 @@
     <BundleResource Include="..\Gnothi.Mobile\Assets\img\*" Link="Assets\img\%(Filename)%(Extension)" LogicalName="Assets/img/%(Filename)%(Extension)" />
 
     <!-- EL SUSTRATO DE LA SALA, publicado y POR REFERENCIA: no se copia al repo. Entra al .app
-         bajo `sala/`, que es de donde IosSala lo sirve a su WKWebView por `gnothi-sala://sala/`.
+         bajo `sala/`, que es de donde IosRoom lo sirve a su WKWebView por `gnothi-sala://sala/`.
          El espejo exacto del AndroidAsset de Gnothi.Mobile.csproj, que lo deja en los assets del
          apk bajo el mismo nombre; si esas dos entradas dejan de coincidir, las dos salas dejan de
          ser la misma sala.

@@ -54,9 +54,9 @@
 
     <!-- Y LA CASCARA DE LA SALA. Se compila el archivo de verdad, no una copia: lo que Sala.cs
          afirma son los dos invariantes que esa clase sostiene, y probarlos contra una
-         reimplementacion seria repetir el antipatron del manifiesto. `ISalaHost` es la unica
+         reimplementacion seria repetir el antipatron del manifiesto. `IRoomHost` es la unica
          costura con la plataforma, asi que todo lo que decide se puede probar aca sin telefono. -->
-    <Compile Include="..\Gnothi.MobileShared\SalaShell.cs" Link="SalaShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\RoomShell.cs" Link="RoomShell.cs" />
 
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />

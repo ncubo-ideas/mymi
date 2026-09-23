@@ -1,44 +1,44 @@
 namespace Gnothi.Assistant.Tests;
 
-// EL SET FIJO DE PREGUNTAS CON EL QUE SE MIDE LA SELECCION DE TOOLS, EN LOS DOS IDIOMAS.
+// THE FIXED SET OF QUESTIONS TOOL SELECTION IS MEASURED WITH, IN BOTH LANGUAGES.
 //
-// Dos por modulo del banco local -Modulos.local- mas dos de cruce, en las palabras de Sonia
-// (docs/persona-sonia.md) y de los README de los spikes.
+// Two per module of the local bench -Modulos.local- plus two crossing ones, in Sonia's words
+// (docs/persona-sonia.md) and those of the spikes' READMEs.
 //
-// ES UN INSTRUMENTO, NO UNA PRUEBA DE COMPORTAMIENTO. No afirma que un modelo acierte: fija
-// CONTRA QUE se mide, para que dos mediciones hechas con meses de diferencia se puedan comparar.
-// La pregunta que contesta es «de las que tenia que llamar, cuantas llamo», y esa cuenta no
-// significa nada si el set cambia entre una corrida y otra.
+// IT IS AN INSTRUMENT, NOT A TEST OF BEHAVIOUR. It does not claim a model gets things right: it
+// fixes WHAT is measured against, so two measurements made months apart can be compared. The
+// question it answers is «of the ones it had to call, how many did it call», and that count means
+// nothing if the set changes between one run and the next.
 //
-// POR QUE CADA PREGUNTA VIENE EN LOS DOS IDIOMAS, y no es simetria decorativa: el idioma es la
-// variable mas pesada que este equipo midio sobre el tool calling. El 2026-09-17, con el mismo
-// binario y la misma tool, el modelo del aparato llamaba 4 de 4 en iOS 26.6.2 y 0 de 8 en iOS
-// 27.0 -- y dos de esas ocho invirtieron el veredicto --. Tres hipotesis cayeron antes de aislar
-// la causa: el encuadre iba en castellano y la persona estaba en ingles. Un banco en un solo
-// idioma no puede medir lo unico que se sabe que decide el resultado.
+// WHY EVERY QUESTION COMES IN BOTH LANGUAGES, and it is not decorative symmetry: language is the
+// heaviest variable this team has measured over tool calling. On 2026-09-17, with the same binary
+// and the same tool, the device's model called 4 out of 4 on iOS 26.6.2 and 0 out of 8 on iOS
+// 27.0 -- and two of those eight reversed the verdict. Three hypotheses fell before the cause was
+// isolated: the framing went in Spanish and the person was in English. A bench in a single
+// language cannot measure the one thing known to decide the result.
 //
-// Y LA ASIMETRIA SE MIDE EN LAS DOS DIRECCIONES. El manifest de concesionario esta en ingles:
-// preguntando en espanol, 'carro' no coincide con 'vehicle' ni 'aceite' con 'oil'. Preguntando
-// en ingles ese desencuentro no existe -- y el de examenes, compras y cargas, que declaran en
-// espanol, se invierte. Eso es lo que `SoloInforma` nombra por idioma en vez de por pregunta.
+// AND THE ASYMMETRY IS MEASURED IN BOTH DIRECTIONS. The concesionario manifest is in English:
+// asking in Spanish, 'carro' does not match 'vehicle' nor 'aceite' match 'oil'. Asking in English
+// that mismatch does not exist -- and the one for examenes, compras and cargas, which declare in
+// Spanish, is inverted. That is what `SoloInforma` names by language instead of by question.
 //
-// Nacio el 2026-09-08 midiendo si podar el catalogo lo hacia entrar en los 4 096 tokens del
-// modelo de Apple -entraba 11/11 y acertaba 6/11-. Esa poda se descarto el 2026-09-17, cuando
-// se midio que el techo del modelo chico no esta en entender sino en DECIDIR, y que la pared de
-// los 4 096 solo aprieta en el escritorio. El set sobrevivio a su primer uso porque sirve para
-// cualquier medicion de seleccion, con modelo o sin el.
+// It was born on 2026-09-08 measuring whether pruning the catalogue made it fit inside Apple's
+// model's 4,096 tokens -it fitted 11/11 and got 6/11 right. That pruning was discarded on
+// 2026-09-17, when it was measured that the small model's ceiling is not in understanding but in
+// DECIDING, and that the 4,096 wall only pinches on the desktop. The set outlived its first use
+// because it serves any selection measurement, with a model or without one.
 //
-// Lo unico que lo cuida es la asercion de Conformance.cs: que los nombres que menciona sigan
-// siendo tools que algun modulo publica. Son strings, no se compilan contra nada.
+// The only thing looking after it is Conformance.cs's assertion: that the names it mentions are
+// still tools some module publishes. They are strings, compiled against nothing.
 //
-// Esperadas son las tools que TIENEN que quedar en el catalogo para que la pregunta pueda
-// contestarse. En cargas la placa la da mis_cargas, asi que esa es tolerable ademas de la
-// directa; por eso Tolerables aparte.
+// Esperadas are the tools that HAVE to stay in the catalogue for the question to be answerable. In
+// cargas the plate is given by mis_cargas, so that one is tolerable as well as the direct one;
+// hence Tolerables separately.
 public static class Preguntas
 {
 	/// <summary>
-	/// Una pregunta, dicha en los dos idiomas que Gnothi habla. Las tools NO cambian con el
-	/// idioma: el nombre publico de una consulta es protocolo, no cara.
+	/// A question, said in the two languages Gnothi speaks. The tools do NOT change with the
+	/// language: a query's public name is protocol, not face.
 	/// </summary>
 	public sealed record Pregunta(
 		string Es,
@@ -49,15 +49,15 @@ public static class Preguntas
 		string? SoloInformaEs = null,
 		string? SoloInformaEn = null)
 	{
-		/// <summary>El texto en ese idioma. Cualquier etiqueta que no empiece por 'es' es ingles.</summary>
+		/// <summary>The text in that language. Any tag not starting with 'es' is English.</summary>
 		public string Texto(string idioma) =>
 			idioma.StartsWith("es", StringComparison.OrdinalIgnoreCase) ? Es : En;
 
 		/// <summary>
-		/// Por que esa pregunta se mide y se imprime pero no se exige, EN ESE IDIOMA. La razon es
-		/// un hallazgo, no una excusa, y se lee en el reporte al lado del resultado. Que dependa
-		/// del idioma no es un detalle: una pregunta puede ser exigible en ingles y no en espanol
-		/// -- concesionario declara en ingles -- y al reves.
+		/// Why that question is measured and printed but not demanded, IN THAT LANGUAGE. The reason
+		/// is a finding, not an excuse, and is read in the report beside the result. That it depends
+		/// on the language is no detail: a question can be demandable in English and not in Spanish
+		/// -- concesionario declares in English -- and the other way round.
 		/// </summary>
 		public string? SoloInforma(string idioma) =>
 			idioma.StartsWith("es", StringComparison.OrdinalIgnoreCase) ? SoloInformaEs : SoloInformaEn;
@@ -86,11 +86,11 @@ public static class Preguntas
 			"In how many days will I need to fill up?",
 			"cargas", ["cargas_dias_hasta_la_proxima_carga"], ["cargas_mis_cargas"]),
 
-		// EL DESENCUENTRO DE IDIOMA, QUE AHORA SE MIDE EN LAS DOS DIRECCIONES. El manifest de
-		// concesionario esta en ingles. Preguntando en espanol la poda lexica dejaba estas dos
-		// afuera -medido el 2026-09-08-, y por eso en espanol solo se informan. En ingles la
-		// pregunta y el manifest coinciden, asi que ahi SI se exigen: si fallan, el problema no
-		// es el idioma y hay que buscarlo en otra parte.
+		// THE LANGUAGE MISMATCH, NOW MEASURED IN BOTH DIRECTIONS. The concesionario manifest
+		// is in English. Asking in Spanish the lexical pruning left these two out
+		// -measured on 2026-09-08- and that is why in Spanish they are only reported. In English
+		// the question and the manifest match, so there they ARE demanded: if they fail, the
+		// problem is not the language and has to be looked for elsewhere.
 		new("¿Mi carro necesita algo de mantenimiento?",
 			"Does my car need any maintenance?",
 			"concesionario", ["concesionario_review_my_maintenance"], [],
@@ -104,8 +104,9 @@ public static class Preguntas
 			"How much have I spent on bills in total?",
 			"facturas", ["facturas_total_de_facturas"], []),
 
-		// LOS CRUCES. Ninguna tool los nombra hoy -Lab.Cruce dice que hay que nombrarlos-, asi
-		// que se miden y se informan, no se exigen. Eso no depende del idioma: falta la tool.
+		// THE CROSSINGS. No tool names them today -Lab.Cruce says they have to be named- so they
+		// are measured and reported, not demanded. That does not depend on the language: the tool
+		// is missing.
 		new("¿Por qué me subió el colesterol? ¿Tiene que ver con lo que compro en el súper?",
 			"Why did my cholesterol go up? Does it have to do with what I buy at the supermarket?",
 			"cruce", ["examenes_evaluar_tendencia", "compras_consumo_de"], ["compras_como_viene_mi_canasta"],
@@ -118,6 +119,6 @@ public static class Preguntas
 			SoloInformaEn: "cruce sin tool que lo nombre"),
 	];
 
-	/// <summary>Las etiquetas en las que este banco esta escrito, para recorrerlo entero.</summary>
+	/// <summary>The tags this bench is written in, so it can be walked in full.</summary>
 	public static readonly string[] LosIdiomas = ["es", "en"];
 }

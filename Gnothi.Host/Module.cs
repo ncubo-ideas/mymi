@@ -93,12 +93,12 @@ public sealed class Module : IAsyncDisposable
 			//
 			// AGAINST APPLE IT IS AN OPEN QUESTION, and it is worth not overstating: B11 leaves unknown
 			// whether wasm counts as "interpreted code" and whether an IL dll run by Mono's interpreter
-			// counts. Both are the room's case. See the long comment on `SalaShell` and B11.
+			// counts. Both are the room's case. See the long comment on `RoomShell` and B11.
 			//
 			// Sibling of "caja" below, not a step towards it: the two are alternative answers to the
 			// same question -- containment by procedure here, by construction there. See
 			// NotasGnothiHost 49-51 and Gnothi.iOS/HALLAZGOS-LA-SALA-EN-IOS.md.
-			"sala"       => new SalaShell(name, installation.Shell, installation.GrantedFolder),
+			"sala"       => new RoomShell(name, installation.Shell, installation.GrantedFolder),
 
 			// THE BOX: the same hybrid package, but the surface runs inside a wasm box instead of in
 			// the Host's process. The face never finds out -- it goes on asking through `consultar` --
@@ -115,6 +115,39 @@ public sealed class Module : IAsyncDisposable
 	// mine" -«I have no opinion»-: the switch in ChooseShell decides as before. It exists so that
 	// Gnothi.Desktop can host the hybrid form without ceasing to be multiplatform.
 	internal static Func<string, Installation, IShell?>? ShellFactory { get; set; }
+
+	// AND HOW A SECOND ONE IS ADDED WITHOUT ERASING THE FIRST. This is not a convenience method:
+	// it is the defect of 2026-09-23 turned into the only shape in which the thing can be done.
+	//
+	// WHAT HAPPENED. `ShellFactory` is ONE static field, and two places on Android were assigning
+	// to it: `PrepareTheBox()` from `OnCreate`, and the sala from `Start()`, later. The last one
+	// won and the box was switched OFF -- while its own log went on saying it was on. A memory
+	// ladder measured like that compares nothing to nothing, and the log would have sworn the
+	// measurement was good. Neither assignment was written wrong; what was missing was that the
+	// field should say it belongs to one owner only.
+	//
+	// WHY THE NEWEST GETS FIRST REFUSAL, and this is the part worth reading before changing it:
+	// the factories are not equally specific. The box's claims a FORM -- every hybrid module --
+	// while the sala's claims a LIST OF NAMES. If the broad one answered first, the narrow one
+	// would never win a single module. Whoever registers last is, in practice, the one being
+	// pointed at right now, so it is asked first and hands the rest back.
+	//
+	// The seam's own contract is what makes this legal: a factory returns null when it has no
+	// opinion. Chaining is nothing but honouring that null instead of throwing it away.
+	//
+	// IT RETURNS WHETHER THERE WAS ONE BEFORE, because the platform has to be able to SAY it. The
+	// damage in September was not that two labs were on at once: it was that one went off without
+	// a word. A caller that chains in silence brings the defect back in a quieter form.
+	internal static bool ChainShellFactory(Func<string, Installation, IShell?> newest)
+	{
+		Func<string, Installation, IShell?>? before = ShellFactory;
+
+		ShellFactory = before is null
+			? newest
+			: (name, installation) => newest(name, installation) ?? before(name, installation);
+
+		return before is not null;
+	}
 
 	public static string PublicName(string module, string tool) => $"{module}_{tool}";
 

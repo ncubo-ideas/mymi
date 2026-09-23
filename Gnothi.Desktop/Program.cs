@@ -31,12 +31,12 @@ internal static class Program
 			: Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Modulos");
 		modulesRoot = Path.GetFullPath(modulesRoot);
 
-		// EL IDIOMA DE LA PERSONA, RESUELTO UNA VEZ Y AQUI. Sale del APARATO: no hay selector
-		// adentro de Gnothi, y esa es la decision, no una etapa.
+		// THE PERSON LANGUAGE, RESOLVED ONCE AND HERE. It comes from the DEVICE: there is no
+		// picker inside Gnothi, and that is the decision, not a stage.
 		//
-		// Va antes que HostState.Reload() porque desde ese momento hay texto que se compone.
-		// Y va en UN solo lugar por cara: dos resolutores son dos fuentes de verdad, que es
-		// exactamente lo que el catalogo compartido existe para evitar.
+		// It goes before HostState.Reload() because from that moment there is text being composed.
+		// And it goes in ONE place per face: two resolvers are two sources of truth, which is
+		// exactly what the shared catalogue exists to avoid.
 		Textos.Idioma = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		// THE HYBRID FORM ON THE DESKTOP. Before the catalog
@@ -60,12 +60,18 @@ internal static class Program
 		faces = frames = new FrameWebModuleHost(secrets, HostState.Log);
 #endif
 		Gnothi.Host.WebViewShell.Host = (Gnothi.Host.IWebModuleHost)faces;
-		Gnothi.Host.Module.ShellFactory = (name, installation) => installation.Shell.Type.ToLowerInvariant() switch
+		// IT CHAINS, LIKE THE TWO PHONES DO, even though on the desktop this is the only factory
+		// and always will be while there is one window. Uniform on purpose: `ShellFactory` is a
+		// static field that took two owners without saying so, and the shape that hid it was the
+		// flat assignment. There is no second owner here to protect -- what is being protected is
+		// that nobody reads this file and copies the shape back into a place that does have one.
+		// See Module.ChainShellFactory.
+		Gnothi.Host.Module.ChainShellFactory((name, installation) => installation.Shell.Type.ToLowerInvariant() switch
 		{
 			"hybrid" => new Gnothi.Host.HybridShell(name, installation.Shell, installation.GrantedFolder),
 			"webview" => new Gnothi.Host.WebViewShell(name, installation.Shell, installation.GrantedFolder),
 			_ => null,
-		};
+		});
 
 		// TEST AIDS, all optional, so a run can be driven and read from a terminal without a hand
 		// on the mouse:
@@ -86,8 +92,8 @@ internal static class Program
 			if (args[i] == "--auto" && int.TryParse(args[i + 1], out int s)) auto = s;
 		}
 
-		// Antes de que nadie toque el modelo: el resolver tiene que estar puesto cuando el
-		// primer DllImport de ModelFoundation se enlace.
+		// Before anybody touches the model: the resolver has to be in place when the first
+		// DllImport of ModelFoundation is bound.
 		AppleModel.Wire();
 
 		var state = new HostState(modulesRoot, journals) { Faces = faces, Frames = frames };
@@ -109,12 +115,12 @@ internal static class Program
 
 		app.MainWindow
 			.SetTitle("Mymi")
-			// EL ICONO DE LA VENTANA, el mismo dibujo que el encabezado y que el telefono. Sin
-			// esto la barra de titulo y la de tareas muestran el icono por omision del runtime,
-			// que no es de nadie. El .ico lleva varios tamanos adentro y Windows elige.
-			// Por ruta absoluta: Photino lo busca desde el directorio de trabajo, y ese es el del
-			// proyecto con `dotnet run` pero cualquier otro cuando lo lanza un icono o un guion.
-			// Sin esto la ventana muere al arrancar con "WindowIconFile: mymi.ico cannot be found".
+			// THE WINDOW ICON, the same drawing as the header and as the phone. Without this the
+			// title bar and the task bar show the runtime default icon, which belongs to nobody.
+			// The .ico carries several sizes inside and Windows chooses.
+			// By absolute path: Photino looks for it from the working directory, which is the
+			// project one with `dotnet run` but anything else when an icon or a script launches it.
+			// Without this the window dies on start-up with "WindowIconFile: mymi.ico cannot be found".
 			.SetIconFile(Path.Combine(AppContext.BaseDirectory, "mymi.ico"))
 			.SetUseOsDefaultLocation(true)
 			.SetSize(1000, 740)
@@ -178,10 +184,10 @@ internal static class Program
 							+ $" excesos=[{string.Join(",", p.Inspection.Excesses)}] origen={p.Provenance.Origin} firma={p.Provenance.Signer}"
 							+ $" ({p.Provenance.SignerId}) seguro={p.Provenance.Secure} update={p.Update.Kind} yaEstaba={p.AlreadyThere}"
 							+ $" journal={p.JournalGoesTo} publicador={p.Publisher}");
-						// LA PRUEBA DEL RELOAD. Si el módulo ya estaba, se le pregunta algo ANTES del alta para
-						// que su superficie tenga el actor abierto, y después de Reload() se mira si ese Module
-						// viejo sigue corriendo. Con un ModuleCatalog nuevo por recarga seguía (dos actores sobre
-						// el mismo journal); con el mismo catálogo, Publish lo desecha.
+						// THE RELOAD TEST. If the module was already there, it is asked something BEFORE the
+						// enrolment so its surface has the actor open, and after Reload() it is checked whether
+						// that old Module is still running. With a new ModuleCatalog per reload it was (two
+						// actors over one journal); with the same catalogue, Publish disposes of it.
 						Gnothi.Host.Module? viejo = state.Catalog.Find(p.Manifest.Module);
 						if (viejo is not null)
 						{

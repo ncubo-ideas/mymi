@@ -16,10 +16,10 @@ internal static class BridgeProbe
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_estado")]
 	private static extern int State();
 
-	// EL MOTIVO, y el nombre del símbolo NO es el de este método: Swift lo exporta como
-	// `gnothi_fm_razon` (Intents/Puente.swift). Faltaba esta línea y con ella Gnothi.iOS no
-	// compilaba -- `CS0103: el nombre 'Reason' no existe` --, porque la llamada entró con
-	// `77f529b` y su declaración no. Devuelve un strdup, así que se libera con Free como las demás.
+	// THE REASON, and the symbol name is NOT this method name: Swift exports it as
+	// `gnothi_fm_razon` (Intents/Puente.swift). This line was missing and with it Gnothi.iOS did
+	// not compile -- `CS0103: the name 'Reason' does not exist` -- because the call came in with
+	// `77f529b` and its declaration did not. It returns a strdup, so it is freed with Free like the rest.
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_razon")]
 	private static extern IntPtr Reason();
 
@@ -43,7 +43,7 @@ internal static class BridgeProbe
 			log($"puente: estado = {estado}  ({(estado == 2 ? "genera" : estado == 1 ? "dice available pero NO genera" : "no disponible")})");
 			if (estado != 2)
 			{
-				// El motivo solo se pide cuando hace falta: en el camino bueno no aporta nada.
+				// The reason is only asked for when needed: on the good path it adds nothing.
 				IntPtr p = Reason();
 				try { log($"puente: motivo = {Marshal.PtrToStringUTF8(p)}"); }
 				finally { if (p != IntPtr.Zero) Free(p); }
@@ -56,10 +56,11 @@ internal static class BridgeProbe
 				  "description":"Dice si un analito de la persona viene subiendo, bajando o estable.",
 				  "params":[{"name":"analito","description":"Cual analito. Valores validos: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."}]}]
 				""";
-			// ESTA LINEA NO SE TOCA SIN SABER QUE SE PIERDE: es la misma con la que se midio
-			// 4 de 4 en iOS 26.6.2 y 0 de 4 en 27, asi que cambiarla rompe la comparacion. El
-			// experimento de pedirle explicitamente que llame la tool se corrio aparte y esta
-			// en Lab.Siri/HALLAZGOS.md seccion 12: no la hizo llamar, la hizo NARRAR la llamada.
+			// THIS LINE IS NOT TOUCHED WITHOUT KNOWING WHAT IS LOST: it is the same one 4 out of 4
+			// on iOS 26.6.2 and 0 out of 4 on 27 were measured with, so changing it breaks the
+			// comparison. The experiment of explicitly asking it to call the tool was run separately
+			// and is in Lab.Siri/HALLAZGOS.md section 12: it did not make it call, it made it
+			// NARRATE the call.
 			const string instrucciones = "Sos el asistente de Gnothi. Prosa corta, sin markdown.";
 
 			// STEP 1 · the intent: it is expected to ask for the tool, not to answer.

@@ -89,21 +89,21 @@ public sealed record Manifest
 	// laboratory over one line -- but it SAYS SO, and says it where these things already get said, in
 	// the catalogue's warnings.
 	//
-	// Que sea una lista y no un bool es la parte que importa: un tope que no se puede nombrar no
-	// se puede arreglar, y quien tiene que arreglarlo es la institucion, que no ve este proceso.
+	// That it is a list and not a bool is the part that matters: a ceiling that cannot be named
+	// cannot be fixed, and the one who has to fix it is the institution, which does not see this process.
 	//
-	// ESTOS MENSAJES VAN EN INGLES Y NO PASAN POR Textos.cs, y es una decision, no un olvido.
-	// Hablan de 'brand.shortName' y de 'about.category': son diagnostico para QUIEN EMPAQUETA EL
-	// MODULO, no copy para la persona que lo usa. Traducirlos seria traducir un mensaje de
+	// THESE MESSAGES GO IN ENGLISH AND DO NOT PASS THROUGH Textos.cs, and it is a decision, not an
+	// oversight. They speak of 'brand.shortName' and 'about.category': they are diagnostics for
+	// WHOEVER PACKAGES THE MODULE, not copy for the person who uses it. Translating them would be
 	// compilador.
 	//
-	// Estaban en espanol y ModuleCatalog.Load los envuelve en un prefijo ingles, asi que salian
-	// mezclados con los suyos EN LA MISMA LISTA -- y esa lista se pinta entera en la ventana del
-	// escritorio (ModuleList.razor). Un idioma por lista; el que ya hablaba el resto de este
+	// They were in Spanish and ModuleCatalog.Load wraps them in an English prefix, so they came out
+	// mixed with its own IN THE SAME LIST -- and that list is painted whole in the desktop window
+	// (ModuleList.razor). One language per list; the one the rest of this
 	// proyecto.
 	//
-	// Que la persona los vea es una decision aparte y sigue abierta: ver el comentario de
-	// ModuleCatalog.Load donde se toma.
+	// Whether the person sees them is a separate decision and is still open: see the comment in
+	// ModuleCatalog.Load where it is taken.
 	public IEnumerable<string> Problems()
 	{
 		if (Txt(Title).Length > MaxTitle)

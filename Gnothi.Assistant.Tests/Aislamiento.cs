@@ -5,27 +5,27 @@ using Gnothi.MobileShared;
 
 namespace Gnothi.Tests;
 
-// EL AISLAMIENTO ENTRE MODULOS, COMO GUARDIAN Y NO COMO INTENCION.
+// THE ISOLATION BETWEEN MODULES, AS A GUARD AND NOT AS AN INTENTION.
 //
-// La separacion de los journals NO la da el origen del navegador: la da el PUENTE, que hoy se ata
-// a un WebView y por lo tanto a un modulo. `WebModule.Serve` lo dice sobre `consultar`:
+// The journals are NOT separated by the browser origin: they are separated by the BRIDGE, which
+// today is tied to one WebView and therefore to one module. `WebModule.Serve` says so of `consultar`:
 //
 //     "IT DOES NOT NAME A MODULE, on purpose. [...] A `module` parameter here would let a face
 //      ask about somebody else's journal, and no rule downstream would stop it."
 //
-// Mientras haya un puente por WebView, esa regla se cumple sola: el llamante no tiene donde
-// escribir la mentira. La forma que se esta evaluando -un solo documento del motor web con varios
-// modulos adentro (nota 49)- le quita esa muleta: un puente, cinco modulos. Ahi la propiedad pasa
-// de ser un hecho de la arquitectura a ser un invariante que hay que sostener con codigo.
+// While there is one bridge per WebView, that rule holds by itself: the caller has nowhere to
+// write the lie. The form under evaluation -a single web-engine document with several modules
+// inside (note 49)- takes that crutch away: one bridge, five modules. There the property stops
+// being a fact of the architecture and becomes an invariant that has to be held up with code.
 //
-// Por eso este guardian no espera a esa forma. Afirma HOY las dos mitades que esa forma no puede
-// perder:
+// That is why this guard does not wait for that form. It asserts TODAY the two halves that form
+// cannot lose:
 //
-//   1 · que una escritura de un modulo no puede aterrizar en la carpeta de otro, y
-//   2 · que ningun verbo del puente acepta el nombre de un modulo como dato del llamante.
+//   1 · that a write by one module cannot land in another's folder, and
+//   2 · that no verb of the bridge accepts a module's name as data from the caller.
 //
-// La segunda es la que se rompe sin que nadie lo note: agregar un parametro `module` compila,
-// queda verde, y recien se ve el dia que un modulo lee el journal del vecino.
+// The second is the one that breaks without anybody noticing: adding a `module` parameter compiles,
+// stays green, and is only seen the day a module reads the neighbour's journal.
 internal static class Aislamiento
 {
 	public static void Run(Action<string, bool, string> assert)
@@ -39,18 +39,18 @@ internal static class Aislamiento
 			var examenes = new ModuloDePrueba("examenes", deExamenes);
 			var compras = new ModuloDePrueba("compras", deCompras);
 
-			// El vecino tiene algo que perder: sin esto, "no lo leyo" no prueba nada.
+			// The neighbour has something to lose: without this, "it did not read it" proves nothing.
 			Directory.CreateDirectory(Path.Combine(deCompras, "compras"));
 			File.WriteAllText(Path.Combine(deCompras, "compras", "meta.bin"), "del vecino");
 
-			// ── 1 · lo legitimo funciona ────────────────────────────────────────────────────
+			// ── 1 · what is legitimate works ───────────────────────────────────────────────
 			string suyo = "examenes/journal/journal_000001.bin";
 			examenes.Write(suyo, Base64("lo mio"));
 			assert("un modulo escribe en SU journal",
 				File.Exists(Path.Combine(deExamenes, "examenes", "journal", "journal_000001.bin")),
 				$"no aparecio bajo {deExamenes}");
 
-			// ── 2 · subir por la carpeta del vecino ─────────────────────────────────────────
+			// ── 2 · climbing up into the neighbour folder ──────────────────────────────────
 			assert("una ruta que SUBE fuera del journal se rechaza",
 				Rechaza(() => examenes.Write("../compras/compras/meta.bin", Base64("pisado"))),
 				"Write acepto una ruta con ..");
@@ -59,12 +59,12 @@ internal static class Aislamiento
 				File.ReadAllText(Path.Combine(deCompras, "compras", "meta.bin")) == "del vecino",
 				"el meta.bin del vecino cambio");
 
-			// La barra invertida es separador en Windows y no la normaliza el reemplazo de '/'.
+			// The backslash is a separator on Windows and the replacement of '/' does not normalise it.
 			assert("una ruta que sube con barra invertida tambien se rechaza",
 				Rechaza(() => examenes.Write(@"..\compras\robado.bin", Base64("x"))),
 				"Write acepto una ruta con ..\\");
 
-			// ── 3 · nombrar la carpeta del vecino de frente ─────────────────────────────────
+			// ── 3 · naming the neighbour folder head on ────────────────────────────────────
 			assert("una ruta ABSOLUTA a otro journal se rechaza",
 				Rechaza(() => examenes.Write(Path.Combine(deCompras, "robado.bin"), Base64("x"))),
 				"Write acepto una ruta absoluta ajena");
@@ -73,18 +73,18 @@ internal static class Aislamiento
 				Rechaza(() => examenes.Read("../compras/compras/meta.bin")),
 				"Read acepto una ruta con ..");
 
-			// ── 4 · lo que un modulo VE al listar es solo lo suyo ───────────────────────────
+			// ── 4 · what a module SEES when listing is only its own ────────────────────────
 			string listado = examenes.List();
 			assert("al listar, un modulo no ve los archivos del vecino",
 				!listado.Contains("compras", StringComparison.OrdinalIgnoreCase),
 				listado);
 
-			// ── 5 · LA FORMA DEL PUENTE: ningun verbo recibe el nombre de un modulo ─────────
+			// ── 5 · THE BRIDGE SHAPE: no verb receives a module name ───────────────────────
 			//
-			// Esta es la que protege la nota 49. Con un puente por WebView el nombre sobra; con
-			// un solo documento y varios modulos adentro, agregarlo es la salida obvia -- y es
-			// justamente la que el comentario de `Serve` prohibe. Si alguien lo agrega, esto
-			// falla el mismo dia.
+			// This is the one that protects note 49. With one bridge per WebView the name is
+			// redundant; with a single document and several modules inside, adding it is the
+			// obvious way out -- and precisely the one `Serve` comment forbids. If somebody adds
+			// it, this fails the same day.
 			MethodInfo? serve = typeof(WebModule).GetMethod("Serve",
 				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
 
@@ -99,8 +99,8 @@ internal static class Aislamiento
 					string.Join(", ", parametros));
 			}
 
-			// Y lo mismo para todo lo que el puente atiende: si una de estas creciera un
-			// parametro `module`, el Host veria una pregunta legitima de un modulo legitimo.
+			// And the same for everything the bridge serves: if one of these grew a `module`
+			// parameter, the Host would see a legitimate question from a legitimate module.
 			string[] verbos = ["List", "Read", "Write", "Pull", "Consultar", "Answer", "Ready", "Violation"];
 			var culpables = new List<string>();
 			foreach (string verbo in verbos)
@@ -118,10 +118,10 @@ internal static class Aislamiento
 				culpables.Count == 0,
 				string.Join(", ", culpables));
 
-			// CONTROL POSITIVO. Sin esto, las dos afirmaciones de arriba pasarian igual aunque el
-			// detector estuviera roto, y una prueba que no puede fallar no prueba nada. El
-			// desalojo SI nombra un modulo -- y esta bien que lo haga, porque lo llama el Host y
-			// no el modulo. Eso es exactamente la distincion que el puente sostiene.
+			// POSITIVE CONTROL. Without this, the two assertions above would pass even with the
+			// detector broken, and a test that cannot fail proves nothing. The eviction DOES name
+			// a module -- and it is right that it does, because it is called by the Host and not
+			// by the module. That is exactly the distinction the bridge sustains.
 			MethodInfo? desalojar = typeof(WebModule).Assembly
 				.GetTypes()
 				.Where(t => t.Name.StartsWith("WebModuleHost", StringComparison.Ordinal))
@@ -132,11 +132,11 @@ internal static class Aislamiento
 				desalojar is not null && desalojar.GetParameters().Any(p => EsNombreDeModulo(p.Name ?? "")),
 				desalojar is null ? "no se encontro Evict(string)" : desalojar.GetParameters()[0].Name ?? "");
 
-			// ── 6 · dos modulos vivos NO comparten carpeta ─────────────────────────────────
+			// ── 6 · two live modules do NOT share a folder ─────────────────────────────────
 			//
-			// Trivial hoy, porque hay un WebModule por modulo. Deja de serlo el dia que un solo
-			// documento hospede a varios: ahi esta afirmacion es la que dice si el enrutado del
-			// puente se hizo bien.
+			// Trivial today, because there is one WebModule per module. It stops being trivial
+			// the day a single document hosts several: there this assertion is the one that says
+			// whether the bridge's routing was done right.
 			string rutaDeExamenes = Raiz(examenes);
 			string rutaDeCompras = Raiz(compras);
 			assert("dos modulos vivos tienen raices de journal distintas",
@@ -154,8 +154,8 @@ internal static class Aislamiento
 		}
 	}
 
-	// `modulo`, `module`, `moduleName`, `nombreDelModulo`: cualquiera de esas deja que el
-	// llamante elija de quien habla, que es lo unico que el puente no puede permitir.
+	// `modulo`, `module`, `moduleName`, `nombreDelModulo`: any of those lets the caller choose who
+	// is being talked about, which is the one thing the bridge cannot allow.
 	private static bool EsNombreDeModulo(string nombre) =>
 		nombre.Contains("module", StringComparison.OrdinalIgnoreCase)
 		|| nombre.Contains("modulo", StringComparison.OrdinalIgnoreCase);
@@ -174,9 +174,9 @@ internal static class Aislamiento
 
 	private static string Base64(string texto) => Convert.ToBase64String(Encoding.UTF8.GetBytes(texto));
 
-	// EL DOBLE, y es lo minimo: las cinco cosas que la plataforma llena. Nada de esto se ejecuta
-	// en la prueba -- no se abre ningun WebView--, porque lo que se afirma es la parte NEUTRAL,
-	// que es donde vive el cerco del journal.
+	// THE DOUBLE, and it is the minimum: the five things the platform fills in. None of this runs
+	// in the test -- no WebView is opened -- because what is asserted is the NEUTRAL part, which is
+	// where the journal's fence lives.
 	private sealed class ModuloDePrueba : WebModule
 	{
 		public ModuloDePrueba(string nombre, string journal)

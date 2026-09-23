@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Gnothi.Assistant;
 using Gnothi.Host;
-using Gnothi.MobileShared;   // Snapshot: la foto que lee la App Intent de Siri
-using Gnothi.Assistant.Tests;   // Preguntas: el banco con que se mide la seleccion de tools
+using Gnothi.MobileShared;   // Snapshot: the picture Siri's App Intent reads
+using Gnothi.Assistant.Tests;   // Preguntas: the bench tool selection is measured against
 
 namespace Gnothi.Conformance;
 
@@ -140,17 +140,17 @@ internal static class Conformance
 			return 1;
 		}
 
-		// EL BANCO DE PREGUNTAS NO SE QUEDO VIEJO.
+		// THE QUESTION BANK HAS NOT GONE STALE.
 		//
-		// Preguntas.cs nombra, por cada pregunta de Sonia, que tool TENDRIA que contestarla. Es un
-		// instrumento de medicion, no una prueba de comportamiento: sirve para medir seleccion de
-		// tools contra un modelo, y para eso tiene que nombrar tools que existan. Un modulo que
-		// renombra una consulta deja el banco midiendo contra un nombre muerto, y eso no se nota
-		// -- el banco no se compila contra nada, son strings.
+		// Preguntas.cs names, for each of Sonia's questions, which tool OUGHT to answer it. It is an
+		// instrument of measurement, not a test of behaviour: it exists to measure tool selection
+		// against a model, and for that it has to name tools that exist. A module that renames a
+		// query leaves the bank measuring against a dead name, and that does not show -- the bank is
+		// compiled against nothing, they are strings.
 		//
-		// SOLO SE EXIGEN LAS TOOLS DE LOS MODULOS QUE ESTE BANCO TIENE. El banco local de esta Mac
-		// no siempre trae los cinco modulos, y una asercion que exigiera todos fallaria por lo que
-		// falta instalar y no por lo que esta mal escrito.
+		// ONLY THE TOOLS OF THE MODULES THIS BENCH HAS ARE REQUIRED. The local bench on this Mac
+		// does not always bring the five modules, and an assertion demanding all of them would fail
+		// over what is missing from the install and not over what is written wrong.
 		{
 			HashSet<string> publicadas = [.. published1];
 			HashSet<string> modulosDelBanco =
@@ -167,10 +167,10 @@ internal static class Conformance
 				muertas.Length == 0,
 				$"nombres que ya no publica ningun modulo: {string.Join(", ", muertas)}");
 
-			// Y QUE ESTE ENTERO EN LOS DOS IDIOMAS. El idioma es la variable mas pesada que se
-			// midio sobre el tool calling -- el 2026-09-17 fue la diferencia entre 4 de 4 y 0 de
-			// 8 -- asi que una pregunta a la que le falte un lado deja ese lado sin medir, y no
-			// se nota: es un string vacio, no un error.
+			// AND THAT IT IS WHOLE IN BOTH LANGUAGES. Language is the heaviest variable measured
+			// over tool calling -- on 2026-09-17 it was the difference between 4 out of 4 and 0 out
+			// of 8 -- so a question missing one side leaves that side unmeasured, and it does not
+			// show: it is an empty string, not an error.
 			string[] mancas = [.. Preguntas.DeSonia
 				.Where(p => string.IsNullOrWhiteSpace(p.Es) || string.IsNullOrWhiteSpace(p.En))
 				.Select(p => p.Es.Length > 0 ? p.Es : p.En)
@@ -315,31 +315,32 @@ internal static class Conformance
 	}
 
 	// ============================================================================================
-	// EL CONSENTIMIENTO SE RESPETA, Y NINGUNA PUERTA LO ESQUIVA.
+	// CONSENT IS HONOURED, AND NO DOOR GETS AROUND IT.
 	//
-	// La compuerta vive en UN solo lugar -- Dispatcher.Serve -- y el catalogo sale ya filtrado de
-	// Module.EnabledTools(). Eso esta bien construido, y el comentario del Dispatcher lo dice:
-	// «the permission is checked HERE, not in the front end. A new front end cannot forget to
+	// The gate lives in ONE place -- Dispatcher.Serve -- and the catalogue comes out of
+	// Module.EnabledTools() already filtered. That is well built, and the Dispatcher's comment says
+	// so: «the permission is checked HERE, not in the front end. A new front end cannot forget to
 	// check it because it is not the one doing the invoking».
 	//
-	// LO QUE NO EXISTIA ERA LA PRUEBA. Hasta hoy ningun test del repo apagaba una tool: la suite
-	// recorria ToolIndex.All, que YA viene filtrado, asi que solo ejercitaba tools ENCENDIDAS. La
-	// propiedad se sostenia por argumento, no por medicion, y un front end nuevo que decidiera
-	// invocar por su cuenta habria pasado el CI en verde.
+	// WHAT DID NOT EXIST WAS THE TEST. Until today no test in the repo switched a tool off: the
+	// suite walked ToolIndex.All, which comes ALREADY filtered, so it only exercised tools that
+	// were ON. The property was held up by argument, not by measurement, and a new front end that
+	// decided to invoke on its own would have passed CI green.
 	//
-	// POR QUE ESTO CUBRE TAMBIEN LA FOTO QUE LEE SIRI, que es el camino mas riesgoso porque su
-	// respuesta sale de un archivo y no de una consulta en vivo: Snapshot.cs arma la foto
-	// recorriendo dispatcher.Catalog() y pidiendo cada hecho por dispatcher.Serve. Si una tool
-	// apagada no aparece en el catalogo NI la sirve el dispatcher, no hay por donde entrar en la
-	// foto. Lo que esta prueba NO puede cubrir es que la foto EN DISCO se reescriba cuando el
-	// consentimiento cambia -- eso es ConsentWatch en la app viva -- y por eso se mide en el aparato.
+	// WHY THIS ALSO COVERS THE SNAPSHOT SIRI READS, which is the riskiest path because its answer
+	// comes out of a file and not out of a live query: Snapshot.cs builds the snapshot by walking
+	// dispatcher.Catalog() and asking for each fact through dispatcher.Serve. If a switched-off
+	// tool is not in the catalogue NOR served by the dispatcher, there is no way into the snapshot.
+	// What this test CANNOT cover is that the snapshot ON DISK is rewritten when consent changes --
+	// that is ConsentWatch in the live app -- and that is why it is measured on the device.
 	//
-	// NO TOCA EL DISCO: Module.Reconsent solo cambia el objeto en memoria. El installation.json de
-	// la persona lo escribe Shell.SetConsent, que no participa aca. El working tree queda igual.
+	// IT DOES NOT TOUCH THE DISK: Module.Reconsent only changes the object in memory. The person's
+	// installation.json is written by Shell.SetConsent, which takes no part here. The working tree
+	// is left as it was.
 	//
-	// NO NECESITA QUE LOS MODULOS ARRANQUEN, y es a proposito: el permiso se chequea ANTES de
-	// invocar, asi que esto corre igual en una maquina donde installation.json trae rutas de otra
-	// -- la limitacion abierta de la seccion 8 --.
+	// IT DOES NOT NEED THE MODULES TO START, and that is on purpose: the permission is checked
+	// BEFORE invoking, so this runs the same on a machine where installation.json carries another
+	// machine's paths -- the open limitation of section 8.
 	public static async Task Consentimiento(string modulesRoot, Action<string, bool, string> assert)
 	{
 		var catalog = new ModuleCatalog(modulesRoot);
@@ -359,60 +360,61 @@ internal static class Conformance
 		string tool = m.Manifest.Tools[0].Name;
 		string publico = Module.PublicName(m.Name, tool);
 
-		// El estado original, para devolverlo al final aunque una afirmacion falle.
+		// The original state, to be put back at the end even if an assertion fails.
 		bool enabled0 = m.Installation.Enabled;
 		string[] disabled0 = [.. m.Installation.DisabledTools];
 
-		// Las tres listas donde una tool apagada NO debe aparecer. Son las que alimentan a los
-		// tres consumidores: el catalogo crudo va a la foto de Siri, ToolIndex es lo que ve la
-		// Puerta 1, y CatalogFor es lo que ve el modelo en la Puerta 2.
+		// The three lists where a switched-off tool must NOT appear. They are the ones feeding the
+		// three consumers: the raw catalogue goes into Siri's snapshot, ToolIndex is what Gate 1
+		// sees, and CatalogFor is what the model sees at Gate 2.
 		bool EnCatalogo() => d.Catalog().Any(x => x.module.Name == m.Name && x.tool.Name == tool);
 		bool EnPuerta1() => ToolIndex.Of(d).All.Any(e => e.PublicName == publico);
 		bool EnPuerta2() => AgentLoop.CatalogFor(d).Any(t => t.Name == publico);
 
 		try
 		{
-			// ── 1 · EL PISO: encendida, aparece en las tres ────────────────────────────────
+			// ── 1 · THE FLOOR: switched on, it shows in all three ──────────────────────────
 			m.Reconsent(true, []);
 			assert($"{publico}: encendida, la ven las tres puertas",
 				EnCatalogo() && EnPuerta1() && EnPuerta2(),
 				$"puerta1={EnPuerta1()} puerta2={EnPuerta2()} foto-de-Siri={EnCatalogo()}");
 
-			// ── 2 · APAGAR SOLO ESA TOOL ───────────────────────────────────────────────────
+			// ── 2 · SWITCH OFF THAT ONE TOOL ───────────────────────────────────────────────
 			m.Reconsent(true, [tool]);
 
 			Response apagada = await d.Serve(new Request(m.Name, tool, null), CancellationToken.None);
 
 			// LA INVOCACION EN VIVO NO SE SEPARA POR PUERTA, y es a proposito: Puerta 1, Puerta 2
-			// y la caratula de Android convergen las tres en Dispatcher.Serve. Inventar tres
-			// llamadas identicas no probaria nada mas -- es lo que ya hace la conformance de
-			// arriba con r2 y r3 -- y daria la ilusion de tres mediciones donde hay una.
+			// and Android's caratula all three converge on Dispatcher.Serve. Inventing three
+			// identical calls would prove nothing more -- it is what the conformance above already
+			// does with r2 and r3 -- and would give the illusion of three measurements where there
+			// is one.
 			assert($"{publico}: apagada · cualquier puerta que invoque: el Dispatcher la RECHAZA",
 				!apagada.Authorized,
 				"el dispatcher la sirvio igual: la compuerta no se aplico");
 
-			// Y la rechaza POR CONSENTIMIENTO. Sin esto la afirmacion de arriba tambien pasaria
-			// si el modulo simplemente no arranca -- Serve devuelve Denied en los dos casos --,
-			// y estariamos festejando una compuerta que nunca se ejecuto.
+			// And it refuses it BY CONSENT. Without this the assertion above would also pass if
+			// the module simply does not start -- Serve returns Denied in both cases -- and we
+			// would be celebrating a gate that never ran.
 			assert($"{publico}: y el motivo es el consentimiento, no un fallo del modulo",
 				(apagada.Reason ?? "").Contains("switched off", StringComparison.OrdinalIgnoreCase),
 				$"motivo: {apagada.Reason}");
 
-			// UNA AFIRMACION POR PUERTA, y conviene decir con precision QUE compra eso, porque
-			// las tres listas NO son independientes: son una cadena.
+			// ONE ASSERTION PER GATE, and it is worth saying precisely WHAT that buys, because the
+			// three lists are NOT independent: they are a chain.
 			//
-			//     Dispatcher.Catalog()        <- la raiz, m.EnabledTools()
+			//     Dispatcher.Catalog()        <- the root, m.EnabledTools()
 			//            v
-			//     ToolIndex.Of(dispatcher)    <- Puerta 1, construido desde Catalog()
+			//     ToolIndex.Of(dispatcher)    <- Gate 1, built from Catalog()
 			//            v
-			//     AgentLoop.CatalogFor(host)  <- Puerta 2, construido desde ToolIndex
+			//     AgentLoop.CatalogFor(host)  <- Gate 2, built from ToolIndex
 			//
-			// O sea que romper la raiz enrojece las tres, y separarlas NO da tres pruebas
-			// independientes. Lo que si da, y por eso se separan: si manana una capa agrega su
-			// propio filtro o transformacion y se equivoca -- ToolIndex incluyendo algo que
-			// Catalog excluyo, o CatalogFor volviendo a sumar tools -- la linea roja nombra LA
-			// CAPA. Y de paso deja escrito que lista alimenta a que puerta, que es justo lo que
-			// nadie tenia claro.
+			// Which means breaking the root reddens all three, and separating them does NOT give
+			// three independent tests. What it does give, and why they are separated: if tomorrow a
+			// layer adds its own filter or transformation and gets it wrong -- ToolIndex including
+			// something Catalog excluded, or CatalogFor adding tools back -- the red line names THE
+			// LAYER. And in passing it leaves written down which list feeds which gate, which is
+			// exactly what nobody had clear.
 			assert($"{publico}: apagada · Puerta 1 (asistente externo): no esta en su catalogo",
 				!EnPuerta1(),
 				"sigue en ToolIndex: un asistente externo la veria y podria pedirla");
@@ -426,16 +428,16 @@ internal static class Conformance
 				"sigue en Dispatcher.Catalog(): entraria en la instantanea que lee la App Intent, "
 				+ "que es la que contestan Siri y el Atajo en iOS");
 
-			// ── 3 · VOLVER A ENCENDERLA ────────────────────────────────────────────────────
-			// Un apagado que no se puede deshacer no es consentimiento, es una baja.
+			// ── 3 · SWITCHING IT BACK ON ───────────────────────────────────────────────────
+			// A switch-off that cannot be undone is not consent, it is a cancellation.
 			m.Reconsent(true, []);
 			assert($"{publico}: al reencenderla vuelve a las tres puertas",
 				EnCatalogo() && EnPuerta1() && EnPuerta2(),
 				$"puerta1={EnPuerta1()} puerta2={EnPuerta2()} foto-de-Siri={EnCatalogo()}");
 
-			// ── 4 · APAGAR EL MODULO ENTERO ────────────────────────────────────────────────
-			// Es el otro switch de la UI, y no comparte codigo con el de arriba: Enabled y
-			// DisabledTools son campos distintos, asi que se afirma aparte.
+			// ── 4 · SWITCHING OFF THE WHOLE MODULE ─────────────────────────────────────────
+			// It is the UI's other switch, and it shares no code with the one above: Enabled and
+			// DisabledTools are different fields, so it is asserted separately.
 			m.Reconsent(false, []);
 
 			string[] asomadas = [.. d.Catalog().Where(x => x.module.Name == m.Name).Select(x => x.tool.Name)];
@@ -447,14 +449,14 @@ internal static class Conformance
 			assert($"{m.Name}: apagado el modulo entero, el Dispatcher rechaza sus tools",
 				!moduloOff.Authorized && (moduloOff.Reason ?? "").Contains("switched off", StringComparison.OrdinalIgnoreCase),
 				$"autorizado={moduloOff.Authorized} motivo: {moduloOff.Reason}");
-			// ── 5 · LA FOTO DE VERDAD, el archivo que Siri lee ─────────────────────────────
-			// Hasta aca se probo que la tool apagada no esta en el catalogo que la foto recorre.
-			// Esto prueba el ARCHIVO: se escribe con Snapshot.Escribir -- el mismo codigo que
-			// compilan iOS y Android, no una reimplementacion -- y se busca el nombre adentro.
+			// ── 5 · THE REAL SNAPSHOT, the file Siri reads ────────────────────────────────
+			// Up to here it was proven that the switched-off tool is not in the catalogue the
+			// snapshot walks. This proves the FILE: it is written with Snapshot.Escribir -- the same
+			// code iOS and Android compile, not a reimplementation -- and the name is looked for inside.
 			//
-			// Importa que sea el archivo y no el catalogo porque en iOS la App Intent NO llama al
-			// Dispatcher: abre este json y contesta con lo que diga. Es el unico artefacto que
-			// Siri realmente consume.
+			// It matters that it is the file and not the catalogue because on iOS the App Intent does
+			// NOT call the Dispatcher: it opens this json and answers with whatever it says. It is the
+			// only artefact Siri actually consumes.
 			string carpeta = Path.Combine(Path.GetTempPath(), "gnothi-foto-" + Guid.NewGuid().ToString("N"));
 			try
 			{
@@ -474,8 +476,8 @@ internal static class Conformance
 					!sinLaTool.Contains($"\"{tool}\"", StringComparison.Ordinal),
 					"el nombre de la tool apagada quedo escrito en el json que la App Intent lee");
 
-				// El modulo entero apagado no puede dejar NI SU NOMBRE: si la foto lo nombrara,
-				// Siri podria decir "tenes un modulo de compras" de uno que la persona revoco.
+				// The whole module switched off cannot leave EVEN ITS NAME: if the snapshot named it,
+				// Siri could say "you have a compras module" about one the person revoked.
 				m.Reconsent(false, []);
 				await Snapshot.Write(d, carpeta, _ => { }, CancellationToken.None);
 				string sinElModulo = await File.ReadAllTextAsync(Path.Combine(carpeta, Snapshot.FileName));
@@ -491,30 +493,31 @@ internal static class Conformance
 		}
 		finally
 		{
-			// Devolver el estado, pase lo que pase. Es en memoria, pero dejar el objeto mentido
-			// haria que cualquier afirmacion posterior midiera otra cosa.
+			// Put the state back, whatever happens. It is in memory, but leaving the object lying
+			// would make every later assertion measure something else.
 			m.Reconsent(enabled0, disabled0);
 			await catalog.DisposeAsync();
 		}
 	}
 
 	// ============================================================================================
-	// UN ENUM FUERA DEL CONJUNTO VUELVE CON LA LISTA, Y VUELVE DEL HOST.
+	// AN ENUM OUTSIDE THE SET COMES BACK WITH THE LIST, AND COMES BACK FROM THE HOST.
 	//
-	// Medido el 2026-09-21 con el modelo de Apple en la ventana de escritorio (docs/16, hallazgo
-	// 2): pidio evaluar_tendencia con analito="colesterol" y recibio el Enum.Parse crudo del
-	// modulo -- «Requested value 'colesterol' was not found» --, que no dice los valores validos.
-	// El modelo chico no relee el esquema: con ese texto se va a otra tool o inventa. Ahora la
-	// compuerta esta en Dispatcher.Serve, contra el `enum` del manifiesto, y el motivo nombra
-	// cada valor.
+	// Measured on 2026-09-21 with Apple's model in the desktop window (docs/16, finding 2): it
+	// asked for evaluar_tendencia with analito="colesterol" and got the module's raw Enum.Parse
+	// back -- «Requested value 'colesterol' was not found» -- which does not say the valid values.
+	// The small model does not re-read the schema: with that text it moves to another tool or
+	// invents. The gate is now in Dispatcher.Serve, against the manifest's `enum`, and the reason
+	// names every value.
 	//
-	// NO NECESITA QUE EL MODULO ARRANQUE, igual que el consentimiento: se comprueba ANTES de
-	// invocar. Por eso ademas se afirma que el motivo NO es un fallo del modulo -- si el modulo no
-	// arrancara, Serve tambien devolveria Denied, y estariamos festejando una compuerta que no
-	// corrio.
+	// IT DOES NOT NEED THE MODULE TO START, the same as consent: it is checked BEFORE invoking.
+	// That is also why it is asserted that the reason is NOT a failure of the module -- if the
+	// module did not start, Serve would also return Denied, and we would be celebrating a gate
+	// that never ran.
 	//
-	// SE PRUEBA SOBRE EL PRIMER PARAMETRO CERRADO DEL BANCO, no sobre examenes por nombre: el
-	// banco local no siempre trae los cinco modulos, y la propiedad es del Host, no de un modulo.
+	// IT IS TESTED OVER THE BENCH'S FIRST CLOSED PARAMETER, not over examenes by name: the local
+	// bench does not always bring the five modules, and the property is the Host's, not a
+	// module's.
 	public static async Task EnumFueraDelConjunto(string modulesRoot, Action<string, bool, string> assert)
 	{
 		var catalog = new ModuleCatalog(modulesRoot);
@@ -541,11 +544,11 @@ internal static class Conformance
 
 		try
 		{
-			// ── 1 · EL VALOR QUE EL MODELO ESCRIBIO, tal como llega por cada puerta ────────
+			// ── 1 · THE VALUE THE MODEL WROTE, exactly as it arrives through each gate ────
 			//
-			// La Puerta 1 entrega un JsonElement (el SDK de MCP deserializa los argumentos); la
-			// Puerta 2 entrega el string del modelo. La compuerta compara TEXTO y tiene que leer
-			// los dos igual, o un valor invalido pasaria por una puerta y no por la otra.
+			// Gate 1 hands over a JsonElement (the MCP SDK deserialises the arguments); Gate 2 hands
+			// over the model's string. The gate compares TEXT and has to read both alike, or an
+			// invalid value would pass through one gate and not the other.
 			var comoString = new Dictionary<string, object?> { [param.Name] = fuera };
 			var comoJson = new Dictionary<string, object?>
 			{
@@ -563,7 +566,7 @@ internal static class Conformance
 				r1.Reason == r2.Reason,
 				$"p1='{r1.Reason}' p2='{r2.Reason}'");
 
-			// ── 2 · EL MOTIVO NOMBRA CADA VALOR VALIDO, el parametro y lo que llego ────────
+			// ── 2 · THE REASON NAMES EVERY VALID VALUE, the parameter and what arrived ────
 			string motivo = r2.Reason ?? "";
 			string[] faltan = [.. param.Enum!.Where(v => !motivo.Contains(v, StringComparison.Ordinal))];
 
@@ -580,11 +583,11 @@ internal static class Conformance
 					&& motivo == Dispatcher.OutsideTheDeclaredSet(modulo.Manifest.Tools, tool.Name, comoString),
 				$"motivo: {motivo}");
 
-			// ── 3 · UN VALOR DEL CONJUNTO NO SE RECHAZA POR LA COMPUERTA, con cualquier caja ──
+			// ── 3 · A VALUE FROM THE SET IS NOT REFUSED BY THE GATE, in any casing ────────
 			//
-			// El in-process ya aceptaba `colesteroltotal` (Enum.Parse con ignoreCase); la
-			// compuerta no endurece esa regla. Si el modulo no arranca en esta maquina, Serve
-			// devuelve Denied por OTRO motivo, y eso no es lo que se mide aca.
+			// In-process already accepted `colesteroltotal` (Enum.Parse with ignoreCase); the gate
+			// does not harden that rule. If the module does not start on this machine, Serve returns
+			// Denied for ANOTHER reason, and that is not what is measured here.
 			string valido = param.Enum![0];
 			foreach (string caja in new[] { valido, valido.ToLowerInvariant() })
 			{
@@ -595,7 +598,7 @@ internal static class Conformance
 					$"motivo: {ok.Reason}");
 			}
 
-			// ── 4 · SIN EL ARGUMENTO, la compuerta no opina: eso lo dice el modulo ─────────
+			// ── 4 · WITHOUT THE ARGUMENT, the gate has no opinion: the module says that ───
 			Response sinArg = await d.Serve(new Request(modulo.Name, tool.Name, new Dictionary<string, object?>()), CancellationToken.None);
 			assert($"{publico}: sin el argumento, el motivo no es de la compuerta del enum",
 				!(sinArg.Reason ?? "").Contains("is not one of", StringComparison.Ordinal),

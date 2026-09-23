@@ -63,17 +63,17 @@ public sealed class Dispatcher
 			catch (Exception e) { return Response.Denied($"the Host failed: {e.GetType().Name}: {e.Message}"); }
 		}
 
-		// LOS MOTIVOS DE DENEGACION SE QUEDAN EN INGLES, y eso se midio antes de dejarlo asi.
+		// THE DENIAL REASONS STAY IN ENGLISH, and that was checked before leaving it that way.
 		//
-		// Se reviso cada consumidor de Response.Reason: AgentLoop se lo devuelve al modelo como
-		// resultado de la tool, ToolBridge lo mete en un TextContentBlock de MCP, IpcService lo
-		// manda por el puente del intent, Snapshot lo escribe en la foto que Siri le entrega al
-		// modelo, y QueryConsole lo saca por stderr. NINGUNO lo pinta en una pantalla: todos son
-		// insumo de un modelo, que despues le contesta a la persona en SU idioma.
+		// Every consumer of Response.Reason was reviewed: AgentLoop hands it back to the model as
+		// the tool's result, ToolBridge puts it in an MCP TextContentBlock, IpcService sends it
+		// through the intent's bridge, Snapshot writes it into the snapshot Siri hands the model,
+		// and QueryConsole prints it to stderr. NONE of them paints it on a screen: they are all
+		// input to a model, which then answers the person in THEIR language.
 		//
-		// El plan de localizacion los daba por texto para la persona porque «llegan hasta Siri».
-		// Llegan, pero como entrada del modelo y no como frase hablada. Traducirlos cambiaria lo
-		// que el modelo entiende, que es una decision aparte y no esta tomada.
+		// The localisation plan counted them as text for the person because «they reach as far as
+		// Siri». They do, but as input to the model and not as a spoken sentence. Translating them
+		// would change what the model understands, which is a separate decision and is not taken.
 		Module? m = catalog.Find(r.Module);
 		if (m is null) return Response.Denied($"there is no installed module called '{r.Module}'");
 
@@ -85,30 +85,30 @@ public sealed class Dispatcher
 
 		meter.Count(r.Module, r.Tool);
 
-		// UN VALOR FUERA DEL CONJUNTO DECLARADO SE RECHAZA ACA, con la lista entera, y no en
-		// el modulo. Medido el 2026-09-21 con el modelo de Apple en la ventana de escritorio
-		// (docs/16, hallazgo 2): llamo evaluar_tendencia con analito="colesterol", el enum pide
-		// ColesterolTotal o ColesterolLdl, y lo que le volvio fue el Enum.Parse crudo del
-		// modulo: «Requested value 'colesterol' was not found». Un modelo grande relee el
-		// esquema y reintenta; el chico no: se va a otra tool o inventa. Necesita que el error
-		// le diga los valores.
+		// A VALUE OUTSIDE THE DECLARED SET IS REFUSED HERE, with the whole list, and not in the
+		// module. Measured on 2026-09-21 with Apple's model in the desktop window (docs/16,
+		// finding 2): it called evaluar_tendencia with analito="colesterol", the enum asks for
+		// ColesterolTotal or ColesterolLdl, and what came back was the module's raw Enum.Parse:
+		// «Requested value 'colesterol' was not found». A large model re-reads the schema and
+		// retries; the small one does not: it moves to another tool or invents. It needs the error
+		// to tell it the values.
 		//
-		// POR QUE EN EL HOST Y NO EN CADA MODULO. Los valores validos ya son DATO del Host: el
-		// manifiesto los trae en `enum` y ToolIndex los publica en el esquema. Comprobar contra
-		// esa misma lista no le quita al modulo la propiedad de sus reglas -- la lista es suya,
-		// el Host no agrega ni quita un valor -- y cubre las cuatro cascaras de una vez: el
-		// in-process (Enum.Parse), el stdio (la union del SDK dentro del proceso hijo), y el
-		// WebView y el hibrido, donde el modulo es JavaScript y ni siquiera hay un enum. Hacerlo
-		// en cada modulo seria repetirlo por modulo Y por cascara, y el primero que lo olvide
-		// vuelve a mandarle al modelo un texto sin la lista.
+		// WHY IN THE HOST AND NOT IN EACH MODULE. The valid values are already the Host's DATA: the
+		// manifest brings them in `enum` and ToolIndex publishes them in the schema. Checking
+		// against that same list does not take the ownership of its rules away from the module --
+		// the list is its own, the Host adds and removes no value -- and it covers the four shells
+		// at once: in-process (Enum.Parse), stdio (the SDK's binding inside the child process), and
+		// the WebView and the hybrid, where the module is JavaScript and there is not even an enum.
+		// Doing it in each module would mean repeating it per module AND per shell, and the first
+		// one to forget goes back to sending the model a text with no list.
 		//
-		// El motivo va en ingles como todos los demas (arriba). No traduce el nombre del valor
-		// -`ColesterolTotal` viaja como el modulo lo declaro-: que el esquema hable en nombres
-		// corrientes es una decision del modulo, no de esta compuerta.
+		// The reason goes in English like all the others (above). It does not translate the value's
+		// name -`ColesterolTotal` travels as the module declared it-: that the schema should speak
+		// in everyday names is the module's decision, not this gate's.
 		//
-		// Un valor con otra CAJA pasa: el in-process ya lo aceptaba (Enum.Parse con ignoreCase)
-		// y cerrarlo aca seria endurecer una regla que no es nuestra. El valor sigue viajando
-		// como llego; el modulo decide.
+		// A value in another CASE passes: in-process already accepted it (Enum.Parse with
+		// ignoreCase) and closing that here would harden a rule that is not ours. The value goes on
+		// travelling as it arrived; the module decides.
 		string? outside = OutsideTheDeclaredSet(m.Manifest.Tools, r.Tool, r.Arguments);
 		if (outside is not null) return Response.Denied(outside);
 

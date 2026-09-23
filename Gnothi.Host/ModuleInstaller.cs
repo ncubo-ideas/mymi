@@ -46,10 +46,10 @@ public static class ModuleInstaller
 	{
 		if (args.Length < 1)
 		{
-			// ESTA MITAD DEL ARCHIVO NO VA AL CATALOGO. Todo lo que sale por Console.Error con
-			// prefijo [gnothi] es la linea de comandos -- Pack e InstallFromCli --, diagnostico para
-			// quien empaqueta un modulo, no copy para quien lo instala. Lo que SI es cara es lo que
-			// devuelve Install(), que ModuleList.razor le muestra a la persona en la ventana.
+			// THIS HALF OF THE FILE DOES NOT GO TO THE CATALOGUE. Everything printed to Console.Error
+			// with the [gnothi] prefix is the command line -- Pack and InstallFromCli -- diagnostics
+			// for whoever packages a module, not copy for whoever installs it. What IS a face is what
+			// Install() returns, which ModuleList.razor shows the person in the window.
 			Console.Error.WriteLine("[gnothi] usage: --pack <source-folder> [<output.gmod>]");
 			return 2;
 		}
@@ -155,9 +155,9 @@ public static class ModuleInstaller
 		// same fake root and approve itself.
 		PackageInspection inspection = PackageInspector.Inspect(zip, manifest);
 		if (inspection.Rejected)
-			// LOS RECHAZOS PASAN DE LARGO, sin traducir: hablan de manifest.json, de web/ y de rutas,
-			// y son diagnostico para quien empaqueta el modulo, no copy para quien lo instala. Se
-			// traduce el MARCO. Es lo mismo que ya hace el telefono en alta.no-instalaria.
+			// THE REFUSALS PASS STRAIGHT THROUGH, untranslated: they speak of manifest.json, of web/
+			// and of paths, and are diagnostics for whoever packages the module, not copy for whoever
+			// installs it. The FRAME is translated. It is the same the phone already does in alta.no-instalaria.
 			return (false, Textos.T("instalar.rechazado",
 				("detalle", string.Join("\n", inspection.Rejections.Select(r => "  x " + r)))));
 
@@ -305,9 +305,9 @@ public static class ModuleInstaller
 			: Textos.T("instalar.firma.ninguna");
 
 		// LAS ETIQUETAS SE ALINEAN AL RENDER Y NO AL LITERAL. Antes el padding venia escrito a
-		// mano adentro de cada string -- «from     :», «checked  :» --, y eso solo cuadra en un
-		// idioma: «signature» mide nueve y «firma» cinco. Se mide el rotulo mas largo de los que
-		// se van a pintar y se rellena con ese ancho, asi la columna cuadra en los dos.
+		// by hand inside each string -- «from     :», «checked  :» -- and that only lines up in one
+		// language: «signature» is nine and «firma» five. The longest of the labels about to be
+		// painted is measured and padded to that width, so the column lines up in both.
 		(string Rotulo, string Valor)[] campos = [
 			(Textos.T("instalar.campo.desde"), Path.GetFileName(package)),
 			(Textos.T("instalar.campo.en"), moduleDir),

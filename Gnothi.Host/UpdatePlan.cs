@@ -198,13 +198,13 @@ public sealed record UpdatePlan
 		=> $"{m.Journal?.Retention ?? ""}|{m.Journal?.ExpectedSize ?? ""}|{m.Journal?.Updates ?? ""}";
 
 	// One line for logs and the desktop's message: what this package is next to the installed one.
-	// UN CONJUNTO CERRADO DE SIETE DESENLACES, y por eso VA AL CATALOGO. No es dato del registro
-	// de nadie ni voz de una institucion: es vocabulario del Host, que es justo lo que la regla 4
-	// manda traducir. Lo que pasa de largo adentro son los numeros de version y los nombres de
-	// institucion, que sí son de ellas.
+	// A CLOSED SET OF SEVEN OUTCOMES, and that is why it GOES TO THE CATALOGUE. It is not a datum
+	// of anybody record nor an institution voice: it is the Host vocabulary, which is exactly what
+	// rule 4 says to translate. What passes straight through inside are the version numbers and the
+	// institution names, which ARE theirs.
 	//
-	// El `_ =>` se queda con el nombre del enum a proposito: si aparece un Kind nuevo sin frase,
-	// que se vea crudo en la pantalla en vez de esconderse en una cadena vacia.
+	// The `_ =>` keeps the enum name on purpose: if a new Kind appears with no sentence, let it
+	// show raw on the screen instead of hiding in an empty string.
 	public string Describe() => Kind switch
 	{
 		UpdateKind.Fresh => Textos.T("actualizacion.primera"),
@@ -227,8 +227,8 @@ public sealed record UpdatePlan
 		if (RemovedTools.Count > 0)
 			parts.Add(RemovedTools.Count == 1 ? Textos.T("actualizacion.cambio.quitadas.una")
 				: Textos.T("actualizacion.cambio.quitadas.varias", ("n", RemovedTools.Count.ToString())));
-		// LAS CAPACIDADES PASAN DE LARGO: son nombres del protocolo, los mismos que el manifiesto
-		// declara. Traducirlas romperia la correspondencia con lo que la institucion escribio.
+		// THE CAPABILITIES PASS STRAIGHT THROUGH: they are protocol names, the same ones the
+		// manifest declares. Translating them would break the correspondence with what the institution wrote.
 		if (NewCapabilities.Count > 0)
 			parts.Add(Textos.T("actualizacion.cambio.pide", ("lista", string.Join(", ", NewCapabilities))));
 		if (PublisherChanged) parts.Add(Textos.T("actualizacion.cambio.editor"));

@@ -171,9 +171,9 @@ internal sealed class ModelFoundation : IModel
 		return Json.Write(salida);
 	}
 
-	// EL TOPE DEL MODELO DE APPLE, en tokens. Medido igual en iOS 26 y en macOS 27; se le dice a
-	// la persona porque es el numero contra el que tiene que razonar, y va como valor y no
-	// escrito en la frase para que el catalogo no lo repita en dos idiomas.
+	// APPLE'S MODEL CEILING, in tokens. Measured the same on iOS 26 and on macOS 27; it is told to
+	// the person because it is the number they have to reason against, and it travels as a value
+	// and not written into the sentence so the catalogue does not repeat it in two languages.
 	private const string Tope = "4096";
 
 	private static Said Leer(string crudo, IReadOnlyList<Exchange> conversation)
@@ -184,21 +184,21 @@ internal sealed class ModelFoundation : IModel
 		{
 			string e = error.GetString() ?? "";
 
-			// NO ENTRA. Medido en la Mac el 2026-09-08 (32 consultas = 7 307 tokens) y de nuevo
-			// el 2026-09-21 (48 consultas = 14 730; Compras solo = 5 925; y en Cargas los hechos
-			// de una sola consulta, 4 154 caracteres, dejan la segunda vuelta en 4 097). El error
-			// crudo no le dice nada a la persona; lo que si puede hacer depende de QUE es lo que
-			// no entra, y eso lo sabe esta clase y no el Swift:
+			// IT DOES NOT FIT. Measured on the Mac on 2026-09-08 (32 queries = 7,307 tokens) and
+			// again on 2026-09-21 (48 queries = 14,730; Compras alone = 5,925; and in Cargas the
+			// facts of a single query, 4,154 characters, leave the second round at 4,097). The raw
+			// error tells the person nothing; what they CAN do depends on WHAT does not fit, and
+			// this class knows that, the Swift does not:
 			//
-			//   - Sin ningun Returned en la conversacion, el modelo recibio catalogo + pregunta y
-			//     ya no entro: es el CATALOGO, y la palanca es apagar consultas (el detalle de cada
-			//     institucion ya la tiene; ver detalle.consultas.apagada).
-			//   - Con un Returned, el catalogo YA ENTRO una vez -si no, el primer paso habria
-			//     reventado aca mismo-: lo que desborda es la RESPUESTA de esa consulta, y eso no
-			//     lo arregla la persona apagando nada.
+			//   - With no Returned in the conversation, the model received catalogue + question and
+			//     it already did not fit: it is the CATALOGUE, and the lever is switching queries
+			//     off (each institution's detail view already has it; see detalle.consultas.apagada).
+			//   - With a Returned, the catalogue ALREADY FITTED once -otherwise the first step
+			//     would have blown up right here-: what overflows is that query's ANSWER, and the
+			//     person cannot fix that by switching anything off.
 			//
-			// El texto del error lo corrobora -macOS 27 dice «Provided N tokens» en la primera y
-			// «Content contains N tokens» en la segunda-, pero la conversacion es el hecho.
+			// The error's text corroborates it -macOS 27 says «Provided N tokens» in the first and
+			// «Content contains N tokens» in the second- but the conversation is the fact.
 			if (NoEntra(e))
 			{
 				string? consulta = UltimaConsulta(conversation);
@@ -251,24 +251,25 @@ internal sealed class ModelFoundation : IModel
 		return new Said(texto, llamadas);
 	}
 
-	// LAS TRES FORMAS EN QUE EL MODELO DICE QUE NO ENTRA, una por sistema y ninguna documentada:
+	// THE THREE WAYS THE MODEL SAYS IT DOES NOT FIT, one per system and none of them documented:
 	//
 	//   iOS 26     "exceededContextWindowSize(...7307 tokens...)"
 	//   macOS 27   "GenerativeError: Provided 14,730 tokens, but the maximum allowed is 4,096."
 	//   macOS 27   "GenerationError: Content contains 4097 tokens, which exceeds the maximum
 	//               allowed context size of 4096."
 	//
-	// Se busca la FRASE y no el tipo: GenerationError tambien es como se llama el rechazo de
-	// las barandas y el de un idioma que el modelo no habla, y esos no son «no entra». El Swift
-	// arma la cadena como "\(type(of: error)): \(error)", asi que el texto viene entero.
+	// The PHRASE is looked for and not the type: GenerationError is also what the guardrails'
+	// refusal is called, and that of a language the model does not speak, and those are not «does
+	// not fit». The Swift builds the string as "\(type(of: error)): \(error)", so the text arrives
+	// whole.
 	private static bool NoEntra(string e) =>
 		e.Contains("exceededContextWindowSize", StringComparison.Ordinal)
 		|| e.Contains("but the maximum allowed is", StringComparison.Ordinal)
 		|| e.Contains("exceeds the maximum allowed context size", StringComparison.Ordinal);
 
-	// LA ULTIMA CONSULTA QUE CONTESTO, o null si todavia ninguna: es lo que separa «no entra el
-	// catalogo» de «no entra lo que devolvio X». Se nombra la ultima porque es la que acaba de
-	// sumarse al transcript; las anteriores ya habian entrado.
+	// THE LAST QUERY THAT ANSWERED, or null if none yet: it is what separates «the catalogue does
+	// not fit» from «what X returned does not fit». The last one is named because it is the one
+	// just added to the transcript; the earlier ones had already fitted.
 	private static string? UltimaConsulta(IReadOnlyList<Exchange> conversation)
 	{
 		string? nombre = null;

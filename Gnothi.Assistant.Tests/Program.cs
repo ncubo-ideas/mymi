@@ -123,16 +123,16 @@ Assert("Request carries no caller identity -- Dispatcher.Serve still does not kn
 // would be the worst outcome: a green CI asserting nothing.
 // ============================================================================================
 
-// Un argumento manda: `dotnet run --project Gnothi.Assistant.Tests -- Modulos.local` corre la
-// suite contra un banco propio (por ejemplo, uno que apunte a los journals reales de la persona).
-// Sin argumento busca ./Modulos, que esta versionado y apunta, RELATIVO a cada carpeta, al
-// bin/Debug de cada modulo: arranca en cualquier maquina que los haya compilado. Si no estan
-// compilados, la primera asercion de la conformance lo dice y dice que compilar.
-// Y SIN ARGUMENTO PREFIERE `Modulos.suite`, que es el banco que el csproj de arriba compila y
-// mantiene. `Modulos/` sigue existiendo y es el que leen los servidores MCP de .mcp.json --
-// justamente por eso la suite no puede usarlo: esos servidores tienen ABIERTOS sus dll, nadie los
-// puede reconstruir, y la suite terminaba comparando el manifiesto contra un binario viejo. Eso
-// se veia como un modulo que declara tools que no tiene, cuando lo unico viejo era el .dll.
+// An argument wins: `dotnet run --project Gnothi.Assistant.Tests -- Modulos.local` runs the suite
+// against a bench of one's own (for instance, one pointing at the person's real journals). With no
+// argument it looks for ./Modulos, which is versioned and points, RELATIVE to each folder, at each
+// module's bin/Debug: it starts on any machine that has built them. If they are not built, the
+// conformance's first assertion says so and says what to build.
+// AND WITH NO ARGUMENT IT PREFERS `Modulos.suite`, which is the bench the csproj above builds and
+// maintains. `Modulos/` still exists and is the one the MCP servers in .mcp.json read -- which is
+// precisely why the suite cannot use it: those servers hold their dlls OPEN, nobody can rebuild
+// them, and the suite ended up comparing the manifest against an old binary. That looked like a
+// module declaring tools it does not have, when the only old thing was the .dll.
 string modulos = args.Length > 0 && Directory.Exists(args[0])
 	? Path.GetFullPath(args[0])
 	: DeLaSuiteOElVersionado();
@@ -153,22 +153,22 @@ if (modulos.Length == 0)
 }
 else
 {
-	// La suite arranca cada modulo y cruza su manifiesto contra las tools REALES antes de comparar
-	// las tres puertas: un catalogo que no coincide con los modulos compararia la copia equivocada.
-	// Ese guardian corre PRIMERO dentro de Run (Conformance.cs).
+	// The suite starts every module and crosses its manifest against the REAL tools before
+	// comparing the three gates: a catalogue that does not match the modules would compare the
+	// wrong copy. That guard runs FIRST inside Run (Conformance.cs).
 	Console.WriteLine();
 	Console.WriteLine("=== LAS TRES PUERTAS CONTESTAN LO MISMO ===");
 	await Gnothi.Conformance.Conformance.Run(modulos, Assert);
 
-	// EL APAGADO SE RESPETA POR TODAS LAS PUERTAS. Corre DESPUES de la conformance porque
-	// necesita su propio catalogo -- apaga y enciende tools para medir la compuerta -- y no
-	// tiene por que mezclarse con el que la comparacion usa. Ver Conformance.Consentimiento.
+	// SWITCHING OFF IS HONOURED BY EVERY GATE. It runs AFTER the conformance because it needs its
+	// own catalogue -- it switches tools off and on to measure the gate -- and has no reason to mix
+	// with the one the comparison uses. See Conformance.Consentimiento.
 	Console.WriteLine();
 	Console.WriteLine("=== UNA TOOL APAGADA NO SE CUELA POR NINGUNA PUERTA ===");
 	await Gnothi.Conformance.Conformance.Consentimiento(modulos, Assert);
 
-	// UN VALOR FUERA DEL ENUM VUELVE CON LA LISTA DE LOS VALIDOS. Tampoco necesita que los modulos
-	// arranquen: la compuerta corre antes de invocar. Ver Conformance.EnumFueraDelConjunto.
+	// A VALUE OUTSIDE THE ENUM COMES BACK WITH THE LIST OF VALID ONES. It does not need the modules
+	// to start either: the gate runs before invoking. See Conformance.EnumFueraDelConjunto.
 	Console.WriteLine();
 	Console.WriteLine("=== UN ENUM FUERA DEL CONJUNTO VUELVE CON LOS VALORES VALIDOS ===");
 	await Gnothi.Conformance.Conformance.EnumFueraDelConjunto(modulos, Assert);
@@ -184,9 +184,9 @@ Console.WriteLine("=== THE PACKAGE IS INSPECTED BEFORE SHE DECIDES ===");
 Gnothi.Tests.Enrollment.Run(Assert);
 
 // ============================================================================================
-// UN MODULO NO PUEDE ESCRIBIR EN LA CARPETA DE OTRO, Y EL PUENTE NO ACEPTA QUE LE DIGAN DE
-// QUIEN HABLA. Hoy la segunda mitad se cumple sola porque hay un puente por WebView; la forma
-// que se esta evaluando (nota 49) le quita esa muleta. Ver Aislamiento.cs.
+// A MODULE CANNOT WRITE IN ANOTHER'S FOLDER, AND THE BRIDGE DOES NOT ACCEPT BEING TOLD WHO IT IS
+// TALKING ABOUT. Today the second half holds by itself because there is one bridge per WebView;
+// the form under evaluation (note 49) takes that crutch away. See Aislamiento.cs.
 // ============================================================================================
 
 Console.WriteLine();
@@ -194,14 +194,24 @@ Console.WriteLine("=== UN MODULO NO ALCANZA EL JOURNAL DE OTRO ===");
 Gnothi.Tests.Aislamiento.Run(Assert);
 
 // ============================================================================================
-// Y EN LA SALA, DONDE TODOS LOS MODULOS COMPARTEN UN DOCUMENTO, LA SEPARACION LA SOSTIENE LA
-// CASCARA: una llamada en vuelo, un modulo cargado por vez, y la identidad sale del marco de la
-// llamada y nunca del mensaje. Ver Sala.cs.
+// AND IN THE SALA, WHERE EVERY MODULE SHARES ONE DOCUMENT, THE SEPARATION IS SUSTAINED BY THE
+// SHELL: one call in flight, one module loaded at a time, and the identity comes out of the call's
+// frame and never out of the message. See Sala.cs.
 // ============================================================================================
 
 Console.WriteLine();
 Console.WriteLine("=== LA SALA SOSTIENE LA SEPARACION QUE EL PUENTE YA NO REGALA ===");
-Gnothi.Tests.Sala.Run(Assert);
+Gnothi.Tests.Room.Run(Assert);
+
+// ============================================================================================
+// Y LA COSTURA QUE ELIGE LA CASCARA ADMITE MAS DE UN DUEÑO SIN QUE NINGUNO DESAPAREZCA. Es un
+// campo estatico con dos platformas escribiendole; hasta el 2026-09-23 la segunda borraba a la
+// primera EN SILENCIO. Ver Costura.cs.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== DOS FABRICAS DE CASCARAS CONVIVEN, Y SE DICE QUE CONVIVEN ===");
+Gnothi.Tests.Costura.Run(Assert);
 
 // ============================================================================================
 // --install WRITES THE CODEX TABLE WITHOUT TOUCHING THE REST OF config.toml.
@@ -283,14 +293,14 @@ Console.WriteLine("=== --install READS AN EMPTY JSON CONFIG AS EMPTY, NOT AS BRO
 }
 
 // ============================================================================================
-// EL INSTALADOR ESCRIBE UN installation.json QUE EL HOST PUEDE LEER.
+// THE INSTALLER WRITES AN installation.json THE HOST CAN READ.
 //
-// Regresion. El refactor a JSON sin reflexion (88e0b95) dejo a --install-module serializando
-// InstallationFile con el type-info de Installation: compilaba, y reventaba con
-// InvalidCastException en cada instalacion, en todas las plataformas. Nadie lo vio porque el
-// unico camino que lo ejercitaba era la prueba manual. Este bloque instala el .gmod que el repo
-// ya versiona (el que sirve la pagina de La Guaria) en una carpeta temporal y lee el resultado
-// con el MISMO lector que usa el catalogo. Si el escritor y el lector se separan, esto falla.
+// A regression. The refactor to reflection-free JSON (88e0b95) left --install-module serialising
+// InstallationFile with Installation's type-info: it compiled, and blew up with
+// InvalidCastException on every install, on every platform. Nobody saw it because the only path
+// exercising it was the manual test. This block installs the .gmod the repo already versions (the
+// one La Guaria's page serves) into a temporary folder and reads the result with the SAME reader
+// the catalogue uses. If the writer and the reader drift apart, this fails.
 // ============================================================================================
 
 if (modulos.Length > 0)
@@ -306,7 +316,7 @@ if (modulos.Length > 0)
 		string temp = Path.Combine(Path.GetTempPath(), "gnothi-tests-" + Guid.NewGuid().ToString("N"));
 		try
 		{
-			// grantBase dentro del temp: la prueba no toca Documents/Gnothi de la persona.
+			// grantBase inside the temp folder: the test does not touch the person Documents/Gnothi.
 			(bool ok, string message) = Gnothi.Host.ModuleInstaller.Install(
 				gmod, Path.Combine(temp, "Modulos"), Path.Combine(temp, "datos"));
 			Assert("--install-module termina bien", ok, message);
@@ -451,22 +461,21 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			&& colision.Contains("La Guaria") && colision.Contains("otra institución"),
 		colision);
 
-	// LA RAIZ DEL REPO, para las dos comprobaciones que leen archivos que ningun proyecto de esta
-	// maquina compila.
+	// THE REPO ROOT, for the two checks that read files no project on this machine compiles.
 	string raiz = AppContext.BaseDirectory;
 	while (raiz.Length > 1 && !Directory.Exists(Path.Combine(raiz, "Gnothi.Host")))
 		raiz = Path.GetDirectoryName(raiz.TrimEnd(Path.DirectorySeparatorChar)) ?? "/";
 
-	// LO QUE LAS DOS CASCARAS DE PLATAFORMA LE PIDEN A Shell, COMPROBADO SIN COMPILARLAS.
+	// WHAT THE TWO PLATFORM SHELLS ASK OF Shell, CHECKED WITHOUT COMPILING THEM.
 	//
-	// MainActivity.cs y ViewController.cs no los compila NINGUN proyecto que corra en una Mac
-	// cualquiera: Android necesita un workload que puede no estar, y el SDK de iOS exige una
-	// version exacta de Xcode. Pero los dos llaman a Shell, que esta suite si compila -- asi que
-	// el borde se puede comprobar aunque las cascaras no.
+	// MainActivity.cs and ViewController.cs are compiled by NO project that runs on an ordinary
+	// Mac: Android needs a workload that may not be installed, and the iOS SDK demands an exact
+	// version of Xcode. But both call Shell, which this suite does compile -- so the border can be
+	// checked even though the shells cannot.
 	//
-	// Lo que atrapa: renombrar un metodo de Shell y actualizar una sola de las dos, que es
-	// exactamente lo que pasa cuando el compilador no esta mirando. Ya paso una vez en sentido
-	// contrario: ReportEnrollmentError recibia la FRASE y las dos la escribian identica.
+	// What it catches: renaming a method of Shell and updating only one of the two, which is
+	// exactly what happens when the compiler is not watching. It already happened in the opposite
+	// direction: ReportEnrollmentError took the SENTENCE and both wrote it identically.
 	{
 		string[] caras = ["Gnothi.Mobile/MainActivity.cs", "Gnothi.iOS/ViewController.cs"];
 		var deShell = typeof(Gnothi.MobileShared.Shell)
@@ -489,13 +498,13 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 		}
 	}
 
-	// TODA CLAVE data-i18n DE ui.html EXISTE EN EL CATALOGO.
+	// EVERY data-i18n KEY IN ui.html EXISTS IN THE CATALOGUE.
 	//
-	// Es lo que hace segura la estrategia del respaldo: la pagina lleva el espanol escrito
-	// adentro del marcado para que la maqueta siga siendo legible, y el catalogo lo PISA cuando
-	// llega. Una clave mal escrita no rompe nada visible -- el nodo simplemente se queda en
-	// espanol -- asi que en ingles esa sola frase saldria en espanol y nadie lo notaria hasta
-	// verlo en un telefono. Aca se nota al compilar.
+	// It is what makes the fallback strategy safe: the page carries the Spanish written inside the
+	// markup so the mock-up stays readable, and the catalogue OVERWRITES it when it arrives. A
+	// misspelt key breaks nothing visible -- the node simply stays in Spanish -- so in English that
+	// one sentence would come out in Spanish and nobody would notice until seeing it on a phone.
+	// Here it shows at build time.
 	{
 		string pagina = Path.Combine(raiz, "Gnothi.Mobile", "Assets", "ui.html");
 		string html = File.Exists(pagina) ? File.ReadAllText(pagina) : "";
@@ -511,19 +520,20 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 		Assert("every data-i18n key in ui.html exists in the catalog",
 			sinCatalogo.Length == 0, $"keys with no phrase: {string.Join(", ", sinCatalogo)}");
 
-		// Y TODA CLAVE QUE PIDE EL JAVASCRIPT, que es la otra mitad y la que no se ve.
+		// AND EVERY KEY THE JAVASCRIPT ASKS FOR, which is the other half and the one that does not
+		// show.
 		//
-		// Las de data-i18n fallan suave -- el nodo se queda con el espanol que trae el marcado --
-		// pero un T('clave') mal escrito PINTA LA CLAVE en la pantalla, y solo en la rama que la
-		// alcanza: la hoja de un paquete con la llave cambiada, el aviso de un origen que no
-		// responde. Ramas que nadie abre a mano.
+		// The data-i18n ones fail softly -- the node keeps the Spanish the markup brings -- but a
+		// misspelt T('key') PAINTS THE KEY on the screen, and only in the branch that reaches it:
+		// the sheet of a package whose key changed, the notice of an origin that does not answer.
+		// Branches nobody opens by hand.
 		//
-		// Es estatica y por eso vale mas que una corrida: cubre TODOS los sitios de llamada, no
-		// los que un render cualquiera toca.
-		// Los literales T('clave'), MAS las claves que se declaran como dato y se resuelven en
-		// tiempo de ejecucion -- hoy la nota de cada proveedor, `nota:'prov.nota.groq'`, que
-		// llega a T(p.nota) y que un regex sobre la llamada no puede ver. Una clave dinamica que
-		// nadie declara cerca es una que esta suite no puede cuidar: por eso se declaran asi.
+		// It is static and that is why it is worth more than a run: it covers EVERY call site, not
+		// the ones some particular render happens to touch.
+		// The T('key') literals, PLUS the keys declared as data and resolved at run time -- today
+		// each provider's note, `nota:'prov.nota.groq'`, which reaches T(p.nota) and which a regex
+		// over the call cannot see. A dynamic key nobody declares nearby is one this suite cannot
+		// look after: that is why they are declared like this.
 		string[] pedidas = [.. System.Text.RegularExpressions.Regex
 			.Matches(html, @"\bT\('([a-z0-9.-]+)'|\bnota:\s*'([a-z0-9.-]+)'")
 			.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value)
@@ -536,12 +546,12 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			huerfanas.Length == 0, $"keys with no phrase: {string.Join(", ", huerfanas)}");
 	}
 
-	// Y TODA CLAVE QUE PIDE EL C#, que es la tercera superficie y la que menos se mira.
+	// AND EVERY KEY THE C# ASKS FOR, which is the third surface and the least looked at.
 	//
-	// El lector devuelve la clave cuando no la encuentra -- feo a proposito -- asi que un
-	// `Textos.T("ajustes.carpta")` compila, corre, y pinta «ajustes.carpta» en la pantalla de
-	// quien tenga esa rama. El compilador no ve nada: es un string. Las dos aserciones de arriba
-	// cubren ui.html; esta cubre los .cs y los .razor, que son las otras dos caras.
+	// The reader returns the key when it does not find it -- ugly on purpose -- so a
+	// `Textos.T("ajustes.carpta")` compiles, runs, and paints «ajustes.carpta» on the screen of
+	// whoever has that branch. The compiler sees nothing: it is a string. The two assertions above
+	// cover ui.html; this one covers the .cs and the .razor, which are the other two faces.
 	{
 		string[] fuentes = [.. new[] { "Gnothi.Host", "Gnothi.MobileShared", "Gnothi.Assistant", "Gnothi.Desktop", "Gnothi.Mobile", "Gnothi.iOS" }
 			.Select(d => Path.Combine(raiz, d))
@@ -551,10 +561,10 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			.Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
 			         && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))];
 
-		// `Textos.T("x")` en los .cs, y `T("x")` en los .razor, que lo llaman por el helper.
-		// SIN COMENTARIOS: `_Imports.razor` documenta el helper escribiendo T("clave") en un
-		// comentario, y leerlo como sitio de llamada hace fallar la asercion por una clave que
-		// nadie pide. Se quitan los bloques @* *@ de Razor y las lineas // de C#.
+		// `Textos.T("x")` in the .cs, and `T("x")` in the .razor, which call it through the helper.
+		// WITHOUT COMMENTS: `_Imports.razor` documents the helper by writing T("clave") in a
+		// comment, and reading that as a call site fails the assertion over a key nobody asks for.
+		// Razor's @* *@ blocks and C#'s // lines are stripped.
 		static string SinComentarios(string s)
 		{
 			s = System.Text.RegularExpressions.Regex.Replace(s, @"@\*.*?\*@", " ",
@@ -578,23 +588,23 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			sinFrase.Length == 0, $"keys with no phrase: {string.Join(", ", sinFrase)}");
 	}
 
-	// Y QUE NINGUN TEXTO PARA LA PERSONA SIGA CABLEADO EN EL JAVASCRIPT.
+	// AND THAT NO TEXT MEANT FOR THE PERSON IS STILL HARD-WIRED IN THE JAVASCRIPT.
 	//
-	// Las dos aserciones de arriba comprueban que toda CLAVE USADA exista. Ninguna comprueba lo
-	// contrario -- que todo LITERAL este convertido en clave --, y por ese hueco pasaron treinta y
-	// un rotulos: se vieron el 2026-09-15 en un iPhone con el sistema en ingles y Ajustes entero en
-	// espanol. Ni el compilador ni una corrida los ven: la pagina se pinta perfecta, en el idioma
-	// equivocado. Las que se escaparon estaban todas en el JS que arma HTML concatenando, que es
-	// justo donde no hay un data-i18n que revisar.
+	// The two assertions above check that every KEY USED exists. Neither checks the opposite --
+	// that every LITERAL has been turned into a key -- and thirty-one labels went through that
+	// hole: they were seen on 2026-09-15 on an iPhone with the system in English and Settings
+	// entirely in Spanish. Neither the compiler nor a run sees them: the page paints perfectly, in
+	// the wrong language. The ones that escaped were all in the JS that builds HTML by
+	// concatenating, which is exactly where there is no data-i18n to review.
 	//
-	// LA REGLA ES EXACTA Y NO UNA HEURISTICA DE IDIOMA -- buscar palabras en espanol no ve
-	// «Proveedor» ni «Modelo», que fueron dos de los treinta y uno. Lo que se exige es esto: EN EL
-	// MARCADO QUE ARMA EL JAVASCRIPT, NINGUN NODO DE TEXTO TRAE LETRAS. Todo lo visible entra por
-	// T(...) o por esc(dato).
+	// THE RULE IS EXACT AND NOT A LANGUAGE HEURISTIC -- looking for Spanish words does not see
+	// «Proveedor» or «Modelo», which were two of the thirty-one. What is demanded is this: IN THE
+	// MARKUP THE JAVASCRIPT BUILDS, NO TEXT NODE CARRIES LETTERS. Everything visible comes in
+	// through T(...) or through esc(data).
 	//
-	// Mira solo desde <script hasta `const MOCK`: el mock del escritorio imita la voz de
-	// instituciones ficticias -«Laboratorio Clinico Delfos», «Tu salud, en tus manos»- y esa no se
-	// traduce nunca (regla 4).
+	// It looks only from <script to `const MOCK`: the desktop's mock imitates the voice of
+	// fictional institutions -«Laboratorio Clinico Delfos», «Tu salud, en tus manos»- and that is
+	// never translated (rule 4).
 	{
 		string pagina = Path.Combine(raiz, "Gnothi.Mobile", "Assets", "ui.html");
 		string html = File.Exists(pagina) ? File.ReadAllText(pagina) : "";
@@ -608,11 +618,11 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 		{
 			string s = lit.Groups[1].Success ? lit.Groups[1].Value : lit.Groups[2].Value;
 
-			// Un literal sin marcado es codigo: un id de protocolo, un selector, una regla CSS.
+			// A literal with no markup is code: a protocol id, a selector, a CSS rule.
 			if (!s.Contains('<') && !s.Contains('>')) continue;
 
-			// Los fragmentos cortan tags por la mitad: se descarta la cola de un tag que abre al
-			// final, y la cabeza de atributos de uno que venia abierto del literal anterior.
+			// The fragments cut tags in half: the tail of a tag that opens at the end is dropped,
+			// and so is the attribute head of one left open by the previous literal.
 			string limpio = System.Text.RegularExpressions.Regex.Replace(s, @"<[^>]*$", "");
 			limpio = System.Text.RegularExpressions.Regex.Replace(limpio, @"^[^<]*>", "");
 

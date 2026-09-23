@@ -78,11 +78,11 @@ public static class Snapshot
 					if (t.Input.Count > 0)
 					{
 						declarada["hechos"] = null;
-						// EN INGLES, y no es un descuido: `porQueNo` lo lee un MODELO, no una persona.
-						// La foto entera se le entrega a Siri con un encuadre que le pide contestar «en su
-						// idioma»; el campo es insumo, no pantalla. Estaba en espanol mientras el otro
-						// origen del mismo campo -- el motivo que compone Dispatcher, unas lineas abajo --
-						// venia en ingles, asi que el archivo mezclaba los dos idiomas en una sola clave.
+						// IN ENGLISH, and it is not an oversight: `porQueNo` is read by a MODEL, not by a
+						// person. The whole snapshot is handed to Siri with a framing that asks it to answer
+						// «in their language»; the field is input, not screen. It was in Spanish while the
+						// other source of the same field -- the reason Dispatcher composes, a few lines below
+						// -- came in English, so the file mixed both languages under one key.
 						declarada["porQueNo"] = "asks for parameters: it cannot be answered in advance";
 						tools.Add(declarada);
 						continue;

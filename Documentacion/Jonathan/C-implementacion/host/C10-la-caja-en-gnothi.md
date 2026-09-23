@@ -58,7 +58,7 @@ existe** para él.
 
 ### Por qué en escritorio no hace falta
 
-Por eso `CajaShellStub.cs` tira con un mensaje y ya. **En escritorio no hay tienda**, así que la
+Por eso `BoxShellStub.cs` tira con un mensaje y ya. **En escritorio no hay tienda**, así que la
 restricción 2 no aplica; y la 3 se resuelve distinto, con el proceso hijo y el confinamiento del
 sistema operativo, que es lo que `B1` y `D2` describen. Lo que en un teléfono es una prohibición de
 tienda, ahí no lo prohíbe nadie.
@@ -102,7 +102,7 @@ plataforma, devuelve `null` cuando no tiene opinión —que es lo normal— y no
 cáscara sigue saliendo del archivo del Host. Lo que permite es **sustituirla a propósito, en un solo
 lugar y con nombre**.
 
-Hoy la usa `LaCaja.cs` para correr un módulo híbrido **ya instalado** adentro de la caja **sin
+Hoy la usa `TheBox.cs` para correr un módulo híbrido **ya instalado** adentro de la caja **sin
 reescribirle su `installation.json` a la persona**, que es un archivo suyo.
 
 ---
@@ -112,9 +112,9 @@ reescribirle su `installation.json` a la persona**, que es un archivo suyo.
 ### La cáscara: son la misma clase con un campo cambiado
 
 ```csharp
-// HybridShell                          // CajaShell
+// HybridShell                          // BoxShell
 private readonly WebViewShell face;     private readonly WebViewShell face;
-private readonly InProcessShell surface;private InstanciaEnCaja? viva;
+private readonly InProcessShell surface;private BoxedInstance? viva;
 ```
 
 `Invoke`, `View`, `Deliver`, `Cursor` y `ActualTools` delegan igual en las dos. **La cara es
@@ -152,16 +152,16 @@ y **ocho de ocho cierran en la caja**. El noveno, leer su propio journal, es el 
 ### En la práctica, lo que el Host escribe
 
 ```csharp
-// InProcessShell.View                          // CajaShell.View
-=> Ask(name, arguments, accepts, ViewMarks);    => Crudo(await (await Caja(ct))
-                                                     .Pedir("consultar", name, Carga(arguments), ct), name);
+// InProcessShell.View                          // BoxShell.View
+=> Ask(name, arguments, accepts, ViewMarks);    => Raw(await (await Box(ct))
+                                                     .Ask("consultar", name, Payload(arguments, accepts), ct), name);
 ```
 
 Y **la cara recibe lo mismo** porque el puente ya hacía `answer as string ?? Serialize(answer)`: una
 cadena que ya es json pasa verbatim y no se serializa dos veces.
 
 Para el asistente sí hay conversión: `InProcessShell` devuelve su `Project(...)` —diccionarios,
-listas, primitivos— y la caja devuelve texto, así que `CajaShell.Aplanar` reconstruye esa misma
+listas, primitivos— y la caja devuelve texto, así que `BoxShell.Flatten` reconstruye esa misma
 forma. Son veinte líneas y están ahí porque el frente de MCP espera objetos, no una cadena con json
 adentro.
 
@@ -175,7 +175,7 @@ pero **no hay callback de entrada** — sólo una ruta o un búfer fijo. Así qu
 
 Abrir un FIFO para leer bloquea hasta que haya escritor, y al revés. `set_stdin_file` **abre para
 leer ahí mismo**, así que llamarlo sin escritor en vuelo cuelga el hilo y **no se imprime una línea
-más**: el log se corta y no hay error que leer. Por eso `InstanciaEnCaja` arranca un hilo que abre
+más**: el log se corta y no hay error que leer. Por eso `BoxedInstance` arranca un hilo que abre
 para escribir **antes** de configurar la entrada.
 
 **2 · El callback se guarda en un campo.** Cruza a código nativo; si sólo viviera en la pila, el
@@ -199,9 +199,9 @@ Se juntaron porque **lo que este paso vino a medir es cómo ve el WebView a la c
 del paquete. Separarlos toca `PackageInspector`, `ModuleEnrollment` y el alta, y es otra
 conversación.
 
-**Y el código dice las dos cosas a la vez, así que conviene ser preciso.** `CajaDeWasm` es estática
+**Y el código dice las dos cosas a la vez, así que conviene ser preciso.** `WasmBox` es estática
 y su comentario promete «uno para todos», pero guarda **un solo componente**: si llegara un segundo
-módulo con otro `.wasm`, `Preparar` llama a `Soltar()` y recompila. Hoy no se nota porque hay un
+módulo con otro `.wasm`, `Prepare` llama a `Release()` y recompila. Hoy no se nota porque hay un
 módulo solo en caja, que es justo lo que este corte eligió medir. **El motor compartido es real; el
 sustrato compartido todavía no.**
 
@@ -209,7 +209,7 @@ sustrato compartido todavía no.**
 > `.wasm` ya no lleva ningún módulo adentro: es el sustrato solo, y los DLL de cada módulo entran
 > desde su bundle por un segundo montaje de sólo lectura. **El sustrato compartido es real y está
 > medido**: los CINCO módulos del POC corriendo a la vez sobre **un solo componente**, sin que
-> `Preparar` recompile una sola vez.
+> `Prepare` recompile una sola vez.
 >
 > Un molde, muchas coladas: el molde —motor, componente y linker estáticos— cuesta **~94 MB una
 > vez**, y cada caja **~26 MB**. Ver F8, «La escalera de los cinco módulos».
@@ -269,8 +269,8 @@ Vale escribirlos juntos porque **la forma es la misma las cuatro veces**, y esa 
 | dónde | qué comparaba | por qué mintió |
 |---|---|---|
 | `ElBorde` | nada: invocaba con `null` | los argumentos no llegaban, y el error salía como *menos pantalla* |
-| `CajaDeWasm` | nada: el `.cwasm` no estaba atado a su fuente | un wasm nuevo con un precompilado viejo y sano corría **el código anterior** |
-| `LaCaja` | **el largo** del asset del APK | el build nuevo salió con **los mismos 6 583 761 bytes** y el asset no se copió |
+| `WasmBox` | nada: el `.cwasm` no estaba atado a su fuente | un wasm nuevo con un precompilado viejo y sano corría **el código anterior** |
+| `TheBox` | **el largo** del asset del APK | el build nuevo salió con **los mismos 6 583 761 bytes** y el asset no se copió |
 | el bundle de exámenes | nada: nadie lo volvió a armar | el arreglo del «212 → 212», escrito el 14, **se seguía viendo el 16** |
 
 Los cuatro se leen igual desde afuera: **se cambia el código, se reinstala, y la pantalla sale
@@ -519,7 +519,7 @@ journal la primera vez que alguien le pregunta algo.
 > Lo escribí sin medirlo, de la misma forma en que salieron las ~42 idas y vueltas que resultaron 22.
 > Es la tercera vez en el día.
 
-Hasta hoy estaba escondido detrás de otra cosa: `InstanciaEnCaja` ya decía *«288 ms para la primera,
+Hasta hoy estaba escondido detrás de otra cosa: `BoxedInstance` ya decía *«288 ms para la primera,
 1 ms para el resto»* y se leía como una propiedad del borde. **No lo es** — es el dominio
 reconstruyéndose, y aparece igual en proceso.
 
@@ -673,12 +673,12 @@ concesionario). `Metodologia/Guias/reglas-del-substrato.md §4` ya lo había dic
 Refutado 2 de 3, por la razón correcta.
 
 **5 · iOS ya rehidrata TODOS los módulos al arrancar, dos veces, y nadie lo midió.** `Shell.Run` hace
-`await Fotografiar()` (`Shell.cs:209`) **antes** de `VerifyNewModules` y del calentado; `Snapshot.Write`
+`await Fotografiar()` (`Shell.cs:212`) **antes** de `VerifyNewModules` y del calentado; `Snapshot.Write`
 llama `dispatcher.Serve` por **cada tool sin parámetros de cada módulo habilitado** (`Snapshot.cs:58-86`),
 lo que arranca el actor de todos. iOS pasa `FotoLocal: true` **y** `Instantaneas: SharedContainer()`
-(`ViewController.cs:104-108`): dos pasadas completas. Android no lo corre — por eso el número de los
+(`ViewController.cs:134-138`): dos pasadas completas. Android no lo corre — por eso el número de los
 694 ms se midió allá y no incluye esto. Y cada cambio de consentimiento vuelve a fotografiar
-(`Shell.cs:250`). **Con cinco módulos a ~14 s, es del orden de un minuto antes de que Gnothi esté listo.**
+(`Shell.cs:253`). **Con cinco módulos a ~14 s, es del orden de un minuto antes de que Gnothi esté listo.**
 Extrapolación, no medición: nadie corrió `Gnothi.iOS` con los cinco.
 
 **6 · Cualquier alta, actualización o rollback mata los actores de TODOS los módulos.**
@@ -805,3 +805,206 @@ lee para decidir algo que no es de la caja.
 
 **Y yo declaré «dos confirmadas» mirando líneas de log filtradas, sin abrir una sola captura de la
 pantalla.** Lo que había en pantalla era una excepción. Lo dijo Jonathan, no la prueba.
+
+## Llegó una cuarta forma, y se sentó en la misma silla · 2026-09-23
+
+En `master` entró **la sala** (PR 10130): el mismo `.dll` híbrido, sin tocarle un byte, corriendo
+adentro de un documento oculto del motor web que es de Gnothi. Es **hermana de la caja**, no un
+escalón: mismo contrato de borde, distinto transporte —wasmtime de un lado, el motor web del otro.
+
+Y por ser hermana, **eligió la misma costura**. Ahí está el problema.
+
+### El choque: un solo campo estático y dos dueños
+
+`Module.ShellFactory` es **una sola propiedad estática**. En Android hay **dos** asignaciones:
+
+| quién | dónde | cuándo corre |
+|---|---|---|
+| la caja | `TheBox.cs:134` | `PrepareTheBox()`, en `OnCreate` |
+| la sala | `MainActivity.cs:281` | dentro de `Start()`, **después** |
+
+La última gana. Con `--ez caja true` y la sala forzada a la vez, **la sala borraba la fábrica de la
+caja** y todo módulo que iba a entrar en caja corría híbrido — mientras el log seguía diciendo
+`caja: encendida para todos los modulos hibridos`.
+
+**El daño no es que dos laboratorios estuvieran prendidos: es que uno se apagaba sin avisar.** Una
+escalera de memoria medida así compara nada contra nada, y el log habría jurado que la medición era
+buena. Es el mismo modo de falla que el `--es calentar` que da falso verde sin `PrepareTheBox()`.
+
+Esto es **leído del código**, no medido en el aparato: las dos asignaciones y su orden se ven en el
+fuente, y nadie corrió todavía las dos prendidas a la vez en el teléfono.
+
+### El arreglo: encadenar, no asignar
+
+```csharp
+// Gnothi.Host/Module.cs — la regla, en un solo lugar
+internal static bool ChainShellFactory(Func<string, Installation, IShell?> newest)
+{
+    Func<string, Installation, IShell?>? before = ShellFactory;
+
+    ShellFactory = before is null
+        ? newest
+        : (name, installation) => newest(name, installation) ?? before(name, installation);
+
+    return before is not null;
+}
+```
+
+**Primero se arregló en línea, en cada plataforma, y eso estaba mal por la misma razón que el
+defecto:** la regla quedaba escrita **dos veces** —`MainActivity` y `ViewController`— y **ninguna de
+las dos la compila ningún proyecto que corra en una máquina cualquiera**. Dos copias de una regla,
+cero pruebas. Así que se mudó a `Gnothi.Host`, donde la suite sí llega, y las cuatro plataformas
+—las dos cáscaras móviles, la caja y el escritorio— la llaman en vez de repetirla.
+
+Lo llama **también la caja, que hoy corre primera y a la que encadenar no le cambia nada**. Está
+así porque `TheBox.cs` es el archivo del que el próximo va a copiar, y lo que no puede copiar es la
+forma que ya costó una medición. Por lo mismo su `catch` ahora **repone lo que encontró** en vez de
+poner `null`.
+
+**Y devuelve si había una antes**, porque el daño de septiembre no fue que hubiera dos laboratorios
+prendidos: fue que uno se apagó sin una palabra. Encadenar en silencio devuelve el defecto en una
+forma más tranquila.
+
+**Lo que lo hace correcto es el contrato que la costura ya tenía escrito: una fábrica devuelve `null`
+cuando no tiene opinión.** La sala contesta por sus nombres y le devuelve el resto a la de antes —la
+caja, que contesta por los suyos y le pasa el resto al `switch`. Y si había una, ahora **se dice en
+el log**, que es lo único que faltaba para que el problema fuera visible en vez de silencioso.
+
+Lo mismo se aplicó en `ViewController.cs` de iOS, donde **hoy no rompe nada** porque no hay caja. Se
+hizo igual: el defecto estaba en la forma, no en la coincidencia de que hubiera dos.
+
+#### Y ahora tiene prueba, que es lo que faltaba de verdad
+
+`Gnothi.Assistant.Tests/Costura.cs`, ocho afirmaciones. **Y se comprobó que discrimina**: se volvió a
+poner la asignación plana a propósito y dos se pusieron rojas, con el mensaje diciendo qué pasó —
+
+```
+[FAIL] Y LA PRIMERA SIGUE VIVA para los demas -- el defecto del 2026-09-23
+        contesto 0: la segunda se comio a la primera
+[FAIL] si ninguna opina, las dos igual fueron consultadas y decide el switch
+        se consultaron 1 de 2
+```
+
+El observable es `Module.Cursor()`, que devuelve un `long` y sale de la cáscara sin pasar por nada
+más: cada cáscara falsa devuelve su propio número, así que se sabe **cuál** contestó y no sólo que
+alguna lo hizo.
+
+Una de las ocho es del orden, y no es un detalle de implementación: **la última en registrarse
+pregunta primero**. Las fábricas no son igual de específicas —la de la caja reclama una **forma**,
+toda híbrida; la de la sala una **lista de nombres**—, así que si la ancha contestara primero, la
+angosta no ganaría un solo módulo nunca.
+
+### Las cuatro formas, al 2026-09-23
+
+| forma | quién la elige | anfitrión |
+|---|---|---|
+| hospedada | el `switch`, `webview` | su propio WebView, uno por módulo |
+| híbrida | el `switch`, `hybrid` | el proceso de Gnothi |
+| caja | el `ShellFactory` de `TheBox` | wasmtime |
+| sala | el `ShellFactory` de `MainActivity` / el `switch`, `sala` | un documento del motor web, uno para todos |
+
+Las dos últimas hospedan **el mismo paquete híbrido**. Por eso las dos se sientan en la costura, y
+por eso encadenarlas no es un parche sino la forma que la costura pedía desde que hubo más de una.
+
+### Y un segundo choque, éste latente
+
+`WebModule.Open` decide el cableado de la cara con `preguntona`, y listaba `hybrid` y `caja`
+**pero no `sala`**. `RoomShell` implementa `View`, `Deliver` y `Cursor` —las tres cosas que `Cablear`
+conecta— y su propio comentario dice que sin eso «la pantalla no abre».
+
+No había disparado, y no por diseño: **el alta móvil no tiene rama que escriba `"type": "sala"`**.
+`ModuleEnrollment` deriva el tipo de lo que trae el paquete —`hybrid`, `in-process`, `webview`— así
+que la sala sólo se prende hoy forzando la cáscara sin tocar el tipo, y la primera cláusula la
+cubría. El día que alguien escriba ese tipo, la cara se quedaba en la excepción.
+
+Que era omisión y no decisión lo delata `Shell.cs`, que **sí** nombra `sala` junto a `webview` y
+`hybrid` en `guardaSuCaraAlLado`: el archivo que guarda la cara lo sabía, el que la cablea no.
+
+Se agregó `sala` al `preguntona`. **Queda abierto quién escribe ese tipo en el alta**, y es decisión
+de producto, igual que con la caja: qué forma corre un paquete híbrido la elige el Host.
+
+### Lo que esto agrega al método
+
+La regresión del 2026-09-18 enseñó que **la revisión estática puede dar bien y el aparato mal**.
+Ésta enseña la otra mitad: **una costura que admite un solo ocupante y no lo declara es una trampa
+para el segundo que llegue**, y el segundo siempre llega. Ninguna de las dos asignaciones estaba
+mal escrita; lo que faltaba era que el campo dijera que es de uno solo.
+
+### Y los nombres de la sala pasaron a inglés · 2026-09-23
+
+La caja llegó con sus identificadores en inglés —`WasmBox.Prepare`, `BoxShell`, `SweepOldArtifacts`—
+y la sala llegó entera en español. Eran dos hermanas escritas en dos idiomas, y eso ya había costado
+un rato de lectura en este mismo documento: los párrafos de más arriba decían `CajaDeWasm`, `Preparar`
+y `Soltar` mucho después de que la caja se llamara `WasmBox.Prepare` y `Release`. **Un documento que
+nombra código con los nombres de antes no está viejo en un detalle: manda a buscar algo que no
+existe.**
+
+| antes | ahora |
+|---|---|
+| `SalaShell` · `ISalaHost` | `RoomShell` · `IRoomHost` |
+| `AndroidSala` · `IosSala` | `AndroidRoom` · `IosRoom` |
+| `Preparar` · `Pedir` · `Soltar` · `Guardar` · `Descartar` | `Prepare` · `Ask` · `Release` · `Save` · `Discard` |
+| `Asegurar` · `Vecindario` · `Confirmar` | `Ensure` · `Neighbourhood` · `Confirm` |
+| `Servir` · `Servible` · `Arrancar` · `Calentar` | `Serve` · `Servable` · `Start` · `WarmUp` |
+
+Los archivos siguieron a sus tipos: `SalaShell.cs` → `RoomShell.cs`, y con ellos los tres `.csproj`
+que los nombran por ruta —el `Exclude` del stub en Android y en iOS, y el `Compile Include` de la
+suite—.
+
+#### Lo que NO se renombró, y es la mitad que importa
+
+**El protocolo con el sustrato no es código: es un contrato entre dos binarios que se compilan por
+separado.** Se quedan exactamente como estaban los verbos (`cargar`, `desalojar`, `consultar`,
+`vista`, `entregar`, `cursor`, `repertorio`), los campos del json (`ok`, `motivo`, `contenido`,
+`escrituras`, `ruta`, `vaciada`, `vecinos`, `entrada`, `archivos`, `rutas`), las rutas que el
+sustrato pide (`modulo/<m>/indice.json`, `dominio`, `journal`), los nombres de JavaScript
+(`window.sala.pedido`, `SalaPuente`) y el `"type": "sala"` del `installation.json`.
+
+Y los **mensajes en español** —logs y excepciones— también, por el mismo criterio con el que la caja
+conserva los suyos: contra esos textos están escritos los hallazgos medidos.
+
+**Y la prueba de que eso es un borde y no una inconsistencia está escrita en una sola línea**, la
+misma en las dos hermanas:
+
+```csharp
+Ask("consultar", …)
+```
+
+**Método en inglés, verbo en castellano.** El renombre cruzó la clase y se detuvo en la comilla. Lo
+mismo con `"entregar"`, `"cursor"` y `"repertorio"`. Del otro lado de esa comilla hay un binario que
+se compila aparte y no se entera de nada: **renombrar algo adentro es gratis; renombrar algo que
+cruza hay que hacerlo en los dos lados y en el mismo commit.**
+
+Acá la suerte está de nuestro lado, y conviene decirlo para no confiarse: un contrato por **texto**
+falla ruidoso y de inmediato —el verbo no coincide y la sala contesta `ok:false`—, a diferencia de
+los demás defectos de este documento, que fallan callados. La regla no es menos necesaria; lo que
+cambia es cuánto tarda en cobrarse.
+
+#### Cómo se hizo, porque el método es lo reutilizable
+
+Un renombrado masivo sobre código que habla con otro binario **falla en silencio**: compila, pasa las
+pruebas y deja de contestar en el aparato. Así que se hizo con **auditoría de literales**: se
+fotografiaron los 395 strings de los cuatro archivos, se renombró, y se comparó. Cualquier cambio que
+no fuera una interpolación tenía que justificarse.
+
+Atrapó dos roturas reales:
+
+1. **`window.sala.pedido` → `window.sala.requested`.** Es el nombre de la función JS del sustrato.
+   Habría dejado la sala sin contestar nunca, sin un error de compilación.
+2. **`new { entrada, archivos }` → `{ entrada, files }`, y `{ rutas }` → `{ paths }`.** Campos json
+   escritos como propiedades de un objeto anónimo, o sea **sin comillas: la auditoría de literales no
+   los ve.** Aparecieron leyendo el resultado, no por la herramienta. Ahora van con nombre explícito
+   —`archivos = files`, `rutas = paths`—, que los vuelve inmunes al próximo renombrado.
+
+La lección de la segunda es la que vale guardar: **una barrera automática cubre la forma que sabe
+mirar, y el contrato también vive en las formas que no.** Un campo de protocolo escrito como
+identificador de C# es indistinguible de una variable para cualquier herramienta que no sepa qué es
+protocolo.
+
+#### Lo que queda sin verificar
+
+`Gnothi.iOS` no se compila desde Windows, y acá el riesgo es mayor que con una traducción de
+comentarios. En su lugar se verificó **símbolo por símbolo** que los 27 nombres nuevos de `IosRoom.cs`
+tienen declaración y usos coherentes — y eso encontró un error real que el compilador habría atrapado
+solo: `ViewController` seguía llamando `sala.Calentar` cuando `IosRoom` ya exponía `WarmUp`. Está
+arreglado, pero **hay que pasarlo por la Mac antes de confiar en él**.

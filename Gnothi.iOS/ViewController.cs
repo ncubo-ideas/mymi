@@ -1,11 +1,11 @@
 using Foundation;
 using Gnothi.Assistant;
-// EL CATALOGO DE TEXTOS, por alias y no importando el namespace entero: `Gnothi.Host`
-// tambien declara un `Shell` -- el bloque de installation.json -- y este archivo usa el
-// `Shell` de Gnothi.MobileShared. Importar los dos namespaces deja el nombre ambiguo y el iOS
-// deja de compilar. Es el MISMO error que 898edec arreglo en MainActivity, y aca sobrevivio porque
-// el SDK de iOS exige una version exacta de Xcode y el build ni empieza: hay que pasarle
-// -p:ValidateXcodeVersion=false, que esta en la receta del equipo y no en el camino de nadie.
+// THE TEXT CATALOGUE, by alias and not by importing the whole namespace: `Gnothi.Host` also
+// declares a `Shell` -- installation.json block -- and this file uses Gnothi.MobileShared
+// `Shell`. Importing both namespaces leaves the name ambiguous and iOS stops compiling. It is
+// the SAME mistake 898edec fixed in MainActivity, and it survived here because the iOS SDK
+// demands an exact version of Xcode and the build does not even start: it needs
+// -p:ValidateXcodeVersion=false, which lives in the team recipe and not in anybody path.
 using Textos = Gnothi.Host.Textos;
 using Gnothi.MobileShared;
 using UIKit;
@@ -26,7 +26,7 @@ namespace Gnothi.iOS;
 //     RunOnUiThread                    InvokeOnMainThread
 //     Android.Util.Log.Info            Console.WriteLine  (comes out through Xcode's log)
 //     FilesDir                         Library/Application Support
-//     GetExternalFilesDir/incoming     Documents/incoming   <- y este SE VE en Archivos
+//     GetExternalFilesDir/incoming     Documents/incoming   <- and this one IS VISIBLE in Files
 //     file:///android_asset/ui.html    LoadFileUrl from the bundle
 //
 // THE ONLY REAL DIFFERENCE is in the last row, and it favours iOS: on Android the package is pushed
@@ -72,15 +72,15 @@ public sealed class ViewController : UIViewController
 		// lost, and that breaks any other detection the page does.
 		config.ApplicationNameForUserAgent = "GnothiHost";
 
-		// LA CAMARA DEL LECTOR SE QUEDA EN LA PAGINA. En iPhone un WKWebView manda TODO video al
-		// reproductor nativo de pantalla completa, y el playsinline del <video> de ui.html no
-		// alcanza solo: hace falta esta linea. Sin ella el stream de getUserMedia salia como
-		// una pelicula -X, imagen en imagen, LIVE- y al cerrarla iOS lo dejaba pausado detras
-		// del recuadro. Medido en el 13 Pro el 2026-09-11.
+		// THE READER CAMERA STAYS IN THE PAGE. On an iPhone a WKWebView sends ALL video to the native
+		// full-screen player, and the playsinline on ui.html <video> is not enough on its own: this
+		// line is needed. Without it the getUserMedia stream came out as a film -X, picture in
+		// picture, LIVE- and on closing it iOS left it paused behind the frame. Measured on the 13
+		// Pro on 2026-09-11.
 		//
-		// Y la segunda es la gemela de MediaPlaybackRequiresUserGesture = false en
-		// MainActivity.cs: el play() viene despues del await de getUserMedia, y WebKit puede
-		// dar por perdido el gesto de la persona para entonces.
+		// And the second is the twin of MediaPlaybackRequiresUserGesture = false in MainActivity.cs:
+		// the play() comes after the await of getUserMedia, and WebKit may have given up on the
+		// person gesture by then.
 		config.AllowsInlineMediaPlayback = true;
 		config.MediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypes.None;
 
@@ -111,15 +111,15 @@ public sealed class ViewController : UIViewController
 
 		SeedFromBundle(incoming);
 
-		// EL IDIOMA DE LA PERSONA, RESUELTO UNA VEZ Y AQUI, antes de que la cascara componga su
-		// primera frase. Sale del APARATO: no hay selector adentro de Mymi.
+		// THE PERSON LANGUAGE, RESOLVED ONCE AND HERE, before the shell composes its first sentence.
+		// It comes from the DEVICE: there is no picker inside Mymi.
 		//
-		// CurrentUICulture sirve porque este proceso es NATIVO -- la advertencia de
-		// Municipalidad.Wasm, que dice de no leer la cultura del proceso, es para wasm, donde
-		// esa cultura es la del runtime y no la de quien usa el telefono. Aca no.
+		// CurrentUICulture works because this process is NATIVE -- the warning in Municipalidad.Wasm,
+		// which says not to read the process culture, is for wasm, where that culture is the
+		// runtime and not that of whoever uses the phone. Not here.
 		//
-		// Y la pagina NO lo resuelve por su cuenta: se lo dice la cascara. Dos resolutores
-		// serian dos fuentes de verdad.
+		// And the page does NOT resolve it on its own: the shell tells it. Two resolvers would be two
+		// sources of truth.
 		Textos.Idioma = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		shell = new Shell(
@@ -157,55 +157,62 @@ public sealed class ViewController : UIViewController
 		moduleHost = new IosWebModuleHost(this, new IosSecretStore(), Log);
 		Gnothi.Host.WebViewShell.Host = moduleHost;
 
-		// Y QUIEN SABE ABRIR LA SALA. Mismo motivo y misma costura, una linea mas abajo que en
-		// MainActivity: es UN solo documento para todos los modulos, creado la primera vez que
-		// alguien pregunta. No recibe `this`, porque a diferencia del WebView de un modulo la
-		// sala no se muestra nunca -- no necesita un ViewController que la ponga en pantalla.
-		var sala = new IosSala(Log);
-		Gnothi.Host.SalaShell.Host = sala;
+		// AND WHO KNOWS HOW TO OPEN THE SALA. Same reason and same seam, one line lower than in
+		// MainActivity: it is ONE document for every module, created the first time somebody asks.
+		// It does not receive `this`, because unlike a module's WebView the sala is never shown --
+		// it needs no ViewController to put it on screen.
+		var room = new IosRoom(Log);
+		Gnothi.Host.RoomShell.Host = room;
 
-		// LA SALA, FORZADA PARA MEDIR, sin tocar el installation.json de nadie. El resto del
-		// camino es el de siempre: Dispatcher, catalogo, consentimiento. Lo unico que cambia es
-		// que cascara construye el Module para esos nombres.
+		// THE SALA, FORCED IN ORDER TO MEASURE, without touching anybody's installation.json. The
+		// rest of the path is the usual one: Dispatcher, catalogue, consent. The only thing that
+		// changes is which shell builds the Module for those names.
 		//
-		// DE DONDE SALE EL INTERRUPTOR, Y POR QUE DE AHI. `Library/Application Support` es del
-		// contenedor de esta app: ninguna otra la ve -- iOS no tiene el equivalente de un extra de
-		// Intent, que es el canal de cualquiera que a Android hubo que quitarle -- y, a diferencia
-		// de `Documents`, NO la expone la app Archivos, asi que tampoco la toca la persona por
-		// accidente. Se lee UNA vez, aca: cambiarla con la app viva no hace nada.
+		// WHERE THE SWITCH COMES FROM, AND WHY FROM THERE. `Library/Application Support` belongs to
+		// this app's container: no other app sees it -- iOS has no equivalent of an Intent extra,
+		// which is the anybody-channel Android had to be stripped of -- and, unlike `Documents`, the
+		// Files app does NOT expose it, so the person does not touch it by accident either. It is
+		// read ONCE, here: changing it with the app alive does nothing.
 		//
 		//     xcrun simctl get_app_container booted com.ncubo.gnothi.host data
 		//     echo comprasw,examenesw > <ese contenedor>/Library/Application\ Support/sala
 		//
-		// Y ademas va en DEBUG, para que el .app que se publica no tenga forma de encenderlo
-		// aunque alguien deje el archivo puesto. Es la misma doble guarda que Android: alla el
-		// archivo privado MAS la bandera de depurable.
+		// And besides, it goes in DEBUG, so the .app that ships has no way of switching it on even
+		// if somebody leaves the file in place. It is the same double guard as Android: there, the
+		// private file PLUS the debuggable flag.
 #if DEBUG
-		string interruptor = Path.Combine(files, "sala");
-		if (File.Exists(interruptor))
+		string switchFile = Path.Combine(files, "sala");
+		if (File.Exists(switchFile))
 		{
-			// EL ARCHIVO VACIO YA DICE ALGO, y es a proposito que diga lo menos: arranca la sala
-			// y nada mas. La pregunta que decide la forma en iOS -- si el sustrato levanta bajo
-			// `gnothi-sala://` -- se contesta con el sustrato SOLO, sin ningun modulo de por
-			// medio. Con nombres adentro, ademas, esos modulos corren por la sala.
+			// THE EMPTY FILE ALREADY SAYS SOMETHING, and it is on purpose that it says the least:
+			// start the sala and nothing else. The question that decides the form on iOS -- whether
+			// the substrate comes up under `gnothi-sala://` -- is answered with the substrate ALONE,
+			// with no module in between. With names inside, those modules also run through the sala.
 			//
-			// Separadas y no juntas: si se midieran en el mismo paso, un alta que fallo leeria
-			// igual que un origen que no sirve, y son dos arreglos distintos.
+			// Separate and not together: if they were measured in the same step, an enrolment that
+			// failed would read the same as an origin that does not serve, and they are two
+			// different fixes.
 			_ = Task.Run(async () =>
 			{
-				try { await sala.Calentar(CancellationToken.None); Log("sala: arranco sin modulos"); }
+				try { await room.WarmUp(CancellationToken.None); Log("sala: arranco sin modulos"); }
 				catch (Exception e) { Log($"sala: NO arranco -- {e.GetType().Name}: {e.Message}"); }
 			});
 
-			HashSet<string> nombres = [.. File.ReadAllText(interruptor)
+			HashSet<string> names = [.. File.ReadAllText(switchFile)
 				.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
-			if (nombres.Count > 0)
+			if (names.Count > 0)
 			{
-				Log($"sala: forzada para {string.Join(", ", nombres)}");
+				Log($"sala: forzada para {string.Join(", ", names)}");
 
-				Gnothi.Host.Module.ShellFactory = (nombre, instalacion) => nombres.Contains(nombre)
-					? new Gnothi.Host.SalaShell(nombre, instalacion.Shell, instalacion.GrantedFolder)
-					: null;
+				// AND IT CHAINS instead of assigning. IT BREAKS NOTHING TODAY -- there is no box on
+				// iOS, so this is the only factory -- and it is written this way for the same
+				// reason a fence is: on Android it DID break. The defect was in the shape, not in
+				// the coincidence of there being two. The reasoning is in
+				// Module.ChainShellFactory, in one place for both platforms.
+				if (Gnothi.Host.Module.ChainShellFactory((name, installation) => names.Contains(name)
+						? new Gnothi.Host.RoomShell(name, installation.Shell, installation.GrantedFolder)
+						: null))
+					Log("sala: ya habia una fabrica de cascaras; la sala se encadena y solo contesta por sus nombres");
 			}
 		}
 #endif
@@ -331,7 +338,7 @@ public sealed class ViewController : UIViewController
 			{
 				// If the assistant has already asked it something, the module is alive and opening is
 				// instant: Open hands it back as it is. That is the reason P1a could be measured without
-				// esta pantalla existiera.
+				// this screen existed.
 				IosWebModule vivo = await moduleHost.Open(m, CancellationToken.None);
 				InvokeOnMainThread(() => Mostrar(vivo, nombre));
 			}
@@ -439,12 +446,13 @@ public sealed class ViewController : UIViewController
 		]);
 
 		// FullScreen and not PageSheet: with the strip saying where you are, leaving Gnothi peeking out
-		// atras no agrega y le come pantalla al modulo.
+		// behind adds nothing and eats the module screen.
 		pantalla.ModalPresentationStyle = UIModalPresentationStyle.FullScreen;
 
-		// EL DELEGADO SE QUEDA aunque en FullScreen no haya descarte por gesto. Cuesta nada y
-		// protects what comes next: if somebody adds another closing path and forgets to clean up, the
-		// module stays Visible forever and WebModuleHost.Evict never evicts it again.
+		// THE DELEGATE STAYS even though in FullScreen there is no dismissal by gesture. It costs
+		// nothing and protects what comes next: if somebody adds another closing path and forgets
+		// to clean up, the module stays Visible forever and WebModuleHost.Evict never evicts it
+		// again.
 		pantalla.PresentationController!.Delegate = new AlDescartar(this);
 
 		enPantallaVc = pantalla;
@@ -640,7 +648,7 @@ public sealed class ViewController : UIViewController
 		{
 			if (prompt != "gnothi" || defaultText is null)
 			{
-				// Un prompt de verdad. Se cancela: esta app no tiene ninguno.
+				// A real prompt. It is cancelled: this app has none.
 				completionHandler(null);
 				return;
 			}
