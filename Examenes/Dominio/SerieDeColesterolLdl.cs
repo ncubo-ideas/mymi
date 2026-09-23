@@ -40,7 +40,7 @@ namespace Examenes.Dominio
 
 			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			lineas.Add(new ReferenciaDeLectura("meta", rango.Maximo,
-				$"tu meta de LDL es bajar de {rango.Maximo.Expresado}"));
+				"linea.colesterol-ldl.meta"));
 
 			return lineas;
 		}
@@ -54,9 +54,8 @@ namespace Examenes.Dominio
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"el LDL pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
-					+ $"en {hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}",
-					hechos, Accion.RepetirElExamen(Plazo.EstaSemana));
+					"lectura.colesterol-ldl.salto-inverosimil", hechos,
+					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			bool enRango = Ultima.EsNormalPara(paciente);
 
@@ -67,30 +66,32 @@ namespace Examenes.Dominio
 			string sobreElHdl = !Ultima.SeSabeSiElHdlAcompana(paciente)
 				? ""
 				: Ultima.HdlEsProtectorPara(paciente)
-					? $", y tu HDL de {Ultima.Hdl.Expresado} juega a favor"
-					: $", y tu HDL de {Ultima.Hdl.Expresado} no alcanza para compensarlo";
+					? "hdl.juega-a-favor"
+					: "hdl.no-alcanza";
+
+			decimal hdl = Ultima.Hdl.Valor;
 
 			if (!Ultima.EsCambioReal(hechos.Cambio))
 				return enRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"el LDL se mantiene en {Ultima.Ldl.Expresado}, dentro de lo deseable", hechos)
+						"lectura.colesterol-ldl.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, Severidad.ConsultePronto,
-						$"el LDL lleva tiempo en {Ultima.Ldl.Expresado}" + sobreElHdl, hechos,
-						Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
+							"lectura.colesterol-ldl.estable-fuera", hechos,
+							Accion.MostrarleEstoATuMedico(Plazo.EsteMes))
+						.ConNivelPropio(hdl, sobreElHdl);
 
 			if (Ultima.Direccion.EsFavorable(hechos.Cambio))
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"el LDL bajó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}",
-					hechos);
+					"lectura.colesterol-ldl.bajo", hechos);
 
 			return enRango
 				? new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}, "
-					+ "todavía dentro de lo deseable", hechos,
+					"lectura.colesterol-ldl.subio-dentro", hechos,
 					Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))
 				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
-					+ sobreElHdl, hechos, Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
+						"lectura.colesterol-ldl.subio-fuera", hechos,
+						Accion.MostrarleEstoATuMedico(Plazo.EsteMes))
+					.ConNivelPropio(hdl, sobreElHdl);
 		}
 	}
 }

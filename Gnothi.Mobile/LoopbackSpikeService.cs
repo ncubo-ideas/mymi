@@ -7,15 +7,15 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 
-// LOS PERMISOS QUE ESTE SPIKE EXIGE, Y SON PARTE DE LA MEDICION -- no un tramite.
+// THE PERMISSIONS THIS SPIKE DEMANDS, AND THEY ARE PART OF THE MEASUREMENT -- not paperwork.
 //
-// Un socket abierto de forma indefinida necesita un foreground service, o sea una NOTIFICACION
-// PERMANENTE. Y desde Android 14 hay que declarar un foregroundServiceType: no existe uno para
-// "servidor local", asi que cae en specialUse, que Play revisa y obliga a justificar.
+// A socket held open indefinitely needs a foreground service, which means a PERMANENT NOTIFICATION.
+// And since Android 14 a foregroundServiceType has to be declared: there is none for "local server",
+// so it falls under specialUse, which Play reviews and demands a justification for.
 //
-// Esto no se descubrio escribiendo el spike: se investigo antes (F1, "el proceso en segundo plano,
-// que es lo que esto exige"). Lo que el spike agrega es que la declaracion queda escrita en el
-// codigo, donde se puede ver, en vez de en un parrafo.
+// This was not discovered while writing the spike: it was researched beforehand (F1, "the background
+// process, which is what this demands"). What the spike adds is that the declaration ends up written
+// in the code, where it can be seen, instead of in a paragraph.
 [assembly: Android.App.UsesPermission(Android.Manifest.Permission.ForegroundService)]
 [assembly: Android.App.UsesPermission("android.permission.FOREGROUND_SERVICE_SPECIAL_USE")]
 [assembly: Android.App.UsesPermission("android.permission.POST_NOTIFICATIONS")]
@@ -91,10 +91,10 @@ public sealed class LoopbackSpikeService : Service
 	{
 		if (listener is not null) { Log("already listening"); return StartCommandResult.Sticky; }
 
-		// PRIMERO LA NOTIFICACION, Y ANTES DE CUALQUIER OTRA COSA. Android mata el servicio si no
-		// llama a StartForeground en unos segundos. Y esa notificacion no se puede esconder ni
-		// descartar mientras el socket viva: es el precio visible de este canal, y la persona lo
-		// ve en su barra de estado todo el tiempo que la PWA este en uso.
+		// THE NOTIFICATION FIRST, AND BEFORE ANYTHING ELSE. Android kills the service if it does not
+		// call StartForeground within a few seconds. And that notification cannot be hidden or dismissed
+		// while the socket lives: it is this channel's visible price, and the person sees it in their
+		// status bar the whole time the PWA is in use.
 		Frente();
 
 		token = Guid.NewGuid().ToString("N")[..16];
@@ -110,9 +110,9 @@ public sealed class LoopbackSpikeService : Service
 		return StartCommandResult.Sticky;
 	}
 
-	// La notificacion permanente. Se arma a mano y no con helpers de MAUI porque este servicio
-	// tiene que poder arrancar SIN que ninguna Activity haya corrido -- que es justamente lo que
-	// permite medirlo desde adb sin tocar el producto.
+	// The permanent notification. It is assembled by hand and not with MAUI helpers because this
+	// service has to be able to start WITHOUT any Activity having run -- which is precisely what makes
+	// it measurable from adb without touching the product.
 	private void Frente()
 	{
 		var gestor = (NotificationManager)GetSystemService(NotificationService)!;
@@ -121,7 +121,7 @@ public sealed class LoopbackSpikeService : Service
 				Canal, "Puerta de loopback (spike)", NotificationImportance.Low));
 
 		Notification aviso = new Notification.Builder(this, Canal)
-			.SetContentTitle("Gnothi está contestando en el dispositivo")
+			.SetContentTitle("Mymi está contestando en el dispositivo")
 			.SetContentText($"Puerta de loopback abierta en el puerto {Port}")
 			.SetSmallIcon(Android.Resource.Drawable.StatSysDownload)
 			.SetOngoing(true)
@@ -150,8 +150,8 @@ public sealed class LoopbackSpikeService : Service
 		{
 			TcpClient client;
 			try { client = await listener!.AcceptTcpClientAsync(ct); }
-			// Calificada: Android.OS tiene su propia OperationCanceledException y el nombre suelto
-			// es ambiguo aca.
+			// Qualified: Android.OS has its own OperationCanceledException and the bare name is ambiguous
+			// here.
 			catch (System.OperationCanceledException) { return; }
 			catch (Exception e) { Log($"accept failed: {e.GetType().Name}"); return; }
 

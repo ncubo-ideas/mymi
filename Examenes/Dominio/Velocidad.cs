@@ -29,7 +29,8 @@ namespace Examenes.Dominio
 		internal string Analito { get; }
 
 		/// <summary>El mismo analito como se le muestra a la persona, con acentos.</summary>
-		internal string AnalitoParaMostrar { get; }
+		/// <summary>El codigo del analito dentro de una clave de frase.</summary>
+		internal string ClaveDelAnalito { get; }
 
 		/// <summary>Cambio por ano, con signo. Positivo si subio. En la unidad del analito.</summary>
 		internal decimal PorAno { get; }
@@ -52,7 +53,7 @@ namespace Examenes.Dominio
 			ArgumentNullException.ThrowIfNull(analito);
 
 			Analito = analito.Nombre;
-			AnalitoParaMostrar = analito.ParaMostrar;
+			ClaveDelAnalito = analito.Clave;
 			PorAno = porAno;
 			Unidad = unidad;
 			DiasDelTramo = diasDelTramo;
@@ -81,8 +82,9 @@ namespace Examenes.Dominio
 		internal bool ExigeAtencion => EsAplicable && PorAno >= UmbralPorAno;
 
 		/// <summary>La velocidad ya dicha. "2.20 ng/mL por ano".</summary>
-		internal string Expresada => EsAplicable
-			? $"{PorAno:0.00} {Unidad} por año"
-			: "no se interpreta por velocidad";
+		/// <summary>La frase con que se dice este ritmo, por su nombre.</summary>
+		internal string ClaveDeLaFrase => EsAplicable
+			? "velocidad.por-ano"
+			: "velocidad.no-se-interpreta";
 	}
 }

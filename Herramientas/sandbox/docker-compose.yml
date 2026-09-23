@@ -1,0 +1,91 @@
+# UNA CAJA SOLA, para probar la imagen a mano antes de poner un broker adelante.
+#
+# En la demo de verdad no hay compose: el broker arranca un contenedor por visitante, con su
+# token, y lo destruye al terminar. Esto es el banco de pruebas de la imagen.
+services:
+  # ================================================================ LA CAJA
+  #
+  # SIN UNA SOLA INTERFAZ DE RED. `network_mode: none` le deja `lo` y nada mas: no tiene como
+  # salir a internet y -- lo que de verdad importa -- tampoco puede alcanzar al servidor que la
+  # contiene ni escanear la LAN donde viven los vClusters.
+  #
+  # Una red `internal: true` NO alcanza para eso: corta la salida a internet, pero el servidor
+  # sigue siendo alcanzable en la IP de la bridge. Sin interfaz no hay a quien hablarle.
+  #
+  # La pantalla sale por un socket Unix en el volumen `sock`. Lo unico que cruza la frontera es
+  # un flujo de pixeles, y lo lee el sidecar de abajo.
+  caja:
+    build: .
+    image: mymi-sandbox:dev
+    network_mode: none
+    volumes:
+      - sock:/sock
+    environment:
+      PANTALLA: 1440x900x24
+      MINUTOS: 15
+
+    # ---------------------------------------------------------------- la contencion
+    #
+    # ESTO NO ES OPCIONAL, y el host de los stages es la prueba: seis pods sin
+    # `limits.memory` se comieron 71 GB porque el GC de .NET toma cuanta RAM ve. Una caja
+    # publica sin techo es lo mismo, pero con un desconocido del otro lado.
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: 1.0
+    pids_limit: 300
+
+    # /dev/shm por defecto es 64 MB y WebKit lo usa para su cache de superficies: con 64 MB la
+    # pagina se cae sola al rato, sin error claro.
+    shm_size: 256m
+
+    # ---------------------------------------------------------------- el aislamiento
+    #
+    # SIN RED HACIA AFUERA. La cara no sale a internet -- no puede y no le hace falta -- y el
+    # unico que lo haria es el cartero, contra el mock. Una caja publica con egress libre es un
+    # relay abierto saliendo por la IP del server.
+    #
+    # `internal: true` en la red deja el 6080 alcanzable desde el host (por el mapeo de
+    # arriba) pero sin ruta a internet.
+    networks: [caja]
+
+    read_only: false            # Mymi escribe el journal y installation.json
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f Gnothi.Desktop > /dev/null"]
+      interval: 20s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+  # ================================================================ EL PUENTE
+  #
+  # Lo unico con red. No tiene Mymi, ni WebKit, ni el journal: lee el socket de la caja y lo
+  # sirve como WebSocket. Si alguien rompiera algo acá, lo que encuentra es un websockify sin
+  # nada alrededor.
+  puente:
+    image: mymi-sandbox:dev
+    depends_on: [caja]
+    volumes:
+      - sock:/sock:ro
+    ports:
+      # Solo loopback. Hacia afuera va el tunel de Cloudflare, nunca este puerto.
+      - "127.0.0.1:6080:6080"
+    entrypoint: ["/usr/bin/tini", "--", "websockify", "--web=/usr/share/novnc",
+                 "6080", "--unix-target=/sock/vnc.sock"]
+    mem_limit: 128m
+    cpus: 0.3
+    pids_limit: 64
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  # Solo para el socket de la pantalla. No lleva datos: el journal vive dentro de la caja y se
+  # va con ella.
+  sock:

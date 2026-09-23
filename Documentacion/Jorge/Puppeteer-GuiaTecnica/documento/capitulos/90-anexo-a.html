@@ -1,0 +1,65 @@
+<!-- ANEXO A -->
+  <div class="part">Anexos</div>
+  <section class="anchor" id="anexoA">
+    <h2>A · Correr los ejemplos</h2>
+    <p class="chapter-meta">Lo mínimo para compilar y ejecutar los ejemplos de juguete de la guía. Verificado con .NET 9.</p>
+
+    <p>Los ejemplos de juguete viven en el proyecto <code>ejemplos/</code>, junto a este documento. Referencia el proyecto <code>Puppeteer</code> y no necesita nada más. Cada ejemplo es autocontenido:</p>
+    <pre><span class="tag">bash</span><code>cd ejemplos
+dotnet run              <span class="c"># todos</span>
+dotnet run -- cap2.1    <span class="c"># contador          </span>  dotnet run -- cap5   <span class="c"># control de flujo</span>
+dotnet run -- cap2.2    <span class="c"># torniquete        </span>  dotnet run -- cap6   <span class="c"># dominio C#</span>
+dotnet run -- cap3      <span class="c"># DSL a fondo       </span>  dotnet run -- cap7   <span class="c"># replay</span>
+dotnet run -- cap4      <span class="c"># parametros        </span>  dotnet run -- cap8   <span class="c"># salida</span>
+dotnet run -- cap15     <span class="c"># modificar una app viva (receta del Cap. 15)</span></code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>== Cap. 2.1 - El actor mas simple ==
+Query -> {"valor":2}
+
+== Cap. 2.2 - Un objeto de dominio con verbos ==
+Estado -> {"desbloqueado":false,"pasos":1}
+
+== Cap. 3 - El DSL a fondo ==
+A. literales/promocion -> {"x":2.25,"y":4000000000}
+B. local en bloque -> {"doble":10}
+B. raiz persiste -> {"total":5}
+C. @Now -> {"anio":2026,"manana":"09/22/2026 12:22:01"}
+D. upgrade una vez -> {"saldo":100}
+
+== Cap. 4 - Parametros y contratos ==
+A. @param -> {"emitidos":3}
+B. Out -> turno numero 4
+C. Eval -> {"ultimo":5}
+
+== Cap. 5 - Control de flujo y guardas ==
+if -> {"t":2}
+foreach -> {"t":4}
+Check acepta -> return="" (vacio = aceptado); {"t":5}
+Check rechaza -> return="{"EWI":[{"Error":"sin cupo"}]}"; {"t":5}
+
+== Cap. 6 - El dominio C# del actor ==
+Semaforo -> {"luz":"Verde"}
+
+== Cap. 7 - Journal, persistencia y replay ==
+original -> {"saldo":150}
+renacido -> {"saldo":150}
+
+== Cap. 8 - Salida y hosting ==
+JSON para el API -> {"total":250,"iva":32.5}
+
+== Cap. 15 - Modificar una app viva ==
+existencias -> {"existencias":75}</code></pre>
+
+    <p>El “andamiaje” es una sola utilidad que crea el actor listo para usar (en el proyecto, además, silencia la línea de arranque que el framework imprime para que la salida quede limpia):</p>
+    <pre><span class="tag">C#</span><code><span class="k">public static</span> ActorV2 NuevoActor(<span class="k">string</span> nombre, Assembly dominio)
+{
+    <span class="k">var</span> actor = <span class="k">new</span> ActorV2(nombre, dominio);
+    actor.ConfigureStorage(DatabaseType.IN_MEMORY, nombre);
+    <span class="k">return</span> actor;
+}</code></pre>
+
+    <p>El código completo de cada ejemplo está en el proyecto <code>ejemplos/</code> (una carpeta por capítulo); aquí mostramos solo los fragmentos que ilustran cada idea. Los ejemplos de juguete cubren las Partes I y III (mecánica del actor, DSL, parámetros, guardas, dominio, replay, salida y la receta de modificar una app). Los fragmentos marcados <strong>real</strong> a lo largo de la guía provienen de la aplicación <em>Velada</em> y no forman parte de este proyecto ejecutable; la Parte II se ilustra con esos fragmentos reales por depender de transportes y varios nodos.</p>
+  </section>
+
+  <div class="callback">
+    <p>Puppeteer · Cómo se usa — borrador para revisión de pares (Prefacio, Introducción y Partes I–III, Capítulos 1–15). Los anexos B–D se desarrollarán tras esta ronda. Los ejemplos de juguete se compilan y ejecutan con .NET 9; los fragmentos <strong>real</strong> provienen de la app <em>Velada</em> (bingo sobre Puppeteer).</p>
+  </div>

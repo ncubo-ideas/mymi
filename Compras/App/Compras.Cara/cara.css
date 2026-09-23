@@ -52,3 +52,23 @@ footer .malo { color: #b3261e; }
  * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
  * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
 [hidden] { display: none !important; }
+
+/* EL APUNTE DEL PUENTE. Lo escribe `puente.js`, que pone el Host y es el mismo en los cinco
+   modulos: cada vez que la cara pide algo, `P.apunte(caja, texto, malo)` deja un
+   <p class="apunte"> -- o "apunte malo" si fallo. Faro y Delfos lo pintaban porque SUS apps
+   sueltas ya traian esa clase de antes; La Guaria no, asi que el aviso salia como parrafo pelado
+   con el cuerpo de la pagina, y un fallo se veia igual que una nota.
+
+   Va aca y no en app.css a proposito: app.css es la hoja de la institucion y viaja tal cual. */
+.apunte { color: var(--tenue); font-size: .85rem; margin: 0; }
+.apunte.malo { color: #b3261e; }
+
+/* Cifras alineadas para la lista de recibos, que las pone en columna. */
+.mono { font-variant-numeric: tabular-nums; }
+
+/* EL CAMBIO DEL MES, en la linea compacta. La app suelta lo pone en una tarjeta con sus propias
+   clases (`mes-resumen-*`); esta cara lo dice en un renglon, asi que el color es lo unico que
+   distingue subir de bajar. Subir es rojo aunque el numero crezca: es plata que sale. */
+.delta--sube  { color: #b3261e; font-weight: 600; }
+.delta--baja  { color: var(--tenue); font-weight: 600; }
+.delta--igual { color: var(--tenue-2); }

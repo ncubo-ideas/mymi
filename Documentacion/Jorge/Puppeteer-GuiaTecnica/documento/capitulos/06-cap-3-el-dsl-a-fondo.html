@@ -1,0 +1,132 @@
+<!-- CAP 3 · EL DSL A FONDO -->
+  <section class="anchor" id="cap3">
+    <h2>3 · El DSL a fondo</h2>
+    <p class="chapter-meta">Todo el lenguaje con el que le hablas a un actor: literales, expresiones, <code>print</code>, ámbito, <code>@Now</code> y <code>upgrade</code>.</p>
+
+    <p>El DSL de Puppeteer es <strong>diminuto a propósito</strong>. No es un lenguaje de propósito general: su trabajo es <strong>orquestar</strong> tu dominio en C# —construir objetos y llamar sus verbos— y dejar el hecho anotado en el diario. En este capítulo lo recorremos completo. Es corto: en una sentada lo tienes. Todos los fragmentos con salida provienen de ejemplos que <strong>compilan y corren</strong> (<a href="#anexoA">Anexo A</a>).</p>
+
+    <h3>3.1 · El cuerpo de un script</h3>
+    <p>Un script es una secuencia de sentencias terminadas en <code>;</code>. Las cadenas van entre <strong>comillas simples</strong>. Puedes agrupar varias sentencias como una unidad con un bloque <code>{ … }</code>, y comentar con <code>//</code> o <code>/* … */</code>.</p>
+    <pre><span class="tag">DSL</span><code>saldo = 0;                 <span class="c">// asignacion; termina en ;</span>
+saldo = saldo + 100;       <span class="c">/* los comentarios no afectan nada */</span>
+nota = <span class="s">'primer abono'</span>;     <span class="c">// texto entre comillas simples</span>
+{ a = 1; b = 2; }          <span class="c">// un bloque agrupa sentencias</span></code></pre>
+
+    <h3>3.2 · Literales y tipos</h3>
+    <p>El DSL es fuertemente tipado. Estos son los literales que escribirás a diario:</p>
+    <table>
+      <thead><tr><th>Tipo</th><th>Cómo se escribe</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td><code>int</code></td><td>número entero, sin sufijo</td><td><code>1</code></td></tr>
+        <tr><td><code>long</code></td><td>sufijo <code>L</code> (enteros grandes)</td><td><code>9000000000L</code></td></tr>
+        <tr><td><code>double</code></td><td>con punto decimal o sufijo <code>d</code></td><td><code>1.0</code>, <code>2d</code></td></tr>
+        <tr><td><code>decimal</code></td><td>sufijo <code>m</code></td><td><code>2.25m</code></td></tr>
+        <tr><td><code>datetime</code></td><td>formato <code>M/d/yyyy</code> (con hora opcional)</td><td><code>03/31/2018</code></td></tr>
+        <tr><td>lista</td><td>llaves, elementos homogéneos</td><td><code>{1, 2, 3}</code></td></tr>
+        <tr><td>texto</td><td>comillas simples</td><td><code>'manzana'</code></td></tr>
+      </tbody>
+      <caption>Tabla 7. Los literales del DSL.</caption>
+    </table>
+    <p>La aritmética <strong>promueve al tipo más ancho</strong>: <code>decimal</code> &gt; <code>double</code> &gt; <code>long</code> &gt; <code>int</code>. Así, mezclar un entero con un decimal da decimal, y sumar dos enteros que se salen del rango de <code>int</code> no desborda si usas <code>long</code>:</p>
+    <pre><span class="tag">DSL</span><code>{ x = 1 * 2.25m; y = 2000000000L + 2000000000; print x <span class="s">'x'</span>, y <span class="s">'y'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"x":2.25,"y":4000000000}</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Hay una sola excepción a la promoción: <code>int / int</code> da <code>double</code>, nunca división entera truncada. Es una decisión deliberada — el resultado “natural” de dividir dos enteros casi nunca es el cociente entero, y esconder esa sorpresa evita errores silenciosos.</p>
+    </aside>
+
+    <h3>3.3 · Expresiones y operadores</h3>
+    <p>Tienes aritmética (<code>+ - * /</code> y el unario <code>-</code>), el operador ternario y concatenación de texto:</p>
+    <pre><span class="tag">DSL</span><code>x = a * 2 + -b;                 <span class="c">// aritmetica y unario</span>
+etiqueta = n &gt; 0 ? <span class="s">'positivo'</span> : <span class="s">'no positivo'</span>;   <span class="c">// ternario</span>
+saludo = <span class="s">'total = '</span> + 5;         <span class="c">// concatenacion: texto a la IZQUIERDA</span></code></pre>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No pongas el número a la izquierda de una concatenación (<code>5 + 'x'</code>). Ahí <code>+</code> es ambiguo entre sumar y concatenar, y el comportamiento puede divergir. Pon siempre el <strong>texto a la izquierda</strong>: <code>'x' + 5</code>.</p>
+    </div>
+    <p>Así se ve en el bingo real: para darle una identidad única a cada aviso, se concatena texto con valores — nota que la expresión <strong>arranca con texto</strong>:</p>
+    <pre><span class="tag real">DSL · real</span><code>once <span class="s">'bolita-'</span> + @ronda + <span class="s">'-'</span> + @numero;</code></pre>
+
+    <h3>3.4 · <code>print</code> a fondo</h3>
+    <p>Ya usaste <code>print &lt;expr&gt; '&lt;etiqueta&gt;';</code>. Además, una sola sentencia puede emitir <strong>varios valores</strong> separados por coma, y la etiqueta se puede escribir con o sin comillas (las comillas solo hacen falta si la etiqueta lleva espacios):</p>
+    <pre><span class="tag">DSL</span><code>print total * 2 grandTotal, contador <span class="s">'live count'</span>;</code></pre>
+    <p>Un detalle útil: al imprimir un valor de enumeración, <code>print</code> emite el <strong>nombre</strong> del miembro como texto, no su número — igual en JSON y en el resto de formatos. Es lo que hace legible el resultado sin que tengas que traducir códigos.</p>
+    <p>Así lo usa el bingo real. Para leer una lista, un <code>foreach</code> imprime cada elemento con la misma etiqueta; y para traerse varios campos de una ronda en una sola ida al actor, se agrupan varios <code>print</code> en un bloque:</p>
+    <pre><span class="tag real">DSL · real</span><code><span class="c">// una lista: cada numero disponible sale bajo la etiqueta 'c'</span>
+foreach (n in festival.NumbersUpForSale()) { print n <span class="s">'c'</span>; }
+
+<span class="c">// varios campos de una ronda, en una sola query</span>
+{ print festival.RoundAt(1).Playing f;
+  print festival.RoundAt(1).HowItStands s;
+  print festival.RoundAt(1).PromiseCount q; }</code></pre>
+    <p>¿Y qué resuelve cada consulta? La primera <strong>enumera los cartones que siguen en venta</strong> (cada uno bajo la etiqueta <code>c</code>); la segunda trae el <strong>estado de la ronda 1</strong> en un solo objeto. Así se verían en una velada real:</p>
+    <pre class="out"><span class="tag">Salida ilustrativa</span><code><span class="c">// cartones aun disponibles (ya se vendieron el 1, 2 y 3):</span>
+{"n":[{"c":4},{"c":5},{"c":6}, … ,{"c":100}]}
+
+<span class="c">// estado de la ronda 1:</span>
+{"f":"AnyRow,FullCard", "s":"Playing", "q":2}
+<span class="c">//   f = figuras en juego · s = como va la ronda · q = premios prometidos</span></code></pre>
+    <p>Fíjate en las dos formas: el <code>foreach</code> agrupa sus elementos bajo la variable del bucle (<code>n</code>), como una lista de objetos <code>{"c":…}</code>; el bloque de varios <code>print</code> produce un objeto plano con una clave por etiqueta.</p>
+
+    <h3>3.5 · Estado raíz vs. variables locales</h3>
+    <p>Dónde colocas una asignación decide qué es. Esta es la regla completa:</p>
+    <table>
+      <thead><tr><th>Dónde asignas</th><th>Qué es</th><th>¿Persiste / se journaliza?</th></tr></thead>
+      <tbody>
+        <tr><td>Identificador suelto en el nivel superior del comando</td><td><strong>global</strong> = estado raíz del actor</td><td>Sí, entre comandos</td></tr>
+        <tr><td>Dentro de un bloque <code>{ }</code> (o cuerpo de <code>if</code> / <code>foreach</code>)</td><td><strong>local</strong></td><td>No — muere con el bloque</td></tr>
+        <tr><td>Dentro de un cuerpo <code>upgrade { }</code></td><td><strong>global</strong> (excepción; ver 3.7)</td><td>Sí</td></tr>
+      </tbody>
+      <caption>Tabla 8. La regla de ámbito: el lugar de la asignación decide su alcance.</caption>
+    </table>
+    <p>Veámoslo: <code>total</code> es raíz (persiste); <code>doble</code> vive solo dentro de su bloque:</p>
+    <pre><span class="tag">DSL</span><code>total = 5;                              <span class="c">// comando 1: raiz</span>
+{ doble = total * 2; print doble <span class="s">'doble'</span>; }   <span class="c">// query: 'doble' es local</span>
+print total <span class="s">'total'</span>;                     <span class="c">// query: 'total' sigue ahi</span></code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"doble":10}
+{"total":5}</code></pre>
+    <div class="call do">
+      <div class="h"><span class="mark">✓</span> Haz</div>
+      <p>Encierra las variables de trabajo en un bloque <code>{ }</code> para que sean locales y no ensucien el estado raíz. Promueve a global (nivel superior) <strong>solo</strong> lo que debe persistir. El estado raíz es memoria que se journaliza: manténlo mínimo e intencional.</p>
+    </div>
+
+    <h3>3.6 · <code>@Now</code>: el tiempo determinista</h3>
+    <p>Dentro de un script <strong>nunca lees el reloj del sistema</strong>. ¿Por qué? Si un comando hiciera <code>DateTime.Now</code>, al reproducir el diario mañana ese “ahora” sería otro y el estado reconstruido no coincidiría con el original. Para evitarlo, el framework te <strong>sirve el tiempo ya fijado</strong>: <code>@Now</code>, un <code>DateTime</code> real disponible en cualquier comando o query <strong>sin declararlo</strong> —piénsalo como un parámetro que el framework ya te pasó—. Se fija una sola vez por <em>invocación</em> (una invocación = un <code>PerformCommand</code> o <code>PerformQuery</code>) y, como es un <code>DateTime</code> de verdad, operas con sus miembros:</p>
+    <pre><span class="tag">DSL</span><code>{ print @Now.Year <span class="s">'anio'</span>; print @Now.AddDays(1) <span class="s">'manana'</span>; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"anio":2026,"manana":"09/22/2026 12:22:01"}</code></pre>
+    <p>La primera línea lee el año; la segunda, un día después — ambas del <em>mismo</em> instante. En vivo, ese instante es el reloj real y queda anotado en el diario; al reproducir, se reinyecta idéntico. Por eso la hora original y cada reproducción coinciden siempre: es el determinismo del Capítulo 1, servido sin que tengas que pensarlo.</p>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Todos los <code>@Now</code> de una misma invocación valen exactamente lo mismo: se muestrea una vez, en el borde de la invocación. Así, dos usos de <code>@Now</code> en el mismo comando nunca quedan a caballo entre un segundo y el siguiente.</p>
+    </aside>
+
+    <h3>3.7 · <code>upgrade</code>: inicializar una sola vez</h3>
+    <p>El bloque <code>upgrade('&lt;nombre&gt;') { … }</code> corre <strong>exactamente una vez por actor</strong>, identificado por su nombre. Es la herramienta para sembrar o migrar estado que no debe re-ejecutarse. A diferencia de un bloque normal, sus asignaciones de nivel superior <strong>sí</strong> quedan como estado raíz —esa es justamente su razón de ser—:</p>
+    <pre><span class="tag">DSL</span><code>upgrade('seed') { saldo = 100; }</code></pre>
+    <pre class="out"><span class="tag">Salida real</span><code>{"saldo":100}</code></pre>
+    <p>Re-emitir el mismo <code>upgrade('seed')</code> no hace nada: ya se aplicó. Así, la <strong>misma llamada sirve para nacer y para rehidratar</strong> — es exactamente el patrón que viste en el bingo real, donde <code>upgrade('festival')</code> crea la velada la primera vez y la reconstruye en cada arranque posterior.</p>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No edites el cuerpo de un <code>upgrade</code> ya aplicado: el framework lo rechaza (los diarios viejos deben rehidratar su versión original). Para cambiar algo, <strong>publica un nombre nuevo</strong> — <code>upgrade('seed_v2') { … }</code> —. Cada <code>upgrade</code> es una “liberación” con nombre, y su historia queda auditable en el diario.</p>
+    </div>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p><code>upgrade</code> solo es válido en comandos: en una query o en una guarda lanza al analizar, porque crea estado que se journaliza. Y si su cuerpo falla, la marca de “aplicado” no se pone y nada persiste: un cuerpo corregido corre en el siguiente intento. La inicialización, así, es segura ante fallos.</p>
+    </aside>
+
+    <div class="tryit">
+      <div class="h">▶ Pruébalo</div>
+      <pre><span class="tag">bash</span><code>cd ejemplos
+dotnet run -- cap3        <span class="c"># literales, ambito, @Now y upgrade</span></code></pre>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>El DSL <strong>orquesta</strong> el dominio: sentencias con <code>;</code>, texto con comillas simples, bloques con <code>{ }</code>.</li>
+      <li>Literales tipados y <strong>promoción</strong> <code>decimal &gt; double &gt; long &gt; int</code>; concatenación con el <strong>texto a la izquierda</strong>.</li>
+      <li><code>print</code> emite uno o varios valores etiquetados; los enums salen por su nombre.</li>
+      <li>La <strong>regla de ámbito</strong>: nivel superior = estado raíz que persiste; bloque = local efímero.</li>
+      <li><code>@Now</code> da tiempo <strong>determinista</strong>; <code>upgrade</code> inicializa <strong>una sola vez</strong> y evoluciona por nombres nuevos.</li>
+    </ul>
+    <p>Ya dominas el lenguaje base. En el próximo capítulo veremos cómo <strong>pasarle valores desde afuera</strong> con parámetros (<code>@</code>) y leer resultados tipados de vuelta — el puente entre tu API y el actor.</p>
+  </section>

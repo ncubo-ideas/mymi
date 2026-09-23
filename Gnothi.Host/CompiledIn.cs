@@ -2,90 +2,91 @@ using System.Collections.Concurrent;
 
 namespace Gnothi.Host;
 
-// ⚠ CONGELADA. ESCRITA, NO ENGANCHADA, Y A PROPOSITO.
+// ⚠ FROZEN. WRITTEN, NOT WIRED UP, AND ON PURPOSE.
 //
-// Module.ChooseShell NO la nombra, asi que hoy este archivo no corre nunca. Se deja porque el
-// diseño esta pensado y vale, pero engancharla ahora seria construir sobre una apuesta.
+// Module.ChooseShell does NOT name it, so today this file never runs. It is kept because the design
+// is thought through and holds, but wiring it up now would mean building on a bet.
 //
-// POR QUE. Existia para un solo escenario: si en iOS hubiera que ir por NativeAOT -- que
-// prohibe cargar ensamblados en runtime -- para poder tener App Intents nativos. Y ese
-// escenario dejo de ser el unico camino: el Host y la caratula de Swift ya se pasan los datos
-// por una FOTO en un contenedor compartido (Gnothi.MobileShared/Snapshot.cs), sin NativeAOT, sin
-// puente Swift-.NET y sin perder la carga dinamica de modulos.
+// WHY. It existed for one scenario only: if iOS had to go through NativeAOT -- which forbids loading
+// assemblies at runtime -- in order to have native App Intents. And that scenario stopped being the
+// only path: the Host and the Swift caratula already pass data to each other through a SNAPSHOT in a
+// shared container (Gnothi.MobileShared/Snapshot.cs), with no NativeAOT, no Swift-.NET bridge and no
+// loss of dynamic module loading.
 //
-// SE DESCONGELA SI, y solo si, pasa alguna de estas dos:
+// IT THAWS IF, and only if, one of these two happens:
 //
-//   1. La sonda de Gnothi.iOS dice que el interprete de Mono NO esta puesto. Ahi
-//      InProcessShell no puede existir en iOS y esta pasa a ser obligatoria.
+//   1. Gnothi.iOS's probe says Mono's interpreter is NOT in place. Then InProcessShell cannot exist
+//      on iOS and this one becomes mandatory.
 //
-//      MEDIDO el 2026-09-01 en un iPhone 13 Pro (Renan): con MtouchInterpreter=-all en las
-//      dos configuraciones, los cinco pasos pasan y las banderas dan Supported=True /
-//      Compiled=False -- el interprete trabajando bajo el AOT obligatorio de Apple. Sin la
-//      bandera en Debug moria con SIGABRT en load_aot_module. LA CONDICION 1 NO SE DIO:
-//      InProcessShell existe en iOS, y esta cascara sigue congelada.
-//   2. Se decide meter el Host DENTRO de la app de Swift como framework. Ahi el unico camino
-//      documentado es NativeAOT, y con el la reflexion no sobrevive.
+//      MEASURED on 2026-09-01 on an iPhone 13 Pro (Renan): with MtouchInterpreter=-all in both
+//      configurations, all five steps pass and the flags report Supported=True / Compiled=False --
+//      the interpreter working underneath Apple's mandatory AOT. Without the flag, Debug died with
+//      SIGABRT in load_aot_module. CONDITION 1 DID NOT HAPPEN: InProcessShell exists on iOS, and
+//      this shell stays frozen.
+//   2. It is decided to put the Host INSIDE the Swift app as a framework. There the only documented
+//      path is NativeAOT, and under it reflection does not survive.
 //
-// El cuadro completo, con las fuentes: NotasGnothiHost/33.
+// The full picture, with sources: NotasGnothiHost/33.
 //
 // ────────────────────────────────────────────────────────────────────────────────────────
 //
-// LA TERCERA CASCARA: el modulo YA VIENE COMPILADO ADENTRO DE LA APP.
+// THE THIRD SHELL: the module ALREADY COMES COMPILED INSIDE THE APP.
 //
-// DE DONDE SALE. En iOS los App Intents solo existen en Swift, asi que la unica forma de tener
-// Puerta 3 nativa es que la app principal sea Swift y el Host entre como framework -- y el
-// unico camino documentado para eso es NativeAOT, que dice textual «it isn't possible to load
-// and execute assemblies at runtime». O sea: InProcessShell no puede existir ahi.
-// NotasGnothiHost/33 tiene el cuadro completo.
+// WHERE IT COMES FROM. On iOS App Intents only exist in Swift, so the only way to have a native
+// Door 3 is for the main app to be Swift and for the Host to come in as a framework -- and the only
+// documented path for that is NativeAOT, which says verbatim «it isn't possible to load and execute
+// assemblies at runtime». Which means: InProcessShell cannot exist there. NotasGnothiHost/33 has the
+// full picture.
 //
-// LO QUE ESTA CASCARA NO HACE, y es todo el punto: NO DESCUBRE NADA.
+// WHAT THIS SHELL DOES NOT DO, and that is the whole point: IT DISCOVERS NOTHING.
 //
-// InProcessShell busca la clase marcada con GetTypes(), el metodo con GetMethods(), arma el
-// objeto con GetConstructors() y proyecta el resultado con GetProperties(). Son los 9 warnings
-// que quedan en Lab.Aot, y no se arreglan anotando: los tipos son desconocidos al compilar,
-// que es su razon de ser. Aca no hay nada que descubrir porque el modulo SE REGISTRA.
+// InProcessShell finds the marked class with GetTypes(), the method with GetMethods(), builds the
+// object with GetConstructors() and projects the result with GetProperties(). Those are the 9
+// warnings left in Lab.Aot, and they are not fixed by annotating: the types are unknown at compile
+// time, which is their reason for being. Here there is nothing to discover because the module
+// REGISTERS ITSELF.
 //
-// QUIEN REGISTRA. La app que lo embarca, al arrancar. Y eso NO es una perdida disfrazada de
-// diseño: en una plataforma donde un modulo no puede llegar despues, listarlos al compilar es
-// el MISMO hecho dicho en voz alta. Lo que se pierde -- que la institucion entregue su modulo
-// sin que republiquemos -- se pierde por Apple, no por esta clase.
+// WHO REGISTERS. The app that ships it, at start-up. And that is NOT a loss dressed up as design: on
+// a platform where a module cannot arrive later, listing them at compile time is the SAME fact said
+// out loud. What is lost -- the institution handing over its module without us republishing -- is
+// lost because of Apple, not because of this class.
 //
-// EL ADAPTADOR ES EL PROTOTIPO DEL CODEGEN. La R13 de Alvaro dice que para Android hace falta
-// «un shim Android diminuto por modulo, generado por codegen». Esto es lo mismo del otro lado:
-// hoy el adaptador se escribe a mano, y el dia que se genere, se genera exactamente esto.
+// THE ADAPTER IS THE CODEGEN'S PROTOTYPE. Álvaro's R13 says Android needs «a tiny per-module Android
+// shim, generated by codegen». This is the same thing on the other side: today the adapter is
+// written by hand, and the day it is generated, exactly this is what gets generated.
 public static class CompiledIn
 {
-	// Registro al arrancar, lecturas despues. Concurrente por si una pantalla pregunta el
-	// catalogo mientras otra todavia registra -- barato, y evita una carrera que se
-	// manifestaria como "el modulo no existe" una vez de cada cien arranques.
+	// Registration at start-up, reads afterwards. Concurrent in case one screen asks for the
+	// catalogue while another is still registering -- cheap, and it avoids a race that would show up
+	// as "the module does not exist" once in every hundred start-ups.
 	private static readonly ConcurrentDictionary<string, Func<string, CompiledSurface>> registro =
 		new(StringComparer.OrdinalIgnoreCase);
 
-	/// <param name="module">El nombre del negocio, el mismo del manifiesto y de la carpeta.</param>
+	/// <param name="module">The business name, the same one as in the manifest and the folder.</param>
 	/// <param name="surface">
-	/// Recibe la carpeta OTORGADA y devuelve la superficie. La carpeta llega por parametro y no
-	/// la elige el modulo, igual que en las otras dos cascaras: otorgar es acto del que otorga.
+	/// Takes the GRANTED folder and returns the surface. The folder arrives as a parameter and is not
+	/// chosen by the module, just as in the other two shells: granting is an act of the granter.
 	/// </param>
 	public static void Register(string module, Func<string, CompiledSurface> surface) =>
 		registro[module] = surface;
 
-	/// Los que estan registrados. Sirve para diagnosticar en el aparato, que es donde se va a
-	/// notar que faltaba uno.
+	/// The ones that are registered. Useful for diagnosing on the device, which is where somebody
+	/// will notice one was missing.
 	public static IReadOnlyCollection<string> Registered => (IReadOnlyCollection<string>)registro.Keys;
 
 	internal static CompiledSurface? Build(string module, string grantedFolder) =>
 		registro.TryGetValue(module, out Func<string, CompiledSurface>? f) ? f(grantedFolder) : null;
 }
 
-// LO QUE UN MODULO COMPILADO ADENTRO DECLARA DE SI MISMO. Dos cosas y nada mas.
+// WHAT A COMPILED-IN MODULE DECLARES ABOUT ITSELF. Two things and nothing more.
 //
-// SOBRE LO QUE DEVUELVE `Answer`: tiene que ser algo que Gnothi.Assistant/Json.cs sepa
-// escribir -- diccionarios, listas y primitivos. NO un POCO.
+// ABOUT WHAT `Answer` RETURNS: it has to be something Gnothi.Assistant/Json.cs knows how to write --
+// dictionaries, lists and primitives. NOT a POCO.
 //
-// Eso parece una carga para el adaptador y en realidad es la consecuencia honesta: sin
-// reflexion, alguien tiene que proyectar, y el unico que puede hacerlo sin reflexionar es el
-// codigo que YA CONOCE el tipo. InProcessShell.Project() hace esa misma proyeccion, pero
-// mirando propiedades en runtime -- que es justo lo que aca no se puede.
+// That looks like a burden on the adapter and is really the honest consequence: without reflection,
+// somebody has to project, and the only one who can do it without reflecting is the code that
+// ALREADY KNOWS the type. InProcessShell.Project() does that same projection, but by looking at
+// properties at runtime -- which is precisely what cannot be done here.
 public sealed record CompiledSurface(
 	IReadOnlyList<string> Tools,
 	Func<string, IReadOnlyDictionary<string, object?>?, Accepts, object> Answer);
@@ -102,17 +103,17 @@ internal sealed class CompiledInShell : IShell
 		this.grantedFolder = grantedFolder;
 	}
 
-	// Registrado no es lo mismo que construido. Se construye al primer uso, igual que las
-	// otras dos, para que instalar un modulo no cueste abrir su journal.
+	// Registered is not the same as built. It is built on first use, like the other two, so that
+	// installing a module does not cost opening its journal.
 	public bool IsRunning => surface is not null;
 
-	// FALLA CERRADO Y RUIDOSO, y esto es deliberado.
+	// IT FAILS CLOSED AND LOUD, and that is deliberate.
 	//
-	// Un installation.json que dice "compiled-in" para un modulo que la app NO embarco es un
-	// error de quien armo la app, y el sintoma natural seria un catalogo con un modulo de cero
-	// tools -- indistinguible de un modulo apagado por la persona. Esa confusion es exactamente
-	// la que no queremos: el consentimiento apagado tiene que seguir siendo indistinguible de
-	// "nadie pregunto", y un error de empaquetado NO.
+	// An installation.json saying "compiled-in" for a module the app did NOT ship is a mistake by
+	// whoever assembled the app, and the natural symptom would be a catalogue with a zero-tool module
+	// -- indistinguishable from a module the person switched off. That confusion is exactly what we
+	// do not want: switched-off consent has to stay indistinguishable from "nobody asked", and a
+	// packaging error must NOT.
 	private CompiledSurface Start() =>
 		surface ??= CompiledIn.Build(name, grantedFolder)
 			?? throw new InvalidOperationException(
@@ -127,22 +128,21 @@ internal sealed class CompiledInShell : IShell
 	{
 		CompiledSurface s = Start();
 
-		// El nombre se verifica ACA y no adentro del adaptador. Asi el mensaje es el mismo que
-		// dan las otras dos cascaras, y un adaptador que se olvide de validar no termina
-		// devolviendo algo raro para una tool que no existe.
+		// The name is checked HERE and not inside the adapter. That way the message is the same one
+		// the other two shells give, and an adapter that forgets to validate does not end up
+		// returning something odd for a tool that does not exist.
 		if (!s.Tools.Contains(tool, StringComparer.Ordinal))
 			throw new InvalidOperationException($"module '{name}' does not expose '{tool}'");
 
-		// `accepts` va por su propio carril, NUNCA por `arguments`. Es la misma regla que
-		// InProcessShell.Bind aplica leyendo el parametro reservado antes que el diccionario:
-		// el formato no es del que pregunta.
+		// `accepts` travels in its own lane, NEVER through `arguments`. It is the same rule
+		// InProcessShell.Bind applies by reading the reserved parameter before the dictionary: the
+		// format does not belong to the asker.
 		return Task.FromResult(s.Answer(tool, arguments, accepts));
 	}
 
-	// No hay proceso que matar ni contexto que descargar: el modulo es parte de la app y vive
-	// lo que vive la app. La contracara es que NO se puede desalojar para soltar el journal
-	// -- las otras dos si pueden -- y por eso un adaptador no deberia dejar archivos abiertos
-	// entre llamadas.
+	// There is no process to kill and no context to unload: the module is part of the app and lives
+	// as long as the app does. The flip side is that it CANNOT be evicted to release the journal --
+	// the other two can -- and that is why an adapter should not leave files open between calls.
 	public ValueTask DisposeAsync()
 	{
 		surface = null;

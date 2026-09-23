@@ -33,7 +33,7 @@ namespace Examenes.Dominio
 		{
 		}
 
-		internal override string Nombre => Suyo.ParaMostrar;
+		internal override string Clave => Suyo.Clave;
 
 		// El techo de lo deseable baja con la edad: a los 60 el mismo 210 pesa mas que
 		// a los 30.

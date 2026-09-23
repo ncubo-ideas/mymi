@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Examenes.Dominio
 {
@@ -68,84 +67,62 @@ namespace Examenes.Dominio
 		// uno: en la hemoglobina falta contra que rango comparar, en el antigeno falta
 		// saber si el examen corresponde. Son dos motivos distintos y la frase los dice
 		// distinto, que es lo que una plantilla no podria hacer.
-		internal string ParaSonia
-		{
-			get
-			{
-				if (!HaceFalta) return "";
+		/// <summary>
+		/// LA FRASE QUE ESTE PEDIDO ELIGE, por su nombre. Vacia cuando no hace falta pedir nada, que
+		/// es una respuesta: pedir un dato sin poder decir para que es el recordatorio generico que
+		/// este diseno evita.
+		/// </summary>
+		internal string ClaveDeLaFrase => HaceFalta ? "pedidoDeSexo.marco" : "";
 
-				var frase = new StringBuilder();
-				frase.Append("Sin saber tu sexo no puedo interpretar ");
-				frase.Append(SinInterpretar);
-				frase.Append(" de tus ");
-				frase.Append(Analitos);
-				frase.Append(" resultados: ");
-
-				frase.Append(PorRango());
-				frase.Append(PorAplicabilidad());
-				frase.Append('.');
-
-				return frase.ToString();
-			}
-		}
-
-		// EL PORQUE, EN CLAVE CLINICA. Es la segunda linea del bloque y no la escribe la
+		// EL PORQUE, EN CLAVE CLINICA. Es la segunda linea del bloque y no la elige la
 		// pantalla: el encuadre del dato —parametro clinico, no declaracion de identidad—
 		// es una decision del dominio, y dejarlo en un .razor lo pondria a un edit de
 		// distancia de convertirse en otra cosa.
 		//
 		// No es una Accion del conjunto cerrado y no lleva plazo, porque no es un consejo
 		// clinico: es un dato que falta.
-		internal string ElPorQue =>
-			HaceFalta ? "Es para comparar tus resultados contra los rangos correctos." : "";
+		/// <summary>El porque, por el nombre de su frase. Vacio cuando no hace falta pedir nada.</summary>
+		internal string ClaveDelPorQue => HaceFalta ? "pedidoDeSexo.porQue" : "";
 
 		// Los que quedan sin leer porque SU RANGO depende del sexo. Es el segundo efecto.
-		private string PorRango()
+		/// <summary>
+		/// LOS QUE NO SE PUEDEN LEER PORQUE SU RANGO DEPENDE DEL SEXO, por sus codigos. Se nombran,
+		/// porque "2 resultados" sin decir cuales no le dice nada a nadie, y viajan como codigos
+		/// porque como se llaman es texto de presentacion.
+		/// </summary>
+		internal IReadOnlyList<string> ClavesPorRango
 		{
-			var cuales = new List<string>();
-			foreach (Analito analito in sinLeer)
-				if (analito.Requisito == RequisitoAnatomico.Ninguno) cuales.Add(analito.ParaMostrar.ToLowerInvariant());
+			get
+			{
+				var cuales = new List<string>();
+				foreach (Analito analito in sinLeer)
+					if (analito.Requisito == RequisitoAnatomico.Ninguno) cuales.Add(analito.Clave);
 
-			if (cuales.Count == 0) return "";
-
-			// Se dice "el rango DE x" y no "x se compara" para no tener que elegir el
-			// articulo de cada analito —la hemoglobina, el colesterol— desde una lista
-			// generica. El genero de un nombre no es conocimiento clinico, y meterlo en el
-			// conjunto cerrado por una frase seria pagarlo caro.
-			return (cuales.Count == 1 ? "el rango de " : "los rangos de ")
-				+ Enumerar(cuales)
-				+ (cuales.Count == 1 ? " es distinto" : " son distintos")
-				+ " según el sexo";
+				return cuales;
+			}
 		}
 
 		// Los que quedan sin leer porque no se sabe si CORRESPONDEN. Es el primer efecto, y
 		// se dice con otras palabras a proposito: no es que el umbral cambie, es que el
 		// examen quizas no sea de esta persona.
-		private string PorAplicabilidad()
+		/// <summary>LOS QUE QUIZAS NO LE CORRESPONDAN, por sus codigos.</summary>
+		internal IReadOnlyList<string> ClavesPorAplicabilidad
 		{
-			var cuales = new List<string>();
-			foreach (Analito analito in sinLeer)
-				if (analito.Requisito != RequisitoAnatomico.Ninguno) cuales.Add(analito.ParaMostrar.ToLowerInvariant());
-
-			if (cuales.Count == 0) return "";
-
-			string coma = PorRango().Length > 0 ? ", y " : "";
-			return coma + "hay " + (cuales.Count == 1 ? "un examen" : $"{cuales.Count} exámenes")
-				+ " —" + Enumerar(cuales) + "— que quizás no te "
-				+ (cuales.Count == 1 ? "corresponda" : "correspondan");
-		}
-
-		// "la hemoglobina", "la hemoglobina y el colesterol", "a, b y c". Es armado de
-		// lista, no redaccion: lo unico que decide es donde va la "y".
-		private static string Enumerar(List<string> cuales)
-		{
-			var texto = new StringBuilder();
-			for (int i = 0; i < cuales.Count; i++)
+			get
 			{
-				if (i > 0) texto.Append(i == cuales.Count - 1 ? " y " : ", ");
-				texto.Append(cuales[i]);
+				var cuales = new List<string>();
+				foreach (Analito analito in sinLeer)
+					if (analito.Requisito != RequisitoAnatomico.Ninguno) cuales.Add(analito.Clave);
+
+				return cuales;
 			}
-			return texto.ToString();
 		}
+
+		/// <summary>Cuantos de los que faltan no se pueden leer por su rango.</summary>
+		internal int CuantosPorRango => ClavesPorRango.Count;
+
+		/// <summary>Cuantos de los que faltan quizas no le correspondan.</summary>
+		internal int CuantosPorAplicabilidad => ClavesPorAplicabilidad.Count;
+
 	}
 }

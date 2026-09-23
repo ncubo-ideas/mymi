@@ -2,6 +2,7 @@ using System.Text.Json;
 using Gnothi.Assistant;
 using Gnothi.Host;
 using Gnothi.MobileShared;   // Snapshot: la foto que lee la App Intent de Siri
+using Gnothi.Assistant.Tests;   // Preguntas: el banco con que se mide la seleccion de tools
 
 namespace Gnothi.Conformance;
 
@@ -137,6 +138,47 @@ internal static class Conformance
 			assert("hay al menos una tool publicada para comparar", false,
 				$"el catalogo de {modulesRoot} salio vacio");
 			return 1;
+		}
+
+		// EL BANCO DE PREGUNTAS NO SE QUEDO VIEJO.
+		//
+		// Preguntas.cs nombra, por cada pregunta de Sonia, que tool TENDRIA que contestarla. Es un
+		// instrumento de medicion, no una prueba de comportamiento: sirve para medir seleccion de
+		// tools contra un modelo, y para eso tiene que nombrar tools que existan. Un modulo que
+		// renombra una consulta deja el banco midiendo contra un nombre muerto, y eso no se nota
+		// -- el banco no se compila contra nada, son strings.
+		//
+		// SOLO SE EXIGEN LAS TOOLS DE LOS MODULOS QUE ESTE BANCO TIENE. El banco local de esta Mac
+		// no siempre trae los cinco modulos, y una asercion que exigiera todos fallaria por lo que
+		// falta instalar y no por lo que esta mal escrito.
+		{
+			HashSet<string> publicadas = [.. published1];
+			HashSet<string> modulosDelBanco =
+				[.. ToolIndex.Of(one).All.Select(e => e.ModuleName)];
+
+			string[] muertas = [.. Preguntas.DeSonia
+				.Where(p => modulosDelBanco.Contains(p.Modulo))
+				.SelectMany(p => p.Esperadas.Concat(p.Tolerables))
+				.Distinct()
+				.Where(nombre => !publicadas.Contains(nombre))
+				.Order()];
+
+			assert("el banco de preguntas nombra tools que existen",
+				muertas.Length == 0,
+				$"nombres que ya no publica ningun modulo: {string.Join(", ", muertas)}");
+
+			// Y QUE ESTE ENTERO EN LOS DOS IDIOMAS. El idioma es la variable mas pesada que se
+			// midio sobre el tool calling -- el 2026-09-17 fue la diferencia entre 4 de 4 y 0 de
+			// 8 -- asi que una pregunta a la que le falte un lado deja ese lado sin medir, y no
+			// se nota: es un string vacio, no un error.
+			string[] mancas = [.. Preguntas.DeSonia
+				.Where(p => string.IsNullOrWhiteSpace(p.Es) || string.IsNullOrWhiteSpace(p.En))
+				.Select(p => p.Es.Length > 0 ? p.Es : p.En)
+				.Order()];
+
+			assert("el banco de preguntas esta entero en los dos idiomas",
+				mancas.Length == 0,
+				$"preguntas a las que les falta un idioma: {string.Join(" | ", mancas)}");
 		}
 
 		int compared = 0;
@@ -452,6 +494,115 @@ internal static class Conformance
 			// Devolver el estado, pase lo que pase. Es en memoria, pero dejar el objeto mentido
 			// haria que cualquier afirmacion posterior midiera otra cosa.
 			m.Reconsent(enabled0, disabled0);
+			await catalog.DisposeAsync();
+		}
+	}
+
+	// ============================================================================================
+	// UN ENUM FUERA DEL CONJUNTO VUELVE CON LA LISTA, Y VUELVE DEL HOST.
+	//
+	// Medido el 2026-09-21 con el modelo de Apple en la ventana de escritorio (docs/16, hallazgo
+	// 2): pidio evaluar_tendencia con analito="colesterol" y recibio el Enum.Parse crudo del
+	// modulo -- «Requested value 'colesterol' was not found» --, que no dice los valores validos.
+	// El modelo chico no relee el esquema: con ese texto se va a otra tool o inventa. Ahora la
+	// compuerta esta en Dispatcher.Serve, contra el `enum` del manifiesto, y el motivo nombra
+	// cada valor.
+	//
+	// NO NECESITA QUE EL MODULO ARRANQUE, igual que el consentimiento: se comprueba ANTES de
+	// invocar. Por eso ademas se afirma que el motivo NO es un fallo del modulo -- si el modulo no
+	// arrancara, Serve tambien devolveria Denied, y estariamos festejando una compuerta que no
+	// corrio.
+	//
+	// SE PRUEBA SOBRE EL PRIMER PARAMETRO CERRADO DEL BANCO, no sobre examenes por nombre: el
+	// banco local no siempre trae los cinco modulos, y la propiedad es del Host, no de un modulo.
+	public static async Task EnumFueraDelConjunto(string modulesRoot, Action<string, bool, string> assert)
+	{
+		var catalog = new ModuleCatalog(modulesRoot);
+		catalog.Load();
+
+		var d = new Dispatcher(catalog, new Meter(), Accepts.JsonOrToon);
+
+		(Module m, DeclaredTool t, DeclaredParameter p)? cerrado = catalog.Modules
+			.SelectMany(m => m.EnabledTools().Select(t => (m, t)))
+			.SelectMany(x => x.t.Input.Select(p => (x.m, x.t, p)))
+			.FirstOrDefault(x => x.p.Enum is { Count: > 0 });
+
+		if (cerrado is null)
+		{
+			assert("hay un parametro declarado como enum para probar la compuerta", false,
+				$"ninguna tool de {catalog.Modules.Count} modulos declara `enum` en su entrada");
+			await catalog.DisposeAsync();
+			return;
+		}
+
+		(Module modulo, DeclaredTool tool, DeclaredParameter param) = cerrado.Value;
+		string publico = Module.PublicName(modulo.Name, tool.Name);
+		const string fuera = "colesterol";
+
+		try
+		{
+			// ── 1 · EL VALOR QUE EL MODELO ESCRIBIO, tal como llega por cada puerta ────────
+			//
+			// La Puerta 1 entrega un JsonElement (el SDK de MCP deserializa los argumentos); la
+			// Puerta 2 entrega el string del modelo. La compuerta compara TEXTO y tiene que leer
+			// los dos igual, o un valor invalido pasaria por una puerta y no por la otra.
+			var comoString = new Dictionary<string, object?> { [param.Name] = fuera };
+			var comoJson = new Dictionary<string, object?>
+			{
+				[param.Name] = JsonSerializer.SerializeToElement(fuera),
+			};
+
+			Response r2 = await d.Serve(new Request(modulo.Name, tool.Name, comoString), CancellationToken.None);
+			Response r1 = await d.Serve(new Request(modulo.Name, tool.Name, comoJson), CancellationToken.None);
+
+			assert($"{publico}: '{fuera}' fuera del enum · el Dispatcher lo RECHAZA",
+				!r1.Authorized && !r2.Authorized,
+				$"p1={r1.Authorized} p2={r2.Authorized}: la compuerta no se aplico");
+
+			assert($"{publico}: y el rechazo dice lo mismo venga como JsonElement o como string",
+				r1.Reason == r2.Reason,
+				$"p1='{r1.Reason}' p2='{r2.Reason}'");
+
+			// ── 2 · EL MOTIVO NOMBRA CADA VALOR VALIDO, el parametro y lo que llego ────────
+			string motivo = r2.Reason ?? "";
+			string[] faltan = [.. param.Enum!.Where(v => !motivo.Contains(v, StringComparison.Ordinal))];
+
+			assert($"{publico}: el motivo lista los {param.Enum!.Count} valores validos",
+				faltan.Length == 0,
+				$"faltan [{string.Join(",", faltan)}] en: {motivo}");
+
+			assert($"{publico}: el motivo nombra el parametro y el valor que llego",
+				motivo.Contains($"{param.Name} '{fuera}'", StringComparison.Ordinal),
+				$"motivo: {motivo}");
+
+			assert($"{publico}: y es la compuerta del Host, no un fallo del modulo",
+				!motivo.Contains("failed", StringComparison.OrdinalIgnoreCase)
+					&& motivo == Dispatcher.OutsideTheDeclaredSet(modulo.Manifest.Tools, tool.Name, comoString),
+				$"motivo: {motivo}");
+
+			// ── 3 · UN VALOR DEL CONJUNTO NO SE RECHAZA POR LA COMPUERTA, con cualquier caja ──
+			//
+			// El in-process ya aceptaba `colesteroltotal` (Enum.Parse con ignoreCase); la
+			// compuerta no endurece esa regla. Si el modulo no arranca en esta maquina, Serve
+			// devuelve Denied por OTRO motivo, y eso no es lo que se mide aca.
+			string valido = param.Enum![0];
+			foreach (string caja in new[] { valido, valido.ToLowerInvariant() })
+			{
+				var dentro = new Dictionary<string, object?> { [param.Name] = caja };
+				Response ok = await d.Serve(new Request(modulo.Name, tool.Name, dentro), CancellationToken.None);
+				assert($"{publico}: '{caja}' esta en el enum · la compuerta lo deja pasar",
+					ok.Authorized || !(ok.Reason ?? "").Contains("is not one of", StringComparison.Ordinal),
+					$"motivo: {ok.Reason}");
+			}
+
+			// ── 4 · SIN EL ARGUMENTO, la compuerta no opina: eso lo dice el modulo ─────────
+			Response sinArg = await d.Serve(new Request(modulo.Name, tool.Name, new Dictionary<string, object?>()), CancellationToken.None);
+			assert($"{publico}: sin el argumento, el motivo no es de la compuerta del enum",
+				!(sinArg.Reason ?? "").Contains("is not one of", StringComparison.Ordinal),
+				$"motivo: {sinArg.Reason}");
+		}
+		finally
+		{
 			await catalog.DisposeAsync();
 		}
 	}

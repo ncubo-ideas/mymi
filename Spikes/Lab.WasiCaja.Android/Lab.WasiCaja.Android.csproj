@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA CAJA DE WASM EN EL TELEFONO. Paso 3 de F2 · P19, la medicion que decide.
+       En la laptop cada instancia viva costo +72 MB de memoria privada. Ese numero no se puede
+       comparar con el del telefono -PSS contra memoria privada, y otro procesador-, asi que hay
+       que medirlo aca con el MISMO instrumento que se uso para la forma hospedada: el PSS que
+       reporta ActivityManager. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <ApplicationId>com.ncubo.gnothi.spike.wasicaja</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <RootNamespace>Lab.WasiCaja.Android</RootNamespace>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+
+    <!-- Solo arm64: es el telefono que hay, y wasmtime pesa 27 MB por arquitectura. -->
+    <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- LA LIBRERIA NATIVA, tal cual la publica bytecodealliance para aarch64-android. Que exista
+         este binario es lo que hace posible todo el camino: sin el, wasmtime en el telefono seria
+         compilarlo nosotros. -->
+    <AndroidNativeLibrary Include="lib/arm64-v8a/libwasmtime.so" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- EL MODULO, como assets. Se copian a la carpeta de la app al arrancar porque wasmtime
+         necesita rutas reales del sistema de archivos para los preopens. -->
+    <AndroidAsset Include="Assets\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- EL MISMO P/Invoke que en escritorio, sin una linea distinta. Que el envoltorio sirva igual
+         en las dos plataformas es parte de lo que este paso vino a comprobar. -->
+    <Compile Include="..\Lab.WasiCaja.Embebido\Wasmtime.cs" Link="Wasmtime.cs" />
+  </ItemGroup>
+
+</Project>

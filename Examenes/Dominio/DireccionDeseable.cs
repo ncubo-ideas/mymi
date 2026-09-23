@@ -40,7 +40,7 @@ namespace Examenes.Dominio
 		// segun algo que el numero no trae. Ningun analito del demo la usa todavia; esta
 		// nombrada para que el dia que entre no obligue a reabrir el conjunto.
 		internal static readonly DireccionDeseable DependeDelContexto =
-			new DireccionDeseable("depende del contexto", 0);
+			new DireccionDeseable("depende-del-contexto", 0);
 
 		internal string Nombre { get; private set; }
 

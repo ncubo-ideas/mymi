@@ -7,6 +7,8 @@
     "compras": "Purchases",
     "abriendo": "Opening your purchases…",
     "nuestroSitio": "Our website",
+    "escribinosPorWhatsApp": "Message us on WhatsApp",
+    "pieNota": "Your purchases live on this device. These links take you out; they take nothing of yours.",
     "verTodos": "See all",
     "sinAbrir": "The app has not opened on this computer yet.",
     "sinAbrirEnlace": "Go to Home",
@@ -94,7 +96,7 @@
     "desde": "since {cuando}",
 
     "migrada": "<strong>Your new purchases now come in through {donde}, on this same phone.</strong> What you see here stays and is still yours; what this copy stops doing is looking for news.",
-    "hospedada": "<strong>It is being saved on this phone.</strong> Your record is yours and it is here: Gnothi gave this supermarket a folder on your phone, and your assistant can read it from there.",
+    "hospedada": "<strong>It is being saved on this phone.</strong> Your record is yours and it is here: Mymi gave this supermarket a folder on your phone, and your assistant can read it from there.",
     "sinCarpeta": "<strong>Nothing is being saved.</strong> This app is running without a folder: what you see is asked of the provider again every time you open it, and no record of yours stays on disk.",
     "guardarEnNavegador": "Save in this browser",
     "guardadoEnApp": "Saved in this app",
@@ -248,6 +250,10 @@
     "deProducto": {
       "uno": "of {cuantos} product",
       "varios": "of {cuantos} products"
+    },
+    "unidades": {
+      "una": "{cuantas} unit",
+      "varias": "{cuantas} units"
     },
     "masRecientes": "The {cuantas} most recent of {total}. Search above to find an older one — and your assistant can consult them all.",
     "resultadosRecientes": "The {cuantas} most recent of {total}. The totals above are for all of them — and your assistant can consult them one by one."

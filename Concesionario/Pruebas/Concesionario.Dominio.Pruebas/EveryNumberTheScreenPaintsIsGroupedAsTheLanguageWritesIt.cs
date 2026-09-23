@@ -132,7 +132,8 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			Assert.That(TheNumbersTheCaratulaAnswers(), Is.EqualTo(new[]
 			{
-				"CountDue", "CountOverdue", "CountScheduled", "CountUpToDate", "DeferralsUsed",
+				"CountDue", "CountOverdue", "CountScheduled", "CountUpToDate",
+				"CountUpToDatePerHundred", "DeferralsUsed",
 				"FlushFromMemfsAsync", "JournalEntries", "LastEventApplied", "MissedCount",
 				"PreloadIntoMemfsAsync",
 			}),
@@ -180,18 +181,20 @@ namespace Concesionario.Dominio.Pruebas
 				"Pages/MyCar.razor missed " + HandedOn,
 				"Pages/MyCar.razor upToDate " + HandedOn,
 				"Pages/MyCar.razor scheduled " + HandedOn,
+				"Pages/MyCar.razor upToDatePerHundred " + HandedOn,
 				"Pages/MyCar.razor Odometer " + Said,
 				"Pages/MyCar.razor Odometer " + Said,
+				"Sections/Historial.razor DayCount " + Said,
 				"Sections/Historial.razor ReadingCount " + Said,
 				"Sections/Historial.razor Value " + Said,
 				"Sections/Historial.razor EntryCount " + Said,
 				"Sections/Inicio.razor AlDia " + Said,
-				"Sections/Inicio.razor AlDia " + Said,
-				"Sections/Inicio.razor Programadas " + Said,
 				"Sections/Inicio.razor Programadas " + Said,
 				"Sections/Inicio.razor Overdue " + Said,
 				"Sections/Inicio.razor Due " + Said,
 				"Sections/Inicio.razor Missed " + Said,
+				"Sections/Inicio.razor AlDia " + Said,
+				"Sections/Inicio.razor Programadas " + Said,
 				"Sections/Servicios.razor DistanceRemaining " + Said,
 				"Sections/Servicios.razor DaysRemaining " + Said,
 				"Sections/Vehiculo.razor DeliveryReading " + Said,
@@ -237,6 +240,7 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.That(TheOnesThatMoveIn(sites), Is.EquivalentTo(new[]
 			{
 				"Sections/Cobertura.razor CoveredSystems " + Said,
+				"Sections/Historial.razor Operations " + Said,
 				"Sections/MyVehicle.razor unpublishedFluids " + Said,
 				"Sections/MyVehicle.razor Fluids " + Said,
 				"Sections/MyVehicle.razor unpublishedTyres " + Said,

@@ -13,6 +13,7 @@
     'use strict';
 
     var P = window.Puente;
+    var I = window.Idioma;
     var $ = P.$;
 
     // ---------------------------------------------------------------- formato
@@ -32,15 +33,30 @@
         return String(Math.round(x * 100) / 100);
     }
 
-    var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    // LOS NOMBRES DE LOS MESES SON DEL IDIOMA, igual que todo lo demas que esta cara dice con
+    // sus propias palabras. Se leen del catalogo ya negociado, no de una lista fija.
     function cuando(iso) { var d = new Date(iso); return isNaN(d.getTime()) ? null : d; }
     function fecha(iso) {
         var d = cuando(iso);
         if (!d) return '';
-        return (d.getDate() < 10 ? '0' : '') + d.getDate() + ' ' + MESES[d.getMonth()] + ' ' + d.getFullYear();
+        var nombres = (window.TextoDeLaCara[I.etiqueta] || {}).meses || [];
+        return (d.getDate() < 10 ? '0' : '') + d.getDate() + ' ' + nombres[d.getMonth()] + ' ' + d.getFullYear();
     }
     function dia(iso) { var d = cuando(iso); return d ? d.toISOString().slice(0, 10) : String(iso); }
-    function plural(n, una, varias) { return n === 1 ? una : varias; }
+    // EL PLURAL, por clave y no pegando una 's': las dos lenguas del alcance tienen dos formas
+    // y el catalogo lleva una clave por forma.
+    function mediciones(n) {
+        return n === 1 ? I.texto('tranquilo.medicion') : I.con('tranquilo.mediciones', { cuantas: n });
+    }
+    function resultados(n) {
+        return n === 1 ? I.texto('historial.resultado') : I.con('historial.resultados', { cuantos: n });
+    }
+    // EL CONTEO DE «MERECE ATENCION» DICE LA UNIDAD, no un numero pelado: allá es
+    // `atencion.conteo`/`atencion.conteoVarios` y acá tambien. Un «3» suelto al lado del rotulo
+    // no dice de que son tres.
+    function conteo(n) {
+        return n === 1 ? I.texto('atencion.conteo') : I.con('atencion.conteoVarios', { cuantos: n });
+    }
 
     // Un numero listo para un atributo de SVG, con punto decimal siempre: el atributo se lee en
     // cultura invariante y una coma lo rompe.
@@ -55,7 +71,84 @@
     // LA FLECHA SIGUE A LA TENDENCIA, que es semantica del dominio -«en ascenso», «en descenso»- y
     // no al signo de un numero. En una unidad invertida el numero sube cuando la cosa mejora.
     function flecha(t) {
-        return t === 'en ascenso' ? '↑' : t === 'en descenso' ? '↓' : '→';
+        return t === 'en-ascenso' ? '↑' : t === 'en-descenso' ? '↓' : '→';
+    }
+
+    // EL ESTADO SE DICE CON EL VOCABULARIO DE LA PANTALLA, no con el codigo del dominio.
+    //
+    // Esto imprimia `t.tendencia` crudo, y el dominio contesta ademas «indeterminada» y «no
+    // aplica» (Dominio/Tendencia.cs): en la tarjeta se leia «→ indeterminada», que a una persona
+    // no le dice nada y la app suelta nunca muestra. Es el mismo switch de EstadoBreve()
+    // (MisExamenes.razor:1387), incluida la precedencia de «sugiere repetir». Las cuatro frases
+    // salen del catalogo, con las MISMAS claves que usa la app suelta.
+    //
+    // LOS CODIGOS LLEVAN GUION -- «en-ascenso», «en-descenso» (Dominio/Tendencia.cs:34) --, que
+    // es lo mismo que ya compara `flecha()` dos funciones mas arriba. Escritos con espacio, los
+    // dos primeros no coincidian nunca y la tarjeta se quedaba muda salvo en «estable».
+    function estadoBreve(l, t) {
+        if (l && l.sugiereRepetirElExamen) return I.texto('atencion.posibleErrorDeMedicion');
+        if (t.tendencia === 'en-ascenso') return I.texto('atencion.vieneAumentando');
+        if (t.tendencia === 'en-descenso') return I.texto('atencion.vieneBajando');
+        if (t.tendencia === 'estable') return I.texto('atencion.enSeguimiento');
+        return '';
+    }
+
+    // «QUE CAMBIO» DICE UNA FRASE MAS PARA LA MISMA SERIE: cuando la tendencia es estable, allá
+    // no dice «en seguimiento» sino «se mantiene estable» (MisExamenes.razor:864). Es la unica
+    // diferencia entre las dos tarjetas, y esta escrita como una sola linea para que se vea.
+    function estadoDelCambio(l, t) {
+        return t.tendencia === 'estable' ? I.texto('atencion.seMantieneEstable') : estadoBreve(l, t);
+    }
+
+    function mayuscula(f) {
+        return !f ? '' : f.charAt(0).toUpperCase() + f.slice(1);
+    }
+
+    // EL PISO Y EL TECHO SALEN DE LA FRASE DEL RANGO, no de las lineas de referencia.
+    //
+    // Es LimitesDeRango() de la app suelta (MisExamenes.razor:1449): la misma «hasta 220 mg/dL»
+    // que la tarjeta ya muestra arriba. Importa que sea esta fuente y no `referencias`: las tres
+    // series con meta -colesterol, LDL, trigliceridos- publican `partida`/`meta` y ninguna
+    // publica `piso`, asi que pidiendo lineas se quedaban sin barra justo las del caso insignia.
+    // Un solo numero en la frase sigue siendo «hasta X» y el piso se asume 0, igual que allá.
+    function limitesDeRango(frase) {
+        var numeros = [];
+        String(frase || '').split(/\s+/).forEach(function (palabra) {
+            var candidato = palabra.replace(/^[,.;]+|[,.;]+$/g, '').replace(',', '.');
+            if (candidato !== '' && isFinite(Number(candidato))) numeros.push(Number(candidato));
+        });
+        if (!numeros.length) return null;
+        if (numeros.length === 1) return { piso: null, techo: numeros[0] };
+        return { piso: numeros[0], techo: numeros[numeros.length - 1] };
+    }
+
+    // LA BARRA CONTRA EL RANGO, en sus dos usos: la tarjeta que pide algo -- donde el limite es
+    // lo unico que el modelo conoce, sin zonas que el dominio no define -- y la fila serena.
+    function barraDeRango(valorFinal, frase, serena) {
+        var lim = limitesDeRango(frase), actual = Number(valorFinal);
+        if (!lim || !(lim.techo > 0) || !isFinite(actual)) return '';
+        var piso = lim.piso === null ? 0 : lim.piso;
+        if (!(lim.techo > piso)) return '';
+        var p = (actual - piso) / (lim.techo - piso);
+        p = p < 0 ? 0 : p > 1 ? 1 : p;
+        return '<div class="inicio-atencion-rango-pista' + (serena ? ' inicio-atencion-rango-pista--serena' : '') + '">' +
+               (serena ? '' : '<div class="inicio-atencion-rango-limite"></div>') +
+               '<div class="inicio-atencion-rango-marca" style="left:' + px(p * 100) + '%"></div>' +
+               '</div>';
+    }
+
+    // LA CIFRA DE CADA FORMA. Para un binario la cifra ES el ultimo resultado y para un nominal
+    // ES la categoria: no hay unidad ni «de cuanto a cuanto». Vive acá porque las tres secciones
+    // -- atencion, lo que esta bien, sin tendencia -- la escriben igual.
+    function cifraDe(r, t) {
+        if (r.presencia) return texto(r.presencia.ultimoResultado);
+        if (r.constancia) return texto((r.constancia || {}).ultimaCategoria);
+        return valor(t.valorFinal) + ' <span>' + texto(t.unidad) + '</span>';
+    }
+
+    function nombreDe(r, l, t) {
+        return l.paraMostrar || t.paraMostrar || (r.presencia || {}).paraMostrar ||
+               (r.constancia || {}).paraMostrar || r.analito;
     }
 
     // EL CHIP, con las mismas precedencias que `Insignia()`: repetir gana sobre todo, despues el
@@ -129,11 +222,14 @@
                  '" r="' + (ultimo ? 5 : 3) + '" class="' + clase + '"/>';
         }
 
+        // LAS NOTAS DEL PIE TAMBIEN SON DEL IDIOMA. Eran las dos ultimas frases en espanol duro
+        // que quedaban en esta cara -- ni el puerto ni la localizacion las habian tocado --, asi
+        // que el dibujo hablaba espanol debajo de una pantalla en ingles.
         var notas = [];
-        if (habitual) notas.push('<span class="forma-nota"><i class="muestra muestra--banda"></i>tu nivel de siempre, ' +
-            valor(habitual.valor) + ' ' + texto(unidad) + '</span>');
-        if (techo) notas.push('<span class="forma-nota"><i class="muestra muestra--techo"></i>esperable hasta ' +
-            valor(techo.valor) + ' ' + texto(unidad) + '</span>');
+        if (habitual) notas.push('<span class="forma-nota"><i class="muestra muestra--banda"></i>' +
+            I.con('forma.nivelDeSiempre', { valor: valor(habitual.valor) + ' ' + texto(unidad) }) + '</span>');
+        if (techo) notas.push('<span class="forma-nota"><i class="muestra muestra--techo"></i>' +
+            I.con('forma.esperableHasta', { valor: valor(techo.valor) + ' ' + texto(unidad) }) + '</span>');
 
         return '<div class="forma forma--trayectoria">' +
                '<svg viewBox="0 0 320 96" role="img" aria-label="' + atributo(descripcion) + '">' + d + '</svg>' +
@@ -212,9 +308,9 @@
 
     // EL SALUDO LO DECIDE LA SEVERIDAD, y es del dominio: no es una frase amable por omision.
     function saludo(sev) {
-        if (sev === 'urgente') return 'Hay algo que conviene revisar pronto.';
-        if (sev === 'consulte pronto') return 'Conviene comentar un resultado con tu médico.';
-        return 'En general, tus resultados vienen bien.';
+        if (sev === 'urgente') return I.texto('portada.urgente');
+        if (sev === 'consulte-pronto') return I.texto('portada.consultePronto');
+        return I.texto('portada.enGeneralBien');
     }
 
     function pintarHero(a, masReciente) {
@@ -250,6 +346,39 @@
         return valor(t.valorInicial) + ' → ' + valor(t.valorFinal);
     }
 
+    // LA TIRA DE UN BINARIO O DE UN NOMINAL, fuera de la tarjeta de atencion porque no es suya:
+    // las tres secciones muestran el mismo dibujo cuando el analito tiene esa forma, y desde que
+    // un negativo puede caer en «lo demas esta bien» esta funcion tiene dos llamadores.
+    function tiraDe(r, l) {
+        if (r.pruebas) {
+            var pr = (r.pruebas || []).map(function (x) {
+                return { fecha: x.fecha, marcada: x.esPositivo, texto: x.expresado };
+            });
+            var pos = pr.filter(function (x) { return x.marcada; }).length;
+            if (!pr.length) return '';
+            return tira(pr, (r.presencia || {}).positivasSeguidas,
+                pos === 0
+                    ? I.con('atencion.pruebasNinguna', { pruebas: pr.length })
+                    : I.con('atencion.pruebasAlgunas', { presentes: pos, pruebas: pr.length }),
+                pr[pr.length - 1].texto, l.paraSonia);
+        }
+
+        if (r.observaciones) {
+            var ob = (r.observaciones || []).map(function (x) {
+                return { fecha: x.fecha, marcada: !x.esEsperable, texto: x.expresado };
+            });
+            var c = r.constancia || {};
+            var dentro = (c.mediciones || ob.length) - (c.noEsperables || 0);
+            if (!ob.length) return '';
+            return tira(ob, c.noEsperablesSeguidas,
+                I.con('atencion.dentroDeLoEsperable',
+                    { dentro: dentro, veces: (c.mediciones || ob.length) }),
+                c.ultimaCategoria || (ob[ob.length - 1] || {}).texto, l.paraSonia);
+        }
+
+        return '';
+    }
+
     function tarjetaAtencion(r) {
         var l = r.lectura || {}, t = r.hechos || {}, puntos = r.puntos || [];
         var dibujo = '';
@@ -257,94 +386,138 @@
         // SIN VEREDICTO NO HAY DIBUJO. Las formas se dibujan CONTRA una referencia, y esa
         // referencia es justamente lo que depende del dato que falta.
         if (!l.requiereElSexo) {
-            if (r.pruebas) {
-                var pr = (r.pruebas || []).map(function (x) {
-                    return { fecha: x.fecha, marcada: x.esPositivo, texto: x.expresado };
-                });
-                var pos = pr.filter(function (x) { return x.marcada; }).length;
-                if (pr.length) dibujo = tira(pr, (r.presencia || {}).positivasSeguidas,
-                    pos === 0 ? pr.length + ' pruebas, ninguna' : pos + ' de ' + pr.length,
-                    pr.length ? pr[pr.length - 1].texto : '', l.paraSonia);
-
-            // LA TERCERA FORMA, que faltaba. Un color no tiene valor continuo NI presencia: tiene
-            // CATEGORIAS, y el dominio las manda en `constancia` + `observaciones`. Sin esta rama
-            // la tarjeta caia por la puerta continua y pedia `hechos.valorFinal`, que para un
-            // nominal no existe: la pantalla imprimia literalmente **undefined** en la cifra
-            // grande, con la referencia y el relato correctos abajo. Visto en el telefono el
-            // 2026-09-16 en «Color de la orina» y «Color de las heces».
+            // UN BINARIO Y UN NOMINAL COMPARTEN DIBUJO, y por eso no hay una forma nueva: lo
+            // que la tira marca no es «positivo» sino «se salio de lo esperable», que es la misma
+            // pregunta -- cuando pasa y cuantas veces seguidas -- sobre otro conjunto de valores.
+            // La app suelta tambien las separa en TRES puertas explicitas (MisExamenes:1740).
             //
-            // Ya estaba escrito que eran tres: `repartir` manda `r.constancia` a atencion desde
-            // antes, y la app suelta las separa en TRES puertas explicitas -- MisExamenes:1740,
-            // «un color no tiene tendencia ni puntos con numero: tiene categorias». Lo que faltaba
-            // era el dibujo y la cifra, no el reparto.
+            // LA RAMA DEL NOMINAL faltaba, y sin ella la tarjeta caia por la puerta
+            // continua y pedia `hechos.valorFinal`, que para un color no existe: la pantalla
+            // imprimia literalmente **undefined** en la cifra grande, con la referencia y el
+            // relato correctos abajo. Visto en el telefono el 2026-09-16 en «Color de la orina» y
+            // «Color de las heces». Lo que faltaba era el dibujo y la cifra, no el reparto:
+            // `repartir` ya mandaba `r.constancia` a atencion desde antes.
             //
-            // LA TIRA SIRVE IGUAL, y por eso no hay forma nueva: lo que marca no es «positivo»
-            // sino «se salio de lo esperable», que es la misma pregunta -- cuando pasa y cuantas
-            // veces seguidas -- sobre otro conjunto de valores.
-            } else if (r.observaciones) {
-                var ob = (r.observaciones || []).map(function (x) {
-                    return { fecha: x.fecha, marcada: !x.esEsperable, texto: x.expresado };
-                });
-                var c = r.constancia || {};
-                var dentro = (c.mediciones || ob.length) - (c.noEsperables || 0);
-                if (ob.length) dibujo = tira(ob, c.noEsperablesSeguidas,
-                    dentro + ' de ' + (c.mediciones || ob.length) + ' dentro de lo esperable',
-                    c.ultimaCategoria || (ob[ob.length - 1] || {}).texto, l.paraSonia);
+            // LAS DOS RAMAS VIVEN EN `tiraDe`, que tambien usa la fila serena: desde que un
+            // negativo puede caer en «lo demas esta bien», este dibujo tiene dos llamadores.
+            if (r.pruebas || r.observaciones) {
+                dibujo = tiraDe(r, l);
 
-            } else if (l.forma === 'trayectoria con linea base' && t.haySerie) {
+            } else if (l.forma === 'trayectoria-con-linea-base' && t.haySerie) {
                 dibujo = trayectoria(puntos, r.referencias, l.pideAlgo, l.paraSonia);
-            } else if (l.forma === 'posicion en banda') {
+            } else if (l.forma === 'posicion-en-banda') {
                 dibujo = pista(puntos, r.referencias, false);
+
+            // LA TERCERA FORMA FALTABA, y es la del caso insignia: colesterol, LDL y
+            // trigliceridos son «progreso-hacia-meta» (SerieDeColesterol.cs:75) y caian en el
+            // `else` mudo, asi que la tarjeta que mas pide salia sin dibujo. La app suelta la
+            // pinta contra el UNICO limite que el modelo conoce -- el de la frase del rango --,
+            // sin zonas normal/limite/alto que el dominio no define (MisExamenes.razor:424).
+            //
+            // EL CODIGO DE LA FORMA LLEVA GUIONES: «progreso-hacia-meta» (FormaDeLectura.cs:27).
+            // Escrito con espacios la rama no entraba nunca, asi que la correccion no corregia
+            // nada: la tarjeta insignia seguia saliendo sin barra.
+            } else if (l.forma === 'progreso-hacia-meta') {
+                var barra = barraDeRango(t.valorFinal, l.referenciaLegible, false);
+                if (barra) dibujo = '<div class="inicio-atencion-rango">' + barra +
+                    '<div class="inicio-atencion-rango-etiquetas">' +
+                        '<span>' + I.con('atencion.tuResultado',
+                            { valor: '<b>' + texto(valor(t.valorFinal) + ' ' + t.unidad) + '</b>' }) + '</span>' +
+                        '<span>' + texto(I.con('atencion.referencia',
+                            { referencia: l.referenciaLegible })) + '</span>' +
+                    '</div></div>';
             }
         }
 
-        var nombre = l.paraMostrar || t.paraMostrar || (r.constancia || {}).paraMostrar || r.analito;
+        var nombre = nombreDe(r, l, t);
 
-        // TRES FORMAS, TRES CIFRAS. Esto tenia dos ramas y el dominio manda tres, asi que la
-        // tercera caia en la rama continua y salia `undefined`. Para un nominal la cifra ES la
-        // categoria -- no hay unidad, no hay «de cuanto a cuanto» -- y no hace falta `haySerie`:
-        // un color con una sola observacion ya esta leido.
-        var v = r.presencia ? texto(r.presencia.ultimoResultado)
-              : r.constancia ? texto((r.constancia || {}).ultimaCategoria)
-                             : valor(t.valorFinal) + ' <span>' + texto(t.unidad) + '</span>';
+        // TRES FORMAS, TRES CIFRAS: lo resuelve cifraDe(), que ahora comparten las tres
+        // secciones. Para un nominal la cifra ES la categoria -- no hay unidad, no hay «de
+        // cuanto a cuanto» -- y no hace falta `haySerie`: un color con una sola observacion ya
+        // esta leido.
+        var v = cifraDe(r, t);
 
         return '<div class="inicio-atencion-tarjeta">' +
             '<div class="inicio-atencion-cabeza">' +
                 '<div class="inicio-atencion-titulo">' +
                     '<div class="inicio-atencion-nombre-grupo">' +
                         '<span class="inicio-atencion-nombre">' + texto(nombre) + '</span>' +
-                        (t.tendencia ? '<span class="inicio-atencion-estado">' + flecha(t.tendencia) + ' ' +
-                            texto(t.tendencia) + '</span>' : '') +
+                        (estadoBreve(l, t) ? '<span class="inicio-atencion-estado">' + flecha(t.tendencia) + ' ' +
+                            texto(estadoBreve(l, t)) + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<span class="inicio-atencion-valor">' + v + '</span>' +
             '</div>' +
             (cadena(t, puntos) ? '<p class="inicio-atencion-serie">' + cadena(t, puntos) + '</p>' : '') +
-            (l.referenciaLegible ? '<p class="inicio-atencion-referencia">referencia: ' +
-                texto(l.referenciaLegible) + '</p>' : '') +
+            (l.referenciaLegible ? '<p class="inicio-atencion-referencia">' +
+                texto(I.con('atencion.referenciaMinuscula', { referencia: l.referenciaLegible })) + '</p>' : '') +
             dibujo +
-            (l.paraSonia ? '<p class="inicio-atencion-detalle">' + texto(l.paraSonia) +
-                (l.pideAlgo && l.accion ? ': <b>' + texto(l.accion) + '</b>' : '.') + '</p>' : '') +
+            // LA CAJA DE LECTURA es la de la app suelta (MisExamenes.razor:459): un icono «i» y
+            // el texto adentro. Esto usaba `inicio-atencion-detalle`, una clase que NO existe en
+            // css/app.css -- la hoja es la misma de la app --, asi que el bloque salia suelto,
+            // sin caja y sin icono. Y la frase va con mayuscula inicial, como allá.
+            (l.paraSonia
+                ? '<div class="inicio-atencion-lectura">' +
+                      '<span class="inicio-atencion-lectura-icono" aria-hidden="true">i</span>' +
+                      '<p class="inicio-atencion-lectura-texto">' +
+                          '<span>' + texto(mayuscula(l.paraSonia)) + '.</span>' +
+                          (l.pideAlgo && l.accion
+                              ? '<span class="inicio-atencion-lectura-accion">' + texto(mayuscula(l.accion)) + '.</span>'
+                              : '') +
+                      '</p>' +
+                  '</div>'
+                : '') +
         '</div>';
     }
 
+    // LA FILA SERENA. Orden y piezas de la app suelta (MisExamenes.razor:728): valor y chevron a
+    // la derecha, la barra contra el rango, y DEBAJO la etiqueta del rango con el chip y la nota
+    // de mediciones. Acá el chip y la nota estaban dentro de la misma linea y la frase del rango
+    // -- «hasta 220 mg/dL», que es lo que explica donde cae la marca -- no aparecia.
+    //
+    // La nota NO dice el vocabulario corto de las tarjetas que piden algo: dice `TendenciaDicha`,
+    // la frase que el dominio ya escribio para esta serie (MisExamenes.razor:1398). El codigo
+    // crudo -- `t.tendencia` -- no va nunca a la pantalla.
     function itemTranquilo(r) {
-        var l = r.lectura || {}, t = r.hechos || {}, puntos = r.puntos || [];
+        var l = r.lectura || {}, t = r.hechos || {};
+        var esContinuo = !r.presencia && !r.constancia;
+
+        // UN NEGATIVO SERENO LLEVA SU TIRA. Desde que un binario o un nominal pueden caer acá
+        // -- antes iban todos a «merece atencion» -- la fila tiene que mostrar lo mismo que
+        // mostraba alla: cuando se midio y cuantas veces seguidas, que es su unica forma. La
+        // barra contra el rango no aplica: no hay valor continuo que ubicar.
+        var barra = esContinuo ? barraDeRango(t.valorFinal, l.referenciaLegible, true) : '';
+        var suTira = esContinuo ? '' : tiraDe(r, l);
+
         return '<li><div class="inicio-tranquilo-item">' +
             '<div class="inicio-tranquilo-cabeza">' +
-                '<span class="inicio-tranquilo-nombre">' + texto(l.paraMostrar || t.paraMostrar || r.analito) + '</span>' +
+                '<span class="inicio-tranquilo-nombre">' + texto(nombreDe(r, l, t)) + '</span>' +
                 '<span class="inicio-tranquilo-cabeza-derecha">' +
-                    '<span class="inicio-tranquilo-valor">' + valor(t.valorFinal) +
-                    ' <small>' + texto(t.unidad) + '</small></span>' +
+                    '<span class="inicio-tranquilo-valor">' + cifraDe(r, t) + '</span>' +
+                    '<span class="inicio-tranquilo-chevron" aria-hidden="true">›</span>' +
                 '</span>' +
             '</div>' +
-            pista(puntos, r.referencias, true) +
-            '<div class="inicio-tranquilo-rango-etiquetas">' +
-                '<span class="chip ' + insignia(l, t.haySerie) + '">en rango</span>' +
-                '<p class="inicio-tranquilo-nota">' + (t.mediciones || 0) + ' ' +
-                plural(t.mediciones, 'medición', 'mediciones') +
-                (t.tendencia ? ' · ' + texto(t.tendencia) : '') + '</p>' +
-            '</div>' +
+            suTira +
+            (barra
+                ? '<div class="inicio-tranquilo-rango">' + barra +
+                      (l.referenciaLegible
+                          ? '<div class="inicio-tranquilo-rango-etiquetas">' +
+                                '<span>' + texto(l.referenciaLegible) + '</span>' +
+                                '<span class="chip ' + insignia(l, t.haySerie) + '">' +
+                                texto(I.texto('tranquilo.enRango')) + '</span>' +
+                            '</div>'
+                          : '') +
+                      (esContinuo && t.haySerie
+                          ? '<p class="inicio-tranquilo-nota">' + texto(I.con('tranquilo.nota', {
+                                mediciones: mediciones(t.mediciones || 0),
+                                tendencia: t.tendenciaDicha || ''
+                            })) + '</p>'
+                          : '') +
+                  '</div>'
+                : '<div class="inicio-tranquilo-rango-etiquetas">' +
+                      '<span class="chip ' + insignia(l, t.haySerie) + '">' +
+                      texto(I.texto('tranquilo.enRango')) + '</span>' +
+                  '</div>') +
             (l.paraSonia ? '<p class="inicio-tranquilo-detalle">' + texto(l.paraSonia) + '.</p>' : '') +
         '</div></li>';
     }
@@ -354,8 +527,8 @@
         return '<div class="inicio-cambio-tarjeta inicio-cambio-tarjeta--' + tono(l) + '">' +
             '<div class="inicio-cambio-cabeza">' +
                 '<span class="inicio-cambio-nombre">' + texto(l.paraMostrar || r.analito) + '</span>' +
-                (t.tendencia ? '<span class="inicio-cambio-estado inicio-cambio-estado--' + tono(l) + '">' +
-                    flecha(t.tendencia) + ' ' + texto(t.tendencia) + '</span>' : '') +
+                (estadoDelCambio(l, t) ? '<span class="inicio-cambio-estado inicio-cambio-estado--' + tono(l) + '">' +
+                    flecha(t.tendencia) + ' ' + texto(estadoDelCambio(l, t)) + '</span>' : '') +
             '</div>' +
             // LAS CIFRAS SON LAS DE LA TENDENCIA, no los dos ultimos puntos de la serie.
             //
@@ -378,19 +551,12 @@
 
     function tarjetaSinTendencia(r) {
         var l = r.lectura || {}, t = r.hechos || {};
-        var n = t.mediciones || 1;
-        return '<div class="inicio-sintendencia-tarjeta">' +
-            '<div class="inicio-sintendencia-cuerpo">' +
-                '<p class="inicio-sintendencia-nombre">' + texto(l.paraMostrar || r.analito) + '</p>' +
-                '<div class="inicio-sintendencia-fila">' +
-                    '<span class="inicio-sintendencia-valor">' + valor(t.valorFinal) +
-                    ' <span>' + texto(t.unidad) + '</span></span>' +
-                    '<span class="chip chip--repetir">' + n + ' ' + plural(n, 'medición', 'mediciones') + '</span>' +
-                '</div>' +
-                '<p class="inicio-sintendencia-texto">' +
-                texto(l.paraSonia || 'Con una sola medición todavía no se puede decir para dónde viene.') +
-                '</p>' +
-            '</div>' +
+        var n = t.mediciones || (r.presencia || {}).mediciones || (r.constancia || {}).mediciones || 1;
+
+        return '<div class="inicio-sintendencia-item">' +
+            '<p class="inicio-sintendencia-nombre">' + texto(nombreDe(r, l, t)) + '</p>' +
+            '<p class="inicio-sintendencia-valor">' + cifraDe(r, t) + '</p>' +
+            '<span class="chip chip--repetir">' + texto(mediciones(n)) + '</span>' +
         '</div>';
     }
 
@@ -408,18 +574,26 @@
             if (!r || !r.lectura) return;
             var l = r.lectura, t = r.hechos || {}, puntos = r.puntos || [];
 
-            // Un binario o un nominal no tienen tendencia ni valor continuo: van con su tira, y
-            // van arriba porque son los que el dominio marca cuando aparecen.
-            if (r.presencia || r.constancia) { atencion.push(r); return; }
+            // LAS TRES FORMAS SE REPARTEN IGUAL, y el criterio es el del dominio: pideAlgo manda,
+            // despues «no hay serie», y lo demas esta bien (MisExamenes.razor:1720-1758).
+            //
+            // Un binario o un nominal caian SIEMPRE en atencion por ser binario o nominal, y eso
+            // es clasificar por la forma del dato en vez de por lo que el dominio dictamino: un
+            // «Nitritos: negativo» aparecia bajo «merece atencion», que es exactamente lo que una
+            // pantalla de laboratorio no puede hacer.
+            var haySerie = r.presencia ? !!r.presencia.haySerie
+                         : r.constancia ? !!r.constancia.haySerie
+                                        : !!t.haySerie;
 
-            if (l.pideAlgo || l.severidad === 'urgente') { atencion.push(r); return; }
-            if (!t.haySerie || (t.mediciones || 0) < 2) { sintendencia.push(r); return; }
+            if (l.pideAlgo || l.severidad === 'urgente') { atencion.push(r); }
+            else if (!haySerie) { sintendencia.push(r); }
+            else { tranquilo.push(r); }
 
-            if (puntos.length >= 2 &&
-                Number(puntos[puntos.length - 1].valor) !== Number(puntos[puntos.length - 2].valor))
-                cambios.push(r);
-
-            tranquilo.push(r);
+            // «QUE CAMBIO» NO ES UNA CUARTA SECCION EXCLUYENTE: es el ultimo salto de CADA serie
+            // continua con dos puntos, este donde este (Cambios(), MisExamenes.razor:1300). Acá
+            // se pedia ademas que no estuviera en atencion y que los dos ultimos puntos fueran
+            // distintos, asi que justo el analito que pide algo nunca se veia cambiar.
+            if (!r.presencia && !r.constancia && t.haySerie && puntos.length >= 2) cambios.push(r);
         });
 
         return { atencion: atencion, tranquilo: tranquilo, cambios: cambios, sintendencia: sintendencia };
@@ -434,27 +608,28 @@
     function pintarSecciones(g) {
         mostrar('atencion', g.atencion.length,
             '<div class="inicio-atencion-encabezado">' +
-                '<p class="inicio-atencion-rotulo">merece atención</p>' +
+                '<p class="inicio-atencion-rotulo">' + texto(I.texto('atencion.rotulo')) + '</p>' +
                 '<span class="inicio-atencion-conteo">' +
                     '<span class="inicio-atencion-conteo-punto" aria-hidden="true"></span>' +
-                    g.atencion.length + '</span>' +
+                    '<span>' + texto(conteo(g.atencion.length)) + '</span></span>' +
             '</div>' + g.atencion.map(tarjetaAtencion).join(''));
 
         mostrar('tranquilo', g.tranquilo.length,
-            '<p class="inicio-tranquilo-rotulo">lo demás está bien</p>' +
+            '<p class="inicio-tranquilo-rotulo">' + texto(I.texto('tranquilo.rotulo')) + '</p>' +
             '<div class="inicio-tranquilo-tarjeta">' +
-                '<p class="inicio-tranquilo-titulo">Estos resultados están dentro de lo esperado.</p>' +
+                '<p class="inicio-tranquilo-titulo">' + texto(I.texto('tranquilo.titulo')) + '</p>' +
                 '<ul class="inicio-tranquilo-lista">' + g.tranquilo.map(itemTranquilo).join('') + '</ul>' +
             '</div>');
 
         mostrar('cambios', g.cambios.length,
-            '<h2 class="seccion">Qué cambió desde tu último chequeo</h2>' +
-            '<p class="inicio-cambios-intro">Así han cambiado tus resultados recientes.</p>' +
+            '<h2 class="seccion">' + texto(I.texto('cambios.titulo')) + '</h2>' +
+            '<p class="inicio-cambios-intro">' + texto(I.texto('cambios.intro')) + '</p>' +
             g.cambios.map(tarjetaCambio).join(''));
 
         mostrar('sintendencia', g.sintendencia.length,
-            '<p class="inicio-sintendencia-rotulo">todavía no podemos ver la tendencia</p>' +
-            g.sintendencia.map(tarjetaSinTendencia).join(''));
+            '<p class="inicio-sintendencia-rotulo">' + texto(I.texto('sinTendencia.rotulo')) + '</p>' +
+            '<p class="inicio-sintendencia-intro">' + texto(I.texto('sinTendencia.intro')) + '</p>' +
+            '<div class="inicio-sintendencia-grid">' + g.sintendencia.map(tarjetaSinTendencia).join('') + '</div>');
     }
 
     // ---------------------------------------------------------------- el historial
@@ -477,20 +652,23 @@
         var caja = $('historial-cuerpo');
         var v = visitas(r && r.celdas);
         if (!v.length) {
-            P.apunte(caja, 'Todavía no hay exámenes. Apretá Actualizar.');
+            // EL MISMO VALOR QUE LA APP, CON SU ENFASIS. `P.apunte` escribe por textContent, asi
+            // que el <em> de «Apretá Actualizar» habria salido escrito; la app lo pinta como
+            // marcado (MisExamenes.razor:1011, MarkupString). Dos redacciones para la misma
+            // frase es lo que el guardian llama una segunda institucion.
+            caja.innerHTML = '<p class="apunte">' + I.texto('historial.sinExamenes') + '</p>';
             return null;
         }
 
         caja.innerHTML =
-            '<p class="inicio-historial-intro">Aquí podés ver tus resultados anteriores.</p>' +
+            '<p class="inicio-historial-intro">' + texto(I.texto('historial.intro')) + '</p>' +
             '<ul class="inicio-historial-timeline">' + v.map(function (x, i) {
                 return '<li class="inicio-historial-evento' +
                     (i === 0 ? ' inicio-historial-evento--reciente' : '') + '">' +
                     '<span class="inicio-historial-nodo" aria-hidden="true"></span>' +
                     '<div class="inicio-historial-fila">' +
                         '<span class="inicio-historial-fecha">' + fecha(x.fecha) + '</span>' +
-                        '<span class="inicio-historial-cantidad">' + x.cosas.length + ' ' +
-                        plural(x.cosas.length, 'resultado', 'resultados') + '</span>' +
+                        '<span class="inicio-historial-cantidad">' + texto(resultados(x.cosas.length)) + '</span>' +
                     '</div></li>';
             }).join('') + '</ul>';
 
@@ -508,7 +686,7 @@
         if (!p || !p.haceFalta) return;
 
         caja.innerHTML = '<div class="inicio-config-fila">' +
-            '<p class="inicio-config-texto"><b>' + texto(p.paraSonia || 'Falta un dato tuyo') + '</b>' +
+            '<p class="inicio-config-texto"><b>' + texto(p.paraSonia || I.texto('pedido.faltaUnDato')) + '</b>' +
             (p.porQue ? '<br>' + texto(p.porQue) : '') + '</p></div>';
     }
 
@@ -526,17 +704,36 @@
         // EL HERO NECESITA LAS DOS: la severidad sale de `alertas` y la fecha del ultimo chequeo
         // del historial. Se encadenan porque pintar medio hero y completarlo despues haria saltar
         // el titular delante de quien lo esta leyendo.
-        P.pedir('historial')
+        P.pedir('historial', { idioma: I.etiqueta })
             .then(function (r) { return pintarHistorial(r); })
-            .catch(function (e) { P.apunte($('historial-cuerpo'), e.message, true); return null; })
+            .catch(function (e) { P.apunte($('historial-cuerpo'), P.porQue(e), true); return null; })
             .then(function (masReciente) {
-                return P.pedir('alertas').then(function (a) {
+                return P.pedir('alertas', { idioma: I.etiqueta }).then(function (a) {
                     if (pasada !== ultimaPasada) return;
                     pintarHero(a, masReciente);
                     pintarPedido(a);
                 });
             })
-            .catch(function () { /* el hero se queda con su frase por omision */ });
+            // NO SE PUDO ARMAR EL HERO, y hay que decirlo.
+            //
+            // Antes esto no hacia nada, con un comentario que afirmaba que «el hero se queda con
+            // su frase por omision». NO HAY tal frase por omision: el titular se queda con el
+            // texto de CARGA -«Preguntandole a Mymi...»- presentado como si fuera el resultado.
+            // Una pantalla que quedaba preguntando para siempre, sin una linea en la consola.
+            //
+            // Lo que NO se puede hacer es caer a «en general, tus resultados vienen bien»: eso
+            // seria afirmar algo sobre un expediente que no se leyo, y es la unica mentira que
+            // esta pantalla no se puede permitir. Por eso `portada.noSePudoLeer` es una cuarta
+            // frase y no una de las tres.
+            //
+            // La guarda de pasada es la misma de arriba: una pasada vieja que falla tarde no
+            // puede pisar el hero que ya pinto la nueva.
+            .catch(function (e) {
+                if (pasada !== ultimaPasada) return;
+                $('saludo').textContent = I.texto('portada.noSePudoLeer');
+                $('secundario').textContent = '';
+                contar((e && e.message) || String(e), true);
+            });
 
         // LAS SERIES, DE A UNA Y EN ORDEN. Cada una es una pregunta al Host; se juntan TODAS antes
         // de repartir, porque una tarjeta no puede saber a que seccion va sin ver al resto.
@@ -544,7 +741,7 @@
         // Y CADA PASADA TIENE SU NUMERO: la pantalla se pinta dos veces -lo que ya hay, y otra vez
         // cuando vuelve el cartero-, y sin la guarda las dos cadenas repartirian sobre las mismas
         // secciones.
-        P.pedir('analitos')
+        P.pedir('analitos', { idioma: I.etiqueta })
             .then(function (r) {
                 var nombres = (r && r.analitos) || [];
                 if (!nombres.length) return null;
@@ -552,7 +749,7 @@
                 var juntadas = [];
                 return nombres.reduce(function (antes, a) {
                     return antes
-                        .then(function () { return P.pedir('tendencia', { analito: a }); })
+                        .then(function () { return P.pedir('tendencia', { analito: a, idioma: I.etiqueta }); })
                         .then(function (x) { juntadas.push(x); })
                         .catch(function () { /* un analito sin serie no rompe los demas */ });
                 }, Promise.resolve()).then(function () { return juntadas; });
@@ -561,7 +758,7 @@
                 if (!juntadas || pasada !== ultimaPasada) return;
                 pintarSecciones(repartir(juntadas));
             })
-            .catch(function (e) { contar(e.message, true); });
+            .catch(function (e) { contar(P.porQue(e), true); });
     }
 
     function releer() {
@@ -580,6 +777,7 @@
 
     function arrancar() {
         P.listo();
+        I.pintarLoEstatico();
         $('releer').addEventListener('click', releer);
 
         // PRIMERO SE PINTA LO QUE YA HAY, y despues se refresca. Al reves, abrir con el publicador

@@ -1,0 +1,107 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- PASO 0 DE LA CAJA DE WASM (F2 · P19): ¿arranca el motor bajo WASI con un modulo real?
+       Nada de Gnothi, nada de telefono, nada de puente. Una consola que instancia la superficie
+       de examenes -la misma clase que el Host carga hoy como dll suelto- y le pide Resumen.
+
+       Si esto no corre, los pasos 1 a 3 no importan. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Lab.WasiCaja</AssemblyName>
+    <RootNamespace>Lab.WasiCaja</RootNamespace>
+
+    <!-- WASI no trae ICU. Sin esto el runtime muere antes de la primera linea. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- SERIALIZAR PASA A SER DEL MODULO al cruzar el borde: el objeto no cruza, cruza texto.
+         El build de WASI trae la serializacion por reflexion APAGADA, que es lo que permite
+         recortar. Esta prueba la enciende para medir el camino entero; lo correcto es un
+         JsonSerializerContext generado, que el modulo escribe una vez. Ver Json.cs y F8. -->
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+
+    <!-- EL INTERRUPTOR QUE NADIE DOCUMENTA, y sin el esto compila y NO PRODUCE NADA.
+         Con el workload wasi-experimental-net9 instalado y RuntimeIdentifier=wasi-wasm, el
+         `dotnet publish` termina en verde y deja solo los dll administrados: ni dotnet.wasm, ni
+         AppBundle, ni nada que se pueda correr. No hay error, no hay advertencia.
+         La cadena es: WasmBuildApp corre si IsWasiProject, que sale de UsingWasiRuntimeWorkload,
+         que sale de WasiNativeWorkloadAvailable, que para net9 sale de ESTA propiedad, y nada
+         la pone. Se ve con:
+             dotnet msbuild ... -getProperty:IsWasiProject
+         que devuelve vacio. Medido el 2026-09-16 con SDK 10.0.400 y el workload 10.0.111. -->
+    <WasiNativeWorkload9>true</WasiNativeWorkload9>
+
+    <!-- LA VERSION DEL MOTOR IMPORTA Y NO ES LA DE SIEMPRE. La 3.0.0-beta.10029 trae el guard
+         de hilos en ActorHandler pero NO en Choreography: bajo WASI arrancaria la rehidratacion
+         y moriria en el despacho. Verificado abriendo los dos .nupkg (F2 · P1). -->
+    <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10029-lector.4</VersionDelMotor>
+  </PropertyGroup>
+
+  <!-- DOS BUILDS DEL MISMO ARCHIVO, y la diferencia es el punto 1 de C10.
+
+       ConModulo=true   (por omision)  examenes va ADENTRO del wasm. Es el corte que se midio:
+                                       junta el sustrato y el modulo a proposito, porque lo que
+                                       vino a medir era como ve el WebView a la caja.
+       ConModulo=false                 EL SUSTRATO SOLO: el motor, el BCL y el borde. El modulo
+                                       entra desde su bundle, por una carpeta que el anfitrion
+                                       monta. Es lo que hace que haya UNA sola copia del codigo
+                                       del modulo en vez de dos.
+
+       Se compila asi:
+           dotnet publish ... -p:ConModulo=false -->
+  <PropertyGroup>
+    <ConModulo Condition="'$(ConModulo)' == ''">true</ConModulo>
+    <DefineConstants Condition="'$(ConModulo)' == 'true'">$(DefineConstants);CON_MODULO</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- La superficie de la institucion, tal cual. Arrastra el dominio, el portador y el motor. -->
+    <ProjectReference Include="..\..\Examenes\App\Examenes.App\Examenes.App.csproj"
+                      Condition="'$(ConModulo)' == 'true'" />
+
+    <!-- EL MOTOR ES DEL SUSTRATO, NO DEL MODULO, y esto lo declara el propio bundle: el `dominio/`
+         de un .gmod trae TRES dll (App, Dominio, Eventos) y NO trae ni Puppeteer ni el Portador.
+         Sin el modulo referenciado hay que pedirlos aca, porque antes llegaban de arrastre y con
+         ellos se iria el motor entero. -->
+    <!-- EL MISMO PORTADOR QUE PRESTA EL HOST, y no uno cualquiera: Gnothi.Host referencia
+         `Examenes\Mecanismo\Puppets.Portador`, asi que el sustrato referencia ese. Cada modulo
+         del repo tiene una copia del Portador en su arbol y las seis son IDENTICAS byte a byte
+         (comprobado 2026-09-16), pero identicas hoy no es una garantia: el dia que una se
+         separe, el sustrato tiene que prestar la MISMA que el Host, o habria dos motores segun
+         donde corra el modulo. -->
+    <ProjectReference Include="..\..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj"
+                      Condition="'$(ConModulo)' != 'true'" />
+
+    <!-- El contrato SI viaja aca, al reves que en el paquete del modulo: la superficie lleva
+         [ModuleSurface] y [Query] encima, y en el bundle el Host presta su copia. En esta consola
+         no hay Host que la preste. -->
+    <ProjectReference Include="..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ConModulo)' != 'true'">
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+
+    <!-- ⚠ ESTAS RAICES NO HACEN NADA EN ESTE PIPELINE, y quedan escritas para que nadie las
+         vuelva a intentar creyendo que si.
+         MEDIDO el 2026-09-16: el mismo publish con y sin `TrimmerRootAssembly` sobre
+         System.Private.CoreLib, System.Collections, System.Linq y System.Runtime da un .wasm de
+         6 387 009 bytes, IDENTICO al byte, y falla igual con
+             TypeLoadException: … expected class 'System.Lazy`1' in assembly 'System.Runtime'
+         Y lo mismo con Puppets.Portador: quitando la raiz, el Portador LLEGA IGUAL al publish.
+         Lo que lo hizo llegar fue arreglar la ruta del ProjectReference, que apuntaba a una
+         carpeta inexistente (`..\..\Mecanismo\…` en vez de `..\..\Examenes\Mecanismo\…`).
+         Casi se documenta al reves: «la raiz lo arreglo». No lo arreglo.
+         El unico interruptor que mueve la aguja es PublishTrimmed=false, y cuesta 19 MB. -->
+    <TrimmerRootAssembly Include="Puppets.Portador" Condition="'$(SinRaizPortador)' != 'true'" />
+    <TrimmerRootAssembly Include="$(RaicesDelFramework)" Condition="'$(RaicesDelFramework)' != ''" />
+
+    <!-- EL OTRO MECANISMO, por si el de arriba no lo honra el pipeline pero este si. Se enciende
+         con -p:ConDescriptor=true. -->
+    <TrimmerRootDescriptor Include="NoRecortarElBcl.xml" Condition="'$(ConDescriptor)' == 'true'" />
+  </ItemGroup>
+
+</Project>

@@ -113,8 +113,10 @@ public sealed class ToolIndex
 					: p.Description,
 			};
 
-			// A real enum, not the values hidden in the prose. The C# side still Enum.Parses
-			// whatever arrives, so a value outside the list is caught there, not here.
+			// A real enum, not the values hidden in the prose. A value outside the list is
+			// caught by Dispatcher.Serve against THIS SAME LIST, before the module is invoked,
+			// and the refusal names every valid value -- the small on-device model does not
+			// re-read the schema, so the error has to carry it.
 			if (closed)
 				property["enum"] = p.Enum!.ToArray();
 

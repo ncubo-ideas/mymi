@@ -157,8 +157,60 @@ Se abre una ventana nativa (WebView2 en Windows, WKWebView en macOS, WebKitGTK e
 - **Open** → la pantalla del módulo, con un botón por consulta. **Run** en `resumen` o `lista_de_examenes` muestra los datos (tabla si es una lista).
 - **Import a module…** → se abre el selector de archivos **del sistema** (NSOpenPanel en Mac); elegí `%TEMP%\gnothi-demo\examenes.gmod` y lo instala desde la interfaz (esto es la Parte 1.3, pero con un clic).
 - **Reload** relee `installation.json` del disco (así se ve un cambio de consentimiento hecho a mano).
+- **Ajustes → Proveedor**: en una Mac con macOS 26 y Apple Intelligence activo aparece **«Apple
+  Intelligence (en esta Mac)»** como primer proveedor, sin llave: el modelo corre en el equipo y
+  nada sale de él. Para que aparezca hay que haber armado el puente una vez, con Xcode 26:
+
+  ```bash
+  ./Gnothi.Desktop/armar-modelo.sh
+  ```
+
+  Es el mismo `Puente.swift` que usa la app de iOS, compilado como dylib universal. Si no está, el
+  preset simplemente no se ofrece. **Tenés que ver**, en Asistente, que una pregunta como «¿qué
+  exámenes me falta repetir?» dispare `examenes_que_me_falta_medir` y conteste (medido: 4,7 s con
+  un módulo instalado).
+
+  > **Límite medido:** el modelo de Apple admite **4 096 tokens** de contexto y el catálogo de los
+  > cinco módulos del banco suma ~6 600 solo de costo fijo, así que con todos encendidos la
+  > pregunta falla diciendo que el catálogo no entra. Apagá módulos o consultas en
+  > `installation.json` y tocá Reload. Con solo `examenes` encendido, entra y contesta.
 
 > Sin argumento, la ventana busca `Modulos` al lado del ejecutable (instalada) o en la raíz del repo (desarrollo).
+
+### 2.1 · En una Mac, la ventana como app (`Mymi.app`)
+
+`dotnet run` deja un **ejecutable suelto**, y suelto macOS no sabe cómo se llama ni qué cara tiene: el
+Dock lo nombra **«Gnothi.Desktop»** —el `AssemblyName`— y le pone **el icono de GIMP**. Lo segundo no es
+culpa del `.ico`: sin bundle el Dock usa el icono del *archivo* ejecutable, y a un binario sin extensión
+el Finder le pone el de la app que dice abrirlo, que en esta Mac es GIMP. Tampoco se arregla desde C#:
+`SetIconFile` es un camino de Windows/Linux y `Photino.Native.dylib` no exporta el
+`setApplicationIconImage:` de macOS. El nombre y el icono de una app de Mac se declaran en un
+`Info.plist` o no existen.
+
+Se arregla empaquetando:
+
+```bash
+./Gnothi.Desktop/empaquetar-mac.sh
+open Gnothi.Desktop/bin/mac/Mymi.app --args Modulos
+```
+
+**Tenés que ver** (medido el 2026-09-18 en macOS 27, arm64):
+
+- el **Dock** y el **menú de la app** dicen **Mymi**, no `Gnothi.Desktop`;
+- el icono es **la cara de Mymi** —el mismo dibujo que pintan los dos teléfonos,
+  `Gnothi.Mobile/Assets/img/mymi-hub.png`, que el script convierte a `.icns`: no hay una segunda copia
+  del dibujo—, y no el de GIMP;
+- y adentro, la misma lista de módulos de arriba: empaquetar no cambia la ventana.
+
+La app es **autocontenida** (~87 MB, `osx-arm64`), así que corre en una Mac sin .NET. Al doble clic, sin
+argumentos, busca los módulos en `Mymi.app/Contents/MacOS/Modulos` —la forma instalada, la misma que
+arma el MSI en Windows—; con `--args` la apuntás a la carpeta que quieras. Si hay identidad de firma en
+el llavero la usa, igual que `publicar-mac.sh` y por la misma razón: sin ella cada build es, para el
+sistema, una app distinta.
+
+> **`dotnet run --project Gnothi.Desktop -- <carpeta>` no cambió** y sigue siendo el camino de
+> desarrollo: el script no toca el `.csproj`. Y en Actividad y en `ps` el proceso se sigue llamando
+> `Gnothi.Desktop`, que es el nombre del ejecutable; lo que cambia es lo que ve la persona.
 
 ---
 

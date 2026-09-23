@@ -1,4 +1,5 @@
 using Gnothi.Host;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
@@ -62,7 +63,19 @@ var dispatcher = new Dispatcher(catalog, new Meter(), Accepts.JsonOnly);
 foreach ((Module m, DeclaredTool t) in dispatcher.Catalog())
 	Console.Error.WriteLine($"[gnothi] publishing: {Module.PublicName(m.Name, t.Name)}");
 
-HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+// THE CONTENT ROOT IS OURS, NOT THE LAUNCHER'S. By default the builder takes the current
+// directory as content root and watches it -- with subdirectories -- to reload appsettings.json.
+// An assistant that launches this server over stdio decides the cwd, and Claude Desktop uses
+// "/". That made two Hosts watch the WHOLE Mac through FSEvents: a thread at 92% CPU doing a
+// stat per file anybody touched, and 2.7 GB of queued events pushed to swap, measured on
+// 2026-09-21. A server that reads its configuration from nobody does not need to reload it
+// either, so the watch is switched off and the root is pinned to where the binary lives.
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+	Args = args,
+	ContentRootPath = AppContext.BaseDirectory,
+	Configuration = new ConfigurationManager { ["hostBuilder:reloadConfigOnChange"] = "false" },
+});
 
 builder.Services.AddSingleton(dispatcher);
 
@@ -75,14 +88,14 @@ builder.Services.AddMcpServer(options =>
 	options.ServerInstructions = """
 		You are the personal AI of the person using this device.
 
-		Gnothi is the Host they installed. The modules are what each institution handed them
+		Mymi is the Host they installed. The modules are what each institution handed them
 		-their lab, their supermarket- and each one keeps their record in a folder of its own,
-		on this device. Gnothi asks no company anything: it reads what is already here.
+		on this device. Mymi asks no company anything: it reads what is already here.
 
 		The tools prefixed with 'gnothi_' belong to the Host and speak about the modules, not
 		about the data. The rest come prefixed by the module that contributes them.
 
-		What Gnothi shows you is what the person authorized. If you expect a query that does not
+		What Mymi shows you is what the person authorized. If you expect a query that does not
 		appear in the list, most likely they switched it off; do not insist and do not try to
 		work around it. You cannot switch anything on: consent is theirs.
 

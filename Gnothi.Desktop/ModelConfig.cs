@@ -52,6 +52,10 @@ internal sealed class ModelConfig
     // que el proveedor realmente ofrezca.
     public static readonly IReadOnlyList<Preset> Presets =
     [
+        // EL DE ESTA MAQUINA, primero: es la puerta que importa (on-device), y las de red son el
+        // "peor es nada". Sin URL y sin llave: nada sale del equipo. Solo se ofrece si el modelo
+        // de verdad genera aca (AppleModel.Works), ver PresetsAvailable.
+        new(AppleName, "apple", "", "on-device"),
         new("Claude", "anthropic", "https://api.anthropic.com/v1", "claude-sonnet-5"),
         new("ChatGPT (OpenAI)", "openai", "https://api.openai.com/v1", "gpt-4o-mini"),
         new("Gemini (Google)", "openai", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.0-flash"),
@@ -60,6 +64,24 @@ internal sealed class ModelConfig
         new("OpenRouter", "openai", "https://openrouter.ai/api/v1", "openai/gpt-oss-20b:free"),
         new("LM Studio (local)", "openai", "http://localhost:1234/v1", "local-model"),
     ];
+
+    /// <summary>El proveedor que corre en esta Mac.</summary>
+    ///
+    /// ES UNA IDENTIDAD, NO UNA ETIQUETA: es lo que se guarda en model.cfg, lo que compara el
+    /// desplegable y de lo que sale KeyPath. La ventana lo MUESTRA por Display.
+    public const string AppleName = "Apple Intelligence (en esta Mac)";
+
+    /// <summary>Como se llama un proveedor EN LA PANTALLA; lo que se guarda y se compara sigue
+    /// siendo el nombre del preset.</summary>
+    public static string Display(string name) =>
+        name == AppleName ? Textos.T("ajustes.proveedor.apple") : name;
+
+    // Los presets que tiene sentido mostrar EN ESTA MAQUINA: el de Apple solo donde el modelo
+    // genera. En Windows, Linux o una Mac sin el puente, la lista es la de siempre.
+    public IReadOnlyList<Preset> PresetsAvailable() =>
+        AppleModel.Works() ? Presets : [.. Presets.Where(p => p.Kind != "apple")];
+
+    public bool IsApple => Provider().Kind == "apple";
 
     // El proveedor elegido; si no hay archivo o no se puede leer, el default.
     public (string Name, string Kind, string Url, string Model) Provider()
@@ -99,12 +121,13 @@ internal sealed class ModelConfig
             ["name"] = name, ["kind"] = kind, ["url"] = url, ["model"] = model,
         }));
 
-    // Un modelo local (localhost) no necesita llave.
+    // Un modelo local -el de Apple, o uno en localhost- no necesita llave.
     public bool NeedsKey
     {
         get
         {
-            string u = Provider().Url;
+            (_, string kind, string u, _) = Provider();
+            if (kind == "apple") return false;
             return !u.Contains("localhost") && !u.Contains("127.0.0.1");
         }
     }
@@ -144,6 +167,12 @@ internal sealed class ModelConfig
     public async Task<ModelsResult> FetchModels(CancellationToken ct = default)
     {
         (string _, string kind, string url, string _) = Provider();
+
+        // Apple no lista modelos: hay uno, el del sistema, y no se elige.
+        if (kind == "apple")
+            return AppleModel.Works()
+                ? new ModelsResult(true, ["on-device"], null)
+                : new ModelsResult(false, [], AppleModel.Diagnosis());
 
         string? key = KeyPresent ? File.ReadAllText(KeyPath).Trim() : null;
         if (NeedsKey && string.IsNullOrWhiteSpace(key))

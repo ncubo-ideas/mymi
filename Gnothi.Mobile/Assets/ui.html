@@ -70,7 +70,21 @@
      action that grows Mymi sits next to it, in the Host's violet -- and STAYS on screen while the
      list scrolls, whether Sonia has five modules or thirty. The connect card left the grid. */
   .hola{display:flex;align-items:flex-end;gap:12px;margin:0 -16px 4px;padding:2px 18px 6px;
-       position:sticky;top:0;z-index:5;background:var(--paper)}
+       position:sticky;top:0;z-index:5;background:var(--paper);
+       /* Y SU FONDO SIGUE HASTA EL BORDE DE ARRIBA. `.scroll` tiene 12 px de relleno superior, y
+          `top:0` de una pegajosa se mide DESPUES de ese relleno: la cabecera se clavaba en y=12 y
+          por esos 12 px de aire asomaban los techos de las tarjetas que subian. Se veia una franja
+          suelta arriba del titulo, como si la cabecera flotara separada de la pantalla.
+          Medido en el Honor y en el emulador el 2026-09-21.
+
+          La sombra es un fondo, no una sombra: mismo color, sin difuminado, corrida 12 px hacia
+          arriba, asi que pinta exactamente la banda del relleno. NO se le quita el relleno a
+          `.scroll` porque son CINCO vistas colgando de esa misma clase, y NO se usa un
+          pseudo-elemento porque esto no agrega una caja ni cambia el alto: es pintura.
+
+          El color es `--paper`, el de la pantalla, no blanco puro: blanco dejaria una costura
+          visible contra el fondo de la pagina, que es justo lo que se estaba tratando de sacar. */
+       box-shadow:0 -12px 0 var(--paper)}
   .hola .t{flex:1;min-width:0}
   .hola{align-items:center}
   .hola b{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
@@ -457,7 +471,9 @@
      que convence es ver la cosa; el botón puede seguir siendo modesto.
      Y el color lo pone la marca -tint() sobre brand.color-, así que el bloque resalta siendo
      de ELLA y no gritando en el acento de Gnothi. */
-  .fijar-caja{display:flex;align-items:center;gap:13px;margin:0 0 14px;padding:12px;
+  /* EL AIRE ARRIBA ES PARTE DEL ARREGLO (Geaninna, 2026-09-21): sin él, moverlo abajo solo
+     cambia a qué cosa queda pegado. */
+  .fijar-caja{display:flex;align-items:center;gap:13px;margin:20px 0 14px;padding:12px;
          border-radius:14px;background:var(--card);box-shadow:var(--shadow)}
   .fijar-muestra{flex:none;width:58px;text-align:center}
   /* La misma caja de icono que la tarjeta, al tamaño en que la dibuja una pantalla de inicio. */
@@ -663,13 +679,13 @@
 <!-- ═══ JOURNAL ═══ -->
 <div class="view" id="v-journal">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Datos de tus instituciones</h2>
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="journal.titulo">Datos de tus instituciones</h2>
     <!-- «Información que Gnothi mantiene en este dispositivo» era el título otra vez. Y la
          segunda mitad -- lo que viaja al asistente -- estaba TAMBIÉN en la pantalla del
          proveedor, palabra por palabra. Cada promesa se hace una vez, en la pantalla donde
          importa: acá el registro es de ella; allá es donde hay un tercero. -->
-    <p class="qlead">Nadie más las lee.</p>
+    <p class="qlead" data-i18n="journal.lead">Nadie más las lee.</p>
     <div id="journal"></div>
   </div>
 </div>
@@ -703,20 +719,22 @@
 <!-- ═══ PROVEEDOR DE IA ═══ -->
 <div class="view" id="v-prov">
   <div class="scroll">
-    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
-    <h2 class="qtitle" style="margin-top:0">Proveedor de IA</h2>
+    <div class="back" onclick="gn.nav('set')">‹ <span data-i18n="nav.ajustes">Ajustes</span></div>
+    <h2 class="qtitle" style="margin-top:0" data-i18n="ajustes.proveedor-ia">Proveedor de IA</h2>
     <!-- «Todos hablan el mismo formato» se fue: es verdad cuando se ELIGE proveedor, y eso pasa
          en la otra hoja, donde también estaba escrito. Acá ya hay uno puesto. Queda lo único que
          esta pantalla tiene que decir, que es qué sale del teléfono. -->
-    <p class="qlead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
+    <p class="qlead" data-i18n="prov.lead">Al modelo viaja solo lo que la consulta elegida devuelve.</p>
     <div class="kv" id="set-model"></div>
 
     <h3 class="cap" data-i18n="prov.cap.acceso">Acceso</h3>
     <!-- The key card: state and actions, and an editor that NEVER echoes the stored value. -->
     <div class="key" id="set-key"></div>
     <!-- «Gratuita o de pago» vive en la hoja donde se elige proveedor, que es donde ella se
-         pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver. -->
-    <p class="hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
+         pregunta si le va a costar. Acá queda la promesa, que es lo que no se puede ver.
+         El id es para poder OCULTARLO: con el modelo del aparato no hay proveedor al que
+         viajarle, así que la frase deja de ser cierta. Ver paint(). -->
+    <p class="hint" id="prov-hint" data-i18n="prov.hint">Se guarda solo en este teléfono, y no viaja a ningún lado salvo al proveedor.</p>
 
     <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)" data-i18n="prov.cambiar">Cambiar proveedor</button>
   </div>
@@ -778,12 +796,12 @@
      "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
-    <h4>Tus instituciones, siempre contigo.</h4>
+    <h4 data-i18n="agregar.titulo">Tus instituciones, siempre contigo.</h4>
     <!-- UNA SOLA FRASE, y es la que ella no puede adivinar. Eran tres: la primera repetía el
          título con otras palabras, la segunda repetía «llevá con vos» que el título ya dice, y
          la tercera -la única con información- quedaba al final. Las tres vías de abajo dicen qué
          hacer; esto dice lo que pasa después de tocarlas. -->
-    <p>Gnothi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
+    <p data-i18n="agregar.lead">Mymi revisa el módulo y te muestra qué trae antes de instalar nada.</p>
     <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
          row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
     <div class="vias">
@@ -823,7 +841,7 @@
      the list comes back with the row marked, so she goes on with the next. -->
 <div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
   <div class="card">
-    <h4>Esto encontré en lo que elegiste</h4>
+    <h4 data-i18n="hallazgos.titulo">Esto encontré en lo que elegiste</h4>
     <!-- SIN PÁRRAFO. Decía «tocá el módulo que querés agregar» -- sobre una lista de módulos --,
          «Gnothi te muestra qué trae antes de instalarlo» -- ya dicho en la hoja anterior -- y
          «podés seguir con el siguiente», que se descubre cuando vuelve la lista con la fila
@@ -836,9 +854,9 @@
 <!-- the provider picker: choose, then just paste that provider's key -->
 <div id="psheet" class="osheet" onclick="if(event.target===this)gn.psheet(false)">
   <div class="card">
-    <h4>Elegí el proveedor del modelo</h4>
+    <h4 data-i18n="prov.elegir.titulo">Elegí el proveedor del modelo</h4>
     <!-- «Elegí uno» sobre una lista, bajo un título que dice «elegí el proveedor», sobraba. -->
-    <p>Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
+    <p data-i18n="prov.elegir.lead">Todos hablan el mismo formato. La llave puede ser gratuita o de pago.</p>
     <div id="plist"></div>
     <div id="pcustom" style="display:none">
       <input id="cu-url" autocomplete="off" spellcheck="false" placeholder="https://servidor/v1">
@@ -982,6 +1000,14 @@ const gn = {
   // se muestra, no cuando ella acepta, y en MIUI hay además un permiso propio que puede tragarse
   // el icono en silencio. Por eso el texto dice lo que Gnothi hizo -- pedirlo -- y no promete que
   // el icono esté.
+  // LO QUE EL LAUNCHER YA TIENE ANOTADO. Se pregunta dos veces por apertura del detalle -- el
+  // rótulo del botón y la nota de abajo -- y eso está bien: es un servicio del sistema leído en
+  // memoria, no una consulta al módulo, y una caché acá habría que invalidarla justo cuando la
+  // persona vuelve de la pantalla de inicio, que es el momento en que más importa acertar.
+  yaFijado(name) {
+    const r = gn.call('fijados') || {};
+    return !!(r.ok && r.ids && r.ids.indexOf('modulo:' + name) >= 0);
+  },
   fijar(name) {
     const b = document.getElementById('fijar');
     const dicho = document.getElementById('fijar-dicho');
@@ -990,8 +1016,11 @@ const gn = {
       // «PEDIDO» Y NO «LISTO», que es lo único que se puede afirmar -- ver el comentario de
       // arriba. El botón ahora lleva glifo y texto, así que el rótulo es su <span> y no su
       // último hijo.
-      if (b) { b.disabled = true; const s = b.querySelector('span'); if (s) s.textContent = 'Pedido'; }
-      if (dicho) dicho.textContent = 'Se lo pedimos a tu pantalla de inicio. Si no aparece, fijate que acepte accesos directos.';
+      if (b) { b.disabled = true; const s = b.querySelector('span'); if (s) s.textContent = T('detalle.fijar.pedido'); }
+      // Y LA FRASE SE COMPONE DE LAS DOS QUE YA EXISTÍAN: el texto quemado era un duplicado
+      // con otra redacción de 'detalle.fijar.si-no-aparece', que ya estaba en el catálogo en los
+      // dos idiomas. Lo único que no tenía clave era la primera oración.
+      if (dicho) dicho.textContent = T('detalle.fijar.pedimos') + ' ' + T('detalle.fijar.si-no-aparece');
       return;
     }
     if (dicho) dicho.textContent = r.razon || T('detalle.fijar.fallo');
@@ -1131,6 +1160,26 @@ const gn = {
         : sirvio + peq(T('hoja.respaldo.no-verificado'))))
       + sello;
 
+    // LA MISMA REVISIÓN, DICHA SIN EL DATO TÉCNICO (Geaninna, 2026-09-21). Arriba, donde la
+    // persona decide en quién confía, una IP y un nombre de llave no ayudan: o no le dicen nada o
+    // la asustan. Lo que sí decide es QUIÉN publica, y eso es el dominio.
+    //
+    // NO ES UN TEXTO MÁS BLANDO: es el mismo, sin el host ni la llave adentro. Los estados que
+    // son advertencia -- sin publicación, no publicado, otro origen, llave nueva, llave cambiada
+    // -- siguen arriba con su redacción entera. Lo único que baja al pliegue es el DATO.
+    // Un archivo elegido a mano conserva su rama: ahí «{archivo}» es el nombre que ella eligió,
+    // no una IP, y decirlo la ayuda a reconocerlo.
+    const respaldoArriba = (pro.origen === 'archivo'
+      ? (archivoTexto[pro.respaldo] || llego + peq(T('hoja.archivo.sin-ninguno')))
+      : ({
+          'verificado': T('hoja.respaldo.verificado.dominio', { quien: nQuien }),
+          'sin-publicacion': T('hoja.respaldo.sin-publicacion'),
+          'no-publicado': T('hoja.respaldo.no-publicado'),
+          'sin-origen-declarado': T('hoja.respaldo.sin-origen'),
+          'otro-origen': T('hoja.respaldo.otro-origen', { quien: nQuien }),
+        }[pro.respaldo] || T('hoja.respaldo.no-verificado')));
+
+
     // THE SIGNATURE: whose key, and since when Mymi knows it. Continuity, not virtue.
     const desde = pro.firmaDesde ? dia(pro.firmaDesde) : '';
     const llave = esc(pro.firmante || '?');
@@ -1143,6 +1192,20 @@ const gn = {
       'rotada': T('hoja.firma.rotada', { llave: llave }) + peq(T('hoja.firma.rotada.detalle')),
       'desconocida': T('hoja.firma.desconocida', { llave: llave }),
       'cambiada': T('hoja.firma.cambiada', { llave: llave }),
+    }[pro.firma] || T('hoja.firma.sin-firma');
+
+    // LA MISMA FIRMA, SIN EL NOMBRE DE LA LLAVE, que se fue al pliegue. El ESTADO no se
+    // pliega: una llave nueva, una que su origen no publica y una que cambio siguen dichas
+    // arriba con todas las letras. Va aca y no mas arriba porque necesita `desde` y `llave`.
+    const firmaArriba = {
+      'sin-firma': T('hoja.firma.sin-firma'),
+      'publicada': desde
+        ? T('hoja.firma.publicada.desde', { desde: desde })
+        : T('hoja.firma.publicada.primera.sin-llave') + peq(T('hoja.firma.publicada.recordar')),
+      'conocida': T('hoja.firma.conocida', { desde: desde }) + peq(T('hoja.firma.conocida.detalle')),
+      'rotada': T('hoja.firma.rotada.sin-llave') + peq(T('hoja.firma.rotada.detalle')),
+      'desconocida': T('hoja.firma.desconocida.sin-llave'),
+      'cambiada': T('hoja.firma.cambiada.sin-llave'),
     }[pro.firma] || T('hoja.firma.sin-firma');
 
     // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
@@ -1213,21 +1276,29 @@ const gn = {
     })();
     if (!up) document.querySelector('#propuesta button.cta').textContent = T('propuesta.instalar');
 
+    // EL NOMBRE CON QUE SE LA LLAMA EN LA FRASE DE LA CARPETA, y es `identidad`: el nombre
+    // corto de la marca, que es como ella la conoce -- «Delfos», no «Laboratorio Clínico Delfos».
+    // La propuesta NO manda `brand.shortName`; manda `identidad`, que el Host ya resolvió.
+    const marcaCorta = p.identidad || p.institucion || p.titulo || '';
+
     const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
     const proc = (p.dominio || p.razonSocial)
       ? '<div class="proc ' + veredicto + '">'
         + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
         + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+        // QUIÉN PUBLICA, y nada más: nombre legal, cédula y dominio. La IP y el puerto se fueron
+        // al pliegue, y la versión también: ninguna de las tres ayuda a decidir si confiar, y la
+        // IP encima se lee como una advertencia cuando no lo es. Cuando el dominio y el host NO
+        // coinciden eso sigue siendo una ALERTA arriba -- la pinta `alerta`, no esta línea.
+        //
+        // SIN DOMINIO DECLARADO SE DICE CON PALABRAS. Antes caía al host, que es justo la IP que
+        // se saca; un paquete que llega como archivo puede no declarar ninguno, y en esa pantalla
+        // «no declara quién lo publica» es información, mientras una IP es ruido.
         + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
         + (p.cedula ? ', ' + esc(p.cedula) : '')
         + (p.dominio
-            ? '<br>' + (veredicto === 'ok'
-                ? T('hoja.proc.mismo-dominio', { servido: esc(p.servido) })
-                : veredicto === 'duda'
-                  ? T('hoja.proc.distinto', { dominio: esc(p.dominio), servido: esc(p.servido) })
-                  : T('hoja.proc.archivo', { dominio: esc(p.dominio) }))
-            : '')
-        + (p.version ? ' · v' + esc(p.version) : '')
+            ? '<br>' + esc(p.dominio)
+            : (p.razonSocial ? '<br>' : '') + peq(T('hoja.proc.sin-dominio')))
         + '</span></div>'
       : '';
 
@@ -1243,7 +1314,13 @@ const gn = {
       // LO QUE LA PANTALLA NO PODÍA CONTESTAR: ya decía DÓNDE va a vivir el registro, y no
       // cuánto va a pesar, cada cuánto se actualiza ni por cuánto tiempo lo guardan -- que es
       // lo que la persona pregunta antes de aceptar.
-      + '<p>' + fuerte(T('hoja.donde-vive')) + '<br><code>' + esc(p.journal) + '</code>'
+      // DÓNDE VIVE, PRIMERO EN LLANO. La ruta cruda era lo primero que se leía y no dice lo que
+      // la persona pregunta. Ahora arriba va la frase -- en este teléfono, en la carpeta de Mymi
+      // para ella --, después cuánto pesa, cada cuánto se actualiza y cuánto lo guardan, y la
+      // ruta completa queda debajo en letra chica. NO se esconde: tiene derecho a saber dónde
+      // está su registro, y por eso no va al pliegue.
+      + '<p>' + fuerte(T('hoja.donde-vive')) + '<br>'
+      + T('hoja.donde-vive.llano', { quien: esc(marcaCorta) })
       + (p.tamano || p.refresco || p.retencion
           ? '<br><small>' + [
               p.tamano ? T('hoja.journal.tamano', { tamano: esc(p.tamano) }) : '',
@@ -1251,12 +1328,40 @@ const gn = {
               p.retencion ? T('hoja.journal.retencion', { retencion: esc(p.retencion) }) : '',
             ].filter(Boolean).join(' ') + '</small>'
           : '')
+      + '<br><small><code>' + esc(p.journal) + '</code></small>'
       + '</p>'
-      + '<p>' + fuerte(T('hoja.con-quien')) + '<br><code>' + esc(p.publicador || T('hoja.sin-publicador')) + '</code><br>'
-      + peq(T('hoja.unica-red')) + '</p>'
+      // CON QUIÉN HABLA: EL DOMINIO, no la URL. El puerto y el recurso -- `/expediente/1` -- son
+      // de quien empaqueta, no de quien decide. La URL entera vive en el pliegue.
+      + '<p>' + fuerte(T('hoja.con-quien')) + '<br>'
+      + (p.dominio ? fuerte(esc(p.dominio)) : '<code>' + esc(p.publicador || T('hoja.sin-publicador')) + '</code>')
+      + '<br>' + peq(T('hoja.unica-red')) + '</p>'
+      // QUÉ COMPROBÓ MYMI, en cuatro líneas y una más de la forma. El sello dejó de ser una nota
+      // al pie del respaldo y pasó a ser su propia línea: que el paquete no cambió desde que se
+      // generó es un hecho aparte de quién lo respalda. Y las capacidades y los ejecutables van
+      // juntos, porque son la misma pregunta: qué se lleva adentro.
       + '<p>' + fuerte(T('hoja.reviso')) + '</p><ul class="pr-tools">'
-      + '<li>' + respaldo + '</li><li>' + firma + '</li><li>' + forma + '</li><li>' + caps + '</li>'
-      + '<li>' + T('hoja.sin-ejecutables') + '</li></ul>';
+      + '<li>' + respaldoArriba + '</li>'
+      + (pro.sello ? '<li>' + T('hoja.respaldo.sello') + '</li>' : '')
+      + '<li>' + firmaArriba + '</li>'
+      + '<li>' + forma + '</li>'
+      + '<li>' + caps + ' ' + T('hoja.sin-ejecutables') + '</li></ul>'
+      // EL PLIEGUE, al pie: el dato que no decide nada pero que alguien va a querer ver. El host
+      // solo cuando NO es el dominio declarado, porque cuando coincide la línea de arriba ya lo
+      // dijo. Y el aviso de conexión sin cifrar entra acá porque su propio texto dice que así
+      // solo sirve en desarrollo: sobre https no aparece nunca.
+      + (function () {
+          const filas = [
+            p.publicador ? [T('hoja.detalle.publicador'), p.publicador] : null,
+            pro.firmante ? [T('hoja.detalle.llave'), pro.firmante] : null,
+            p.version ? [T('hoja.detalle.version'), p.version] : null,
+            (pro.servido && pro.servido !== p.dominio) ? [T('hoja.detalle.servido'), pro.servido + (via || '')] : null,
+          ].filter(Boolean);
+          if (!filas.length && pro.seguro) return '';
+          return '<details class="trace"><summary>' + T('hoja.detalles') + '</summary>'
+            + filas.map(f => '<p>' + peq(f[0]) + '<br><code>' + esc(f[1]) + '</code></p>').join('')
+            + (pro.seguro ? '' : '<p>' + peq(T('hoja.respaldo.inseguro')) + '</p>')
+            + '</details>';
+        })();
 
     document.getElementById('propuesta').classList.add('on');
   },
@@ -1530,6 +1635,38 @@ const gn = {
         + '</div></div>';
     }).join('');
 
+    // EL NOMBRE DE MARCA CABE EN SU TARJETA (Geaninna, 2026-09-18; medido y corregido el 09-21).
+    //
+    // «Monteverde» a 21 px pide 106 px y la caja del nombre topa en 102: se perdía la última
+    // letra. NO la recorta el `overflow:hidden` de la tarjeta -- el nombre termina en 186 y la
+    // tarjeta llega a 200, o sea adentro --: la recorta SU PROPIA CAJA, que es un item flex con
+    // `min-width:0` al lado del icono de 44. Importa saberlo: tocar el overflow de la tarjeta no
+    // arregla nada. «La Guaria» no baja ni un píxel, y «Sotaventos Motors» tampoco: ése parte en
+    // dos líneas y nunca desbordó.
+    //
+    // El tamaño baja de a un píxel hasta que la palabra más larga entra, nunca por debajo de 15.
+    // Medido, no silabeado: un nombre de marca no se parte al medio.
+    //
+    // VA CUANDO LA LETRA DE LA INSTITUCIÓN YA ESTÁ. Unas líneas más arriba se inyectan sus
+    // `@font-face`, y medir en el mismo tick mide con Manrope: el tamaño elegido no sería el de
+    // la letra que se va a ver. Por eso corre dos veces -- ahora, para que no haya un salto
+    // visible, y otra vez cuando `fonts.ready` dice que llegaron.
+    const queQuepaElNombre = () => grid.querySelectorAll('.nm b').forEach(b => {
+      b.style.fontSize = ''; b.style.overflowWrap = '';
+      let size = parseFloat(getComputedStyle(b).fontSize);
+      while (b.scrollWidth > b.clientWidth && size > 15) { size -= 1; b.style.fontSize = size + 'px'; }
+
+      // Y SI NI A 15 PX ENTRA, SE PARTE. Es el último recurso, y es lo honesto: a esa altura la
+      // opción es perder letras o partir la palabra, y una palabra a la que le falta la última
+      // letra se lee como un error de dedo, no como un nombre que no cabía. Sin esto el bucle
+      // se rendía en silencio: «Municipalidadísima» se queda en 126 px contra 102 y sigue
+      // recortada. El tope de 28 caracteres del manifiesto no alcanza, porque lo que no cabe
+      // es el ancho de UNA palabra, no el largo del nombre.
+      if (b.scrollWidth > b.clientWidth) b.style.overflowWrap = 'anywhere';
+    });
+    queQuepaElNombre();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queQuepaElNombre);
+
     if (gn.open) {
       const m = ms.find(x => x.name === gn.open);
       if (!m) { gn.nav('home'); return; }
@@ -1557,31 +1694,14 @@ const gn = {
         // El icono lleva el logo y el nombre de la institución, pero lo que abre es GNOTHI: el
         // launcher le estampa su badge en la esquina y eso no se puede quitar. Está bien que
         // esté -- dice quién corre el código -- y por eso el rótulo no dice «instalar la app».
-        + (m.enabled
-            ? '<div class="fijar-caja">'
-              // LA MUESTRA, que es el argumento entero: el MISMO iconOf() de la tarjeta, a 48px
-              // y con el rótulo debajo, o sea exactamente lo que va a quedar en la pantalla de
-              // inicio. Antes esto era una frase -«un icono de Delfos»- y una frase describe;
-              // esto muestra.
-              + '<div class="fijar-muestra">' + iconOf(m)
-              + '<span>' + esc(nameOf(m)) + '</span></div>'
-              + '<div class="fijar-que">'
-              // SIN PÁRRAFO. Decía «Así se va a ver. Al tocarlo abre esta app, acá adentro», y
-              // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
-              // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
-              // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
-              + '<b>En tu pantalla de inicio</b>'
-              // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
-              // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
-              // pantalla sí.
-              + '<button class="fijar" id="fijar" style="background:' + tint(colorOf(m), .11)
-              + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
-              + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
-              + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
-              + '<span>Agregar</span></button>'
-              + '<p class="fijar-dicho" id="fijar-dicho"></p>'
-              + '</div></div>'
-            : '')
+        // EL ACCESO DIRECTO SE FUE ABAJO (Geaninna, 2026-09-21). Estaba pegado a la cabecera y
+        // repetía el logo a 48 px justo debajo del grande: dos veces el mismo icono a dos
+        // tamaños, a un renglón de distancia, se lee como un error de la pantalla y no como una
+        // muestra. Ahora va DESPUÉS de las consultas, que es lo que la persona vino a ver.
+        //
+        // LA MUESTRA NO SE QUITA, y eso es a propósito: antes era una frase -- «un icono de
+        // Delfos» -- y se cambió porque el icono ES lo que va a quedar en su pantalla. Lo que
+        // sobraba era la cercanía, no la muestra.
 
         // The institution retired the key this module was accepted with. Said here, once, and
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
@@ -1611,9 +1731,43 @@ const gn = {
             + '</div>').join('')
         + '<p class="hint">' + T('detalle.consultas.apagada') + '</p>'
 
+
         + (m.description
             ? '<p class="desc">' + esc(m.description)
               + (m.doesNotDo ? ' <span class="noHace">' + esc(m.doesNotDo) + '</span>' : '') + '</p>'
+            : '')
+
+        + (m.enabled
+            ? '<div class="fijar-caja">'
+              // LA MUESTRA, que es el argumento entero: el MISMO iconOf() de la tarjeta, a 48px
+              // y con el rótulo debajo, o sea exactamente lo que va a quedar en la pantalla de
+              // inicio. Antes esto era una frase -«un icono de Delfos»- y una frase describe;
+              // esto muestra.
+              + '<div class="fijar-muestra">' + iconOf(m)
+              + '<span>' + esc(nameOf(m)) + '</span></div>'
+              + '<div class="fijar-que">'
+              // SIN PÁRRAFO. Decía «Así se va a ver. Al tocarlo abre esta app, acá adentro», y
+              // la muestra de la izquierda ya dice las dos cosas: el icono ES cómo se va a ver, y
+              // que lleva adentro de Gnothi se ve al tocarlo, no hace falta avisarlo antes.
+              // Quedan el lugar y el verbo, que es lo único que no se puede mostrar.
+              + '<b>' + esc(T('detalle.fijar.lugar')) + '</b>'
+              // EL GLIFO DICE LA ACCIÓN. El anterior era un rectángulo con renglones -un
+              // documento, o una lista-, que no es lo que este botón hace. Un más adentro de la
+              // pantalla sí.
+              + '<button class="fijar" id="fijar" style="background:' + tint(colorOf(m), .11)
+              + ';color:' + colorOf(m) + '" onclick="gn.fijar(\'' + m.name + '\')">'
+              + '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/>'
+              + '<path d="M12 8.5v7M8.5 12h7"/></svg>'
+              // EL VERBO CAMBIA SI YA ESTÁ. «Agregar» sobre algo que ya está agregado es lo que
+              // hacía que tocarlo pareciera roto: ahora dice volver a ponerlo, que es lo que el
+              // botón de verdad hace en ese caso.
+              + '<span>' + esc(T(gn.yaFijado(m.name) ? 'detalle.fijar.otra-vez' : 'detalle.fijar.agregar')) + '</span></button>'
+              // Y LA NOTA YA VIENE ESCRITA cuando el icono está: el mismo párrafo que después
+              // usa el resultado del pedido, para no sumar un lugar donde pueda hablar la
+              // pantalla.
+              + '<p class="fijar-dicho" id="fijar-dicho">'
+              + (gn.yaFijado(m.name) ? T('detalle.fijar.ya') : '') + '</p>'
+              + '</div></div>'
             : '')
 
         // LA PROCEDENCIA: lo que la institución DECLARA -- su dominio -- al lado de lo que
@@ -1631,16 +1785,34 @@ const gn = {
               + '><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
               + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>'
                  : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+              // LA MISMA REGLA DE DOS ZONAS QUE LA HOJA (Geaninna, 2026-09-21). Acá también
+              // estaban la IP y la versión, y acá también lo que decide es QUIÉN publica. El
+              // ícono sigue diciendo el veredicto -- comprobado, ojo, o «no hay con qué
+              // comparar» --: eso es estado y el estado no se pliega.
               + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
               + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
-              + (veredicto === 'ok'
-                  ? '<br>' + T('detalle.proc.mismo-dominio', { servido: esc(org.servedBy) })
-                  : veredicto === 'duda'
-                    ? '<br>' + T('detalle.proc.distinto', { dominio: esc(proc.domain), servido: esc(org.servedBy) })
-                    : proc.domain ? '<br>' + T('detalle.proc.archivo', { dominio: esc(proc.domain) }) : '')
-              + (org.version ? ' · v' + esc(org.version) : proc.version ? ' · v' + esc(proc.version) : '')
+              + (proc.domain
+                  ? '<br>' + esc(proc.domain)
+                  : (proc.legal ? '<br>' : '') + peq(T('hoja.proc.sin-dominio')))
               + '</span></div>'
             : '')
+
+        // Y EL DATO TÉCNICO, PLEGADO. Las mismas claves de la hoja: la llave, la versión y quien
+        // sirvió -- ése solo cuando NO es el dominio declarado, porque si coincide ya lo dijo la
+        // línea de arriba. El detalle no tiene la URL del publicador: la cáscara no la manda en
+        // el estado del módulo, y no vale inventarla desde el dominio.
+        + (function () {
+            const filas = [
+              m.signerKey ? [T('hoja.detalle.llave'), m.signerKey] : null,
+              (org.version || proc.version) ? [T('hoja.detalle.version'), org.version || proc.version] : null,
+              (org.servedBy && org.servedBy !== proc.domain) ? [T('hoja.detalle.servido'), org.servedBy] : null,
+            ].filter(Boolean);
+            return filas.length
+              ? '<details class="trace"><summary>' + T('hoja.detalles') + '</summary>'
+                + filas.map(f => '<p>' + peq(f[0]) + '<br><code>' + esc(f[1]) + '</code></p>').join('')
+                + '</details>'
+              : '';
+          })()
 
         + '<div class="master"><span>' + T('detalle.modulo-encendido') + '</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
@@ -1685,17 +1857,36 @@ const gn = {
       + ' · ' + (files === 1 ? T('journal.archivo.uno') : T('journal.archivo.varios', { n: files }));
 
     const s = gn.state.settings || {};
+    // EL NOMBRE DEL PROVEEDOR LOCAL SE TRADUCE; EL DE LOS DEMAS NO. «Groq» es el nombre de una
+    // empresa y se dice igual en los dos idiomas; «En este teléfono» es texto NUESTRO, o sea UI
+    // del Host, que por la regla 1 sigue a la persona. Lo que viaja en `s.name` es la IDENTIDAD
+    // que se guarda en model.cfg y no se toca: acá solo se elige como mostrarla.
+    const nombreProv = s.local ? T('ajustes.proveedor.local') : (s.name || s.provider);
+    const nombreServ = s.local ? T('ajustes.servidor.local')  : s.provider;
     document.getElementById('set-model').innerHTML =
-        '<div><span>' + T('ajustes.proveedor') + '</span><b>' + esc(s.name || s.provider) + '</b></div>'
-      + '<div><span>' + T('ajustes.servidor') + '</span><b>' + esc(s.provider) + '</b></div>'
+        '<div><span>' + T('ajustes.proveedor') + '</span><b>' + esc(nombreProv) + '</b></div>'
+      + '<div><span>' + T('ajustes.servidor') + '</span><b>' + esc(nombreServ) + '</b></div>'
       + '<div><span>' + T('ajustes.modelo') + '</span><b>' + esc(s.model) + '</b></div>';
-    document.getElementById('set-prov-sub').textContent = (s.name || s.provider || '—') + (s.model ? ' · ' + s.model : '');
-    document.getElementById('set-key-sub').innerHTML = s.keyPresent
-      ? '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1E9E6A;margin-right:6px"></i>' + T('ajustes.clave.puesta')
-      : '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--off);margin-right:6px"></i>' + T('ajustes.clave.falta');
+    document.getElementById('set-prov-sub').textContent = (nombreProv || '—') + (s.model ? ' · ' + s.model : '');
+    // EL PUNTO ROJO NO VA DONDE NO HAY NADA QUE FALTAR. El Host manda `local` desde que existe el
+    // proveedor del aparato -Shell.cs, «para que la pagina no pida llave donde no hace falta»- y
+    // esta pagina no lo leia: mostraba «No key — the assistant cannot answer» sobre el unico
+    // proveedor que no lleva llave, y que estaba contestando igual. Visto en un iPhone 17 Pro el
+    // 2026-09-17.
+    const punto = (c) => '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + c + ';margin-right:6px"></i>';
+    document.getElementById('set-key-sub').innerHTML = s.local
+      ? punto('#1E9E6A') + T('ajustes.clave.no-hace-falta')
+      : s.keyPresent ? punto('#1E9E6A') + T('ajustes.clave.puesta')
+                     : punto('var(--off)') + T('ajustes.clave.falta');
 
     // The stored key is NEVER echoed back into the page: the editor opens empty, always.
-    document.getElementById('set-key').innerHTML = gn.keyEdit
+    // Y EL PIE TAMBIEN: hablarle de llaves gratuitas o de pago a quien no necesita ninguna es
+    // ofrecerle un problema que no tiene. Se OCULTA, no se vacia: el repintado de data-i18n
+    // recorre el marcado y le volveria a poner el texto.
+    document.getElementById('prov-hint').hidden = !!s.local;
+    document.getElementById('set-key').innerHTML = s.local
+      ? '<div class="st"><i class="dot ok"></i><b>' + T('ajustes.local.telefono') + '</b></div>'
+      : gn.keyEdit
       ? '<div class="st"><b>' + T('ajustes.clave.pega-nueva') + '</b></div>'
         + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(T('ajustes.clave.placeholder')) + '">'
         + '<div class="btns"><button class="btn" onclick="gn.saveKey()">' + T('ajustes.llave.guardar') + '</button>'
@@ -1718,12 +1909,24 @@ const gn = {
   // ── the provider: pick one, then just paste ITS key ─────────────────────
   // Every entry speaks the OpenAI shape, which is the one wire format the app implements.
   // 'Otro' covers anything else that speaks it too -- LM Studio on the LAN included.
+  // LA LISTA DEL SELECTOR, CON EL APARATO ADELANTE CUANDO LO HAY. El Host manda la terna entera
+  // en settings.proveedorLocal, asi que la pagina no se sabe ni el nombre ni el modelo: los
+  // recibe. Va PRIMERO a proposito -- es el unico donde el dato no sale del telefono --, y su
+  // nombre se muestra traducido aunque lo que se guarde sea la identidad que vino.
+  provList() {
+    const s = (gn.state && gn.state.settings) || {};
+    const local = s.proveedorLocal
+      ? [{ name: s.proveedorLocal.name, url: s.proveedorLocal.url, model: s.proveedorLocal.model,
+           nota: 'prov.nota.local', local: true }]
+      : [];
+    return local.concat(PROV);
+  },
   psheet(on) {
     if (on) {
       const cur = (gn.state && gn.state.settings) ? gn.state.settings.name : '';
-      document.getElementById('plist').innerHTML = PROV.map((p, i) =>
+      document.getElementById('plist').innerHTML = gn.provList().map((p, i) =>
         '<div class="prow" onclick="gn.pickProvider(' + i + ')">'
-        + '<div class="t"><b>' + esc(p.name) + '</b>' + peq(T(p.nota)) + '</div>'
+        + '<div class="t"><b>' + esc(p.local ? T('ajustes.proveedor.local') : p.name) + '</b>' + peq(T(p.nota)) + '</div>'
         + (cur === p.name ? '<span class="cur">✓</span>' : '') + '</div>').join('')
         + '<div class="prow" onclick="document.getElementById(\'pcustom\').style.display=\'block\'">'
         + '<div class="t"><b>' + T('prov.otro') + '</b>' + peq(T('prov.otro.nota')) + '</div></div>';
@@ -1731,7 +1934,7 @@ const gn = {
     }
     document.getElementById('psheet').classList.toggle('on', on);
   },
-  pickProvider(i) { gn.useProvider(PROV[i]); },
+  pickProvider(i) { gn.useProvider(gn.provList()[i]); },
   saveCustom() {
     const url = document.getElementById('cu-url').value.trim();
     const model = document.getElementById('cu-model').value.trim();
@@ -1744,7 +1947,9 @@ const gn = {
     if (s) {
       gn.state = s;
       // no key for this provider yet -> open the editor right away: pick, paste, done.
-      gn.keyEdit = !s.settings.keyPresent;
+      // Salvo el del aparato, que no lleva llave: ahi abrir el editor seria pedir lo que no hace
+      // falta, que es el mismo error que la tarjeta de acceso ya tenia.
+      gn.keyEdit = !s.settings.local && !s.settings.keyPresent;
       gn.paint();
     }
   },
@@ -1850,6 +2055,7 @@ function T(clave, valores) {
 // Repinta lo que esta escrito en el marcado. Un nodo lleva data-i18n con su clave; si ademas
 // lleva data-i18n-attr, lo que se cambia es ese atributo y no el texto.
 function pintarTextos() {
+  document.documentElement.lang = IDIOMA;
   for (const el of document.querySelectorAll('[data-i18n]')) {
     const clave = el.getAttribute('data-i18n');
     if (!(clave in TEXTOS)) continue;
@@ -1988,6 +2194,8 @@ function mock(op, x) {
   // En el monitor no hay pantalla de inicio donde poner nada, y decirlo es mejor que fingir
   // que se pudo: el botón queda probable en su camino de error, que es el que más se ve.
   if (op === 'fijar') return { ok: false, razon: 'Acá no hay pantalla de inicio: esto solo funciona en el teléfono.' };
+  // Y sin pantalla de inicio no hay nada anotado: la maqueta dibuja el camino de agregar.
+  if (op === 'fijados') return { ok: false, ids: [] };
 
   // LA MAQUETA NO TIENE CATALOGO, y devuelve uno vacio a proposito en vez de inventar uno.
   //

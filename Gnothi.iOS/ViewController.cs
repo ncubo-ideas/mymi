@@ -13,10 +13,10 @@ using WebKit;
 
 namespace Gnothi.iOS;
 
-// EL HOST DE GNOTHI EN UN iPHONE, con cara. LA MITAD DE iOS Y NADA MAS.
+// GNOTHI'S HOST ON AN iPHONE, with a face. THE iOS HALF AND NOTHING ELSE.
 //
-// Este archivo es el espejo de Gnothi.Mobile/MainActivity.cs, y conviene leerlos al lado:
-// hacen lo mismo, en el mismo orden, con los mismos nombres. Lo que cambia es la API.
+// This file is the mirror of Gnothi.Mobile/MainActivity.cs, and they are worth reading side by side:
+// they do the same things, in the same order, with the same names. What changes is the API.
 //
 //     Android                          iOS
 //     -------------------------------  ---------------------------------------
@@ -24,20 +24,20 @@ namespace Gnothi.iOS;
 //     WebChromeClient.OnJsPrompt       WKUIDelegate.RunJavaScriptTextInputPanel
 //     result.Confirm(x)                completionHandler(x)
 //     RunOnUiThread                    InvokeOnMainThread
-//     Android.Util.Log.Info            Console.WriteLine  (sale por el log de Xcode)
+//     Android.Util.Log.Info            Console.WriteLine  (comes out through Xcode's log)
 //     FilesDir                         Library/Application Support
 //     GetExternalFilesDir/incoming     Documents/incoming   <- y este SE VE en Archivos
-//     file:///android_asset/ui.html    LoadFileUrl del bundle
+//     file:///android_asset/ui.html    LoadFileUrl from the bundle
 //
-// LA UNICA DIFERENCIA DE FONDO esta en la ultima fila, y es a favor de iOS: en Android el
-// paquete se empuja con adb porque no hay otra forma; aca Documents/ aparece en la app
-// Archivos, asi que la persona puede dejarlo ella misma. Sin cable y sin desarrollador.
+// THE ONLY REAL DIFFERENCE is in the last row, and it favours iOS: on Android the package is pushed
+// with adb because there is no other way; here Documents/ shows up in the Files app, so the person
+// can drop it in themselves. No cable and no developer.
 public sealed class ViewController : UIViewController
 {
 	private static readonly UIColor Fondo = UIColor.FromRGB(0xF5, 0xF3, 0xFB);
 
-	// [PENDIENTE DE GEANINNA] El alto de la franja del modulo. Aca y no inline para que ajustarlo
-	// sea cambiar un numero.
+	// [PENDING GEANINNA] The height of the module's strip. Here and not inline so that adjusting it is
+	// changing one number.
 	private const int FranjaAlto = 40;
 
 	private WKWebView? web;
@@ -45,9 +45,9 @@ public sealed class ViewController : UIViewController
 	private IosWebModuleHost? moduleHost;
 	private NSObject? foregroundWatch;   // keeps the WillEnterForeground observer alive with this controller
 
-	// EL MODULO QUE LA PERSONA ESTA MIRANDO, y el boton para salir de el. Los dos son de esta
-	// clase y no del Shell: el Shell no sabe que existe una pantalla, y esa es la linea que
-	// permite que el mismo Host corra en escritorio sin arrastrar UIKit.
+	// THE MODULE THE PERSON IS LOOKING AT, and the button for leaving it. Both belong to this class and
+	// not to the Shell: the Shell does not know a screen exists, and that is the line that lets the
+	// same Host run on the desktop without dragging UIKit along.
 	private IosWebModule? enPantalla;
 	private string? enPantallaNombre;
 	private UIViewController? enPantallaVc;
@@ -63,13 +63,13 @@ public sealed class ViewController : UIViewController
 			UIApplication.WillEnterForegroundNotification, _ => shell?.ReviewOriginsIfDue());
 
 		var config = new WKWebViewConfiguration();
-		// LA MARCA QUE LA PAGINA BUSCA. ui.html hace navigator.userAgent.includes('GnothiHost')
-		// y si no la ve NUNCA llama prompt() -- en un browser comun ese dialogo es modal y
-		// congela la pagina.
+		// THE MARK THE PAGE LOOKS FOR. ui.html does navigator.userAgent.includes('GnothiHost') and if it
+		// does not see it, it NEVER calls prompt() -- in an ordinary browser that dialogue is modal and
+		// freezes the page.
 		//
-		// ApplicationNameForUserAgent y NO CustomUserAgent: el primero AGREGA al user agent por
-		// omision, el segundo lo REEMPLAZA entero. Con el segundo la marca queda igual pero se
-		// pierde todo lo demas, y eso rompe cualquier otra deteccion de la pagina.
+		// ApplicationNameForUserAgent and NOT CustomUserAgent: the first ADDS to the default user agent,
+		// the second REPLACES it whole. With the second the mark is still there but everything else is
+		// lost, and that breaks any other detection the page does.
 		config.ApplicationNameForUserAgent = "GnothiHost";
 
 		// LA CAMARA DEL LECTOR SE QUEDA EN LA PAGINA. En iPhone un WKWebView manda TODO video al
@@ -92,8 +92,8 @@ public sealed class ViewController : UIViewController
 			Opaque = false,
 		};
 
-		// El equivalente del problema de insets de Android, y aca sale gratis: se ancla a las
-		// safe area guides y el sistema se encarga de la isla dinamica y de la barra de gestos.
+		// The equivalent of Android's insets problem, and here it comes for free: it anchors to the safe
+		// area guides and the system takes care of the dynamic island and the gesture bar.
 		View.BackgroundColor = Fondo;
 		View.AddSubview(web);
 
@@ -104,7 +104,7 @@ public sealed class ViewController : UIViewController
 		else
 			Log($"NO se encontro {html} -- revisar el BundleResource de ui.html en el csproj");
 
-		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, igual que en Android.
+		// THE TWO FOLDERS ARE CHOSEN BY THE PLATFORM, just as on Android.
 		string files = Path.Combine(Home(NSSearchPathDirectory.LibraryDirectory), "Application Support");
 		string incoming = Path.Combine(Home(NSSearchPathDirectory.DocumentDirectory), "incoming");
 		Directory.CreateDirectory(files);
@@ -123,37 +123,37 @@ public sealed class ViewController : UIViewController
 		Textos.Idioma = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		shell = new Shell(
-			// ReescribirRutas: true, y es obligatorio aca. El paquete lo arma armar-paquete.ps1
-			// con rutas absolutas de Android, que alla se saben de antemano. El contenedor de
-			// iOS lleva un GUID que cambia en cada instalacion, asi que la unica ruta valida es
-			// la que este proceso acaba de averiguar.
+			// ReescribirRutas: true, and it is mandatory here. The package is assembled by
+			// armar-paquete.ps1 with absolute Android paths, which over there are known in advance. The
+			// iOS container carries a GUID that changes on every install, so the only valid path is the
+			// one this process has just found out.
 			new Shell.Paths(
 				Files: files,
 				Incoming: incoming,
 				ReescribirRutas: true,
 				Instantaneas: SharedContainer(),
-				// La foto local es la que lee Intents/GnothiIntents.swift, la intent que vive
-				// DENTRO de esta app. No depende del App Group: si SharedContainer() da null, esta
-				// se escribe igual.
+				// The local snapshot is the one Intents/GnothiIntents.swift reads, the intent that lives
+				// INSIDE this app. It does not depend on the App Group: if SharedContainer() returns
+				// null, this one still gets written.
 				FotoLocal: true),
 			Log,
 			(kind, id, payload) => InvokeOnMainThread(() =>
 				web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { })),
 
-			// EL MODELO DE ESTE TELEFONO, si de verdad genera. Se pasa como fabrica porque el
-			// Shell se comparte con Android, donde estos simbolos no existen: alla el argumento
-			// va en null y el proveedor no se ofrece.
+			// THIS PHONE'S MODEL, if it really generates. It is passed as a factory because the Shell is
+			// shared with Android, where these symbols do not exist: over there the argument goes null and
+			// the provider is not offered.
 			//
-			// La comprobacion es Sirve() y no isAvailable, que MIENTE -en iOS 26.2 dice que si y
-			// la generacion falla-. Sirve() lo verifica generando, y cachea.
+			// The check is Works() and not isAvailable, which LIES -- on iOS 26.2 it says yes and the
+			// generation fails. Works() verifies it by generating, and caches.
 			ModelFoundation.Works() ? encuadre => new ModelFoundation(encuadre) : null);
 
-		// QUIEN SABE CREAR WEBVIEWS. ChooseShell es estatico y no tiene ViewController, asi que
-		// la cascara de webview no puede construir el moduleHost: se lo registra esta clase, que
-		// si lo tiene. Sin esto, un modulo con "type": "webview" falla diciendo exactamente eso.
+		// WHO KNOWS HOW TO CREATE WEBVIEWS. ChooseShell is static and has no ViewController, so the
+		// webview shell cannot build the moduleHost: this class registers it, because this class does
+		// have one. Without this, a module with "type": "webview" fails saying exactly that.
 		//
-		// Es la MISMA linea que MainActivity corre en Android, y con la misma forma: el Host solo
-		// nombra la interfaz, la plataforma pone quien la cumple.
+		// It is the SAME line MainActivity runs on Android, and in the same shape: the Host only names
+		// the interface, the platform provides whoever fulfils it.
 		moduleHost = new IosWebModuleHost(this, new IosSecretStore(), Log);
 		Gnothi.Host.WebViewShell.Host = moduleHost;
 
@@ -221,21 +221,21 @@ public sealed class ViewController : UIViewController
 
 		_ = Task.Run(async () =>
 		{
-			// LA SONDA VA ANTES DEL ARRANQUE, y a proposito: si el Host no levanta porque el
-			// AOT no dejo cargar un modulo, la respuesta a POR QUE tiene que estar ya escrita
-			// en el log. Un spike que falla sin decir en cual de los cuatro pasos fallo cuesta
-			// una tarde.
+			// THE PROBE GOES BEFORE THE START-UP, and on purpose: if the Host does not come up because
+			// the AOT would not let a module load, the answer to WHY has to be written in the log
+			// already. A spike that fails without saying which of the four steps it failed at costs an
+			// afternoon.
 			Probe.Run(Log);
 			BridgeProbe.Run(Log);
 			try
 			{
-				// Run() es el bucle del Host y no termina: se arranca UNA vez y se espera al
-				// final. Entre medio se atiende lo que hubiera llegado antes.
+				// Run() is the Host's loop and never ends: it is started ONCE and awaited at the end. In
+				// between, whatever had arrived earlier gets served.
 				Task corriendo = shell.Run();
 
-				// EL ENLACE QUE LLEGO ANTES DE QUE EL HOST LEVANTARA. Android tiene el mismo
-				// pendiente por la misma razon: iOS puede lanzar la app CON el universal link,
-				// y ahi ContinueUserActivity corre antes de que esto termine de armarse.
+				// THE LINK THAT ARRIVED BEFORE THE HOST CAME UP. Android has the same pending slot for
+				// the same reason: iOS can launch the app WITH the universal link, and then
+				// ContinueUserActivity runs before this has finished assembling itself.
 				if (pendingEnrollment is { Length: > 0 } p) { pendingEnrollment = null; await shell.Enroll(p); }
 
 				// AND THE FILES THAT ARRIVED BEFORE IT: a .gmod opened with «Copiar en Gnothi» can
@@ -254,8 +254,8 @@ public sealed class ViewController : UIViewController
 		base.Dispose(disposing);
 	}
 
-	/// La primera vez, si el paquete vino dentro de la app, se siembra Documents/incoming.
-	/// Despues no se toca: lo que la persona deje ahi por Archivos manda.
+	/// The first time, if the package shipped inside the app, Documents/incoming is seeded. After that
+	/// it is not touched: whatever the person drops there through Files wins.
 	private void SeedFromBundle(string incoming)
 	{
 		if (Directory.Exists(incoming)) return;
@@ -281,17 +281,17 @@ public sealed class ViewController : UIViewController
 	private static string Home(NSSearchPathDirectory which) =>
 		NSSearchPath.GetDirectories(which, NSSearchPathDomain.User, true)[0];
 
-	/// EL CONTENEDOR COMPARTIDO CON LA CARATULA, o null si no esta aprovisionado.
+	/// THE CONTAINER SHARED WITH THE CARATULA, or null if it is not provisioned.
 	///
-	/// Es la unica forma en que el Host de .NET y los App Intents de Swift se pueden pasar algo:
-	/// no se llaman, se dejan un archivo. Y funciona porque las dos apps son NUESTRAS -- App
-	/// Groups exige el mismo Team ID, que es tambien la razon por la que esto no serviria para
-	/// que una institucion de terceros entregue su propia caratula.
+	/// It is the only way the .NET Host and Swift's App Intents can pass each other anything: they do
+	/// not call each other, they leave a file. And it works because both apps are OURS -- App Groups
+	/// demands the same Team ID, which is also the reason this would not work for a third-party
+	/// institution shipping its own caratula.
 	///
-	/// DEVUELVE NULL SI FALTA APROVISIONAR, y hay que leer el log para saberlo: el App Group
-	/// tiene que estar habilitado en el portal de Apple para los DOS app IDs y venir en el
-	/// perfil de aprovisionamiento. Si falta, esto no tira excepcion -- devuelve null en
-	/// silencio, que es la clase de falla que cuesta una tarde si no esta dicha en algun lado.
+	/// IT RETURNS NULL IF PROVISIONING IS MISSING, and you have to read the log to find out: the App
+	/// Group has to be enabled in Apple's portal for BOTH app IDs and come in the provisioning profile.
+	/// If it is missing, this does not throw -- it returns null in silence, which is the kind of failure
+	/// that costs an afternoon if it is not written down somewhere.
 	private static string? SharedContainer()
 	{
 		const string grupo = "group.com.ncubo.gnothi";
@@ -307,19 +307,19 @@ public sealed class ViewController : UIViewController
 		return ruta;
 	}
 
-	// Sale por el log de Xcode y por `log stream` de la Mac. El equivalente del
-	// `adb logcat -s GNOTHI` de Android es:
+	// It comes out through Xcode's log and through the Mac's `log stream`. The equivalent of Android's
+	// `adb logcat -s GNOTHI` is:
 	//
 	//     log stream --predicate 'processImagePath CONTAINS "Gnothi"' --style compact
-	// ── ABRIR UN MODULO Y VERLO ──────────────────────────────────────────────────────────
+	// ── OPENING A MODULE AND SEEING IT ───────────────────────────────────────────────────
 	//
-	// El espejo de AbrirModulo/Mostrar/Cerrar de Gnothi.Mobile/MainActivity.cs, y a proposito con
-	// los mismos nombres: son las tres piezas que no se pueden compartir, asi que lo unico que
-	// puede mantenerlas juntas es que se lean igual.
+	// The mirror of AbrirModulo/Mostrar/Cerrar in Gnothi.Mobile/MainActivity.cs, and deliberately with
+	// the same names: they are the three pieces that cannot be shared, so the only thing that can keep
+	// them together is that they read the same.
 
-	// CONTESTA YA Y ABRE DESPUES. Levantar un modulo es hidratar su actor, que tarda; si esto
-	// esperara, prompt() del lado de la pagina queda bloqueado y la cara se congela. La pagina
-	// recibe "ok" y la vista aparece cuando esta lista.
+	// IT ANSWERS NOW AND OPENS AFTERWARDS. Bringing a module up means hydrating its actor, which takes
+	// time; if this waited, prompt() on the page's side would be blocked and the face would freeze. The
+	// page receives "ok" and the view appears when it is ready.
 	private string AbrirModulo(string nombre)
 	{
 		Gnothi.Host.Module? m = shell?.Find(nombre);
@@ -329,8 +329,8 @@ public sealed class ViewController : UIViewController
 		{
 			try
 			{
-				// Si el asistente ya le pregunto algo, el modulo esta vivo y abrir es instantaneo:
-				// Open lo devuelve tal cual. Esa es la razon por la que P1a se pudo medir sin que
+				// If the assistant has already asked it something, the module is alive and opening is
+				// instant: Open hands it back as it is. That is the reason P1a could be measured without
 				// esta pantalla existiera.
 				IosWebModule vivo = await moduleHost.Open(m, CancellationToken.None);
 				InvokeOnMainThread(() => Mostrar(vivo, nombre));
@@ -344,34 +344,35 @@ public sealed class ViewController : UIViewController
 		return "{\"ok\":true}";
 	}
 
-	// EL MODULO OCUPA LA PANTALLA ENTERA, con una FRANJA de Gnothi arriba. Decision de Geaninna,
-	// y el patron es el del in-app browser: el anfitrion se queda un renglon y le da el resto.
+	// THE MODULE TAKES THE WHOLE SCREEN, with a STRIP of Gnothi on top. Geaninna's decision, and the
+	// pattern is the in-app browser's: the host keeps one line and gives it the rest.
 	//
-	// POR QUE LA FRANJA Y NO UN BOTON FLOTANTE. Medido el 2026-09-07: un '‹ Gnothi' encima de un
-	// modulo full-bleed le tapaba el logo y la primera letra de "Supermercado La Guaria". Abajo
-	// pasa lo mismo con su nav. Un modulo que ocupa todo no deja lugar para cromo ajeno, asi que
-	// el cromo tiene que ocupar su propio espacio y correr al modulo hacia abajo.
+	// WHY THE STRIP AND NOT A FLOATING BUTTON. Measured on 2026-09-07: a '‹ Gnothi' on top of a
+	// full-bleed module covered its logo and the first letter of "Supermercado La Guaria". At the
+	// bottom the same happens with its nav. A module that takes up everything leaves no room for
+	// somebody else's chrome, so the chrome has to take its own space and push the module down.
 	//
-	// POR QUE LA FRANJA Y NO UN SHEET CON GRABBER, que fue la version anterior. El sheet INSINUA
-	// que estas dentro de Gnothi -la app queda asomando detras-; la franja lo DICE. Y ese es el
-	// argumento entero: esta es la app de la institucion, corriendo bajo Gnothi, leyendo un
-	// registro que vive en el telefono. Ademas un boton con etiqueta le gana a un gesto: el
-	// grabber es estandar pero hay que descubrirlo, y "Listo" no.
+	// WHY THE STRIP AND NOT A SHEET WITH A GRABBER, which was the previous version. The sheet HINTS
+	// that you are inside Gnothi -- the app peeks out behind it --; the strip SAYS SO. And that is the
+	// whole argument: this is the institution's app, running under Gnothi, reading a record that lives
+	// on the phone. Besides, a labelled button beats a gesture: the grabber is standard but has to be
+	// discovered, and "Listo" does not.
 	//
-	// LO QUE NO SE COPIA DEL PATRON ES LA URL. Un in-app browser muestra el origen porque el
-	// contenido vino de la red y ahi el origen es lo auditable. Aca lo sirve Gnothi desde su
-	// propio contenedor y el origen es gnothi-mod://<modulo>, que no le dice nada a la persona
-	// -y mostrarlo seria peor que no mostrarlo, porque parece una direccion y no lo es. Va el
-	// NOMBRE de la institucion. Se toma el cromo del patron, no su semantica.
+	// WHAT IS NOT COPIED FROM THE PATTERN IS THE URL. An in-app browser shows the origin because the
+	// content came off the network and there the origin is what can be audited. Here it is served by
+	// Gnothi from its own container and the origin is gnothi-mod://<module>, which tells the person
+	// nothing -- and showing it would be worse than not showing it, because it looks like an address
+	// and is not one. The institution's NAME goes there instead. The pattern's chrome is taken, not its
+	// semantics.
 	//
-	// [PENDIENTE DE GEANINNA] Esta franja es la MINIMA a proposito, para que ella la ajuste sobre
-	// algo que ya corre. Lo que hay que cuidar es el peso: el modulo YA trae su propio header y
-	// su propia nav, asi que esto son dos encabezados apilados. Si engorda, la app de la
-	// institucion parece encajonada. Alto, tipografia y si va o no el subtitulo son de ella.
+	// [PENDING GEANINNA] This strip is the MINIMAL one on purpose, so she can adjust it over something
+	// that already runs. What has to be watched is its weight: the module ALREADY brings its own header
+	// and its own nav, so this makes two stacked headers. If it grows, the institution's app looks
+	// boxed in. Height, typography and whether the subtitle goes there at all are hers.
 	//
-	// [DIVERGENCIA DELIBERADA CON ANDROID] Alla no hay franja porque el boton atras del sistema
-	// alcanza. Este punto se VE distinto en las dos plataformas a proposito; esta anotado en
-	// PRUEBAS-WEBVIEW-IOS.md para que nadie lo reporte como bug.
+	// [DELIBERATE DIVERGENCE FROM ANDROID] Over there there is no strip because the system's back
+	// button is enough. This point deliberately LOOKS different on the two platforms; it is noted in
+	// PRUEBAS-WEBVIEW-IOS.md so nobody reports it as a bug.
 	private void Mostrar(IosWebModule vivo, string nombre)
 	{
 		UIView? vista = vivo.View;
@@ -381,20 +382,20 @@ public sealed class ViewController : UIViewController
 
 		enPantalla = vivo;
 		enPantallaNombre = nombre;
-		// Visible es del codigo compartido y NO es cosmetico: WebModuleHost.Evict se niega a
-		// desalojar un modulo que la persona esta mirando.
+		// Visible belongs to the shared code and is NOT cosmetic: WebModuleHost.Evict refuses to evict a
+		// module the person is looking at.
 		vivo.Visible = true;
 
-		// UN VIEW CONTROLLER PROPIO Y NO la vista suelta: presentar exige un controller, y de paso
-		// es quien le da al WKWebView del modulo un ciclo de vida donde apoyarse.
+		// A VIEW CONTROLLER OF ITS OWN AND NOT the bare view: presenting demands a controller, and it is
+		// also what gives the module's WKWebView a lifecycle to lean on.
 		var pantalla = new UIViewController();
 		UIView raiz = pantalla.View!;
 		raiz.BackgroundColor = Fondo;
 
 		var franja = new UIView { BackgroundColor = Fondo, TranslatesAutoresizingMaskIntoConstraints = false };
 
-		// El nombre de la institucion, no el del modulo: 'compras' es la llave tecnica y
-		// "Mis compras" es lo que la persona reconoce.
+		// The institution's name, not the module's: 'compras' is the technical key and "Mis compras" is
+		// what the person recognises.
 		var quien = new UILabel
 		{
 			Text = Textos.T("ios.adentro-de", ("titulo", shell?.TitleOf(nombre) ?? nombre)),
@@ -429,21 +430,21 @@ public sealed class ViewController : UIViewController
 			listo.TrailingAnchor.ConstraintEqualTo(franja.TrailingAnchor, -16),
 			listo.CenterYAnchor.ConstraintEqualTo(franja.CenterYAnchor),
 
-			// EL MODULO ARRANCA DEBAJO DE LA FRANJA, que es lo que evita la superposicion por
-			// construccion y no por elegir bien las coordenadas.
+			// THE MODULE STARTS BELOW THE STRIP, which is what avoids the overlap by construction and not
+			// by choosing the coordinates well.
 			vista.TopAnchor.ConstraintEqualTo(franja.BottomAnchor),
 			vista.LeadingAnchor.ConstraintEqualTo(raiz.LeadingAnchor),
 			vista.TrailingAnchor.ConstraintEqualTo(raiz.TrailingAnchor),
 			vista.BottomAnchor.ConstraintEqualTo(raiz.BottomAnchor),
 		]);
 
-		// FullScreen y no PageSheet: con la franja diciendo donde estas, dejar a Gnothi asomando
+		// FullScreen and not PageSheet: with the strip saying where you are, leaving Gnothi peeking out
 		// atras no agrega y le come pantalla al modulo.
 		pantalla.ModalPresentationStyle = UIModalPresentationStyle.FullScreen;
 
 		// EL DELEGADO SE QUEDA aunque en FullScreen no haya descarte por gesto. Cuesta nada y
-		// protege lo que sigue: si alguien agrega otro camino de cierre y olvida limpiar, el
-		// modulo queda Visible para siempre y WebModuleHost.Evict no lo desaloja nunca mas.
+		// protects what comes next: if somebody adds another closing path and forgets to clean up, the
+		// module stays Visible forever and WebModuleHost.Evict never evicts it again.
 		pantalla.PresentationController!.Delegate = new AlDescartar(this);
 
 		enPantallaVc = pantalla;
@@ -452,7 +453,7 @@ public sealed class ViewController : UIViewController
 		Log($"abrir: '{nombre}' en pantalla");
 	}
 
-	// Sacarlo de la pantalla NO lo mata: el modulo sigue vivo y contestando preguntas del
+	// Taking it off the screen does NOT kill it: the module stays alive and goes on answering the
 	// asistente. Solo deja de verse, y vuelve a ser desalojable.
 	private bool Cerrar()
 	{
@@ -465,9 +466,9 @@ public sealed class ViewController : UIViewController
 		return true;
 	}
 
-	// Lo que hay que deshacer pase lo que pase, venga de Cerrar() o del gesto. La vista del modulo
-	// se saca de la jerarquia del sheet para que un Mostrar() posterior la pueda volver a poner:
-	// el WKWebView es del modulo y le sobrevive a la pantalla.
+	// What has to be undone whatever happens, whether it comes from Cerrar() or from the gesture. The
+	// module's view is taken out of the sheet's hierarchy so that a later Mostrar() can put it back:
+	// the WKWebView belongs to the module and outlives the screen.
 	private void Soltar()
 	{
 		if (enPantalla is null) return;
@@ -484,7 +485,7 @@ public sealed class ViewController : UIViewController
 		shell?.ReviewOriginsIfDue();
 	}
 
-	// El gesto de arrastrar el sheet hacia abajo no pasa por Cerrar(): llega por aca.
+	// The gesture of dragging the sheet downwards does not go through Cerrar(): it arrives here.
 	private sealed class AlDescartar : UIAdaptivePresentationControllerDelegate
 	{
 		private readonly ViewController host;
@@ -496,7 +497,7 @@ public sealed class ViewController : UIViewController
 	private static void Log(string s) => Console.WriteLine($"GNOTHI: {s}");
 	private string? pendingEnrollment;
 
-	// ── EL ALTA DESDE UN ARCHIVO, la mitad que SI es de iOS ────────────────────────────────
+	// ── ENROLMENT FROM A FILE, the half that IS iOS-specific ───────────────────────────────
 	//
 	// WRITTEN ON WINDOWS ON 2026-09-09, WITHOUT A MAC TO COMPILE IT: it mirrors what
 	// MainActivity.cs does and was measured to do on Android that day -the document picker with
@@ -606,15 +607,15 @@ public sealed class ViewController : UIViewController
 		_ = shell.Enroll(url);
 	}
 
-	// ── el puente, la mitad que SI es de iOS ────────────────────────────────────────────
+	// ── the bridge, the half that IS iOS-specific ───────────────────────────────────────
 	//
-	// La pagina llama window.prompt('gnothi', json), igual que en Android. Lo unico que hace
-	// este tipo es TRADUCIR: saca el json y entrega la respuesta por el completionHandler.
-	// Que se hace con el pedido es de Shell.Handle, y es el mismo archivo en las dos.
+	// The page calls window.prompt('gnothi', json), just as on Android. All this type does is
+	// TRANSLATE: it takes the json out and hands the answer back through the completionHandler. What is
+	// done with the request belongs to Shell.Handle, and that is the same file on both.
 	//
-	// UNA DIFERENCIA QUE NO SE NOTA DESDE LA PAGINA: aca el lado nativo es asincronico -- se
-	// contesta llamando un handler, no retornando. Del lado del javascript prompt() bloquea
-	// igual hasta que ese handler se llame, asi que ui.html no se entera ni cambia.
+	// ONE DIFFERENCE THAT CANNOT BE NOTICED FROM THE PAGE: here the native side is asynchronous -- you
+	// answer by calling a handler, not by returning. On the javascript side prompt() blocks all the
+	// same until that handler is called, so ui.html never finds out and never changes.
 	private sealed class Bridge : WKUIDelegate
 	{
 		private readonly ViewController host;
@@ -644,17 +645,16 @@ public sealed class ViewController : UIViewController
 				return;
 			}
 
-			// CASI TODO lo que la pagina pide lo atiende Shell.Handle, que es el MISMO archivo en
-			// las dos plataformas -- los dos verbos del alta incluidos, desde que la propuesta
-			// vive alla.
+			// ALMOST EVERYTHING the page asks for is served by Shell.Handle, which is the SAME file on both
+			// platforms -- both enrolment verbs included, ever since the proposal came to live over there.
 			//
-			// LA UNICA OP QUE SE INTERCEPTA ACA ES 'abrir', y por la misma razon que en Android
-			// (MainActivity.cs): poner una vista en pantalla es lo unico de todo el protocolo que
-			// NO se puede compartir, porque UIView y android.view.View no tienen nada en comun.
-			// Shell.Handle no la conoce a proposito -- si la conociera tendria que saber de
-			// pantallas- y por eso caia en su `_ => "{}"`: el boton llegaba al Host y el Host no
-			// tenia que hacer con el. Medido el 2026-09-07: se veia `bridge: abrir` en el log,
-			// que se escribe ANTES del switch, y despues nada.
+			// THE ONLY OP INTERCEPTED HERE IS 'abrir', and for the same reason as on Android
+			// (MainActivity.cs): putting a view on screen is the only thing in the whole protocol that
+			// CANNOT be shared, because UIView and android.view.View have nothing in common. Shell.Handle
+			// does not know about it on purpose -- if it did, it would have to know about screens -- and
+			// that is why it fell through to its `_ => "{}"`: the button reached the Host and the Host had
+			// nothing to do with it. Measured on 2026-09-07: `bridge: abrir` showed up in the log, which is
+			// written BEFORE the switch, and after that nothing.
 			//
 			// AND 'altaArchivo' (2026-09-09), for the same reason: the document picker is a view
 			// controller of this screen. What she picks comes back into the shared enrollment.

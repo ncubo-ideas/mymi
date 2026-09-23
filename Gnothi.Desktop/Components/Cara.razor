@@ -8,9 +8,11 @@
 *@
 
 <div class="carabar">
-    <button class="link" @onclick="() => Back.InvokeAsync()">&larr; Volver a Gnothi</button>
+    @* La flecha es del render y no de la frase: en el catalogo, una clave que la llevara adentro no
+       se podria pintar de otra forma en otra cara. El nombre de la institucion no se traduce. *@
+    <button class="link" @onclick="() => Back.InvokeAsync()">&larr; @T("pantalla.cara.volver")</button>
     <span class="title">@Identity</span>
-    <span class="meta">dentro de Gnothi &middot; tu registro queda en esta computadora</span>
+    <span class="meta">@T("pantalla.cara.dentro")</span>
 </div>
 @* sandbox WITHOUT allow-top-navigation and WITHOUT allow-popups: the module's origin, scripts and
    forms are its own, but it cannot take Gnothi's window somewhere else nor open one -- the half

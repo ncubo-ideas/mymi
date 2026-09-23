@@ -282,11 +282,11 @@ namespace Examenes.Dominio
 			Medicion habitual = NivelHabitual();
 			if (habitual != null)
 				lineas.Add(new ReferenciaDeLectura("habitual", habitual,
-					$"tu nivel de siempre ronda {habitual.Expresado}"));
+					"linea.antigeno-prostatico.habitual"));
 
 			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
-				$"a tu edad, lo esperable llega hasta {rango.Maximo.Expresado}"));
+				"linea.antigeno-prostatico.techo"));
 
 			return lineas;
 		}
@@ -304,17 +304,16 @@ namespace Examenes.Dominio
 			if (PicoNoConfirmado())
 			{
 				Medicion linea = NivelHabitual();
-				string suyo = linea == null ? Ultima.Valor.Expresado : linea.Expresado;
+				decimal suyo = linea == null ? Ultima.Valor.Valor : linea.Valor;
 
 				return new Interpretacion(Veredicto.PicoNoConfirmado, Severidad.Informativo,
-					$"se repitió el examen y el valor volvió a {Ultima.Valor.Expresado}: el pico "
-					+ $"anterior no se confirmó, y estás en tu nivel de siempre ({suyo})", hechos);
+					"lectura.antigeno-prostatico.pico-no-confirmado", hechos)
+					.ConNivelPropio(suyo);
 			}
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"cambió {Formato(hechos.Cambio)} {hechos.Unidad} en {hechos.DiasTranscurridos} días, "
-					+ "que es demasiado para el tiempo transcurrido", hechos,
+					"lectura.antigeno-prostatico.salto-inverosimil", hechos,
 					// El "espere una semana" de Alvaro: la repeticion no espera al control.
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
@@ -323,9 +322,9 @@ namespace Examenes.Dominio
 			Velocidad velocidad = VelocidadDelTramo();
 			if (velocidad.ExigeAtencion)
 				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					$"viene subiendo a {velocidad.Expresada}, y por encima de "
-					+ $"{Formato(AntigenoProstatico.VelocidadQueExigeAtencionPorAno)} {hechos.Unidad} por año conviene mirarlo",
-					hechos, Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
+					"lectura.antigeno-prostatico.viene-subiendo", hechos,
+					Accion.MostrarleEstoATuMedico(Plazo.EsteMes))
+					.ConRitmo(velocidad.PorAno, AntigenoProstatico.VelocidadQueExigeAtencionPorAno);
 
 			// SALIRSE DE LO SUYO, aunque el valor siga bajo el techo de la poblacion. Es la
 			// lectura que este analito exige y que un rango de referencia no puede dar.
@@ -333,9 +332,9 @@ namespace Examenes.Dominio
 			{
 				Medicion linea = NivelHabitual();
 				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					$"venías alrededor de {linea.Expresado} y esta vez dio {Ultima.Valor.Expresado}: "
-					+ "lo que importa acá no es el número sino que se salió de lo tuyo", hechos,
-					Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
+					"lectura.antigeno-prostatico.se-salio-de-lo-suyo", hechos,
+					Accion.MostrarleEstoATuMedico(Plazo.EsteMes))
+					.ConNivelPropio(linea.Valor);
 			}
 
 			if (!Ultima.EsCambioReal(hechos.Cambio))
@@ -345,24 +344,19 @@ namespace Examenes.Dominio
 				// esperar a la cita que ya ibas a tener.
 				return Ultima.EsNormalPara(paciente)
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"se mantiene alrededor de {Ultima.Valor.Expresado} desde hace "
-						+ $"{hechos.DiasTranscurridos} días", hechos)
+						"lectura.antigeno-prostatico.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, Severidad.ConsultePronto,
-						$"se mantiene estable, pero en {Ultima.Valor.Expresado} está por encima de "
-						+ $"lo esperado a tu edad", hechos,
+						"lectura.antigeno-prostatico.estable-fuera", hechos,
 						Accion.MostrarleEstoATuMedico(Plazo.EnLaProximaCita));
 			}
 
 			return Ultima.Direccion.EsFavorable(hechos.Cambio)
 				? new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"bajó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}", hechos)
+					"lectura.antigeno-prostatico.bajo", hechos)
 				: new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-					$"subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
-					+ $"en {hechos.DiasTranscurridos} días", hechos,
+					"lectura.antigeno-prostatico.subio", hechos,
 					Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 		}
-
-		private static string Formato(decimal valor) => valor.ToString("0.##");
 
 		// Dos decimales para todos los bordes del histograma, ni mas ni menos.
 		//

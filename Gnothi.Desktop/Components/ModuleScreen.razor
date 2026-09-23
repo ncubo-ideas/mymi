@@ -21,7 +21,26 @@
 }
 else
 {
-    <h1>@HostState.Icon(module.Manifest) @module.Manifest.Identity</h1>
+    @* LA MARCA DE LA INSTITUCION, la que ella declaro, igual que en la tarjeta de «Mis
+       conexiones». Este encabezado pintaba SIEMPRE el dibujo del rubro y nunca el logo, asi
+       que la misma institucion se veia con su gota en la lista y con un estetoscopio generico
+       acá. Y en Linux ni eso: sin una fuente de emoji instalada el glifo sale como un cuadro
+       vacio, que fue como se detectó -medido el 2026-09-21 en la VM de demo-.
+
+       El fallback al rubro se queda para quien no declaró marca: el Host no le inventa una
+       cara a nadie. *@
+    Module.BrandLook look = Module.LookOf(module.Manifest, module.Directory, out _);
+    <h1 class="conmarca">
+        @if (look.Logo.Length > 0)
+        {
+            <img class="marca chica" src="@look.Logo" alt="" />
+        }
+        else
+        {
+            <span class="marca chica sinlogo">@HostState.Icon(module.Manifest)</span>
+        }
+        @module.Manifest.Identity
+    </h1>
     <p class="sub">@module.Manifest.Title</p>
     @if (module.Installation.Shell.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase))
     {

@@ -1,0 +1,206 @@
+{
+  "sourceLanguage" : "es",
+  "strings" : {
+    "Buscá algo en mis exámenes de ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search something in my ${applicationName} lab results"
+          }
+        }
+      }
+    },
+    "Buscá algo en mis facturas de ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search something in my ${applicationName} invoices"
+          }
+        }
+      }
+    },
+    "Buscar en las facturas de ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search my invoices in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Buscar en los exámenes de ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search my lab results in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cómo salieron mis exámenes en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How did my lab results come out in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cómo van mis exámenes en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How are my lab results in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cuánto gasté en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much did I spend in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cuánto he gastado en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much have I spent in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Datos de exámenes de ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lab result data from ${applicationName}"
+          }
+        }
+      }
+    },
+    "Datos de facturas de ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invoice data from ${applicationName}"
+          }
+        }
+      }
+    },
+    "Mis datos reales en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My real data in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Mis exámenes en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My lab results in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Mis facturas en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My invoices in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Preguntale a ${applicationName} por mis exámenes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask ${applicationName} about my lab results"
+          }
+        }
+      }
+    },
+    "Preguntale a ${applicationName} por mis facturas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask ${applicationName} about my invoices"
+          }
+        }
+      }
+    },
+    "Preguntar sobre mis exámenes en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask about my lab results in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Preguntar sobre mis facturas en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask about my invoices in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Qué dicen mis exámenes en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do my lab results say in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Qué tiene ${applicationName} de verdad" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does ${applicationName} really have"
+          }
+        }
+      }
+    },
+    "Total de facturas en ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total of my invoices in ${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

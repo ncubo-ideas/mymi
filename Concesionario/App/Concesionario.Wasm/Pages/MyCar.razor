@@ -133,6 +133,7 @@ else
                         Missed="@missed"
                         AlDia="@upToDate"
                         Programadas="@scheduled"
+                        AlDiaPorCiento="@upToDatePerHundred"
                         Siguiente="@nextDue"
                         Modelo="@(sheet is not null ? sheet.Model : "")"
                         Odometro="@(stands is not null && stands.OdometerKnown ? texts.Grouped(stands.Odometer) : "--")"
@@ -220,7 +221,7 @@ else
             }
             else if (tab == "servicios")
             {
-                <div class="d__pad" style="padding-top:16px">
+                <div class="d__pad d-svc-page" style="padding-top:16px">
                     <div class="page-head page-head--row" style="margin-bottom:4px">
                         <h1 class="page-title">@texts["tab.services"]</h1>
                         <AppearanceToggle />
@@ -243,7 +244,7 @@ else
             }
             else if (tab == "historial")
             {
-                <div class="d__pad" style="padding-top:16px">
+                <div class="d__pad d-svc-page" style="padding-top:16px">
                     <div class="page-head page-head--row" style="margin-bottom:4px">
                         <h1 class="page-title">@texts["tab.history"]</h1>
                         <AppearanceToggle />
@@ -311,6 +312,7 @@ else
     private int overdue;
     private int missed;
     private int upToDate;
+    private int upToDatePerHundred;
     private int scheduled;
 
     private Dictionary<string, string> board = Empty();
@@ -440,6 +442,7 @@ else
         overdue = state.CountOverdue();
         missed = state.MissedCount();
         upToDate = state.CountUpToDate();
+        upToDatePerHundred = state.CountUpToDatePerHundred();
         scheduled = state.CountScheduled();
         evaluatedUpTo = state.EvaluatedUpTo();
         nextDue = state.NextDueKind();

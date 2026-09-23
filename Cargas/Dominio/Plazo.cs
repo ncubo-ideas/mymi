@@ -6,37 +6,35 @@ namespace Cargas.Dominio
 	/// CUANDO. Es la mitad de la accion: "anota el kilometraje" sin un cuando es el
 	/// consejo de plantilla que este producto no da. Cerrado y ordenado, comparado por
 	/// referencia como Severidad.
+	/// <para>
+	/// Los plazos concretos son criterio propio para el demo, como los umbrales.
+	/// </para>
 	/// </summary>
-	// ⚠️ Los plazos concretos son criterio propio para el demo, como los umbrales.
 	internal sealed class Plazo
 	{
 		/// <summary>El momento natural de este negocio: la proxima vez que cargue.</summary>
-		internal static readonly Plazo EnTuProximaCarga =
-			new Plazo("en tu proxima carga", "en tu próxima carga", 1);
+		internal static readonly Plazo EnTuProximaCarga = new Plazo("proxima-carga", 1);
 
-		internal static readonly Plazo EsteMes = new Plazo("este mes", "este mes", 2);
+		internal static readonly Plazo EsteMes = new Plazo("este-mes", 2);
 
-		internal static readonly Plazo EstaSemana = new Plazo("esta semana", "esta semana", 3);
+		internal static readonly Plazo EstaSemana = new Plazo("esta-semana", 3);
 
-		internal static readonly Plazo Pronto = new Plazo("pronto", "pronto", 4);
+		internal static readonly Plazo Pronto = new Plazo("pronto", 4);
 
 		/// <summary>El plazo que no apura nada: pesa cero.</summary>
-		internal static readonly Plazo CuandoQueras =
-			new Plazo("cuando queras", "cuando querás", 0);
+		internal static readonly Plazo CuandoQueras = new Plazo("cuando-queras", 0);
 
-		// La etiqueta interna, sin acentos: para comparar y serializar.
-		internal string Nombre { get; private set; }
-
-		// El plazo como se le dice a la persona, con acentos, listo para encadenar
-		// despues del que: "anotá el kilometraje" + "en tu próxima carga".
-		internal string ParaMostrar { get; private set; }
+		/// <summary>
+		/// EL CODIGO de este plazo: identidad, y lo unico que cruza el wire. Como se le dice a la
+		/// persona lo busca con este codigo la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
+		internal string Clave { get; private set; }
 
 		private readonly int peso;
 
-		private Plazo(string nombre, string paraMostrar, int peso)
+		private Plazo(string clave, int peso)
 		{
-			Nombre = nombre;
-			ParaMostrar = paraMostrar;
+			Clave = clave;
 			this.peso = peso;
 		}
 

@@ -1,5 +1,33 @@
 import AppIntents
 
+// LAS FRASES VIVEN EN DOS IDIOMAS, Y NO ES COSMETICA: ES LO QUE HABILITA LA MEDICION QUE FALTA.
+//
+// Siri AI -la rebautizada, la que consulta las entidades de la app- salio el 14 de septiembre de
+// 2026 y **exige el idioma del APARATO en ingles**. Con el aparato en ingles, una frase declarada
+// solo en espanol no entra siquiera al concurso: es el hallazgo de codigo 4 de HALLAZGOS.md, visto
+// desde el otro lado. Sin traducir esto, la proxima corrida mediria el idioma y no el ruteo.
+//
+// EL MECANISMO ES EL DE APPLE, no un truco: `AppShortcuts.xcstrings` para las frases -donde
+// `\(.applicationName)` se escribe `${applicationName}`- y `Localizable.xcstrings` para los
+// titulos y las descripciones, que son `LocalizedStringResource`. El idioma fuente sigue siendo el
+// espanol, asi que las corridas anteriores se pueden repetir tal cual.
+//
+// QUE SE TRADUJO Y QUE NO, a proposito:
+//   SI   las frases, los titulos y las descripciones -- la superficie por la que el sistema
+//        descubre y elige la accion.
+//   NO   lo que la intent CONTESTA, ni los datos de Examenes.swift / Facturas.swift. Eso es el
+//        registro de la persona, que por la regla 3 de reglas-de-localizacion.md no se traduce --
+//        y de paso sirve de atribucion: si la respuesta sale en espanol en un telefono en ingles,
+//        fue NUESTRA intent la que disparo y no otra cosa.
+//
+// CONSECUENCIA PARA EL TECHO, que conviene tener escrita antes de correrlo: el analito se llama
+// "Colesterol total" en el registro, asi que en un aparato en ingles la unica puerta del indice
+// sigue siendo una palabra en espanol. Si t8b falla ahi, hay que saber cual de las dos cosas fallo.
+//
+// MEDIDO el 2026-09-17 en un simulador en ingles: `en.lproj/AppShortcuts.strings` con las 20
+// frases, `en.lproj/Localizable.strings` con las 23 cadenas, `en.lproj/nlu.appintents` construido,
+// y buscar "lab results" en Atajos devuelve las acciones de Gnothi con sus nombres en ingles.
+
 // THE FLOOR, AND ONLY THE FLOOR.
 //
 // Every phrase here MUST contain the app name -- Apple requires it to disambiguate against

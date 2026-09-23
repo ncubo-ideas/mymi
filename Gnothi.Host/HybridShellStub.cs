@@ -1,13 +1,13 @@
 namespace Gnothi.Host;
 
-// LA CASCARA HIBRIDA NO EXISTE EN ESCRITORIO, por la misma razon que no existe la de webview:
-// ahi no hace falta. La mitad que el hibrido agrega es la CARA en un WebView, y en escritorio
-// el modulo se carga en proceso y el Host renderiza. Lo que en un telefono es una prohibicion
-// de tienda, aca no lo prohibe nadie.
+// THE HYBRID SHELL DOES NOT EXIST ON THE DESKTOP, for the same reason the webview one does not: it
+// is not needed there. The half the hybrid adds is the FACE in a WebView, and on the desktop the
+// module is loaded in process and the Host renders. What is a store ban on a phone is banned by
+// nobody here.
 //
-// El tipo existe solo porque Module.ChooseShell nombra "hybrid" en su switch. Tirar con un
-// mensaje claro es mejor que no compilar: mantiene el codigo del Host IDENTICO en las dos
-// plataformas, y deja dicha la imposibilidad donde alguien la buscaria.
+// The type exists only because Module.ChooseShell names "hybrid" in its switch. Throwing with a
+// clear message beats not compiling: it keeps the Host's code IDENTICAL on both platforms, and
+// leaves the impossibility stated where somebody would go looking for it.
 //
 // El archivo se llama HybridShellStub.cs para no chocar con el HybridShell.cs de Gnothi.MobileShared,
 // que es el de verdad. Gnothi.Mobile EXCLUYE este archivo de su glob; si algun dia entraran

@@ -307,8 +307,8 @@ namespace Cargas.Dominio
 				if (!Lealtad.HaySorteoQueCubra(carga.Fecha))
 				{
 					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto, "", "",
-						false, "esta carga es de antes o de después de los sorteos que conozco",
-						0, emitidos, 0m, ""));
+						false, BoletosDeLaCarga.FueraDeLasFechas,
+						0, emitidos, 0m, carga.MonedaDelTotal, ""));
 					continue;
 				}
 
@@ -317,8 +317,8 @@ namespace Cargas.Dominio
 				{
 					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
 						sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, false,
-						$"el sorteo da boletos por {sorteo.MonedaDeLaRegla} y esta carga fue "
-						+ $"en {carga.MonedaDelTotal}", 0, emitidos, 0m, ""));
+						BoletosDeLaCarga.LaReglaEsEnOtraMoneda, 0, emitidos, 0m,
+						carga.MonedaDelTotal, sorteo.MonedaPorBoleto));
 					continue;
 				}
 
@@ -326,7 +326,7 @@ namespace Cargas.Dominio
 				filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
 					sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, true, "",
 					sorteo.BoletosQueDaria(carga.Total), emitidos, sobrante,
-					new Dinero(sobrante, carga.Total.Moneda).Expresado));
+					carga.MonedaDelTotal, sorteo.MonedaPorBoleto));
 			}
 
 			return filas;

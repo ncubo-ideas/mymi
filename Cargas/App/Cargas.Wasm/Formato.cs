@@ -1,55 +1,62 @@
 using System.Globalization;
+using Cargas.App.Frases;
 
 namespace Cargas.Wasm;
 
-// COMO SE ESCRIBE UNA CIFRA EN EL TABLERO. Vive suelto y no dentro de una pantalla porque
-// lo usan las cuatro, y porque tenerlo en un solo lugar es lo que impide que dos pantallas
-// redondeen el mismo numero distinto.
-//
-// LOS TRES FORMATOS SON DEL DOMINIO, no de la caratula. Hubo uno solo -"0.##" para todo- y
-// eso ponia a la pantalla a contradecirse consigo misma: el instrumento decia "9.43 km/L"
-// mientras la frase del dominio, tres centimetros mas arriba, decia "el ultimo tramo dio
-// 9.4". La misma cifra con dos redondeos se lee como dos mediciones distintas.
-//
-// La precision de cada magnitud ya estaba decidida, y no aca: Rendimiento.Expresado es
-// "0.#", Dinero.Expresado es "0.##", y Tramo.Expresado da los kilometros enteros.
+/// <summary>
+/// COMO SE ESCRIBE UNA CIFRA EN EL TABLERO. Vive suelto y no dentro de una pantalla porque lo usan
+/// las cuatro, y porque tenerlo en un solo lugar es lo que impide que dos pantallas redondeen el
+/// mismo numero distinto.
+/// <para>
+/// NO ESCRIBE NINGUNA CIFRA POR SU CUENTA: delega en el MISMO renderizador con que la puerta compone
+/// las frases del dominio. La cifra de un instrumento y la de la frase tres centimetros mas arriba
+/// son la misma pantalla, y dos implementaciones de la coma decimal son la frase rival en pequeno.
+/// Los tres formatos siguen siendo del dominio -- un decimal el rendimiento, dos el dinero, enteros
+/// los kilometros -- y lo que cambia con el idioma es el separador.
+/// </para>
+/// <para>
+/// EL IDIOMA SE FIJA UNA VEZ, al negociar, y antes del primer render. Es estatico por la misma razon
+/// que esta clase lo es: la carátula tiene UNA eleccion de la persona, no una por pantalla, y
+/// pasarla por parametro a cada llamada del marcado la volveria ilegible sin comprar nada.
+/// </para>
+/// </summary>
 public static class Formato
 {
-	// Formato explicito SIEMPRE: la escala del decimal no sobrevive el journal (5571.50
-	// entra, 5571.5 sale del replay), asi que un ToString() pelado mostraria valores
-	// distintos antes y despues de reabrir la app.
-	//
-	// CON SEPARADOR DE MILES, y es del tablero: aca la cifra es el contenido, y "29392"
-	// hay que contarlo con el dedo. El separador es un espacio fino -el mismo que usa el
-	// dominio cuando arma una frase con plata adentro, Cifras.Plata- y el decimal sigue
-	// siendo el punto, asi que no hay dos convenciones en la misma pantalla.
-	private static readonly NumberFormatInfo Miles = new NumberFormatInfo
-	{
-		NumberGroupSeparator = "\u202f",   // espacio fino, escapado a proposito: invisible en el fuente
-		NumberDecimalSeparator = ".",
-	};
+	private static string idioma = Frases.IdiomaDelRegistro;
 
-	/// <summary>Una decimal: rendimiento, litros, ritmos. El formato de Rendimiento.</summary>
-	public static string Cifra(decimal medido) => medido.ToString("#,0.#", Miles);
+	/// <summary>
+	/// Fija el idioma con que se escribe toda cifra de la carátula. Lo llama <see cref="Textos"/>
+	/// al terminar de negociar con el dispositivo, y nadie mas.
+	/// </summary>
+	public static void Hablar(string etiqueta)
+	{
+		idioma = string.IsNullOrWhiteSpace(etiqueta) ? Frases.IdiomaDelRegistro : etiqueta;
+		Cultura = ReferenceEquals(LasFrases, Frases.De(Frases.ElOtroIdioma))
+			? CultureInfo.GetCultureInfo("en-US")
+			: CultureInfo.GetCultureInfo("es-ES");
+	}
+
+	private static Frases LasFrases => Frases.De(idioma);
+
+	/// <summary>Una decimal: rendimiento, litros, ritmos.</summary>
+	public static string Cifra(decimal medido) => LasFrases.Cifra(medido);
 
 	/// <summary>Kilometros. El dominio los expresa enteros y la pantalla tambien.</summary>
-	public static string Entero(decimal medido) => medido.ToString("#,0", Miles);
+	public static string Entero(decimal medido) => LasFrases.Entera(medido);
 
-	/// <summary>Dinero, dos decimales. El formato de Dinero.Expresado.</summary>
-	public static string Plata(decimal monto) => monto.ToString("#,0.##", Miles);
+	/// <summary>Dinero, dos decimales, SIN el simbolo: el marcado lo pone aparte.</summary>
+	public static string Plata(decimal monto) => LasFrases.Cifra(Math.Round(monto, 2));
 
-	/// <summary>El simbolo de la moneda. Si no la conoce, devuelve el codigo y un espacio:
-	/// mostrar "USD 48" es feo pero cierto, e inventar un simbolo no lo es.</summary>
-	public static string Simbolo(string moneda) => moneda switch
-	{
-		"CRC" => "₡",
-		"PAB" => "B/.",
-		"USD" => "$",
-		_ => moneda + " ",
-	};
+	/// <summary>El simbolo de la moneda, que no se traduce: es con lo que la estacion cobra.</summary>
+	public static string Simbolo(string moneda) => Frases.Simbolo(moneda);
 
 	public static string Mayuscula(string frase) =>
 		frase.Length == 0 ? frase : char.ToUpperInvariant(frase[0]) + frase.Substring(1);
 
-	public static readonly CultureInfo Cultura = new CultureInfo("es-ES");
+	/// <summary>
+	/// LA CULTURA CON QUE SE ESCRIBE UN NOMBRE DE MES, que es lo unico para lo que hace falta una:
+	/// el resto de las cifras las escribe el renderizador. Cambia con el idioma de la persona, y no
+	/// se lee del proceso -- en wasm esa cultura es la del runtime y no la de nadie.
+	/// </summary>
+	public static CultureInfo Cultura { get; private set; } = CultureInfo.GetCultureInfo("es-ES");
 }

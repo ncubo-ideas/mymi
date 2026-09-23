@@ -39,7 +39,7 @@ namespace Examenes.Dominio
 		{
 		}
 
-		internal override string Nombre => Suyo.ParaMostrar;
+		internal override string Clave => Suyo.Clave;
 
 		// El techo sube con la edad: la prostata crece, y 4.0 a los 70 no significa lo
 		// mismo que 4.0 a los 45. Este escalonado por decada es la razon concreta de que

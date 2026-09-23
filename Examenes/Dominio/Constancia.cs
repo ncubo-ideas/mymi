@@ -37,11 +37,11 @@ namespace Examenes.Dominio
 		// Presencia.NuncaAparecio no sabe nombrar ese caso, porque en un binario no hay
 		// dos maneras distintas de estar bien.
 		internal static readonly Constancia SiempreEsperable =
-			new Constancia("siempre lo esperable");
+			new Constancia("siempre-esperable");
 
 		// La ultima salio fuera de lo esperable y la anterior no. Todavia nadie lo vio dos
 		// veces.
-		internal static readonly Constancia Aparecio = new Constancia("apareció");
+		internal static readonly Constancia Aparecio = new Constancia("aparecio");
 
 		// Dos o mas inesperadas SEGUIDAS al final. Dejo de ser un resultado suelto, y es
 		// el inhabitante que justifica que los nominales tengan serie.
@@ -49,12 +49,16 @@ namespace Examenes.Dominio
 
 		// Hubo UNA inesperada aislada y la observacion siguiente volvio a lo esperable. NO
 		// ERA, y decirlo es la buena noticia que ninguna medicion sola puede dar.
-		internal static readonly Constancia NoConfirmado = new Constancia("no confirmado");
+		internal static readonly Constancia NoConfirmado = new Constancia("no-confirmado");
 
 		// Estuvo fuera de lo esperable de verdad —dos o mas veces— y despues volvio. No es
 		// lo mismo que NoConfirmado: ahi nunca se confirmo nada, aca se confirmo y volvio.
-		internal static readonly Constancia Volvio = new Constancia("volvió a lo esperable");
+		internal static readonly Constancia Volvio = new Constancia("volvio");
 
+		/// <summary>
+		/// EL CODIGO de esta constancia: identidad, y lo unico que cruza el wire. Como se dice lo busca con este
+		/// codigo la capa que redacta, en el idioma que le pidieron.
+		/// </summary>
 		internal string Nombre { get; private set; }
 
 		private Constancia(string nombre)

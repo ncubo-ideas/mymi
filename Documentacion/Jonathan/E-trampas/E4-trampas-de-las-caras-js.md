@@ -72,7 +72,7 @@ La cara buscaba `dueStates[nextDueKind]`, encontraba `undefined`, y el respaldo 
 
 ## 2 · «Color de la orina: undefined»
 
-`tarjetaAtencion` lee `r.presencia.ultimoResultado`, y `PresenciaDeAnalito` **no tiene ese campo**:
+`tarjetaAtencion` leía `r.presencia.ultimoResultado`, y `PresenciaDeAnalito` **no tiene ese campo**:
 tiene `Presencia`. Con las cetonas funcionaba de casualidad; con los analitos de forma «categoría en
 el tiempo» salía `undefined` **impreso en la pantalla, en tamaño titular**.
 
@@ -81,6 +81,37 @@ La lección es la de siempre en JS: `objeto.campoQueNoExiste` no es un error, es
 
 **Es el costo real de pasar a JS**, y no aparece en la cuenta de líneas: los −21 % de concesionario
 no descuentan los campos que el compilador dejó de revisar.
+
+### Y el título de esta sección siguió siendo literal doce días más — 2026-09-16
+
+**Ese arreglo no arregló «Color de la orina».** Arregló los binarios —cetonas, nitritos, glucosa en
+orina— y ahí se dio por cerrado, porque los binarios eran los que se estaban mirando. El analito que
+le da nombre a la sección siguió imprimiendo `undefined` hasta hoy, y **la causa era otra**:
+
+```js
+var v = r.presencia ? texto(r.presencia.ultimoResultado)
+                    : valor(t.valorFinal) + ' <span>' + texto(t.unidad) + '</span>';
+```
+
+**Dos ramas, y el dominio manda tres.** La vista `tendencia` devuelve `presencia` para «presencia en
+el tiempo», `hechos` para una serie continua, y **`constancia` + `observaciones`** para «categoría en
+el tiempo». La tercera caía en la rama continua y pedía `hechos.valorFinal`, que para un nominal no
+existe.
+
+El dato estaba ahí todo el tiempo: `constancia.ultimaCategoria` = `"ámbar"`. Y el reparto ya sabía
+que eran tres —`repartir` manda `r.constancia` a atención desde antes—, igual que la app suelta, que
+las separa en tres puertas explícitas y lo dice con todas las letras: *«un color no tiene tendencia
+ni puntos con número: tiene categorías»* (`MisExamenes.razor:1740`).
+
+**Lo que faltaba era la rama de dibujo y la de la cifra, no el reparto.** La tira de los binarios
+sirve igual sin tocarla: lo que marca no es «positivo» sino «se salió de lo esperable», que es la
+misma pregunta —cuándo pasa y cuántas veces seguidas— sobre otro conjunto de valores.
+
+> **La lección nueva, y es de método:** un defecto que se manifiesta en varios analitos puede tener
+> **más de una causa**. Arreglar la que explica los casos que uno está mirando y cerrar el ticket
+> deja el resto en pantalla, con el mismo síntoma y el mismo nombre. Verificado el 2026-09-16 en el
+> teléfono, en híbrida **y** en caja: «Color de la orina → ámbar», «Color de las heces → marrón», con
+> su tira y su «4 de 4 dentro de lo esperable».
 
 ## 3 · El `@onclick` que llegó como texto — el spike
 
@@ -167,3 +198,64 @@ extremos, se usan ésos — no los dos últimos puntos que uno tiene a mano.
 **6 · Ningún defecto lo encontró una prueba.** Los seis se vieron mirando la pantalla, y tres de
 ellos sólo son visibles con datos reales. La cara de un módulo **no tiene hoy ninguna red** que no
 sean los ojos de alguien.
+
+---
+
+## 7 · El arreglo que nunca se empaquetó — 2026-09-16
+
+El §6 se arregló el 2026-09-14 y **se siguió viendo en el teléfono el 16**: la captura del día de la
+caja muestra «212 → 212» con «↑ en ascenso» al lado, dos días después de darlo por cerrado.
+
+La corrección estaba bien escrita y estaba en el lugar correcto —`Examenes/App/Examenes.Cara/cara.js`—
+pero ese archivo **no es el que corre**. El que corre es la copia que `armar-bundle.ps1` mete en el
+`.gmod`, y el bundle no se había vuelto a armar:
+
+```
+Examenes/App/Examenes.Cara/cara.js                       31 254 bytes   (con el arreglo)
+Gnothi.Mobile/bundles/hibrida/examenes/web/cara.js       30 xxx bytes   (sin él)
+```
+
+**No es un defecto de la cara: es un defecto de la cadena.** Y se lee igual que un arreglo que no
+funciona, que es lo peor que puede pasar: se vuelve a mirar el código correcto buscando el error.
+
+Es la misma familia que los dos de la caja del mismo día —el `.cwasm` sin atar a su fuente, y el
+asset comparado por largo— y por eso vale escribirla como una sola regla:
+
+> **Un arreglo no está hecho hasta que corre.** Entre el archivo que uno edita y el byte que ejecuta
+> el aparato hay una cadena —compilar, empaquetar, firmar, copiar, precompilar— y **cada eslabón que
+> decide «esto no cambió» puede equivocarse**. Cuando una corrección «no hizo nada», la primera
+> pregunta no es qué está mal en el código: es si el código llegó.
+
+Para exámenes la cadena entera es: editar `Examenes.Cara/cara.js` → `armar-bundle.ps1 -Forma hibrida
+-Version <mayor a la instalada>` → copiar el `.gmod` a `bundles/` → reiniciar la página de la
+institución (el `h` del enlace de alta sella el paquete) → `adb reverse tcp:8096` → actualizar el
+módulo desde el teléfono. Gnothi avisa en cada paso si algo no cuadra: dijo *«es más viejo que el que
+tenés: es la 2.4.0 y tenés la 3.9.0»* y *«el paquete no es el que sellaba el enlace»*, las dos veces
+antes de tocar nada.
+
+### Y no era uno: eran tres
+
+Encontrado el §7, la comprobación obvia es barata —comparar las cinco caras fuente contra sus
+bundles— y **había dos más**, los dos con el arreglo del §3, el `[hidden] { display: none
+!important }`:
+
+| módulo | estado |
+|---|---|
+| cargas | al día |
+| dealership | al día |
+| **exámenes** | `cara.js` sin el arreglo del «212 → 212» |
+| **compras** | `cara.css` sin la regla de `[hidden]` |
+| **municipalidad** | `cara.css` sin la regla de `[hidden]` |
+
+Y el de compras **no era latente por casualidad**: el comentario del propio arreglo lo dice —
+*«latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto, una
+persona sin cambios de ritmo vería una rejilla vacía donde no hay nada que decir»*. Estaba escrito
+que iba a pasar, en el archivo que no se empaquetó.
+
+**Tres de cinco caras tenían un arreglo escrito y no entregado.** Los tres se armaron el 2026-09-16 y
+se verificó la regla **adentro del `.gmod`**, no en la carpeta de salida — que es la comprobación que
+esta sección existe para pedir.
+
+> **La comprobación que vale la pena automatizar:** `diff -rq <Modulo>.Cara bundles/hibrida/<mod>/web`.
+> Cuesta un segundo y contesta «¿lo que corre es lo que escribí?». Hoy nadie la hace, y por eso tres
+> arreglos estuvieron escritos y sin entregar hasta dos días.

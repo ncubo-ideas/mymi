@@ -26,37 +26,38 @@ internal interface IShell : IAsyncDisposable
 	// Names and not protocol objects: names are the only thing being compared.
 	Task<IReadOnlyList<string>> ActualTools(CancellationToken ct);
 
-	// LO QUE EL CARTERO DEJA. Gnothi hizo la red -- con SU credencial, contra el endpoint que
-	// EL fijo -- y le entrega al modulo un sobre ya leido. El modulo decide que hace con el.
+	// WHAT THE INSTITUTION'S FACE ASKS FOR, and it is ANOTHER SET than the tools'.
 	//
-	// ES OPCIONAL, y por eso tiene cuerpo por omision: un modulo que solo lee no tiene donde
-	// asentar nada, y eso no es una falla suya. Tirar seria decirle a quien lo llama que algo
-	// se rompio; lo que pasa es que no hay a quien entregarle.
+	// Invoke answers what the assistant may ask: what is declared in the manifest, coarse, and
+	// switchable off one by one. This answers what a SCREEN needs in order to draw -- series,
+	// points, reference lines --, which is neither declared nor of any use to the model. Measured
+	// over exámenes: 2 against 21.
 	//
-	// La cascara que SI entrega es la hibrida: ahi la cara no tiene motor y la superficie es la
-	// unica que puede escribir el journal.
-	// LO QUE PIDE LA CARA DE LA INSTITUCION, y es OTRO CONJUNTO que el de las tools.
-	//
-	// Invoke contesta lo que el asistente puede preguntar: lo declarado en el manifiesto, grueso,
-	// y apagable una por una. Esto contesta lo que una PANTALLA necesita para dibujar -- series,
-	// puntos, lineas de referencia --, que ni se declara ni le sirve al modelo. Medido sobre
-	// examenes: 2 contra 21.
-	//
-	// Son dos metodos y no un parametro a proposito: con un solo camino, una consulta de pantalla
-	// podria llegar por la puerta del asistente, y al reves, sin que nada lo impidiera.
+	// They are two methods and not one parameter on purpose: with a single path, a screen query
+	// could arrive through the assistant's door, and the other way round, with nothing to stop it.
 	Task<object> View(string name, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct) =>
 		throw new NotSupportedException(
 			"this shell has no screen queries: only the hybrid form has a face that asks.");
 
+	// WHAT THE POSTMAN DROPS OFF. Gnothi did the networking -- with ITS credential, against the
+	// endpoint IT pinned -- and hands the module an envelope it has already read. The module decides
+	// what to do with it.
+	//
+	// IT IS OPTIONAL, which is why it has a default body: a module that only reads has nowhere to
+	// record anything, and that is not a failing of its own. Throwing would tell the caller that
+	// something broke; what is happening is that there is nobody to deliver to.
+	//
+	// The shell that DOES take deliveries is the hybrid one: there the face has no engine and the
+	// surface is the only thing that can write the journal.
 	Task<string> Deliver(string envelopeJson, CancellationToken ct) =>
 		throw new NotSupportedException(
 			"this shell does not take deliveries: the module has no surface that writes. "
 			+ "In the hosted form the page applies events with the engine it carries.");
 
-	// HASTA DONDE YA LEYO EL MODULO, para que el cartero pida de ahi en adelante.
+	// HOW FAR THE MODULE HAS ALREADY READ, so the postman asks from there onwards.
 	//
-	// CERO POR OMISION, y cero no es un error: significa «traeme todo», que es lo que el cartero
-	// hacia antes de que esto existiera. Solo la forma hibrida lo contesta de verdad, porque es la
-	// unica donde la pagina no tiene actor con que saberlo.
+	// ZERO BY DEFAULT, and zero is not an error: it means «bring me everything», which is what the
+	// postman did before this existed. Only the hybrid form answers it for real, because it is the
+	// only one where the page has no actor to know it with.
 	Task<long> Cursor(CancellationToken ct) => Task.FromResult(0L);
 }

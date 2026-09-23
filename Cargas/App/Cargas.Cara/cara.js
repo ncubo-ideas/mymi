@@ -10,7 +10,13 @@
     'use strict';
 
     var P = window.Puente;
+    var I = window.Idioma;
     var $ = P.$, el = P.el;
+
+    // LO ESTATICO SE DICE YA, y no en arrancar(): el markup de arriba ya esta parseado cuando
+    // este script corre, y esperar a DOMContentLoaded seria pintar en un idioma para repintar en
+    // el otro.
+    I.pintarLoEstatico();
 
     // La placa que se esta mirando. El dominio reparte TODO por vehiculo, y quedarse con el
     // primero escondia los demas sin decirlo.
@@ -23,10 +29,14 @@
     // 1452.5 sale del replay- asi que un toString pelado mostraria valores distintos antes y
     // despues de reabrir. Es el mismo criterio que la app suelta.
 
+    // LA COMA DECIMAL ES DEL IDIOMA, no del dato: la app suelta escribe 9,4 en espanol y 9.4 en
+    // ingles con el mismo renderizador, y dos formas de la misma cifra en la misma pantalla es la
+    // frase rival en pequeno.
     function cifra(n) {
         var x = Number(n);
         if (!isFinite(x)) return '—';
-        return String(Math.round(x * 100) / 100);
+        var escrito = String(Math.round(x * 100) / 100);
+        return I.lengua === 'en' ? escrito : escrito.replace('.', ',');
     }
 
     // Los enteros de distancia llevan separador de miles fino: «1 452 km». En la sans el fino
@@ -173,6 +183,18 @@
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
+    // LA FRASE DEL CATALOGO SE ESCAPA PRIMERO Y SE LLENA DESPUES, y ese orden es la regla: la
+    // sentencia es nuestra pero varios huecos llevan marcado propio -<b class="mono">-, y al reves
+    // ese marcado saldria escrito en vez de aplicado. Lo que venga del registro lo escapa quien
+    // arma el hueco.
+    function frase(clave, huecos) {
+        var dicho = texto(I.texto(clave));
+        for (var hueco in huecos)
+            if (Object.prototype.hasOwnProperty.call(huecos, hueco))
+                dicho = dicho.split('{' + hueco + '}').join(huecos[hueco]);
+        return dicho;
+    }
+
     // ---------------------------------------------------------------- la franja
 
     // El tono lo decide la SEVERIDAD del dominio; aca solo se pinta.
@@ -204,9 +226,11 @@
         } else if (refrescando) {
             // MIENTRAS SE VA A BUSCAR, la franja lo dice. Antes decia «Apretá Actualizar» con la
             // tecla ya en «Actualizando…»: pedia una accion que estaba en curso.
-            cuerpo = '<p class="franja-frase">Buscando tus cargas en la estación…</p>';
+            cuerpo = '<p class="franja-frase">' + texto(I.texto('tablero.buscando')) + '</p>';
         } else {
-            cuerpo = '<p class="franja-frase">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>';
+            cuerpo = '<p class="franja-frase">' + frase('tablero.sinCargas', {
+                actualizar: '<em>' + texto(I.texto('comun.actualizar')) + '</em>'
+            }) + '</p>';
         }
 
         caja.innerHTML = '<span class="franja-luz"></span><div class="franja-texto">' + cuerpo + '</div>';
@@ -227,32 +251,39 @@
         // --- autonomia
         if (a.hay) {
             var descMedidor = p.hay
-                ? 'Te quedan unos ' + entero(p.kilometrosRestantes) + ' kilómetros de los ' +
-                  entero(a.kilometros) + ' de un tanque lleno'
-                : 'Con el tanque lleno te alcanza para unos ' + entero(a.kilometros) + ' kilómetros';
+                ? I.con('tablero.medidorAria', {
+                      restan: entero(p.kilometrosRestantes), lleno: entero(a.kilometros) })
+                : I.con('tablero.medidorLlenoAria', { lleno: entero(a.kilometros) });
 
             html += instrumento('instrumento--medidor',
-                '<span class="rotulo">Autonomía</span>' +
+                '<span class="rotulo">' + texto(I.texto('tablero.autonomia')) + '</span>' +
                 medidor(p.fraccionRestante, descMedidor, false) +
                 '<div class="cifra">~' + entero(p.hay ? p.kilometrosRestantes : a.kilometros) +
                 '<span class="unidad">km</span></div>' +
                 '<div class="cifra-pie">' + (p.hay
-                    ? 'lo que queda, estimado &middot; con el tanque lleno son <b class="mono">~' +
-                      entero(a.kilometros) + ' km</b>'
-                    : 'con el tanque lleno &middot; ' + cifra(a.capacidadEnLitros) + ' L a <b class="mono">' +
-                      cifra(r.habitualComoSeVe) + ' ' + texto(r.simbolo) + '</b>') + '</div>');
+                    ? frase('cara.pieLoQueQueda', {
+                          lleno: '<b class="mono">~' + entero(a.kilometros) + ' km</b>' })
+                    : frase('cara.pieTanqueLleno', {
+                          litros: cifra(a.capacidadEnLitros),
+                          rinde: '<b class="mono">' + cifra(r.habitualComoSeVe) + ' ' +
+                                 texto(r.simbolo) + '</b>' })) + '</div>');
         } else {
             html += instrumento('instrumento--medidor',
-                '<span class="rotulo">Autonomía</span>' +
-                medidor(0, 'Todavía no se puede estimar la autonomía', true) +
+                '<span class="rotulo">' + texto(I.texto('tablero.autonomia')) + '</span>' +
+                medidor(0, I.texto('tablero.sinAutonomiaAria'), true) +
                 '<div class="cifra">—</div>' +
-                '<div class="cifra-pie">Hace falta un tramo cerrado entre dos tanques llenos para ' +
-                'saber cuánto rinde, y de ahí sale la autonomía.</div>');
+                '<div class="cifra-pie">' + texto(I.texto('tablero.sinAutonomia')) + '</div>');
         }
 
         // --- rendimiento
-        var dentro = '<div class="fila"><span class="rotulo crece">Rendimiento</span>' +
-            (r.veredicto ? '<span class="sello ' + sello(r) + '">' + texto(r.veredicto) + '</span>' : '') +
+        var dentro = '<div class="fila"><span class="rotulo crece">' +
+            texto(I.texto('tablero.rendimiento')) + '</span>' +
+            // EL SELLO LLEVA EL VEREDICTO DICHO, no su codigo. `veredicto` es identidad y con el
+            // se decide el tono; imprimirlo ponia «sin-tramo» crudo en una pantalla en ingles.
+            (r.veredicto
+                ? '<span class="sello ' + sello(r) + '">' +
+                  texto(r.veredictoComoSeDice || r.veredicto) + '</span>'
+                : '') +
             '</div>';
 
         if (Number(r.actual) > 0) {
@@ -272,31 +303,38 @@
 
             dentro += '<div class="cifra-pie">' +
                 (Number(r.habitual) > 0
-                    ? 'tu nivel de siempre: <b class="mono">' + cifra(r.habitualComoSeVe) + ' ' +
-                      texto(r.simbolo) + '</b> &middot; ' : '') +
-                'sobre ' + r.tramosCalculados + ' ' + plural(r.tramosCalculados, 'tramo', 'tramos') +
-                ' entre tanques llenos' +
-                (r.tramosBloqueados > 0 ? ', ' + r.tramosBloqueados + ' sin calcular' : '') +
+                    ? frase('cara.pieNivel', {
+                          habitual: '<b class="mono">' + cifra(r.habitualComoSeVe) + ' ' +
+                                    texto(r.simbolo) + '</b>' })
+                    : '') +
+                frase(r.tramosCalculados === 1 ? 'tablero.sobreUnTramo' : 'tablero.sobreTramos',
+                      { cuantos: r.tramosCalculados }) +
+                (r.tramosBloqueados > 0
+                    ? frase('tablero.sinCalcular', { cuantos: r.tramosBloqueados })
+                    : '') +
                 '</div>';
         } else {
             dentro += '<div class="cifra">—</div><div class="cifra-pie">' +
                 (r.queFalta ? texto(mayuscula(r.queFalta)) + '.'
-                            : 'Todavía no hay un tramo cerrado entre dos tanques llenos.') + '</div>';
+                            : texto(I.texto('tablero.sinTramoCerrado'))) + '</div>';
         }
         html += instrumento('instrumento--ancho', dentro);
 
         // --- proxima carga
         html += instrumento(p.hay ? '' : 'instrumento--apagado',
-            '<span class="rotulo">Próxima carga</span>' + (p.hay
+            '<span class="rotulo">' + texto(I.texto('tablero.proximaCarga')) + '</span>' + (p.hay
                 // «~35 días» y no «en ~35 días»: el «en» en la tipografia de las cifras se leia
                 // como parte del numero, y el rotulo ya dice de que se trata.
                 ? '<div class="cifra cifra--chica">~' + p.diasEstimados +
-                  '<span class="unidad">' + plural(p.diasEstimados, 'día', 'días') + '</span></div>' +
-                  '<div class="cifra-pie">estimado &middot; te quedan <b class="mono">~' +
-                  entero(p.kilometrosRestantes) + ' km</b> y andás <b class="mono">' +
-                  cifra(p.kilometrosPorDia) + ' km</b> por día</div>'
+                  '<span class="unidad">' +
+                  texto(I.texto(plural(p.diasEstimados, 'comun.dia', 'comun.dias'))) +
+                  '</span></div>' +
+                  '<div class="cifra-pie">' + frase('cara.pieProxima', {
+                      restan: '<b class="mono">~' + entero(p.kilometrosRestantes) + ' km</b>',
+                      porDia: '<b class="mono">' + cifra(p.kilometrosPorDia) + ' km</b>'
+                  }) + '</div>'
                 : '<div class="cifra cifra--chica">—</div>' +
-                  '<div class="cifra-pie">Hace falta la autonomía y tu promedio diario.</div>'));
+                  '<div class="cifra-pie">' + texto(I.texto('tablero.sinProximaCarga')) + '</div>'));
 
         // --- costo por kilometro, UNO POR MONEDA
         //
@@ -306,27 +344,34 @@
         if (costos.length) {
             costos.forEach(function (c) {
                 html += instrumento('',
-                    '<span class="rotulo">Costo por kilómetro</span>' +
+                    '<span class="rotulo">' + texto(I.texto('tablero.costoPorKilometro')) + '</span>' +
                     '<div class="cifra cifra--chica">' + simbolo(c.moneda) + cifra(c.montoPorKilometro) + '</div>' +
-                    '<div class="cifra-pie">por kilómetro &middot; sobre <b class="mono">' +
-                    entero(c.kilometros) + ' km</b> con kilometraje anotado</div>');
+                    '<div class="cifra-pie">' + frase('cara.pieCosto', {
+                        kilometros: '<b class="mono">' + entero(c.kilometros) + ' km</b>'
+                    }) + '</div>');
             });
         } else {
             html += instrumento('instrumento--apagado',
-                '<span class="rotulo">Costo por kilómetro</span>' +
+                '<span class="rotulo">' + texto(I.texto('tablero.costoPorKilometro')) + '</span>' +
                 '<div class="cifra cifra--chica">—</div>' +
-                '<div class="cifra-pie">Hace falta kilometraje anotado para repartir el gasto.</div>');
+                '<div class="cifra-pie">' + texto(I.texto('tablero.sinCosto')) + '</div>');
         }
 
         // --- odometro
         html += instrumento('instrumento--medio' + (o.hay ? '' : ' instrumento--apagado'),
-            '<span class="rotulo">Odómetro</span>' + (o.hay
-                ? tira(o.kilometrosComoSeVen, 'Unos ' + entero(o.kilometrosComoSeVen) + ' kilómetros, estimados') +
-                  '<div class="cifra-pie">estimado &middot; ' + o.diasDesdeLaUltimaLectura + ' ' +
-                  plural(o.diasDesdeLaUltimaLectura, 'día', 'días') + ' desde la última lectura, a <b class="mono">' +
-                  cifra(o.porDiaComoSeVe) + ' ' + texto(o.simboloDeLaDistancia) + '</b> por día</div>'
+            '<span class="rotulo">' + texto(I.texto('tablero.odometro')) + '</span>' + (o.hay
+                ? tira(o.kilometrosComoSeVen,
+                       I.con('tablero.odometroAria', {
+                           kilometraje: entero(o.kilometrosComoSeVen) + ' ' + o.simboloDeLaDistancia
+                       })) +
+                  '<div class="cifra-pie">' + frase('cara.pieOdometro', {
+                      dias: o.diasDesdeLaUltimaLectura + ' ' +
+                            texto(I.texto(plural(o.diasDesdeLaUltimaLectura, 'comun.dia', 'comun.dias'))),
+                      porDia: '<b class="mono">' + cifra(o.porDiaComoSeVe) + ' ' +
+                              texto(o.simboloDeLaDistancia) + '</b>'
+                  }) + '</div>'
                 : '<div class="cifra cifra--chica">—</div>' +
-                  '<div class="cifra-pie">Hace falta una lectura anotada y tu promedio diario.</div>'));
+                  '<div class="cifra-pie">' + texto(I.texto('tablero.sinOdometro')) + '</div>'));
 
         caja.innerHTML = html;
     }
@@ -339,7 +384,7 @@
         var caja = $('faltantes');
         var lista = (r && r.faltantes) || [];
         if (!lista.length) {
-            P.apunte(caja, 'Nada: el tablero tiene todo lo que necesita para calcular.');
+            P.apunte(caja, I.texto('cara.nadaFalta'));
             return;
         }
         // QUE FALTA y QUE DESBLOQUEA, juntos: sin lo segundo, el faltante es una tarea sin
@@ -360,13 +405,18 @@
         p.classList.toggle('malo', !!malo);
     }
 
+    // EL IDIOMA VIAJA CON LA PREGUNTA. Las frases del dominio -el veredicto, lo que falta- las
+    // compone la superficie, que no tiene navegador; esta cara si lo es y ya leyo la eleccion del
+    // aparato, asi que se la dice. Sin esto la pantalla quedaba en ingles con las frases en
+    // espanol.
     function pintarTablero() {
         if (!placa) return;
-        P.pedir('tablero', { placa: placa })
+        P.pedir('tablero', { placa: placa, idioma: I.etiqueta })
             .then(function (t) { pintarFranja(t.rendimiento, false); pintarCuadro(t); })
-            .catch(function (e) { P.apunte($('cuadro'), e.message, true); });
+            .catch(function (e) { P.apunte($('cuadro'), P.porQue(e), true); });
 
-        P.pedir('faltantes', { placa: placa }).then(pintarFaltantes).catch(function () { /* nada */ });
+        P.pedir('faltantes', { placa: placa, idioma: I.etiqueta })
+            .then(pintarFaltantes).catch(function () { /* nada */ });
     }
 
     function pintarTodo() {
@@ -374,7 +424,7 @@
             .then(function (c) {
                 if (c.hayDatos === false) {
                     pintarFranja(null, false);
-                    P.apunte($('cuadro'), 'Todavía no hay cargas en este dispositivo.');
+                    P.apunte($('cuadro'), I.texto('cara.sinCargasAqui'));
                     return;
                 }
                 unidades = c.unidades || unidades;
@@ -400,21 +450,21 @@
 
                 pintarTablero();
             })
-            .catch(function (e) { P.apunte($('cuadro'), e.message, true); });
+            .catch(function (e) { P.apunte($('cuadro'), P.porQue(e), true); });
     }
 
     function releer() {
         var b = $('releer');
         b.disabled = true;
         b.setAttribute('aria-busy', 'true');
-        b.textContent = 'Actualizando…';
+        b.textContent = I.texto('comun.actualizando');
         pintarFranja(null, true);
 
         P.refrescar(contar).then(function (r) {
             if (r) pintarTodo();
             b.disabled = false;
             b.setAttribute('aria-busy', 'false');
-            b.textContent = 'Actualizar';
+            b.textContent = I.texto('comun.actualizar');
         });
     }
 

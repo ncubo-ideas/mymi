@@ -28,7 +28,7 @@ namespace Examenes.Dominio
 
 			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			lineas.Add(new ReferenciaDeLectura("meta", rango.Maximo,
-				$"la meta es bajar de {rango.Maximo.Expresado}"));
+				"linea.trigliceridos.meta"));
 
 			return lineas;
 		}
@@ -42,9 +42,7 @@ namespace Examenes.Dominio
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
 				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
-					$"los triglicéridos cambiaron {Math.Abs(hechos.Cambio)} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que es demasiado hasta para un analito que se mueve rápido", hechos,
+					"lectura.trigliceridos.salto-inverosimil", hechos,
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			bool enRango = Ultima.EsNormalPara(paciente);
@@ -52,27 +50,23 @@ namespace Examenes.Dominio
 			if (!Ultima.EsCambioReal(hechos.Cambio))
 				return enRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"los triglicéridos se mantienen en {Ultima.Valor.Expresado}, dentro de "
-						+ "lo deseable", hechos)
+						"lectura.trigliceridos.estable-dentro", hechos)
 					: new Interpretacion(Veredicto.Estable, Severidad.Vigilar,
-						$"los triglicéridos llevan tiempo en {Ultima.Valor.Expresado}", hechos,
+						"lectura.trigliceridos.estable-fuera", hechos,
 						Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 
 			// LA BUENA NOTICIA QUE UN PUNTO NO PUEDE DAR: bajar es bajar, aunque el valor
 			// siga fuera de la meta.
 			if (Ultima.Direccion.EsFavorable(hechos.Cambio))
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"los triglicéridos bajaron de {hechos.ValorInicial} a {hechos.ValorFinal} "
-					+ $"{hechos.Unidad}", hechos);
+					"lectura.trigliceridos.bajo", hechos);
 
 			return enRango
 				? new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
-					$"los triglicéridos subieron de {hechos.ValorInicial} a "
-					+ $"{hechos.ValorFinal} {hechos.Unidad}, todavía dentro de lo deseable",
-					hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))
+					"lectura.trigliceridos.subio-dentro", hechos,
+					Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))
 				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
-					$"los triglicéridos subieron de {hechos.ValorInicial} a "
-					+ $"{hechos.ValorFinal} {hechos.Unidad}", hechos,
+					"lectura.trigliceridos.subio-fuera", hechos,
 					Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 		}
 	}

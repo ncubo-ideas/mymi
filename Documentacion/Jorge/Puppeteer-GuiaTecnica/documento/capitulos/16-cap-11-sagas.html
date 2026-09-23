@@ -1,0 +1,68 @@
+<!-- CAP 11 · SAGAS -->
+  <section class="anchor" id="cap11">
+    <h2>11 · Sagas</h2>
+    <p class="chapter-meta">Un flujo de pasos ordenados agrupados por una clave de instancia, que no deben correr concurrentemente.</p>
+
+    <p>A veces los mensajes no son sueltos: son <strong>pasos de un mismo flujo</strong> —una reserva, luego su confirmación— que pertenecen a una misma “instancia” y deben ejecutarse en orden, sin pisarse. Para eso está la <em class="term">saga</em>.</p>
+
+    <table>
+      <thead><tr><th>Situación</th><th>Herramienta</th></tr></thead>
+      <tbody>
+        <tr><td>Un tipo de mensaje → un comando</td><td><code>Dispatch.On&lt;T&gt;(...)</code> (Cap. 10)</td></tr>
+        <tr><td>Varios tipos, cada uno un comando independiente</td><td>varios <code>Dispatch.On&lt;T&gt;(...)</code></td></tr>
+        <tr><td><strong>Pasos ordenados agrupados por clave, uno a la vez por clave</strong></td><td><strong>Saga</strong></td></tr>
+      </tbody>
+      <caption>Tabla 13. Cuándo alcanza un despacho simple y cuándo se necesita una saga.</caption>
+    </table>
+
+    <h3>11.1 · La API</h3>
+    <p><code>CreateDispatch()</code> va primero; <code>DefineSaga</code> se construye encima. Cada <code>On&lt;Msg&gt;</code> extrae la <strong>clave de instancia</strong> que agrupa un flujo, y cada <code>.Task</code> es un paso:</p>
+    <pre><span class="tag">C#</span><code>performance.CreateDispatch();                          <span class="c">// requerido primero</span>
+performance.DefineSaga(<span class="s">"Provision"</span>)
+    .On&lt;Reserve&gt;(m => m.InstanceId)                    <span class="c">// la clave agrupa un flujo</span>
+        .Task(<span class="s">"reserve"</span>, (actor, m) =>
+            actor.Using(<span class="s">"inventory.Reserve(@sku, @qty);"</span>)
+                 .WithParameters(p => { p.UserParameter&lt;<span class="k">string</span>&gt;(<span class="s">"sku"</span>, m.Sku);
+                                        p.UserParameter&lt;<span class="k">int</span>&gt;(<span class="s">"qty"</span>, m.Qty); })
+                 .PerformCommand())
+    .On&lt;Confirm&gt;(m => m.InstanceId)
+        .Task(<span class="s">"confirm"</span>, (actor, m) =>
+            actor.Using(<span class="s">"inventory.Confirm(@sku);"</span>)
+                 .WithParameters(p => p.UserParameter&lt;<span class="k">string</span>&gt;(<span class="s">"sku"</span>, m.Sku))
+                 .PerformCommand());</code></pre>
+
+    <h3>11.2 · Las dos garantías</h3>
+    <ul class="body">
+      <li><strong>Serialización por clave de instancia:</strong> los pasos de una misma clave corren en serie; claves distintas corren en paralelo. El paso B no adelanta al A del mismo flujo.</li>
+      <li><strong>Idempotencia de paso (en proceso):</strong> un paso ya completado para <code>(saga, clave, paso)</code> se salta. Un paso que <strong>lanza</strong> no se marca completo → se reintenta.</li>
+    </ul>
+
+    <h3>11.3 · Cuidado al reiniciar el proceso</h3>
+    <p>El registro de pasos completados vive <strong>en memoria</strong>: tras un reinicio está vacío, y un mensaje reentregado re-ejecutaría el paso. La guarda de verdad no va en el despachador, va en el <strong>diario del actor</strong> con un <code>Check</code>:</p>
+    <pre><span class="tag">C#</span><code>.Task(<span class="s">"reserve"</span>, (actor, m) =>
+    actor.Using(<span class="s">"Check(!inventory.Reserved) Error 'already reserved';"</span>,
+                <span class="s">"inventory.Reserve(@sku, @qty);"</span>)
+         .WithParameters(p => { p.UserParameter&lt;<span class="k">string</span>&gt;(<span class="s">"sku"</span>, m.Sku);
+                                p.UserParameter&lt;<span class="k">int</span>&gt;(<span class="s">"qty"</span>, m.Qty); })
+         .PerformCheckThenCommand());</code></pre>
+    <aside class="note">
+      <div class="h">✎ Nota del diseñador</div>
+      <p>Regla: el registro de pasos de la saga es un <strong>atajo rápido</strong>; la guarda real es el <code>Check</code> contra el estado replayable del actor. Tras un reinicio, el re-intento <em>falla el Check</em> (no re-aplica) en vez de duplicar el efecto.</p>
+    </aside>
+
+    <h3>11.4 · No hay compensación automática</h3>
+    <p>Una saga da serialización e idempotencia; <strong>no</strong> hace rollback. Si el paso 2 falla tras el paso 1, el efecto del 1 permanece. La compensación es un patrón que <strong>tú escribes</strong>: un mensaje de compensación con su propio <code>.Task</code>.</p>
+    <div class="call dont">
+      <div class="h"><span class="mark">✕</span> No hagas</div>
+      <p>No esperes que el framework deshaga los pasos previos cuando uno posterior lanza. El <code>reserve</code> ya comprometido no se revierte; el paso que falló simplemente se re-ejecuta al reentregarse. Modela un paso <code>release</code> explícito y emite su mensaje al detectar la falla.</p>
+    </div>
+
+    <h3>Lo que aprendiste</h3>
+    <ul class="body">
+      <li>Una saga agrupa pasos por <strong>clave de instancia</strong> y los serializa; claves distintas van en paralelo.</li>
+      <li><code>CreateDispatch()</code> primero; luego <code>DefineSaga(...).On&lt;T&gt;(clave).Task(nombre, handler)</code>.</li>
+      <li>La idempotencia en memoria es un atajo; la <strong>guarda real</strong> es un <code>Check</code> en el diario del actor.</li>
+      <li>No hay rollback automático: la <strong>compensación se modela</strong> como un paso más.</li>
+    </ul>
+    <p>Todo esto asume que los actores viven y se comunican en alguna parte. El último capítulo de la parte mira el mapa: cómo se replican y se unen a través de máquinas.</p>
+  </section>

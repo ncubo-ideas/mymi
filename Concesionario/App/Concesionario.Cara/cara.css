@@ -2,7 +2,7 @@
  *
  * `app.css` y `dueno.css` VIAJAN TAL CUAL, sin tocar una regla. Antes esta hoja tenia copiados a
  * mano los bloques de `dueno.css` que me parecia que hacian falta, y elegir cuales era decidir
- * como se ve Sotavento. Copiar los archivos enteros saca esa decision de aca.
+ * como se ve Sotaventos. Copiar los archivos enteros saca esa decision de aca.
  *
  * SON LAS DOS, y no solo la del dueño: `dueno.css` da el vocabulario `d-*` de esta pantalla, pero
  * el reset, el cuerpo y la tipografia los pone `app.css`. Llevar una sola dejaba la pantalla sin
@@ -55,3 +55,13 @@ footer .malo { color: var(--d-danger-ink); }
  * Latente en compras con `.mk-cambio` y `.mk-oportunidad`, que son `display: grid`: sin esto,
  * una persona sin cambios de ritmo veria una rejilla vacia donde no hay nada que decir. */
 [hidden] { display: none !important; }
+
+/* THE BRIDGE'S NOTE. `puente.js` -- the Host's file, the same in all five modules -- leaves a
+   <p class="apunte"> on every query, or "apunte malo" when it failed. Neither sheet of this
+   institution defines that class: its standalone app never needed it, because the app knows on
+   its own whether it could. So the note rendered as a bare paragraph and a failure looked exactly
+   like a remark.
+
+   It lives here and not in app.css on purpose: those two sheets are hers and travel untouched. */
+.apunte { color: var(--d-muted-2); font-size: 12.5px; margin: 0; }
+.apunte.malo { color: var(--d-danger-ink); }

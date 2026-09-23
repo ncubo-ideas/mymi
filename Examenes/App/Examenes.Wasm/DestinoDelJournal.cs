@@ -56,7 +56,7 @@ public sealed class DestinoPorPuente : IDestinoDelJournal
 		Func<ValueTask<ResultadoDeListado>> listar,
 		Func<string, ValueTask<ResultadoDeLectura>> leer,
 		Func<string, string, ValueTask<ResultadoDeEscritura>> escribir,
-		string nombre = "Gnothi")
+		string nombre = "Mymi")
 	{
 		ArgumentNullException.ThrowIfNull(listar);
 		ArgumentNullException.ThrowIfNull(leer);

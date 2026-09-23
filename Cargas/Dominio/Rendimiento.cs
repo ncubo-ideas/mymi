@@ -71,6 +71,5 @@ namespace Cargas.Dominio
 			return KilometrosPorLitro > referencia.KilometrosPorLitro * multiplo;
 		}
 
-		internal string Expresado => $"{KilometrosPorLitro:0.#} km/L";
 	}
 }

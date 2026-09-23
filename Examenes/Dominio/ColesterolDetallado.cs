@@ -29,12 +29,9 @@ namespace Examenes.Dominio
 			Hdl = Medida(hdl, unidad, ElDelHdl);
 		}
 
-		internal override string Nombre => "Colesterol HDL/LDL";
+		internal override string Clave => "colesterol-detallado";
 
 		internal Medicion Ldl => Valor;
-
-		// Se muestran los dos, porque el examen son los dos.
-		internal override string ResultadoExpresado => $"LDL {Ldl.Expresado} / HDL {Hdl.Expresado}";
 
 		// DOS ANALITOS, no uno. Este examen trae el LDL y su HDL, y son dos cosas medidas
 		// distintas: una se lee hacia abajo y la otra hacia arriba. Sin este override

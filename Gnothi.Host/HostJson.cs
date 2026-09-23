@@ -3,26 +3,25 @@ using System.Text.Json.Serialization;
 
 namespace Gnothi.Host;
 
-// JSON DEL HOST SIN REFLEXION, generado al compilar.
+// THE HOST'S JSON WITHOUT REFLECTION, generated at compile time.
 //
-// POR QUE EXISTE. `JsonSerializer.Serialize<T>` y `Deserialize<T>` descubren la forma del tipo
-// POR REFLEXION, en runtime. Eso anda en escritorio y en Android -- donde el linker esta
-// apagado a proposito, «reflection IS the mechanism, not a detail»-- y NO anda bajo NativeAOT,
-// que es el unico camino documentado para embeber el Host como framework en una app de Swift.
-// Ver NotasGnothiHost/33: de eso depende que en iOS pueda haber Puerta 3.
+// WHY IT EXISTS. `JsonSerializer.Serialize<T>` and `Deserialize<T>` discover a type's shape BY
+// REFLECTION, at runtime. That works on the desktop and on Android -- where the linker is off on
+// purpose, «reflection IS the mechanism, not a detail» -- and does NOT work under NativeAOT, which
+// is the only documented path for embedding the Host as a framework inside a Swift app. See
+// NotasGnothiHost/33: whether iOS can have Door 3 depends on it.
 //
-// QUE HACE EL GENERADOR. Lee estos atributos al compilar y escribe el lector y el escritor de
-// cada tipo como codigo C# comun. No hay reflexion en runtime, el trimmer no puede borrar nada
-// que haga falta, y el analizador deja de quejarse -- IL2026 e IL3050 desaparecen del sitio.
+// WHAT THE GENERATOR DOES. It reads these attributes at compile time and writes each type's reader
+// and writer as ordinary C# code. There is no runtime reflection, the trimmer cannot delete anything
+// that is needed, and the analyser stops complaining -- IL2026 and IL3050 disappear from the site.
 //
-// LO QUE SE GANA ADEMAS, y no es menor: si alguien agrega una propiedad a Manifest y el
-// generador no la puede manejar, se entera AL COMPILAR. Con reflexion se enteraba en el
-// telefono, con un campo que llegaba vacio y sin error.
+// WHAT ELSE IS GAINED, and it is not minor: if somebody adds a property to Manifest and the
+// generator cannot handle it, they find out AT COMPILE TIME. With reflection they found out on the
+// phone, with a field arriving empty and no error.
 //
-// QUE VA ACA Y QUE NO. Solo tipos CONCRETOS del Host. Lo que viaja como `object` -- los hechos
-// que devuelve un modulo -- no puede estar aca por definicion: su forma la decide el modulo y
-// el Host no la conoce. De eso se encarga Gnothi.Assistant/Json.cs, escribiendo el arbol a
-// mano.
+// WHAT BELONGS HERE AND WHAT DOES NOT. Only CONCRETE Host types. What travels as `object` -- the
+// facts a module returns -- cannot be here by definition: its shape is decided by the module and the
+// Host does not know it. Gnothi.Assistant/Json.cs takes care of that, writing the tree by hand.
 [JsonSourceGenerationOptions(
 	PropertyNameCaseInsensitive = true,
 	ReadCommentHandling = JsonCommentHandling.Skip,
@@ -31,9 +30,9 @@ namespace Gnothi.Host;
 [JsonSerializable(typeof(Installation))]
 public partial class HostJson : JsonSerializerContext
 {
-	// La misma forma, pero indentada. Es para los archivos que LEE UNA PERSONA -- el
-	// installation.json es de ella y lo va a abrir con un editor -- y por eso el formato no es
-	// un detalle cosmetico.
+	// The same shape, but indented. It is for the files A PERSON READS -- the installation.json is
+	// theirs and they are going to open it in an editor -- and that is why the formatting is not a
+	// cosmetic detail.
 	public static readonly HostJson Legible = new(new JsonSerializerOptions
 	{
 		WriteIndented = true,
@@ -42,19 +41,19 @@ public partial class HostJson : JsonSerializerContext
 		AllowTrailingCommas = true,
 	});
 
-	// LOS RESULTADOS DE LAS TOOLS DEL PROPIO HOST, que son el unico caso donde por
-	// `Response.Content` viaja un tipo nuestro y no un diccionario.
+	// THE RESULTS OF THE HOST'S OWN TOOLS, which are the only case where a type of ours travels
+	// through `Response.Content` instead of a dictionary.
 	//
-	// Todo lo demas que sale de una tool es dict/lista/primitivo (lo proyecta InProcessShell) o
-	// un JsonElement (lo devuelve StdioShell), y eso Json.Write lo escribe solo. Estos dos son
-	// la excepcion, y la lista esta ACA -- al lado del generador -- para que quien agregue una
-	// quinta tool al Host tropiece con ella.
+	// Everything else coming out of a tool is a dict/list/primitive (projected by InProcessShell) or
+	// a JsonElement (returned by StdioShell), and Json.Write writes that on its own. These two are
+	// the exception, and the list is HERE -- next to the generator -- so that whoever adds a fifth
+	// tool to the Host trips over it.
 	//
-	// Devuelve null si no lo conoce, y el que llama decide que hacer. No adivina.
+	// Returns null if it does not know the type, and the caller decides what to do. It does not guess.
 	//
-	// El metodo es publico -- Gnothi.Assistant es otro ensamblado en escritorio -- pero los
-	// TIPOS siguen internos, y por eso su contexto es el de abajo y no este. La firma solo
-	// menciona object y string, asi que nada se escapa.
+	// The method is public -- Gnothi.Assistant is a separate assembly on the desktop -- but the TYPES
+	// stay internal, which is why their context is the one below and not this one. The signature only
+	// mentions object and string, so nothing leaks.
 	public static string? TryWrite(object value) => value switch
 	{
 		InstalledModules m => JsonSerializer.Serialize(m, HostToolsJson.Default.InstalledModules),
@@ -63,28 +62,28 @@ public partial class HostJson : JsonSerializerContext
 	};
 }
 
-// LOS RESULTADOS DE LAS TOOLS DEL HOST, en su propio contexto y INTERNO.
+// THE HOST'S TOOL RESULTS, in their own context and INTERNAL.
 //
-// Estan aparte porque `InstalledModules` y `Verification` son internos a proposito: son la
-// proyeccion que el Host hace de si mismo, y nadie de afuera deberia construir una. Un
-// JsonSerializerContext publico no puede exponer un JsonTypeInfo de un tipo interno -- el
-// compilador lo rechaza con CS0053 -- asi que el contexto acompaña la visibilidad de lo que
-// describe, que ademas es lo correcto.
+// They are separate because `InstalledModules` and `Verification` are internal on purpose: they are
+// the projection the Host makes of itself, and nobody on the outside should be building one. A
+// public JsonSerializerContext cannot expose a JsonTypeInfo for an internal type -- the compiler
+// rejects it with CS0053 -- so the context follows the visibility of what it describes, which is
+// also the right thing.
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(InstalledModules))]
 [JsonSerializable(typeof(Verification))]
 internal partial class HostToolsJson : JsonSerializerContext;
 
-// LO QUE EL INSTALADOR ESCRIBE: la forma de escritura de installation.json, con su nota '//'.
+// WHAT THE INSTALLER WRITES: the write-shape of installation.json, with its '//' note.
 //
-// Es un contexto aparte y no una entrada mas en HostJson por dos razones. La primera es de
-// visibilidad: InstallationFile es interno (nadie fuera del Host arma una instalacion) y
-// HostJson es publico, asi que no puede exponerlo (CS0053), igual que HostToolsJson. La
-// segunda es que este archivo lo abre una persona con un editor, y por eso va indentado.
+// It is a separate context rather than one more entry in HostJson for two reasons. The first is
+// visibility: InstallationFile is internal (nobody outside the Host assembles an installation) and
+// HostJson is public, so it cannot expose it (CS0053), just like HostToolsJson. The second is that
+// this file is opened by a person in an editor, which is why it is indented.
 //
-// La leccion que lo trajo: serializar InstallationFile con el type-info de Installation
-// compila -- Serialize(object, JsonTypeInfo) acepta cualquier object -- y revienta en runtime.
-// Cada tipo que se escribe tiene que tener SU entrada en algun contexto de este archivo.
+// The lesson that brought it here: serialising InstallationFile with Installation's type-info
+// compiles -- Serialize(object, JsonTypeInfo) accepts any object -- and blows up at runtime. Every
+// type that gets written has to have ITS OWN entry in some context in this file.
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(ModuleInstaller.InstallationFile))]
 internal partial class InstallerJson : JsonSerializerContext;

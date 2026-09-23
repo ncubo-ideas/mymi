@@ -57,7 +57,7 @@ else
             <p class="hallazgo-dicho">
                 <strong>@Junta(hallazgo.Productos)</strong>
                 &middot; @textos.CuantasCompras(hallazgo.CuantasCompras)
-                &middot; @hallazgo.TotalUnidades u
+                &middot; @Unidades(hallazgo.TotalUnidades)
                 &middot; @Colones(hallazgo.TotalGastado)
             </p>
         }
@@ -80,7 +80,7 @@ else
                                la lista y no se entiende qué hizo la búsqueda. *@
                             @if (fila.EsHallazgo)
                             {
-                                <strong>@fila.Unidades u &middot; @Colones(fila.Gasto)</strong>
+                                <strong>@Unidades(fila.Unidades) &middot; @Colones(fila.Gasto)</strong>
                                 <span class="small text-body-secondary">
                                     @textos.Con(fila.Lineas == 1 ? "recibos.deProducto.uno" : "recibos.deProducto.varios", ("cuantos", fila.Lineas.ToString()))
                                 </span>
@@ -242,6 +242,15 @@ else
 
         return $"{hora}:{cuando.Minute:00} {textos[cuando.Hour < 12 ? "comun.am" : "comun.pm"]}";
     }
+
+    /// <summary>
+    /// Cuantas unidades, con su abreviatura. El par se resuelve a mano porque el espanol
+    /// abrevia igual en singular y en plural y el ingles no, y una sola clave dejaria
+    /// "1 units" en una de las dos pantallas.
+    /// </summary>
+    private string Unidades(int cuantas) =>
+        textos.Con(cuantas == 1 ? "recibos.unidades.una" : "recibos.unidades.varias",
+            ("cuantas", cuantas.ToString(CultureInfo.InvariantCulture)));
 
     private string Colones(decimal monto) => textos.Monto(monto);
 }

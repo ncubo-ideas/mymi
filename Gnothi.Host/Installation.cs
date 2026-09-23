@@ -43,20 +43,19 @@ public sealed record Installation
 	// never open.
 	[JsonPropertyName("caratula")] public AllowedCaller? AllowedCaller { get; init; }
 
-	// LO QUE EL HOST OBSERVO AL DAR EL ALTA, y por eso vive aca y no en el manifiesto: no lo
-	// declara nadie, lo VIO Gnothi. Es la misma razon que la carpeta concedida y que la
-	// caratula -- conceder, y atestiguar, son actos del que concede.
+	// WHAT THE HOST OBSERVED WHEN IT ENROLLED THE MODULE, which is why it lives here and not in the
+	// manifest: nobody declares it, Gnothi SAW it. Same reason as the granted folder and the
+	// caratula -- granting, and witnessing, are acts of the granter.
 	//
-	// PARA QUE HACE FALTA. La pantalla del alta puede comparar el dominio que la institucion
-	// declara contra el host del que bajo el bundle, porque en ese momento tiene las dos cosas.
-	// Despues NO: 'servedBy' era un dato del instante y se perdia, asi que el detalle del
-	// modulo mostraba la procedencia sin poder contrastarla -- y estuvo un rato pintandola de
-	// verde, que afirmaba una comprobacion que no habia ocurrido. Guardarlo convierte esa
-	// franja en lo que decia ser.
+	// WHY IT IS NEEDED. The enrolment screen can compare the domain the institution declares against
+	// the host the bundle was downloaded from, because at that moment it holds both. Afterwards it
+	// CANNOT: 'servedBy' was a fact of the instant and was lost, so the module's detail showed the
+	// provenance with no way to contrast it -- and for a while it painted it green, which asserted a
+	// check that had never happened. Storing it turns that strip into what it claimed to be.
 	//
-	// LAS TRES SON DEL MISMO ACTO y una vez escritas no cambian nunca. Eso las separa de
-	// 'enabled' y 'disabledTools', que son lo unico mutable de este archivo: ReloadConsent
-	// relee esas dos y no toca esto.
+	// ALL THREE BELONG TO THE SAME ACT and once written they never change. That is what separates
+	// them from 'enabled' and 'disabledTools', the only mutable things in this file: ReloadConsent
+	// re-reads those two and does not touch this.
 	[JsonPropertyName("provenance")] public Provenance? Provenance { get; init; }
 
 	// THE ACTS ACCUMULATE (NotasGnothiHost/44 §3.7). 'provenance' above is the LATEST act and keeps
@@ -84,8 +83,8 @@ public sealed record Installation
 	// publishes no list.
 	[JsonPropertyName("update")] public AvailableUpdate? Update { get; init; }
 
-	// Por HostJson y no por Deserialize<T>: el lector se genera al compilar, sin reflexion.
-	// Ver HostJson.cs -- de eso depende que el Host pueda embeberse bajo NativeAOT.
+	// Through HostJson and not through Deserialize<T>: the reader is generated at compile time, with
+	// no reflection. See HostJson.cs -- whether the Host can be embedded under NativeAOT depends on it.
 	public static Installation Read(string path)
 	{
 		Installation read = JsonSerializer.Deserialize(File.ReadAllText(path), HostJson.Default.Installation)
@@ -161,26 +160,27 @@ public sealed record AllowedCaller
 		string.Concat(digest.Where(char.IsAsciiHexDigit)).ToUpperInvariant();
 }
 
-// DE DONDE VINO ESTE MODULO, atestiguado por el Host en el momento del alta.
+// WHERE THIS MODULE CAME FROM, witnessed by the Host at enrolment time.
 public sealed record Provenance
 {
-	// EL HOST DEL QUE BAJO EL BUNDLE. Vacio es legitimo y significa "no vino de la red": un
-	// .gmod importado de un archivo no tiene servidor, y en ese caso no hay nada que contrastar
-	// -- que es distinto de contrastar y que no coincida.
+	// THE HOST THE BUNDLE WAS DOWNLOADED FROM. Empty is legitimate and means "it did not come off
+	// the network": a .gmod imported from a file has no server, and in that case there is nothing to
+	// contrast -- which is different from contrasting and not matching.
 	[JsonPropertyName("servedBy")] public string ServedBy { get; init; } = "";
 
-	// Cuando la persona acepto. ISO 8601 en UTC.
+	// When the person accepted. ISO 8601 in UTC.
 	[JsonPropertyName("at")] public string At { get; init; } = "";
 
-	// QUE VERSION ACEPTO, que es lo que permite decir despues "aceptaste la 2.4.0 y este bundle
-	// declara la 2.5.0". Sin esto, reinstalar solo puede decir "ya tenes este modulo".
+	// WHICH VERSION THEY ACCEPTED, which is what makes it possible to say later "you accepted 2.4.0
+	// and this bundle declares 2.5.0". Without it, reinstalling can only say "you already have this
+	// module".
 	[JsonPropertyName("version")] public string Version { get; init; } = "";
 
-	// SI LO QUE LA INSTITUCION DECLARA SE CORRESPONDE CON QUIEN LE ENTREGO EL BUNDLE.
+	// WHETHER WHAT THE INSTITUTION DECLARES MATCHES WHOEVER HANDED OVER THE BUNDLE.
 	//
-	// Devuelve null -- NO true -- cuando no hay con que comparar, y esa distincion es el punto
-	// entero: "coincide", "no coincide" y "no se puede saber" son tres cosas, y la pantalla
-	// tiene que poder decir la tercera en vez de pintar un visto bueno.
+	// Returns null -- NOT true -- when there is nothing to compare against, and that distinction is
+	// the whole point: "matches", "does not match" and "cannot be known" are three things, and the
+	// screen has to be able to say the third instead of painting a tick.
 	public bool? Matches(Publisher? publisher)
 	{
 		if (ServedBy.Length == 0) return null;

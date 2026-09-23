@@ -30,30 +30,30 @@ public sealed record Manifest
 	[JsonPropertyName("substrate")] public Substrate? Substrate { get; init; }
 	[JsonPropertyName("capabilities")] public Capabilities? Capabilities { get; init; }
 
-	// LO QUE LA INSTITUCION DICE DE SI MISMA (formato 1.1, 2026-09-08). Los cuatro grupos son
-	// OPCIONALES: un manifiesto que no los trae instala igual y se ve como se veia. Eso no es
-	// cortesia, es lo que permite que el Host los estrene sin huerfanar a nadie.
+	// WHAT THE INSTITUTION SAYS ABOUT ITSELF (format 1.1, 2026-09-08). All four groups are OPTIONAL:
+	// a manifest that does not carry them installs just the same and looks the way it looked. That is
+	// not courtesy, it is what lets the Host introduce them without orphaning anybody.
 	//
-	// Y `brand` es opcional en un sentido mas fuerte todavia: si no esta, la marca sale del
-	// `manifest.webmanifest` que la PWA YA trae en su bundle -- theme_color e icons --, asi que
-	// un manifiesto 1.0 se pinta con su marca sin tocarlo. Declarar `brand` es afinar eso, no
-	// habilitarlo.
+	// And `brand` is optional in an even stronger sense: if it is absent, the branding comes from the
+	// `manifest.webmanifest` the PWA ALREADY carries in its bundle -- theme_color and icons -- so a
+	// 1.0 manifest gets painted with its own branding without being touched. Declaring `brand` becomes
+	// a way of refining that, not of enabling it.
 	//
-	// VAN AGRUPADOS Y NO SUELTOS EN LA RAIZ porque un grupo se puede ignorar entero, versionar
-	// entero y -cuando llegue la firma- firmar entero.
+	// THEY ARE GROUPED AND NOT LOOSE AT THE ROOT because a group can be ignored whole, versioned
+	// whole and -- when signing arrives -- signed whole.
 	//
-	// LA REGLA QUE FRENA EL PROXIMO CAMPO, y conviene leerla antes de agregar uno: el manifiesto
-	// declara HECHOS VERIFICABLES SOBRE LA INSTITUCION. Nunca instrucciones para el Host, y
-	// nunca instrucciones para el modelo. Por eso no hay -y no va a haber- un 'assistantHint',
-	// un 'tone' ni una 'persona': eso seria inyeccion de prompt con formato de contrato, escrita
-	// por un tercero y entregada por Gnothi.
+	// THE RULE THAT STOPS THE NEXT FIELD, and it is worth reading before adding one: the manifest
+	// declares VERIFIABLE FACTS ABOUT THE INSTITUTION. Never instructions for the Host, and never
+	// instructions for the model. That is why there is no -- and will be no -- 'assistantHint',
+	// 'tone' or 'persona': that would be prompt injection in the shape of a contract, written by a
+	// third party and delivered by Gnothi.
 	[JsonPropertyName("brand")] public Brand? Brand { get; init; }
 	[JsonPropertyName("publisher")] public Publisher? Publisher { get; init; }
 	[JsonPropertyName("about")] public About? About { get; init; }
 	[JsonPropertyName("journal")] public JournalDeclaration? Journal { get; init; }
 
-	// Donde esta el publicador de esta institucion, para el cartero. Opcional: un modulo
-	// puede vivir solo de lo que ya tiene en su journal.
+	// Where this institution's publisher is, for the postman. Optional: a module can live off
+	// nothing but what it already has in its journal.
 	[JsonPropertyName("publicador")] public Publicador? Publicador { get; init; }
 	[JsonPropertyName("tools")] public IReadOnlyList<DeclaredTool> Tools { get; init; } = [];
 
@@ -71,22 +71,23 @@ public sealed record Manifest
 	// is identity, declared by the institution, not something the Host grants.
 	[JsonPropertyName("load")] public Load? Load { get; init; }
 
-	// LA LINEA QUE IDENTIFICA A ESTA INSTITUCION EN LA PANTALLA, resuelta UNA VEZ.
+	// THE LINE THAT IDENTIFIES THIS INSTITUTION ON THE SCREEN, resolved ONCE.
 	//
-	// Vive aca y no en cada cara por lo mismo que el icono no deberia haber vivido en un switch:
-	// hay tres caras -los dos telefonos y el escritorio- y un fallback implementado tres veces
-	// es un fallback que diverge. La regla es simple y no la decide la institucion: si declaro un
-	// nombre corto se usa ese, y si no, el 'institution' que siempre estuvo.
+	// It lives here and not in each face for the same reason the icon should never have lived in a
+	// switch: there are three faces -- the two phones and the desktop -- and a fallback implemented
+	// three times is a fallback that diverges. The rule is simple and the institution does not decide
+	// it: if it declared a short name, that one is used, and if not, the 'institution' that was
+	// always there.
 	//
-	// Lo que NO hace es inventar: si el manifiesto no dice nada, esto devuelve vacio y la cara
-	// decide que poner. El Host no le pone nombre a nadie.
+	// What it does NOT do is invent: if the manifest says nothing, this returns empty and the face
+	// decides what to put. The Host gives nobody a name.
 	public string Identity
 		=> Brand?.ShortName is { Length: > 0 } s ? s : Institution;
 
-	// TODO LO QUE SE PASA DE LOS TOPES, en una lista. Es el mismo verbo que Capabilities.Excesses:
-	// el Host no rechaza el modulo por un titulo largo -eso seria dejar a la persona sin su
-	// laboratorio por un renglon- pero lo DICE, y lo dice donde ya se dicen estas cosas, en los
-	// warnings del catalogo.
+	// EVERYTHING THAT OVERRUNS THE LIMITS, as a list. Same verb as Capabilities.Excesses: the Host
+	// does not reject the module over a long title -- that would leave the person without their
+	// laboratory over one line -- but it SAYS SO, and says it where these things already get said, in
+	// the catalogue's warnings.
 	//
 	// Que sea una lista y no un bool es la parte que importa: un tope que no se puede nombrar no
 	// se puede arreglar, y quien tiene que arreglarlo es la institucion, que no ve este proceso.
@@ -115,22 +116,20 @@ public sealed record Manifest
 
 	public const int MaxTitle = 32;
 
-	// UNA PROPIEDAD QUE EL JSON NO TRAE LLEGA NULL, NO CON SU INICIALIZADOR, y por eso todo lo
-	// que este archivo toca de un manifiesto pasa por aca.
+	// A PROPERTY THE JSON DOES NOT CARRY ARRIVES NULL, NOT WITH ITS INITIALISER, which is why
+	// everything this file touches of a manifest goes through here.
 	//
-	// Medido el 2026-09-08: un manifiesto con "about": { "category": "..." } y sin
-	// "description" hacia estallar About.Problems() con NullReferenceException en
-	// Description.Length, aunque la propiedad declara = "". El catalogo lo atajaba -- un
-	// manifiesto que revienta se saltea con un warning -- asi que el sintoma no era un crash,
-	// era UN MODULO QUE DESAPARECIA de la pantalla por no haber escrito un campo OPCIONAL. El
-	// peor de los dos.
+	// Measured on 2026-09-08: a manifest with "about": { "category": "..." } and no "description"
+	// blew About.Problems() up with a NullReferenceException on Description.Length, even though the
+	// property declares = "". The catalogue caught it -- a manifest that blows up is skipped with a
+	// warning -- so the symptom was not a crash, it was A MODULE DISAPPEARING from the screen for not
+	// having written an OPTIONAL field. The worse of the two.
 	//
-	// Y hay una pista de que esto ya se habia topado antes: Manifest.Read valida el modulo con
-	// IsNullOrWhiteSpace y no con Length == 0. Ahora esta dicho en voz alta.
+	// And there is a hint this had been hit before: Manifest.Read validates the module with
+	// IsNullOrWhiteSpace and not with Length == 0. Now it is said out loud.
 	//
-	// LA REGLA PARA EL PROXIMO CAMPO: en un manifiesto, ningun string es de fiar. Ni con
-	// inicializador, porque el JSON tambien puede traer null EXPLICITO -- y eso ningun default
-	// lo puede evitar.
+	// THE RULE FOR THE NEXT FIELD: in a manifest, no string can be trusted. Not even with an
+	// initialiser, because the JSON can also carry an EXPLICIT null -- and no default can prevent that.
 	internal static string Txt(string? s) => s ?? "";
 
 	public static Manifest Read(string path)
@@ -153,60 +152,60 @@ public sealed record Manifest
 // A RANGE, NOT an exact version. If a module pins one precise version, every Host update
 // orphans every installed module.
 
-// DONDE VIVE LA NARRATIVA de esta institucion. Lo declara ELLA en su manifiesto, y Gnothi lo
-// registra al dar de alta el modulo: a partir de ahi el endpoint es FIJO y el modulo no lo
-// elige ni lo puede cambiar (especificacion 11 §6, 13 §7).
+// WHERE THIS INSTITUTION'S NARRATIVE LIVES. IT declares it in its manifest, and Gnothi records it
+// when the module is enrolled: from then on the endpoint is FIXED and the module neither chooses it
+// nor can change it (specification 11 §6, 13 §7).
 //
-// El modulo nunca lo usa: no tiene red. Lo usa el cartero, que es Gnothi.
+// The module never uses it: it has no network. The postman uses it, and the postman is Gnothi.
 public sealed record Publicador
 {
-	// La base del servicio de eventos de la institucion.
+	// The base of the institution's event service.
 	[JsonPropertyName("eventos")] public string Eventos { get; init; } = "";
 
-	// Que recurso de la persona, y cual. La app pide UNA sola forma de URL sobre esto:
-	// {recurso}/{id}/events?after=N, y nada mas.
+	// Which of the person's resources, and which one. The app asks for ONE single URL shape over
+	// this: {recurso}/{id}/events?after=N, and nothing else.
 	[JsonPropertyName("recurso")] public string Recurso { get; init; } = "expediente";
 
 	[JsonPropertyName("id")] public string Id { get; init; } = "1";
 }
 
-// LA MARCA, Y ES LO UNICO DE ESTE ARCHIVO QUE LLEGA AL OJO SIN LEERSE. Hasta ahora el icono lo
-// elegia el Host con un switch por nombre de modulo -tres copias del mismo switch- asi que un
-// modulo de una institucion que el Host no conocia entraba anonimo. Eso contradice el alta
-// dinamica: agregar un modulo son dos json, no dos json y un release del Host.
+// THE BRANDING, AND IT IS THE ONLY THING IN THIS FILE THAT REACHES THE EYE WITHOUT BEING READ. Until
+// now the icon was picked by the Host with a switch on the module's name -- three copies of the same
+// switch -- so a module from an institution the Host did not know came in anonymous. That contradicts
+// dynamic enrolment: adding a module is two json files, not two json files and a Host release.
 //
-// EL CORTE: la institucion DECLARA, el Host COMPONE. Ella provee el material; el decide el
-// lugar, el tamano y el contraste. Por eso aca no hay ni una medida ni una regla de estilo: hay
-// un archivo y un color.
+// THE DIVIDING LINE: the institution DECLARES, the Host COMPOSES. It provides the material; the Host
+// decides the placement, the size and the contrast. That is why there is not one measurement nor one
+// style rule here: there is a file and a colour.
 public sealed record Brand
 {
-	// EL NOMBRE CON EL QUE LA GENTE LA CONOCE -'La Guaria', no 'Supermercado La Guaria S.A.'-.
-	// Es la linea que IDENTIFICA en la tarjeta, y por eso lleva tope: un renglon de 28
-	// caracteres es lo que cabe sin cortar en la grilla de dos columnas del telefono.
+	// THE NAME PEOPLE KNOW IT BY -- 'La Guaria', not 'Supermercado La Guaria S.A.'. It is the line
+	// that IDENTIFIES on the card, which is why it carries a limit: a line of 28 characters is what
+	// fits without cutting in the phone's two-column grid.
 	[JsonPropertyName("shortName")] public string ShortName { get; init; } = "";
 
-	// UN NOMBRE DE ARCHIVO DENTRO DEL BUNDLE -relativo a el, tipo «web/icon-192.png»-, no bytes
-	// y NO UNA URL. Una URL seria un beacon: le contaria a la institucion cada vez que la
-	// persona abre su lista de modulos, y eso rompe la propiedad central -Gnothi no le pregunta
-	// nada a ninguna empresa- por un dibujo.
+	// A FILE NAME INSIDE THE BUNDLE -- relative to it, like «web/icon-192.png» --, not bytes and NOT
+	// A URL. A URL would be a beacon: it would tell the institution every time the person opens their
+	// list of modules, and that breaks the central property -- Gnothi asks no company anything -- over
+	// a drawing.
 	//
-	// Los bytes los lee el Host, los valida y los pasa ya validados a la pantalla.
+	// The bytes are read by the Host, validated, and passed to the screen already validated.
 	//
-	// SVG SI, y esto corrige un argumento que estuvo escrito aca: «el formato ejecuta» es cierto
-	// para un svg INLINE en el DOM, y falso para uno que viaja como data URI en un `<img>`, que
-	// es como llega -- ahi el navegador lo aisla y no corre scripts. Lo que si cambia con el svg
-	// es que no tiene pixeles: es vectorial y lo escala el contenedor, asi que el tope de
-	// dimensiones no le aplica y el de peso si.
+	// SVG YES, and this corrects an argument that used to be written here: «the format executes» is
+	// true for an svg INLINE in the DOM, and false for one travelling as a data URI in an `<img>`,
+	// which is how it arrives -- there the browser isolates it and runs no scripts. What does change
+	// with svg is that it has no pixels: it is vectorial and the container scales it, so the dimension
+	// limit does not apply to it and the weight limit does.
 	[JsonPropertyName("logo")] public string Logo { get; init; } = "";
 
-	// UN COLOR, uno solo, en #rrggbb. El Host lo usa donde decide -hoy el tinte del icono- y le
-	// garantiza el contraste. Nunca CSS: eso seria dejar que la institucion escriba estilo en la
-	// pantalla donde la persona le da y le quita permisos.
+	// ONE COLOUR, just one, in #rrggbb. The Host uses it where it decides -- today the icon's tint --
+	// and guarantees the contrast. Never CSS: that would let the institution write styling on the very
+	// screen where the person grants and revokes its permissions.
 	[JsonPropertyName("color")] public string Color { get; init; } = "";
 
-	// UNA LINEA CORTA EN LA VOZ DE LA INSTITUCION, que va debajo de su nombre en la tarjeta en
-	// vez del titulo del modulo: «My invoices» no es prosa de tarjeta. Es lo que la persona lee
-	// para saber quien le esta hablando, y por eso lleva tope como todo lo que llega al ojo.
+	// A SHORT LINE IN THE INSTITUTION'S OWN VOICE, which goes under its name on the card instead of
+	// the module's title: «My invoices» is not card prose. It is what the person reads to know who is
+	// talking to them, which is why it carries a limit like everything that reaches the eye.
 	[JsonPropertyName("slogan")] public string Slogan { get; init; } = "";
 
 	// THE BANNER (2026-09-09): a wide picture the Host puts BEHIND the card, with the institution's
@@ -237,22 +236,22 @@ public sealed record Brand
 	public static bool InsideBundle(string path)
 		=> !(path.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(path) || path.Contains(':'));
 
-	// El svg entra por lo dicho arriba: viaja en un `<img>`, no inline. Y el webmanifest de una
-	// PWA suele declarar png, asi que el camino por omision no lo usa.
+	// The svg gets in for the reason given above: it travels in an `<img>`, not inline. And a PWA's
+	// webmanifest usually declares png, so the default path does not use it.
 	private static readonly string[] AllowedLogo = [".png", ".jpg", ".jpeg", ".webp", ".svg"];
 
-	// UN COLOR O NADA, y el que llama decide que hacer con el nada. Devuelve el mismo string si
-	// es un #rrggbb de verdad y null si no, porque el color va a terminar en un atributo `style`
-	// de la pagina que tiene el puente del consentimiento: ahi no entra nada sin mirar.
+	// A COLOUR OR NOTHING, and the caller decides what to do with the nothing. It returns the same
+	// string if it is a real #rrggbb and null if not, because the colour is going to end up in a
+	// `style` attribute of the page that holds the consent bridge: nothing gets in there unlooked at.
 	//
-	// Vive aca -- y no en la pagina ni en el lector del webmanifest -- porque los tres caminos
-	// que traen un color tienen que aplicar la misma regla. Uno solo que la relaje es el agujero.
+	// It lives here -- and not in the page nor in the webmanifest reader -- because all three paths
+	// that bring a colour have to apply the same rule. One that relaxes it is the hole.
 	public static string? ValidColor(string? c)
 		=> c is { Length: 7 } s && s[0] == '#' && s[1..].All(char.IsAsciiHexDigit) ? s : null;
 
-	// Lo que se puede revisar SIN abrir el archivo. Los bytes -el peso, las dimensiones, que el
-	// encabezado sea de verdad el que dice la extension- los revisa quien los lee, porque este
-	// tipo no sabe donde esta la carpeta del modulo.
+	// What can be checked WITHOUT opening the file. The bytes -- the weight, the dimensions, whether
+	// the header really is what the extension claims -- are checked by whoever reads them, because
+	// this type does not know where the module's folder is.
 	public IEnumerable<string> Problems()
 	{
 		if (Manifest.Txt(ShortName).Length > MaxShortName)
@@ -311,39 +310,38 @@ public sealed record BrandFont
 	[JsonPropertyName("bold")] public string Bold { get; init; } = "";
 }
 
-// DE DONDE VIENE ESTE MODULO Y QUE VERSION ES. Es el grupo que le da sentido a la marca: un logo
-// sin procedencia es un dibujo que cualquiera copia.
+// WHERE THIS MODULE COMES FROM AND WHICH VERSION IT IS. It is the group that gives the branding its
+// meaning: a logo with no provenance is a drawing anybody can copy.
 //
-// AQUI VIVE LA RAZON SOCIAL, y no en 'institution', a proposito. Nadie dice "voy a Supermercado
-// La Guaria S.A.": el nombre legal y la cedula no son con lo que una persona reconoce a nadie,
-// son LO QUE SE COMPRUEBA. Por eso van al lado del dominio, que es la comprobacion.
+// THE LEGAL NAME LIVES HERE, and not in 'institution', on purpose. Nobody says "I'm going to
+// Supermercado La Guaria S.A.": the legal name and the tax id are not what a person recognises anyone
+// by, they are WHAT GETS CHECKED. That is why they sit next to the domain, which is the check.
 public sealed record Publisher
 {
-	// EL UNICO CAMPO CONTRASTABLE DE TODO EL GRUPO, y por eso el mas valioso. Gnothi ya sabe de
-	// que host bajo el bundle -lo OBSERVO, no se lo declaro nadie- asi que puede comparar. Es el
-	// mismo patron que gnothi_verify_module: declarado contra real.
+	// THE ONLY CONTRASTABLE FIELD IN THE WHOLE GROUP, and therefore the most valuable. Gnothi already
+	// knows which host the bundle came down from -- it OBSERVED it, nobody declared it -- so it can
+	// compare. It is the same pattern as gnothi_verify_module: declared against real.
 	[JsonPropertyName("domain")] public string Domain { get; init; } = "";
 
 	[JsonPropertyName("legal")] public string Legal { get; init; } = "";
 	[JsonPropertyName("taxId")] public string TaxId { get; init; } = "";
 	[JsonPropertyName("jurisdiction")] public string Jurisdiction { get; init; } = "";
 
-	// LA VERSION DEL MODULO, que no es la del formato: 'manifest' es el formato y esto es el
-	// modulo. Sin esto, al reinstalar la persona puede saber que ya lo tiene y no si lo que baja
-	// es mas nuevo, que es la pregunta que hace.
+	// THE MODULE'S VERSION, which is not the format's: 'manifest' is the format and this is the
+	// module. Without it, on reinstalling the person can learn that they already have it but not
+	// whether what is coming down is newer, which is the question they are asking.
 	[JsonPropertyName("version")] public string Version { get; init; } = "";
 	[JsonPropertyName("released")] public string Released { get; init; } = "";
 	[JsonPropertyName("license")] public string License { get; init; } = "";
 
 	public const int MaxLegal = 64;
 
-	// SI EL DOMINIO DECLARADO SE CORRESPONDE CON QUIEN SIRVIO EL BUNDLE. Un dominio vacio no
-	// afirma nada, y no afirmar nada no es mentir: devuelve true y la pantalla simplemente no
-	// tiene nada que mostrar.
+	// WHETHER THE DECLARED DOMAIN MATCHES WHOEVER SERVED THE BUNDLE. An empty domain asserts nothing,
+	// and asserting nothing is not lying: it returns true and the screen simply has nothing to show.
 	//
-	// Se compara por sufijo de etiqueta -y no con Contains- para que 'delfos.cr' acepte
-	// 'eventos.delfos.cr' y rechace 'delfos.cr.malo.com', que es justo el caso que un Contains
-	// aprobaria.
+	// It is compared by label suffix -- and not with Contains -- so that 'delfos.cr' accepts
+	// 'eventos.delfos.cr' and rejects 'delfos.cr.malo.com', which is precisely the case a Contains
+	// would approve.
 	public bool MatchesServer(string servedBy)
 	{
 		string dom = Manifest.Txt(Domain);
@@ -362,22 +360,22 @@ public sealed record Publisher
 	}
 }
 
-// QUE ES ESTE MODULO, EN PALABRAS PARA LA PERSONA. Hoy lo unico que ella puede leer son las
-// descripciones de las tools, que estan escritas para el modelo: densas, en tercera persona y
-// hablando de "la persona" en vez de con ella. Este grupo es el primer texto del manifiesto que
-// se escribe para quien lo va a leer.
+// WHAT THIS MODULE IS, IN WORDS FOR THE PERSON. Today the only thing they can read are the tool
+// descriptions, which are written for the model: dense, in the third person, and talking about "the
+// person" instead of to them. This group is the first text in the manifest written for whoever is
+// going to read it.
 public sealed record About
 {
-	// DE ACA SALE EL ICONO DE RESERVA cuando no hay logo, y eso es lo que le permite al Host
-	// dejar de conocer instituciones por nombre. Lista cerrada: una categoria libre volveria a
-	// ser un texto de la institucion en la pantalla, y para eso ya estan los otros campos.
+	// THE FALLBACK ICON COMES FROM HERE when there is no logo, and that is what lets the Host stop
+	// knowing institutions by name. A closed list: a free-form category would go back to being a text
+	// of the institution's on the screen, and the other fields are already there for that.
 	[JsonPropertyName("category")] public string Category { get; init; } = "";
 
 	[JsonPropertyName("description")] public string Description { get; init; } = "";
 
-	// EL ANTI-CLAIM, y es una idea del propio repo: el modulo de compras ya dice "este modulo no
-	// juzga la alimentacion de nadie", pero lo dice ENTERRADO en la descripcion de una tool,
-	// donde solo lo lee la IA. Aca lo lee la persona.
+	// THE ANTI-CLAIM, and it is an idea from this very repo: the compras module already says "this
+	// module does not judge anybody's diet", but it says it BURIED in a tool's description, where only
+	// the AI reads it. Here the person reads it.
 	[JsonPropertyName("doesNotDo")] public string DoesNotDo { get; init; } = "";
 
 	// THE LANGUAGE OF THE RECORD -- a BCP 47 tag such as es-CR or en-US. It is a fact about the
@@ -387,19 +385,19 @@ public sealed record About
 	// from the prose, and a guess of "milk" against a journal that says "leche" finds nothing.
 	[JsonPropertyName("locale")] public string Locale { get; init; } = "";
 
-	// LA MONEDA, y es el hueco mas concreto que este grupo cierra. La unica tool de facturas
-	// lleva escrito en su descripcion "EL TOTAL NO TIENE MONEDA: la institucion no la reporta en
-	// sus eventos, asi que este modulo no la sabe y vos tampoco". Un campo lo cierra, y ademas
-	// deja de gastar ese parrafo en tokens de la persona en cada turno.
+	// THE CURRENCY, and it is the most concrete hole this group closes. The single facturas tool
+	// carries, written into its description, "THE TOTAL HAS NO CURRENCY: the institution does not
+	// report it in its events, so this module does not know it and neither do you". One field closes
+	// that, and it also stops spending that paragraph in the person's tokens every turn.
 	[JsonPropertyName("currency")] public string Currency { get; init; } = "";
 	[JsonPropertyName("units")] public string Units { get; init; } = "";
 
 	public const int MaxDescription = 180;
 	public const int MaxDoesNotDo = 120;
 
-	// LAS CATEGORIAS QUE EL HOST CONOCE. Crece cuando aparece un negocio que no encaja, y la
-	// que no esta en la lista cae al icono generico -que es exactamente lo que pasa hoy con
-	// TODOS, porque no hay categorias.
+	// THE CATEGORIES THE HOST KNOWS. It grows when a business turns up that does not fit, and one
+	// that is not on the list falls back to the generic icon -- which is exactly what happens today
+	// with ALL of them, because there are no categories.
 	public static readonly string[] Known =
 	[
 		"laboratorio", "salud", "supermercado", "comercio", "banca", "seguros",
@@ -418,16 +416,16 @@ public sealed record About
 	}
 }
 
-// LO QUE LA INSTITUCION PROMETE SOBRE EL REGISTRO que va a vivir en el aparato de la persona.
+// WHAT THE INSTITUTION PROMISES ABOUT THE RECORD that is going to live on the person's device.
 //
-// LOS TRES PRIMEROS SE FIJAN AL CREAR EL JOURNAL y pedir otro modo despues lanza excepcion. Los
-// lee quien crea el journal, no el Host, y estan aca porque si la especificacion no lo dice
-// alguna institucion va a descubrir a los dos anos que activar cifrado significa EMPEZAR UN
-// JOURNAL NUEVO. Llegar tarde a estos tres es lo caro.
+// THE FIRST THREE ARE FIXED WHEN THE JOURNAL IS CREATED and asking for another mode later throws.
+// They are read by whoever creates the journal, not by the Host, and they are here because if the
+// specification does not say so, some institution is going to discover two years in that switching
+// encryption on means STARTING A NEW JOURNAL. Arriving late to these three is what is expensive.
 //
-// LOS TRES SIGUIENTES son para la pantalla del alta: ella ya le dice a la persona DONDE va a
-// vivir el registro, y no cuanto va a pesar, cada cuanto se actualiza ni por cuanto tiempo lo
-// guardan -que es lo que pregunta antes de aceptar.
+// THE NEXT THREE are for the enrolment screen: it already tells the person WHERE the record is going
+// to live, and not how much it is going to weigh, how often it updates or how long they keep it --
+// which is what they ask before accepting.
 public sealed record JournalDeclaration
 {
 	[JsonPropertyName("compression")] public string Compression { get; init; } = "None";
@@ -438,13 +436,13 @@ public sealed record JournalDeclaration
 	[JsonPropertyName("expectedSize")] public string ExpectedSize { get; init; } = "";
 	[JsonPropertyName("updates")] public string Updates { get; init; } = "";
 
-	// Y EL QUE PESA, que ya existia en Cargas/manifiesto.json antes de que el Host lo leyera:
-	// true si el diario se puede volver a traer entero del publicador; false si lleva aportes de
-	// la persona que no estan en ningun otro lado, y entonces borrarlo PIERDE DATOS y el Host no
-	// puede vaciarlo sin costo.
+	// AND THE ONE THAT CARRIES WEIGHT, which already existed in Cargas/manifiesto.json before the Host
+	// read it: true if the journal can be fetched whole from the publisher again; false if it carries
+	// contributions from the person that exist nowhere else, in which case deleting it LOSES DATA and
+	// the Host cannot empty it for free.
 	//
-	// bool? y no bool: null es "la institucion no lo dijo", y eso no es lo mismo que "se puede
-	// reconstruir". Un default optimista aca autorizaria a vaciar un diario irrecuperable.
+	// bool? and not bool: null is "the institution did not say", and that is not the same as "it can
+	// be rebuilt". An optimistic default here would authorise emptying an unrecoverable journal.
 	[JsonPropertyName("reconstruible")] public bool? Reconstruible { get; init; }
 }
 

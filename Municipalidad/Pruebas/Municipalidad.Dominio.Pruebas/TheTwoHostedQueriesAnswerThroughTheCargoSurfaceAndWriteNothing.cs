@@ -191,37 +191,76 @@ namespace Municipalidad.Dominio.Pruebas
 			});
 		}
 
-		// PREGUNTAR POR ESTA PUERTA TAMPOCO ESCRIBE, y es la misma disciplina que la del asistente: el
-		// anfitrion que abre es el que no siembra. Con el de la app, cada pregunta del Host dejaria una
-		// entrada en el journal de la persona.
+		// PREGUNTAR POR ESTA PUERTA NO ESCRIBE, que es la misma disciplina que la del asistente: con el
+		// anfitrion de la app, CADA pregunta del Host dejaria una entrada en el journal de la persona.
+		//
+		// LO QUE SE MIDE ES LA PREGUNTA Y NO LA APERTURA, y la diferencia es todo el punto. Desde la
+		// forma hibrida esta superficie abre UN actor vivo con el anfitrion que SIEMBRA -- es deliberado
+		// y su razon esta en el /// del campo `app`: dos actores sobre un journal fue el problema, y sin
+		// semilla el DSL se queda sin sus globales y el bucle muere pidiendo el cursor.
+		//
+		// ESA APERTURA DEJA UN REGISTRO INERTE, uno por hidratacion, y no es un defecto de este modulo:
+		// es la forma documentada del anfitrion escribible, medida y dispuesta como C16 -- 124 bytes, el
+		// mismo script de `upgrade`, y las respuestas byte-identicas antes y despues. La guarda del
+		// upgrade hace la semilla idempotente EN EFECTO, no en el journal.
+		//
+		// Asi que la linea base se toma con el actor YA ABIERTO. Medido al escribir esto: ocho preguntas
+		// y UNA sola entrada nueva, la de la apertura -- si preguntar escribiera, serian ocho.
 		[Test]
 		public void AskingThroughTheSurfaceLeavesTheJournalWithoutANewEntry()
 		{
 			UnExpedienteComoElDeUnaPersona();
 
-			long entradasAntes = LasEntradasDe(carpeta);
-			long largoAntes = ElLargoDelJournalDe(carpeta);
-
-			MunicipalidadSurface superficie = new MunicipalidadSurface(carpeta);
-
-			for (int vuelta = 0; vuelta < 4; vuelta++)
+			using (MunicipalidadSurface superficie = new MunicipalidadSurface(carpeta))
 			{
+				// La primera pregunta es la que abre: `app` es perezoso, asi que construir la
+				// superficie todavia no hidrata nada.
 				Assert.That(Dicho(superficie.Resumen()), Does.Contain("\"hayDatos\":true"),
-					"La vuelta llego de verdad al dominio: sin esto la promesa se estaria midiendo sobre "
-					+ "una respuesta vacia.");
+					"La apertura llego de verdad al dominio: sin esto la linea base se tomaria sobre un "
+					+ "actor que nunca se hidrato, y la promesa quedaria sin medir.");
 
-				Assert.That(Dicho(superficie.ListaDeVencimientos()), Does.Contain("\"porVencer\":"));
+				long entradasAntes = LasEntradasDe(carpeta);
+				long largoAntes = ElLargoDelJournalDe(carpeta);
+
+				for (int vuelta = 0; vuelta < 4; vuelta++)
+				{
+					Assert.That(Dicho(superficie.Resumen()), Does.Contain("\"hayDatos\":true"),
+						"La vuelta llego de verdad al dominio: sin esto la promesa se estaria midiendo "
+						+ "sobre una respuesta vacia.");
+
+					Assert.That(Dicho(superficie.ListaDeVencimientos()), Does.Contain("\"porVencer\":"));
+				}
+
+				Assert.Multiple(() =>
+				{
+					Assert.That(LasEntradasDe(carpeta), Is.EqualTo(entradasAntes),
+						"Una pregunta del Host dejo una entrada en el journal de la persona. Eso es un "
+						+ "segundo escritor sobre el mismo actor.");
+
+					Assert.That(ElLargoDelJournalDe(carpeta), Is.EqualTo(largoAntes),
+						"El archivo del journal crecio. Ninguna lectura puede hacerlo crecer.");
+				});
 			}
+		}
 
-			Assert.Multiple(() =>
+		// Y LA APERTURA DEJA EXACTAMENTE UNA, no dos ni ninguna. Es el otro lado de la de arriba: sin
+		// esto, mover la linea base alla habria tapado el dia en que abrir empiece a escribir de mas.
+		[Test]
+		public void OpeningTheSurfaceLeavesExactlyTheOneInertSeedRecord()
+		{
+			UnExpedienteComoElDeUnaPersona();
+
+			long entradasAntes = LasEntradasDe(carpeta);
+
+			using (MunicipalidadSurface superficie = new MunicipalidadSurface(carpeta))
 			{
-				Assert.That(LasEntradasDe(carpeta), Is.EqualTo(entradasAntes),
-					"Una pregunta del Host dejo una entrada en el journal de la persona. Eso es un "
-					+ "segundo escritor sobre el mismo actor.");
+				Assert.That(Dicho(superficie.Resumen()), Does.Contain("\"hayDatos\":true"));
 
-				Assert.That(ElLargoDelJournalDe(carpeta), Is.EqualTo(largoAntes),
-					"El archivo del journal crecio. Ninguna lectura puede hacerlo crecer.");
-			});
+				Assert.That(LasEntradasDe(carpeta), Is.EqualTo(entradasAntes + 1),
+					"Abrir con el anfitrion que siembra deja UN registro inerte, y solo uno. Dos "
+					+ "querria decir que la semilla dejo de ser una-vez-por-actor; ninguno, que el "
+					+ "anfitrion cambio y el DSL puede quedarse sin sus globales.");
+			}
 		}
 
 		// LA APP NUNCA SE ABRIO EN ESTE DISPOSITIVO ES UNA RESPUESTA, y dice DONDE se busco: un "no hay

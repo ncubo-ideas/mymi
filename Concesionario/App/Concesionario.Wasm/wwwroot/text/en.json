@@ -1,21 +1,17 @@
 {
   "//": "THE SAME SCREEN, SAID IN ENGLISH, key for key. A key that is in one catalogue and not in the other reaches the screen as a raw {key} and nothing goes red, so the parity is asserted by a test rather than by care. The model name, the VIN, the plate, the covered systems and the exclusions come from the dealership's record and are NOT translated. {key} is a hole the code fills.",
-
   "shell": {
     "wentWrong": "Something went wrong.",
     "reload": "Reload"
   },
-
   "route": {
     "notFound": "Not found",
     "notFoundBody": "There is nothing at this address."
   },
-
   "appearance": {
     "toLight": "Switch to the light theme",
     "toDark": "Switch to the dark theme"
   },
-
   "page": {
     "errorWhileOpen": "That could not be completed.",
     "errorWhileClosed": "The app could not be opened.",
@@ -27,7 +23,6 @@
     "folderIn": "the folder «{folder}»",
     "thisBrowser": "this browser"
   },
-
   "step": {
     "chooseFolder": "choose a folder",
     "requestPermission": "grant permission to the folder",
@@ -43,7 +38,6 @@
     "denied": "The browser refused to {what}, without asking you. Two things cause that, and they are fixed in different places. Either this site's file editing permission is blocked — open the padlock beside the address, reset this site's permissions, reload and choose the folder again — or this browser does not offer file editing at all, which is normal in an embedded browser or inside another app. If there is no padlock to open, it is the second one: open this app in Chrome or Edge directly and the folder will work there.",
     "failed": "Could not {what}. The browser said: {reason}"
   },
-
   "start": {
     "welcomeBack": "Welcome back",
     "regrantSub": "Your folder is <strong>&laquo;{folder}&raquo;</strong>. The browser asks you to confirm write permission every time you reopen the app.",
@@ -62,12 +56,10 @@
     "browserStorageNote": "It survives closing, but <strong>it is not a folder of yours</strong> and your assistant <strong>cannot read it</strong>. The folder picker exists only in desktop Chromium, so this is the fallback and not an equivalent option.",
     "openWithoutSaving": "Open without saving anything"
   },
-
   "state": {
     "alreadyEvaluated": "This record has already been evaluated up to {when}, which is later than now ({now}). The plan below is at that later instant, not at today's, and it cannot be evaluated backwards.",
     "unreachable": "Could not reach {where} ({kind}: {detail})."
   },
-
   "notice": {
     "unreachableTitle": "This is your record, not today's news.",
     "unreachableBody": "The app could not reach the dealership when it opened, so whatever they have sent since last time is not here yet. Everything above is what your record already held.",
@@ -79,9 +71,8 @@
     "migratedTitle": "Your new services now arrive through {where}, on this same phone.",
     "migratedBody": "What you see here stays and is still yours; what this copy stops doing is looking for news.",
     "hostedTitle": "It is being saved on this phone.",
-    "hostedBody": "Your record is yours and it is here: Gnothi gave this dealership a folder on your phone, and your assistant can read it from there."
+    "hostedBody": "Your record is yours and it is here: Mymi gave this dealership a folder on your phone, and your assistant can read it from there."
   },
-
   "tab": {
     "home": "Home",
     "vehicle": "My vehicle",
@@ -89,7 +80,6 @@
     "coverage": "Coverage",
     "history": "History"
   },
-
   "home": {
     "kicker": "Owner service",
     "sub": "Your dealership keeps this record and is the only one that changes it. Here you read it.",
@@ -131,14 +121,18 @@
     "yourCar": "Your car",
     "yourModel": "Your {model}",
     "whatsappCar": "car",
-    "whatsappText": "Hello, I would like to book {operation} for my {car} (odometer {odometer} {unit})."
+    "whatsappText": "Hello, I would like to book {operation} for my {car} (odometer {odometer} {unit}).",
+    "heroStateAttention": "needs attention",
+    "heroStateSomething": "has something to do",
+    "heroStateOk": "is up to date"
   },
-
   "services": {
     "count": "{count} operations, the urgent ones first",
     "measuredAt": "What is left is measured at {instant}",
     "refusedLabel": "Could not be measured",
     "remainingLabel": "What is left",
+    "byDistance": "by distance",
+    "byTime": "by time",
     "hide": "Hide",
     "why": "Why?",
     "order": "Urgency sets the order, not the calendar: what is overdue first, then what is due, and what is up to date last. The dates of what has already been done do not come in the record yet.",
@@ -150,7 +144,6 @@
     "summaryNotDue": "Inside the interval, or with no interval scheduled for this car.",
     "summaryUnknown": "Your record gave this operation no state."
   },
-
   "vehicle": {
     "photoAlt": "Photograph of the {what}",
     "photoAltFallback": "vehicle",
@@ -159,6 +152,14 @@
     "tabInfo": "Information",
     "tabWarranty": "Warranty",
     "tabManual": "Manual",
+    "infoTitle": "Your vehicle's data",
+    "plateNotPublished": "Your dealership hasn't published it yet.",
+    "infoNote": "These are the facts your dealership has published about this vehicle. What doesn't appear here hasn't been published yet.",
+    "manualPillNone": "Not published yet",
+    "manualNotPublished": "Your dealership hasn't published this vehicle's sheet yet.",
+    "pricesTitleShort": "Prices",
+    "pricesPillNone": "Not published yet",
+    "pricesNotPublished": "Your dealership hasn't published prices for this vehicle yet.",
     "rowModel": "Model",
     "rowVin": "VIN",
     "rowPlate": "Plate",
@@ -192,7 +193,6 @@
     "hideSheet": "Hide the full sheet",
     "seeSheet": "See the full sheet"
   },
-
   "coverage": {
     "sheetTag": "sheet {revision}",
     "notReadYet": "This record has not been read yet.",
@@ -204,14 +204,19 @@
     "elsewhereTitle": "Servicing elsewhere",
     "elsewhereNone": "The manufacturer did not publish a servicing-elsewhere rule for this model."
   },
-
   "history": {
     "doneTitle": "What has been done to it",
     "doneNoneTitle": "Nothing is recorded as done yet",
     "doneNoneBody": "Each operation says below why it has nothing.",
     "nothingTitle": "What has nothing recorded",
+    "emptyTitle": "No operations recorded yet",
+    "emptyBody": "Once your workshop records services, they'll show up here.",
+    "pendingTitle": "Operations with no record",
+    "pendingRowNone": "No records",
+    "pendingNote": "A missing record doesn't mean the work was never done; it just means it isn't recorded here.",
     "notReadYet": "This record has not been read yet.",
     "staysTitle": "Days in the workshop",
+    "staysExplain": "Stays count the days your vehicle was recorded as being at the workshop.",
     "staysRightNow": "Right now, at {instant}",
     "staysEach": "Each stay",
     "staysNoneTitle": "No stay recorded in this period",
@@ -230,7 +235,6 @@
     "costsTitle": "Each cost",
     "costsNoneTitle": "No cost recorded in this period"
   },
-
   "sheet": {
     "title": "The manufacturer's sheet",
     "scope": "What the manufacturer published for the model <span class=\"mono\">{model}</span>.",
@@ -250,7 +254,6 @@
     "fuelNoPermitted": "no other was published as permitted",
     "unknownRevision": "--"
   },
-
   "warranty": {
     "title": "Where your car stands",
     "askedAt": "at {instant}",
@@ -272,7 +275,6 @@
     "elsewhereTitle": "Servicing elsewhere",
     "unknownRevision": "--"
   },
-
   "ownerIsTold": {
     "nothingHasBeenPublishedYet": "Nothing has been published about this model yet. That is neither a fault nor a screen waiting for you to fill it in: your dealership sends the manufacturer's sheet, and until it arrives here there is nothing to quote.",
     "theDealershipHasNotSentTheseFactsYet": "Part of what decides this has not reached your record yet: the warranty envelope itself, the day the car was delivered, or an odometer reading taken today or earlier. The sentence above names which one, in the words of your own record. Your dealership sends all three, down the same feed that brings everything else here, so there is nothing for you to fill in and nothing worth guessing. An envelope that is not recorded here is not the same as a car with no warranty -- ask your dealership to record it.",

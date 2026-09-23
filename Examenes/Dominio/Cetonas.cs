@@ -33,7 +33,7 @@ namespace Examenes.Dominio
 			this.positivo = positivo;
 		}
 
-		internal override string Expresado => Etiqueta;
+		internal override string Clave => Etiqueta;
 
 		internal override bool FueRealizada => realizada;
 
@@ -63,11 +63,10 @@ namespace Examenes.Dominio
 		internal override Accion AccionDelHallazgo =>
 			EsHallazgo ? Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita) : null;
 
-		internal override string ParaSonia => !realizada
-			? "el laboratorio no corrió esta prueba"
-			: positivo
-				? "salieron cetonas en la orina"
-				: "no salieron cetonas en la orina";
+		internal override string ClaveDeLaFrase =>
+			!realizada ? "resultado.no-realizado"
+			: positivo ? "resultado.cetonas.positivo"
+			: "resultado.cetonas.negativo";
 
 		// La frontera: el resultado llega como texto en el evento y se resuelve una vez.
 		// VACIO ES "NO REALIZADO" y no un negativo: la tira reactiva no siempre corre todas

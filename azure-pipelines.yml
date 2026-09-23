@@ -70,6 +70,17 @@ steps:
   - script: dotnet run --project Gnothi.Assistant.Tests --no-build -c Release
     displayName: "Guardian 1 - la Puerta 2 se puede borrar"
 
+  # GUARDIAN 3 - LA CARA HIBRIDA NO SE DESVIA DE SU APP SUELTA.
+  #
+  # Cada negocio tiene DOS pantallas del mismo hecho -- la app suelta en Blazor y la cara hibrida
+  # escrita a mano -- y nada las ata: la hoja entresacada, una clase sin regla y un catalogo con una
+  # clave de menos no ponen rojo ni al compilador ni a la suite. El guardian ya existe y sale con
+  # codigo 1, asi que sirve de compuerta tal cual.
+  #
+  # NO NECESITA .NET: es node sobre los archivos, asi que no depende del build ni del solution.
+  - script: node Herramientas/revisar-las-caras.mjs
+    displayName: "Guardian 3 - las caras no se desvian de su app suelta"
+
   # GUARDIAN 2 - EL NUCLEO NO HABLA MCP.
   # El workload tarda unos minutos la primera vez; es el precio de tener el test.
   - script: dotnet workload install android --skip-sign-check

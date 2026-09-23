@@ -356,6 +356,28 @@ namespace Concesionario.Dominio
 			return _order.Count;
 		}
 
+		/// <summary>
+		/// Que parte de lo agendado no tiene nada pendiente, de cada cien. ES LA DIVISION DE LAS DOS
+		/// ANTERIORES, Y VIVE ACA POR ESO: la agenda es la unica que puede dividir sus propias
+		/// cuentas. Una caratula que quiera dibujar la proporcion -- un aro, una barra -- pide esto y
+		/// no divide nada, que es la regla que las dos de arriba dicen con todas las letras.
+		///
+		/// SIN NADA AGENDADO NO HAY PROPORCION Y LA RESPUESTA ES CERO, no un vacio ni un error: un
+		/// vehiculo cuya agencia todavia no programo nada tiene cero de cada cien al dia, y eso es
+		/// cierto y es dibujable.
+		///
+		/// REDONDEA HACIA ABAJO A PROPOSITO. Ocho de nueve son 88 y no 89: un aro que se dibuje lleno
+		/// cuando falta una operacion dice algo que la agenda no dice.
+		/// </summary>
+		internal int CountUpToDatePerHundred()
+		{
+			int scheduled = CountScheduled();
+
+			if (scheduled == 0) return 0;
+
+			return CountUpToDate() * 100 / scheduled;
+		}
+
 		/// <summary>Cuantas operaciones se pasaron de la gracia.</summary>
 		internal int CountOverdue()
 		{

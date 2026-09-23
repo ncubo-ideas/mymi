@@ -68,8 +68,15 @@ private func esquema(_ nombre: String, _ params: [[String: Any]]) -> GenerationS
 			schema: DynamicGenerationSchema(type: String.self))
 	}
 	let raiz = DynamicGenerationSchema(name: nombre, description: nil, properties: propiedades)
-	return try? GenerationSchema(root: raiz, dependencies: [])
+	// EL try? SE FUE, Y POR QUE. Si esto falla, la tool se caia del compactMap sin una linea en
+	// ningun lado y el modelo se quedaba sin herramientas: podia hablar de llamarlas y no
+	// llamarlas nunca. Es exactamente el sintoma del hallazgo 12. Ahora el motivo sale.
+	do { return try GenerationSchema(root: raiz, dependencies: []) }
+	catch { fallosDeEsquema.append("\(nombre): \(error)"); return nil }
 }
+
+/// Lo que se cayo al armar los esquemas de esta llamada. Se vacia en cada paso.
+private var fallosDeEsquema: [String] = []
 
 @available(iOS 26.0, *)
 private func entradas(_ conversacion: [[String: Any]]) -> [Transcript.Entry] {
@@ -128,6 +135,41 @@ public func gnothi_fm_estado() -> Int32 {
 	return estadoImpl()
 }
 
+/// POR QUE NO HAY MODELO, en palabras. El estado 0 los mete a todos en la misma bolsa y son tres
+/// situaciones distintas: una se espera, otra se enciende y la tercera no tiene arreglo.
+///
+/// Costo medido: el 2026-09-17 el puente dijo `0` tres veces en un iPhone 17 Pro y cada una fue por
+/// un motivo distinto -el idioma de Siri cruzado con el del aparato, y despues el salto a iOS 27-.
+/// Sin el motivo, cada diagnostico fue media hora de hipotesis. La cadena la libera el C#.
+@_cdecl("gnothi_fm_razon")
+public func gnothi_fm_razon() -> UnsafeMutablePointer<CChar> {
+	guard #available(iOS 26.0, *) else { return cadena("iOS < 26: no existe FoundationModels") }
+	return cadena(razonImpl())
+}
+
+@available(iOS 26.0, *)
+private func razonImpl() -> String {
+	switch SystemLanguageModel.default.availability {
+	case .available:
+		return "disponible"
+	case .unavailable(let motivo):
+		switch motivo {
+		case .deviceNotEligible:
+			return "el aparato no es elegible para Apple Intelligence"
+		case .appleIntelligenceNotEnabled:
+			// El caso que mas cuesta: tambien cae aca el idioma de Siri cruzado con el del
+			// aparato, que Apple documenta y que no se ve como un interruptor apagado.
+			return "Apple Intelligence no esta encendido para este aparato (revisar tambien que el idioma de Siri y el del aparato coincidan)"
+		case .modelNotReady:
+			return "el modelo todavia se esta descargando o preparando: es cuestion de esperar"
+		@unknown default:
+			return "no disponible, por un motivo que esta version del puente no conoce"
+		}
+	@unknown default:
+		return "availability devolvio algo que esta version del puente no conoce"
+	}
+}
+
 @available(iOS 26.0, *)
 private func estadoImpl() -> Int32 {
 	guard SystemLanguageModel.default.isAvailable else { return 0 }
@@ -170,6 +212,7 @@ private func pasoImpl(
 	let sistema = String(cString: instrucciones)
 
 	let captura = Captura()
+	fallosDeEsquema = []
 	let tools: [any Tool] = decl.compactMap { d in
 		guard let n = d["name"] as? String,
 			  let e = esquema(n, d["params"] as? [[String: Any]] ?? []) else { return nil }
@@ -177,10 +220,28 @@ private func pasoImpl(
 					   parameters: e, captura: captura)
 	}
 
+	// LAS TOOLS SE DECLARAN DOS VECES. MEDIDO: NO ES LA CAUSA DE NADA, y se deja igual.
+	//
+	// EL HECHO (2026-09-17, iPhone 17 Pro): el modelo de iOS 26.6.2 llama la tool 4 de 4 veces y
+	// el de iOS 27.0 -mismo puente, mismo prompt, misma tool- 0 de 4. Contesta con texto
+	// inventado y dos de esas ocho corridas INVIRTIERON el veredicto: «tu colesterol total viene
+	// bajando», cuando el expediente dice que sube.
+	//
+	// LA HIPOTESIS QUE ESTO ERA: que en 27 el modelo tomara su inventario de tools de la historia
+	// que lee, donde antes deciamos `toolDefinitions: []`, o sea que no habia ninguna. Se corrio
+	// con esta linea puesta: **0 de 4 otra vez**. Queda descartada.
+	//
+	// SE DEJA porque declarar las tools en el transcript es lo veraz -- la historia decia una
+	// mentira -- y porque asi el proximo que sospeche de esto encuentra la respuesta acá en vez
+	// de volver a probarlo. La causa del 0 de 4 esta en otro lado: el candidato que sigue es el
+	// `Senuelo`, que corta la generacion lanzando `Detener` desde dentro de `call`, y despues el
+	// texto de las instrucciones, que en las cuatro corridas empujo al modelo a repreguntar en
+	// vez de actuar.
 	var previas = entradas(conv)
 	if !sistema.isEmpty {
 		previas.insert(.instructions(Transcript.Instructions(
-			segments: [.text(Transcript.TextSegment(content: sistema))], toolDefinitions: [])), at: 0)
+			segments: [.text(Transcript.TextSegment(content: sistema))],
+			toolDefinitions: tools.map { Transcript.ToolDefinition(tool: $0) })), at: 0)
 	}
 
 	// La ultima entrada es la que dispara el paso; el resto es historia.
@@ -188,6 +249,10 @@ private func pasoImpl(
 	let sesion = LanguageModelSession(tools: tools, transcript: Transcript(entries: previas))
 
 	var respuesta: [String: Any] = [:]
+	// CUANTAS TOOLS VIO DE VERDAD EL MODELO. Sin esto, «declare 3 y usó 0» y «declaré 3, se
+	// cayeron las 3 y usó 0» se leen igual desde el C#, y son cosas opuestas.
+	respuesta["toolsDeclaradas"] = tools.count
+	if !fallosDeEsquema.isEmpty { respuesta["toolsRechazadas"] = fallosDeEsquema }
 	let sem = DispatchSemaphore(value: 0)
 
 	Task {

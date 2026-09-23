@@ -10,6 +10,23 @@
     --amarillo: #FDC820;
     --rojo: #EC3049;
 
+    /* Identidad navy del tablero de Inicio: navy real (no violeta lavado), con violeta reservado a
+       acentos/gradientes, turquesa para positivo y coral para alertas. Fijos (no cambian con
+       prefers-color-scheme): el tablero de Inicio es oscuro siempre, por decision de diseno. */
+    --noche-fondo: #0A0E28;
+    --noche-superficie: #141A3E;
+    --noche-superficie-alta: #1C2450;
+    --noche-linea: rgba(255, 255, 255, .08);
+    --noche-texto-tenue: rgba(255, 255, 255, .64);
+    --turquesa: #2CD9C5;
+    --coral: #FF7A54;
+    --coral-tenue: rgba(255, 122, 84, .16);
+
+    /* Acento UNICO de la navegacion (header activo en desktop, pie-nav activo en mobile): un
+       lila mas claro que --violeta, porque --violeta solo* da 3.5:1 sobre --indigo-alto y un
+       texto de nav necesita AA. Es la misma familia, no un color nuevo sin relacion. */
+    --acento-nav: #B8A8E8;
+
     --tinta: #1A1D3C;
     --tinta-suave: #5C6088;
     --tinta-tenue: #8A8DAB;
@@ -119,8 +136,7 @@ body { min-height: 100dvh; }
 .arranque__sello {
     width: min(7rem, 30vw);
     height: auto;
-    fill: #FFFFFF;
-    opacity: .92;
+    object-fit: contain;
 }
 
 .cargando {
@@ -161,27 +177,20 @@ h2 {
     max-width: 42rem;
 }
 
+/* Mismo --indigo-alto solido que usa .pie-nav (sin degradado): header y footer deben leerse
+   como el mismo sistema conteniendo la app, no como dos superficies distintas. */
 .marco {
     position: sticky;
     top: 0;
     z-index: 30;
-    background: linear-gradient(150deg, var(--indigo-alto) 0%, var(--indigo) 62%, var(--indigo-medio) 100%);
-    box-shadow: var(--sombra-marco);
-}
-
-.marco::after {
-    content: "";
-    display: block;
-    height: 3px;
-    background: linear-gradient(to right,
-        var(--cian) 0 20%, var(--violeta) 20% 40%, var(--rosa) 40% 60%,
-        var(--rojo) 60% 80%, var(--amarillo) 80% 100%);
+    background: var(--indigo-alto);
+    box-shadow: 0 1px 12px rgba(0, 0, 0, .22);
 }
 
 .marco__banda {
     max-width: 52rem;
     margin: 0 auto;
-    padding: .875rem 1.25rem;
+    padding: .625rem 1.25rem;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -191,49 +200,42 @@ h2 {
 .marco__marca {
     display: flex;
     align-items: center;
-    gap: .875rem;
+    gap: .625rem;
     min-width: 0;
     text-decoration: none;
     margin-right: auto;
 }
 
-.marco__sello {
-    width: 2.5rem;
-    height: 2.5rem;
+.marco__logo {
     flex: none;
-    border-radius: .75rem;
-    background: rgba(255, 255, 255, .14);
-    display: grid;
-    place-items: center;
-    color: #FFFFFF;
-}
-
-.marco__sello svg {
-    width: 1.375rem;
-    height: 1.375rem;
-    fill: currentColor;
+    display: block;
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
 }
 
 .marco__titulos {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     min-width: 0;
 }
 
 .marco__nombre {
-    font-size: .9375rem;
+    font-size: 1rem;
     font-weight: 700;
     letter-spacing: -.01em;
-    line-height: 1.2;
+    line-height: 1.25;
     color: #FFFFFF;
 }
 
 .marco__apunte {
-    font-size: .6875rem;
+    font-size: .625rem;
     font-weight: 650;
-    letter-spacing: .14em;
+    letter-spacing: .13em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .62);
+    color: rgba(255, 255, 255, .6);
+    line-height: 1.4;
 }
 
 .marco__nav {
@@ -639,6 +641,41 @@ a.boton:hover { background: var(--indigo-alto); border-color: var(--indigo-alto)
 
 .nota a { color: var(--acento-tinta); }
 
+/* Nota informativa compacta: contexto util, no contenido principal. Fondo apenas distinto del
+   fondo (papel-hundido), borde sutil, poco padding -- nunca una tarjeta grande. */
+.nota-info {
+    display: flex;
+    align-items: flex-start;
+    gap: .625rem;
+    padding: .75rem .875rem;
+    background: var(--papel-hundido);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-chico);
+    margin: 0 0 1.5rem;
+}
+
+.nota-info__icono {
+    flex: none;
+    color: var(--calma);
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.nota-info__titulo {
+    display: block;
+    font-size: .8125rem;
+    font-weight: 650;
+    color: var(--tinta);
+    margin: 0 0 .125rem;
+}
+
+.nota-info__texto {
+    margin: 0;
+    font-size: .8125rem;
+    color: var(--tinta-suave);
+    line-height: 1.5;
+}
+
 .parte {
     border-radius: var(--radio);
     padding: 1rem 1.25rem;
@@ -826,4 +863,1098 @@ a.boton:hover { background: var(--indigo-alto); border-color: var(--indigo-alto)
 
 @media (prefers-reduced-motion: reduce) {
     .preguntas a:hover { transform: none; }
+}
+
+/* ===== Sprite (sprite-mi-muni.png, 1536x1024) =====
+   Cada modificador recorta y escala UNA pieza real del sprite, en la misma proporcion en X y en Y
+   para no deformarla. Los numeros salen de medir el PNG (bounding box de alfa por icono), no son
+   estimados a ojo. */
+.icono-sprite {
+    display: inline-block;
+    flex-shrink: 0;
+    background-image: url('../images/sprite-mi-muni.png');
+    background-repeat: no-repeat;
+}
+
+.icono-sprite--logo { width: 40px; height: 38.66px; background-size: 258.15px 172.1px; background-position: -8.24px -7.06px; }
+.icono-sprite--home { width: 24px; height: 23.2px; background-size: 307.2px 204.8px; background-position: -71.4px -15.2px; }
+.icono-sprite--calendario { width: 35.27px; height: 36px; background-size: 558.55px 372.36px; background-position: -22.55px -115.27px; }
+.icono-sprite--calendario-chico { width: 23.52px; height: 24px; background-size: 372.36px 248.24px; background-position: -15.03px -76.85px; }
+.icono-sprite--presupuesto { width: 33.82px; height: 36px; background-size: 558.55px 372.36px; background-position: -86.91px -115.27px; }
+.icono-sprite--presupuesto-chico { width: 22.55px; height: 24px; background-size: 372.36px 248.24px; background-position: -57.94px -76.85px; }
+.icono-sprite--alcancia { width: 36px; height: 34.73px; background-size: 489.35px 326.23px; background-position: -262.83px -165.03px; }
+.icono-sprite--tendencia { width: 36px; height: 32.57px; background-size: 526.63px 351.09px; background-position: -137.83px -109.03px; }
+.icono-sprite--basura { width: 27.43px; height: 32px; background-size: 501.55px 334.37px; background-position: -295.84px -103.18px; }
+.icono-sprite--policia { width: 27.35px; height: 32px; background-size: 446.84px 297.89px; background-position: -306.91px -89.89px; }
+.icono-sprite--inmuebles { width: 32px; height: 30.15px; background-size: 472.62px 315.08px; background-position: -370.77px -97.54px; }
+.icono-sprite--parques { width: 29.69px; height: 32px; background-size: 506.72px 337.81px; background-position: -454.93px -105.24px; }
+.icono-sprite--doc-x { width: 24.71px; height: 30px; background-size: 451.76px 301.18px; background-position: -170.59px -92.65px; }
+.icono-sprite--al-dia { width: 43.02px; height: 44px; background-size: 750.93px 500.62px; background-position: -24.93px -259.11px; }
+.icono-sprite--vencido { width: 43.5px; height: 44px; background-size: 768px 512px; background-position: -100px -264.5px; }
+.icono-sprite--proximo { width: 43.52px; height: 44px; background-size: 734.61px 489.74px; background-position: -167.87px -252.52px; }
+/* Recorte corregido: SOLO la escena municipal (edificio, arboles, faroles, luna, fondo).
+   La primera version llegaba hasta x=636 y se comia el borde del icono de ubicacion morado
+   que esta inmediatamente a la derecha en la hoja (empieza en x=533): el limite real de la
+   ilustracion, medido por alfa, esta en x=515. Tambien se subio el techo de y=750 a y=766
+   para no agarrar la cola de los chevrons de la fila de arriba. */
+.icono-sprite--ilustracion { width: 210px; height: 97.94px; background-size: 677.65px 451.76px; background-position: -17.21px -337.94px; }
+
+@media (min-width: 48rem) {
+    .icono-sprite--ilustracion { width: 320px; height: 149.24px; background-size: 1032.61px 688.4px; background-position: -26.22px -514.96px; }
+}
+
+/* =====================================================================================
+   Fondo azul noche: identidad real de Inicio Y de las pantallas internas que ya se
+   redisenaron (Pagos y vencimientos, Mi presupuesto, Cambios en mis cobros). UNA sola zona
+   de fondo por pantalla (sin tarjeta que envuelva todo): cancela el padding de .hoja para
+   sangrar hasta el borde, y de ahi para abajo todo vive sobre --noche-fondo liso. Las
+   tarjetas de adentro son una superficie MAS CLARA (--noche-superficie), no otro violeta.
+   Las paginas que NO se tocaron esta ronda (Sin comprobante, el arranque) siguen con el
+   fondo claro de siempre: esta clase no se les aplica.
+   ===================================================================================== */
+.fondo-noche {
+    margin: -1.75rem -1.25rem 1.5rem;
+    padding: 1.75rem 1.25rem 2rem;
+    background: linear-gradient(180deg, var(--indigo) 0%, var(--noche-fondo) 9rem, var(--noche-fondo) 100%);
+    color: #FFFFFF;
+}
+
+@media (min-width: 48rem) {
+    .fondo-noche { margin: -2.25rem -1.5rem 1.5rem; padding: 2.25rem 1.5rem 2rem; }
+}
+
+/* Cuando el fondo noche es lo ultimo de la pantalla (las 3 paginas rediseniadas: nada de
+   tecnico despues), sangra tambien hasta el borde inferior en vez de dejar un reborde claro
+   antes del nav inferior. En Inicio no aplica: ahi sigue la nota y el detalle tecnico. */
+.fondo-noche:last-child {
+    margin-bottom: -5rem;
+    padding-bottom: 5rem;
+}
+
+@media (max-width: 47.9375rem) {
+    .fondo-noche:last-child { margin-bottom: -5.5rem; padding-bottom: 5.5rem; }
+}
+
+.fondo-noche h1 { color: #FFFFFF; }
+
+.fondo-noche h2 {
+    color: rgba(255, 255, 255, .68);
+}
+
+.fondo-noche h2::after { background: rgba(255, 255, 255, .14); }
+
+.fondo-noche .nota { color: rgba(255, 255, 255, .72); }
+.fondo-noche .nota a { color: var(--turquesa); }
+.fondo-noche .mono { color: rgba(255, 255, 255, .82); }
+
+.fondo-noche .tarjeta {
+    background: var(--noche-superficie);
+    border-color: var(--noche-linea);
+    box-shadow: none;
+    color: #FFFFFF;
+}
+
+.fondo-noche .renglones { border-top-color: var(--noche-linea); }
+.fondo-noche .renglones dt { color: var(--noche-texto-tenue); border-bottom-color: var(--noche-linea); }
+.fondo-noche .renglones dd { color: #FFFFFF; border-bottom-color: var(--noche-linea); }
+
+.fondo-noche .frase { color: rgba(255, 255, 255, .88); }
+.fondo-noche .frase--apagada { color: var(--noche-texto-tenue); }
+
+.fondo-noche .periodo { color: var(--noche-texto-tenue); }
+
+.fondo-noche .llave,
+.fondo-noche .nombre-rubro {
+    background: rgba(255, 255, 255, .1);
+    color: #FFFFFF;
+}
+
+.fondo-noche .nombre-rubro { background: none; padding: 0; font-weight: 700; }
+
+.fondo-noche .sello {
+    background: rgba(255, 255, 255, .1);
+    border-color: transparent;
+    color: rgba(255, 255, 255, .85);
+}
+
+.fondo-noche .sello--urgente,
+.fondo-noche .sello--hay-periodos-sin-comprobante {
+    background: var(--coral-tenue);
+    color: var(--coral);
+}
+
+.fondo-noche .sello--aviso,
+.fondo-noche .sello--salto,
+.fondo-noche .sello--sin-consulta {
+    background: rgba(253, 200, 32, .16);
+    color: var(--amarillo);
+}
+
+.fondo-noche .sello--nada-sin-comprobante {
+    background: rgba(44, 217, 197, .16);
+    color: var(--turquesa);
+}
+
+.fondo-noche .aviso {
+    background: var(--noche-superficie);
+    border-color: var(--noche-linea);
+    border-left-color: rgba(255, 255, 255, .3);
+}
+
+.fondo-noche .aviso h3 { color: #FFFFFF; }
+.fondo-noche .aviso__cuerpo > p { color: rgba(255, 255, 255, .85); }
+
+.fondo-noche .aviso--mala {
+    background: var(--coral-tenue);
+    border-color: transparent;
+    border-left-color: var(--coral);
+    color: rgba(255, 255, 255, .9);
+}
+.fondo-noche .aviso--mala h3 { color: var(--coral); }
+
+.fondo-noche .aviso--tibia {
+    background: rgba(253, 200, 32, .12);
+    border-color: transparent;
+    border-left-color: var(--amarillo);
+    color: rgba(255, 255, 255, .9);
+}
+.fondo-noche .aviso--tibia h3 { color: var(--amarillo); }
+
+.fondo-noche .sin-firmar {
+    background: var(--noche-superficie);
+    border-color: var(--noche-linea);
+    color: rgba(255, 255, 255, .8);
+}
+.fondo-noche .sin-firmar__estado { background: rgba(253, 200, 32, .18); color: var(--amarillo); }
+.fondo-noche .sin-firmar__estado--firmado { background: rgba(44, 217, 197, .18); color: var(--turquesa); }
+
+.fondo-noche .plomeria { border-top-color: var(--noche-linea); }
+.fondo-noche .plomeria > summary { color: var(--noche-texto-tenue); }
+.fondo-noche .plomeria > summary:hover { color: #FFFFFF; }
+
+.fondo-noche .aporte { border-top-color: var(--noche-linea); }
+.fondo-noche .aporte > label { color: var(--noche-texto-tenue); }
+.fondo-noche .aporte input {
+    background: rgba(255, 255, 255, .07);
+    border-color: var(--noche-linea);
+    color: #FFFFFF;
+}
+.fondo-noche .aporte input:focus-visible { background: rgba(255, 255, 255, .12); outline-color: var(--turquesa); }
+
+.fondo-noche button:not(.suave),
+.fondo-noche a.boton {
+    background: var(--violeta);
+    border-color: var(--violeta);
+    color: #FFFFFF;
+}
+.fondo-noche button:not(.suave):hover,
+.fondo-noche a.boton:hover { background: #6B5AA3; border-color: #6B5AA3; }
+
+.fondo-noche button.suave {
+    background: transparent;
+    border-color: var(--noche-linea);
+    color: rgba(255, 255, 255, .85);
+}
+.fondo-noche button.suave:hover { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .3); }
+
+.panel-inicio__hero {
+    position: relative;
+    min-height: 6.5rem;
+    margin: 0 0 1.25rem;
+    overflow: hidden;
+}
+
+/* Sincronizar: la MISMA accion de refrescar que antes era un boton protagonista, ahora un
+   icono chico y discreto en la esquina del hero. No es un adorno: sigue llamando
+   RefrescarAsync() tal cual. */
+.panel-inicio__sync {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid var(--noche-linea);
+    color: rgba(255, 255, 255, .82);
+    font-size: 1.0625rem;
+    line-height: 1;
+    padding: 0;
+    box-shadow: none;
+}
+
+.panel-inicio__sync:hover { background: rgba(255, 255, 255, .18); color: #FFFFFF; border-color: rgba(255, 255, 255, .3); }
+
+.panel-inicio__sync:disabled,
+.panel-inicio__sync:disabled:hover {
+    background: rgba(255, 255, 255, .1);
+    border-color: var(--noche-linea);
+    color: rgba(255, 255, 255, .82);
+    opacity: .7;
+}
+
+.panel-inicio__sync--girando { animation: panel-inicio-girar .9s linear infinite; }
+
+@keyframes panel-inicio-girar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .panel-inicio__sync--girando { animation: none; }
+}
+
+.panel-inicio__hero-texto {
+    position: relative;
+    z-index: 1;
+    max-width: 60%;
+}
+
+.panel-inicio__hero-texto h1 {
+    color: #FFFFFF;
+    font-size: 1.5rem;
+    margin: 0 0 .3125rem;
+}
+
+.panel-inicio__hero-texto p {
+    margin: 0;
+    color: rgba(255, 255, 255, .8);
+    font-size: .9375rem;
+    line-height: 1.4;
+}
+
+.panel-inicio__hero .icono-sprite--ilustracion {
+    position: absolute;
+    right: -1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .9;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22%);
+    mask-image: linear-gradient(to right, transparent 0, #000 22%);
+}
+
+.tarjeta-estado {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    text-align: left;
+    text-decoration: none;
+    color: inherit;
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio);
+    padding: 1rem 1.125rem;
+    margin: 0 0 1.5rem;
+    font: inherit;
+    cursor: pointer;
+}
+
+a.tarjeta-estado:hover,
+button.tarjeta-estado:hover { background: var(--noche-superficie-alta); }
+
+/* Variante compacta: solo Pagos sin comprobante, que no necesita el mismo aire que el resumen
+   de Inicio (que ademas es un link con flecha y mas jerarquia que resolver). */
+.tarjeta-estado--compacta {
+    padding: .875rem 1rem;
+    gap: .875rem;
+    margin-bottom: 1.25rem;
+}
+
+.tarjeta-estado__icono {
+    flex: none;
+    display: grid;
+    place-items: center;
+}
+
+.tarjeta-estado__texto { min-width: 0; flex: 1; }
+
+.tarjeta-estado__etiqueta {
+    display: block;
+    font-size: .75rem;
+    font-weight: 650;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--noche-texto-tenue);
+    margin-bottom: .25rem;
+}
+
+.tarjeta-estado__estado {
+    display: block;
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    margin-bottom: .25rem;
+    color: #FFFFFF;
+}
+
+/* Al dia y proximo si llevan color en el titulo (son buenas o neutras noticias); vencido
+   NO: el titulo se queda blanco y el coral se reserva para el icono y este indicador chico,
+   para no mezclar dos rojos distintos (el del icono del sprite y el del texto). */
+.tarjeta-estado--al-dia .tarjeta-estado__estado { color: var(--turquesa); }
+.tarjeta-estado--proximo .tarjeta-estado__estado { color: var(--amarillo); }
+
+.tarjeta-estado__detalle {
+    display: block;
+    font-size: .8438rem;
+    color: rgba(255, 255, 255, .82);
+}
+
+.tarjeta-estado__indicador {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    font-size: .8438rem;
+    font-weight: 650;
+    color: rgba(255, 255, 255, .82);
+}
+
+.tarjeta-estado__indicador--coral { color: var(--coral); }
+.tarjeta-estado__indicador--coral span:last-child { color: rgba(255, 255, 255, .82); font-weight: 500; }
+
+.tarjeta-estado__flecha {
+    flex: none;
+    color: var(--noche-texto-tenue);
+    font-size: 1.375rem;
+}
+
+.panel-inicio__titulo {
+    margin: 0 0 .75rem;
+    font-size: .8125rem;
+    font-weight: 750;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--noche-texto-tenue);
+}
+
+.accesos-principales {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+    margin: 0 0 .75rem;
+}
+
+.accesos-principales__ancho { grid-column: 1 / -1; }
+
+.acceso {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    text-decoration: none;
+    color: #FFFFFF;
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio-chico);
+    padding: 1rem;
+}
+
+.acceso:hover { background: var(--noche-superficie-alta); }
+
+.acceso--ancho { flex-direction: row; align-items: center; gap: 1rem; }
+
+.acceso__nombre {
+    font-size: .9375rem;
+    font-weight: 700;
+    letter-spacing: -.005em;
+    line-height: 1.25;
+}
+
+.acceso__dato {
+    display: block;
+    margin-top: .25rem;
+    font-size: .8125rem;
+    font-weight: 650;
+    color: rgba(255, 255, 255, .78);
+    line-height: 1.4;
+}
+
+.otras-opciones {
+    margin: 1.5rem 0 0;
+}
+
+.otras-opciones__lista {
+    display: grid;
+    gap: .625rem;
+}
+
+.opcion-menor {
+    display: flex;
+    align-items: center;
+    gap: .875rem;
+    padding: .875rem 1rem;
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio-chico);
+    text-decoration: none;
+    color: #FFFFFF;
+}
+
+.opcion-menor:hover { background: var(--noche-superficie-alta); }
+
+.opcion-menor__nombre { font-weight: 650; font-size: .9375rem; }
+
+/* =====================================================================================
+   Resumen de estado a nivel de pagina (Pagos y vencimientos): el mismo icono/color que la
+   tarjeta de Inicio, pero SIN tarjeta -- ya estamos en la pantalla, no hace falta un link.
+   ===================================================================================== */
+.resumen-estado {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 0 1.75rem;
+}
+
+.resumen-estado__titulo {
+    display: block;
+    font-size: 1.625rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.15;
+    color: #FFFFFF;
+}
+
+/* Vencido se queda en blanco (ver tarjeta-estado en app.css: el coral del icono ya alcanza,
+   sumarle el titulo entero en coral era el problema que se corrigio esta ronda). */
+.resumen-estado--al-dia .resumen-estado__titulo { color: var(--turquesa); }
+.resumen-estado--proximo .resumen-estado__titulo { color: var(--amarillo); }
+
+.resumen-estado__indicador {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    margin-top: .25rem;
+    font-size: .875rem;
+    font-weight: 650;
+}
+
+.resumen-estado__indicador--coral { color: var(--coral); }
+.resumen-estado__indicador--coral span:last-child { color: rgba(255, 255, 255, .82); font-weight: 500; }
+
+.resumen-estado__nota {
+    display: block;
+    margin-top: .1875rem;
+    font-size: .875rem;
+    color: rgba(255, 255, 255, .7);
+}
+
+/* =====================================================================================
+   Flecha de regreso junto al titulo: para pantallas secundarias (accesibles solo desde
+   Inicio, no desde el footer) que necesitan una salida coherente sin duplicar el header
+   global ni el footer. El h1 conserva su propio margen; el circulo es el unico elemento
+   nuevo.
+   ===================================================================================== */
+.titulo-con-volver {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* Titulo mas chico que el h1 de las pantallas principales (1.75rem): esta es una pantalla
+   secundaria, y el titulo compartia peso visual con la flecha en vez de quedar claramente al
+   mando. white-space:nowrap solo baja de tamano si el texto no entra en una linea; el "Cambios
+   en mis cobros"/"Pagos sin comprobante" mas largos siguen envolviendo si hiciera falta, nunca
+   se recortan. */
+.titulo-con-volver h1 {
+    min-width: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+.volver {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .1);
+    color: #FFFFFF;
+    text-decoration: none;
+    font-size: .9375rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.volver:hover { background: rgba(255, 255, 255, .18); }
+
+/* =====================================================================================
+   Pagos y vencimientos: encabezado corto (sin segunda portada) y obligaciones como filas
+   compactas con el detalle bajo demanda (<details> nativo, sin JS).
+   ===================================================================================== */
+.subtitulo-pagina {
+    margin: -.5rem 0 1.75rem;
+    color: rgba(255, 255, 255, .78);
+    font-size: .9375rem;
+}
+
+/* El total vive en su propio bloque a la derecha: la cifra pesa mas que la etiqueta por
+   tamano/peso tipografico, no por color -- nada de coral ni rojo en un total. */
+.seccion-total-bloque {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    flex: none;
+}
+
+.seccion-total-etiqueta {
+    font-size: .75rem;
+    color: var(--noche-texto-tenue);
+}
+
+.seccion-total-cifra {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+}
+
+/* Explicacion secundaria: mas chica y mas apagada que .nota (que usan otras pantallas que no
+   se tocan esta ronda), para que la confirmacion de arriba sea lo unico que compita por ojo. */
+.explicacion-menor {
+    margin: .375rem 0 0;
+    font-size: .8125rem;
+    color: rgba(255, 255, 255, .58);
+    line-height: 1.5;
+}
+
+.obligaciones {
+    display: flex;
+    flex-direction: column;
+    gap: .625rem;
+    margin: 0 0 .25rem;
+}
+
+/* Cada obligacion es su propia tarjeta (fondo + borde + radio), no una fila de una lista
+   continua: es "convertir cada vencimiento en tarjeta", no una tabla de texto. */
+.obligacion {
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio-chico);
+    overflow: hidden;
+}
+
+.obligacion__resumen {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem .875rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.obligacion__resumen::-webkit-details-marker { display: none; }
+.obligacion__resumen::marker { content: ""; }
+
+.obligacion__resumen:hover { background: var(--noche-superficie-alta); }
+
+/* El icono vive en un contenedor violeta: es identidad del rubro, no una alerta. El coral
+   queda exclusivo del badge de atraso, nunca del icono principal. */
+.obligacion__icono {
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radio-chico);
+    background: rgba(128, 110, 186, .25);
+}
+
+.obligacion__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3125rem;
+}
+
+.obligacion__rubro {
+    font-weight: 700;
+    font-size: .9375rem;
+    color: #FFFFFF;
+    line-height: 1.25;
+}
+
+.obligacion__fecha {
+    font-size: .8125rem;
+    color: var(--noche-texto-tenue);
+}
+
+/* El dato de atraso ya no es una capsula solida (fondo vino + texto rosado de poco contraste):
+   una diferencia tipografica -- coral sobre el navy de la tarjeta, sin fondo -- alcanza para que
+   se note sin volverse una alerta repetida cuatro veces, y deja al monto como protagonista. */
+.obligacion__atraso {
+    display: block;
+    font-size: .8125rem;
+    font-weight: 700;
+    color: var(--coral);
+}
+
+.obligacion__lado {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.obligacion__monto {
+    font-size: 1.1875rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.obligacion__chevron {
+    color: var(--noche-texto-tenue);
+    font-size: 1.25rem;
+    transition: transform .15s ease;
+}
+
+.obligacion[open] .obligacion__chevron { transform: rotate(90deg); }
+
+.obligacion__detalle { padding: 0 .875rem 1rem; }
+
+.obligacion__detalle .renglones { margin-top: 0; }
+
+.obligacion__detalle__titulo {
+    display: block;
+    margin: .875rem 0 .375rem;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--noche-texto-tenue);
+}
+
+.obligacion__detalle .item__frase {
+    margin: 0;
+    font-size: .8438rem;
+    color: var(--noche-texto-tenue);
+    line-height: 1.5;
+}
+
+/* ===== Cifra protagonista: el numero real domina, la etiqueta lo acompana chiquita ===== */
+.cifra-protagonista {
+    display: block;
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    color: #FFFFFF;
+}
+
+.cifra-etiqueta {
+    display: block;
+    font-size: .8125rem;
+    font-weight: 650;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--noche-texto-tenue);
+}
+
+.cifra-etiqueta--eyebrow { margin: 0 0 .375rem; }
+.cifra-etiqueta--debajo { margin: .375rem 0 0; text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+.cifra-secundaria {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, .92);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ===== Bloque protagonista (Mi presupuesto): UNA tarjeta compacta, poco texto ===== */
+.bloque-protagonista {
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio);
+    padding: 1.25rem 1.25rem 1.375rem;
+    margin: 0 0 1rem;
+}
+
+.bloque-protagonista .icono-sprite { margin: 0 0 .625rem; }
+
+.bloque-protagonista__frase {
+    margin: .875rem 0 0;
+    max-width: 34rem;
+    font-size: .9375rem;
+}
+
+/* ===== Estado amigable: icono + una linea + una frase + CTA, sin tarjeta ni parrafo ===== */
+.estado-amigable {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+    margin: 0 0 .25rem;
+}
+
+/* El icono acompaña el titulo en la misma linea -- antes quedaba solo, arriba de todo, como un
+   elemento suelto sin relacion visual con el texto. */
+.estado-amigable__cabeza {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+}
+
+.estado-amigable__icono {
+    flex: none;
+    display: grid;
+    place-items: center;
+}
+
+.estado-amigable__titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin: 0;
+}
+
+.estado-amigable__texto {
+    font-size: .875rem;
+    color: var(--noche-texto-tenue);
+    margin: 0 0 .25rem;
+}
+
+/* ===== Items en lista: unidades reales, pero sin caja completa por cada una ===== */
+/* =====================================================================================
+   Cambios en mis cobros: cada rubro con historial es su propia tarjeta compacta con
+   detalle bajo demanda (mismo patron de <details> que Pagos y vencimientos). El icono real
+   del rubro (basura/policia/inmuebles/parques) vive en un contenedor violeta -- identidad,
+   no alerta. El color de la flecha/porcentaje lo decide EsSalto (si el cambio es
+   significativo), no el signo: un aumento chico no debe verse como una alerta.
+   ===================================================================================== */
+.rubros-cambio {
+    display: flex;
+    flex-direction: column;
+    gap: .625rem;
+    margin: 0 0 .5rem;
+}
+
+.rubro-cambio {
+    background: var(--noche-superficie);
+    border: 1px solid var(--noche-linea);
+    border-radius: var(--radio-chico);
+    overflow: hidden;
+}
+
+.rubro-cambio__resumen {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .875rem 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.rubro-cambio__resumen::-webkit-details-marker { display: none; }
+.rubro-cambio__resumen::marker { content: ""; }
+.rubro-cambio__resumen:hover { background: var(--noche-superficie-alta); }
+
+.rubro-cambio__icono {
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radio-chico);
+    background: rgba(128, 110, 186, .25);
+}
+
+.rubro-cambio__info { flex: 1; min-width: 0; }
+
+.rubro-cambio__cabeza {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin: 0 0 .5rem;
+}
+
+.rubro-cambio__nombre { font-weight: 700; font-size: .9375rem; color: #FFFFFF; }
+
+.rubro-cambio__montos {
+    display: block;
+    font-size: 1.3125rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
+    color: #FFFFFF;
+    margin: 0 0 .25rem;
+}
+
+.rubro-cambio__cambio {
+    display: flex;
+    align-items: baseline;
+    gap: .4375rem;
+    flex-wrap: wrap;
+    margin: 0 0 .25rem;
+}
+
+.rubro-cambio__flecha { font-size: 1.125rem; font-weight: 800; line-height: 1; }
+.rubro-cambio__porcentaje { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.rubro-cambio__flecha--atencion, .rubro-cambio__porcentaje--atencion { color: var(--amarillo); }
+
+/* Un cambio que el dominio NO marca como salto (p.ej. 1,7%) se dice en una sola linea de peso
+   liviano -- ni flecha grande, ni numero en negrita, ni color de atencion: nada compite con el
+   monto de arriba por un cambio que la propia regla real considera ruido. */
+.rubro-cambio__cambio-leve {
+    display: block;
+    font-size: .8125rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--noche-texto-tenue);
+    margin: 0 0 .25rem;
+}
+
+.rubro-cambio__periodo {
+    display: block;
+    font-size: .8125rem;
+    color: var(--noche-texto-tenue);
+    margin: 0 0 .5rem;
+}
+
+.rubro-cambio__nota {
+    display: block;
+    font-size: .8125rem;
+    color: var(--noche-texto-tenue);
+    margin: .125rem 0 0;
+}
+
+/* Pagos sin comprobante: dos estados por fila -- lo que dice el portal (positivo, turquesa)
+   y lo que le falta a la app (neutro, nunca coral: no es una alerta ni una deuda real). */
+.comprobante-estados {
+    display: flex;
+    flex-direction: column;
+    gap: .1875rem;
+    margin: 0 0 .5rem;
+}
+
+.comprobante-estado { font-size: .8125rem; font-weight: 650; }
+.comprobante-estado--pagado { color: var(--turquesa); }
+.comprobante-estado--pendiente { color: var(--noche-texto-tenue); }
+
+/* Variante compacta: solo Pagos sin comprobante. Sus tarjetas dicen menos que las de Cambios en
+   mis cobros (no hay montos ni periodo comparado), asi que no necesitan el mismo aire. */
+.rubro-cambio--compacta .rubro-cambio__resumen { padding: .75rem .875rem; gap: .625rem; }
+.rubro-cambio--compacta .rubro-cambio__icono { width: 2.25rem; height: 2.25rem; }
+.rubro-cambio--compacta .rubro-cambio__cabeza { margin-bottom: .375rem; }
+.rubro-cambio--compacta .comprobante-estados { margin-bottom: .375rem; }
+
+.rubro-cambio__toggle {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .8125rem;
+    font-weight: 650;
+    color: var(--turquesa);
+}
+
+.rubro-cambio__toggle-cerrar { display: none; }
+.rubro-cambio[open] .rubro-cambio__toggle-abrir { display: none; }
+.rubro-cambio[open] .rubro-cambio__toggle-cerrar { display: inline; }
+
+.rubro-cambio__toggle-chevron { transition: transform .15s ease; }
+.rubro-cambio[open] .rubro-cambio__toggle-chevron { transform: rotate(90deg); }
+
+.rubro-cambio__chevron {
+    flex: none;
+    align-self: center;
+    color: var(--noche-texto-tenue);
+    font-size: 1.25rem;
+    transition: transform .15s ease;
+}
+
+.rubro-cambio[open] .rubro-cambio__chevron { transform: rotate(90deg); }
+
+.rubro-cambio__detalle { padding: 0 1rem 1rem 3.5rem; }
+
+.item__meta {
+    display: block;
+    font-size: .8438rem;
+    color: rgba(255, 255, 255, .78);
+    margin: .125rem 0;
+}
+
+.item__meta strong { font-weight: 650; color: #FFFFFF; }
+
+.item__frase {
+    margin: .625rem 0 0;
+    font-size: .8438rem;
+    color: var(--noche-texto-tenue);
+    line-height: 1.5;
+}
+
+/* ===== Cabecera de seccion con total real, sin inventar nada que mezcle listas ===== */
+.seccion-cabeza {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin: 0 0 .75rem;
+}
+
+.seccion-cabeza h2 { margin: 0; }
+
+.estado-vacio {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem 0 .25rem;
+    color: rgba(255, 255, 255, .88);
+    font-weight: 650;
+}
+
+.estado-vacio__marca { color: var(--turquesa); font-weight: 800; }
+
+.icono-info { color: var(--turquesa); font-weight: 700; }
+
+/* Agrupa la confirmacion tranquila con su aclaracion secundaria SIN convertirlas en otra
+   tarjeta: una franja turquesa apenas insinuada, no un borde completo. */
+.aviso-tranquilo {
+    padding: .625rem .875rem;
+    border-left: 3px solid var(--turquesa);
+    background: rgba(44, 217, 197, .07);
+    border-radius: 0 var(--radio-chico) var(--radio-chico) 0;
+    margin: 0 0 1.25rem;
+}
+
+.aviso-tranquilo .estado-vacio { margin: 0; padding: 0; }
+.aviso-tranquilo .explicacion-menor { margin: .375rem 0 0; }
+
+/* Disclosure secundario compacto (p.ej. "Sobre los vencimientos"): una fila con icono + label +
+   chevron entre dos filetes, NO otra tarjeta y NO el simbolo pegado al texto como antes. Clase
+   propia (no .plomeria) para no tocar los demas disclosures de otras pantallas esta ronda. */
+.disclosure-secundaria {
+    border-top: 1px solid var(--noche-linea);
+    border-bottom: 1px solid var(--noche-linea);
+    margin: 1.5rem 0 0;
+}
+
+.disclosure-secundaria__resumen {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    padding: .875rem .125rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.disclosure-secundaria__resumen::-webkit-details-marker { display: none; }
+.disclosure-secundaria__resumen::marker { content: ""; }
+
+.disclosure-secundaria__resumen:hover .disclosure-secundaria__texto { color: #FFFFFF; }
+
+.disclosure-secundaria__icono {
+    flex: none;
+    color: var(--turquesa);
+    font-size: 1.0625rem;
+    line-height: 1;
+}
+
+.disclosure-secundaria__texto {
+    flex: 1;
+    font-size: .875rem;
+    font-weight: 650;
+    color: rgba(255, 255, 255, .85);
+}
+
+.disclosure-secundaria__chevron {
+    flex: none;
+    color: var(--noche-texto-tenue);
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: transform .15s ease;
+}
+
+.disclosure-secundaria[open] .disclosure-secundaria__chevron { transform: rotate(90deg); }
+
+.disclosure-secundaria__contenido { padding: 0 .125rem 1.125rem; }
+
+/* ===== Navegacion inferior (mobile) ===== */
+.pie-nav {
+    display: none;
+}
+
+@media (max-width: 47.9375rem) {
+    .marco__nav { display: none; }
+
+    .pie-nav {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
+        background: var(--indigo-alto);
+        box-shadow: 0 -1px 12px rgba(0, 0, 0, .25);
+        padding: .375rem .5rem env(safe-area-inset-bottom);
+    }
+
+    .pie-nav a {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .25rem;
+        min-height: 2.75rem;
+        padding: .25rem;
+        text-decoration: none;
+        color: rgba(255, 255, 255, .48);
+        font-size: .6875rem;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    /* Un solo sistema de acento: el icono pasa de atenuado a opaco, y el texto toma el lila de
+       nav. Los iconos conservan su propio color (calendario coral, barras cyan): no se pintan
+       de un color de "seccion" distinto cada uno. */
+    .pie-nav__icono {
+        display: grid;
+        place-items: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        opacity: .5;
+        transition: opacity .15s ease;
+    }
+
+    .pie-nav__logo {
+        width: 1.375rem;
+        height: 1.375rem;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* Indicador superior corto y discreto: la marca mas clara de "estoy aca", sin pill ni
+       fondo grande detras de la opcion. */
+    .pie-nav a::before {
+        content: "";
+        position: absolute;
+        top: -.375rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1.125rem;
+        height: .1875rem;
+        border-radius: 999px;
+        background: transparent;
+    }
+
+    .pie-nav a.active {
+        color: var(--acento-nav);
+        font-weight: 700;
+    }
+
+    .pie-nav a.active::before { background: var(--acento-nav); }
+    .pie-nav a.active .pie-nav__icono { opacity: 1; }
+
+    .hoja { padding-bottom: 5.5rem; }
 }

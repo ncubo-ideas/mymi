@@ -1,21 +1,17 @@
 {
   "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Las frases que compone el dominio NO estan aca: esas las trae la puerta ya dichas y se citan letra por letra. El espanol de este archivo es de Costa Rica y es voseo -lees, elegi, abrila-: no lo pases a tuteo. El nombre del modelo, el VIN, la placa, los sistemas del alcance y las exclusiones son del registro del concesionario y no se traducen. {clave} es un hueco que el codigo llena.",
-
   "shell": {
     "wentWrong": "Algo salió mal.",
     "reload": "Recargar"
   },
-
   "route": {
     "notFound": "No encontrado",
     "notFoundBody": "No hay nada en esta dirección."
   },
-
   "appearance": {
     "toLight": "Cambiar al tema claro",
     "toDark": "Cambiar al tema oscuro"
   },
-
   "page": {
     "errorWhileOpen": "No se pudo completar la operación.",
     "errorWhileClosed": "No se pudo abrir la app.",
@@ -27,7 +23,6 @@
     "folderIn": "la carpeta «{folder}»",
     "thisBrowser": "este navegador"
   },
-
   "step": {
     "chooseFolder": "elegir una carpeta",
     "requestPermission": "dar permiso a la carpeta",
@@ -43,7 +38,6 @@
     "denied": "El navegador se negó a {what}, sin preguntarte. Hay dos cosas que hacen eso, y se arreglan en lugares distintos. O el permiso de edición de archivos de este sitio está bloqueado — abrí el candado al lado de la dirección, reiniciá los permisos de este sitio, recargá y volvé a elegir la carpeta — o este navegador no da edición de archivos del todo, que es lo normal en un navegador embebido o dentro de otra app. Si no hay candado que abrir, es lo segundo: abrí esta app en Chrome o Edge directamente y ahí la carpeta sí va a funcionar.",
     "failed": "No se pudo {what}. El navegador dijo: {reason}"
   },
-
   "start": {
     "welcomeBack": "Bienvenido de vuelta",
     "regrantSub": "Tu carpeta es <strong>&laquo;{folder}&raquo;</strong>. El navegador te pide confirmar el permiso de escritura cada vez que volvés a abrir la app.",
@@ -62,12 +56,10 @@
     "browserStorageNote": "Sobrevive al cerrar, pero <strong>no es una carpeta tuya</strong> y tu asistente <strong>no puede leerla</strong>. El selector de carpetas existe solo en Chromium de escritorio, así que esto es el recurso de reserva y no una opción equivalente.",
     "openWithoutSaving": "Abrir sin guardar nada"
   },
-
   "state": {
     "alreadyEvaluated": "Este registro ya se evaluó hasta el {when}, que es posterior a ahora ({now}). El plan de abajo está a ese instante posterior, no al de hoy, y no se puede volver a evaluar hacia atrás.",
     "unreachable": "No se pudo alcanzar {where} ({kind}: {detail})."
   },
-
   "notice": {
     "unreachableTitle": "Esto es tu registro, no las novedades de hoy.",
     "unreachableBody": "La app no pudo llegar al concesionario al abrir, así que lo que haya enviado desde la última vez todavía no está aquí. Todo lo de arriba es lo que tu registro ya tenía.",
@@ -79,9 +71,8 @@
     "migratedTitle": "Tus servicios nuevos ahora entran por {where}, en este mismo teléfono.",
     "migratedBody": "Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de hacer es buscar novedades.",
     "hostedTitle": "Se está guardando en este teléfono.",
-    "hostedBody": "Tu registro es tuyo y está acá: Gnothi le dio a este concesionario una carpeta en tu teléfono, y tu asistente la puede leer desde ahí."
+    "hostedBody": "Tu registro es tuyo y está acá: Mymi le dio a este concesionario una carpeta en tu teléfono, y tu asistente la puede leer desde ahí."
   },
-
   "tab": {
     "home": "Inicio",
     "vehicle": "Mi vehículo",
@@ -89,7 +80,6 @@
     "coverage": "Cobertura",
     "history": "Historial"
   },
-
   "home": {
     "kicker": "Servicio al propietario",
     "sub": "Tu concesionario lleva este registro y es el único que lo cambia. Aquí lo leés.",
@@ -131,14 +121,18 @@
     "yourCar": "Tu carro",
     "yourModel": "Tu {model}",
     "whatsappCar": "carro",
-    "whatsappText": "Hola, quiero agendar {operation} para mi {car} (odómetro {odometer} {unit})."
+    "whatsappText": "Hola, quiero agendar {operation} para mi {car} (odómetro {odometer} {unit}).",
+    "heroStateAttention": "necesita atención",
+    "heroStateSomething": "tiene algo por hacer",
+    "heroStateOk": "está al día"
   },
-
   "services": {
     "count": "{count} operaciones, primero lo urgente",
     "measuredAt": "Lo que falta está medido al {instant}",
     "refusedLabel": "No se pudo medir",
     "remainingLabel": "Lo que falta",
+    "byDistance": "por distancia",
+    "byTime": "por tiempo",
     "hide": "Ocultar",
     "why": "¿Por qué?",
     "order": "El orden lo pone la urgencia, no el calendario: primero lo vencido, después lo que toca, y de último lo que está al día. Las fechas de lo ya hecho todavía no vienen en el registro.",
@@ -150,7 +144,6 @@
     "summaryNotDue": "Dentro del intervalo, o sin intervalo programado para este carro.",
     "summaryUnknown": "Tu registro no le puso un estado a esta operación."
   },
-
   "vehicle": {
     "photoAlt": "Fotografía del {what}",
     "photoAltFallback": "vehículo",
@@ -159,6 +152,14 @@
     "tabInfo": "Información",
     "tabWarranty": "Garantía",
     "tabManual": "Manual",
+    "infoTitle": "Datos de tu vehículo",
+    "plateNotPublished": "Tu concesionario aún no la ha publicado.",
+    "infoNote": "Estos son los datos que tu concesionario ha publicado sobre este vehículo. Lo que no aparece aún no ha sido publicado.",
+    "manualPillNone": "Aún no publicada",
+    "manualNotPublished": "Tu concesionario aún no ha publicado la ficha de este vehículo.",
+    "pricesTitleShort": "Precios",
+    "pricesPillNone": "Aún no publicados",
+    "pricesNotPublished": "Tu concesionario aún no ha publicado precios para este vehículo.",
     "rowModel": "Modelo",
     "rowVin": "VIN",
     "rowPlate": "Placa",
@@ -192,7 +193,6 @@
     "hideSheet": "Ocultar la ficha completa",
     "seeSheet": "Ver la ficha completa"
   },
-
   "coverage": {
     "sheetTag": "ficha {revision}",
     "notReadYet": "Este registro todavía no se ha leído.",
@@ -204,14 +204,19 @@
     "elsewhereTitle": "Servicio en otro taller",
     "elsewhereNone": "El fabricante no publicó una regla de servicio en otro taller para este modelo."
   },
-
   "history": {
     "doneTitle": "Lo que le han hecho",
     "doneNoneTitle": "Todavía no hay nada registrado como hecho",
     "doneNoneBody": "Cada operación dice abajo por qué no tiene nada.",
     "nothingTitle": "Lo que no tiene nada registrado",
+    "emptyTitle": "Todavía no hay operaciones registradas",
+    "emptyBody": "Cuando tu taller registre servicios, aparecerán aquí.",
+    "pendingTitle": "Operaciones sin registro",
+    "pendingRowNone": "Sin registros",
+    "pendingNote": "Que no aparezca un registro no significa que el trabajo nunca se haya hecho; solo que no está registrado aquí.",
     "notReadYet": "Este registro todavía no se ha leído.",
     "staysTitle": "Los días en el taller",
+    "staysExplain": "Las estadías cuentan los días que tu vehículo estuvo registrado en el taller.",
     "staysRightNow": "Ahora mismo, al {instant}",
     "staysEach": "Cada estadía",
     "staysNoneTitle": "Ninguna estadía registrada en este periodo",
@@ -230,7 +235,6 @@
     "costsTitle": "Cada gasto",
     "costsNoneTitle": "Ningún gasto registrado en este periodo"
   },
-
   "sheet": {
     "title": "La ficha del fabricante",
     "scope": "Lo que el fabricante publicó para el modelo <span class=\"mono\">{model}</span>.",
@@ -250,7 +254,6 @@
     "fuelNoPermitted": "no se publicó ningún otro como permitido",
     "unknownRevision": "--"
   },
-
   "warranty": {
     "title": "Dónde está parado tu carro",
     "askedAt": "al {instant}",
@@ -272,7 +275,6 @@
     "elsewhereTitle": "Servicio en otro taller",
     "unknownRevision": "--"
   },
-
   "ownerIsTold": {
     "nothingHasBeenPublishedYet": "Todavía no se ha publicado nada sobre este modelo. Eso no es una falla ni es una pantalla esperando que vos la llenes: tu concesionario manda la ficha del fabricante, y hasta que llegue aquí no hay nada que citar.",
     "theDealershipHasNotSentTheseFactsYet": "Parte de lo que decide esto todavía no ha llegado a tu registro: el sobre de garantía mismo, el día en que se entregó el carro, o una lectura del odómetro tomada hoy o antes. La frase de arriba nombra cuál, con las palabras de tu propio registro. Tu concesionario manda los tres, por el mismo feed que trae todo lo demás aquí, así que no hay nada que tengas que llenar ni nada que valga la pena adivinar. Un sobre que no está registrado aquí no es lo mismo que un carro sin garantía -- pedile a tu concesionario que lo registre.",

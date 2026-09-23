@@ -3,48 +3,49 @@ using Gnothi.Host;
 
 namespace Gnothi.MobileShared;
 
-// LA FOTO QUE EL HOST LE DEJA A LA CARATULA.
+// THE SNAPSHOT THE HOST LEAVES FOR THE CARATULA.
 //
-// EL PROBLEMA QUE RESUELVE, en una linea: en un telefono el unico asistente que puede hablarle
-// a una app es el del sistema, y en iOS ese asistente solo entra por App Intents, que solo
-// existen en Swift. El Host esta en .NET. Los dos no se pueden tocar directamente sin pagar
-// NativeAOT y perder la carga dinamica de modulos (NotasGnothiHost/33).
+// THE PROBLEM IT SOLVES, in one line: on a phone the only assistant that can talk to an app is the
+// system's, and on iOS that assistant only comes in through App Intents, which only exist in Swift.
+// The Host is in .NET. The two cannot touch each other directly without paying for NativeAOT and
+// losing dynamic module loading (NotasGnothiHost/33).
 //
-// Asi que no se tocan: el Host DEJA ESCRITO lo que la caratula va a necesitar, y la caratula
-// lo lee.
+// So they do not touch: the Host WRITES DOWN what the caratula is going to need, and the caratula
+// reads it.
 //
-//     Gnothi.iOS corre  ->  escribe esta foto en el contenedor compartido
+//     Gnothi.iOS runs         ->  writes this snapshot into the shared container
 //                                    |
-//     Siri: "cuanto gaste en Gnothi" |
+//     Siri: "how much did I spend"   |
 //                                    v
-//              App Intent (Swift)  ->  lee la foto  ->  contesta
+//              App Intent (Swift)  ->  reads the snapshot  ->  answers
 //
-// POR QUE SE PUEDE. Las dos apps son NUESTRAS, o sea mismo Team ID, que es exactamente lo que
-// App Groups exige. Es la razon por la que esto NO sirve para que una institucion entregue su
-// propia caratula -- ahi el Team ID es otro -- y si sirve entre las dos nuestras.
+// WHY IT IS POSSIBLE. Both apps are OURS, meaning the same Team ID, which is exactly what App Groups
+// requires. It is the reason this does NOT work for an institution shipping its own caratula --
+// there the Team ID is somebody else's -- and does work between our two.
 //
-// EL PRECIO, dicho de frente: la respuesta sale de una foto, no en vivo. Siri contesta con lo
-// que el Host dejo la ultima vez que la app corrio.
+// THE PRICE, said plainly: the answer comes from a snapshot, not live. Siri answers with whatever
+// the Host left the last time the app ran.
 //
-// Y eso NO es un compromiso nuevo. Las instrucciones que el modulo ya le da al asistente dicen
-// textual: «si el total no cambio, pedile que abra su app y apriete Refresh». El journal solo
-// avanza cuando la app corre. La foto repite un limite que ya existia; no agrega uno.
+// And that is NOT a new compromise. The instructions the module already gives the assistant say
+// verbatim: «if the total did not change, ask them to open their app and hit Refresh». The journal
+// only advances when the app runs. The snapshot repeats a limit that already existed; it does not
+// add one.
 //
-// EL CONSENTIMIENTO SE RESPETA POR CONSTRUCCION, y esto era el agujero que habia que cerrar.
-// La foto se arma recorriendo Dispatcher.Catalog(), que YA viene filtrado por lo que la persona
-// autorizo, y cada hecho se pide por Dispatcher.Serve, que vuelve a chequear el permiso. O sea:
-// aca no puede caer nada que el asistente no tuviera derecho a ver. Y como se reescribe entera
-// cada vez que el consentimiento cambia, apagar un modulo lo BORRA de la foto -- no queda una
-// foto vieja contestando por el.
+// CONSENT IS RESPECTED BY CONSTRUCTION, and this was the hole that had to be closed. The snapshot is
+// assembled by walking Dispatcher.Catalog(), which ALREADY comes filtered by what the person
+// authorised, and each fact is requested through Dispatcher.Serve, which checks the permission
+// again. Which means: nothing the assistant had no right to see can land here. And since it is
+// rewritten whole every time consent changes, switching a module off ERASES it from the snapshot --
+// no stale snapshot is left answering on its behalf.
 public static class Snapshot
 {
-	/// El nombre es fijo y lo conocen los dos lados. Si cambia, cambia en Swift tambien.
+	/// The name is fixed and both sides know it. If it changes, it changes in Swift too.
 	public const string FileName = "gnothi-instantanea.json";
 
 	/// <param name="carpeta">
-	/// El contenedor compartido. Lo elige la plataforma: en iOS sale de
-	/// NSFileManager.GetContainerUrl del App Group. En Android es null y esto no corre --
-	/// alla la caratula habla por binder, en vivo, y no necesita foto.
+	/// The shared container. The platform picks it: on iOS it comes from
+	/// NSFileManager.GetContainerUrl of the App Group. On Android it is null and this does not run --
+	/// over there the caratula talks over binder, live, and needs no snapshot.
 	/// </param>
 	public static async Task Write(Dispatcher dispatcher, string carpeta, Action<string> log, CancellationToken ct)
 	{
@@ -70,10 +71,10 @@ public static class Snapshot
 						["descripcion"] = t.Description,
 					};
 
-					// SOLO SE FOTOGRAFIAN LAS QUE NO PIDEN NADA. Una tool con parametros tiene
-					// infinitas respuestas y no hay foto que las contenga; se declara igual para
-					// que la caratula pueda decir "esta existe pero hay que preguntarla desde la
-					// app", que es mejor que ocultarla.
+					// ONLY THE ONES THAT ASK FOR NOTHING GET PHOTOGRAPHED. A tool with parameters has
+					// infinitely many answers and no snapshot can hold them; it is declared anyway so
+					// the caratula can say "this one exists but has to be asked from the app", which
+					// beats hiding it.
 					if (t.Input.Count > 0)
 					{
 						declarada["hechos"] = null;
@@ -89,10 +90,10 @@ public static class Snapshot
 
 					Response r = await dispatcher.Serve(new Request(m.Name, t.Name, null), ct);
 
-					// Un modulo que falla NO tumba la foto: se anota el motivo y siguen los
-					// demas. Veinte modulos instalados son veinte formas de que algo fuera de
-					// nuestro control falle, y la caratula tiene que poder contestar por los
-					// que si andan.
+					// A module that fails does NOT bring the snapshot down: the reason is noted and
+					// the rest carry on. Twenty installed modules are twenty ways for something
+					// outside our control to fail, and the caratula has to be able to answer for the
+					// ones that do work.
 					if (!r.Authorized) { declarada["hechos"] = null; declarada["porQueNo"] = r.Reason; }
 					else declarada["hechos"] = r.Content;
 
@@ -102,14 +103,14 @@ public static class Snapshot
 				modulos.Add(new Dictionary<string, object?>
 				{
 					["nombre"] = m.Name,
-					// La linea que identifica sale del manifiesto y no de aca, igual que en la
-					// pantalla: es una sola regla para las tres caras y para la foto.
+					// The identifying line comes from the manifest and not from here, just as on the
+					// screen: one rule for the three faces and for the snapshot.
 					["identidad"] = m.Manifest.Identity,
 					["titulo"] = m.Manifest.Title,
 					["institucion"] = m.Manifest.Institution,
-					// El emoji por rubro. La foto no puede pintar un logo -- la lee un intent del
-					// sistema, no un WebView -- asi que aca el icono del Host sigue siendo lo
-					// unico que hay, y ahora al menos sale de lo que la institucion declaro ser.
+					// The emoji by sector. The snapshot cannot paint a logo -- it is read by a system
+					// intent, not a WebView -- so here the Host's icon is still all there is, and now
+					// at least it comes from what the institution declared itself to be.
 					["icono"] = Shell.Icon(m.Manifest),
 					["tools"] = tools,
 				});
@@ -117,15 +118,15 @@ public static class Snapshot
 
 			string json = Json.Write(new Dictionary<string, object?>
 			{
-				// Para que la caratula pueda decir "esto es de hace tres dias" en vez de
-				// presentarlo como si fuera de ahora.
+				// So the caratula can say "this is from three days ago" instead of presenting it as
+				// if it were from now.
 				["escritaEn"] = DateTimeOffset.UtcNow,
 				["modulos"] = modulos,
 			});
 
-			// ATOMICO. Siri puede disparar la intent justo mientras esto escribe, y leer medio
-			// archivo es peor que leer uno viejo: uno viejo se entiende, uno partido revienta el
-			// parser y la caratula no sabe por que.
+			// ATOMIC. Siri can fire the intent right while this is writing, and reading half a file is
+			// worse than reading an old one: an old one is understandable, a torn one blows up the
+			// parser and the caratula has no idea why.
 			string destino = Path.Combine(carpeta, FileName);
 			string temporal = destino + ".tmp";
 			File.WriteAllText(temporal, json);
@@ -135,9 +136,9 @@ public static class Snapshot
 		}
 		catch (Exception e)
 		{
-			// Que no se pueda escribir la foto NO puede tumbar la app: la Puerta 2 adentro de
-			// la app sigue andando igual. Lo que se pierde es que Siri conteste, y eso tiene
-			// que verse en el log y no como un crash.
+			// Not being able to write the snapshot must NOT bring the app down: Door 2 inside the app
+			// goes on working the same. What is lost is Siri answering, and that has to show up in
+			// the log and not as a crash.
 			log($"instantanea: FALLO {e.GetType().Name}: {e.Message}");
 		}
 	}

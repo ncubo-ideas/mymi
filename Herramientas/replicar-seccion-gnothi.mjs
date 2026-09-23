@@ -15,141 +15,141 @@ const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // ------------------------------------------------------------------ the three voices
 const voces = {
   usted: {
-    titulo: 'Se usa con <em>Gnothi</em>.',
-    lead: (c) => `Gnothi es la aplicación que junta lo que cada institución le entrega —su laboratorio, su supermercado— y se lo muestra a su asistente de IA, en su propio aparato. <strong>Se instala una sola vez</strong>, gratis; después, cada institución se agrega con un toque. ${c.quien} es una de ellas.`,
+    titulo: 'Se usa con <em>Mymi</em>.',
+    lead: (c) => `Mymi es la aplicación que junta lo que cada institución le entrega —su laboratorio, su supermercado— y se lo muestra a su asistente de IA, en su propio aparato. <strong>Se instala una sola vez</strong>, gratis; después, cada institución se agrega con un toque. ${c.quien} es una de ellas.`,
     tablist: 'Elija su aparato',
     tabs: ['Android', 'iPhone', 'Computadora'],
     android: {
       h3: 'En su teléfono Android',
-      nota: (c) => `Gnothi está en Google Play. ${c.marca} se agrega desde esta misma página, con un toque.`,
+      nota: (c) => `Mymi está en Google Play. ${c.marca} se agrega desde esta misma página, con un toque.`,
       tienda: ['Disponible en', 'Google Play'],
-      agregar: (c) => `Agregar ${c.marca} a Gnothi`,
+      agregar: (c) => `Agregar ${c.marca} a Mymi`,
       pasos: (c) => [
-        ['Instale Gnothi desde Google Play.', 'Es gratuita y se instala una sola vez: la misma Gnothi sirve para todas sus instituciones.'],
-        [`Vuelva a esta página en el teléfono y toque «Agregar ${c.marca} a Gnothi».`, `Gnothi baja el módulo desde esta misma dirección y le muestra una hoja: quién lo entrega, qué preguntas va a contestar y en qué carpeta del teléfono guarda ${c.registro}. Nada se escribe antes de que usted lo lea.`],
+        ['Instale Mymi desde Google Play.', 'Es gratuita y se instala una sola vez: la misma Mymi sirve para todas sus instituciones.'],
+        [`Vuelva a esta página en el teléfono y toque «Agregar ${c.marca} a Mymi».`, `Mymi baja el módulo desde esta misma dirección y le muestra una hoja: quién lo entrega, qué preguntas va a contestar y en qué carpeta del teléfono guarda ${c.registro}. Nada se escribe antes de que usted lo lea.`],
         ['Toque «Instalar en mi teléfono».', `${c.marca} aparece en su lista de instituciones.`],
         ['Pregunte.', `Su asistente ve a ${c.marca} junto a sus otras instituciones. Cada consulta tiene un interruptor: usted apaga la que no quiera que lea.`],
       ],
-      enlace: (c) => `¿Está leyendo esto en una computadora? En Gnothi toque <b>Pegar su enlace</b> y pegue este. Si le llegó el archivo <code>${c.modulo}.gmod</code> por correo o WhatsApp, ábralo: el teléfono le ofrece Gnothi.`,
+      enlace: (c) => `¿Está leyendo esto en una computadora? En Mymi toque <b>Pegar su enlace</b> y pegue este. Si le llegó el archivo <code>${c.modulo}.gmod</code> por correo o WhatsApp, ábralo: el teléfono le ofrece Mymi.`,
     },
     iphone: {
       h3: 'En su iPhone',
-      nota: 'Los mismos pasos que en Android. Gnothi para iPhone está en camino a la App Store.',
+      nota: 'Los mismos pasos que en Android. Mymi para iPhone está en camino a la App Store.',
       tienda: ['Próximamente en', 'App Store'],
       pasos: (c) => [
-        ['Instale Gnothi desde la App Store', 'cuando esté publicada. Una sola vez, para todas sus instituciones.'],
-        [`Vuelva a esta página en el iPhone y toque «Agregar ${c.marca} a Gnothi».`, 'Gnothi se abre con la hoja del módulo: quién lo entrega, qué contesta y dónde guarda ' + c.registro + '.'],
+        ['Instale Mymi desde la App Store', 'cuando esté publicada. Una sola vez, para todas sus instituciones.'],
+        [`Vuelva a esta página en el iPhone y toque «Agregar ${c.marca} a Mymi».`, 'Mymi se abre con la hoja del módulo: quién lo entrega, qué contesta y dónde guarda ' + c.registro + '.'],
         ['Toque «Instalar en mi teléfono».', ''],
         ['Pregunte.', `Su asistente ve a ${c.marca}, y usted decide qué consultas quedan encendidas.`],
       ],
     },
     computadora: {
       h3: 'En su computadora',
-      nota: 'Gnothi para Windows se descarga de aquí. No pide permisos de administrador y no toca nada fuera de su carpeta.',
+      nota: 'Mymi para Windows se descarga de aquí. No pide permisos de administrador y no toca nada fuera de su carpeta.',
       tienda: ['Descargar para', 'Windows'],
       modulo: (c) => `Descargar el módulo de ${c.marca}`,
       pasos: (c) => [
-        ['Descargue e instale Gnothi.', 'Una sola vez. Si Windows muestra el aviso de SmartScreen, elija «Más información» y «Ejecutar de todas formas». La primera vez que abre, Gnothi le pregunta antes de registrarse con su asistente (Claude u otro) y hace un respaldo de la configuración que va a tocar.'],
-        ['Abra Gnothi y elija «Agregar una institución».', `Pegue el enlace de ${c.marca} que está abajo, o toque «Elegir el archivo…» y busque el <code>${c.modulo}.gmod</code> que bajó con el botón.`],
+        ['Descargue e instale Mymi.', 'Una sola vez. Si Windows muestra el aviso de SmartScreen, elija «Más información» y «Ejecutar de todas formas». La primera vez que abre, Mymi le pregunta antes de registrarse con su asistente (Claude u otro) y hace un respaldo de la configuración que va a tocar.'],
+        ['Abra Mymi y elija «Agregar una institución».', `Pegue el enlace de ${c.marca} que está abajo, o toque «Elegir el archivo…» y busque el <code>${c.modulo}.gmod</code> que bajó con el botón.`],
         ['Lea la hoja y toque «Instalar en esta computadora».', `Le dice quién entrega el módulo, qué va a contestar y en qué carpeta guarda ${c.registro}: <code>Documentos\\Gnothi\\${c.modulo}</code>. La misma que usa la aplicación.`],
         ['Reinicie su asistente y pregunte.', `${c.pregunta} Todo se contesta desde su computadora; nada sube a la nube.`],
       ],
-      enlace: (c) => `El enlace de ${c.marca}, para pegar en Gnothi:`,
+      enlace: (c) => `El enlace de ${c.marca}, para pegar en Mymi:`,
     },
     copiar: ['Copiar', 'Copiado'],
-    suelta: (c) => `<b>¿Sin Gnothi?</b> La aplicación también funciona suelta, en el navegador: <a href="/app/">ábrala</a> y elija la carpeta donde quiere guardar ${c.registro}. Cuando instale Gnothi, va a leer esa misma carpeta.`,
+    suelta: (c) => `<b>¿Sin Mymi?</b> La aplicación también funciona suelta, en el navegador: <a href="/app/">ábrala</a> y elija la carpeta donde quiere guardar ${c.registro}. Cuando instale Mymi, va a leer esa misma carpeta.`,
   },
 
   vos: {
-    titulo: 'Se usa con <em>Gnothi</em>.',
-    lead: (c) => `Gnothi es la aplicación que junta lo que cada institución te entrega —tu laboratorio, tu supermercado— y se lo muestra a tu asistente de IA, en tu propio aparato. <strong>Se instala una sola vez</strong>, gratis; después, cada institución se agrega con un toque. ${c.quien} es una de ellas.`,
+    titulo: 'Se usa con <em>Mymi</em>.',
+    lead: (c) => `Mymi es la aplicación que junta lo que cada institución te entrega —tu laboratorio, tu supermercado— y se lo muestra a tu asistente de IA, en tu propio aparato. <strong>Se instala una sola vez</strong>, gratis; después, cada institución se agrega con un toque. ${c.quien} es una de ellas.`,
     tablist: 'Elegí tu aparato',
     tabs: ['Android', 'iPhone', 'Computadora'],
     android: {
       h3: 'En tu teléfono Android',
-      nota: (c) => `Gnothi está en Google Play. ${c.marca} se agrega desde esta misma página, con un toque.`,
+      nota: (c) => `Mymi está en Google Play. ${c.marca} se agrega desde esta misma página, con un toque.`,
       tienda: ['Disponible en', 'Google Play'],
-      agregar: (c) => `Agregar ${c.marca} a Gnothi`,
+      agregar: (c) => `Agregar ${c.marca} a Mymi`,
       pasos: (c) => [
-        ['Instalá Gnothi desde Google Play.', 'Es gratuita y se instala una sola vez: la misma Gnothi sirve para todas tus instituciones.'],
-        [`Volvé a esta página en el teléfono y tocá «Agregar ${c.marca} a Gnothi».`, `Gnothi baja el módulo desde esta misma dirección y te muestra una hoja: quién lo entrega, qué preguntas va a contestar y en qué carpeta del teléfono guarda ${c.registro}. Nada se escribe antes de que la leas.`],
+        ['Instalá Mymi desde Google Play.', 'Es gratuita y se instala una sola vez: la misma Mymi sirve para todas tus instituciones.'],
+        [`Volvé a esta página en el teléfono y tocá «Agregar ${c.marca} a Mymi».`, `Mymi baja el módulo desde esta misma dirección y te muestra una hoja: quién lo entrega, qué preguntas va a contestar y en qué carpeta del teléfono guarda ${c.registro}. Nada se escribe antes de que la leas.`],
         ['Tocá «Instalar en mi teléfono».', `${c.marca} aparece en tu lista de instituciones.`],
         ['Preguntá.', `Tu asistente ve a ${c.marca} junto a tus otras instituciones. Cada consulta tiene un interruptor: apagás la que no querés que lea.`],
       ],
-      enlace: (c) => `¿Estás leyendo esto en una computadora? En Gnothi tocá <b>Pegar su enlace</b> y pegá este. Si te llegó el archivo <code>${c.modulo}.gmod</code> por correo o WhatsApp, abrilo: el teléfono te ofrece Gnothi.`,
+      enlace: (c) => `¿Estás leyendo esto en una computadora? En Mymi tocá <b>Pegar su enlace</b> y pegá este. Si te llegó el archivo <code>${c.modulo}.gmod</code> por correo o WhatsApp, abrilo: el teléfono te ofrece Mymi.`,
     },
     iphone: {
       h3: 'En tu iPhone',
-      nota: 'Los mismos pasos que en Android. Gnothi para iPhone está en camino a la App Store.',
+      nota: 'Los mismos pasos que en Android. Mymi para iPhone está en camino a la App Store.',
       tienda: ['Próximamente en', 'App Store'],
       pasos: (c) => [
-        ['Instalá Gnothi desde la App Store', 'cuando esté publicada. Una sola vez, para todas tus instituciones.'],
-        [`Volvé a esta página en el iPhone y tocá «Agregar ${c.marca} a Gnothi».`, 'Gnothi se abre con la hoja del módulo: quién lo entrega, qué contesta y dónde guarda ' + c.registro + '.'],
+        ['Instalá Mymi desde la App Store', 'cuando esté publicada. Una sola vez, para todas tus instituciones.'],
+        [`Volvé a esta página en el iPhone y tocá «Agregar ${c.marca} a Mymi».`, 'Mymi se abre con la hoja del módulo: quién lo entrega, qué contesta y dónde guarda ' + c.registro + '.'],
         ['Tocá «Instalar en mi teléfono».', ''],
         ['Preguntá.', `Tu asistente ve a ${c.marca}, y vos decidís qué consultas quedan encendidas.`],
       ],
     },
     computadora: {
       h3: 'En tu computadora',
-      nota: 'Gnothi para Windows se descarga de acá. No pide permisos de administrador y no toca nada fuera de su carpeta.',
+      nota: 'Mymi para Windows se descarga de acá. No pide permisos de administrador y no toca nada fuera de su carpeta.',
       tienda: ['Descargar para', 'Windows'],
       modulo: (c) => `Descargar el módulo de ${c.marca}`,
       pasos: (c) => [
-        ['Descargá e instalá Gnothi.', 'Una sola vez. Si Windows muestra el aviso de SmartScreen, elegí «Más información» y «Ejecutar de todas formas». La primera vez que abre, Gnothi te pregunta antes de registrarse con tu asistente (Claude u otro) y hace un respaldo de la configuración que va a tocar.'],
-        ['Abrí Gnothi y elegí «Agregar una institución».', `Pegá el enlace de ${c.marca} que está abajo, o tocá «Elegir el archivo…» y buscá el <code>${c.modulo}.gmod</code> que bajaste con el botón.`],
+        ['Descargá e instalá Mymi.', 'Una sola vez. Si Windows muestra el aviso de SmartScreen, elegí «Más información» y «Ejecutar de todas formas». La primera vez que abre, Mymi te pregunta antes de registrarse con tu asistente (Claude u otro) y hace un respaldo de la configuración que va a tocar.'],
+        ['Abrí Mymi y elegí «Agregar una institución».', `Pegá el enlace de ${c.marca} que está abajo, o tocá «Elegir el archivo…» y buscá el <code>${c.modulo}.gmod</code> que bajaste con el botón.`],
         ['Leé la hoja y tocá «Instalar en esta computadora».', `Te dice quién entrega el módulo, qué va a contestar y en qué carpeta guarda ${c.registro}: <code>Documentos\\Gnothi\\${c.modulo}</code>. La misma que usa la app.`],
         ['Reiniciá tu asistente y preguntá.', `${c.pregunta} Todo se contesta desde tu computadora; nada sube a la nube.`],
       ],
-      enlace: (c) => `El enlace de ${c.marca}, para pegar en Gnothi:`,
+      enlace: (c) => `El enlace de ${c.marca}, para pegar en Mymi:`,
     },
     copiar: ['Copiar', 'Copiado'],
-    suelta: (c) => `<b>¿Sin Gnothi?</b> La app también funciona suelta, en el navegador: <a href="/app/">abrila</a> y elegí la carpeta donde querés guardar ${c.registro}. Cuando instalés Gnothi, va a leer esa misma carpeta.`,
+    suelta: (c) => `<b>¿Sin Mymi?</b> La app también funciona suelta, en el navegador: <a href="/app/">abrila</a> y elegí la carpeta donde querés guardar ${c.registro}. Cuando instalés Mymi, va a leer esa misma carpeta.`,
   },
 
   en: {
-    titulo: 'It works with <em>Gnothi</em>.',
-    lead: (c) => `Gnothi is the app that gathers what each institution hands you —your lab, your supermarket— and shows it to your AI assistant, on your own device. <strong>You install it once</strong>, for free; after that, each institution is added with one tap. ${c.quien} is one of them.`,
+    titulo: 'It works with <em>Mymi</em>.',
+    lead: (c) => `Mymi is the app that gathers what each institution hands you —your lab, your supermarket— and shows it to your AI assistant, on your own device. <strong>You install it once</strong>, for free; after that, each institution is added with one tap. ${c.quien} is one of them.`,
     tablist: 'Choose your device',
     tabs: ['Android', 'iPhone', 'Computer'],
     android: {
       h3: 'On your Android phone',
-      nota: (c) => `Gnothi is on Google Play. ${c.marca} is added from this very page, with one tap.`,
+      nota: (c) => `Mymi is on Google Play. ${c.marca} is added from this very page, with one tap.`,
       tienda: ['Get it on', 'Google Play'],
-      agregar: (c) => `Add ${c.marca} to Gnothi`,
+      agregar: (c) => `Add ${c.marca} to Mymi`,
       pasos: (c) => [
-        ['Install Gnothi from Google Play.', 'It is free and you install it once: the same Gnothi serves every institution you have.'],
-        [`Come back to this page on your phone and tap “Add ${c.marca} to Gnothi”.`, `Gnothi downloads the module from this same address and shows you a sheet: who hands it over, what questions it will answer and in which folder of the phone it keeps ${c.registro}. Nothing is written before you read it.`],
+        ['Install Mymi from Google Play.', 'It is free and you install it once: the same Mymi serves every institution you have.'],
+        [`Come back to this page on your phone and tap “Add ${c.marca} to Mymi”.`, `Mymi downloads the module from this same address and shows you a sheet: who hands it over, what questions it will answer and in which folder of the phone it keeps ${c.registro}. Nothing is written before you read it.`],
         ['Tap “Install on my phone”.', `${c.marca} appears in your list of institutions.`],
         ['Ask.', `Your assistant sees ${c.marca} next to your other institutions. Every query has a switch: you turn off the ones you do not want it to read.`],
       ],
-      enlace: (c) => `Reading this on a computer? In Gnothi tap <b>Paste their link</b> and paste this one. If the <code>${c.modulo}.gmod</code> file reached you by mail or WhatsApp, open it: the phone offers Gnothi.`,
+      enlace: (c) => `Reading this on a computer? In Mymi tap <b>Paste their link</b> and paste this one. If the <code>${c.modulo}.gmod</code> file reached you by mail or WhatsApp, open it: the phone offers Mymi.`,
     },
     iphone: {
       h3: 'On your iPhone',
-      nota: 'The same steps as on Android. Gnothi for iPhone is on its way to the App Store.',
+      nota: 'The same steps as on Android. Mymi for iPhone is on its way to the App Store.',
       tienda: ['Coming soon to the', 'App Store'],
       pasos: (c) => [
-        ['Install Gnothi from the App Store', 'once it is published. Once, for every institution you have.'],
-        [`Come back to this page on your iPhone and tap “Add ${c.marca} to Gnothi”.`, 'Gnothi opens with the module’s sheet: who hands it over, what it answers and where it keeps ' + c.registro + '.'],
+        ['Install Mymi from the App Store', 'once it is published. Once, for every institution you have.'],
+        [`Come back to this page on your iPhone and tap “Add ${c.marca} to Mymi”.`, 'Mymi opens with the module’s sheet: who hands it over, what it answers and where it keeps ' + c.registro + '.'],
         ['Tap “Install on my phone”.', ''],
         ['Ask.', `Your assistant sees ${c.marca}, and you decide which queries stay on.`],
       ],
     },
     computadora: {
       h3: 'On your computer',
-      nota: 'Gnothi for Windows downloads from here. It asks for no administrator rights and touches nothing outside its folder.',
+      nota: 'Mymi for Windows downloads from here. It asks for no administrator rights and touches nothing outside its folder.',
       tienda: ['Download for', 'Windows'],
       modulo: (c) => `Download the ${c.marca} module`,
       pasos: (c) => [
-        ['Download and install Gnothi.', 'Once. If Windows shows the SmartScreen notice, choose “More info” and “Run anyway”. The first time it opens, Gnothi asks before registering with your assistant (Claude or another) and backs up the configuration it is about to touch.'],
-        ['Open Gnothi and choose “Add an institution”.', `Paste the ${c.marca} link below, or tap “Pick the file…” and find the <code>${c.modulo}.gmod</code> you downloaded with the button.`],
+        ['Download and install Mymi.', 'Once. If Windows shows the SmartScreen notice, choose “More info” and “Run anyway”. The first time it opens, Mymi asks before registering with your assistant (Claude or another) and backs up the configuration it is about to touch.'],
+        ['Open Mymi and choose “Add an institution”.', `Paste the ${c.marca} link below, or tap “Pick the file…” and find the <code>${c.modulo}.gmod</code> you downloaded with the button.`],
         ['Read the sheet and tap “Install on this computer”.', `It tells you who hands over the module, what it will answer and in which folder it keeps ${c.registro}: <code>Documents\\Gnothi\\${c.modulo}</code>. The same one the app uses.`],
         ['Restart your assistant and ask.', `${c.pregunta} Everything is answered from your computer; nothing goes to the cloud.`],
       ],
-      enlace: (c) => `The ${c.marca} link, to paste into Gnothi:`,
+      enlace: (c) => `The ${c.marca} link, to paste into Mymi:`,
     },
     copiar: ['Copy', 'Copied'],
-    suelta: (c) => `<b>No Gnothi?</b> The app also works on its own, in the browser: <a href="/app/">open it</a> and pick the folder where you want ${c.registro} kept. When you install Gnothi, it reads that same folder.`,
+    suelta: (c) => `<b>No Mymi?</b> The app also works on its own, in the browser: <a href="/app/">open it</a> and pick the folder where you want ${c.registro} kept. When you install Mymi, it reads that same folder.`,
   },
 };
 
@@ -383,11 +383,11 @@ const instituciones = [
       html = reemplazar(html, 'Examenes',
         [`<p class="descargaTexto">No está en tiendas: la descarga directo de esta página, de la
             institución en la que ya confía.</p>`,
-         `<p class="descargaTexto">Se usa dentro de Gnothi: gratuita, en Google Play y para Windows.
+         `<p class="descargaTexto">Se usa dentro de Mymi: gratuita, en Google Play y para Windows.
             Su laboratorio y sus otras instituciones, en la misma aplicación.</p>`],
         [`        <a class="btnDownload" href="/app/">`, `        <a class="btnDownload" href="#gnothi">`],
         [`          Descargar aplicación\n        </a>\n        <p class="compatibilidad">Compatible con Windows, macOS y Linux</p>`,
-         `          Usarla con Gnothi\n        </a>\n        <p class="compatibilidad">Android, iPhone y Windows. Abajo, el paso a paso.</p>`]);
+         `          Usarla con Mymi\n        </a>\n        <p class="compatibilidad">Android, iPhone y Windows. Abajo, el paso a paso.</p>`]);
       return html;
     },
   },
@@ -406,9 +406,9 @@ const instituciones = [
         ['<h1>Tu cuenta con la municipalidad, en tu propia computadora.</h1>', '<h1>Tu cuenta con la municipalidad, en tu propio aparato.</h1>'],
         [`        No en la nuestra. La app se abre en tu navegador, guarda tu cuenta en una carpeta que elegís
         vos, y sigue contestando con la red apagada.`,
-         `        No en la nuestra. La app se usa dentro de Gnothi, guarda tu cuenta en una carpeta que elegís
+         `        No en la nuestra. La app se usa dentro de Mymi, guarda tu cuenta en una carpeta que elegís
         vos, y sigue contestando con la red apagada.`],
-        ['        <h2>Abrila</h2>', '        <h2>Sin Gnothi: abrila suelta</h2>']);
+        ['        <h2>Abrila</h2>', '        <h2>Sin Mymi: abrila suelta</h2>']);
     },
   },
   {
@@ -426,9 +426,9 @@ const instituciones = [
         ['<h1>Your car\'s maintenance schedule, on your own computer.</h1>', '<h1>Your car\'s maintenance schedule, on your own device.</h1>'],
         [`        Not on ours. The app installs on your machine, keeps your vehicle's record in a folder you
         pick, and works with the network off.`,
-         `        Not on ours. The app runs inside Gnothi, keeps your vehicle's record in a folder you
+         `        Not on ours. The app runs inside Mymi, keeps your vehicle's record in a folder you
         pick, and works with the network off.`],
-        ['        <h2>Install it</h2>', '        <h2>Without Gnothi: open it on its own</h2>']);
+        ['        <h2>Install it</h2>', '        <h2>Without Mymi: open it on its own</h2>']);
     },
   },
   {
@@ -446,10 +446,10 @@ const instituciones = [
       html = html.slice(0, a) + sec.replace(/\n/g, '\n      ').trimEnd() + '\n\n' + html.slice(a);
       return reemplazar(html, 'Cargas',
         [`<p style="margin-top:18px"><a class="boton" href="/app/">Instalar Mis cargas</a></p>`,
-         `<p style="margin-top:18px"><a class="boton" href="#gnothi">Usarla con Gnothi</a></p>`],
+         `<p style="margin-top:18px"><a class="boton" href="#gnothi">Usarla con Mymi</a></p>`],
         [`                    La bitácora vive <strong>en una carpeta tuya, en tu computadora</strong>.`,
          `                    La bitácora vive <strong>en una carpeta tuya, en tu propio aparato</strong>.`],
-        [`                <b>1 · Instalás la app</b>`, `                <b>1 · Instalás Gnothi y agregás Faro</b>`]);
+        [`                <b>1 · Instalás la app</b>`, `                <b>1 · Instalás Mymi y agregás Faro</b>`]);
     },
   },
 ];

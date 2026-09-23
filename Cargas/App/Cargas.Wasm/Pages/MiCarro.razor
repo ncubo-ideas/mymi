@@ -3,9 +3,19 @@
 @using Cargas.App
 @using Cargas.App.Vistas
 
-<PageTitle>Mi carro · Estaciones Faro</PageTitle>
+<PageTitle>@Texto["miCarro.titulo"] · @Textos.NombreDeLaMarca</PageTitle>
 
-<h1 class="solo-para-lectores">Mi carro</h1>
+@* EL H1 AHORA SE DIBUJA: en el resto de la app el título vive escondido porque la marca
+   ya está en el capó, pero Mi carro se abre desde el ícono del capó o desde otra
+   pantalla -no tiene destino propio en la barra- y necesita decir dónde estás. La flecha
+   vuelve a Inicio, que es de donde sale ese ícono. Es el mismo faro-icon--flecha que ya
+   usa "ver en Mis cargas", solo rotado. *@
+<div class="pantalla-cabeza">
+    <a href="" class="pantalla-volver" aria-label="@Texto["comun.volverAInicio"]" title="@Texto["comun.volverAInicio"]">
+        <span class="faro-icon faro-icon--flecha pantalla-volver-flecha" aria-hidden="true"></span>
+    </a>
+    <h1 class="pantalla-titulo">@Texto["miCarro.titulo"]</h1>
+</div>
 
 @* LA PESTAÑA DE AJUSTES. Es del carro que se está mirando -el que elige el selector del
    capó- y no de todos: con la ficha de tres carros en la misma pantalla no se sabe cuál
@@ -23,210 +33,305 @@
 
 @if (enFoco is null)
 {
-    <p class="apunte">Todavía no entró ninguna carga, así que la app no conoce ningún carro.</p>
+    <p class="apunte">@Texto["miCarro.sinCarros"]</p>
 }
 else
 {
-    @* LOS TÍTULOS DE SECCIÓN SON TÍTULOS. Todos eran .rotulo de 10.5 px, el mismo de un
-       instrumento, y la pantalla no tenía ningún nivel entre la marca y los campos. *@
-    <h2 class="seccion-titulo">@(enFoco.TieneFicha ? "Tu carro" : "Ponele nombre a tu carro")</h2>
-
-    @* LA FICHA. CompletarFicha existía desde el principio y ninguna pantalla lo llamaba,
-       así que un segundo carro no se podía ni nombrar: la app lo mostraba por su placa
-       para siempre.
-
-       SOLO EL ALIAS ES OBLIGATORIO. Lo demás es de la persona y no hace falta para nada
-       de lo que la app calcula — pedirlo entero antes de dejarla seguir sería pedirle
-       trabajo por prolijidad nuestra. *@
-    <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
-        <label class="ficha-campo ficha-campo--ancho">
-            <span>Cómo le decís</span>
-            <input class="campo campo--texto" @bind="alias" maxlength="40"
-                   placeholder="el Corolla, la camioneta…" />
-        </label>
-
-        @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
-        <div class="ficha-campo">
-            <span>Placa</span>
-            <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
+    @* EL HERO. Responde «¿qué carro tengo configurado?» de un vistazo, sin leer el
+       formulario. Solo con datos reales: si marca/modelo están vacíos, cae al alias -que
+       sí existe si TieneFicha-, nunca inventa algo como «Toyota Yaris». Sin foto: no hay
+       ningún campo de imagen en VehiculoEnLista, así que es el ícono de carro del sprite. *@
+    <div class="resumen-vehiculo">
+        <span class="tarjeta-acceso-icono">
+            <span class="faro-icon faro-icon--carro" aria-hidden="true"></span>
+        </span>
+        <div class="resumen-vehiculo-cuerpo">
+            <div class="resumen-vehiculo-nombre">
+                @(enFoco.TieneFicha ? NombreDelVehiculo() : "Todavía sin nombre")
+            </div>
+            <div class="resumen-vehiculo-pie">
+                @if (enFoco.Anio > 0)
+                {
+                    <text>@enFoco.Anio &middot; </text>
+                }
+                <span class="placa">@enFoco.Placa</span>
+            </div>
         </div>
-        <p id="porque-la-placa" class="ficha-nota">
-            La placa la pone la estación con cada carga: no es tuya para cambiar.
-        </p>
+    </div>
 
-        <label class="ficha-campo">
-            <span>Marca</span>
-            <input class="campo campo--texto" @bind="marca" maxlength="30" />
-        </label>
-        <label class="ficha-campo">
-            <span>Modelo</span>
-            <input class="campo campo--texto" @bind="modelo" maxlength="30" />
-        </label>
-        @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
-           y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
-           dice qué va, y el cero vuelve a ser la ausencia al guardar.
+    @* IDENTIDAD DEL VEHÍCULO. CompletarFicha existía desde el principio y ninguna pantalla
+       lo llamaba, así que un segundo carro no se podía ni nombrar: la app lo mostraba por
+       su placa para siempre. SOLO EL ALIAS ES OBLIGATORIO.
 
-           Y EL PLACEHOLDER SE DECLARA EJEMPLO. «2019» pelado, en un campo numérico del mismo
-           ancho que su valor, se leía como un año ya cargado —en 375 px no se distinguía— y
-           alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
-           de confundirlo con un valor. *@
-        <label class="ficha-campo">
-            <span>Año</span>
-            <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
-                   placeholder="p. ej. 2019" />
-        </label>
-        <label class="ficha-campo">
-            <span>Color</span>
-            <input class="campo campo--texto" @bind="color" maxlength="20" />
-        </label>
-
-        <label class="ficha-campo ficha-campo--ancho">
-            <span>Rendimiento de fábrica</span>
-            <input class="campo" type="number" step="0.1" inputmode="decimal"
-                   @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
-                   placeholder="p. ej. 14.5" />
-        </label>
-        @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
-           contra lo que el carro está dando de verdad. *@
-        <p id="porque-el-rendimiento" class="ficha-nota">
-            En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
-            que tu carro está dando. Dejalo vacío si no lo sabés.
-        </p>
-
-        <div class="fila ficha-campo--ancho">
-            <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
-                @(enFoco.TieneFicha ? "Guardar los cambios" : "Ponerle nombre")
-            </button>
+       MODO LECTURA ES EL DEFAULT SIEMPRE, tenga o no tenga ficha todavía -antes esto
+       arrancaba en modo lectura SOLO si TieneFicha, así que un carro recién llegado
+       (sin alias puesto) caía derecho al formulario y "Editar información" nunca se
+       veía: exactamente el caso más común la primera vez que se abre la pantalla. Ahora
+       la lectura manda siempre; lo que cambia es que sin ficha, sus filas están vacías
+       ("—") salvo Placa, que siempre es real. "Editar información" solo cambia una
+       bandera local (editandoFicha); Guardar() sigue siendo exactamente el mismo
+       CompletarFicha de siempre, mismos parámetros, mismo camino. *@
+    <div class="tarjeta-grupo">
+        <div class="tarjeta-grupo-cabeza">
+            <h3 class="seccion-titulo seccion-titulo--en-grupo">@Texto["miCarro.identidadTitulo"]</h3>
+            @if (!editandoFicha)
+            {
+                <button type="button" class="tecla tecla--texto" @onclick="() => editandoFicha = true">
+                    @Texto["miCarro.editarInformacion"]
+                </button>
+            }
         </div>
-    </form>
+
+        @if (!editandoFicha)
+        {
+            @* INFORMACIÓN, NO UN FORMULARIO ABIERTO. Filas limpias: rótulo a la izquierda,
+               valor real a la derecha. Lo que no se completó es un guion -"—"-, la ausencia
+               como dato y no un espacio en blanco que parezca un error de layout. *@
+            <dl class="identidad-lista">
+                <div class="identidad-fila">
+                    <dt>@Texto["miCarro.comoLeDecis"]</dt>
+                    <dd class="@(enFoco.Alias.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Alias.Length > 0 ? enFoco.Alias : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>@Texto["miCarro.placa"]</dt>
+                    <dd><span class="placa">@enFoco.Placa</span></dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>@Texto["miCarro.marca"]</dt>
+                    <dd class="@(enFoco.Marca.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Marca.Length > 0 ? enFoco.Marca : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>@Texto["miCarro.modelo"]</dt>
+                    <dd class="@(enFoco.Modelo.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Modelo.Length > 0 ? enFoco.Modelo : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>@Texto["miCarro.anio"]</dt>
+                    <dd class="@(enFoco.Anio == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Anio > 0 ? enFoco.Anio.ToString() : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>@Texto["miCarro.color"]</dt>
+                    <dd class="@(enFoco.Color.Length == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.Color.Length > 0 ? enFoco.Color : "—")
+                    </dd>
+                </div>
+                <div class="identidad-fila">
+                    <dt>@Texto["miCarro.rendimientoDeFabrica"]</dt>
+                    <dd class="@(enFoco.RendimientoDeFabrica == 0 ? "identidad-vacio" : "")">
+                        @(enFoco.RendimientoDeFabrica > 0 ? $"{enFoco.RendimientoDeFabrica:0.#} km/L" : "—")
+                    </dd>
+                </div>
+            </dl>
+        }
+        else
+        {
+            @if (!enFoco.TieneFicha)
+            {
+                <p class="apunte" style="margin-top:4px">@Texto["miCarro.sinFichaTodavia"]</p>
+            }
+            <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
+                <label class="ficha-campo ficha-campo--ancho">
+                    <span>@Texto["miCarro.comoLeDecis"]</span>
+                    <input class="campo campo--texto" @bind="alias" maxlength="40"
+                           placeholder="@Texto["miCarro.aliasEjemplo"]" />
+                </label>
+
+                @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
+                <div class="ficha-campo">
+                    <span>@Texto["miCarro.placa"]</span>
+                    <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
+                </div>
+                <p id="porque-la-placa" class="ficha-nota">@Texto["miCarro.porqueLaPlaca"]</p>
+
+                <label class="ficha-campo">
+                    <span>@Texto["miCarro.marca"]</span>
+                    <input class="campo campo--texto" @bind="marca" maxlength="30" />
+                </label>
+                <label class="ficha-campo">
+                    <span>@Texto["miCarro.modelo"]</span>
+                    <input class="campo campo--texto" @bind="modelo" maxlength="30" />
+                </label>
+                @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
+                   y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
+                   dice qué va, y el cero vuelve a ser la ausencia al guardar.
+
+                   Y EL PLACEHOLDER SE DECLARA EJEMPLO. «2019» pelado, en un campo numérico del mismo
+                   ancho que su valor, se leía como un año ya cargado —en 375 px no se distinguía— y
+                   alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
+                   de confundirlo con un valor. *@
+                <label class="ficha-campo">
+                    <span>@Texto["miCarro.anio"]</span>
+                    <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
+                           placeholder="@Texto.Con("miCarro.porEjemplo", ("valor", "2019"))" />
+                </label>
+                <label class="ficha-campo">
+                    <span>@Texto["miCarro.color"]</span>
+                    <input class="campo campo--texto" @bind="color" maxlength="20" />
+                </label>
+
+                <label class="ficha-campo ficha-campo--ancho">
+                    <span>@Texto["miCarro.rendimientoDeFabrica"]</span>
+                    <input class="campo" type="number" step="0.1" inputmode="decimal"
+                           @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
+                           placeholder="@Texto.Con("miCarro.porEjemplo", ("valor", "14.5"))" />
+                </label>
+                @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
+                   contra lo que el carro está dando de verdad. *@
+                <p id="porque-el-rendimiento" class="ficha-nota">@Texto["miCarro.porqueElRendimiento"]</p>
+
+                <div class="fila ficha-campo--ancho">
+                    <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
+                        @Texto[enFoco.TieneFicha ? "miCarro.guardarCambios" : "miCarro.ponerleNombre"]
+                    </button>
+                    @* CANCELAR SIEMPRE DISPONIBLE EN EDICIÓN, tenga o no ficha: el modo
+                       lectura ahora es el default también sin ficha, así que entrar a
+                       "Editar información" en un carro sin nombre tiene que poder volver
+                       atrás igual que en uno que ya lo tiene -CargarCampos ya sabe volver
+                       a los valores reales, vacíos o no-. *@
+                    <button class="tecla tecla--contorno" type="button" @onclick="CancelarEdicion">
+                        @Texto["comun.cancelar"]
+                    </button>
+                </div>
+            </form>
+        }
+    </div>
 
     @if (otros.Count > 0)
     {
-        <h2 class="seccion-titulo">Tus otros carros</h2>
-        <p class="apunte">
-            Elegí cuál mirás con el selector de arriba.
-        </p>
+        <h2 class="seccion-titulo">@Texto["miCarro.otrosCarros"]</h2>
+        <p class="apunte">@Texto["miCarro.otrosCarrosApunte"]</p>
         <ul class="otros-carros">
             @foreach (VehiculoEnLista otro in otros)
             {
                 <li @key="@otro.Placa">
                     <span class="n">@otro.Placa</span>
-                    @(otro.TieneFicha ? $" · {otro.Nombre}" : " · todavía sin nombre")
-                    <span class="apunte"> · @otro.Cargas @(otro.Cargas == 1 ? "carga" : "cargas")</span>
+                    @(otro.TieneFicha ? $" · {otro.Nombre}" : " · " + Texto["miCarro.todaviaSinNombre"])
+                    <span class="apunte"> · @otro.Cargas @Texto[otro.Cargas == 1 ? "comun.carga" : "comun.cargas"]</span>
                 </li>
             }
         </ul>
     }
 }
 
-<h2 class="seccion-titulo">Cómo lo mirás</h2>
+<div class="tarjeta-grupo">
+    <h2 class="seccion-titulo seccion-titulo--en-grupo">
+        <span class="faro-icon faro-icon--rendimiento" aria-hidden="true"></span>
+        @Texto["miCarro.comoLoMiras"]
+    </h2>
 
-@* LAS UNIDADES VAN AL JOURNAL, no a este navegador. Es la única preferencia que lo hace,
-   y la razón es que cambia lo que la app DICE y no solo lo que se ve: guardada en el
-   browser, la pantalla mostraría mpg mientras tu asistente te sigue contestando en km/L
-   sobre la misma bitácora.
+    @* LAS UNIDADES VAN AL JOURNAL, no a este navegador. Es la única preferencia que lo hace,
+       y la razón es que cambia lo que la app DICE y no solo lo que se ve: guardada en el
+       browser, la pantalla mostraría mpg mientras tu asistente te sigue contestando en km/L
+       sobre la misma bitácora.
 
-   La MONEDA no está acá y no es un olvido: no es una preferencia, es un dato que viene con
-   cada carga desde la estación. Convertirla obligaría a inventar un tipo de cambio, que es
-   justo lo que este producto no hace en ninguna otra parte. Por eso hay un instrumento de
-   gasto por moneda en vez de un selector. *@
-<div class="unidades">
-    <fieldset class="unidad-grupo">
-        <legend>Rendimiento</legend>
-        @foreach ((string simbolo, string comoSeLee) in FormasDeMirarElRendimiento)
-        {
-            <button type="button" @key="@simbolo"
-                    class="tecla tecla--contorno @(unidades.Rendimiento == simbolo ? "tecla--elegida" : "")"
-                    aria-pressed="@(unidades.Rendimiento == simbolo)"
-                    @onclick="() => ElegirRendimiento(simbolo)">
-                @comoSeLee
-            </button>
-        }
-    </fieldset>
+       La MONEDA no está acá y no es un olvido: no es una preferencia, es un dato que viene con
+       cada carga desde la estación. Convertirla obligaría a inventar un tipo de cambio, que es
+       justo lo que este producto no hace en ninguna otra parte. Por eso hay un instrumento de
+       gasto por moneda en vez de un selector.
 
-    <fieldset class="unidad-grupo">
-        <legend>Distancia</legend>
-        @foreach ((string simbolo, string comoSeLee) in FormasDeMirarLaDistancia)
-        {
-            <button type="button" @key="@simbolo"
-                    class="tecla tecla--contorno @(unidades.Distancia == simbolo ? "tecla--elegida" : "")"
-                    aria-pressed="@(unidades.Distancia == simbolo)"
-                    @onclick="() => ElegirDistancia(simbolo)">
-                @comoSeLee
-            </button>
-        }
-    </fieldset>
+       EL SEGMENTADO ES SU PROPIA CLASE, no .tecla--contorno/.tecla--elegida: esas dos las
+       usan botones de acción en media app, y acá el amarillo significa «esto es lo que está
+       elegido», no «esto hace algo». Mezclarlas habría corrido el amarillo a pantallas donde
+       ese color ya quiere decir otra cosa. *@
+    <div class="segmentado">
+        <fieldset class="unidad-grupo">
+            <legend>@Texto["tablero.rendimiento"]</legend>
+            @foreach ((string simbolo, string comoSeLee) in FormasDeMirarElRendimiento)
+            {
+                <button type="button" @key="@simbolo"
+                        class="tecla-segmento @(unidades.Rendimiento == simbolo ? "tecla-segmento--elegida" : "")"
+                        aria-pressed="@(unidades.Rendimiento == simbolo)"
+                        @onclick="() => ElegirRendimiento(simbolo)">
+                    @comoSeLee
+                </button>
+            }
+        </fieldset>
+
+        <fieldset class="unidad-grupo">
+            <legend>@Texto["miCarro.distancia"]</legend>
+            @foreach (string simbolo in FormasDeMirarLaDistancia)
+            {
+                <button type="button" @key="@simbolo"
+                        class="tecla-segmento @(unidades.Distancia == simbolo ? "tecla-segmento--elegida" : "")"
+                        aria-pressed="@(unidades.Distancia == simbolo)"
+                        @onclick="() => ElegirDistancia(simbolo)">
+                    @ComoSeLeeLaDistancia(simbolo)
+                </button>
+            }
+        </fieldset>
+    </div>
+
+    <p class="apunte" style="margin-top:10px">@Texto["miCarro.laUnidadNoMueveElVeredicto"]</p>
 </div>
 
-<p class="apunte" style="margin-top:8px">
-    Cambiar la unidad cambia cómo se dice tu rendimiento, nunca el veredicto: si tu carro
-    empeoró, empeoró en las tres.
-</p>
+@* NO HAY UN ÍCONO DE CARPETA EN EL SPRITE OFICIAL -se revisó pieza por pieza-, así que el
+   título usa el de documento: es el más cercano a «dónde vive tu bitácora» sin inventar un
+   dibujo nuevo fuera del sistema de íconos ya establecido. *@
+<div class="tarjeta-grupo">
+    <h2 class="seccion-titulo seccion-titulo--en-grupo">
+        <span class="faro-icon faro-icon--documento" aria-hidden="true"></span>
+        @Texto["miCarro.dondeVive"]
+    </h2>
 
-<h2 class="seccion-titulo">Dónde vive tu bitácora</h2>
+    @* HOSPEDADA VA PRIMERO, y es la rama que faltaba. `HayCarpeta` es el handle del modo suelto y
+       hospedada no hay ninguno, así que sin esto cae en el `else` y dice «en ningún lado, se pierde
+       al cerrar» — justo cuando es más falso: Gnothi le dio una carpeta en el teléfono, y ahí es
+       donde el asistente SÍ la lee. Es el aviso neutro que MainLayout mandó a esta pantalla; estaba
+       en MisCargas.razor, que master partió en cuatro. *@
+    @if (Estado.Hospedada)
+    {
+        <p class="apunte">@((MarkupString)Texto["miCarro.viveHospedada"])</p>
+    }
+    else if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
+    {
+        <p class="apunte">@((MarkupString)Texto.Con("miCarro.viveEnCarpeta",
+            ("carpeta", "&laquo;" + Estado.NombreDeLaCarpeta + "&raquo;")))</p>
+    }
+    else if (Estado.EnAlmacenamientoDelNavegador)
+    {
+        <p class="apunte">@((MarkupString)Texto["miCarro.viveEnElNavegador"])</p>
+    }
+    else
+    {
+        <p class="apunte">@((MarkupString)Texto["miCarro.noViveEnNingunLado"])</p>
+    }
 
-@* HOSPEDADA VA PRIMERO, y es la rama que faltaba. `HayCarpeta` es el handle del modo suelto y
-   hospedada no hay ninguno, así que sin esto cae en el `else` y dice «en ningún lado, se pierde
-   al cerrar» — justo cuando es más falso: Gnothi le dio una carpeta en el teléfono, y ahí es
-   donde el asistente SÍ la lee. Es el aviso neutro que MainLayout mandó a esta pantalla; estaba
-   en MisCargas.razor, que master partió en cuatro. *@
-@if (Estado.Hospedada)
-{
-    <p class="apunte">
-        En una carpeta que Gnothi le dio a esta estación, en este mismo teléfono, y es tuya.
-        <b>Tu asistente la puede leer desde ahí.</b>
-    </p>
-}
-else if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
-{
-    <p class="apunte">
-        En la carpeta &laquo;@Estado.NombreDeLaCarpeta&raquo;, y se guarda después de cada
-        cambio. <b>Es el único modo en el que tu asistente la puede leer.</b>
-    </p>
-}
-else if (Estado.EnAlmacenamientoDelNavegador)
-{
-    <p class="apunte">
-        En este navegador. Sobrevive al cerrar, pero <b>tu asistente no la puede leer</b>:
-        para eso hace falta una carpeta tuya.
-    </p>
-}
-else
-{
-    <p class="apunte">
-        <strong>En ningún lado.</strong> La bitácora vive solo en memoria y se pierde al cerrar.
-    </p>
-}
+    @* HASTA DÓNDE LEYÓ. Antes iba en la cabeza de la Ruta, en mono, como si fuera del carro.
+       Es de la app: dice hasta qué evento de la estación llegó la bitácora, y sirve para
+       saber si un Actualizar trajo algo. Acá, al lado de dónde vive, es donde se entiende. *@
+    <p class="apunte mono">@Texto.Con("miCarro.leidaHasta", ("evento", ultimoEvento.ToString()))</p>
 
-@* HASTA DÓNDE LEYÓ. Antes iba en la cabeza de la Ruta, en mono, como si fuera del carro.
-   Es de la app: dice hasta qué evento de la estación llegó la bitácora, y sirve para
-   saber si un Actualizar trajo algo. Acá, al lado de dónde vive, es donde se entiende. *@
-<p class="apunte mono">leída hasta el evento @ultimoEvento de la estación</p>
-
-@* IMPORTAR TAMBIÉN DESDE ACÁ. Exportar vivía en esta pantalla e importar solo en la de
-   arranque, así que traer una bitácora con la app ya abierta obligaba a cerrarla. Pero
-   importar REEMPLAZA el expediente y rearranca el actor, así que va en dos pasos: el
-   primero dice qué va a pasar y el segundo abre el selector. No es un diálogo del browser
-   porque el aviso tiene que decir qué se pierde, y un confirm() no tiene dónde. *@
-@if (porImportar)
-{
-    <div class="parte parte--atencion fila">
-        <div class="crece">
-            <strong>Importar reemplaza tu bitácora actual</strong> por la del archivo que elijas.
-            Lo que la estación publicó se vuelve a pedir al abrir; tus kilometrajes y
-            confirmaciones de hoy solo sobreviven si están en ese archivo. Exportá antes si
-            querés conservarlos.
+    @* IMPORTAR TAMBIÉN DESDE ACÁ. Exportar vivía en esta pantalla e importar solo en la de
+       arranque, así que traer una bitácora con la app ya abierta obligaba a cerrarla. Pero
+       importar REEMPLAZA el expediente y rearranca el actor, así que va en dos pasos: el
+       primero dice qué va a pasar y el segundo abre el selector. No es un diálogo del browser
+       porque el aviso tiene que decir qué se pierde, y un confirm() no tiene dónde. *@
+    @if (porImportar)
+    {
+        <div class="parte parte--atencion fila">
+            <div class="crece">@((MarkupString)Texto["miCarro.importarReemplaza"])</div>
+            <button class="tecla tecla--alerta" @onclick="Importar">@Texto["miCarro.siElegirArchivo"]</button>
+            <button class="tecla tecla--contorno" @onclick="() => porImportar = false">@Texto["comun.cancelar"]</button>
         </div>
-        <button class="tecla tecla--alerta" @onclick="Importar">Sí, elegir el archivo</button>
-        <button class="tecla tecla--contorno" @onclick="() => porImportar = false">Cancelar</button>
-    </div>
-}
+    }
 
-<div class="fila" style="margin-top:12px">
-    <button class="tecla tecla--contorno" @onclick="Exportar">Exportar a un archivo</button>
-    <button class="tecla tecla--texto" @onclick="() => porImportar = true" disabled="@porImportar">
-        Importar una bitácora
-    </button>
+    <div class="fila" style="margin-top:12px">
+        <button class="tecla tecla--contorno tecla--icono" @onclick="Exportar">
+            <span class="faro-icon faro-icon--exportar" aria-hidden="true"></span>
+            @Texto["miCarro.exportar"]
+        </button>
+        <button class="tecla tecla--texto tecla--icono" @onclick="() => porImportar = true" disabled="@porImportar">
+            <span class="faro-icon faro-icon--importar" aria-hidden="true"></span>
+            @Texto["arranque.importar"]
+        </button>
+    </div>
 </div>
 
 @* PASAR LAS ANOTACIONES A GNOTHI (especificación 13 §5). Cuando esta app pase a vivir
@@ -238,52 +343,50 @@ else
 
    Va por la hoja de compartir y no por el enlace porque no cabe: medido con el guion de
    28 cargas, el sobre pesa ~21 KB escapado para una URL. Las fotos se quedan: el journal
-   tiene el nombre y el archivo vive en la carpeta; pasar el nombre sin el archivo mentiría. *@
-<h2 class="seccion-titulo">Pasar tus anotaciones a Gnothi</h2>
+   tiene el nombre y el archivo vive en la carpeta; pasar el nombre sin el archivo mentiría.
 
-@if (Estado.HayTraspasoPendiente)
-{
-    <div class="parte parte--atencion">
-        <strong>Llegaron anotaciones de tu otra copia y están esperando a sus cargas.</strong>
-        Se asientan solas en cuanto la estación las publique acá.
-    </div>
-}
+   ES SECUNDARIO A PROPÓSITO: la tarjeta punteada y sin relleno la separa visualmente de
+   los tres grupos de arriba -que son sobre el carro-, porque esto es sobre la cuenta y es
+   un paso ocasional, no algo que se mire cada vez que se entra a Mi carro. *@
+<div class="tarjeta-grupo tarjeta-grupo--secundario">
+    <h2 class="seccion-titulo seccion-titulo--en-grupo">@Texto["miCarro.pasarAGnothi"]</h2>
 
-@if (traspaso.HayAlgoQuePasar)
-{
-    <p class="apunte">
-        Lo que la estación publicó, Gnothi lo vuelve a pedir solo. Lo que anotaste vos no:
-        <b>@Piezas(traspaso)</b>. Esto se lo pasa a Gnothi de una vez, sin tu credencial, y
-        repetirlo no duplica nada.
-        @if (traspaso.FotosQueSeQuedan > 0)
-        {
-            <text> @(traspaso.FotosQueSeQuedan == 1 ? "La foto del tablero se queda" : $"Las {traspaso.FotosQueSeQuedan} fotos del tablero se quedan") en tu carpeta: no viaja@(traspaso.FotosQueSeQuedan == 1 ? "" : "n") con esto.</text>
-        }
-    </p>
-    <div class="fila">
-        <button class="tecla" @onclick="CompartirConGnothi">
-            @(puedeCompartir == true ? "Pasar mis anotaciones a Gnothi" : "Guardar mis anotaciones para Gnothi")
-        </button>
-        @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha por
-           script se trata como pegar la URL en la barra y nunca abre la app; en Android,
-           sin gesto Chrome se va derecho al fallback. *@
-        <a class="tecla tecla--texto" href="@enlaceAGnothi">Abrir Gnothi</a>
-    </div>
-    @if (puedeCompartir == false)
+    @if (Estado.HayTraspasoPendiente)
+    {
+        <div class="parte parte--atencion">
+            @((MarkupString)Texto["miCarro.traspasoPendiente"])
+        </div>
+    }
+
+    @if (traspaso.HayAlgoQuePasar)
     {
         <p class="apunte">
-            Este navegador no tiene hoja de compartir, así que el archivo se descarga: lo
-            abrís después desde Gnothi.
+            @((MarkupString)Texto.Con("miCarro.queSePasa", ("piezas", "<b>" + Piezas(traspaso) + "</b>")))
+            @if (traspaso.FotosQueSeQuedan > 0)
+            {
+                <text> @Texto.Con(traspaso.FotosQueSeQuedan == 1 ? "miCarro.unaFotoSeQueda" : "miCarro.lasFotosSeQuedan",
+                    ("cuantas", Entero(traspaso.FotosQueSeQuedan)))</text>
+            }
         </p>
+        <div class="fila">
+            <button class="tecla" @onclick="CompartirConGnothi">
+                @Texto[puedeCompartir == true ? "miCarro.pasarlas" : "miCarro.guardarlas"]
+            </button>
+            @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha por
+               script se trata como pegar la URL en la barra y nunca abre la app; en Android,
+               sin gesto Chrome se va derecho al fallback. *@
+            <a class="tecla tecla--texto" href="@enlaceAGnothi">@Texto["miCarro.abrirGnothi"]</a>
+        </div>
+        @if (puedeCompartir == false)
+        {
+            <p class="apunte">@Texto["miCarro.sinHojaDeCompartir"]</p>
+        }
     }
-}
-else
-{
-    <p class="apunte">
-        Todavía no anotaste nada que haya que pasar: los kilometrajes, los tanques y la
-        ficha aparecen acá cuando los cargues.
-    </p>
-}
+    else
+    {
+        <p class="apunte">@Texto["miCarro.nadaQuePasar"]</p>
+    }
+</div>
 
 @code {
     private VehiculoEnLista? enFoco;
@@ -300,11 +403,13 @@ else
         ("mpg",     "mpg"),
     };
 
-    private static readonly (string simbolo, string comoSeLee)[] FormasDeMirarLaDistancia =
-    {
-        ("km", "kilómetros"),
-        ("mi", "millas"),
-    };
+    private string ComoSeLeeLaDistancia(string simbolo) =>
+        Texto[simbolo == "mi" ? "miCarro.millas" : "miCarro.kilometros"];
+
+    // LOS SIMBOLOS NO SE TRADUCEN -- son los del dominio y los que se journalizan -- pero
+    // como se LEE cada uno si: "kilometros" y "millas" son palabras. La clave del catalogo se
+    // arma con el simbolo, que es identidad.
+    private static readonly string[] FormasDeMirarLaDistancia = { "km", "mi" };
 
     private string alias = "", marca = "", modelo = "", color = "";
     private long ultimoEvento;
@@ -318,6 +423,19 @@ else
     // el formulario tiene que recargarse: si no, se estaria editando un carro con los
     // datos tecleados para otro.
     private string cargadaPara = "";
+
+    // SI EL BLOQUE DE IDENTIDAD MUESTRA LA INFORMACIÓN O EL FORMULARIO. Arranca en lectura
+    // -false- cada vez que se cambia de carro (ver Releer): abrir Mi carro no puede dejar
+    // el formulario de otro carro abierto por accidente.
+    private bool editandoFicha;
+
+    // Marca+modelo si hay; si no, el alias -que si TieneFicha, siempre existe-. Nunca un
+    // nombre de fábrica inventado: si el campo está vacío, se dice lo que sí se sabe.
+    private string NombreDelVehiculo()
+    {
+        string marcaModelo = $"{enFoco!.Marca} {enFoco.Modelo}".Trim();
+        return marcaModelo.Length > 0 ? marcaModelo : enFoco.Alias;
+    }
 
     protected override void Releer()
     {
@@ -343,37 +461,55 @@ else
         if (cargadaPara != enFoco.Placa)
         {
             cargadaPara = enFoco.Placa;
+            editandoFicha = false;
             Listo.Borrar();
-            alias = enFoco.Alias;
-            marca = enFoco.Marca;
-            modelo = enFoco.Modelo;
-            anio = enFoco.Anio > 0 ? enFoco.Anio : null;
-            color = enFoco.Color;
-            rendimientoDeFabrica = enFoco.RendimientoDeFabrica > 0 ? enFoco.RendimientoDeFabrica : null;
+            CargarCampos(enFoco);
         }
     }
 
-    private Task Guardar() => Intentar("guardar la ficha", async () =>
+    // Un solo lugar para "los campos del formulario son los del vehículo real": lo usa
+    // Releer al cambiar de carro y CancelarEdicion al salir de editar sin guardar.
+    private void CargarCampos(VehiculoEnLista v)
+    {
+        alias = v.Alias;
+        marca = v.Marca;
+        modelo = v.Modelo;
+        anio = v.Anio > 0 ? v.Anio : null;
+        color = v.Color;
+        rendimientoDeFabrica = v.RendimientoDeFabrica > 0 ? v.RendimientoDeFabrica : null;
+    }
+
+    // CANCELAR vuelve a lo guardado, no a lo vacío: descarta lo tecleado y no llamado
+    // Guardar, y vuelve al modo lectura. No es async ni pasa por Intentar -no toca el
+    // actor, es puro estado de esta pantalla.
+    private void CancelarEdicion()
+    {
+        if (enFoco is not null) CargarCampos(enFoco);
+        editandoFicha = false;
+    }
+
+    private Task Guardar() => Intentar("guardar-la-ficha", async () =>
     {
         if (enFoco is null || alias.Trim().Length == 0) return;
 
         string rechazo = await Estado.CompletarFicha(enFoco.Placa, alias.Trim(), marca.Trim(),
             modelo.Trim(), anio ?? 0, color.Trim(), rendimientoDeFabrica ?? 0m);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
 
-        MostrarListo($"Listo: ahora le decimos «{alias.Trim()}».");
+        editandoFicha = false;
+        MostrarListo(Texto.Con("miCarro.listoNombre", ("alias", alias.Trim())));
     });
 
-    private Task ElegirRendimiento(string simbolo) => Intentar("elegir cómo mirás el rendimiento", async () =>
+    private Task ElegirRendimiento(string simbolo) => Intentar("elegir-como-mira-el-rendimiento", async () =>
     {
         string rechazo = await Estado.ElegirPresentacionDeRendimiento(simbolo);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
     });
 
-    private Task ElegirDistancia(string simbolo) => Intentar("elegir la unidad de distancia", async () =>
+    private Task ElegirDistancia(string simbolo) => Intentar("elegir-la-unidad-de-distancia", async () =>
     {
         string rechazo = await Estado.ElegirUnidadDeDistancia(simbolo);
-        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        if (rechazo.Length > 0) throw new RechazoDeLaApp(rechazo);
     });
 
     // El primer paso de importar: se muestra el aviso; el segundo llama a Estado.Importar.
@@ -392,47 +528,51 @@ else
         puedeCompartir = await Estado.PuedeCompartirArchivos();
     }
 
-    private static string Piezas(ResumenDeTraspaso resumen)
+    private string Piezas(ResumenDeTraspaso resumen)
     {
         var piezas = new List<string>();
         if (resumen.Kilometrajes > 0)
-            piezas.Add(resumen.Kilometrajes == 1 ? "1 kilometraje" : $"{resumen.Kilometrajes} kilometrajes");
+            piezas.Add(Texto.Con(resumen.Kilometrajes == 1 ? "miCarro.unKilometraje" : "miCarro.nKilometrajes",
+                ("cuantos", Entero(resumen.Kilometrajes))));
         if (resumen.Tanques > 0)
-            piezas.Add(resumen.Tanques == 1 ? "1 tanque confirmado" : $"{resumen.Tanques} tanques confirmados");
+            piezas.Add(Texto.Con(resumen.Tanques == 1 ? "miCarro.unTanque" : "miCarro.nTanques",
+                ("cuantos", Entero(resumen.Tanques))));
         if (resumen.Fichas > 0)
-            piezas.Add(resumen.Fichas == 1 ? "la ficha de tu carro" : $"las fichas de {resumen.Fichas} carros");
-        piezas.Add("y en qué unidades lo mirás");
-        return piezas.Count == 2 ? $"{piezas[0]} {piezas[1]}" : string.Join(", ", piezas.GetRange(0, piezas.Count - 1)) + " " + piezas[^1];
+            piezas.Add(Texto.Con(resumen.Fichas == 1 ? "miCarro.unaFicha" : "miCarro.nFichas",
+                ("cuantas", Entero(resumen.Fichas))));
+        piezas.Add(Texto["miCarro.yLasUnidades"]);
+        return piezas.Count == 2
+            ? $"{piezas[0]} {piezas[1]}"
+            : string.Join(", ", piezas.GetRange(0, piezas.Count - 1)) + " " + piezas[^1];
     }
 
-    private Task CompartirConGnothi() => Intentar("pasar tus anotaciones a Gnothi", async () =>
+    private Task CompartirConGnothi() => Intentar("pasar-las-anotaciones-a-gnothi", async () =>
     {
         ResultadoDeCompartir resultado = await Estado.CompartirConGnothi();
         if (resultado.Cancelado) return;
-        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+        if (!resultado.Ok) throw new RechazoDeLaApp(resultado.Motivo);
 
-        MostrarListo(resultado.Como == "compartido"
-            ? "Listo: tus anotaciones salieron hacia Gnothi. Si las volvés a pasar, no se duplican."
-            : "Guardado: el archivo con tus anotaciones se descargó. Abrilo desde Gnothi cuando lo tengas.");
+        MostrarListo(Texto[resultado.Como == "compartido"
+            ? "miCarro.listoCompartido" : "miCarro.listoDescargado"]);
     });
 
-    private Task Importar() => Intentar("importar una bitácora", async () =>
+    private Task Importar() => Intentar("importar-una-bitacora", async () =>
     {
         porImportar = false;
         string motivo = await Estado.Importar();
-        if (motivo.Length > 0) throw new InvalidOperationException(motivo);
-        MostrarListo("Listo: la bitácora importada ya está abierta.");
+        if (motivo.Length > 0) throw new RechazoDeLaApp(motivo);
+        MostrarListo(Texto["miCarro.listoImportada"]);
     });
 
-    private Task Exportar() => Intentar("exportar la bitácora", async () =>
+    private Task Exportar() => Intentar("exportar-la-bitacora", async () =>
     {
         ResultadoDeExportacion resultado = await Estado.Exportar();
-        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+        if (!resultado.Ok) throw new RechazoDeLaApp(resultado.Motivo);
 
         // Exportar bajaba un archivo y la pantalla no decía nada: la descarga la anuncia el
         // browser donde le parece, y en una PWA instalada a veces en ningún lado. Se nombra
         // el archivo para que se pueda encontrar después.
-        MostrarListo($"Exportado: «{resultado.Nombre}», {resultado.Archivos} "
-            + (resultado.Archivos == 1 ? "archivo." : "archivos."));
+        MostrarListo(Texto.Con(resultado.Archivos == 1 ? "miCarro.exportadoUno" : "miCarro.exportadoVarios",
+            ("archivo", resultado.Nombre), ("cuantos", Entero(resultado.Archivos))));
     });
 }

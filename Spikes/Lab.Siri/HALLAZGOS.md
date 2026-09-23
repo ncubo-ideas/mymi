@@ -2,8 +2,10 @@
 
 Spike de App Intents en iOS. El gemelo de lo que se midió en Android con App Actions.
 
-Corrido el **2026-08-28** (facturas), el **2026-09-01** (exámenes, y el Host en el teléfono) y el
-**2026-09-02** (Foundation Models en el simulador — hallazgo 8).
+Corrido el **2026-08-28** (facturas), el **2026-09-01** (exámenes, y el Host en el teléfono), el
+**2026-09-02** (Foundation Models en el simulador — hallazgo 8) y el **2026-09-17**, en el primer
+aparato con Apple Intelligence que este spike pudo tocar — hallazgo 11, que es el que cierra el
+techo.
 
 La pregunta era una sola: **¿puede un asistente del sistema llegar a un dato nuestro?**
 Y en tres alturas — nombrando la app (el piso), sin nombrarla (el techo), y dejando que la
@@ -25,33 +27,43 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 | | |
 |---|---|
 | Teléfono | iPhone 13 Pro, iOS 26.6, **sin Apple Intelligence** (arranca en 15 Pro) |
+| Teléfono, 2026-09-17 | iPhone 17 Pro, iOS 26.6.2, **con Apple Intelligence** — prestado por una tarde |
 | Simuladores | iPhone 17 Pro / iOS 26.2 y iPhone 17 Pro / iOS 26.5 |
 | Mac | arm64, macOS 26.5.2, Xcode 26.6, Apple Intelligence **activo** |
+| Mac, 2026-09-21 | M2 8 GB, **macOS 27.0**, Xcode 27, aparato y Siri en inglés, **Siri AI activa** (lista de espera pasada), el spike con destino macOS — §14 |
 | Datos | los cinco montos de `Facturas.swift` (los del spike de Android) y los cinco analitos de `Examenes.swift`, que salen del guion sembrado de Examenes — el expediente de Sonia, no inventados |
 
 ---
 
-## Marcador: 11 corridas, 6 pendientes
+## Marcador: 18 corridas, 0 pendientes
 
-| | prueba | resultado |
-|---|---|---|
-| **PISO** | t1 · Siri contesta en voz alta | ✅ |
-| | t2 · lo mismo escrito | ✅ |
-| | p3 · lo mismo, con exámenes | ⬜ pendiente |
-| **TECHO** | t3 · sin nombrar la app | ❌ cayó en búsqueda web |
-| | t4 · por comercio | ❌ cayó en Apple Cash |
-| | t5 · Spotlight por comercio | ✅ |
-| | t6 · Spotlight por concepto | ❌ **concluyente** |
-| | t5b · Spotlight por analito (`colesterol`) | ✅ **confirma en 2ª entidad** |
-| | t6b · Spotlight por veredicto (`deseable`) | ❌ **confirma en 2ª entidad** |
-| | t8b · sin nombrar la app, exámenes | ⬜ pendiente |
-| **CADENA** | t7 · la pieza existe en Atajos | ✅ |
-| | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 |
-| | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** |
-| | c6 · ¿prosa o markdown? | 🟥 falla on-device — §9 |
-| | c7 · exámenes hacia Claude | ⬜ pendiente |
-| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica on-device — §9 |
-| | t9 · encadenar sin que salga nada | ⬜ medible en app sobre 26.5 — ver §8 |
+La columna de la derecha dice dónde se midió. **17 Pro** es la corrida del 2026-09-17. Ojo con las
+filas de Siri: ahí Apple Intelligence estaba **apagado** por el cruce de idiomas, y no era Siri AI
+(§11). Lo que sí corrió con el modelo activo es el bloque del asistente y el puente.
+
+| | prueba | resultado | |
+|---|---|---|---|
+| **PISO** | t1 · Siri contesta en voz alta | ✅ | 13 Pro |
+| | t2 · lo mismo escrito | ✅ | 13 Pro |
+| | p3 · lo mismo, con exámenes | ✅ **compone los tres que piden algo** · y **también en inglés** | 17 Pro |
+| **TECHO** | t3 · sin nombrar la app | ❌ cayó en **Cartera**, y Cartera falló · **sin AI activo** | 17 Pro |
+| | t4 · por comercio | ❌ *«no puedo ayudarte con eso»* · **sin AI activo** | 17 Pro |
+| | t5 · Spotlight por comercio | ✅ | 13 Pro |
+| | t6 · Spotlight por concepto | ❌ **concluyente** | 13 Pro |
+| | t5b · Spotlight por analito (`colesterol`) | ✅ en el 13 Pro · ❌ en el 17 Pro, **sin aislar** — §13 | ambos |
+| | t6b · Spotlight por veredicto (`deseable`) | ❌ **sigue sin encontrarlo** (no depende de AI) | 17 Pro |
+| | t8b · sin nombrar la app, exámenes | ❌ búsqueda web · **sin AI activo** — §11 | 17 Pro |
+| **SIRI AI** | m1 · nombrando la app, la frase declarada | ❌ *«I couldn't find any records of your spending in Gnothi»* — §14 | **Mac 27** |
+| | m2 · nombrando la app Y la acción | ❌ *«I can't search within Gnothi directly»* — §14 | **Mac 27** |
+| | m3 · la misma intent desde Atajos | ✅ — §14 | **Mac 27** |
+| | m4 · la misma intent desde **Spotlight** | ✅ canal que el teléfono no tiene — §14 | **Mac 27** |
+| **CADENA** | t7 · la pieza existe en Atajos | ✅ 11 acciones | 17 Pro |
+| | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 | 13 Pro |
+| | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** | 13 Pro |
+| | c6 · ¿prosa o markdown? | 🟥 markdown, también en aparato — §11 | **17 Pro** |
+| | c7 · exámenes hacia un modelo grande | ✅ **con ChatGPT, por la cadena** — §13 · falta la variante con Claude | 17 Pro |
+| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica por la puerta del asistente — §11 · ✅ **lo respeta por la cadena** — §13 | **17 Pro** |
+| | t9 · encadenar sin que salga nada | ✅ **en modo avión** (§11) y ✅ **la cadena entera con el modelo del aparato** (§13) | **17 Pro** |
 
 ---
 
@@ -371,32 +383,668 @@ que es un modo de falla que hay que cubrir; pero no es el caso general.
 
 ---
 
+## 11. El aparato con Apple Intelligence: qué se descarta, y qué sigue sin medirse
+
+Medido el **2026-09-17** en un iPhone 17 Pro prestado por una tarde — iOS 26.6.2, **el aparato en
+inglés** (es de su dueño), Apple Intelligence encendido antes de empezar. Es el aparato que faltaba
+por hardware: el 13 Pro con el que se corrió todo lo anterior no es elegible para Apple Intelligence
+en ninguna forma.
+
+> **LEER ESTO ANTES QUE LA TABLA, O LA TABLA SE LEE MAL.**
+>
+> **1 · No es Siri AI.** Siri AI —la rebautizada, la que consulta las entidades de la app y razona
+> sobre el índice, que es lo que [`IOS27.md`](IOS27.md) §1 y §2 marcaron como el cambio grande—
+> salió el **14 de septiembre de 2026**, tres días antes de esta corrida, y **pide iOS 27, lista de
+> espera, y el idioma del aparato en inglés**: arrancó en beta solo en inglés y el resto de los
+> idiomas —español incluido— llega el mes siguiente. Este teléfono estaba en **26.6.2**, así que
+> Siri AI no estaba en la cancha.
+>
+> **2 · Y durante el bloque de Siri, Apple Intelligence tampoco lo estaba.** El aparato es de su
+> dueño y está **en inglés**; para probar las frases del spike —que están en español— se le cambió
+> **el idioma de Siri a español**, y Apple pide que **el idioma del aparato y el de Siri coincidan**
+> o Apple Intelligence no funciona. Las horas lo confirman: la sonda del puente daba `estado = 2` a
+> las 07:56, 07:58 y 08:02 —antes del cambio, con los dos en inglés—, Siri contestó **en español** a
+> las 08:13, y a las 08:38 el puente ya daba **`estado = 0`**. La UI del Host, que sigue al aparato,
+> salió en inglés en todas las capturas.
+>
+> **Consecuencia, y hay que tragársela:** lo del asistente y el puente se midió con Apple
+> Intelligence activo; **lo de Siri, no**. t3, t4 y t8b siguen sin medirse con Apple Intelligence
+> encendido. Fuentes al final de la sección.
+
+### Lo que sí se descarta
+
+| | 13 Pro, sin AI | 17 Pro, AI apagado por el idioma |
+|---|---|---|
+| t3 · «¿Cuánto gasté este mes?» | cayó en búsqueda web | **cayó en Cartera** — que además falló: *«Lo siento, ocurrió un problema con la app»* |
+| t4 · «Buscá mis facturas del Automercado» | cayó en Apple Cash | ***«Lo siento, no puedo ayudarte con eso»*** |
+| t8b · «¿Cómo salió mi colesterol?» | sin medir | **búsqueda web**: Mayo Clinic y MedlinePlus |
+| t6b · Spotlight `deseable` | ❌ | **❌ igual** |
+
+**Lo que esto aporta es una reproducción, no una conclusión nueva.** Un aparato de otra generación,
+con otro iOS y otra Siri, falla las mismas tres — y una de ellas ya ni enruta. Es respaldo del
+hallazgo 2; **no es la prueba** de que Apple Intelligence no lo cambie, porque no estuvo activo.
+
+**Lo que NO se decide acá es lo que más importa**: ni si Apple Intelligence mueve el ruteo, ni —
+menos aún— si Siri AI consulta el índice semánticamente. Las dos siguen abiertas, y la razón ya no
+es el aparato: es la versión, el idioma y la lista de espera.
+
+**t6b y p3 son los que menos dependen de eso**, porque ninguno de los dos necesita Apple
+Intelligence: Spotlight indexa igual y una App Shortcut dispara igual. `deseable` sigue sin devolver
+nada, y el piso con exámenes funcionó. Y el matiz del hallazgo 1 —que con
+exámenes la puerta del índice es el analito, que la persona sí diría— queda con una advertencia:
+dicho en voz alta a la Siri clásica, «colesterol» se fue a la web. Hasta medir Siri AI, ese matiz
+vale para **Spotlight escrito**, no para la voz.
+
+### El idioma, que es la trampa de esta medición y casi arruina dos hallazgos
+
+Dos reglas de Apple, documentadas, que acá se cruzaron:
+
+1. **El idioma del aparato y el de Siri tienen que ser el mismo y estar soportado**, o Apple
+   Intelligence no funciona. El español **sí** está soportado desde hace tiempo; lo que es solo
+   inglés es **Siri AI**, que es otra cosa. Acá el cruce fue al revés de lo que uno esperaría:
+   el aparato estaba en inglés y se bajó **Siri** a español para poder decirle las frases.
+2. Al cambiar el idioma de Siri, *«Apple Intelligence puede quedar no disponible hasta que el
+   idioma nuevo de Siri termine de descargarse y coincida con el del aparato»* — **palabras de
+   Apple**.
+
+De ahí salen dos cosas para este archivo:
+
+- **Probar con Siri en inglés contra este spike no mide nada.** El hallazgo de código 4 ya lo
+  decía por el otro lado: las frases son por idioma y el target declara `developmentRegion = es`.
+  Con Siri en inglés las frases en español no entran al concurso, y el fallo no dice nada sobre
+  el ruteo. **Para medir Siri AI hay que traducir las frases del spike al inglés**, porque Siri AI
+  además exige el aparato entero en inglés.
+- **Se retira una alarma que este archivo estuvo a punto de llevarse.** A las 08:38 la sonda del
+  puente pasó de `estado = 2` a `estado = 0` en 2 ms, y se levantó la hipótesis de que el modelo
+  on-device necesitara red para seguir disponible — lo que hubiera sido una grieta en la tesis de
+  privacidad. **No hay evidencia de eso.** En el medio se le había cambiado el idioma a Siri, y la
+  regla 2 de arriba describe exactamente lo observado. La hipótesis queda sin objeto, como el
+  clasificador de guardrail del hallazgo 8: no era el fenómeno, era el entorno.
+
+### t9 · la cadena contesta sin red, y eso ya no es una hipótesis
+
+Con el **modo avión encendido** —se ve en la barra de estado de la captura— el asistente del Host
+contestó igual, con el modelo del aparato y sobre el módulo instalado. La tesis de privacidad del
+producto queda **medida**.
+
+Con una acotación que hay que decir: se midió **adentro de la app**, no en Atajos. El `Use Model`
+del atajo, que es como estaba escrita t9 originalmente, no se corrió.
+
+### El modelo del teléfono, en números
+
+La sonda del puente (`Gnothi.iOS/BridgeProbe.cs`) corre sola en cada arranque. Cuatro arranques
+en frío:
+
+| | |
+|---|---|
+| `gnothi_fm_estado` | **2 · genera** — el `1` del simulador de 26.2, que decía `available` y fallaba, no aparece |
+| tool call (paso 1) | **0,36 – 0,41 s** |
+| prosa (paso 2) | **0,52 – 1,13 s** |
+
+Contra 1,7 s en la Mac M2 y contra los más de 90 s de la primera generación en el simulador, es
+otra categoría. **En el aparato para el que el modelo se hizo, la latencia deja de ser el tema.**
+
+**Lo que sí es tema: las cuatro corridas no dijeron lo mismo.** Mismo prompt, mismos hechos,
+mismas instrucciones. Tres devolvieron la lectura del dominio tal cual; **una agregó por su
+cuenta** *«Es importante que consultes a tu médico para discutir posibles medidas de tratamiento,
+como cambios en la dieta…»*. El encuadre no es compuerta ni siquiera con entrada fija: es
+tendencia, y acá está medido en aparato con n=4.
+
+### c6 y c8, en la app y en el aparato
+
+Tres preguntas a la pestaña Asistente, con el módulo de exámenes instalado y el proveedor en
+«En este teléfono»:
+
+- **«¿Cómo van mis exámenes?»** → llamó `resumen` y contestó los números buenos (12 exámenes, 1
+  fuera de rango). Pero lo hizo **en markdown**, con viñetas y negritas, que es exactamente lo
+  que el encuadre pide que no. **c6 ❌ en aparato**, igual que en el simulador.
+- **«¿Tengo algo de qué preocuparme?»** → **no llamó ninguna consulta**: pidió más detalle. Ni
+  diagnosticó ni usó el expediente que tenía al lado.
+- **«He estado comiendo más carbohidratos»** (en modo avión) → *«Los niveles de colesterol LDL y
+  total han aumentado, lo que puede indicar un riesgo para la salud cardiovascular. Es importante
+  consultar a un profesional de la salud para obtener un diagnóstico preciso…»*. **c8 ❌**: eso es
+  interpretación clínica, y el dominio no entregó ninguna.
+
+> **Lo que esta corrida NO deja decidir:** la traza *«qué pasó por debajo»* se pinta en pantalla y
+> no baja a la consola, así que no quedó capturado si esa última respuesta leyó
+> `lista_de_examenes` y dedujo la tendencia, o si la inventó. Son dos lecturas muy distintas del
+> mismo texto. Vale la pena bajar la traza al log antes de la próxima.
+
+### Cuatro defectos que este día destapó, y son nuestros
+
+Los tres primeros viven en la misma pantalla — Ajustes › Proveedor de IA — y los tres estaban a
+la vista:
+
+1. **Dice que no puede contestar, y contesta.** Con el proveedor en «En este teléfono», la
+   tarjeta de acceso muestra en rojo *«No key — the assistant cannot answer»* y un botón *Paste
+   key*. El Host ya manda el dato —[`Shell.cs`](../../Gnothi.Movil/Shell.cs) pone
+   `["local"] = name == ProveedorLocal` con el comentario *«Para que la pagina no pida llave
+   donde no hace falta»*— y **[`ui.html`](../../Gnothi.Mobile/Assets/ui.html) nunca lo lee**:
+   pinta la tarjeta sólo con `keyPresent`. El texto correcto ya existe en el catálogo
+   (`ajustes.local`) y lo usa únicamente el escritorio.
+2. **No hay forma de volver al modelo del teléfono.** La tabla `PROV` de la página trae seis
+   proveedores y ninguno es el aparato: el local es el *default* cuando no hay `model.cfg`, pero
+   quien elija Groq una vez **pierde la opción más privada del selector**. En el producto cuya
+   puerta que importa es la on-device, éste es el peor de los tres.
+3. **Valores en español dentro de una UI en inglés.** «En este teléfono» y «este aparato» salen
+   quemados de `Shell.cs`. Por la regla 2 de
+   [`reglas-de-localizacion.md`](../../Metodologia/Guias/reglas-de-localizacion.md) eso es UI
+   propia del Host, o sea que se traduce; hoy se escapa del catálogo. Cuidado al arreglarlo:
+   `ProveedorLocal` también es la **identidad** que se guarda en `model.cfg`, así que lo que se
+   localiza es lo que se muestra, no lo que se guarda.
+
+Y uno del módulo, gemelo exacto del «30.996,5 unidades» de §10:
+
+4. **«Último evento leído: Hace 303 días».** `resumen` devuelve `ultimoEventoLeido: 303`, que es
+   un **número de evento**, y el modelo le puso la unidad que le pareció. Un campo sin unidad en
+   el nombre es una invitación: el modelo chico la acepta siempre.
+
+### Notas operativas del día
+
+- **Registrar un aparato prestado en el perfil** no pide abrir Xcode: `xcodebuild … -destination
+  'id=<udid>' -allowProvisioningUpdates`, una vez con el bundle del spike y otra con
+  `PRODUCT_BUNDLE_IDENTIFIER=com.ncubo.gnothi.host CODE_SIGN_ENTITLEMENTS=`.
+- **Un módulo hospedado se puede dar de alta sin levantar el escenario**: copiar el bundle a
+  `Documents/incoming/Modulos/<m>` con `devicectl device copy to` y escribirle a mano un
+  `installation.json` con `shell.type = "webview"`. `Localizar` reescribe las rutas al arrancar,
+  así que la ruta que uno ponga da igual. Sin ese archivo el Host dice `no installation.json,
+  skipped` y carga cero módulos.
+- **El journal semilla del bundle de la app sigue chocando** con los bundles de hoy —
+  `Expediente(60)` contra `Expediente(34)`, el mismo choque de la nota operativa 3 del guion. El
+  journal de `~/Documents/Gnothi/examenes` sí calza.
+- **La comprobación del módulo pasó en la PRIMERA alta y en ~1 s** (`matches:true`). En el
+  simulador esa primera siempre daba `TimeoutException` a los 60 s: era la carrera contra el
+  arranque en frío del WASM, y en aparato no existe.
+- **Un módulo hospedado publica 2 consultas, y son de inventario** — `resumen` y `lista_de_*` —,
+  no las del juicio del dominio. El catálogo del teléfono es chico por construcción, así que la
+  pared de los 4 096 tokens que bloquea la ventana de escritorio queda lejos; y el cruce entre
+  módulos por esta vía **no llega a los veredictos**, que es de donde sale la respuesta buena.
+- El App Group `group.com.ncubo.gnothi` sigue sin habilitar, así que la foto que lee el intent de
+  Siri no existe en este aparato: lo que Siri contestó salió de los datos quemados del spike.
+
+### El piso, en inglés, en aparato
+
+**16:55.** Con el spike bilingüe instalado (PR 10092), en el 17 Pro con iOS 27 y todo en inglés:
+
+> **«How much did I spend in Gnothi?»**
+> → *«Tenés 5 facturas registradas, por un total de ₡30.996,50.»*
+
+**La frase traducida dispara.** El piso deja de depender del idioma del aparato, que era el
+requisito previo para poder medir Siri AI cuando salga de la lista de espera.
+
+Y el detalle que confirma el diseño: **contestó en castellano en un teléfono en inglés**. Es la
+señal de atribución que se dejó a propósito —solo las frases, los títulos y las descripciones se
+tradujeron; el texto que la intent devuelve no—, así que una respuesta en español prueba que
+disparó **nuestra** intent y no otra cosa del sistema.
+
+De paso, el contraste que conviene no perder: acá el monto sale **«₡30.996,50»**, con símbolo y
+todo, porque los datos del spike lo llevan. La misma cifra, por la puerta del asistente, sale como
+«30.996,5 unidades» (§10) — el hueco es del módulo, y esta corrida lo deja a la par.
+
+### Las fuentes de lo que se afirma arriba sobre Siri AI y el idioma
+
+Lo único de esta sección que no se midió acá son las reglas de Apple, y van con fuente porque
+deciden cómo se lee todo lo demás:
+
+- Requisitos de Apple Intelligence, lista de idiomas —el español está— y la regla de que el idioma
+  del aparato y el de Siri deben coincidir, más el aviso de que al cambiar el de Siri *«Apple
+  Intelligence puede quedar no disponible hasta que el idioma nuevo termine de descargarse y
+  coincida»* · <https://support.apple.com/en-euro/121115>
+- El lanzamiento de Siri AI, 14 de septiembre de 2026: beta **solo en inglés**, con francés,
+  japonés, coreano, portugués y español *«el mes que viene»*; iPhone 15 Pro o posterior ·
+  <https://www.apple.com/newsroom/2026/09/siri-ai-a-profoundly-more-capable-and-personal-assistant-is-here/>
+- Siri AI entra por **lista de espera** en iOS 27 (Ajustes › Siri › *Try Siri AI (beta)*), y pide
+  el idioma del aparato en inglés · <https://www.macrumors.com/2026/09/15/ios-27-siri-ai-has-waitlist-how-to-join/>
+
+---
+
+## 12. iOS 27 dejó de llamar la tool, y es el hallazgo más caro del día
+
+Medido el **2026-09-17 por la tarde**, en el **mismo** iPhone 17 Pro de la mañana, después de que
+su dueño lo actualizara a **iOS 27.0 (24A437)**. Mismo binario del Host, mismo puente, mismo
+prompt, misma tool declarada, aparato y Siri los dos en inglés, Apple Intelligence encendido.
+
+| | iOS 26.6.2 | iOS 27.0 |
+|---|---|---|
+| `gnothi_fm_estado` | 2 · genera | 2 · genera |
+| **el paso 1 llama `examenes_evaluar_tendencia`** | **4 de 4** | **0 de 4** |
+| el paso 2, con los hechos ya calculados | bien | bien |
+
+En vez de llamar la tool, el modelo de 27 contesta texto:
+
+> «Mi asistente de Gnothi te pregunta: ¿cómo viene tu colesterol total?»
+> «Mi asistente de Gnothi consulta la tendencia del colesterol total. ¿Desea saber si está
+> aumentando, disminuyendo o estable?»
+> «Mi asistente de Gnothi te dice que el colesterol total viene **bajando**.»
+
+La tercera es la que importa: **inventó el veredicto y lo invirtió** — el expediente dice que
+sube— sin tener un solo dato, porque no llamó a nadie. No es una respuesta pobre: es la falla que
+el producto no puede tener.
+
+**Esto contradice lo que `IOS27.md` esperaba** a partir del material de Apple: que el modelo
+reconstruido fuera *mejor* en tool calling. En esta sonda es lo contrario, 0 de 4 contra 4 de 4.
+
+### La primera sospecha, medida y DESCARTADA
+
+El puente declara sus tools en `LanguageModelSession(tools:)` y además arma un `Transcript` cuya
+instrucción decía `toolDefinitions: []` — o sea que **la historia que el modelo lee declaraba que
+no había ninguna tool**. Hasta 26.6.2 eso no impedía que las llamara, así que la hipótesis era que
+el modelo de 27 tomara su inventario de ahí.
+
+**Se corrió esa misma tarde, por red, en el mismo aparato: 0 de 4 otra vez.** No es la causa. El
+cambio queda igual en `fix/movil-el-puente-declara-las-tools-en-el-transcript` porque declarar las
+tools en el transcript es lo veraz, no porque arregle nada.
+
+Con eso, el conteo de iOS 27 va en **0 de 8**, y **dos de esas ocho invirtieron el veredicto** —
+«tu colesterol total viene bajando», cuando el expediente dice que sube—. Las cuatro nuevas
+también contestaron **repreguntando**: *«¿Quieres saber cuál es el estado actual?»*.
+
+### La segunda sospecha, medida y también DESCARTADA — pero cambia el diagnóstico
+
+«Sos el asistente de Gnothi. Prosa corta, sin markdown» no dice en ningún lado *consultá antes de
+contestar*. Se le agregó: *«Para contestar sobre los datos de la persona TENÉS QUE LLAMAR a la
+herramienta que los trae: no contestes de memoria y no le preguntes de vuelta»*. Cuatro corridas:
+
+> «**Llama a la herramienta** para obtener la información sobre tu colesterol total.»
+
+**0 de 4 otra vez, pero ahora narra la llamada en vez de hacerla.** Eso ya no parece un modelo que
+no quiere consultar: parece uno que no tiene por dónde.
+
+### Lo que lo destapa: la tool sí llegaba, y el modelo la escribe en vez de invocarla
+
+El puente armaba el esquema dinámico con `try?`, así que una tool que no compilara se caía del
+`compactMap` **sin una línea en ningún lado** — y el modelo se quedaba sin herramientas, pudiendo
+hablar de llamarlas y no llamarlas nunca. Se instrumentó (rama
+`fix/movil-el-puente-dice-cuantas-tools-vio`) y el aparato contestó:
+
+```
+toolsDeclaradas: 1      ← en las cuatro corridas
+```
+
+**La tool llegaba.** Esa hipótesis también cae. Y entonces apareció la corrida que ordena todo: con
+la instrucción puesta, una de las cuatro devolvió
+
+```json
+{"tool": "examenes_evaluar_tendencia", "analito": "ColesterolTotal"}
+```
+
+**como el TEXTO de la respuesta.** Nombre correcto, argumento correcto, valor del enum correcto —
+escrito en el contenido en vez de invocado por el framework, así que el `Senuelo` nunca corre,
+`Detener` nunca se lanza y `captura.llamadas` queda vacía.
+
+**El diagnóstico se da vuelta:** no es que el modelo de 27 elija mal ni se niegue. **Elige bien y
+no puede ejecutar.** Lo que falla es la invocación estructurada, no el juicio.
+
+### Y entonces llamó dos tools: el 0 de N no era del modelo
+
+**16:12 del mismo día.** Con el encuadre ya en inglés —`fix/movil-el-encuadre-en-el-idioma-de-la-persona`—
+y la pregunta escrita como una orden en vez de como un sí/no:
+
+> **Look at my lab results and my shopping together**
+>
+> ```
+> catalog: 8 queries
+> round 1: 2 queries
+>   compras_resumen:  129 characters
+>   examenes_resumen: 122 characters
+> ```
+
+**Llamó dos tools de dos módulos distintos en un solo turno.** El cruce —lo que este proyecto llama
+el boss final— corre en iOS 27. O sea que **«iOS 27 no puede invocar tools» era falso**, y las
+secciones de arriba hay que leerlas como lo que son: el modelo no llamaba *en esas condiciones*.
+
+**Se aisló media hora después, y la variable era el encuadre.** La misma pregunta de sí/no que
+antes no llamaba nada —*«Have my last purchases impacted my cholesterol results?»*, 16:26— con el
+encuadre en inglés ya puesto:
+
+```
+round 1: 1 query
+  compras_resumen: 129 characters
+```
+
+**La forma de la pregunta no era.** Con el encuadre en el idioma de la persona, las cuatro corridas
+de la tarde llamaron tools: 2, 1, 1 y 2 consultas. Antes, **0 de todas**.
+
+Y encaja con lo otro que quedó firme: **la sonda del puente sigue en 0 de 12**, y la sonda le habla
+al modelo **en castellano** en un aparato en inglés. Es el mismo cruce de idiomas que apagaba Apple
+Intelligence esa mañana, ahora apagando otra cosa.
+
+> **Lo que esto convierte en importante:** `fix/movil-el-encuadre-en-el-idioma-de-la-persona` dejó
+> de ser un arreglo de presentación. En iOS 27, con la persona en un idioma y el encuadre en otro,
+> **el modelo no consulta**, y el asistente contesta de memoria sobre datos de salud. El arreglo es
+> lo que devuelve la puerta.
+
+### Llama, cita bien, y aun así el cruce no ocurre — y la culpa no es del modelo
+
+Las tres pruebas de las 16:26, 16:27 y 16:29, todas en inglés y con el encuadre en inglés:
+
+| pregunta | consultas | qué hizo |
+|---|---|---|
+| «Have my last purchases impacted my cholesterol results?» | `compras_resumen` | recita compras y dice que no puede determinar el vínculo |
+| «Have my cholesterol been affected by what I've been eating…?» | `examenes_lista_de_examenes` (2 421 caracteres) | **cita datos reales** y dice que no puede establecer la relación |
+| «Cross my exam results with my purchases to find any correlation» | `compras_resumen` + `examenes_resumen` | recita los dos resúmenes, sin cruzar |
+
+**Y cita bien.** La segunda reportó *«LDL de 118 mg/dL a 212 mg/dL, de abril de 2021 a abril de
+2026»*, y **118, 212, 2021 y 2026 están todos en el journal**: leyó los 2 421 caracteres de la
+lista y los citó. No hay confabulación acá.
+
+**Entonces por qué no cruza.** Porque con lo que tiene **no se puede cruzar**: `compras_resumen`
+devuelve *87 compras, total X* y `examenes_resumen` devuelve *12 exámenes, 1 fuera de rango*. Dos
+inventarios no se correlacionan. El modelo diciendo *«no puedo determinar una relación»* **está en
+lo correcto**, y es además exactamente lo que el encuadre le pide: no inventar causalidad.
+
+Es lo que ya se había visto al leer los manifiestos —un módulo hospedado publica 2 consultas y son
+de inventario— pero acá tiene consecuencia medida: **el cruce no falla por el modelo, falla porque
+los bundles hospedados no publican las consultas del juicio del dominio.** En `Lab.Cruce` el cruce
+salió con `examenes_evaluar_tendencia` y `compras_consumo_de`, que son las del MCP y no viajan en
+el bundle. **Esa es la brecha que hay que cerrar, y es de los módulos, no del Host ni del modelo.**
+
+### Lo que el encuadre en inglés no arregló: la voz
+
+En las cuatro contesta **en castellano**. Y además se le va la persona gramatical: *«sus
+resultados»* (usted) en una, *«**La persona** ha tenido resultados…»* en otra — hablando **de** ella
+en vez de **a** ella, que es literalmente el «la persona que te pregunta» del encuadre devuelto como
+eco.
+
+### El idioma de la respuesta: el encuadre no alcanza
+
+Encuadre en inglés, pregunta en inglés, UI en inglés, aparato en inglés — **y contesta en castellano
+las cuatro veces**. La conclusión es más incómoda que la del arreglo: **el encuadre solo no decide
+el idioma**. Lo que queda tirando del otro lado son las **descripciones de las tools**, que vienen
+del manifiesto de cada institución, y el **registro**, que por la regla 3 no se traduce nunca. Un
+modelo de 3B sigue al idioma que domina su contexto, y hoy ese idioma es el del expediente. O las
+instituciones embarcan sus descripciones en los dos idiomas —como la Wasm embarca sus textos— o se
+acepta que el asistente hable el idioma del registro. **Es decisión de producto, no un bug.**
+
+Y las respuestas reproducen, una y otra vez, **los dos huecos que ya estaban anotados**, los dos del
+módulo y ninguno del modelo — «3.2 millones de **pesos**», «322.233.6», «3.222.336 **unidades**»,
+«el último evento del supermercado lo leyó **a las 387**», «hace **387 días**», «hace **303 días**»:
+
+- **«3.2 millones de pesos»** — `totalGastado` viaja sin moneda, así que el modelo eligió una, y
+  eligió mal: acá son colones. Es el «30.996,5 unidades» del §10 con otra ropa.
+- **«el último evento que leí en tu app fue hace 387 días»** y «hace 303 días» — `ultimoEventoLeido`
+  es un **número de evento**, no días. Dos módulos, el mismo campo sin unidad, la misma invención.
+
+### Lo que queda por probar, en orden
+
+1. **Cómo se construye la sesión.** El puente arma `LanguageModelSession(tools:transcript:)` y
+   dispara con `respond(to:)`. Habría que medir la forma simple —`LanguageModelSession(tools:
+   instructions:)`, sin transcript— antes de culpar a nada más.
+2. **El `Senuelo`.** Sus tools no devuelven nada: cortan la generación lanzando desde dentro de
+   `call`. Si en 27 una tool que lanza queda marcada como inservible, explicaría el resto.
+3. **Y un plan B que ya se sabe que funcionaría a medias:** si el modelo escribe la llamada bien
+   formada en el texto, el puente **podría parsearla** cuando no hubo invocación. Es feo y hay que
+   decir que lo es — pero devuelve la puerta mientras se encuentra la causa.
+
+**Mientras tanto la sección no debe citarse como «iOS 27 rompió el tool calling»:** lo medido es
+que **por esta puerta, tal como la tenemos escrita hoy**, el modelo de 27 no llama la tool.
+
+### Y en la app, con los tres módulos: el cruce se contesta negándolo
+
+A las 12:08, en la pestaña Asistente del Host sobre iOS 27 y con exámenes, compras y cargas
+instalados, la pregunta que este proyecto llama el boss final — **el cruce entre módulos**, escrita
+en inglés porque el teléfono está en inglés:
+
+> **Do my last purchases have anything to do with my cholesterol levels?**
+>
+> «Mis últimos compras no tienen nada a hacer con mis niveles de colesterol. Los datos de mis
+> compras están registrados en mi dispositivo y no están vinculados directamente a los niveles de
+> colesterol que están siendo monitoreados por mi institución médica.»
+
+Tres cosas, y ninguna es el modelo siendo tonto:
+
+1. **Niega el cruce en vez de consultarlo, y ahora está medido.** Una segunda corrida a las 16:04,
+   con la traza **desplegada**, lo deja sin interpretación posible:
+
+   ```
+   catalog: 8 queries
+   ```
+
+   y **ninguna línea de vuelta**: ocho consultas disponibles —las seis de los tres módulos más las
+   dos del Host— y **cero usadas**. La respuesta vuelve a afirmar que no hay vínculo y a explicar
+   por qué, sin un solo dato debajo. Es el 0 de N del §12 en el camino del producto, con el
+   catálogo completo y no con una sola tool.
+2. **Contesta en español una pregunta escrita en inglés**, en un teléfono en inglés y con la UI en
+   inglés. El encuadre corto del teléfono está escrito en español y arrastra la respuesta con él.
+   Por la regla 1 de [`reglas-de-localizacion.md`](../../Metodologia/Guias/reglas-de-localizacion.md)
+   el idioma del Host sigue **a la persona**, así que esto es un defecto nuestro, no del modelo.
+   Y encima sale con la gramática rota —«mis últimos compras», «no tienen nada a hacer»—, que es lo
+   que pasa cuando un modelo chico traduce a un idioma al que nadie le pidió ir.
+3. **Habla en primera persona como si fuera la persona** — «mis compras», «mi dispositivo», «mi
+   institución médica»—, en vez de hablarle a ella. El encuadre tampoco sujeta eso.
+
+**Para el producto, el punto 1 es el que duele**: el cruce entre módulos es la promesa grande, y en
+la versión de iOS que la gente va a tener, por esta puerta, hoy se contesta negándolo.
+
+### De paso, dos cosas que sí quedaron firmes
+
+- **El modelo de iOS 27 genera en este aparato** (`estado = 2`), y el paso 2 —componer con hechos
+  ya calculados— sigue saliendo bien y fiel a la lectura del dominio en las cuatro corridas.
+- **`modelNotReady` dura un rato largo después de un update mayor.** Entre el salto a 27 y el
+  primer `estado = 2` pasó cerca de media hora con el teléfono enchufado y en Wi-Fi. Antes de
+  concluir nada de un `0`, hay que leer el motivo — que ahora el puente dice, rama
+  `fix/movil-el-puente-dice-por-que-no-hay-modelo`.
+
+---
+
+## 13. La cadena que la persona arma, con el modelo del aparato — y funciona
+
+Medido el **2026-09-17 a las 17:05**, iPhone 17 Pro con iOS 27, todo en inglés, Apple Intelligence
+encendido. **Es t9 en su forma original** —la que este archivo definió como *«encadenar sin que
+salga nada»*— y es la primera vez que se corre.
+
+### Primero: `Use Model` existe y está habilitada
+
+La pregunta que el hallazgo 8 dejó abierta —*por qué Atajos deshabilitaba `Use Model`*— tiene
+respuesta simple: **necesitaba Apple Intelligence encendido**. Con el interruptor puesto, la acción
+aparece y ofrece cuatro destinos:
+
+| | |
+|---|---|
+| **Cloud** · **Cloud Pro** | los de Apple, por red |
+| **On-Device** | el del aparato — el que interesa |
+| **ChatGPT** | de fábrica, sin instalar nada |
+
+Que **ChatGPT venga de fábrica en el selector** es un dato para el pitch: por esta puerta, un
+asistente ajeno llega a los datos de la persona sin que ella instale ni configure nada nuestro.
+
+### Y la cadena entera corre, respeta el encuadre y cita bien
+
+El atajo, armado a mano en dos pasos:
+
+```
+Gnothi · «Lab results (data for an AI)»      ← la acción, ya en inglés (PR 10092)
+  ↓
+Use  On-Device  model
+```
+
+> «Los resultados de los cinco exámenes que has proporcionado muestran cambios significativos en
+> algunos indicadores, pero es importante entender que estos datos provienen de tu propio expediente
+> y **no son interpretados ni reevaluados por mí**. El análisis del antígeno prostático ha aumentado
+> de **3,0 a 5,2 ng/mL en un año**, lo cual es un cambio considerable considerando el tiempo
+> transcurrido…»
+
+Tres cosas, y las tres importan:
+
+1. **t9 ✅.** La cadena contesta con el modelo del aparato. Ya estaba medido que el asistente de la
+   app contesta en modo avión; esto es la otra mitad —la ruta que **la persona arma ella misma**—,
+   que este spike llamó *la única ruta sin techo*.
+2. **El encuadre se respeta, y se nota que se respeta.** *«no son interpretados ni reevaluados por
+   mí»* es `Examenes.encuadre` puesto en palabras por el modelo. Contra el §11 y el §12, donde el
+   mismo modelo por la puerta del asistente diagnosticaba y recetaba, **acá aguanta**.
+3. **Cita los valores buenos**: 3,0 → 5,2 ng/mL en un año es exactamente el antígeno del expediente
+   de Sonia. Sin inventar.
+
+> **La diferencia entre esta corrida y las del §12 no es el modelo: es lo que se le manda.** Por la
+> cadena, el encuadre y los hechos **viajan pegados en el mismo texto** —eso es el hallazgo 6— y el
+> modelo no tiene que decidir nada: redacta. Por la puerta del asistente tiene que elegir consultas
+> y componer, y ahí es donde se cae. **El techo del modelo chico no está en entender: está en
+> decidir.**
+
+### El control que faltaba: el mismo atajo, con el modelo grande
+
+**17:12.** Mismo atajo, mismo dato, cambiando una sola cosa: `On-Device` → `ChatGPT`, que Atajos
+trae de fábrica.
+
+> «Tu expediente muestra cinco exámenes recientes. Tres de ellos requieren atención. El antígeno
+> prostático subió de 3,0 a 5,2 ng/mL en un año, **lo que tu registro califica** como un cambio
+> demasiado rápido y por eso indica que consultes pronto. El colesterol total llegó a 280 mg/dL, por
+> encima de lo deseable, y se recomienda vigilarlo. La hemoglobina está en 14,2 g/dL, estable y
+> dentro de lo normal. La sangre oculta en heces volvió a salir…»
+
+**«lo que tu registro califica».** Eso es el encuadre respetado en su forma exacta: el veredicto ya
+viene hecho, no es del modelo, y el modelo lo **atribuye** en vez de apropiárselo. Y los cuatro
+números —3,0 → 5,2; 280 mg/dL; 14,2 g/dL— son los del expediente.
+
+**Esto es la pregunta de c7 contestada, aunque no sea c7 tal como está escrita:** c7 decía «hacia
+Claude» porque t8 usaba la app `Ask Claude`; acá el modelo viene de fábrica en Atajos y no hay que
+instalar nada. Queda sin correr la variante con Claude, pero **el control que c7 existía para dar ya
+está dado**.
+
+| | por la cadena | lo que dijo |
+|---|---|---|
+| **On-Device** | ✅ respeta | «no son interpretados ni reevaluados por mí» · vago: *«cambios significativos en algunos indicadores»* |
+| **ChatGPT** | ✅ respeta | analito por analito, con el veredicto **atribuido al registro** |
+
+**Y eso cierra la discusión del §12 desde el otro lado.** El encuadre no es débil y el modelo chico
+no es incapaz de respetarlo: **por esta puerta lo respetan los dos**. Lo que se rompía en el §11 y
+el §12 era la puerta del asistente, donde el modelo tiene que **decidir** qué consultar y componer.
+La diferencia entre los dos modelos acá no es obediencia sino **precisión**: el grande recorre los
+cinco analitos, el del aparato generaliza.
+
+> **El precio, que hay que decir en la misma frase:** la columna de ChatGPT es más precisa **porque
+> el expediente sale del teléfono**. La de On-Device es más vaga y no sale nada. Esa es la elección
+> real del producto, y ahora está medida en las dos direcciones en vez de argumentada.
+
+### Y dos cosas más de la misma tanda
+
+**p3 en inglés ✅.** *«How did my lab results come out in Gnothi?»* → *«De tus 5 exámenes, 3 piden
+algo: Antígeno prostático, Colesterol total y Sangre oculta en heces. El resto está dentro de lo
+normal.»* La frase traducida de exámenes también dispara, así que la traducción sirve para las dos
+entidades y no solo para facturas.
+
+**Spotlight, en cambio, dejó de encontrar el analito — y NO está aislado.** En Spotlight, sobre este
+aparato:
+
+| busco | |
+|---|---|
+| `colesterol` | ❌ nada de Gnothi (solo la sugerencia de Safari) |
+| `cholesterol` | ❌ nada de Gnothi (el diccionario de Oxford) |
+
+El segundo era el resultado esperado —el analito se llama «Colesterol total» en el registro y por la
+regla 3 no se traduce—, **pero el primero pasaba en el 13 Pro** (t5b ✅, iOS 26.6, aparato en
+español). Acá cambiaron tres cosas a la vez: iOS 27, el idioma del aparato, y una reinstalación
+reciente de la app. **No se puede atribuir a ninguna**, y conviene volver a correrlo dejando pasar
+un rato desde la instalación antes de sacar conclusiones sobre el índice.
+
+---
+
+## 14. Siri AI, medida por fin: no invoca las intents, y lo dice con todas las letras
+
+Medido el **2026-09-21** en la Mac M2 (8 GB) con **macOS 27.0**, el aparato y Siri en inglés, Apple
+Intelligence encendido y **Siri AI activa** tras la lista de espera. Es la primera corrida de este
+spike con Siri AI en la cancha: las de §11 eran la Siri de siempre, y en el 13 Pro Siri AI no existe.
+
+**Cómo se pudo.** Siri AI necesita una app con App Intents en el aparato, y en la Mac la nuestra es
+.NET. Al spike se le dio **destino macOS** (rama `feat/siri-spike-destino-mac`): SDK automático, un
+`Gnothi.mac.entitlements` con el App Group **prefijado por equipo** (`W5SWU29W6D.group.…`, que en
+macOS es obligatorio y con el string pelado falla en silencio) y el sandbox encendido. Compila para
+las dos plataformas sin tocar una línea de UI. La app se instaló en `~/Applications` y no se corrió
+desde DerivedData: la primera prueba se hizo así y se descarta abajo.
+
+**La foto.** En la Mac nadie escribe `gnothi-instantanea.json`: la escribe `Gnothi.iOS` en el
+teléfono, y `devicectl` no llega al contenedor del grupo (`ContainerLookupErrorDomain error 7`). Se
+generó en la Mac con el **mismo `Snapshot.Write`** contra `Modulos.local` —cinco módulos, 91 959
+caracteres— y se copió al contenedor **con el Finder**: ni la terminal de Claude ni un `cp` desde
+ella pueden escribir en `~/Library/Group Containers/` (privacidad de macOS, «Operation not
+permitted»). La pantalla del spike ahora dice si la encontró y dónde la buscó, y dijo **FOTO
+ENCONTRADA**.
+
+**El registro, verificado antes de culpar a Siri.** Atajos lista las **11 acciones**, incluidas
+`Find Factura` y `Find Examen`, que son las de entidades. Ajustes › Siri muestra a Gnothi con un
+solo interruptor, «Learn from this application», encendido. O sea: el sistema conoce las intents.
+
+### Lo medido
+
+| | qué se dijo o hizo | qué pasó |
+|---|---|---|
+| m1 (descartada) | Siri AI, *«How much did I spend in Gnothi?»*, app corriendo desde DerivedData | *«I couldn't find any records of your spending in Gnothi across your emails, messages, transactions, or files.»* |
+| **m1** | lo mismo, app instalada en `~/Applications`, foto encontrada | *«I couldn't find any records of your spending in Gnothi.»* Ya reconoce «Gnothi» como algo concreto. **No invoca la App Shortcut**, y la frase es la declarada palabra por palabra: `How much did I spend in ${applicationName}`. |
+| **m2** | Siri AI, *«Use Gnothi to get the total of my invoices»* — app **y** acción nombradas | *«I can't search within Gnothi directly. However, you can open the app to find your invoices.»* y una ficha para abrir la app. |
+| **m3** | Atajos, la acción **Total of my invoices**, ▶ | ✅ *«Tenés 5 facturas registradas, por un total de ₡30.996,50.»* |
+| **m4** | **Spotlight**, escribiendo «Total of my invoices» | ✅ la acción aparece en la lista y **contesta ahí mismo**, sin abrir nada. |
+
+### Lo que esto dice
+
+1. **Siri AI en macOS 27 no invoca App Intents de terceros, ni siquiera nombrando la app y la
+   acción.** No es que elija mal: dice *«I can't search within Gnothi directly»*. La intent está
+   registrada y corre por otros dos canales (m3, m4). En el 13 Pro, la Siri clásica con la misma
+   frase **sí** disparaba la App Shortcut (t1, t2). Para el piso, esta beta es un paso atrás.
+
+2. **El techo sigue sin medirse, y cambió la razón.** t3, t4 y t8b —sin nombrar la app— no se
+   pueden medir mientras Siri AI no invoque las intents ni nombrándolas. Ya no es la versión, el
+   idioma ni la lista de espera: es lo que Siri AI hace hoy con apps de terceros.
+
+3. **Spotlight en la Mac es un canal que el teléfono no tiene.** Ejecuta la App Intent y muestra la
+   respuesta en la propia lista. Es piso sin Siri, y funciona con firma de desarrollo.
+
+4. **m3 y m4 contestan con el dato quemado**, `Facturas.swift`, no con la foto: `TotalDeFacturasIntent`
+   nunca leyó la foto, eso lo hacen las de «data for an AI». Es lo esperado del spike; se anota para
+   que nadie lea «5 facturas, ₡30.996,50» como el journal de facturas del banco (3, 19 321,50).
+
+### Lo que NO dice
+
+- Una corrida por frase. m1 se repitió dos veces con el mismo resultado; m2, una.
+- La app va firmada con **Apple Development**, no distribuida. Si Siri AI exige App Store o
+  notarización para consultar apps de terceros, no está escrito en ningún material de Apple que
+  hayamos leído, y este spike no lo distingue.
+- Un M2 con 8 GB no es el hardware «más potente» de la tabla de `IOS27.md`. Si Siri AI corre
+  recortada acá, tampoco lo distingue.
+- No se probó en un iPhone 17 Pro con iOS 27 y Siri AI. Es la corrida que falta para saber si es
+  Siri AI o Siri AI en la Mac.
+
+### Para repetirlo
+
+```bash
+cd Spikes/Lab.Siri
+xcodebuild -project Gnothi.xcodeproj -scheme Gnothi -destination 'platform=macOS' -derivedDataPath /tmp/dd build
+ditto /tmp/dd/Build/Products/Debug/Gnothi.app ~/Applications/Gnothi.app && open ~/Applications/Gnothi.app
+```
+
+La foto se genera con `Snapshot.Write` contra `Modulos.local` (una consola de tres líneas con
+`Gnothi.Host`, `Gnothi.Assistant` y `Gnothi.MobileShared/Snapshot.cs`; `Shell.Icon` hay que
+copiarlo o traer `Shell.cs` entero) y se arrastra con el Finder a
+`~/Library/Group Containers/W5SWU29W6D.group.com.ncubo.gnothi/`. La sección «El dato real» de la
+pantalla dice si la vio.
+
 ## Lo que este spike NO responde
 
 Conviene no fingir que sí.
 
-**t3 y t4 no son concluyentes.** Corrieron en un 13 Pro sin Apple Intelligence, que es
-justamente la pieza que enrutaría voz → índice semántico. Que fallen ahí no dice qué pasa
-en un 15 Pro o 16+. Son diez minutos con un teléfono prestado.
+**t3 y t4 siguen sin ser concluyentes, y ahora se sabe exactamente qué falta.** El 2026-09-17
+volvieron a fallar en un 17 Pro, con t8b atrás — pero ahí Apple Intelligence estaba apagado por el
+cruce de idiomas, y Siri AI ni existía en esa versión. Para cerrarlas hacen falta cuatro cosas
+juntas: iOS 27, la lista de espera de Siri AI, el aparato en inglés **y las frases del spike en
+inglés**. Ver §11.
 
 Lo que sí queda firme es que la mitad de indexado funciona **sin** Apple Intelligence: t5
 pasó igual.
 
-**t9 quedó sin medir.** El 13 Pro no tiene Apple Intelligence, y el simulador no deja
-activarlo: en iOS 26.2 y en 26.5 el panel de *Apple Intelligence & Siri* no tiene
+~~**t9 quedó sin medir.**~~ **Medido el 2026-09-17: contesta en modo avión** — §11. Lo que sigue
+describe por qué había quedado bloqueado, y sigue valiendo para el simulador. El 13 Pro no tiene
+Apple Intelligence, y el simulador no deja activarlo: en iOS 26.2 y en 26.5 el panel de *Apple Intelligence & Siri* no tiene
 interruptor, solo ajustes de Siri, aunque la pantalla principal muestre el banner *«Ready
 for Apple Intelligence»* y el Mac lo tenga encendido. Atajos deshabilita `Use Model` con
 *«This action is not currently available»*, y **por qué es pregunta abierta**: la explicación
 que acá había —que `SystemLanguageModel` no queda disponible— está medida y es falsa, ver
 hallazgo 8.
 
-Queda abierto si la cadena contesta **sin red**, que es la tesis de privacidad del producto.
+Lo que **sigue abierto** es el `Use Model` de Atajos: t9 se midió adentro de la app, no en la
+cadena que la persona arma.
 
-**Seis pruebas del marcador siguen sin correr** (p3, t8b, c6, c7, c8 y el t9 bloqueado). Las de
-exámenes en la cadena son las que más importan: **c8 le pregunta al modelo «¿tengo algo de qué
-preocuparme?»** con el antígeno en 5,2 y sangre oculta positiva. Es la pregunta que más lo invita
-a diagnosticar, y `Examenes.encuadre` le dice explícitamente que el veredicto ya viene hecho y no
-es suyo. Si el encuadre aguanta ahí, aguanta.
+**Queda una sola prueba del marcador sin correr: c7**, exámenes hacia Claude por la cadena. Es el
+control que falta — c8 ya se midió on-device y **diagnostica** (§9 y §11), y sin la misma pregunta
+contra un modelo grande no se sabe si eso es del modelo chico o del encuadre.
 
 **El Host se midió en Debug con el intérprete forzado.** `Gnothi.iOS` sólo carga módulos con
 `-p:MtouchInterpreter=-all`; sin esa bandera muere con SIGABRT en `load_aot_module`. Lo que este

@@ -44,6 +44,7 @@ namespace Examenes.Dominio
 
 		// El resultado dicho con el vocabulario de SU analito: "positivo" en nitritos,
 		// "reactivo" en una serologia. Es la razon de que la magnitud no sea un bool.
-		internal string Expresado => Resultado.Expresado;
+		/// <summary>El codigo del resultado: identidad, y lo unico que cruza el wire.</summary>
+		internal string ClaveDelResultado => Resultado.Clave;
 	}
 }

@@ -1,0 +1,4 @@
+# Los .gmod NO se versionan: los arma `Gnothi.Mobile/armar-bundle.ps1` y pesan cientos de KB.
+# Copiá acá el que quieras servir en la demo, por ejemplo:
+#   Gnothi.Mobile/bundles/hibrida/examenes.gmod
+*.gmod

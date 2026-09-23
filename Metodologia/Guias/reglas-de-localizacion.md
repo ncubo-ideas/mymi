@@ -309,6 +309,13 @@ Cuando esta guía dice algo que no verificó, lo dice en el lugar donde lo dice.
 
 ## El orden de trabajo acordado
 
+> **Al 2026-09-18 los cuatro pasos estan hechos o casi**: el Host, Municipalidad, Cargas, Compras y
+> Concesionario estan localizados y **solo falta Examenes**. Las dos cosas que esta guia lista como
+> «lo que falta construir» ya existen, y la regla 5 dejo de ser una propuesta: hay cuatro
+> implementaciones corriendo. Que forma quedo adoptada, que falta y que trampas ya se pagaron esta en
+> [`localizar-una-caratula.md`](localizar-una-caratula.md).
+
+
 1. **El Host primero** — `ui.html` y Desktop sobre un JSON compartido (regla 10). No depende de nadie
    y de paso cierra la contradicción que ya existe.
 2. **Acordar la forma clave-más-valores** de la regla 5 en Municipalidad, que es donde Kenneth ya está
