@@ -104,6 +104,12 @@
       "total": "en total"
     },
 
+    "vistas": {
+      "grupo": "Vista de facturas",
+      "calendario": "Vista de calendario",
+      "items": "Vista de artículos"
+    },
+
     "promo": {
       "region": "Promociones",
       "irA": "Ir a la promoción {numero}"

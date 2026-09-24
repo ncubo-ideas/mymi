@@ -5,20 +5,16 @@
 @inject Textos textos
 @inject AlmacenDeAlias almacenAlias
 
-@* "My invoices": un CALENDARIO, no una lista vertical -pedido explicito: la pregunta que
-   tiene que responder rapido es "cuando compre y cuanto gaste", no "dame todas las
-   invoices en orden". "Recent purchases" en Home sigue siendo la lista (vista previa de
-   5), esa NO se toco; esta pantalla ahora es otra cosa.
+@* "My invoices" con DOS vistas en la misma ruta:
+   - Calendar: "¿cuándo compré?" -el calendario del mes + las compras agrupadas por mes en
+     una lista compacta debajo-.
+   - Items: "¿qué compras tengo?" -tarjetas visuales en dos columnas, agrupadas por mes-.
+   Todo sale de Facturas() (Numero/Fecha/Total) y de Detalle() para la suma real de
+   unidades: ningun mes, total, factura ni alias inventado.
 
-   SIN CARRUSEL, SIN ACCESOS, SIN Total spent/Evolution: esa parte sigue siendo solo de
-   Home. Si la app todavia no abrio (por ejemplo, alguien entra por URL directa antes de
-   pasar por Home), se manda a Home -que es quien sabe manejar el flujo de conectar
-   carpeta-, en vez de duplicar esa logica aca.
+   HERO UNICO (back + titulo + bajada + ilustracion) sin cambios de marcado. *@
+<PageTitle>@($"{textos["misFacturas.accesos.misFacturas"]} · {Textos.Institucion}")</PageTitle>
 
-   HERO UNICO (back + titulo + bajada + ilustracion) SIN TOCAR, como se pidio. invoices.png
-   se usa COMPLETO: el PNG tiene transparencia real (se verifico canal alfa), asi que va
-   como <img> suelto con solo el ancho acotado -sin object-fit:cover, sin recorte, sin
-   tarjeta propia- para que la canasta se sienta una ilustracion editorial. *@
 <div class="triunfo-invoices-hero">
     <div class="triunfo-invoices-hero__texto">
         <div class="triunfo-invoices-hero__cabecera">
@@ -51,99 +47,213 @@ else if (facturas.Count == 0)
         <p class="mb-0">@((MarkupString)textos["misFacturas.vacio"])</p>
     </div>
 }
-else if (MesActual is (int anio, int mes))
+else
 {
-    @* CALENDARIO, no lista. Los meses disponibles salen SOLO de Facturas() -mesesConDatos,
-       calculado una vez en OnInitializedAsync-: si solo hay agosto 2026, los dos controles
-       quedan disabled y nunca se puede navegar a un mes sin datos ni inventado. *@
-    <div class="triunfo-calendario" @key="@($"{anio}-{mes}")">
-        <div class="triunfo-calendario__cabecera">
-            <button type="button" class="triunfo-calendario__nav" disabled="@(!PuedeAnterior)"
-                    @onclick="MesAnterior" aria-label="@textos["misFacturas.calendario.mesAnterior"]">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12.5 4 6.5 10l6 6" />
-                </svg>
-            </button>
-            <div class="triunfo-calendario__titulo">
-                <span class="triunfo-calendario__mes">@textos.PeriodoLargo(anio, mes)</span>
-                <span class="triunfo-calendario__resumen">
-                    @textos.Con(facturasDelMes.Count == 1 ? "misFacturas.resumen.una" : "misFacturas.resumen.varias",
-                                ("cuantas", textos.Cuenta(facturasDelMes.Count)))
-                    &middot;
-                    @textos.Monto(facturasDelMes.Sum(f => f.Total)) @textos["misFacturas.calendario.total"]
-                </span>
-            </div>
-            <button type="button" class="triunfo-calendario__nav" disabled="@(!PuedeSiguiente)"
-                    @onclick="MesSiguiente" aria-label="@textos["misFacturas.calendario.mesSiguiente"]">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M7.5 4 13.5 10l-6 6" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="triunfo-calendario__diassemana" aria-hidden="true">
-            @for (int i = 0; i < 7; i++)
-            {
-                <span>@textos.DiaCorto(i)</span>
-            }
-        </div>
-
-        <div class="triunfo-calendario__grilla">
-            @for (int i = 0; i < PrimerDiaSemana(anio, mes); i++)
-            {
-                <span class="triunfo-calendario__celda triunfo-calendario__celda--vacia" aria-hidden="true"></span>
-            }
-            @for (int dia = 1; dia <= DateTime.DaysInMonth(anio, mes); dia++)
-            {
-                int diaLocal = dia;
-                if (porDia.TryGetValue(diaLocal, out List<FacturaEnLista>? delDia))
-                {
-                    @* Celda CON compra: dia + monto, nada mas -sin "Invoice #..." adentro,
-                       pedido explicito de mantener el calendario limpio-. Si hubiera mas de
-                       una factura ese dia se muestra el TOTAL del dia (arquitectura lista
-                       para el caso, aunque hoy los tres datos reales caen en dias distintos). *@
-                    <button type="button" class="triunfo-calendario__celda triunfo-calendario__celda--compra @(diaExpandido == diaLocal ? "triunfo-calendario__celda--seleccionada" : "")"
-                            @onclick="() => AbrirDia(diaLocal)"
-                            aria-label="@textos.Con("misFacturas.abrirDetalle", ("numero", delDia.Count == 1 ? delDia[0].Numero : diaLocal.ToString()))">
-                        <span class="triunfo-calendario__celda-dia">@diaLocal</span>
-                        <span class="triunfo-calendario__celda-monto">@textos.Monto(delDia.Sum(f => f.Total))</span>
-                    </button>
-                }
-                else
-                {
-                    <span class="triunfo-calendario__celda triunfo-calendario__celda--sin-compra">
-                        <span class="triunfo-calendario__celda-dia">@diaLocal</span>
-                    </span>
-                }
-            }
-        </div>
-
-        @* Solo aparece si algun dia real tiene MAS de una factura -no pasa hoy con los tres
-           datos reales, pero el componente queda preparado: tocar ese dia abre este
-           selector en vez de navegar directo, y de aca cada fila SI navega a su detalle. *@
-        @if (diaExpandido is int diaSel && porDia.TryGetValue(diaSel, out List<FacturaEnLista>? variasDelDia))
-        {
-            <div class="triunfo-calendario__selector">
-                @foreach (FacturaEnLista factura in variasDelDia.OrderBy(f => f.Fecha))
-                {
-                    <FilaDeCompra Factura="factura" Destacada="true" />
-                }
-            </div>
-        }
+    <div class="triunfo-vistas" role="group" aria-label="@textos["misFacturas.vistas.grupo"]">
+        <button type="button" class="triunfo-vistas__boton @(vista == Vista.Calendario ? "triunfo-vistas__boton--activo" : "")"
+                aria-pressed="@(vista == Vista.Calendario ? "true" : "false")"
+                aria-label="@textos["misFacturas.vistas.calendario"]" title="@textos["misFacturas.vistas.calendario"]"
+                @onclick="() => CambiarVista(Vista.Calendario)">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4.5" width="14" height="12.5" rx="2.5" />
+                <path d="M3 8.5h14M7 2.8v3.2M13 2.8v3.2" />
+            </svg>
+        </button>
+        <button type="button" class="triunfo-vistas__boton @(vista == Vista.Items ? "triunfo-vistas__boton--activo" : "")"
+                aria-pressed="@(vista == Vista.Items ? "true" : "false")"
+                aria-label="@textos["misFacturas.vistas.items"]" title="@textos["misFacturas.vistas.items"]"
+                @onclick="() => CambiarVista(Vista.Items)">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="6" height="6" rx="1.6" />
+                <rect x="11" y="3" width="6" height="6" rx="1.6" />
+                <rect x="3" y="11" width="6" height="6" rx="1.6" />
+                <rect x="11" y="11" width="6" height="6" rx="1.6" />
+            </svg>
+        </button>
     </div>
+
+    @if (vista == Vista.Calendario && MesActual is (int anio, int mes))
+    {
+        @* Meses navegables SOLO los de mesesConDatos: con un unico mes real, ambos controles
+           quedan disabled y nunca se llega a un mes inventado. *@
+        <div class="triunfo-calendario" @key="@($"{anio}-{mes}")">
+            <div class="triunfo-calendario__cabecera">
+                <button type="button" class="triunfo-calendario__nav" disabled="@(!PuedeAnterior)"
+                        @onclick="MesAnterior" aria-label="@textos["misFacturas.calendario.mesAnterior"]">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12.5 4 6.5 10l6 6" />
+                    </svg>
+                </button>
+                <div class="triunfo-calendario__titulo">
+                    <span class="triunfo-calendario__mes">@textos.PeriodoLargo(anio, mes)</span>
+                    <span class="triunfo-calendario__resumen">
+                        @Resumen(facturasDelMes) @textos["misFacturas.calendario.total"]
+                    </span>
+                </div>
+                <button type="button" class="triunfo-calendario__nav" disabled="@(!PuedeSiguiente)"
+                        @onclick="MesSiguiente" aria-label="@textos["misFacturas.calendario.mesSiguiente"]">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M7.5 4 13.5 10l-6 6" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="triunfo-calendario__diassemana" aria-hidden="true">
+                @for (int i = 0; i < 7; i++)
+                {
+                    <span>@textos.DiaCorto(i)</span>
+                }
+            </div>
+
+            <div class="triunfo-calendario__grilla">
+                @for (int i = 0; i < PrimerDiaSemana(anio, mes); i++)
+                {
+                    <span class="triunfo-calendario__celda triunfo-calendario__celda--vacia" aria-hidden="true"></span>
+                }
+                @for (int dia = 1; dia <= DateTime.DaysInMonth(anio, mes); dia++)
+                {
+                    int diaLocal = dia;
+                    if (porDia.TryGetValue(diaLocal, out List<FacturaEnLista>? delDia))
+                    {
+                        <button type="button" class="triunfo-calendario__celda triunfo-calendario__celda--compra @(diaExpandido == diaLocal ? "triunfo-calendario__celda--seleccionada" : "")"
+                                @onclick="() => AbrirDia(diaLocal)"
+                                aria-label="@textos.Con("misFacturas.abrirDetalle", ("numero", delDia.Count == 1 ? delDia[0].Numero : diaLocal.ToString()))">
+                            <span class="triunfo-calendario__celda-dia">@diaLocal</span>
+                            <span class="triunfo-calendario__celda-monto">@textos.Monto(delDia.Sum(f => f.Total))</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="triunfo-calendario__celda triunfo-calendario__celda--sin-compra">
+                            <span class="triunfo-calendario__celda-dia">@diaLocal</span>
+                        </span>
+                    }
+                }
+            </div>
+
+            @* Varias facturas el mismo dia: selector debajo de la grilla (hoy no ocurre con
+               los datos reales, pero la arquitectura lo soporta). *@
+            @if (diaExpandido is int diaSel && porDia.TryGetValue(diaSel, out List<FacturaEnLista>? variasDelDia))
+            {
+                <div class="triunfo-calendario__selector">
+                    @foreach (FacturaEnLista factura in variasDelDia.OrderBy(f => f.Fecha))
+                    {
+                        <FilaDeCompra Factura="factura" Destacada="true" />
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @* LAS COMPRAS AGRUPADAS POR MES, en las dos vistas. Los grupos salen de mesesConDatos
+       (del mas reciente al mas viejo): si solo hay agosto, solo hay "August 2026". *@
+    @foreach ((int Anio, int Mes) grupo in Enumerable.Reverse(mesesConDatos))
+    {
+        List<FacturaEnLista> delGrupo = DelMes(grupo.Anio, grupo.Mes);
+        <section class="triunfo-grupo-mes">
+            <div class="triunfo-grupo-mes__cabecera">
+                <h2 class="triunfo-grupo-mes__titulo">@textos.PeriodoLargo(grupo.Anio, grupo.Mes)</h2>
+                <span class="triunfo-grupo-mes__linea" aria-hidden="true"></span>
+                <span class="triunfo-grupo-mes__resumen">@Resumen(delGrupo)</span>
+            </div>
+
+            @if (vista == Vista.Calendario)
+            {
+                @* LISTA compacta (una fila por factura): la vista Calendar ubica la factura
+                   rapido; las tarjetas visuales son de la vista Items. *@
+                <div class="triunfo-lista-mes">
+                    @foreach (FacturaEnLista factura in delGrupo)
+                    {
+                        FacturaEnLista local = factura;
+                        string alias = almacenAlias.Obtener(local.Numero);
+                        <button type="button" class="triunfo-fila-mes" @onclick="() => Abrir(local)"
+                                aria-label="@textos.Con("misFacturas.abrirDetalle", ("numero", local.Numero))">
+                            <span class="triunfo-fila-mes__fecha" aria-hidden="true">
+                                <span class="triunfo-fila-mes__dia">@local.Fecha.Day.ToString("00") @textos.MesCorto(local.Fecha).ToUpperInvariant()</span>
+                                <span class="triunfo-fila-mes__anio">@local.Fecha.Year</span>
+                            </span>
+                            <span class="triunfo-fila-mes__info">
+                                @if (alias.Length > 0)
+                                {
+                                    <span class="triunfo-fila-mes__alias">@alias</span>
+                                }
+                                <span class="triunfo-fila-mes__numero @(alias.Length > 0 ? "triunfo-fila-mes__numero--secundario" : "")">
+                                    @textos.Con("misFacturas.compra.titulo", ("numero", local.Numero))
+                                </span>
+                                <span class="triunfo-fila-mes__cantidad">@CantidadItems(local)</span>
+                            </span>
+                            <span class="triunfo-fila-mes__monto">@textos.Monto(local.Total)</span>
+                            <svg class="triunfo-fila-mes__chevron" viewBox="0 0 8 14" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1.5 1.5 6.5 7l-5 5.5" />
+                            </svg>
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                @* Tarjetas visuales: ficha de fecha, alias (si hay) sobre el numero, unidades
+                   y monto con chevron. Sin icono de canasta: composicion limpia. *@
+                <div class="triunfo-tarjetas">
+                    @foreach (FacturaEnLista factura in delGrupo)
+                    {
+                        FacturaEnLista local = factura;
+                        string alias = almacenAlias.Obtener(local.Numero);
+                        <button type="button" class="triunfo-tarjeta-compra" @onclick="() => Abrir(local)"
+                                aria-label="@textos.Con("misFacturas.abrirDetalle", ("numero", local.Numero))">
+                            <span class="triunfo-tarjeta-compra__ficha" aria-hidden="true">
+                                <span class="triunfo-tarjeta-compra__dia">@local.Fecha.Day</span>
+                                <span class="triunfo-tarjeta-compra__mes">@textos.MesCorto(local.Fecha).ToUpperInvariant()</span>
+                                <span class="triunfo-tarjeta-compra__anio">@local.Fecha.Year</span>
+                            </span>
+                            <span class="triunfo-tarjeta-compra__info">
+                                @if (alias.Length > 0)
+                                {
+                                    <span class="triunfo-tarjeta-compra__alias">@alias</span>
+                                }
+                                <span class="triunfo-tarjeta-compra__numero @(alias.Length > 0 ? "triunfo-tarjeta-compra__numero--secundario" : "")">
+                                    @textos.Con("misFacturas.compra.titulo", ("numero", local.Numero))
+                                </span>
+                                <span class="triunfo-tarjeta-compra__cantidad">@CantidadItems(local)</span>
+                            </span>
+                            <span class="triunfo-tarjeta-compra__abajo">
+                                <span class="triunfo-tarjeta-compra__monto">@textos.Monto(local.Total)</span>
+                                <span class="triunfo-tarjeta-compra__chevron" aria-hidden="true">
+                                    <svg viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.8"
+                                         stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1.5 1.5 6.5 7l-5 5.5" />
+                                    </svg>
+                                </span>
+                            </span>
+                        </button>
+                    }
+                </div>
+            }
+        </section>
+    }
 }
 
 @code {
+    private enum Vista { Calendario, Items }
+
+    // Estatico a proposito: Invoice detail vuelve con NavigateTo("facturas"), que crea una
+    // instancia nueva de esta pagina; asi Back regresa a la vista que la persona eligio.
+    private static Vista ultimaVista = Vista.Calendario;
+    private Vista vista = ultimaVista;
+
     private IReadOnlyList<FacturaEnLista> facturas = new List<FacturaEnLista>();
 
-    // Meses reales con al menos una factura, ordenados. El calendario solo puede pararse
-    // en uno de estos -nunca en un mes sin datos, nunca inventado-.
+    // Meses reales con al menos una factura, ordenados de viejo a nuevo.
     private List<(int Anio, int Mes)> mesesConDatos = new();
     private int indiceMes = -1;
     private List<FacturaEnLista> facturasDelMes = new();
     private Dictionary<int, List<FacturaEnLista>> porDia = new();
+    private Dictionary<string, int> unidades = new(StringComparer.Ordinal);
     private int? diaExpandido;
 
     private (int Anio, int Mes)? MesActual =>
@@ -154,7 +264,6 @@ else if (MesActual is (int anio, int mes))
 
     protected override async Task OnInitializedAsync()
     {
-        // Precarga los alias antes de que FilaDeCompra los pregunte de forma sincrona.
         await almacenAlias.CargarAsync();
 
         if (!estado.EstaArriba)
@@ -170,10 +279,37 @@ else if (MesActual is (int anio, int mes))
             .OrderBy(p => p.Year).ThenBy(p => p.Month)
             .ToList();
 
-        // Arranca en el mes mas reciente que tiene datos -"August 2026" en el caso real
-        // actual, sin asumir "el mes de hoy" (que podria no tener ninguna factura).
+        // "N items" = suma real de Cantidad (Detalle() es lectura local), una vez por factura.
+        unidades = facturas.ToDictionary(
+            f => f.Numero,
+            f => estado.Detalle(f.Numero).Lineas.Sum(l => l.Cantidad),
+            StringComparer.Ordinal);
+
         indiceMes = mesesConDatos.Count - 1;
         RecalcularDia();
+    }
+
+    private void CambiarVista(Vista nueva)
+    {
+        vista = nueva;
+        ultimaVista = nueva;
+    }
+
+    private List<FacturaEnLista> DelMes(int anio, int mes) =>
+        facturas.Where(f => f.Fecha.Year == anio && f.Fecha.Month == mes)
+                .OrderByDescending(f => f.Fecha)
+                .ToList();
+
+    private string Resumen(IReadOnlyCollection<FacturaEnLista> delMes) =>
+        textos.Con(delMes.Count == 1 ? "misFacturas.resumen.una" : "misFacturas.resumen.varias",
+                   ("cuantas", textos.Cuenta(delMes.Count)))
+        + " · " + textos.Monto(delMes.Sum(f => f.Total));
+
+    private string CantidadItems(FacturaEnLista factura)
+    {
+        int cuantas = unidades.TryGetValue(factura.Numero, out int u) ? u : 0;
+        return textos.Con(cuantas == 1 ? "comun.cantidadItems.una" : "comun.cantidadItems.varias",
+                          ("cuantas", textos.Cuenta(cuantas)));
     }
 
     private void RecalcularDia()
@@ -182,7 +318,7 @@ else if (MesActual is (int anio, int mes))
         diaExpandido = null;
         if (MesActual is not (int anio, int mes)) { facturasDelMes = new(); return; }
 
-        facturasDelMes = facturas.Where(f => f.Fecha.Year == anio && f.Fecha.Month == mes).ToList();
+        facturasDelMes = DelMes(anio, mes);
         foreach (FacturaEnLista factura in facturasDelMes)
         {
             if (!porDia.TryGetValue(factura.Fecha.Day, out List<FacturaEnLista>? lista))
@@ -211,13 +347,15 @@ else if (MesActual is (int anio, int mes))
 
         if (delDia.Count == 1)
         {
-            navegacion.NavigateTo($"factura/{Uri.EscapeDataString(delDia[0].Numero)}");
+            Abrir(delDia[0]);
             return;
         }
 
-        // Varias facturas el mismo dia: alterna el selector en vez de adivinar cual abrir.
         diaExpandido = diaExpandido == dia ? null : dia;
     }
+
+    private void Abrir(FacturaEnLista factura) =>
+        navegacion.NavigateTo($"factura/{Uri.EscapeDataString(factura.Numero)}");
 
     // Lunes=0 ... domingo=6, para que coincida con el encabezado MON..SUN del grid.
     private static int PrimerDiaSemana(int anio, int mes) =>

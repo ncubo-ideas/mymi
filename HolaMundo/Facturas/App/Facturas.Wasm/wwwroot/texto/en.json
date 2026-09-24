@@ -104,6 +104,12 @@
       "total": "total"
     },
 
+    "vistas": {
+      "grupo": "Invoice view",
+      "calendario": "Calendar view",
+      "items": "Items view"
+    },
+
     "promo": {
       "region": "Promotions",
       "irA": "Go to promotion {numero}"

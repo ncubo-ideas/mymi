@@ -234,27 +234,42 @@ main.container { max-width: 40rem; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   display: flex;
   background: #fff;
-  box-shadow: 0 -2px 10px rgba(15, 80, 40, .08);
-  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -6px 22px rgba(15, 80, 40, .07), 0 -1px 0 rgba(15, 80, 40, .03);
+  padding: 7px 8px calc(7px + env(safe-area-inset-bottom, 0px));
 }
+/* Todo el item (mitad de la barra, >=52px de alto) es el area tactil. */
 .triunfo-nav-inferior__item {
-  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  background: none; border: none; padding: 2px 4px 6px;
-  font: inherit; font-size: 11px; font-weight: 600;
-  color: var(--triunfo-tinta-2); cursor: pointer;
+  flex: 1 1 0; min-height: 52px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  background: none; border: none; padding: 2px 4px;
+  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  color: #7d8f82; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .2s ease;
 }
-/* EL ESTADO ACTIVO, mas reconocible: pildora verde-muy-claro detras del icono -mismo
-   lenguaje que ya usa el boton de volver (triunfo-volver) en el resto de la app-, no
-   solo un cambio de color de texto (eso se pidio explicitamente reforzar). */
+/* ESTADO ACTIVO: pildora organica verde muy claro detras del icono, que sube 2px y
+   agranda apenas el icono (200ms). Inactivo: icono lineal apagado, sin fondo. */
 .triunfo-nav-inferior__icono {
   display: flex; align-items: center; justify-content: center;
-  width: 42px; height: 27px; border-radius: 14px;
-  transition: background-color .15s ease;
+  width: 56px; height: 30px; border-radius: 15px;
+  background: transparent;
+  transition: background-color .2s ease, transform .2s ease, box-shadow .2s ease;
 }
-.triunfo-nav-inferior__icono svg { width: 22px; height: 22px; }
-.triunfo-nav-inferior__item--activo .triunfo-nav-inferior__icono { background: var(--triunfo-menta); }
+.triunfo-nav-inferior__icono svg { width: 22px; height: 22px; transition: transform .2s ease; }
 .triunfo-nav-inferior__item--activo { color: var(--triunfo-verde-osc); font-weight: 700; }
-.triunfo-nav-inferior__item:focus-visible { outline: 2px solid var(--triunfo-verde-cl); outline-offset: -2px; border-radius: 8px; }
+.triunfo-nav-inferior__item--activo .triunfo-nav-inferior__icono {
+  background: #dcefe1;
+  box-shadow: inset 0 0 0 1px rgba(26, 122, 60, .10);
+  transform: translateY(-2px);
+}
+.triunfo-nav-inferior__item--activo .triunfo-nav-inferior__icono svg { transform: scale(1.06); }
+.triunfo-nav-inferior__item:not(.triunfo-nav-inferior__item--activo):hover { color: var(--triunfo-tinta-2); }
+.triunfo-nav-inferior__item:focus-visible { outline: none; }
+.triunfo-nav-inferior__item:focus-visible .triunfo-nav-inferior__icono { box-shadow: 0 0 0 2px var(--triunfo-verde-cl); }
+@media (prefers-reduced-motion: reduce) {
+  .triunfo-nav-inferior__icono, .triunfo-nav-inferior__icono svg { transition: none; }
+}
 
 /* El título de la pantalla y el color de acento, en verde. */
 h1 { color: var(--triunfo-verde-osc); font-weight: 700; letter-spacing: -.01em; font-size: 1.5rem; }
@@ -604,8 +619,8 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
    en el hero para que pueda sobresalir hacia la lista sin ser recortada. */
 .triunfo-invoices-hero {
   position: relative;
-  min-height: 148px;
-  margin: 10px 0 6px;
+  min-height: 118px;
+  margin: 10px 0 0;
   overflow: visible;
 }
 .triunfo-invoices-hero__texto {
@@ -622,7 +637,9 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
   margin: 10px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--triunfo-tinta-2);
 }
 .triunfo-invoices-hero__imagen {
-  position: absolute; right: -18px; top: -4px; z-index: 0;
+  /* right = -padding del .container (12px): la ilustracion toca el borde de la pantalla
+     sin pasarse -con -18px desbordaba 6px y generaba scroll horizontal en el telefono-. */
+  position: absolute; right: -12px; top: -4px; z-index: 0;
   width: clamp(160px, 50vw, 215px); height: auto;
   pointer-events: none;
 }
@@ -658,7 +675,7 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
 .triunfo-calendario__titulo { flex: 1 1 auto; min-width: 0; text-align: center; }
 .triunfo-calendario__mes {
   display: block;
-  font-family: var(--triunfo-serif); font-weight: 700; font-size: 19px;
+  font-family: var(--triunfo-serif); font-weight: 700; font-size: 21px;
   color: var(--triunfo-verde-osc);
 }
 /* El resumen real (cuenta + monto del mes) integrado aca, chico, en vez de otra tarjeta
@@ -722,6 +739,123 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
   display: flex; flex-direction: column; gap: 8px;
   margin-top: 16px;
 }
+
+/* SELECTOR Calendar / Items: dos iconos en un segmented control chiquito, por encima de
+   la ilustracion del hero (z-index) para que no compita con el titulo ni deje un hueco. */
+.triunfo-vistas {
+  position: relative; z-index: 3;
+  display: flex; gap: 2px; width: max-content;
+  margin: 0 auto 14px; padding: 3px;
+  background: #fff;
+  border: 1px solid var(--triunfo-linea);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(15, 80, 40, .06);
+}
+.triunfo-vistas__boton {
+  width: 40px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; color: #8a9b8f;
+  border: none; border-radius: 9px; cursor: pointer;
+  position: relative;
+  transition: background-color .18s ease, color .18s ease;
+}
+/* Area tactil de 44px aunque el boton se vea de 30px. */
+.triunfo-vistas__boton::before { content: ""; position: absolute; inset: -7px -2px; }
+.triunfo-vistas__boton svg { width: 18px; height: 18px; }
+.triunfo-vistas__boton:not(.triunfo-vistas__boton--activo):hover { color: var(--triunfo-tinta-2); }
+/* Activo: verde claro con borde interior sutil + icono verde oscuro mas grueso. */
+.triunfo-vistas__boton--activo {
+  background: #dcefe1; color: var(--triunfo-verde-osc);
+  box-shadow: inset 0 0 0 1px rgba(26, 122, 60, .14);
+}
+.triunfo-vistas__boton--activo svg { stroke-width: 2; }
+.triunfo-vistas__boton:focus-visible { outline: 2px solid var(--triunfo-verde-cl); outline-offset: 1px; }
+
+/* GRUPO POR MES: separador de agrupacion, mas chico que el titulo del calendario (que
+   es el mes que se esta mirando) y con linea fina. */
+.triunfo-grupo-mes { margin-top: 22px; }
+.triunfo-grupo-mes:first-of-type { margin-top: 18px; }
+.triunfo-grupo-mes__cabecera { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.triunfo-grupo-mes__titulo {
+  flex: none; margin: 0;
+  font-family: var(--triunfo-serif); font-weight: 700; font-size: 15px;
+  color: var(--triunfo-verde-osc);
+}
+.triunfo-grupo-mes__linea { flex: 1 1 auto; min-width: 12px; height: 1px; background: var(--triunfo-linea); }
+.triunfo-grupo-mes__resumen { flex: none; font-size: 11.5px; color: var(--triunfo-tinta-2); white-space: nowrap; }
+
+/* LISTA COMPACTA (vista Calendar): una fila por factura -fecha | alias/numero/items |
+   monto + chevron-. */
+.triunfo-lista-mes { display: flex; flex-direction: column; gap: 8px; }
+.triunfo-fila-mes {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 10px 12px 10px 14px; text-align: left; font: inherit;
+  background: var(--triunfo-carta); color: var(--triunfo-tinta);
+  border: 1px solid var(--triunfo-linea); border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 80, 40, .05);
+  cursor: pointer;
+}
+.triunfo-fila-mes:hover, .triunfo-fila-mes:focus-visible { border-color: var(--triunfo-verde-cl); outline: none; }
+.triunfo-fila-mes__fecha { flex: none; width: 50px; display: flex; flex-direction: column; line-height: 1.2; }
+.triunfo-fila-mes__dia { font-size: 13px; font-weight: 700; color: var(--triunfo-verde-osc); white-space: nowrap; }
+.triunfo-fila-mes__anio { font-size: 11px; color: var(--triunfo-tinta-2); }
+.triunfo-fila-mes__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.triunfo-fila-mes__alias {
+  font-size: 14px; font-weight: 700; color: var(--triunfo-naranja-osc);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.triunfo-fila-mes__numero {
+  font-size: 13.5px; font-weight: 700; color: var(--triunfo-tinta);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.triunfo-fila-mes__numero--secundario { font-size: 12px; font-weight: 500; color: var(--triunfo-tinta-2); }
+.triunfo-fila-mes__cantidad { font-size: 12px; color: var(--triunfo-tinta-2); }
+.triunfo-fila-mes__monto { flex: none; align-self: flex-end; font-size: 15px; font-weight: 700; color: var(--triunfo-verde-osc); white-space: nowrap; }
+.triunfo-fila-mes__chevron { flex: none; align-self: flex-end; width: 7px; height: 12px; margin-bottom: 4px; color: var(--triunfo-tinta-2); }
+
+/* TARJETAS (vista Items): blancas con sombra, ficha de fecha, jerarquia alias > numero,
+   monto serif con chevron. Sin icono: composicion limpia. */
+.triunfo-tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.triunfo-tarjeta-compra {
+  display: flex; flex-direction: column; min-width: 0;
+  padding: 14px 12px 12px 14px; text-align: left; font: inherit;
+  background: var(--triunfo-carta); color: var(--triunfo-tinta);
+  border: 1px solid var(--triunfo-linea); border-radius: 16px;
+  box-shadow: var(--triunfo-sombra);
+  cursor: pointer;
+}
+.triunfo-tarjeta-compra:hover, .triunfo-tarjeta-compra:focus-visible { border-color: var(--triunfo-verde-cl); outline: none; }
+.triunfo-tarjeta-compra__ficha {
+  align-self: flex-start;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 44px; padding: 5px 6px; line-height: 1.1;
+  background: var(--triunfo-menta); border-radius: 10px;
+}
+.triunfo-tarjeta-compra__dia { font-size: 17px; font-weight: 700; color: var(--triunfo-verde-osc); }
+.triunfo-tarjeta-compra__mes { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--triunfo-verde-osc); }
+.triunfo-tarjeta-compra__anio { font-size: 9.5px; color: var(--triunfo-tinta-2); }
+.triunfo-tarjeta-compra__info { display: flex; flex-direction: column; min-width: 0; margin-top: 12px; }
+.triunfo-tarjeta-compra__alias {
+  font-size: 14px; font-weight: 700; color: var(--triunfo-naranja-osc);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.triunfo-tarjeta-compra__numero {
+  font-size: 13.5px; font-weight: 700; color: var(--triunfo-tinta);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.triunfo-tarjeta-compra__numero--secundario { font-size: 12px; font-weight: 500; color: var(--triunfo-tinta-2); }
+.triunfo-tarjeta-compra__cantidad { margin-top: 2px; font-size: 12px; color: var(--triunfo-tinta-2); }
+.triunfo-tarjeta-compra__abajo { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; padding-top: 10px; }
+.triunfo-tarjeta-compra__monto {
+  min-width: 0; font-family: var(--triunfo-serif); font-weight: 700; font-size: 18px;
+  color: var(--triunfo-verde-osc); white-space: nowrap;
+}
+.triunfo-tarjeta-compra__chevron {
+  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--triunfo-menta); color: var(--triunfo-verde-osc);
+}
+.triunfo-tarjeta-compra__chevron svg { width: 6px; height: 11px; }
 
 /* ----------------------------------------------------------------------------
    ESTADOS. Reemplaza los `alert` planos de Bootstrap por una tarjeta con la
@@ -926,17 +1060,21 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
   min-height: calc(100vh - 236px);
 }
 
-/* PURCHASE + ILUSTRACION: plano de ATRAS (z-index:1). El icono ahora tiene
-   presencia real -circulo 50px, canasta 26px adentro-, nada de icono diminuto.
-   Ya NO muestra "N items" aca -se movio al Total, para no repetir el dato-.
-   padding-bottom grande reserva el lugar donde la factura (mas abajo) va a
-   montarse encima; el margin-bottom muy negativo de la ilustracion la deja
-   descender hacia esa misma zona, para que la factura la tape parcialmente al
-   superponerse -el efecto 2D que se pidio, sin recortar la imagen en si-. */
+/* PURCHASE: icono + alias/numero + fecha. padding-bottom reserva el lugar donde el
+   recibo (margin-top negativo) se monta. Capas: fondo verde < texto del hero < recibo
+   (z 2) < ilustracion (z 3, ver .triunfo-compra-hero__imagen). */
+/* SIN z-index a proposito: si el hero creara su propio stacking context, la ilustracion
+   (hija) nunca podria quedar por encima del recibo (z-index:2), por alto que fuera su
+   z-index. Asi la ilustracion compite en el mismo contexto que el recibo. */
 .triunfo-compra-hero {
-  position: relative; z-index: 1;
+  position: relative;
   display: flex; align-items: flex-start; gap: 14px;
   padding-bottom: 44px;
+  /* Alto minimo derivado del alto de la ilustracion (ancho x 574/900, la proporcion
+     real de detalle-hero.png): sin alias el hero es bajo y la ilustracion, anclada al
+     pie, subia hasta la fila del titulo y chocaba con "Purchase #TQ-0002" y el lapiz.
+     Asi su borde superior siempre queda debajo de esa primera fila. */
+  min-height: calc(43px + clamp(112px, 33vw, 150px) * .638);
   padding-right: 84px; /* le hace lugar a la ilustracion (position:absolute, ver abajo) */
 }
 .triunfo-compra-hero__icono-circulo {
@@ -1000,10 +1138,16 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
 .triunfo-alias-editor__quitar:hover, .triunfo-alias-editor__cancelar:hover { text-decoration: underline; }
 .triunfo-alias-editor__guardar:hover { color: var(--triunfo-verde); text-decoration: underline; }
 
+/* ILUSTRACION EN PRIMER PLANO (z-index:3 > recibo 2): anclada al PIE del hero, que es
+   donde empieza el recibo (margin-top:-44px), asi su parte inferior se monta ~34px
+   sobre la esquina superior derecha del papel -zona vacia: el eyebrow "N ITEMS" esta a
+   la izquierda y la primera linea empieza ~55px mas abajo-. drop-shadow sigue el canal
+   alfa del PNG, no una caja. */
 .triunfo-compra-hero__imagen {
-  position: absolute; right: -4px; top: 2px;
-  width: clamp(88px, 26vw, 132px); height: auto;
+  position: absolute; right: -6px; bottom: 10px; z-index: 3;
+  width: clamp(112px, 33vw, 150px); height: auto; margin: 0;
   pointer-events: none;
+  filter: drop-shadow(0 6px 7px rgba(25, 70, 45, .20));
 }
 
 /* EL RECIBO, CONSTRUIDO CON CSS -SIN factura.svg (autorizacion explicita: el SVG daba

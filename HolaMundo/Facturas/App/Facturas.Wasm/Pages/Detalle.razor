@@ -51,13 +51,9 @@ else
        superficie, que es mas ANCHA que la factura misma -eso es lo que antes faltaba: todo
        tenia el mismo ancho y se sentia una sola caja rectangular-.
 
-       PURCHASE (icono grande + numero + fecha, SIN "items" -eso se movio abajo, con el
-       total, para no repetirlo-) e ILUSTRACION quedan en el plano de atras (z-index:1).
-       La FACTURA (factura.svg, mas angosta, con su propio recorte de papel ya resuelto en
-       el SVG -por eso no hay otro zigzag CSS compitiendo con el-) se monta ENCIMA con
-       margin-top negativo + z-index mas alto: invade el area de Purchase a proposito, ese
-       solapamiento es el efecto de profundidad que se pidio. El TOTAL queda FUERA de la
-       hoja blanca, de nuevo sobre el fondo #F0F5EB, como cierre de la composicion. *@
+       Capas: fondo verde < PURCHASE < RECIBO (margin-top negativo, invade el area de
+       Purchase) < ILUSTRACION, que se proyecta por encima de la esquina superior derecha
+       del papel. El TOTAL queda FUERA de la hoja blanca, sobre el fondo #F0F5EB. *@
     <div class="triunfo-factura-fondo">
         <div class="triunfo-compra-hero">
             <span class="triunfo-compra-hero__icono-circulo" aria-hidden="true">
