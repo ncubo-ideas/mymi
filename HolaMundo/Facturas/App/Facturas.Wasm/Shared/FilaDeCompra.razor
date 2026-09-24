@@ -1,0 +1,80 @@
+@using Facturas.App.Vistas
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+@inject Textos textos
+@inject AlmacenDeAlias almacenAlias
+
+@* UNA FILA DE "Recent purchases" / "My invoices", en un solo componente porque ahora vive
+   en DOS pantallas (la vista previa de Home y la lista completa) y la persona pidio
+   explicitamente "no crear una segunda lista" -esto es reutilizar el mismo marcado, no
+   duplicarlo-.
+
+   LA FICHA DE FECHA (dia grande / mes / año) separa dia de hora a proposito: la hora no
+   es prioritaria aca y queda disponible en el detalle (textos.Instante() la sigue
+   mostrando ahi, sin cambios). El mes usa MesCorto(), que habla el idioma negociado -"Aug"
+   en ingles, nunca "Ago" a la fuerza-.
+
+   "N items" es la SUMA REAL de Cantidad de cada linea (via Detalle(), que es una lectura
+   local y sincronica -ver el comentario de FacturasSurface/EstadoDeLaApp-, no una consulta
+   nueva ni un dato inventado). NO es lo mismo que Factura.Lineas (la cantidad de lineas/SKUs
+   distintos): esta pantalla mostraba antes "3 lines" para una factura con 3 lineas pero,
+   por ejemplo, 4 unidades reales compradas (2 huevos x12 cuentan como una linea, dos
+   unidades). "Items" tiene que ser la suma de unidades para no decir menos de lo que
+   realmente se compro. *@
+<button type="button" class="factura-fila @(Destacada ? "factura-fila--destacada" : "")" @onclick="Abrir" aria-label="@Etiqueta">
+    <div class="factura-fila__fecha-ficha" aria-hidden="true">
+        <span class="factura-fila__fecha-dia">@Factura.Fecha.Day</span>
+        <span class="factura-fila__fecha-mes">@textos.MesCorto(Factura.Fecha)</span>
+        <span class="factura-fila__fecha-anio">@Factura.Fecha.Year</span>
+    </div>
+    <span class="factura-fila__icono-fondo" aria-hidden="true">
+        <img src="brand/iconos/icono-canasta.png" alt="" class="factura-fila__icono" />
+    </span>
+    <div class="factura-fila__info">
+        @* EL ALIAS PERSONAL (si existe) toma el lugar principal, igual que en Invoice
+           detail: mayor jerarquia que el numero tecnico, que pasa a secundario debajo.
+           Sin alias, el numero vuelve a ser la linea principal -sin fila de mas-. *@
+        @if (Alias.Length > 0)
+        {
+            <span class="factura-fila__alias">@Alias</span>
+        }
+        <span class="factura-fila__numero @(Alias.Length > 0 ? "factura-fila__numero--secundario" : "")">
+            @textos.Con("misFacturas.compra.titulo", ("numero", Factura.Numero))
+        </span>
+        <span class="factura-fila__cantidad">
+            @textos.Con(Unidades == 1 ? "comun.cantidadItems.una" : "comun.cantidadItems.varias",
+                        ("cuantas", textos.Cuenta(Unidades)))
+        </span>
+    </div>
+    <div class="factura-fila__monto">
+        <span class="factura-fila__total">@textos.Monto(Factura.Total)</span>
+        <svg class="factura-fila__chevron" viewBox="0 0 8 14" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M1.5 1.5 6.5 7l-5 5.5" />
+        </svg>
+    </div>
+</button>
+
+@code {
+    [Parameter, EditorRequired]
+    public FacturaEnLista Factura { get; set; } = default!;
+
+    // Modificador SOLO visual (mas radio, sombra y aire) para la version elaborada que
+    // pidio "My invoices". Home sigue pasando este parametro en false -su valor por
+    // defecto-, asi que su aspecto no cambia con este ajuste.
+    [Parameter]
+    public bool Destacada { get; set; }
+
+    // Suma de Cantidad de cada linea real de ESTA factura. Detalle() es una lectura local
+    // (FacturasSurface la documenta como sincronica, sin red), asi que llamarla una vez
+    // por fila -incluso en una lista de varias- no pega contra el proveedor ni bloquea.
+    private int Unidades => estado.Detalle(Factura.Numero).Lineas.Sum(l => l.Cantidad);
+
+    // Sincrono: quien renderiza esta fila (Home/ListaDeFacturas) ya llamo
+    // AlmacenDeAlias.CargarAsync() en su propio OnInitializedAsync.
+    private string Alias => almacenAlias.Obtener(Factura.Numero);
+
+    private string Etiqueta => textos.Con("misFacturas.abrirDetalle", ("numero", Factura.Numero));
+
+    private void Abrir() => navegacion.NavigateTo($"factura/{Uri.EscapeDataString(Factura.Numero)}");
+}

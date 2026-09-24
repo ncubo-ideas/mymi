@@ -3,56 +3,166 @@
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 @inject Textos textos
+@inject AlmacenDeAlias almacenAlias
 
 <PageTitle>@textos.Con("detalle.titulo", ("numero", Numero))</PageTitle>
 
-<button class="btn btn-outline-secondary mb-3" @onclick="Volver">&larr; @textos["detalle.volver"]</button>
+@* NAVEGACION: "Invoice detail" siempre vuelve a "My invoices" (/facturas), sea cual sea
+   el origen real del click (la vista previa de Home o la lista completa). Es la regla
+   simple que se pidio en vez de rastrear de donde vino la persona -Blazor no trae un
+   history stack propio mas alla del history del browser, y armar uno paralelo solo para
+   esto seria la "arquitectura nueva" que se pidio evitar-. El back del navegador sigue
+   funcionando igual que siempre; esto es una salida ADEMAS, no en reemplazo. *@
+<div class="triunfo-subpagina-encabezado">
+    <button type="button" class="triunfo-volver" @onclick="Volver" aria-label="@textos["comun.volverAMisFacturas"]">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12.5 4 6.5 10l6 6" />
+        </svg>
+    </button>
+    <h1 class="triunfo-subpagina-titulo">@textos["detalle.encabezado"]</h1>
+</div>
 
 @if (!estado.EstaArriba)
 {
-    <div class="alert alert-warning">
-        @((MarkupString)textos["detalle.sinAbrir"])
+    <div class="estado-tarjeta">
+        <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 5.7a1 1 0 0 1 1-1h3.8l1.5 1.8h7.7a1 1 0 0 1 1 1v6.8a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1z" />
+        </svg>
+        <div class="estado-tarjeta__cuerpo">@((MarkupString)textos["detalle.sinAbrir"])</div>
     </div>
 }
 else if (error.Length > 0)
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="estado-tarjeta estado-tarjeta--error">
+        <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 2.6 18 16.8H2z" />
+            <path d="M10 8.2v3.6" />
+            <circle cx="10" cy="14.4" r="1" fill="currentColor" stroke="none" />
+        </svg>
+        <div class="estado-tarjeta__cuerpo">@error</div>
+    </div>
 }
 else
 {
-    <h1>@textos.Con("detalle.titulo", ("numero", detalle.Numero))</h1>
-    <p class="text-muted">
-        @textos.Instante(detalle.Fecha)
-    </p>
+    @* CAPA DE FONDO (#F0F5EB): todo -purchase, factura, total- vive apoyado sobre esta
+       superficie, que es mas ANCHA que la factura misma -eso es lo que antes faltaba: todo
+       tenia el mismo ancho y se sentia una sola caja rectangular-.
 
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th>@textos["detalle.columna.sku"]</th><th>@textos["detalle.columna.descripcion"]</th>
-                <th class="text-end">@textos["detalle.columna.cantidad"]</th>
-                <th class="text-end">@textos["detalle.columna.costoUnitario"]</th>
-                <th class="text-end">@textos["detalle.columna.total"]</th>
-            </tr>
-        </thead>
-        <tbody>
+       Capas: fondo verde < PURCHASE < RECIBO (margin-top negativo, invade el area de
+       Purchase) < ILUSTRACION, que se proyecta por encima de la esquina superior derecha
+       del papel. El TOTAL queda FUERA de la hoja blanca, sobre el fondo #F0F5EB. *@
+    <div class="triunfo-factura-fondo">
+        <div class="triunfo-compra-hero">
+            <span class="triunfo-compra-hero__icono-circulo" aria-hidden="true">
+                <img src="brand/iconos/icono-canasta.png" alt="" />
+            </span>
+            <div class="triunfo-compra-hero__texto">
+                @if (editandoAlias)
+                {
+                    @* EDITOR CHICO, no un input permanente: aparece solo al tocar el lapiz y
+                       desaparece al guardar/cancelar. maxlength es un limite razonable de UI,
+                       no una regla de dominio -el alias no es dato del proveedor-. *@
+                    <div class="triunfo-alias-editor">
+                        <input @ref="inputAlias" class="triunfo-alias-editor__input" maxlength="60"
+                               placeholder="@textos["detalle.alias.agregar"]"
+                               aria-label="@textos["detalle.alias.agregar"]"
+                               value="@borradorAlias" @oninput="@((ChangeEventArgs e) => borradorAlias = e.Value?.ToString() ?? "")"
+                               @onkeydown="@(async (KeyboardEventArgs e) => { if (e.Key == "Enter") await GuardarAlias(); else if (e.Key == "Escape") CancelarAlias(); })" />
+                        <div class="triunfo-alias-editor__acciones">
+                            @if (alias.Length > 0)
+                            {
+                                <button type="button" class="triunfo-alias-editor__quitar" @onclick="QuitarAlias">@textos["detalle.alias.quitar"]</button>
+                            }
+                            <span class="triunfo-alias-editor__espaciador"></span>
+                            <button type="button" class="triunfo-alias-editor__cancelar" @onclick="CancelarAlias">@textos["comun.cancelar"]</button>
+                            <button type="button" class="triunfo-alias-editor__guardar" @onclick="GuardarAlias">@textos["comun.guardar"]</button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @* EL ALIAS, cuando existe, tiene MAS jerarquia que "Purchase #TQ-0003" -pedido
+                       explicito: es la etiqueta humana, el numero tecnico pasa a secundario-. Sin
+                       alias, "Purchase #TQ-0003" vuelve a ser la linea principal, como antes. *@
+                    <div class="triunfo-compra-hero__fila-editable">
+                        <span class="@(alias.Length > 0 ? "triunfo-compra-hero__alias" : "triunfo-compra-hero__numero")">
+                            @if (alias.Length > 0)
+                            {
+                                @alias
+                            }
+                            else
+                            {
+                                @textos["detalle.hero.etiqueta"] <span class="triunfo-compra-hero__codigo">#@Numero</span>
+                            }
+                        </span>
+                        <button type="button" class="triunfo-compra-hero__editar" @onclick="EmpezarEdicionAlias"
+                                aria-label="@textos[alias.Length > 0 ? "detalle.alias.editar" : "detalle.alias.agregar"]">
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M13.5 3.5 16.5 6.5 7 16H4v-3z" />
+                            </svg>
+                        </button>
+                    </div>
+                    @if (alias.Length > 0)
+                    {
+                        @* "#{numero}" en su propio span con white-space:nowrap -el codigo real
+                           (p.ej. "TQ-0003") no se debe partir a mitad del guion si la linea envuelve. *@
+                        <span class="triunfo-compra-hero__numero triunfo-compra-hero__numero--secundario">
+                            @textos["detalle.hero.etiqueta"] <span class="triunfo-compra-hero__codigo">#@Numero</span>
+                        </span>
+                    }
+                }
+                <span class="triunfo-compra-hero__fecha">
+                    @detalle.Fecha.Day @textos.MesCorto(detalle.Fecha) @detalle.Fecha.Year
+                    &middot;
+                    @detalle.Fecha.ToString("HH:mm")
+                </span>
+            </div>
+            <img src="brand/detalle-hero.png" alt="" aria-hidden="true" class="triunfo-compra-hero__imagen" />
+        </div>
+
+        @* EL RECIBO, CONSTRUIDO CON CSS -SIN factura.svg-. El SVG obligaba a un <img> cuyo
+           layout (width/height:100%) dependia de que el navegador recalculara correctamente
+           contra un contenido que cambia de alto por factura; en la practica eso fallaba de
+           forma inconsistente (ancho distinto entre TQ-0002/TQ-0001 vs TQ-0003) y no se pudo
+           volver confiable. Un <div> con width:100% de un padre de ancho FIJO nunca tiene ese
+           problema: su ancho no depende del navegador "recalculando" nada, es aritmetica de
+           layout basica. Mismo criterio de antes -width:100% del content-box de
+           .triunfo-factura-fondo, @@key="Numero" para que cada factura sea una identidad
+           nueva- pero ahora sin ningun asset de por medio. *@
+        <div class="triunfo-recibo" @key="Numero">
+            @* El label ya NO es "Items" fijo: es la cuenta real de unidades -misma logica de
+               SUM(Cantidad) que el resto de la app, nunca Detalle(numero).Count- y el
+               text-transform:uppercase del CSS la deja "4 ITEMS" / "1 ITEM" en pantalla. *@
+            <p class="triunfo-eyebrow triunfo-recibo__titulo">
+                @textos.Con(Unidades == 1 ? "comun.cantidadItems.una" : "comun.cantidadItems.varias",
+                            ("cuantas", textos.Cuenta(Unidades)))
+            </p>
             @foreach (LineaDeFactura linea in detalle.Lineas)
             {
-                <tr>
-                    <td><code>@linea.Sku</code></td>
-                    <td>@linea.Descripcion</td>
-                    <td class="text-end">@textos.Cuenta(linea.Cantidad)</td>
-                    <td class="text-end">@textos.Monto(linea.CostoUnitario)</td>
-                    <td class="text-end">@textos.Monto(linea.TotalDeLinea)</td>
-                </tr>
+                <div class="recibo-linea">
+                    <div class="recibo-linea__quien">
+                        <div class="recibo-linea__descripcion">@linea.Descripcion</div>
+                        <div class="recibo-linea__meta">
+                            <span class="recibo-linea__sku">@linea.Sku</span>
+                            <span>@textos.Cuenta(linea.Cantidad) &times; @textos.Monto(linea.CostoUnitario)</span>
+                        </div>
+                    </div>
+                    <div class="recibo-linea__importe">
+                        <div class="recibo-linea__total">@textos.Monto(linea.TotalDeLinea)</div>
+                    </div>
+                </div>
             }
-        </tbody>
-        <tfoot>
-            <tr class="fw-bold">
-                <td colspan="4" class="text-end">@textos["detalle.columna.total"]</td>
-                <td class="text-end">@textos.Monto(detalle.Total)</td>
-            </tr>
-        </tfoot>
-    </table>
+        </div>
+
+        <div class="triunfo-factura-total">
+            <span class="triunfo-factura-total__etiqueta">@textos["detalle.columna.total"]</span>
+            <span class="triunfo-factura-total__cifra">@textos.Monto(detalle.Total)</span>
+        </div>
+    </div>
 }
 
 @code {
@@ -61,9 +171,24 @@ else
     private FacturaDetallada detalle = new();
     private string error = "";
 
-    protected override void OnParametersSet()
+    // Misma logica que FilaDeCompra.Unidades: suma real de Cantidad por linea, no la
+    // cantidad de lineas/SKUs (detalle.Lineas.Count). Ver el comentario de esa fila para
+    // el porque -aca importa igual para que "N items" del cierre no diga menos de lo que
+    // realmente se compro.
+    private int Unidades => detalle.Lineas.Sum(l => l.Cantidad);
+
+    // EL ALIAS PERSONAL. Vive en AlmacenDeAlias (localStorage del origen), no en
+    // detalle/Vistas.cs: ver el comentario largo de AlmacenDeAlias.cs sobre por que no
+    // se agrego al dominio ni a la proyeccion compartida con el servidor MCP.
+    private string alias = "";
+    private bool editandoAlias;
+    private string borradorAlias = "";
+    private ElementReference inputAlias;
+
+    protected override async Task OnParametersSetAsync()
     {
         error = "";
+        editandoAlias = false;
         if (!estado.EstaArriba) return;
 
         // El dominio tira KeyNotFoundException si el numero no existe; la pantalla lo
@@ -71,7 +196,49 @@ else
         try { detalle = estado.Detalle(Numero); }
         catch (KeyNotFoundException) { error = textos.Con("detalle.noExiste", ("numero", Numero)); }
         catch (Exception ex) { error = textos.Con("detalle.fallo", ("numero", Numero), ("detalle", ex.Message)); }
+
+        if (error.Length == 0)
+        {
+            await almacenAlias.CargarAsync();
+            alias = almacenAlias.Obtener(Numero);
+        }
     }
 
-    private void Volver() => navegacion.NavigateTo("");
+    private void EmpezarEdicionAlias()
+    {
+        borradorAlias = alias;
+        editandoAlias = true;
+        enfocarInputAlias = true;
+    }
+
+    private void CancelarAlias() => editandoAlias = false;
+
+    private async Task GuardarAlias()
+    {
+        await almacenAlias.GuardarAsync(Numero, borradorAlias);
+        alias = almacenAlias.Obtener(Numero);
+        editandoAlias = false;
+    }
+
+    private async Task QuitarAlias()
+    {
+        await almacenAlias.GuardarAsync(Numero, "");
+        alias = "";
+        borradorAlias = "";
+        editandoAlias = false;
+    }
+
+    // Foco automatico al abrir el editor: un input que aparece y no recibe el cursor
+    // obliga a un tap extra, y el editor solo vive un instante en pantalla.
+    private bool enfocarInputAlias;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!enfocarInputAlias) return;
+        enfocarInputAlias = false;
+        try { await inputAlias.FocusAsync(); }
+        catch (JSException) { }
+    }
+
+    private void Volver() => navegacion.NavigateTo("facturas");
 }

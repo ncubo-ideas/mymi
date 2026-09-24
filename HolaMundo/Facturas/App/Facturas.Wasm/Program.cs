@@ -26,6 +26,11 @@ builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetR
 // journal. Singleton por la misma razon que el puente: es estado de la instalacion.
 builder.Services.AddSingleton<AlmacenDeCredencial>(sp => new AlmacenDeCredencial(sp.GetRequiredService<IJSRuntime>()));
 
+// EL ALIAS PERSONAL DE UNA FACTURA, mismo criterio que la credencial: storage del
+// browser del origen, no el journal. Singleton para que el cache en memoria (una vez
+// cargado) sirva a cualquier pantalla sin releer JS por cada fila.
+builder.Services.AddSingleton<AlmacenDeAlias>(sp => new AlmacenDeAlias(sp.GetRequiredService<IJSRuntime>()));
+
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se
 // construye una vez y se mantiene alcanzable mientras la app vive.
 builder.Services.AddSingleton<EstadoDeLaApp>();
