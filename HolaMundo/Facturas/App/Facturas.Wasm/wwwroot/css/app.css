@@ -211,6 +211,51 @@ code {
    dashboard -no hace falta el ancho completo del layout de Bootstrap. */
 main.container { max-width: 40rem; }
 
+/* Aire reservado abajo de TODO el contenido para que la navegacion inferior fija
+   (position:fixed, ver .triunfo-nav-inferior) nunca tape la ultima linea/boton de
+   ninguna pantalla. 60-70px de barra real + safe-area + un respiro.
+   !important: .py-4 de Bootstrap fija su padding-bottom con !important (asi estan
+   escritas TODAS las utilities de espaciado de Bootstrap), y app.css carga despues de
+   bootstrap.min.css en index.html -sin !important aca, .py-4 seguia ganando y el
+   padding real medido en Browser quedaba en los 24px de siempre, no en los ~78px
+   pedidos-. */
+.triunfo-main { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important; }
+/* Ver el comentario en MainLayout.razor: pinta el mismo verde de .triunfo-factura-fondo
+   en <main> SOLO para Invoice detail, para que el padding-bottom de arriba (que cae
+   despues del fondo) no deje una franja blanca antes de la navegacion inferior. */
+.triunfo-main--detalle { background: var(--triunfo-fondo-factura); }
+
+/* ----------------------------------------------------------------------------
+   NAVEGACION INFERIOR (MainLayout.razor). SOLO Home e Invoices -mobile-first,
+   fija abajo, con su propia safe-area-. Fondo blanco + sombra muy suave hacia
+   arriba (no un borde solido) para separarse del contenido sin verse pesada.
+   -------------------------------------------------------------------------- */
+.triunfo-nav-inferior {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex;
+  background: #fff;
+  box-shadow: 0 -2px 10px rgba(15, 80, 40, .08);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+}
+.triunfo-nav-inferior__item {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; padding: 2px 4px 6px;
+  font: inherit; font-size: 11px; font-weight: 600;
+  color: var(--triunfo-tinta-2); cursor: pointer;
+}
+/* EL ESTADO ACTIVO, mas reconocible: pildora verde-muy-claro detras del icono -mismo
+   lenguaje que ya usa el boton de volver (triunfo-volver) en el resto de la app-, no
+   solo un cambio de color de texto (eso se pidio explicitamente reforzar). */
+.triunfo-nav-inferior__icono {
+  display: flex; align-items: center; justify-content: center;
+  width: 42px; height: 27px; border-radius: 14px;
+  transition: background-color .15s ease;
+}
+.triunfo-nav-inferior__icono svg { width: 22px; height: 22px; }
+.triunfo-nav-inferior__item--activo .triunfo-nav-inferior__icono { background: var(--triunfo-menta); }
+.triunfo-nav-inferior__item--activo { color: var(--triunfo-verde-osc); font-weight: 700; }
+.triunfo-nav-inferior__item:focus-visible { outline: 2px solid var(--triunfo-verde-cl); outline-offset: -2px; border-radius: 8px; }
+
 /* El título de la pantalla y el color de acento, en verde. */
 h1 { color: var(--triunfo-verde-osc); font-weight: 700; letter-spacing: -.01em; font-size: 1.5rem; }
 a, .btn-link { color: var(--triunfo-verde); }
@@ -484,33 +529,6 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
   .triunfo-hero__evolucion { flex-basis: 100%; max-width: none; }
 }
 
-/* ----------------------------------------------------------------------------
-   ACCESOS RAPIDOS. Se revisaron las rutas reales (solo "/" y "/factura/{Numero}"
-   existen) y Offers/Cupones se QUITARON del marcado -no quedaron como inertes-:
-   no hay pantalla real a la que lleven. Por eso el layout es flex CENTRADO con
-   gap fijo, no space-between con flex:1 por hijo -eso era para repartir tres
-   elementos iguales a todo el ancho; con uno solo se veria descentrado y con
-   dos tercios de aire vacio a los lados-. Centrado reparte con elegancia sea
-   cual sea la cantidad de accesos reales que haya.
-
-   EL ICONO ES EL DEL SPRITE (wwwroot/brand/iconos/, recortado de
-   sprite-triunfo.png) -no un dibujo propio en CSS-, con su circulo suave y su
-   sombra 3D ya incluidos en el PNG: por eso no hay un circulo de color
-   dibujado por CSS detras, seria un circulo sobre otro circulo.
-   -------------------------------------------------------------------------- */
-.triunfo-accesos { display: flex; justify-content: center; gap: 32px; margin: 4px 0 22px; }
-.triunfo-acceso {
-  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  background: none; border: none; padding: 0; text-align: center;
-  color: inherit; font: inherit; cursor: pointer;
-}
-.triunfo-acceso__icono {
-  width: 66px; height: 66px; object-fit: contain;
-  transition: transform .15s ease;
-}
-.triunfo-acceso:hover .triunfo-acceso__icono,
-.triunfo-acceso:focus-visible .triunfo-acceso__icono { transform: translateY(-2px); }
-.triunfo-acceso__etiqueta { font-size: 12.5px; font-weight: 600; color: var(--triunfo-tinta); }
 
 /* ----------------------------------------------------------------------------
    EL CARRUSEL DE PROMOCIONES. scroll-snap nativo (cero dependencias) para el
@@ -609,13 +627,101 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
   pointer-events: none;
 }
 
-/* Encabezado liviano de la lista completa: mayuscula chica + cuenta real de
-   facturas a la derecha (mismas claves de conteo que ya usa el resumen de Home). */
-.triunfo-lista-encabezado {
-  display: flex; align-items: baseline; justify-content: space-between;
-  margin: 4px 2px 10px;
+/* ----------------------------------------------------------------------------
+   EL CALENDARIO de "My invoices" (ListaDeFacturas.razor). Responde "¿cuándo compré y
+   cuánto gasté?" de un vistazo -pedido explicito de dejar de ser una lista vertical-.
+   Blanco + #F0F5EB + verde institucional + naranja de acento, radios generosos, sombras
+   muy suaves: mismo lenguaje organico del resto de la app, no un calendario
+   administrativo. Los meses navegables salen SOLO de Facturas() (mesesConDatos en el
+   code-behind); nunca se puede llegar a un mes sin datos.
+   -------------------------------------------------------------------------- */
+.triunfo-calendario { margin: 6px 0 4px; }
+
+.triunfo-calendario__cabecera {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 16px;
 }
-.triunfo-lista-encabezado__cuenta { font-size: 12.5px; color: var(--triunfo-tinta-2); }
+.triunfo-calendario__nav {
+  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--triunfo-menta); color: var(--triunfo-verde-osc);
+  border: none; cursor: pointer;
+}
+.triunfo-calendario__nav svg { width: 16px; height: 16px; }
+.triunfo-calendario__nav:hover:not(:disabled), .triunfo-calendario__nav:focus-visible:not(:disabled) {
+  background: var(--triunfo-verde); color: #fff; outline: none;
+}
+/* Sin datos para ir mas atras/adelante: el control desaparece visualmente (opacity) en
+   vez de mostrar una flecha que llevaria a un mes inventado. */
+.triunfo-calendario__nav:disabled { opacity: 0; pointer-events: none; }
+
+.triunfo-calendario__titulo { flex: 1 1 auto; min-width: 0; text-align: center; }
+.triunfo-calendario__mes {
+  display: block;
+  font-family: var(--triunfo-serif); font-weight: 700; font-size: 19px;
+  color: var(--triunfo-verde-osc);
+}
+/* El resumen real (cuenta + monto del mes) integrado aca, chico, en vez de otra tarjeta
+   aparte -pedido explicito de "no otra card enorme"-. */
+.triunfo-calendario__resumen { display: block; margin-top: 2px; font-size: 12.5px; color: var(--triunfo-tinta-2); }
+
+.triunfo-calendario__diassemana {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+.triunfo-calendario__diassemana span {
+  text-align: center;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .03em;
+  color: var(--triunfo-tinta-2);
+}
+
+.triunfo-calendario__grilla { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+
+.triunfo-calendario__celda {
+  min-height: 50px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 12px;
+}
+.triunfo-calendario__celda--vacia { visibility: hidden; }
+.triunfo-calendario__celda--sin-compra { color: var(--triunfo-tinta-2); }
+.triunfo-calendario__celda--sin-compra .triunfo-calendario__celda-dia { font-size: 12.5px; font-weight: 500; }
+
+/* EL DIA CON COMPRA: la celda destacada -fondo verde muy claro, dia con mas peso, monto
+   real debajo, toda la celda tappable. Sin naranja aca -el naranja de acento vive en el
+   basket de las filas/hero, este calendario lo deja como color neutro de fondo para no
+   competir con el-. */
+.triunfo-calendario__celda--compra {
+  background: var(--triunfo-menta);
+  border: none; cursor: pointer; font: inherit; padding: 4px 2px;
+  box-shadow: 0 1px 3px rgba(15, 80, 40, .06);
+}
+.triunfo-calendario__celda--compra:hover, .triunfo-calendario__celda--compra:focus-visible {
+  background: var(--triunfo-verde-cl); outline: none;
+}
+.triunfo-calendario__celda--compra:hover .triunfo-calendario__celda-dia,
+.triunfo-calendario__celda--compra:hover .triunfo-calendario__celda-monto,
+.triunfo-calendario__celda--compra:focus-visible .triunfo-calendario__celda-dia,
+.triunfo-calendario__celda--compra:focus-visible .triunfo-calendario__celda-monto { color: #fff; }
+.triunfo-calendario__celda--seleccionada {
+  background: var(--triunfo-verde);
+}
+.triunfo-calendario__celda--seleccionada .triunfo-calendario__celda-dia,
+.triunfo-calendario__celda--seleccionada .triunfo-calendario__celda-monto { color: #fff; }
+.triunfo-calendario__celda--compra .triunfo-calendario__celda-dia {
+  font-size: 13.5px; font-weight: 700; color: var(--triunfo-verde-osc);
+}
+.triunfo-calendario__celda--compra .triunfo-calendario__celda-monto {
+  margin-top: 1px; font-size: 7.5px; font-weight: 700; color: var(--triunfo-verde-osc);
+  white-space: nowrap;
+}
+
+/* EL SELECTOR de varios en un mismo dia: aparece debajo de la grilla, no como modal
+   -mismo criterio "sin capas nuevas" del resto de la app-. Reutiliza FilaDeCompra tal
+   cual, mismo gap que .facturas-lista. */
+.triunfo-calendario__selector {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 16px;
+}
 
 /* ----------------------------------------------------------------------------
    ESTADOS. Reemplaza los `alert` planos de Bootstrap por una tarjeta con la
@@ -720,6 +826,11 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
 .factura-fila--destacada .factura-fila__numero { font-size: 14.5px; font-weight: 700; }
 .factura-fila--destacada .factura-fila__total { font-size: 16.5px; }
 .factura-fila--destacada .factura-fila__fecha-ficha { width: 42px; border-radius: 12px; padding: 6px 2px; }
+/* Sin esto, la regla de arriba (misma especificidad, ".factura-fila--destacada
+   .factura-fila__numero") pisaria el tamano chico/secundario cuando hay alias en "My
+   invoices": el numero volveria a verse grande aunque el alias ya este ocupando su lugar. */
+.factura-fila--destacada .factura-fila__numero--secundario { font-size: 11.5px; font-weight: 500; }
+.factura-fila--destacada .factura-fila__alias { font-size: 14.5px; }
 
 .factura-fila__fecha-ficha {
   flex: none; width: 40px;
@@ -757,10 +868,17 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
 .factura-fila--destacada .factura-fila__icono { width: 25px; height: 25px; }
 
 .factura-fila__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.factura-fila__alias {
+  font-size: 13.5px; font-weight: 700; color: var(--triunfo-tinta);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .factura-fila__numero {
   font-size: 13.5px; font-weight: 600; color: var(--triunfo-tinta);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Cuando hay alias, el numero tecnico pasa a secundario -mismo criterio que Invoice
+   detail: el alias es la etiqueta humana, el numero queda de apoyo, mas chico-. */
+.factura-fila__numero--secundario { font-size: 11.5px; font-weight: 500; color: var(--triunfo-tinta-2); }
 .factura-fila__cantidad { font-size: 12px; color: var(--triunfo-tinta-2); }
 
 .factura-fila__monto { flex: none; display: flex; align-items: center; gap: 4px; }
@@ -785,16 +903,27 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
    Total ya no comparten el mismo ancho ni el mismo fondo.
    -------------------------------------------------------------------------- */
 
-/* CAPA DE FONDO: ancha, ocupa casi todo el viewport (solo 12px de margen a cada
-   lado), esquinas muy redondeadas. Purchase/ilustracion, la factura y el total
-   viven todos DENTRO de esta superficie -es lo que da la sensacion de recibo
-   fisico apoyado en algo, no de tarjeta Bootstrap-. */
+/* CAPA DE FONDO (z-index 0, implicito): YA NO es una tarjeta redondeada que envuelve
+   el contenido -es el fondo de la PANTALLA-. margin lateral NEGATIVO (-12px) sangra
+   por fuera del padding de <main class="container"> hasta el borde real del viewport
+   -full-bleed-, y esos mismos 12px se suman al padding propio (16+12=28px) para que
+   Purchase/factura/Total queden exactamente en el mismo x que antes (28px del borde,
+   334px de factura a 390px: ver el comentario de .triunfo-factura). min-height llega
+   hasta el final visible del viewport -no termina debajo de Total-; el numero resta
+   lo que ocupan el resto de la cascara (cinta + header + bottom nav + padding del
+   <main>), medido en Browser y ajustado a mano, no es una formula exacta. */
 .triunfo-factura-fondo {
   position: relative;
-  margin: 4px 12px 24px;
-  padding: 22px 16px 26px;
+  margin: 4px -12px 0;
+  padding: 22px 28px 32px;
   background: var(--triunfo-fondo-factura);
-  border-radius: 26px;
+  /* 236px = lo que NO es este fondo, medido en Browser: la cinta + el header "<
+     Invoice detail" + el padding-top de <main> (=88px arriba del fondo) + la barra de
+     navegacion inferior (~69.5px) + el padding-bottom de <main> (78px, ver
+     .triunfo-main) que cae justo despues de este elemento. Si esta pantalla alguna vez
+     suma o saca algo de su cascara fija, este numero hay que volver a medirlo -no es
+     una formula que se derive sola en CSS puro-. */
+  min-height: calc(100vh - 236px);
 }
 
 /* PURCHASE + ILUSTRACION: plano de ATRAS (z-index:1). El icono ahora tiene
@@ -822,46 +951,112 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
   padding-top: 7px;
 }
 .triunfo-compra-hero__numero { font-weight: 700; font-size: 16.5px; color: var(--triunfo-tinta); }
+/* Version secundaria: cuando hay alias, "Purchase #TQ-0003" pasa a ser el dato tecnico
+   de apoyo -el alias (.triunfo-compra-hero__alias, mismo tamano que __numero normal)
+   toma el lugar principal-. */
+.triunfo-compra-hero__numero--secundario {
+  font-weight: 600; font-size: 12.5px; color: var(--triunfo-tinta-2);
+}
+.triunfo-compra-hero__alias { font-weight: 700; font-size: 16.5px; color: var(--triunfo-tinta); }
 /* El codigo real (p.ej. "TQ-0003") no se parte a mitad del guion si la linea envuelve
    -"Purchase"/"Compra" (la palabra fija) si puede quedar en su propia linea antes-. */
 .triunfo-compra-hero__codigo { white-space: nowrap; }
 .triunfo-compra-hero__fecha { font-size: 12.5px; color: var(--triunfo-tinta-2); }
+
+.triunfo-compra-hero__fila-editable { display: flex; align-items: center; gap: 3px; }
+/* El lapiz: ghost button chico, sin borde ni fondo propio hasta el hover. 22px (no
+   28px) para dejarle mas ancho a "Purchase #TQ-0003" -a 390px cada pixel de mas aca
+   era lo que la empujaba a envolver en dos lineas-. */
+.triunfo-compra-hero__editar {
+  flex: none; width: 22px; height: 22px; padding: 0; margin: -1px 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; border-radius: 6px;
+  color: var(--triunfo-tinta-2); cursor: pointer;
+}
+.triunfo-compra-hero__editar:hover, .triunfo-compra-hero__editar:focus-visible {
+  background: var(--triunfo-menta); color: var(--triunfo-verde-osc); outline: none;
+}
+.triunfo-compra-hero__editar svg { width: 13px; height: 13px; }
+
+/* EL EDITOR CHICO: aparece en el mismo lugar que ocupaba el alias/numero, no como un
+   modal ni una segunda superficie -sigue viviendo sobre el fondo #F0F5EB, sin tarjeta
+   propia-. max-width para que no se estire hasta pegarse contra la ilustracion. */
+.triunfo-alias-editor { display: flex; flex-direction: column; gap: 8px; max-width: 200px; }
+.triunfo-alias-editor__input {
+  font: inherit; font-size: 14px; padding: 7px 10px;
+  border: 1px solid var(--triunfo-verde-cl); border-radius: 8px;
+  background: var(--triunfo-carta); color: var(--triunfo-tinta);
+  width: 100%;
+}
+.triunfo-alias-editor__input:focus { outline: 2px solid var(--triunfo-verde-cl); outline-offset: 1px; }
+.triunfo-alias-editor__acciones { display: flex; align-items: center; gap: 12px; }
+.triunfo-alias-editor__espaciador { flex: 1 1 auto; }
+.triunfo-alias-editor__quitar, .triunfo-alias-editor__cancelar, .triunfo-alias-editor__guardar {
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 0; border: none; background: none; cursor: pointer;
+}
+.triunfo-alias-editor__quitar { color: var(--triunfo-rojo); }
+.triunfo-alias-editor__cancelar { color: var(--triunfo-tinta-2); }
+.triunfo-alias-editor__guardar { color: var(--triunfo-verde-osc); }
+.triunfo-alias-editor__quitar:hover, .triunfo-alias-editor__cancelar:hover { text-decoration: underline; }
+.triunfo-alias-editor__guardar:hover { color: var(--triunfo-verde); text-decoration: underline; }
+
 .triunfo-compra-hero__imagen {
   position: absolute; right: -4px; top: 2px;
   width: clamp(88px, 26vw, 132px); height: auto;
   pointer-events: none;
 }
 
-/* LA FACTURA: factura.svg como forma/soporte -su propio recorte de papel y su
-   propia sombra de contacto ya vienen resueltos en el SVG, por eso no hay aca
-   otro zigzag CSS compitiendo con el (background-size:100%/100% lo estira a
-   cualquier alto de contenido sin romper el patron)-. MAS ANGOSTA que
-   .triunfo-factura-fondo (88%, centrada) para que se vea fondo verde a los dos
-   lados -antes todo compartia el mismo ancho, ese era el problema-. z-index:2 +
-   margin-top negativo la monta POR ENCIMA del hero; box-shadow propia, elegante
-   -no oscura- para reforzar que esta hoja flota sobre el fondo. */
-.triunfo-factura {
+/* EL RECIBO, CONSTRUIDO CON CSS -SIN factura.svg (autorizacion explicita: el SVG daba
+   un ancho inconsistente entre facturas de distinta cantidad de lineas y no se pudo
+   volver confiable)-. width:100% de un padre de ancho FIJO (.triunfo-factura-fondo,
+   28px de padding a cada lado) es aritmetica de layout basica: TQ-0003/TQ-0002/TQ-0001
+   miden EXACTAMENTE el mismo ancho siempre, sin depender de que el navegador recalcule
+   nada contra una imagen. z-index:2 + margin-top negativo sigue montando el recibo
+   POR ENCIMA del hero -mismo efecto de profundidad que antes-.
+
+   border-radius SOLO arriba (bien sutil) + box-shadow propia -ya no hay "rectangulo
+   detras del papel" que evitar: no hay una imagen con otra silueta compitiendo, la
+   sombra sigue exactamente la caja real del recibo, que es lo que se ve-. El corte de
+   papel abajo lo hace el ::after de .triunfo-recibo__hoja mas abajo (ver ese
+   comentario), NO la esquina de este contenedor -por eso no hay radio abajo: lo
+   reemplaza el festoneado-. */
+.triunfo-recibo {
   position: relative; z-index: 2;
-  width: 88%;
-  margin: -36px auto 0;
-  padding: 22px 20px 34px;
-  /* OJO: app.css vive en wwwroot/css/, asi que un url() relativo se resuelve contra ESA
-     carpeta -no contra la pagina-. "../brand/factura.svg" sube a wwwroot/ y entra a brand/;
-     "brand/factura.svg" (sin el "../") pedia wwwroot/css/brand/factura.svg, que no existe,
-     y por eso el fondo del recibo nunca cargaba (404 silencioso de background-image). */
-  background-image: url('../brand/factura.svg');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  box-shadow: 0 12px 28px rgba(25, 70, 45, .1);
+  width: 100%; /* llena el content-box de .triunfo-factura-fondo, igual que .triunfo-compra-hero */
+  margin: -44px 0 0;
+  padding: 19px 20px 20px;
+  min-height: 210px; /* altura minima elegante -TQ-0002 (1 linea) no debe sentirse una
+                         notita-, sin techo: 2-3+ lineas la superan libremente. El
+                         contenido queda anclado arriba (sin flex/centrado), asi que el
+                         aire de mas cuando gana el minimo lo absorbe el espacio DESPUES
+                         de la ultima linea, justo antes del corte -que es donde se
+                         pidio ese aire, no en el medio-. */
+  box-sizing: border-box;
+  background: var(--triunfo-carta);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 10px 20px rgba(25, 70, 45, .14);
 }
-.triunfo-factura__titulo {
-  margin: 0 0 8px;
-  font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-  color: var(--triunfo-tinta-2);
+/* EL CORTE DE PAPEL, sin SVG: una fila de semicirculos del mismo blanco que el recibo,
+   montada sobre la costura inferior -tecnica de "borde de ticket" en CSS puro, radial-
+   gradient repetido-. La mitad de cada circulo cae dentro del recibo (blanco sobre
+   blanco, invisible) y la otra mitad muerde el verde de --triunfo-fondo-factura debajo,
+   dejando el festoneado (~7px de profundidad). */
+.triunfo-recibo::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -7px;
+  height: 14px;
+  background-image: radial-gradient(circle at 7px 7px, var(--triunfo-carta) 7px, transparent 7.5px);
+  background-size: 14px 14px;
+  background-repeat: repeat-x;
+  background-position: -7px 0;
 }
+/* Tipografia/color vienen de .triunfo-eyebrow (compartida); aca solo el posicionamiento
+   propio -por encima del festoneado del ::after, margin distinto al de otros usos-. */
+.triunfo-recibo__titulo { position: relative; z-index: 1; margin: 0 0 21px; }
 .recibo-linea {
-  display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;
-  padding: 12px 0;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  padding: 14px 0;
   border-bottom: 1px solid var(--triunfo-linea);
 }
 .recibo-linea:last-child { border-bottom: none; }
@@ -875,19 +1070,19 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
 .recibo-linea__importe { flex: none; text-align: right; }
 .recibo-linea__total { font-weight: 600; color: var(--triunfo-tinta); }
 
-/* EL TOTAL: FUERA de la hoja blanca, de vuelta sobre --triunfo-fondo-factura -no
-   es una tercera tarjeta, es el cierre de la misma superficie de fondo-. Unico
-   lugar donde aparece la cantidad de items. Sin icono de canasta aca: ya hay uno
-   grande arriba junto a Purchase, repetirlo chico solo agregaria ruido. */
+/* EL TOTAL: FUERA de la hoja blanca, de vuelta sobre --triunfo-fondo-factura -no es una
+   tercera tarjeta, es el cierre de la misma superficie de fondo-. Solo "Total" + cifra:
+   la cantidad de items se movio arriba, junto a Purchase -unica aparicion del dato, ya
+   no se repite aca-. Sin icono de canasta: ya hay uno grande junto a Purchase. */
 .triunfo-factura-total {
   position: relative; z-index: 1;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
   margin-top: 20px;
-  padding: 0 22px;
+  padding: 0; /* sin padding propio: el padding del fondo (16px) ya alinea el Total con
+                el borde izquierdo/derecho visual de la factura, que usa ese mismo inset */
 }
-.triunfo-factura-total__fila { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .triunfo-factura-total__etiqueta { font-weight: 700; font-size: 21px; color: var(--triunfo-tinta); }
 .triunfo-factura-total__cifra {
   font-family: var(--triunfo-serif); font-weight: 700; font-size: 32px;
   color: var(--triunfo-verde-osc);
 }
-.triunfo-factura-total__items { display: block; margin-top: 4px; font-size: 13px; color: var(--triunfo-tinta-2); }

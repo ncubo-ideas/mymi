@@ -2,6 +2,7 @@
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 @inject Textos textos
+@inject AlmacenDeAlias almacenAlias
 
 @* UNA FILA DE "Recent purchases" / "My invoices", en un solo componente porque ahora vive
    en DOS pantallas (la vista previa de Home y la lista completa) y la persona pidio
@@ -30,7 +31,16 @@
         <img src="brand/iconos/icono-canasta.png" alt="" class="factura-fila__icono" />
     </span>
     <div class="factura-fila__info">
-        <span class="factura-fila__numero">@textos.Con("misFacturas.compra.titulo", ("numero", Factura.Numero))</span>
+        @* EL ALIAS PERSONAL (si existe) toma el lugar principal, igual que en Invoice
+           detail: mayor jerarquia que el numero tecnico, que pasa a secundario debajo.
+           Sin alias, el numero vuelve a ser la linea principal -sin fila de mas-. *@
+        @if (Alias.Length > 0)
+        {
+            <span class="factura-fila__alias">@Alias</span>
+        }
+        <span class="factura-fila__numero @(Alias.Length > 0 ? "factura-fila__numero--secundario" : "")">
+            @textos.Con("misFacturas.compra.titulo", ("numero", Factura.Numero))
+        </span>
         <span class="factura-fila__cantidad">
             @textos.Con(Unidades == 1 ? "comun.cantidadItems.una" : "comun.cantidadItems.varias",
                         ("cuantas", textos.Cuenta(Unidades)))
@@ -59,6 +69,10 @@
     // (FacturasSurface la documenta como sincronica, sin red), asi que llamarla una vez
     // por fila -incluso en una lista de varias- no pega contra el proveedor ni bloquea.
     private int Unidades => estado.Detalle(Factura.Numero).Lineas.Sum(l => l.Cantidad);
+
+    // Sincrono: quien renderiza esta fila (Home/ListaDeFacturas) ya llamo
+    // AlmacenDeAlias.CargarAsync() en su propio OnInitializedAsync.
+    private string Alias => almacenAlias.Obtener(Factura.Numero);
 
     private string Etiqueta => textos.Con("misFacturas.abrirDetalle", ("numero", Factura.Numero));
 

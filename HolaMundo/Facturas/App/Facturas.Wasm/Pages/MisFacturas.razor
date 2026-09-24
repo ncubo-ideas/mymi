@@ -5,6 +5,7 @@
 @inject NavigationManager navegacion
 @inject Textos textos
 @inject IJSRuntime js
+@inject AlmacenDeAlias almacenAlias
 @implements IAsyncDisposable
 
 <PageTitle>@Textos.TituloDelModulo</PageTitle>
@@ -223,23 +224,13 @@ else
         </div>
     </div>
 
-    @* ACCESOS RAPIDOS. Se revisaron las rutas reales de Facturas.Wasm -las dos unicas
-       @@page son "/" y "/factura/{Numero}"- y no existe ninguna pantalla de Offers ni de
-       Cupones. El carrusel publicitario de mas abajo es solo imagenes de demo; no es una
-       "pantalla de ofertas". Por eso esos dos accesos SE QUITARON, no se dejaron inertes:
-       la persona pidio explicitamente no mostrar accesos a funciones que no existen, ni
-       siquiera deshabilitados. Solo queda "My invoices", ahora si funcional de verdad -
-       lleva a /facturas, la lista completa (ver Pages/ListaDeFacturas.razor)-. La fila es
-       flex centrado con gap fijo (no space-between con flex:1 por hijo, que era para
-       repartir TRES elementos iguales): con uno solo, centrado se ve intencional y no dos
-       tercios de espacio vacio. Si algun dia vuelve a haber mas de un acceso real, el
-       mismo layout centrado los reparte con aire sin tocar el CSS. *@
-    <div class="triunfo-accesos">
-        <button type="button" class="triunfo-acceso" @onclick="@(() => navegacion.NavigateTo("facturas"))">
-            <img src="brand/iconos/icono-facturas.png" alt="" aria-hidden="true" class="triunfo-acceso__icono" />
-            <span class="triunfo-acceso__etiqueta">@textos["misFacturas.accesos.misFacturas"]</span>
-        </button>
-    </div>
+    @* ACCESOS RAPIDOS: SE QUITARON. Vivian aca como el unico camino a "My invoices"
+       -y antes de eso, Offers/Cupones, que tampoco tenian pantalla real detras y por
+       eso ya se habian sacado-. Ahora que existe la navegacion inferior (Home |
+       Invoices, en MainLayout.razor) ese shortcut quedaba redundante: dos caminos al
+       mismo destino real es ruido, no una funcionalidad extra. Sacarlo tambien libera
+       el tramo vertical entero que quedaba solo entre Total spent/Evolution y el
+       carrusel de promociones. *@
 
     @* CARRUSEL DE PROMOCIONES, DATO DE DEMO: tres banners que la persona proveyo en
        wwwroot/brand/promos/ (version en ingles), no una consulta al dominio -Facturas no
@@ -402,6 +393,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // Precarga los alias antes de que FilaDeCompra (mas abajo, "Recent purchases")
+        // los pregunte de forma sincrona. Idempotente: si ya estan cargados, vuelve al toque.
+        await almacenAlias.CargarAsync();
+
         if (estado.EstaArriba) { Releer(); return; }
 
         soportado = await estado.EstaSoportado();

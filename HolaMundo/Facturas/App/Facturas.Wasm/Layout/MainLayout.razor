@@ -37,12 +37,62 @@
     </header>
 }
 
-<main class="container py-4">
+@* El fondo #F0F5EB de Invoice detail (.triunfo-factura-fondo, en Detalle.razor) no
+   llega solo hasta el final del viewport: el padding-bottom fijo de <main> (78px,
+   reservado para que la navegacion inferior nunca tape contenido, ver .triunfo-main)
+   cae DESPUES de ese fondo, y sin esto quedaba una franja blanca entre el verde y la
+   barra de abajo. <main> pinta ese mismo verde SOLO en esta ruta -Home/My invoices
+   siguen con fondo blanco, sin tocar su aspecto-, asi la franja de padding tambien
+   queda verde y no se nota la costura. *@
+<main class="container py-4 triunfo-main @(EnFacturaDetalle ? "triunfo-main--detalle" : "")">
     @Body
 </main>
 
+@* NAVEGACION INFERIOR: SOLO dos destinos reales -Home e Invoices ("Invoices" cubre
+   tanto "My invoices" como "Invoice detail", ver EnFacturas-. Nada de Offers/Coupons/
+   QR/More: mismo criterio que los accesos rapidos de Home, no se muestra una opcion
+   sin pantalla real detras.
+
+   ESTO NO REEMPLAZA el back jerarquico (triunfo-volver en cada subpagina): el footer
+   es navegacion PRINCIPAL (a donde ir), el back es navegacion de JERARQUIA (de donde
+   se vino). Son dos conceptos distintos y los dos siguen funcionando -pedido explicito
+   de no duplicar/confundir uno con otro-. *@
+<nav class="triunfo-nav-inferior" aria-label="@textos["navInferior.inicio"] / @textos["navInferior.facturas"]">
+    <button type="button" class="triunfo-nav-inferior__item @(EnHome ? "triunfo-nav-inferior__item--activo" : "")"
+            @onclick="@(() => navegacion.NavigateTo(""))" aria-current="@(EnHome ? "page" : null)">
+        <span class="triunfo-nav-inferior__icono">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 10.5 11 3l8 7.5" />
+                <path d="M5.5 8.8V18a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V8.8" />
+            </svg>
+        </span>
+        <span>@textos["navInferior.inicio"]</span>
+    </button>
+    <button type="button" class="triunfo-nav-inferior__item @(EnFacturas ? "triunfo-nav-inferior__item--activo" : "")"
+            @onclick="@(() => navegacion.NavigateTo("facturas"))" aria-current="@(EnFacturas ? "page" : null)">
+        <span class="triunfo-nav-inferior__icono">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5.5 2.8h11v16.4l-2.4-1.5-2.35 1.5-2.35-1.5-2.35 1.5-2.35-1.5-1.2.75z" />
+                <path d="M8.2 7.7h5.6M8.2 11.2h5.6" />
+            </svg>
+        </span>
+        <span>@textos["navInferior.facturas"]</span>
+    </button>
+</nav>
+
 @code {
-    private bool EnHome => navegacion.ToBaseRelativePath(navegacion.Uri).Length == 0;
+    private string RutaRelativa => navegacion.ToBaseRelativePath(navegacion.Uri);
+    private bool EnHome => RutaRelativa.Length == 0;
+
+    // "Invoices" queda activo tanto en la lista completa (/facturas) como en el detalle
+    // (/factura/{numero}): las dos son parte del mismo destino principal desde el punto
+    // de vista de la navegacion de abajo, aunque el back jerarquico las trate distinto.
+    private bool EnFacturas => RutaRelativa.StartsWith("facturas", StringComparison.Ordinal)
+                             || RutaRelativa.StartsWith("factura/", StringComparison.Ordinal);
+
+    private bool EnFacturaDetalle => RutaRelativa.StartsWith("factura/", StringComparison.Ordinal);
 
     protected override void OnInitialized() => navegacion.LocationChanged += AlCambiarDeRuta;
 

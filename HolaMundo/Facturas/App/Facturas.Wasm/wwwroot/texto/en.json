@@ -12,6 +12,8 @@
     "volverAHome": "Back to Home",
     "volverAMisFacturas": "Back to My invoices",
     "redirigiendo": "Redirecting…",
+    "cancelar": "Cancel",
+    "guardar": "Save",
     "cantidadLineas": {
       "una": "{cuantas} line",
       "varias": "{cuantas} lines"
@@ -20,6 +22,11 @@
       "una": "{cuantas} item",
       "varias": "{cuantas} items"
     }
+  },
+
+  "navInferior": {
+    "inicio": "Home",
+    "facturas": "Invoices"
   },
 
   "noEncontrado": {
@@ -91,6 +98,12 @@
       "bajada": "All your purchases in one place."
     },
 
+    "calendario": {
+      "mesAnterior": "Previous month",
+      "mesSiguiente": "Next month",
+      "total": "total"
+    },
+
     "promo": {
       "region": "Promotions",
       "irA": "Go to promotion {numero}"
@@ -125,8 +138,10 @@
       "etiqueta": "Purchase"
     },
 
-    "lineas": {
-      "encabezado": "Items"
+    "alias": {
+      "agregar": "Add a name",
+      "editar": "Edit name",
+      "quitar": "Remove"
     },
 
     "columna": {

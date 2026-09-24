@@ -149,6 +149,19 @@ public sealed class Textos
 		? $"{mesesLargosEs[mes - 1]} {anio}"
 		: $"{mesesLargosEn[mes - 1]} {anio}";
 
+	// Lunes primero (indice 0), domingo ultimo (indice 6): es el orden que pidio el
+	// calendario de "My invoices", no el domingo-primero de EstadoUnidos.
+	private static readonly string[] diasCortosEs = { "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM" };
+
+	private static readonly string[] diasCortosEn = { "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN" };
+
+	/// <summary>
+	/// EL DIA DE LA SEMANA, abreviado, para el encabezado del calendario de "My invoices".
+	/// indiceLunes0 va de 0 (lunes) a 6 (domingo) -la columna del grid, no DayOfWeek.Sunday=0-.
+	/// </summary>
+	public string DiaCorto(int indiceLunes0) =>
+		Idioma == LenguaDelRegistro ? diasCortosEs[indiceLunes0] : diasCortosEn[indiceLunes0];
+
 	/// <summary>
 	/// UN PORCENTAJE, con un decimal y el separador del idioma, SIEMPRE con el valor absoluto: el
 	/// signo (+/-) es de quien llama, porque "sube" y "baja" a veces se dicen con una palabra y no

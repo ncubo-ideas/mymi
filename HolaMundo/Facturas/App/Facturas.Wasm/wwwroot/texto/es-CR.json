@@ -12,6 +12,8 @@
     "volverAHome": "Volver a Inicio",
     "volverAMisFacturas": "Volver a Mis facturas",
     "redirigiendo": "Redirigiendo…",
+    "cancelar": "Cancelar",
+    "guardar": "Guardar",
     "cantidadLineas": {
       "una": "{cuantas} línea",
       "varias": "{cuantas} líneas"
@@ -20,6 +22,11 @@
       "una": "{cuantas} artículo",
       "varias": "{cuantas} artículos"
     }
+  },
+
+  "navInferior": {
+    "inicio": "Inicio",
+    "facturas": "Facturas"
   },
 
   "noEncontrado": {
@@ -91,6 +98,12 @@
       "bajada": "Todas tus compras en un solo lugar."
     },
 
+    "calendario": {
+      "mesAnterior": "Mes anterior",
+      "mesSiguiente": "Mes siguiente",
+      "total": "en total"
+    },
+
     "promo": {
       "region": "Promociones",
       "irA": "Ir a la promoción {numero}"
@@ -125,8 +138,10 @@
       "etiqueta": "Compra"
     },
 
-    "lineas": {
-      "encabezado": "Artículos"
+    "alias": {
+      "agregar": "Agregar un nombre",
+      "editar": "Editar nombre",
+      "quitar": "Quitar"
     },
 
     "columna": {
