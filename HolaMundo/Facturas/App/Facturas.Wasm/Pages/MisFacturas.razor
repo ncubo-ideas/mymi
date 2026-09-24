@@ -110,33 +110,43 @@
 }
 else
 {
-    @* EL HERO. Sexta pasada: mas compacto. El selector de mes se muda AL LADO de
-       "EVOLUTION" -es el control del grafico y del resumen a la vez, ya no un elemento
-       flotante arriba-, y "leido hasta el evento X" se deja de mostrar -es un dato
-       tecnico de sincronizacion, no algo que le importe a la persona-. ultimoEvento
-       SIGUE leyendose y guardandose igual que siempre (Releer() no cambio); solo se dejo
-       de imprimir en pantalla. El selector solo ofrece los meses que Facturas()
-       realmente tiene -nunca uno vacio ni inventado-, y elegir uno recalcula total,
-       cantidad y grafico filtrando la MISMA lista de siempre (FacturasDelPeriodo). El
-       cambio contra el mes anterior se compara contra el mes CALENDARIO inmediatamente
-       anterior, y solo se muestra si ese mes tiene al menos una factura real -si no, se
-       omite en vez de inventar un 0% (ver CambioVsMesAnterior). El refresh vuelve a ser
-       el circulo chico en la esquina, en posicion absoluta -ya no comparte fila con
-       nada, asi que no le resta ancho a las dos columnas-. *@
+    @* EL HERO. El PERIODO vive en la fila de arriba, junto a "TOTAL SPENT": controla
+       todo el hero (total, cantidad, cambio y grafico), no solo EVOLUTION. Los periodos
+       salen de Facturas() agrupando año+mes -nunca uno inventado-. Con mas de un mes
+       real es un <select> de verdad; con uno solo es una etiqueta sin chevron, porque
+       algo que parece interactivo tiene que serlo. Sin boton de refresh: la app ya se
+       pone al dia sola al abrir (EstadoDeLaApp.Arrancar). El cambio contra el mes
+       anterior solo aparece si ese mes calendario tiene facturas reales. *@
+    List<(int Anio, int Mes)> periodos = Periodos();
     <div class="triunfo-hero">
-        <button type="button" class="triunfo-hero__refrescar @(refrescando ? "triunfo-hero__refrescar--girando" : "")"
-                @onclick="Refrescar" disabled="@refrescando"
-                aria-label="@(refrescando ? textos["misFacturas.refresh.enCurso"] : textos["misFacturas.refresh.boton"])">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M16.5 10a6.5 6.5 0 1 1-2-4.7" />
-                <path d="M16.5 3v4h-4" />
-            </svg>
-        </button>
+        <div class="triunfo-hero__cabecera">
+            <p class="triunfo-hero__etiqueta">@textos["misFacturas.resumen.etiquetaTotal"]</p>
+            @if (periodos.Count > 1)
+            {
+                <div class="triunfo-hero__periodo-envoltorio">
+                    <select class="triunfo-hero__periodo" @onchange="CambiarPeriodo"
+                            aria-label="@textos["misFacturas.resumen.periodoEtiqueta"]">
+                        @foreach ((int anio, int mes) in periodos)
+                        {
+                            <option value="@($"{anio}-{mes}")" selected="@(periodoSeleccionado == (anio, mes))">
+                                @textos.PeriodoLargo(anio, mes)
+                            </option>
+                        }
+                    </select>
+                    <svg class="triunfo-hero__periodo-flecha" viewBox="0 0 12 8" fill="none" stroke="currentColor"
+                         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 1.5 6 6.5 11 1.5" />
+                    </svg>
+                </div>
+            }
+            else if (periodoSeleccionado is (int anioUnico, int mesUnico))
+            {
+                <span class="triunfo-hero__periodo-fijo">@textos.PeriodoLargo(anioUnico, mesUnico)</span>
+            }
+        </div>
 
         <div class="triunfo-hero__cuerpo">
             <div class="triunfo-hero__cifras">
-                <p class="triunfo-hero__etiqueta">@textos["misFacturas.resumen.etiquetaTotal"]</p>
                 <p class="triunfo-hero__total">@textos.Monto(TotalDelPeriodo())</p>
                 <p class="triunfo-hero__meta">
                     @{ int cantidadPeriodo = CantidadDelPeriodo(); }
@@ -166,7 +176,6 @@ else
             </div>
 
             @{
-                List<(int Anio, int Mes)> periodos = Periodos();
                 IReadOnlyList<FacturaEnLista> evolucion = ParaEvolucion();
                 decimal maxTotal = evolucion.Count > 0 ? evolucion.Max(f => f.Total) : 0;
                 // Una fecha corta debajo de cada barra ayuda a leer el grafico, pero con
@@ -175,25 +184,7 @@ else
                 bool caenLasFechas = evolucion.Count <= 8;
             }
             <div class="triunfo-hero__evolucion">
-                <div class="triunfo-hero__evolucion-cabeza">
-                    <span class="triunfo-hero__evolucion-etiqueta">@textos["misFacturas.resumen.evolucion"]</span>
-                    <div class="triunfo-hero__periodo-envoltorio">
-                        <select class="triunfo-hero__periodo" @onchange="CambiarPeriodo"
-                                disabled="@(periodos.Count <= 1)"
-                                aria-label="@textos["misFacturas.resumen.periodoEtiqueta"]">
-                            @foreach ((int anio, int mes) in periodos)
-                            {
-                                <option value="@($"{anio}-{mes}")" selected="@(periodoSeleccionado == (anio, mes))">
-                                    @textos.PeriodoLargo(anio, mes)
-                                </option>
-                            }
-                        </select>
-                        <svg class="triunfo-hero__periodo-flecha" viewBox="0 0 12 8" fill="none" stroke="currentColor"
-                             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M1 1.5 6 6.5 11 1.5" />
-                        </svg>
-                    </div>
-                </div>
+                <span class="triunfo-hero__evolucion-etiqueta">@textos["misFacturas.resumen.evolucion"]</span>
                 @if (evolucion.Count > 0)
                 {
                     <div class="triunfo-evolucion-barras" role="img" aria-label="@textos["misFacturas.evolucion.descripcion"]">
@@ -375,7 +366,6 @@ else
 
 @code {
     private bool? soportado;
-    private bool refrescando;
 
     private IReadOnlyList<FacturaEnLista> facturas = new List<FacturaEnLista>();
     private long ultimoEvento;
@@ -436,13 +426,6 @@ else
         Releer();
     });
 
-
-    private Task Refrescar() => Intentar("misFacturas.pasos.refrescar", async () =>
-    {
-        refrescando = true;
-        try { await estado.Refrescar(); }
-        finally { refrescando = false; Releer(); }
-    });
 
     // Una app que no puede abrir tiene que DECIR por que. Sin esto, un fallo en el
     // arranque deja la pantalla igual que antes de apretar el boton y no hay forma de

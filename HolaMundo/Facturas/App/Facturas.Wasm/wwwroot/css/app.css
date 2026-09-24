@@ -421,29 +421,18 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
   box-shadow: 0 12px 24px -16px rgba(15, 80, 40, .45);
 }
 
-/* El refresh: circulo chico en la esquina, posicion absoluta -ya no comparte fila con
-   nada (el selector de mes se mudo adentro de EVOLUTION, ver mas abajo), asi que no le
-   resta ancho a las dos columnas del cuerpo-. */
-.triunfo-hero__refrescar {
-  position: absolute; top: 16px; right: 16px;
-  width: 26px; height: 26px; border-radius: 999px;
-  background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .22);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  transition: background-color .15s ease;
+/* FILA DE ARRIBA: "TOTAL SPENT" a la izquierda y el periodo a la derecha -el periodo
+   gobierna todo el hero, por eso esta a la altura de la tarjeta y no dentro del grafico-. */
+.triunfo-hero__cabecera {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 6px;
 }
-.triunfo-hero__refrescar:hover:not(:disabled),
-.triunfo-hero__refrescar:focus-visible { background: rgba(255, 255, 255, .26); outline: none; }
-.triunfo-hero__refrescar:disabled { opacity: .55; }
-.triunfo-hero__refrescar svg { width: 12px; height: 12px; }
-.triunfo-hero__refrescar--girando svg { animation: triunfo-girar .8s linear infinite; }
-@keyframes triunfo-girar { to { transform: rotate(360deg); } }
-
-.triunfo-hero__cuerpo { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 16px; padding-right: 22px; }
+.triunfo-hero__cuerpo { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 16px; }
 .triunfo-hero__cifras { flex: 1 1 140px; min-width: 0; }
 .triunfo-hero__etiqueta {
   font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
   color: rgba(255, 255, 255, .78);
-  margin: 0 0 5px;
+  margin: 0;
 }
 .triunfo-hero__total {
   font-family: var(--triunfo-serif); font-weight: 700; font-size: 29px; line-height: 1.08;
@@ -476,43 +465,39 @@ a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
 
 .triunfo-hero__evolucion { flex: 1 1 116px; min-width: 0; max-width: 172px; }
 
-/* La cabeza de la columna de evolucion: la etiqueta y el selector de mes JUNTOS -el
-   selector es el control temporal del grafico Y del resumen, asi que vive pegado a
-   "EVOLUTION" en vez de flotar arriba de toda la tarjeta-. flex-wrap por si el mes mas
-   largo (en espanol "septiembre 2026" es mas largo que cualquier mes en ingles) no
-   entra al lado de la etiqueta: el selector baja a su propia linea sin romper nada. */
-.triunfo-hero__evolucion-cabeza {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
-  gap: 4px 8px; margin-bottom: 8px;
-}
 .triunfo-hero__evolucion-etiqueta {
+  display: block; margin-bottom: 8px;
   font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
   color: rgba(255, 255, 255, .7);
 }
 .triunfo-hero__evolucion-vacia { font-size: 12px; color: rgba(255, 255, 255, .68); margin: 0; }
 
-/* El selector de mes: SOLO lista los meses que Periodos() encontro en datos reales (ver
-   MisFacturas.razor). Un <select> nativo -no un menu propio- por accesibilidad y para no
-   sumar JS que no hace falta; se le saca el aspecto de formulario con appearance:none y
-   se le dibuja una flecha propia encima, en vez de la del sistema operativo. Si solo hay
-   un mes real, queda disabled: no tiene sentido ofrecer un menu de una sola opcion. Mas
-   chico que en la pasada anterior porque ahora vive en la columna angosta, no en una
-   fila propia de todo el ancho de la tarjeta. */
-.triunfo-hero__periodo-envoltorio { position: relative; display: inline-flex; align-items: center; max-width: 100%; }
+/* EL PERIODO. Con varios meses reales: <select> nativo (accesible, sin JS propio) sin
+   aspecto de formulario, con borde y chevron -se ve y ES interactivo-. Con un solo mes:
+   .triunfo-hero__periodo-fijo, una etiqueta sin borde ni chevron -no finge ser un menu-. */
+.triunfo-hero__periodo-envoltorio { position: relative; display: inline-flex; align-items: center; flex: none; max-width: 60%; }
 .triunfo-hero__periodo {
   appearance: none; -webkit-appearance: none;
-  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .3);
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .34);
   border-radius: 999px;
-  color: #fff; font-size: 10.5px; font-weight: 700;
-  padding: 4px 20px 4px 9px;
+  color: #fff; font: inherit; font-size: 11.5px; font-weight: 700;
+  padding: 5px 24px 5px 11px;
   max-width: 100%;
   text-overflow: ellipsis;
+  cursor: pointer;
 }
-.triunfo-hero__periodo:disabled { opacity: .75; }
+.triunfo-hero__periodo:hover, .triunfo-hero__periodo:focus-visible { background: rgba(255, 255, 255, .26); outline: none; }
 .triunfo-hero__periodo option { color: var(--triunfo-tinta); font-size: 14px; }
 .triunfo-hero__periodo-flecha {
-  position: absolute; right: 8px; width: 8px; height: 6px;
-  color: rgba(255, 255, 255, .85); pointer-events: none;
+  position: absolute; right: 10px; width: 8px; height: 6px;
+  color: rgba(255, 255, 255, .9); pointer-events: none;
+}
+.triunfo-hero__periodo-fijo {
+  flex: none;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, .12);
+  font-size: 11.5px; font-weight: 600; color: rgba(255, 255, 255, .92);
+  white-space: nowrap;
 }
 
 .triunfo-evolucion-barras {

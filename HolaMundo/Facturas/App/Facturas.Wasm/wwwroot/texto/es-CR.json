@@ -47,8 +47,7 @@
     "pasos": {
       "elegirCarpeta": "elegir carpeta",
       "darPermiso": "dar permiso a la carpeta",
-      "abrir": "abrir la app",
-      "refrescar": "refrescar contra el proveedor"
+      "abrir": "abrir la app"
     },
 
     "permiso": {
@@ -61,11 +60,6 @@
       "explicacion": "Esta app guarda <strong>tus</strong> facturas en una carpeta <strong>tuya</strong>. Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.",
       "sinSoporte": "Este browser no tiene <code>showDirectoryPicker</code>, así que no puede escribir en una carpeta tuya. La app funciona igual, pero el registro vive solo en memoria y se pierde al cerrar.",
       "abrirSinGuardar": "Abrir sin guardar nada"
-    },
-
-    "refresh": {
-      "boton": "Refrescar",
-      "enCurso": "Refrescando…"
     },
 
     "resumen": {
@@ -129,7 +123,7 @@
     },
 
     "guardando": "Se guarda en «{carpeta}» después de cada cambio.",
-    "vacio": "Todavía no hay facturas. Apretá <em>Refresh</em>."
+    "vacio": "Todavía no hay facturas."
   },
 
   "detalle": {

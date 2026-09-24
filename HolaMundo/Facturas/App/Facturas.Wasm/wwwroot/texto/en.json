@@ -47,8 +47,7 @@
     "pasos": {
       "elegirCarpeta": "choosing the folder",
       "darPermiso": "granting permission to the folder",
-      "abrir": "opening the app",
-      "refrescar": "refreshing against the provider"
+      "abrir": "opening the app"
     },
 
     "permiso": {
@@ -61,11 +60,6 @@
       "explicacion": "This app keeps <strong>your</strong> invoices in a folder of <strong>yours</strong>. Choose the folder and the app writes its record there; nobody else reads it.",
       "sinSoporte": "This browser has no <code>showDirectoryPicker</code>, so it cannot write to a folder of yours. The app still works, but the record lives in memory only and is lost when you close it.",
       "abrirSinGuardar": "Open without saving anything"
-    },
-
-    "refresh": {
-      "boton": "Refresh",
-      "enCurso": "Refreshing…"
     },
 
     "resumen": {
@@ -129,7 +123,7 @@
     },
 
     "guardando": "Saved to “{carpeta}” after every change.",
-    "vacio": "There are no invoices yet. Press <em>Refresh</em>."
+    "vacio": "There are no invoices yet."
   },
 
   "detalle": {
