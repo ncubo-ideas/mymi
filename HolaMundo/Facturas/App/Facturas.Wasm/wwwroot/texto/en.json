@@ -1,10 +1,25 @@
 {
-  "//": "WHAT THIS SCREEN SAYS IN ITS OWN WORDS. Nothing that came out of the journal is here: an invoice's number, date, SKU, description and amounts are shown exactly as the provider recorded them. The store's name and its motto are not here either -- they are the institution's own voice and live in Textos.cs, where a translator does not see them. {clave} is a hole the code fills.",
+  "//": "WHAT THIS SCREEN SAYS IN ITS OWN WORDS. Nothing that came out of the journal is here: an invoice's number, date, SKU, description and amounts are shown exactly as the provider recorded them. The store's name is STILL fixed in Textos.cs -it does not translate, it is a proper name- but its motto (institucion.lema) does live here: translating it was requested for the English visual review. {clave} is a hole the code fills.",
+
+  "institucion": {
+    "lema": "Your neighborhood store, well stocked since 1998"
+  },
 
   "comun": {
     "elegirCarpeta": "Choose folder",
     "errorInesperado": "Something went wrong.",
-    "recargar": "Reload"
+    "recargar": "Reload",
+    "volverAHome": "Back to Home",
+    "volverAMisFacturas": "Back to My invoices",
+    "redirigiendo": "Redirecting…",
+    "cantidadLineas": {
+      "una": "{cuantas} line",
+      "varias": "{cuantas} lines"
+    },
+    "cantidadItems": {
+      "una": "{cuantas} item",
+      "varias": "{cuantas} items"
+    }
   },
 
   "noEncontrado": {
@@ -13,8 +28,8 @@
   },
 
   "misFacturas": {
-    "titulo": "My invoices",
-    "bajada": "your purchases, on your own computer.",
+    "saludo": "Hello! 👋",
+    "bajada": "Your purchases, always at hand.",
 
     "fallo": {
       "operacion": "The operation could not be completed.",
@@ -47,11 +62,41 @@
     },
 
     "resumen": {
+      "etiquetaTotal": "Total spent",
       "una": "{cuantas} invoice",
       "varias": "{cuantas} invoices",
-      "total": "total <strong>{total}</strong>",
-      "leidoHasta": "read up to event {evento}"
+      "evolucion": "Evolution",
+      "periodoEtiqueta": "Month",
+      "cambio": "{signo}{cambio} vs last month"
     },
+
+    "evolucion": {
+      "descripcion": "Bar chart of each invoice's total for the selected period, from oldest to most recent."
+    },
+
+    "accesos": {
+      "misFacturas": "My invoices"
+    },
+
+    "compra": {
+      "titulo": "Invoice #{numero}"
+    },
+
+    "ultimas": {
+      "titulo": "Recent purchases",
+      "verTodas": "View all"
+    },
+
+    "listaHero": {
+      "bajada": "All your purchases in one place."
+    },
+
+    "promo": {
+      "region": "Promotions",
+      "irA": "Go to promotion {numero}"
+    },
+
+    "abrirDetalle": "View invoice {numero}",
 
     "sinCarpeta": {
       "titulo": "Nothing is being saved.",
@@ -65,28 +110,26 @@
     },
 
     "guardando": "Saved to “{carpeta}” after every change.",
-    "vacio": "There are no invoices yet. Press <em>Refresh</em>.",
-
-    "columna": {
-      "numero": "Number",
-      "fecha": "Date",
-      "lineas": "Lines",
-      "total": "Total"
-    }
+    "vacio": "There are no invoices yet. Press <em>Refresh</em>."
   },
 
   "detalle": {
     "titulo": "Invoice {numero}",
+    "encabezado": "Invoice detail",
     "volver": "Back to the list",
     "sinAbrir": "The app is not open. <a href=\"\">Go back to the list</a> to open it.",
     "noExiste": "There is no invoice numbered “{numero}” in your record.",
     "fallo": "Invoice {numero} could not be opened: {detalle}",
 
+    "hero": {
+      "etiqueta": "Purchase"
+    },
+
+    "lineas": {
+      "encabezado": "Items"
+    },
+
     "columna": {
-      "sku": "SKU",
-      "descripcion": "Description",
-      "cantidad": "Quantity",
-      "costoUnitario": "Unit cost",
       "total": "Total"
     }
   }

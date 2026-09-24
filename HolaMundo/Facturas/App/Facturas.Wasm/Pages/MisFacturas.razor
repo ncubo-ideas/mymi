@@ -4,117 +4,326 @@
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 @inject Textos textos
+@inject IJSRuntime js
+@implements IAsyncDisposable
 
 <PageTitle>@Textos.TituloDelModulo</PageTitle>
 
-<h1>@textos["misFacturas.titulo"]</h1>
-<p class="text-muted mb-4">@Textos.Institucion &middot; @textos["misFacturas.bajada"]</p>
+@* EL SALUDO ES EL H1. "Mis facturas" ya no compite como titulo aparte -la persona lo
+   pidio asi-: la seccion de la lista, mas abajo, es la que lleva ese nombre ahora
+   ("Últimas compras"). Semanticamente sigue habiendo un solo encabezado de pagina,
+   simplemente es el saludo en vez de un titulo tecnico.
+
+   LA CANASTA, MAS GRANDE Y CON PROFUNDIDAD (setima pasada): ya no es un icono chico
+   flotando al lado del saludo -ahora es un elemento editorial que conecta el saludo
+   con la tarjeta verde, con la parte de abajo tapada A PROPOSITO por esa tarjeta. El
+   mecanismo es simple: .triunfo-portada es position:relative y termina con un
+   margin-bottom NEGATIVO, que "jala" hacia arriba a lo que venga despues (el hero, o
+   la tarjeta de conectar carpeta si la app todavia no abrio) por encima de la parte
+   de abajo de la canasta -que sigue ahi, la tarjeta simplemente la tapa-. El texto
+   tiene max-width y su propio z-index para que "Hello!" y el subtitulo NUNCA queden
+   debajo de la imagen, pase lo que pase con el ancho. *@
+<div class="triunfo-portada">
+    <div class="triunfo-bienvenida">
+        <h1 class="triunfo-saludo-grande">@textos["misFacturas.saludo"]</h1>
+        <p class="triunfo-saludo-sub">@textos["misFacturas.bajada"]</p>
+    </div>
+    <img src="brand/hero.png" alt="" aria-hidden="true" class="triunfo-portada__canasta" />
+</div>
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
    estando abajo quedaba fuera de pantalla: la app parecia no reaccionar al click. *@
 @if (error.Length > 0)
 {
-    <div class="alert alert-danger">
-        <strong>@(estado.EstaArriba ? textos["misFacturas.fallo.operacion"] : textos["misFacturas.fallo.apertura"])</strong>
-        <pre class="mb-0 mt-2 small" style="white-space:pre-wrap">@error</pre>
+    <div class="estado-tarjeta estado-tarjeta--error">
+        <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 2.6 18 16.8H2z" />
+            <path d="M10 8.2v3.6" />
+            <circle cx="10" cy="14.4" r="1" fill="currentColor" stroke="none" />
+        </svg>
+        <div class="estado-tarjeta__cuerpo">
+            <strong class="estado-tarjeta__titulo">@(estado.EstaArriba ? textos["misFacturas.fallo.operacion"] : textos["misFacturas.fallo.apertura"])</strong>
+            <pre class="mb-0 mt-1 small" style="white-space:pre-wrap">@error</pre>
+        </div>
     </div>
 }
 
 @if (!estado.EstaArriba)
 {
-    <div class="alert alert-secondary">
-        @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta
-           es RE-OTORGAR, no volver a elegir la carpeta. Ofrecer "Elegir carpeta" como
-           primaria hacia que la persona reabriera el picker y volviera a navegar hasta la
-           misma carpeta cada vez. *@
-        @if (estado.FaltaReotorgarPermiso)
-        {
-            <p class="mb-2">
-                @((MarkupString)textos.Con("misFacturas.permiso.explicacion", ("carpeta", estado.NombreDeLaCarpeta)))
-            </p>
-            <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-warning" @onclick="PedirPermiso">
-                    @textos.Con("misFacturas.permiso.boton", ("carpeta", estado.NombreDeLaCarpeta))
-                </button>
-                @* Elegir carpeta es una accion de primera clase, siempre. Estaba como
-                   outline-secondary y se leia deshabilitada, asi que la opcion de elegir
-                   OTRA carpeta parecia no estar disponible. *@
-                <button class="btn btn-primary" @onclick="ConectarCarpeta"
-                        disabled="@(soportado == false)">
+    <div class="estado-tarjeta">
+        <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 5.7a1 1 0 0 1 1-1h3.8l1.5 1.8h7.7a1 1 0 0 1 1 1v6.8a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1z" />
+        </svg>
+        <div class="estado-tarjeta__cuerpo">
+            @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta
+               es RE-OTORGAR, no volver a elegir la carpeta. Ofrecer "Elegir carpeta" como
+               primaria hacia que la persona reabriera el picker y volviera a navegar hasta la
+               misma carpeta cada vez. *@
+            @if (estado.FaltaReotorgarPermiso)
+            {
+                <p class="mb-0">
+                    @((MarkupString)textos.Con("misFacturas.permiso.explicacion", ("carpeta", estado.NombreDeLaCarpeta)))
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button class="btn btn-warning btn-sm" @onclick="PedirPermiso">
+                        @textos.Con("misFacturas.permiso.boton", ("carpeta", estado.NombreDeLaCarpeta))
+                    </button>
+                    @* Elegir carpeta es una accion de primera clase, siempre. Estaba como
+                       outline-secondary y se leia deshabilitada, asi que la opcion de elegir
+                       OTRA carpeta parecia no estar disponible. *@
+                    <button class="btn btn-primary btn-sm" @onclick="ConectarCarpeta"
+                            disabled="@(soportado == false)">
+                        @textos["comun.elegirCarpeta"]
+                    </button>
+                </div>
+            }
+            else
+            {
+                <p class="mb-0">
+                    @((MarkupString)textos["misFacturas.carpeta.explicacion"])
+                </p>
+
+                @if (soportado == false)
+                {
+                    <p class="text-danger mb-0 mt-2">
+                        @((MarkupString)textos["misFacturas.carpeta.sinSoporte"])
+                    </p>
+                }
+
+                <button class="btn btn-primary btn-sm mt-2" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
                     @textos["comun.elegirCarpeta"]
                 </button>
-            </div>
-        }
-        else
-        {
-            <p class="mb-2">
-                @((MarkupString)textos["misFacturas.carpeta.explicacion"])
-            </p>
-
-            @if (soportado == false)
-            {
-                <p class="text-danger mb-2">
-                    @((MarkupString)textos["misFacturas.carpeta.sinSoporte"])
-                </p>
             }
 
-            <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
-                @textos["comun.elegirCarpeta"]
-            </button>
-        }
-
-        @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app
-           anda pero no deja registro tuyo. Va aparte y como enlace, para que se note que
-           es otra cosa. *@
-        <div class="mt-3">
-            <button class="btn btn-link p-0" @onclick="Arrancar">@textos["misFacturas.carpeta.abrirSinGuardar"]</button>
+            @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app
+               anda pero no deja registro tuyo. Va aparte y como enlace, para que se note que
+               es otra cosa. *@
+            <div class="mt-2">
+                <button class="btn btn-link p-0" @onclick="Arrancar">@textos["misFacturas.carpeta.abrirSinGuardar"]</button>
+            </div>
         </div>
     </div>
 }
 else
 {
-    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-        <button class="btn btn-primary" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? textos["misFacturas.refresh.enCurso"] : textos["misFacturas.refresh.boton"])
+    @* EL HERO. Sexta pasada: mas compacto. El selector de mes se muda AL LADO de
+       "EVOLUTION" -es el control del grafico y del resumen a la vez, ya no un elemento
+       flotante arriba-, y "leido hasta el evento X" se deja de mostrar -es un dato
+       tecnico de sincronizacion, no algo que le importe a la persona-. ultimoEvento
+       SIGUE leyendose y guardandose igual que siempre (Releer() no cambio); solo se dejo
+       de imprimir en pantalla. El selector solo ofrece los meses que Facturas()
+       realmente tiene -nunca uno vacio ni inventado-, y elegir uno recalcula total,
+       cantidad y grafico filtrando la MISMA lista de siempre (FacturasDelPeriodo). El
+       cambio contra el mes anterior se compara contra el mes CALENDARIO inmediatamente
+       anterior, y solo se muestra si ese mes tiene al menos una factura real -si no, se
+       omite en vez de inventar un 0% (ver CambioVsMesAnterior). El refresh vuelve a ser
+       el circulo chico en la esquina, en posicion absoluta -ya no comparte fila con
+       nada, asi que no le resta ancho a las dos columnas-. *@
+    <div class="triunfo-hero">
+        <button type="button" class="triunfo-hero__refrescar @(refrescando ? "triunfo-hero__refrescar--girando" : "")"
+                @onclick="Refrescar" disabled="@refrescando"
+                aria-label="@(refrescando ? textos["misFacturas.refresh.enCurso"] : textos["misFacturas.refresh.boton"])">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16.5 10a6.5 6.5 0 1 1-2-4.7" />
+                <path d="M16.5 3v4h-4" />
+            </svg>
         </button>
-        <span class="text-muted">
-            @textos.Con(cantidad == 1 ? "misFacturas.resumen.una" : "misFacturas.resumen.varias",
-                        ("cuantas", textos.Cuenta(cantidad))) &middot;
-            @((MarkupString)textos.Con("misFacturas.resumen.total", ("total", textos.Monto(total)))) &middot;
-            @textos.Con("misFacturas.resumen.leidoHasta", ("evento", textos.Cuenta(ultimoEvento)))
-        </span>
+
+        <div class="triunfo-hero__cuerpo">
+            <div class="triunfo-hero__cifras">
+                <p class="triunfo-hero__etiqueta">@textos["misFacturas.resumen.etiquetaTotal"]</p>
+                <p class="triunfo-hero__total">@textos.Monto(TotalDelPeriodo())</p>
+                <p class="triunfo-hero__meta">
+                    @{ int cantidadPeriodo = CantidadDelPeriodo(); }
+                    @textos.Con(cantidadPeriodo == 1 ? "misFacturas.resumen.una" : "misFacturas.resumen.varias",
+                                ("cuantas", textos.Cuenta(cantidadPeriodo)))
+                </p>
+                @{ decimal? cambio = CambioVsMesAnterior(); }
+                @if (cambio is not null)
+                {
+                    bool subio = cambio.Value >= 0;
+                    <p class="triunfo-hero__cambio @(subio ? "triunfo-hero__cambio--sube" : "triunfo-hero__cambio--baja")">
+                        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            @if (subio)
+                            {
+                                <path d="M2 9 9 2M9 2H4.3M9 2v4.7" />
+                            }
+                            else
+                            {
+                                <path d="M2 3 9 10M9 10H4.3M9 10V5.3" />
+                            }
+                        </svg>
+                        @textos.Con("misFacturas.resumen.cambio",
+                                    ("signo", subio ? "+" : "-"), ("cambio", textos.Porcentaje(cambio.Value)))
+                    </p>
+                }
+            </div>
+
+            @{
+                List<(int Anio, int Mes)> periodos = Periodos();
+                IReadOnlyList<FacturaEnLista> evolucion = ParaEvolucion();
+                decimal maxTotal = evolucion.Count > 0 ? evolucion.Max(f => f.Total) : 0;
+                // Una fecha corta debajo de cada barra ayuda a leer el grafico, pero con
+                // demasiadas facturas satura en vez de aclarar -a partir de ahi el grafico
+                // sigue mostrando todas las barras, simplemente sin el rotulo de fecha.
+                bool caenLasFechas = evolucion.Count <= 8;
+            }
+            <div class="triunfo-hero__evolucion">
+                <div class="triunfo-hero__evolucion-cabeza">
+                    <span class="triunfo-hero__evolucion-etiqueta">@textos["misFacturas.resumen.evolucion"]</span>
+                    <div class="triunfo-hero__periodo-envoltorio">
+                        <select class="triunfo-hero__periodo" @onchange="CambiarPeriodo"
+                                disabled="@(periodos.Count <= 1)"
+                                aria-label="@textos["misFacturas.resumen.periodoEtiqueta"]">
+                            @foreach ((int anio, int mes) in periodos)
+                            {
+                                <option value="@($"{anio}-{mes}")" selected="@(periodoSeleccionado == (anio, mes))">
+                                    @textos.PeriodoLargo(anio, mes)
+                                </option>
+                            }
+                        </select>
+                        <svg class="triunfo-hero__periodo-flecha" viewBox="0 0 12 8" fill="none" stroke="currentColor"
+                             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M1 1.5 6 6.5 11 1.5" />
+                        </svg>
+                    </div>
+                </div>
+                @if (evolucion.Count > 0)
+                {
+                    <div class="triunfo-evolucion-barras" role="img" aria-label="@textos["misFacturas.evolucion.descripcion"]">
+                        @foreach (FacturaEnLista factura in evolucion)
+                        {
+                            bool esLaUltima = factura == evolucion[evolucion.Count - 1];
+                            double alturaPct = maxTotal > 0 ? Math.Max((double)(factura.Total / maxTotal) * 100, 12) : 12;
+                            <div class="triunfo-evolucion-barra @(esLaUltima ? "triunfo-evolucion-barra--actual" : "")"
+                                 style="height:@(alturaPct.ToString(System.Globalization.CultureInfo.InvariantCulture))%"
+                                 title="@($"{factura.Numero} · {textos.Monto(factura.Total)}")"></div>
+                        }
+                    </div>
+                    @if (caenLasFechas)
+                    {
+                        <div class="triunfo-evolucion-fechas" aria-hidden="true">
+                            @foreach (FacturaEnLista factura in evolucion)
+                            {
+                                <span class="triunfo-evolucion-fecha">@textos.FechaCorta(factura.Fecha)</span>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="triunfo-hero__evolucion-vacia">@textos["misFacturas.vacio"]</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ACCESOS RAPIDOS. Se revisaron las rutas reales de Facturas.Wasm -las dos unicas
+       @@page son "/" y "/factura/{Numero}"- y no existe ninguna pantalla de Offers ni de
+       Cupones. El carrusel publicitario de mas abajo es solo imagenes de demo; no es una
+       "pantalla de ofertas". Por eso esos dos accesos SE QUITARON, no se dejaron inertes:
+       la persona pidio explicitamente no mostrar accesos a funciones que no existen, ni
+       siquiera deshabilitados. Solo queda "My invoices", ahora si funcional de verdad -
+       lleva a /facturas, la lista completa (ver Pages/ListaDeFacturas.razor)-. La fila es
+       flex centrado con gap fijo (no space-between con flex:1 por hijo, que era para
+       repartir TRES elementos iguales): con uno solo, centrado se ve intencional y no dos
+       tercios de espacio vacio. Si algun dia vuelve a haber mas de un acceso real, el
+       mismo layout centrado los reparte con aire sin tocar el CSS. *@
+    <div class="triunfo-accesos">
+        <button type="button" class="triunfo-acceso" @onclick="@(() => navegacion.NavigateTo("facturas"))">
+            <img src="brand/iconos/icono-facturas.png" alt="" aria-hidden="true" class="triunfo-acceso__icono" />
+            <span class="triunfo-acceso__etiqueta">@textos["misFacturas.accesos.misFacturas"]</span>
+        </button>
+    </div>
+
+    @* CARRUSEL DE PROMOCIONES, DATO DE DEMO: tres banners que la persona proveyo en
+       wwwroot/brand/promos/ (version en ingles), no una consulta al dominio -Facturas no
+       modela ofertas ni promociones-. CADA IMAGEN YA TRAE SU TEXTO Y SU "View offers"
+       QUEMADOS EN EL PNG, asi que no se superpone texto propio encima -seria duplicarlo-.
+       Sin boton adicional: el "View offers" de la imagen no navega a ningun lado real, y
+       agregar OTRO boton al lado seria fingir una segunda funcionalidad que tampoco existe.
+
+       Cada diapositiva lleva su aspect-ratio REAL (medido con el archivo en mano) para
+       que object-fit:cover nunca tenga que recortar ni un pixel. El swipe es
+       scroll-snap nativo del navegador -CERO dependencias nuevas-; carrusel-interop.js
+       (11 lineas) solo MIRA el scroll para saber que punto resaltar, no controla nada. *@
+    <div class="triunfo-carrusel" role="region" aria-label="@textos["misFacturas.promo.region"]">
+        <div class="triunfo-carrusel__pista" @ref="pistaCarrusel">
+            <div class="triunfo-carrusel__diapositiva" style="aspect-ratio:960/220">
+                <img src="brand/promos/promo-1.png" alt="" loading="lazy" />
+            </div>
+            <div class="triunfo-carrusel__diapositiva" style="aspect-ratio:960/202">
+                <img src="brand/promos/promo-2.png" alt="" loading="lazy" />
+            </div>
+            <div class="triunfo-carrusel__diapositiva" style="aspect-ratio:960/199">
+                <img src="brand/promos/promo-3.png" alt="" loading="lazy" />
+            </div>
+        </div>
+        @if (CantidadDeDiapositivas > 1)
+        {
+            <div class="triunfo-carrusel__puntos">
+                @for (int i = 0; i < CantidadDeDiapositivas; i++)
+                {
+                    int indice = i;
+                    <button type="button"
+                            class="triunfo-carrusel__punto @(indice == diapositivaActiva ? "triunfo-carrusel__punto--activo" : "")"
+                            aria-label="@textos.Con("misFacturas.promo.irA", ("numero", textos.Cuenta(indice + 1)))"
+                            @onclick="() => IrADiapositiva(indice)"></button>
+                }
+            </div>
+        }
     </div>
 
     @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba,
-       no en una nota al pie debajo de la tabla. Sin carpeta la app sigue funcionando
+       no en una nota al pie debajo de la lista. Sin carpeta la app sigue funcionando
        -se pone al dia contra el proveedor en cada apertura- asi que se ve completa y
        correcta, y no hay forma de notar que no persiste salvo que se diga. Es la
        degradacion silenciosa que hizo que el servidor MCP leyera un estado viejo. *@
     @if (!estado.HayCarpeta)
     {
-        <div class="alert alert-warning d-flex align-items-center flex-wrap gap-2">
-            <div class="flex-grow-1">
-                <strong>@textos["misFacturas.sinCarpeta.titulo"]</strong>
-                @textos["misFacturas.sinCarpeta.cuerpo"]
+        <div class="estado-tarjeta estado-tarjeta--atencion">
+            <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 2.6 18 16.8H2z" />
+                <path d="M10 8.2v3.6" />
+                <circle cx="10" cy="14.4" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            <div class="estado-tarjeta__cuerpo">
+                <strong class="estado-tarjeta__titulo">@textos["misFacturas.sinCarpeta.titulo"]</strong>
+                <p class="mb-0">@textos["misFacturas.sinCarpeta.cuerpo"]</p>
             </div>
-            <button class="btn btn-warning" @onclick="ConectarCarpeta">@textos["comun.elegirCarpeta"]</button>
+            <div class="estado-tarjeta__accion">
+                <button class="btn btn-warning btn-sm" @onclick="ConectarCarpeta">@textos["comun.elegirCarpeta"]</button>
+            </div>
         </div>
     }
     else if (estado.GuardadoFallando.Length > 0)
     {
-        <div class="alert alert-danger d-flex align-items-center flex-wrap gap-2">
-            <div class="flex-grow-1">
-                <strong>@textos["misFacturas.guardadoFallando.titulo"]</strong>
-                @textos.Con("misFacturas.guardadoFallando.cuerpo", ("carpeta", estado.NombreDeLaCarpeta))
-                <div class="small mt-1">@estado.GuardadoFallando</div>
+        <div class="estado-tarjeta estado-tarjeta--error">
+            <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 2.6 18 16.8H2z" />
+                <path d="M10 8.2v3.6" />
+                <circle cx="10" cy="14.4" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            <div class="estado-tarjeta__cuerpo">
+                <strong class="estado-tarjeta__titulo">@textos["misFacturas.guardadoFallando.titulo"]</strong>
+                <p class="mb-0">@textos.Con("misFacturas.guardadoFallando.cuerpo", ("carpeta", estado.NombreDeLaCarpeta))</p>
+                <p class="small mb-0 mt-1">@estado.GuardadoFallando</p>
             </div>
-            <button class="btn btn-danger" @onclick="PedirPermiso">@textos["misFacturas.permiso.reotorgar"]</button>
+            <div class="estado-tarjeta__accion">
+                <button class="btn btn-danger btn-sm" @onclick="PedirPermiso">@textos["misFacturas.permiso.reotorgar"]</button>
+            </div>
         </div>
     }
     else
     {
-        <p class="small text-muted">
+        <p class="small text-muted mb-3">
             @textos.Con("misFacturas.guardando", ("carpeta", estado.NombreDeLaCarpeta))
         </p>
     }
@@ -124,31 +333,42 @@ else
        esta pantalla tiene lo que tiene que tener y nada mas. *@
     @if (facturas.Count == 0)
     {
-        <p class="text-muted">@((MarkupString)textos["misFacturas.vacio"])</p>
+        <div class="factura-vacio">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 2.5h10v14.2l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3z" />
+                <path d="M7.3 7h5.4M7.3 10.2h5.4" />
+            </svg>
+            <p class="mb-0">@((MarkupString)textos["misFacturas.vacio"])</p>
+        </div>
     }
     else
     {
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>@textos["misFacturas.columna.numero"]</th>
-                    <th>@textos["misFacturas.columna.fecha"]</th>
-                    <th class="text-end">@textos["misFacturas.columna.lineas"]</th>
-                    <th class="text-end">@textos["misFacturas.columna.total"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (FacturaEnLista factura in facturas)
-                {
-                    <tr style="cursor:pointer" @onclick="() => VerDetalle(factura.Numero)">
-                        <td>@factura.Numero</td>
-                        <td>@textos.Instante(factura.Fecha)</td>
-                        <td class="text-end">@textos.Cuenta(factura.Lineas)</td>
-                        <td class="text-end">@textos.Monto(factura.Total)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        @* "Recent purchases" es ahora una VISTA PREVIA (las 5 mas recientes), no la lista
+           entera -esa vive en /facturas, "My invoices"-. "View all" lleva exactamente ahi:
+           no hay una pantalla nueva, es el mismo destino real que el acceso rapido de
+           arriba. Reutiliza FilaDeCompra (Shared/), el mismo componente que usa la lista
+           completa -"no crear una segunda lista" se cumple compartiendo el marcado de
+           cada fila. Orden por fecha descendente -la mas reciente primero-, que es como
+           se lee una actividad; el grafico del hero usa el orden inverso porque ese lee
+           como linea de tiempo. *@
+        <div class="triunfo-seccion-encabezado">
+            <p class="triunfo-seccion-titulo">@textos["misFacturas.ultimas.titulo"]</p>
+            <button type="button" class="triunfo-ver-todas" @onclick="@(() => navegacion.NavigateTo("facturas"))">
+                @textos["misFacturas.ultimas.verTodas"]
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2 6h8M6.5 2.5 10 6l-3.5 3.5" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="facturas-lista">
+            @foreach (FacturaEnLista factura in facturas.OrderByDescending(f => f.Fecha).Take(5))
+            {
+                <FilaDeCompra Factura="factura" />
+            }
+        </div>
     }
 
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
@@ -156,9 +376,9 @@ else
        usuario, y se fue. *@
     @if (!estado.HayCarpeta)
     {
-        <p class="small text-muted mt-4">
-            @((MarkupString)textos["misFacturas.sinCarpeta.pie"])
-        </p>
+        <div class="estado-tarjeta estado-tarjeta--nota mt-3">
+            <p class="mb-0">@((MarkupString)textos["misFacturas.sinCarpeta.pie"])</p>
+        </div>
     }
 }
 
@@ -167,10 +387,18 @@ else
     private bool refrescando;
 
     private IReadOnlyList<FacturaEnLista> facturas = new List<FacturaEnLista>();
-    private decimal total;
-    private int cantidad;
     private long ultimoEvento;
     private string error = "";
+
+    // El mes que la persona eligio en el selector del hero. Nunca arranca en null salvo
+    // que no haya ni una factura: Releer() lo fija al periodo mas reciente que exista de
+    // verdad la primera vez, y lo conserva entre refrescos mientras siga existiendo.
+    private (int Anio, int Mes)? periodoSeleccionado;
+
+    private ElementReference pistaCarrusel;
+    private IJSObjectReference? moduloCarrusel;
+    private DotNetObjectReference<MisFacturas>? referenciaNet;
+    private int diapositivaActiva;
 
     protected override async Task OnInitializedAsync()
     {
@@ -263,10 +491,125 @@ else
     private void Releer()
     {
         facturas = estado.Facturas();
-        total = estado.Total();
-        cantidad = estado.Cantidad();
         ultimoEvento = estado.UltimoEvento();
+
+        // Si el periodo que la persona tenia elegido ya no existe (por ejemplo, un
+        // refresh que trajo facturas nuevas y reordeno la lista de periodos), se cae al
+        // mas reciente en vez de quedar apuntando a un mes que ya no esta en pantalla.
+        List<(int Anio, int Mes)> periodos = Periodos();
+        if (periodoSeleccionado is null || !periodos.Contains(periodoSeleccionado.Value))
+            periodoSeleccionado = periodos.Count > 0 ? periodos[0] : null;
     }
 
-    private void VerDetalle(string numero) => navegacion.NavigateTo($"factura/{Uri.EscapeDataString(numero)}");
+    // Los meses que Facturas() REALMENTE tiene, del mas reciente al mas viejo -nunca un
+    // mes que la persona no compro-. Es la misma lista de siempre, solo agrupada por
+    // año+mes de Fecha.
+    private List<(int Anio, int Mes)> Periodos() =>
+        facturas.Select(f => (f.Fecha.Year, f.Fecha.Month))
+                .Distinct()
+                .OrderByDescending(p => p.Year).ThenByDescending(p => p.Month)
+                .ToList();
+
+    private IReadOnlyList<FacturaEnLista> FacturasDelPeriodo(int anio, int mes) =>
+        facturas.Where(f => f.Fecha.Year == anio && f.Fecha.Month == mes).ToList();
+
+    private decimal TotalDelPeriodo() =>
+        periodoSeleccionado is (int anio, int mes) ? FacturasDelPeriodo(anio, mes).Sum(f => f.Total) : 0m;
+
+    private int CantidadDelPeriodo() =>
+        periodoSeleccionado is (int anio, int mes) ? FacturasDelPeriodo(anio, mes).Count : 0;
+
+    // Compara contra el mes CALENDARIO inmediatamente anterior -no contra "el ultimo mes
+    // que tenga datos", que podria estar varios meses atras y confundirse con "el mes
+    // pasado"-. Si ese mes exacto no tiene ni una factura real, se omite la comparacion:
+    // nunca se inventa un 0% que insinuaria que el gasto se mantuvo igual.
+    private decimal? CambioVsMesAnterior()
+    {
+        if (periodoSeleccionado is not (int anio, int mes)) return null;
+
+        (int anioAnterior, int mesAnterior) = mes == 1 ? (anio - 1, 12) : (anio, mes - 1);
+        IReadOnlyList<FacturaEnLista> delAnterior = FacturasDelPeriodo(anioAnterior, mesAnterior);
+        if (delAnterior.Count == 0) return null;
+
+        decimal totalAnterior = delAnterior.Sum(f => f.Total);
+        if (totalAnterior == 0) return null;
+
+        return (TotalDelPeriodo() - totalAnterior) / totalAnterior * 100m;
+    }
+
+    private void CambiarPeriodo(ChangeEventArgs evento)
+    {
+        string[] partes = (evento.Value?.ToString() ?? "").Split('-');
+        if (partes.Length == 2 && int.TryParse(partes[0], out int anio) && int.TryParse(partes[1], out int mes))
+            periodoSeleccionado = (anio, mes);
+    }
+
+    // El grafico de evolucion reordena la MISMA lista de facturas DEL PERIODO elegido
+    // -de la mas vieja a la mas nueva-, no consulta ni deriva un dato nuevo.
+    private IReadOnlyList<FacturaEnLista> ParaEvolucion() =>
+        periodoSeleccionado is (int anio, int mes)
+            ? FacturasDelPeriodo(anio, mes).OrderBy(f => f.Fecha).ToList()
+            : new List<FacturaEnLista>();
+
+    // EL CARRUSEL. Se inicializa una sola vez -en el primer render con la pista ya en el
+    // DOM-, y solo si hay mas de una diapositiva: con una sola, ni puntos ni autoplay
+    // tienen sentido (ver el @@if alrededor de .triunfo-carrusel__puntos en el marcado).
+    // carrusel-interop.js es la UNICA fuente de verdad del indice activo -mira el scroll,
+    // avisa por ActualizarDiapositivaActiva- tanto para swipe como para autoplay como
+    // para el click en un punto (IrADiapositiva solo le pide a JS que se mueva; JS es
+    // quien confirma el indice de vuelta). Asi nunca hay un estado de "slide" en C# que
+    // pueda desincronizarse del estado real del punto.
+    private const int CantidadDeDiapositivas = 3;
+    private const int AutoplayMs = 4500;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // NO "if (!firstRender) return": el primer render casi siempre cae en el estado
+        // de "Elegir carpeta" (o revisando permiso), momento en el que .triunfo-carrusel__pista
+        // todavia no existe en el DOM -el @ref queda apuntando a nada-. Se espera a que
+        // estado.EstaArriba sea true (la seccion con el carrusel recien ahi se renderiza) y
+        // moduloCarrusel is not null sigue siendo la guarda que evita inicializar dos veces.
+        if (moduloCarrusel is not null || CantidadDeDiapositivas <= 1 || !estado.EstaArriba) return;
+
+        try
+        {
+            moduloCarrusel = await js.InvokeAsync<IJSObjectReference>("import", "./carrusel-interop.js");
+            referenciaNet = DotNetObjectReference.Create(this);
+            await moduloCarrusel.InvokeVoidAsync("inicializar", pistaCarrusel, referenciaNet, AutoplayMs);
+        }
+        catch (JSException)
+        {
+            // Sin JS el carrusel se queda como una tira que se puede scrollear a mano
+            // -scroll-snap es CSS puro-, simplemente sin el punto activo sincronizado
+            // ni autoplay.
+        }
+    }
+
+    [JSInvokable]
+    public void ActualizarDiapositivaActiva(int indice)
+    {
+        if (indice == diapositivaActiva) return;
+        diapositivaActiva = indice;
+        StateHasChanged();
+    }
+
+    private async Task IrADiapositiva(int indice)
+    {
+        if (moduloCarrusel is not null)
+            await moduloCarrusel.InvokeVoidAsync("irA", pistaCarrusel, indice);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (moduloCarrusel is not null)
+        {
+            try
+            {
+                await moduloCarrusel.InvokeVoidAsync("destruir", pistaCarrusel);
+                await moduloCarrusel.DisposeAsync();
+            }
+            catch (JSDisconnectedException) { /* la pagina ya se fue */ }
+        }
+        referenciaNet?.Dispose();
+    }
 }

@@ -1,0 +1,83 @@
+@page "/facturas"
+@using Facturas.App.Vistas
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+@inject Textos textos
+
+@* "My invoices", la lista COMPLETA -a diferencia de "Recent purchases" en Home, que
+   ahora es solo una vista previa de las 5 mas recientes-. Reutiliza FilaDeCompra
+   (Shared/), el MISMO componente que usa Home: "no crear una segunda lista" se cumple
+   reutilizando el marcado de cada fila, no reescribiendolo.
+
+   SIN CARRUSEL, SIN ACCESOS, SIN Total spent/Evolution: esa parte sigue siendo solo de
+   Home. Si la app todavia no abrio (por ejemplo, alguien entra por URL directa antes de
+   pasar por Home), se manda a Home -que es quien sabe manejar el flujo de conectar
+   carpeta-, en vez de duplicar esa logica aca.
+
+   HERO UNICO (back + titulo + bajada + ilustracion), NO una tarjeta separada debajo del
+   titulo -eso fue lo que se pidio corregir-. invoices.png se usa COMPLETO: el PNG tiene
+   transparencia real (se verifico canal alfa), asi que va como <img> suelto con solo el
+   ancho acotado -sin object-fit:cover, sin recorte, sin tarjeta propia- para que la
+   canasta se sienta una ilustracion editorial, no un icono metido en una caja. *@
+<div class="triunfo-invoices-hero">
+    <div class="triunfo-invoices-hero__texto">
+        <div class="triunfo-invoices-hero__cabecera">
+            <button type="button" class="triunfo-volver" @onclick="@(() => navegacion.NavigateTo(""))"
+                    aria-label="@textos["comun.volverAHome"]">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12.5 4 6.5 10l6 6" />
+                </svg>
+            </button>
+            <h1 class="triunfo-invoices-hero__titulo">@textos["misFacturas.accesos.misFacturas"]</h1>
+        </div>
+        <p class="triunfo-invoices-hero__subtitulo">@textos["misFacturas.listaHero.bajada"]</p>
+    </div>
+    <img src="brand/invoices-hero.png" alt="" aria-hidden="true" class="triunfo-invoices-hero__imagen" />
+</div>
+
+@if (!estado.EstaArriba)
+{
+    <p class="text-muted">@textos["comun.redirigiendo"]</p>
+}
+else if (facturas.Count == 0)
+{
+    <div class="factura-vacio">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 2.5h10v14.2l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3z" />
+            <path d="M7.3 7h5.4M7.3 10.2h5.4" />
+        </svg>
+        <p class="mb-0">@((MarkupString)textos["misFacturas.vacio"])</p>
+    </div>
+}
+else
+{
+    <div class="triunfo-lista-encabezado">
+        <span class="triunfo-eyebrow">@textos["misFacturas.ultimas.titulo"]</span>
+        <span class="triunfo-lista-encabezado__cuenta">
+            @textos.Con(facturas.Count == 1 ? "misFacturas.resumen.una" : "misFacturas.resumen.varias",
+                        ("cuantas", textos.Cuenta(facturas.Count)))
+        </span>
+    </div>
+    <div class="facturas-lista">
+        @foreach (FacturaEnLista factura in facturas.OrderByDescending(f => f.Fecha))
+        {
+            <FilaDeCompra Factura="factura" Destacada="true" />
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<FacturaEnLista> facturas = new List<FacturaEnLista>();
+
+    protected override void OnInitialized()
+    {
+        if (!estado.EstaArriba)
+        {
+            navegacion.NavigateTo("", replace: true);
+            return;
+        }
+        facturas = estado.Facturas();
+    }
+}

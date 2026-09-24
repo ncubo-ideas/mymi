@@ -6,53 +6,108 @@
 
 <PageTitle>@textos.Con("detalle.titulo", ("numero", Numero))</PageTitle>
 
-<button class="btn btn-outline-secondary mb-3" @onclick="Volver">&larr; @textos["detalle.volver"]</button>
+@* NAVEGACION: "Invoice detail" siempre vuelve a "My invoices" (/facturas), sea cual sea
+   el origen real del click (la vista previa de Home o la lista completa). Es la regla
+   simple que se pidio en vez de rastrear de donde vino la persona -Blazor no trae un
+   history stack propio mas alla del history del browser, y armar uno paralelo solo para
+   esto seria la "arquitectura nueva" que se pidio evitar-. El back del navegador sigue
+   funcionando igual que siempre; esto es una salida ADEMAS, no en reemplazo. *@
+<div class="triunfo-subpagina-encabezado">
+    <button type="button" class="triunfo-volver" @onclick="Volver" aria-label="@textos["comun.volverAMisFacturas"]">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12.5 4 6.5 10l6 6" />
+        </svg>
+    </button>
+    <h1 class="triunfo-subpagina-titulo">@textos["detalle.encabezado"]</h1>
+</div>
 
 @if (!estado.EstaArriba)
 {
-    <div class="alert alert-warning">
-        @((MarkupString)textos["detalle.sinAbrir"])
+    <div class="estado-tarjeta">
+        <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 5.7a1 1 0 0 1 1-1h3.8l1.5 1.8h7.7a1 1 0 0 1 1 1v6.8a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1z" />
+        </svg>
+        <div class="estado-tarjeta__cuerpo">@((MarkupString)textos["detalle.sinAbrir"])</div>
     </div>
 }
 else if (error.Length > 0)
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="estado-tarjeta estado-tarjeta--error">
+        <svg class="estado-tarjeta__icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 2.6 18 16.8H2z" />
+            <path d="M10 8.2v3.6" />
+            <circle cx="10" cy="14.4" r="1" fill="currentColor" stroke="none" />
+        </svg>
+        <div class="estado-tarjeta__cuerpo">@error</div>
+    </div>
 }
 else
 {
-    <h1>@textos.Con("detalle.titulo", ("numero", detalle.Numero))</h1>
-    <p class="text-muted">
-        @textos.Instante(detalle.Fecha)
-    </p>
+    @* CAPA DE FONDO (#F0F5EB): todo -purchase, factura, total- vive apoyado sobre esta
+       superficie, que es mas ANCHA que la factura misma -eso es lo que antes faltaba: todo
+       tenia el mismo ancho y se sentia una sola caja rectangular-.
 
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th>@textos["detalle.columna.sku"]</th><th>@textos["detalle.columna.descripcion"]</th>
-                <th class="text-end">@textos["detalle.columna.cantidad"]</th>
-                <th class="text-end">@textos["detalle.columna.costoUnitario"]</th>
-                <th class="text-end">@textos["detalle.columna.total"]</th>
-            </tr>
-        </thead>
-        <tbody>
+       PURCHASE (icono grande + numero + fecha, SIN "items" -eso se movio abajo, con el
+       total, para no repetirlo-) e ILUSTRACION quedan en el plano de atras (z-index:1).
+       La FACTURA (factura.svg, mas angosta, con su propio recorte de papel ya resuelto en
+       el SVG -por eso no hay otro zigzag CSS compitiendo con el-) se monta ENCIMA con
+       margin-top negativo + z-index mas alto: invade el area de Purchase a proposito, ese
+       solapamiento es el efecto de profundidad que se pidio. El TOTAL queda FUERA de la
+       hoja blanca, de nuevo sobre el fondo #F0F5EB, como cierre de la composicion. *@
+    <div class="triunfo-factura-fondo">
+        <div class="triunfo-compra-hero">
+            <span class="triunfo-compra-hero__icono-circulo" aria-hidden="true">
+                <img src="brand/iconos/icono-canasta.png" alt="" />
+            </span>
+            <div class="triunfo-compra-hero__texto">
+                @* "#{numero}" en su propio span con white-space:nowrap -el codigo real
+                   (p.ej. "TQ-0003") no se debe partir a mitad del guion si la linea envuelve;
+                   "Purchase"/"Compra" si puede quedar en su propia linea, es la palabra fija. *@
+                <span class="triunfo-compra-hero__numero">
+                    @textos["detalle.hero.etiqueta"] <span class="triunfo-compra-hero__codigo">#@Numero</span>
+                </span>
+                <span class="triunfo-compra-hero__fecha">
+                    @detalle.Fecha.Day @textos.MesCorto(detalle.Fecha) @detalle.Fecha.Year
+                    &middot;
+                    @detalle.Fecha.ToString("HH:mm")
+                </span>
+            </div>
+            <img src="brand/detalle-hero.png" alt="" aria-hidden="true" class="triunfo-compra-hero__imagen" />
+        </div>
+
+        <div class="triunfo-factura">
+            <p class="triunfo-factura__titulo">@textos["detalle.lineas.encabezado"]</p>
             @foreach (LineaDeFactura linea in detalle.Lineas)
             {
-                <tr>
-                    <td><code>@linea.Sku</code></td>
-                    <td>@linea.Descripcion</td>
-                    <td class="text-end">@textos.Cuenta(linea.Cantidad)</td>
-                    <td class="text-end">@textos.Monto(linea.CostoUnitario)</td>
-                    <td class="text-end">@textos.Monto(linea.TotalDeLinea)</td>
-                </tr>
+                <div class="recibo-linea">
+                    <div class="recibo-linea__quien">
+                        <div class="recibo-linea__descripcion">@linea.Descripcion</div>
+                        <div class="recibo-linea__meta">
+                            <span class="recibo-linea__sku">@linea.Sku</span>
+                            <span>@textos.Cuenta(linea.Cantidad) &times; @textos.Monto(linea.CostoUnitario)</span>
+                        </div>
+                    </div>
+                    <div class="recibo-linea__importe">
+                        <div class="recibo-linea__total">@textos.Monto(linea.TotalDeLinea)</div>
+                    </div>
+                </div>
             }
-        </tbody>
-        <tfoot>
-            <tr class="fw-bold">
-                <td colspan="4" class="text-end">@textos["detalle.columna.total"]</td>
-                <td class="text-end">@textos.Monto(detalle.Total)</td>
-            </tr>
-        </tfoot>
-    </table>
+        </div>
+
+        <div class="triunfo-factura-total">
+            <div class="triunfo-factura-total__fila">
+                <span class="triunfo-factura-total__etiqueta">@textos["detalle.columna.total"]</span>
+                <span class="triunfo-factura-total__cifra">@textos.Monto(detalle.Total)</span>
+            </div>
+            <span class="triunfo-factura-total__items">
+                @textos.Con(Unidades == 1 ? "comun.cantidadItems.una" : "comun.cantidadItems.varias",
+                            ("cuantas", textos.Cuenta(Unidades)))
+            </span>
+        </div>
+    </div>
 }
 
 @code {
@@ -60,6 +115,12 @@ else
 
     private FacturaDetallada detalle = new();
     private string error = "";
+
+    // Misma logica que FilaDeCompra.Unidades: suma real de Cantidad por linea, no la
+    // cantidad de lineas/SKUs (detalle.Lineas.Count). Ver el comentario de esa fila para
+    // el porque -aca importa igual para que "N items" del cierre no diga menos de lo que
+    // realmente se compro.
+    private int Unidades => detalle.Lineas.Sum(l => l.Cantidad);
 
     protected override void OnParametersSet()
     {
@@ -73,5 +134,5 @@ else
         catch (Exception ex) { error = textos.Con("detalle.fallo", ("numero", Numero), ("detalle", ex.Message)); }
     }
 
-    private void Volver() => navegacion.NavigateTo("");
+    private void Volver() => navegacion.NavigateTo("facturas");
 }

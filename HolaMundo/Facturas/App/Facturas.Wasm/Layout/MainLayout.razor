@@ -1,31 +1,53 @@
 @inherits LayoutComponentBase
+@inject Textos textos
+@inject NavigationManager navegacion
+@implements IDisposable
 
 @* LA MARCA DE SÚPER EL TRIUNFO, la misma que la página de descarga: barra superior verde,
-   membrete con el logo de bolsa de solo trazo y el nombre en serif. Es lo que hace que la
-   app se SIENTA del súper y no un formulario de Bootstrap.
+   membrete con la canasta 3D de la marca y el nombre en serif. Es lo que hace que la app
+   se SIENTA del súper y no un formulario de Bootstrap.
+
+   EL LOGO es wwwroot/brand/canasta-3d.png -el que la persona entregó como asset real de
+   Triunfo-, no el sello de trazo que había antes (ese era un dibujo propio de relleno
+   mientras no había logo). Es puramente decorativo -el nombre de al lado ya dice quién es-
+   por eso alt="" y aria-hidden.
 
    Sin sidebar ni "About" del template: la UI de la app son el refresh, la lista, el
    detalle y el back. Una app que le entregás a una persona para ver SUS datos no trae el
-   andamio del framework. *@
+   andamio del framework.
+
+   EL MEMBRETE (logo + nombre + lema) SOLO EN HOME: en las pantallas internas ("My
+   invoices", "Invoice detail") ese espacio pasa a ser el hero propio de cada una -pedido
+   explicito-, y repetir la marca ahi arriba era puro relleno redundante (la marca ya
+   aparece en Home, un tap atras). La cinta verde SI se mantiene en todas las pantallas:
+   es el acento minimo de identidad, no el "header global" del que se quejaron. *@
 
 <div class="triunfo-cinta"></div>
 
-<header class="triunfo-barra">
-    <div class="triunfo-membrete">
-        <span class="triunfo-sello" aria-hidden="true">
-            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none"
-                 stroke="#1a7a3c" stroke-width="2.4">
-                <path d="M9 13h22l-1.6 20a2 2 0 0 1-2 1.9H12.6a2 2 0 0 1-2-1.9L9 13z"/>
-                <path d="M15 15V11a5 5 0 0 1 10 0v4" stroke-linecap="round"/>
-            </svg>
-        </span>
-        <span class="triunfo-marca">
-            <b>@Textos.Institucion</b>
-            <i>@Textos.Lema</i>
-        </span>
-    </div>
-</header>
+@if (EnHome)
+{
+    <header class="triunfo-barra">
+        <div class="triunfo-membrete">
+            <img src="brand/canasta-3d.png" alt="" aria-hidden="true" class="triunfo-sello" />
+            <span class="triunfo-marca">
+                <b>@Textos.Institucion</b>
+                <i>@textos.Lema</i>
+            </span>
+        </div>
+    </header>
+}
 
-<main class="container py-4" style="max-width:56rem">
+<main class="container py-4">
     @Body
 </main>
+
+@code {
+    private bool EnHome => navegacion.ToBaseRelativePath(navegacion.Uri).Length == 0;
+
+    protected override void OnInitialized() => navegacion.LocationChanged += AlCambiarDeRuta;
+
+    private void AlCambiarDeRuta(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => StateHasChanged();
+
+    public void Dispose() => navegacion.LocationChanged -= AlCambiarDeRuta;
+}

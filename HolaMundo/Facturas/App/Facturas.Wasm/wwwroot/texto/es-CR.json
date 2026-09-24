@@ -1,10 +1,25 @@
 {
-  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Nada que haya salido del journal esta aca: el numero de una factura, su fecha, su SKU, su descripcion y sus montos se muestran tal como el proveedor los asento. El nombre del super y su lema tampoco estan aca -son voz de la institucion y viven en Textos.cs, donde quien traduzca no los ve-. El espanol de este archivo es de Costa Rica y es voseo -elegi, apreta, volves-: no lo pases a tuteo. {clave} es un hueco que el codigo llena.",
+  "//": "LO QUE ESTA PANTALLA DICE CON SUS PROPIAS PALABRAS. Nada que haya salido del journal esta aca: el numero de una factura, su fecha, su SKU, su descripcion y sus montos se muestran tal como el proveedor los asento. El nombre del super SI sigue fijo en Textos.cs -no se traduce, es su nombre propio-, pero su lema (institucion.lema) si vive aca: se pidio traducirlo para la revision en ingles. El espanol de este archivo es de Costa Rica y es voseo -elegi, apreta, volves-: no lo pases a tuteo. {clave} es un hueco que el codigo llena.",
+
+  "institucion": {
+    "lema": "Tu barrio, bien surtido desde 1998"
+  },
 
   "comun": {
     "elegirCarpeta": "Elegir carpeta",
     "errorInesperado": "Algo salió mal.",
-    "recargar": "Recargar"
+    "recargar": "Recargar",
+    "volverAHome": "Volver a Inicio",
+    "volverAMisFacturas": "Volver a Mis facturas",
+    "redirigiendo": "Redirigiendo…",
+    "cantidadLineas": {
+      "una": "{cuantas} línea",
+      "varias": "{cuantas} líneas"
+    },
+    "cantidadItems": {
+      "una": "{cuantas} artículo",
+      "varias": "{cuantas} artículos"
+    }
   },
 
   "noEncontrado": {
@@ -13,8 +28,8 @@
   },
 
   "misFacturas": {
-    "titulo": "Mis facturas",
-    "bajada": "tus compras, en tu computadora.",
+    "saludo": "¡Hola! 👋",
+    "bajada": "Tus compras, siempre a mano.",
 
     "fallo": {
       "operacion": "No se pudo completar la operación.",
@@ -47,11 +62,41 @@
     },
 
     "resumen": {
+      "etiquetaTotal": "Total gastado",
       "una": "{cuantas} factura",
       "varias": "{cuantas} facturas",
-      "total": "total <strong>{total}</strong>",
-      "leidoHasta": "leído hasta el evento {evento}"
+      "evolucion": "Evolución",
+      "periodoEtiqueta": "Mes",
+      "cambio": "{signo}{cambio} vs. el mes anterior"
     },
+
+    "evolucion": {
+      "descripcion": "Gráfico de barras con el total de cada factura del período elegido, de la más antigua a la más reciente."
+    },
+
+    "accesos": {
+      "misFacturas": "Mis facturas"
+    },
+
+    "compra": {
+      "titulo": "Compra #{numero}"
+    },
+
+    "ultimas": {
+      "titulo": "Últimas compras",
+      "verTodas": "Ver todas"
+    },
+
+    "listaHero": {
+      "bajada": "Todas tus compras en un solo lugar."
+    },
+
+    "promo": {
+      "region": "Promociones",
+      "irA": "Ir a la promoción {numero}"
+    },
+
+    "abrirDetalle": "Ver la factura {numero}",
 
     "sinCarpeta": {
       "titulo": "No se está guardando nada.",
@@ -65,28 +110,26 @@
     },
 
     "guardando": "Se guarda en «{carpeta}» después de cada cambio.",
-    "vacio": "Todavía no hay facturas. Apretá <em>Refresh</em>.",
-
-    "columna": {
-      "numero": "Número",
-      "fecha": "Fecha",
-      "lineas": "Líneas",
-      "total": "Total"
-    }
+    "vacio": "Todavía no hay facturas. Apretá <em>Refresh</em>."
   },
 
   "detalle": {
     "titulo": "Factura {numero}",
+    "encabezado": "Detalle de la factura",
     "volver": "Volver a la lista",
     "sinAbrir": "La app no está abierta. <a href=\"\">Volvé a la lista</a> para abrirla.",
     "noExiste": "No hay ninguna factura con número «{numero}» en tu registro.",
     "fallo": "No se pudo abrir la factura {numero}: {detalle}",
 
+    "hero": {
+      "etiqueta": "Compra"
+    },
+
+    "lineas": {
+      "encabezado": "Artículos"
+    },
+
     "columna": {
-      "sku": "SKU",
-      "descripcion": "Descripción",
-      "cantidad": "Cantidad",
-      "costoUnitario": "Costo unitario",
       "total": "Total"
     }
   }

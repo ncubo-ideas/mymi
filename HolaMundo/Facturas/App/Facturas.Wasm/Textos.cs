@@ -35,8 +35,13 @@ public sealed class Textos
 	/// <summary>El nombre con que el super se nombra a si mismo. Voz de la institucion: no se traduce.</summary>
 	public const string Institucion = "Súper El Triunfo";
 
-	/// <summary>El lema del super. Voz de la institucion: no se traduce.</summary>
-	public const string Lema = "Tu barrio, bien surtido desde 1998";
+	/// <summary>
+	/// El lema del super, en el idioma negociado. A DIFERENCIA del nombre, este si se traduce -se
+	/// pidio expresamente para la revision visual en ingles-, asi que vive en el catalogo
+	/// (institucion.lema) y no como constante fija. Con el mismo respaldo que cualquier otra clave:
+	/// si el catalogo no cargo, se ve "{institucion.lema}" y no una pantalla en blanco.
+	/// </summary>
+	public string Lema => this["institucion.lema"];
 
 	private static readonly NumberFormatInfo comoSeEscribeEnEspanol = new NumberFormatInfo
 	{
@@ -99,18 +104,77 @@ public sealed class Textos
 	public string Instante(DateTime instante) =>
 		instante.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
+	private static readonly string[] mesesCortosEs =
+		{ "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic" };
+
+	private static readonly string[] mesesCortosEn =
+		{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
 	/// <summary>
-	/// Lee lo que la persona eligio en su dispositivo y carga el catalogo que le corresponde. Si la
-	/// lectura falla se queda con el idioma del registro en vez de dejar la pantalla sin palabras.
+	/// LA FECHA DE UNA FACTURA, corta, para la etiqueta debajo de una barra del grafico de
+	/// evolucion. Deriva SOLO de Fecha -el mismo dato que ya muestra Instante()-, nada nuevo. Va con
+	/// nombre de mes -no numeros- porque ahi no hay ambiguedad de dia/mes que evitar, y a diferencia
+	/// de Instante() un rotulo de grafico si tiene sentido que hable el idioma de la persona.
+	/// </summary>
+	public string FechaCorta(DateTime fecha) => Idioma == LenguaDelRegistro
+		? $"{fecha.Day} {mesesCortosEs[fecha.Month - 1]}"
+		: $"{mesesCortosEn[fecha.Month - 1]} {fecha.Day}";
+
+	/// <summary>
+	/// SOLO el mes, abreviado, para la fichita de fecha de "Recent purchases" (dia grande arriba,
+	/// mes chico al medio, año chico abajo -tres piezas separadas, no una frase-). Mismos arreglos
+	/// que FechaCorta(), en el idioma negociado: "Aug" en ingles, nunca "Ago" a la fuerza.
+	/// </summary>
+	public string MesCorto(DateTime fecha) =>
+		Idioma == LenguaDelRegistro ? mesesCortosEs[fecha.Month - 1] : mesesCortosEn[fecha.Month - 1];
+
+	private static readonly string[] mesesLargosEs =
+	{
+		"enero", "febrero", "marzo", "abril", "mayo", "junio",
+		"julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre",
+	};
+
+	private static readonly string[] mesesLargosEn =
+	{
+		"January", "February", "March", "April", "May", "June",
+		"July", "August", "September", "October", "November", "December",
+	};
+
+	/// <summary>
+	/// "August 2026" / "agosto 2026": la etiqueta de una opcion del selector de periodo. Mes y año
+	/// son los mismos que ya trae cada Fecha real -esto solo los nombra-, nunca un periodo que la
+	/// app se inventa.
+	/// </summary>
+	public string PeriodoLargo(int anio, int mes) => Idioma == LenguaDelRegistro
+		? $"{mesesLargosEs[mes - 1]} {anio}"
+		: $"{mesesLargosEn[mes - 1]} {anio}";
+
+	/// <summary>
+	/// UN PORCENTAJE, con un decimal y el separador del idioma, SIEMPRE con el valor absoluto: el
+	/// signo (+/-) es de quien llama, porque "sube" y "baja" a veces se dicen con una palabra y no
+	/// con un signo delante.
+	/// </summary>
+	public string Porcentaje(decimal valor) =>
+		Math.Abs(valor).ToString("N1", Idioma == LenguaDelRegistro ? comoSeEscribeEnEspanol : comoSeEscribeEnIngles) + "%";
+
+	/// <summary>
+	/// FORZADO A INGLES: pedido explicito y repetido de que la version visible de TODA esta app se
+	/// muestre en ingles sin importar lo que pida el dispositivo -asi navigator.languages niegue
+	/// "en" (el caso real: el dispositivo de la persona que revisa pide espanol primero), la
+	/// revision tiene que verse en ingles. El mecanismo de negociacion real por
+	/// navigator.languages (LaPrimeraQueHablamos/LoQuePidioElDispositivoAsync, mas abajo) sigue
+	/// intacto y sin tocar -no se borro nada, no se hardcodeo ningun texto-, simplemente esta
+	/// pantalla no lo consulta todavia: alcanza con volver a llamarlo aca para reactivar el
+	/// bilingue el dia que se vuelva a pedir.
 	/// </summary>
 	public async Task NegociarAsync(IJSRuntime js, HttpClient http)
 	{
 		ArgumentNullException.ThrowIfNull(js);
 		ArgumentNullException.ThrowIfNull(http);
 
-		string[] pedidas = await LoQuePidioElDispositivoAsync(js);
+		const string etiquetaForzada = "en";
 
-		Etiqueta = LaPrimeraQueHablamos(pedidas);
+		Etiqueta = etiquetaForzada;
 		textos = await CargarAsync(http, Etiqueta);
 
 		if (textos.Count == 0 && Etiqueta != LaDelRegistro)
