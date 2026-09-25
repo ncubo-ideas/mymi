@@ -25,8 +25,21 @@
   <ItemGroup>
     <!-- LA LIBRERIA NATIVA, tal cual la publica bytecodealliance para aarch64-android. Que exista
          este binario es lo que hace posible todo el camino: sin el, wasmtime en el telefono seria
-         compilarlo nosotros. -->
-    <AndroidNativeLibrary Include="lib/arm64-v8a/libwasmtime.so" />
+         compilarlo nosotros.
+
+         Y ES LA DE Gnothi.Mobile, POR REFERENCIA. Hasta el 2026-09-24 este spike tenia SU PROPIA
+         COPIA, byte por byte la misma -mismo md5-: 26 MB versionados dos veces en un repo cuyo .git
+         pesa 49. Nadie lo decidio; se acumulo, que es como se acumulan siempre estas cosas.
+
+         La direccion de la referencia es la incomoda -un laboratorio mirando al producto- y se
+         eligio igual porque la alternativa es un tercer lugar y dos csproj tocados. Lo que NO se
+         puede es tener dos: el dia que una suba de version y la otra no, este spike medira contra
+         un wasmtime distinto del que corre en el telefono y la comparacion no dira nada.
+
+         BORRAR LA COPIA NO RECUPERA LOS 26 MB DE git: siguen en la historia para siempre. Lo que
+         recupera es el arbol de trabajo, y que la proxima suba de version agregue UNA copia y no
+         dos. -->
+    <AndroidNativeLibrary Include="..\..\Gnothi.Mobile\lib\arm64-v8a\libwasmtime.so" />
   </ItemGroup>
 
   <ItemGroup>

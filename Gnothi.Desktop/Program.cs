@@ -60,6 +60,14 @@ internal static class Program
 		faces = frames = new FrameWebModuleHost(secrets, HostState.Log);
 #endif
 		Gnothi.Host.WebViewShell.Host = (Gnothi.Host.IWebModuleHost)faces;
+
+		// EL CONTADOR DE LA HIBRIDA, CABLEADO — lo hace `MainActivity` desde el 2026-09-18 y el
+		// escritorio no lo hacia. La cascara cuenta y cronometra cada vuelta al borde, pero no sabe
+		// escribir en el log de nadie: se lo dan al arrancar. Sin esta linea, la forma que corre EN
+		// PROCESO —la que es el punto de comparacion de las otras dos— era la unica de las tres que
+		// no se podia medir en esta maquina.
+		Gnothi.Host.HybridShell.Log = HostState.Log;
+
 		// IT CHAINS, LIKE THE TWO PHONES DO, even though on the desktop this is the only factory
 		// and always will be while there is one window. Uniform on purpose: `ShellFactory` is a
 		// static field that took two owners without saying so, and the shape that hid it was the
@@ -73,12 +81,44 @@ internal static class Program
 			_ => null,
 		});
 
+		// AND THE BOX, AFTER the one above and not before, which is the whole reason the seam
+		// chains: `ChainShellFactory` asks the LAST one registered first, so the box gets first
+		// refusal on the hybrids and everything it does not take falls back to the factory above,
+		// which goes on building them in process exactly as before.
+		//
+		// It is attempted always and gated by whether it can be done -- native library, substrate,
+		// and the canary. See TheDesktopBox: if any of those is missing, nothing is registered and
+		// one line in the log says why.
+		TheDesktopBox.Prepare(HostState.Log);
+
+		// Y LA SALA, que vive como un iframe oculto de esta página servido por loopback -y no por un
+		// esquema propio, porque el de Photino NO recibe los pedidos de un frame: medido el
+		// 2026-09-14, cero llamadas-. Ver PhotinoRoom.
+		//
+		// Registra la cáscara siempre que el sustrato esté; sin él, una línea en el log y los
+		// módulos corren como siempre. No hay bandera, por el mismo criterio que la caja.
+		// Se lee aca y no con las demas ayudas de prueba porque la fabrica tiene que quedar
+		// registrada ANTES de que el catalogo abra un modulo, y eso pasa antes de ese bloque.
+		string? salaSolo = null;
+		for (int i = 0; i < args.Length - 1; i++)
+			if (args[i] == "--sala-solo") salaSolo = args[i + 1];
+
+		Func<CancellationToken, Task>? sala = TheDesktopRoom.Prepare(HostState.Log, caraVentana, salaSolo);
+
 		// TEST AIDS, all optional, so a run can be driven and read from a terminal without a hand
 		// on the mouse:
 		//   --journals <dir>   where granted folders go (default: Documents/Gnothi, like --install-module)
 		//   --alta <enlace>    runs the enrollment on that link -sheet to stderr, then Instalar- at startup
 		//   --abrir <modulo>   opens that module's face and, eight seconds later, reads its screen
 		//   --auto <segundos>  closes the whole app after that many seconds
+		//   --sala-solo <a,b>  those hybrids run IN THE ROOM instead of in the box -- a decision of
+//                      code, per run, that never touches the person file. Same shape as the
+//                      box `--es caja-solo`. Ver TheDesktopRoom.
+//   --sala             warms the room up WITH NO MODULE, which is how the question that
+		//                      decides this form gets answered on its own: whether the substrate
+		//                      comes up at all under this engine. Measured together with an
+		//                      enrolment, a failed install reads the same as an origin that does not
+		//                      serve. Same shape as iOS's empty switch file.
 		//   --modulo <nombre>  NOT a test aid: what the desktop icon of a module passes, to open its
 		//                      face straight away. The person went to the institution, not to Gnothi.
 		string? abrir = null, alta = null, journals = null, modulo = null;
@@ -91,6 +131,30 @@ internal static class Program
 			if (args[i] == "--journals") journals = Path.GetFullPath(args[i + 1]);
 			if (args[i] == "--auto" && int.TryParse(args[i + 1], out int s)) auto = s;
 		}
+
+		// EL CALENTADO DE LA SALA, SIN NINGUN MODULO. Va fuera del bucle porque no lleva valor, y
+		// `args.Length - 1` lo dejaría afuera si fuera el último argumento.
+		//
+		// No tumba nada si falla: lo que se busca es que el log diga si el sustrato levanta bajo
+		// este motor, que es la pregunta que decide la forma. Ver PhotinoRoom.
+		//
+		// Y CALENTAR NO ES CARGAR UN MODULO, que es justo lo que confundió el 2026-09-25: con esto
+		// solo se sabe que el sustrato levanta. La sala de WebView2 pasaba esta prueba y **no cargaba
+		// un módulo de verdad**, y se dio por verificada igual. Ver `--sala-solo`.
+		if (sala is not null && Array.Exists(args, a => a == "--sala"))
+			_ = Task.Run(async () =>
+			{
+				// LA LINEA DICE LO QUE **NO** PRUEBA, y eso es el arreglo de un defecto real: esta
+				// misma línea se leyó como «la sala anda» y con ella se dio por verificada una sala
+				// que no cargaba un módulo ni una vez. Ver TheDesktopRoom.
+				try
+				{
+					await sala(CancellationToken.None);
+					HostState.Log("sala: arranco sin modulos -- esto NO prueba que un modulo cargue; "
+						+ "para eso  --sala-solo <modulo> --abrir <modulo>");
+				}
+				catch (Exception e) { HostState.Log($"sala: NO arranco -- {e.GetType().Name}: {e.Message}"); }
+			});
 
 		// Before anybody touches the model: the resolver has to be in place when the first
 		// DllImport of ModelFoundation is bound.
@@ -146,7 +210,7 @@ internal static class Program
 			_ = Task.Run(async () =>
 			{
 				// The page has to be up before a frame can be shown: wait for Root to wire the bridge.
-				for (int i = 0; i < 100 && frames is { PageReady: false }; i++) await Task.Delay(100);
+				if (!await WaitForThePage(frames, "--modulo")) return;
 				Gnothi.Host.Module? m = state.Catalog.Modules.FirstOrDefault(x => x.Name == modulo);
 				if (m is null) { HostState.Log($"--modulo: no hay módulo '{modulo}' instalado"); return; }
 				try { await faces.OpenFace(m, CancellationToken.None); }
@@ -211,10 +275,12 @@ internal static class Program
 						foreach (string line in await state.VerifyNewModules(CancellationToken.None)) HostState.Log($"--alta: {line}");
 					}
 
-					if (abrir is not null)
+					// EL `&&` Y NO UN `return` ADENTRO, que es lo que había acá por un rato: este lambda
+					// tiene el `--auto` DESPUÉS del bloque, así que salir temprano dejaba la ventana
+					// abierta para siempre y la corrida colgada. Una guarda que se lleva puesto el
+					// cierre automático es peor que la espera que vino a arreglar.
+					if (abrir is not null && await WaitForThePage(frames, "--abrir", TimeSpan.FromSeconds(2)))
 					{
-						await Task.Delay(TimeSpan.FromSeconds(2));
-						for (int i = 0; i < 100 && frames is { PageReady: false }; i++) await Task.Delay(100);
 						Gnothi.Host.Module? m = state.Catalog.Modules.FirstOrDefault(x => x.Name == abrir);
 						if (m is null) { HostState.Log($"--abrir: no hay módulo '{abrir}'"); }
 						else
@@ -266,6 +332,34 @@ internal static class Program
 
 		app.Run();
 	}
+	// ESPERAR A QUE LA PAGINA ESTE, Y DECIRLO SI NO LLEGA. Las dos ayudas de prueba que abren una
+	// cara —`--abrir` y `--modulo`— necesitan que Root haya cableado el puente de los marcos; antes
+	// de eso `OpenFace` tira «la página de Gnothi todavía no está lista».
+	//
+	// ESTABA COMO UN BUCLE DE 10 s COPIADO EN DOS LADOS, Y SE COBRO EL 2026-09-25: al repetir una
+	// medición, dos de las tres corridas fallaron ahí. **No porque esperara poco, sino porque al
+	// agotarse SEGUIA IGUAL**, sin decir nada, y lo que llegaba al log era la excepción de más
+	// abajo — un mensaje verdadero sobre la página que no dice que el problema fue la espera. Media
+	// hora de corridas leyendo el síntoma equivocado.
+	//
+	// Dos cosas cambian: la paciencia sube a 60 s, y **un plazo agotado se dice**. Lo segundo vale
+	// más que lo primero: 60 s tampoco alcanzarían en una máquina cargada, y lo que hace falta
+	// entonces es saber QUE fue eso.
+	private static async Task<bool> WaitForThePage(FrameWebModuleHost? frames, string who, TimeSpan settle = default)
+	{
+		if (settle > TimeSpan.Zero) await Task.Delay(settle);
+
+		if (frames is null) return true;   // con `--cara ventana` pinta WebView2 y no hay puente que esperar
+
+		for (int i = 0; i < 600 && !frames.PageReady; i++) await Task.Delay(100);
+
+		if (frames.PageReady) return true;
+
+		HostState.Log($"{who}: la página de Gnothi no estuvo lista en 60 s; no se abre nada. "
+			+ "Es la ventana que no levantó, no el módulo.");
+		return false;
+	}
+
 	// What Eval hands back: WebView2 answers with a JSON string, the frame with the text itself.
 	private static string Plain(string text) =>
 		text.StartsWith('"') ? (System.Text.Json.JsonSerializer.Deserialize<string>(text) ?? "") : text;

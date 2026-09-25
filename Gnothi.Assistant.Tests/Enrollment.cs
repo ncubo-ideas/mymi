@@ -188,6 +188,7 @@ internal static class Enrollment
 			assert("a module asking for network is installed switched OFF, the desktop's rule",
 				!off.Enabled, $"enabled={off.Enabled}");
 
+
 			try
 			{
 				enrolling.Examine(Zip(

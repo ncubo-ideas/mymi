@@ -27,7 +27,7 @@ internal sealed class BoxedInstance : IDisposable
 
 	private readonly Action<string> log;
 	private readonly string module;
-	private readonly string pipe;
+	private readonly BorderPipe pipe;
 	private readonly nint store;
 	private readonly StreamWriter toTheBox;
 	private readonly Thread theGuest;
@@ -58,11 +58,11 @@ internal sealed class BoxedInstance : IDisposable
 		this.log = log;
 
 		Directory.CreateDirectory(grantedFolder);
-		pipe = Path.Combine(privateFolder, "caja-" + module + ".fifo");
-		try { File.Delete(pipe); } catch { /* it was not there */ }
-		if (Wasmtime.mkfifo(pipe, 384) != 0)   // 0600
-			throw new InvalidOperationException(
-				$"caja: no pude crear la tuberia de {module}, errno={Marshal.GetLastWin32Error()}");
+
+		// LA TUBERIA, Y ES EL UNICO LUGAR DONDE LA CAJA SABE EN QUE SISTEMA ESTA. En POSIX es un
+		// FIFO; en Windows, un named pipe. Las dos se abren POR RUTA, que es lo unico que
+		// `set_stdin_file` acepta, asi que el invitado no se entera de la diferencia. Ver BorderPipe.
+		pipe = BorderPipe.Create(privateFolder, module);
 
 		// THE CAGE IS BUILT BY `Cage`, not by this file: what the guest can reach has to be the SAME
 		// thing the canary checks, and the only way to guarantee that is for it to be the same code.
@@ -78,23 +78,14 @@ internal sealed class BoxedInstance : IDisposable
 		};
 		Wasmtime.wasi_config_set_stdout_custom(wasi, listening, 0, 0);
 
-		// BOTH ENDS OF THE FIFO, IN FLIGHT AT ONCE. See the note above.
-		StreamWriter? opened = null;
-		Exception? failedToOpen = null;
-		var opening = new Thread(() =>
-		{
-			try { opened = new StreamWriter(new FileStream(pipe, FileMode.Open, FileAccess.Write)) { AutoFlush = true }; }
-			catch (Exception e) { failedToOpen = e; }
-		}) { IsBackground = true, Name = "caja-abre-" + module };
-		opening.Start();
+		// BOTH ENDS IN FLIGHT AT ONCE. See the note above -- it holds for the FIFO and for the named
+		// pipe alike, which is why the opening is split in two here and not hidden inside BorderPipe.
+		pipe.BeginOpening(module);
 
-		if (!Wasmtime.wasi_config_set_stdin_file(wasi, pipe))
+		if (!Wasmtime.wasi_config_set_stdin_file(wasi, pipe.GuestPath))
 			throw new InvalidOperationException($"caja: no pude darle la tuberia a {module}");
 
-		opening.Join(TimeSpan.FromSeconds(10));
-		if (failedToOpen is not null)
-			throw new InvalidOperationException($"caja: la tuberia de {module} no abrio", failedToOpen);
-		toTheBox = opened ?? throw new InvalidOperationException($"caja: la tuberia de {module} no abrio a tiempo");
+		toTheBox = pipe.FinishOpening(module, TimeSpan.FromSeconds(10));
 
 		// WHERE ITS PACKAGE IS, SAID BY THE HOST. The guest does not go looking: it is told, with the
 		// guest-side name of the mount and which assembly holds the surface. Same reason the granted
@@ -174,20 +165,41 @@ internal sealed class BoxedInstance : IDisposable
 		finally { oneAtATime.Release(); }
 	}
 
+	// ARMAR LA LINEA QUE LLEGA, Y SE BUSCA EL CORTE EN EL TROZO NUEVO Y NO EN LO ACUMULADO.
+	//
+	// ESTO ERA CUADRATICO Y SE VEIA EN LOS NUMEROS · 2026-09-25. La version anterior preguntaba
+	// `halfLine.ToString().IndexOf('\n')` en la condicion del `while`: **materializaba TODO lo
+	// acumulado como string cada vez que llegaba un trozo**, y volvia a recorrerlo entero desde el
+	// principio. Una respuesta que llega partida en N trozos costaba N² en vez de N.
+	//
+	// El invitado escribe por stdout y wasmtime entrega lo que hay, asi que N crece con el tamaño de
+	// la respuesta: las vistas chicas no lo notaban y las dos grandes —`portada` y `movimientos`—
+	// pagaban casi 2× lo que paga la sala por las mismas vistas, con el resto de las vueltas siendo
+	// la caja unas 3× MAS BARATA. Ese patron cruzado —barata en chico, cara en grande— es lo que
+	// llevo a mirar aca.
+	//
+	// Ahora el trozo nuevo se recorre una sola vez, y el `StringBuilder` solo se materializa **cuando
+	// hay una linea completa**, que es una vez por respuesta y no una vez por trozo.
 	private void Receive(string chunk)
 	{
 		lock (halfLine)
 		{
-			halfLine.Append(chunk);
-			int cut;
-			while ((cut = halfLine.ToString().IndexOf('\n')) >= 0)
+			int from = 0, cut;
+			while ((cut = chunk.IndexOf('\n', from)) >= 0)
 			{
-				string line = halfLine.ToString(0, cut).TrimEnd('\r');
-				halfLine.Remove(0, cut + 1);
+				halfLine.Append(chunk, from, cut - from);
+				string line = halfLine.ToString().TrimEnd('\r');
+				halfLine.Clear();
+				from = cut + 1;
 				if (line.Length == 0) continue;
 				lock (said) said.Enqueue(line);
 				aLineIsReady.Release();
 			}
+
+			// Lo que quedo despues del ultimo salto —o el trozo entero si no traia ninguno— espera al
+			// proximo. Es el mismo estado que antes; lo que cambio es que nadie lo vuelve a leer hasta
+			// que se cierre la linea.
+			halfLine.Append(chunk, from, chunk.Length - from);
 		}
 	}
 
@@ -206,7 +218,7 @@ internal sealed class BoxedInstance : IDisposable
 		try { theGuest.Join(TimeSpan.FromSeconds(5)); } catch { /* already gone */ }
 		try { toTheBox.Dispose(); } catch { /* already gone */ }
 		if (store != 0) Wasmtime.wasmtime_store_delete(store);
-		try { File.Delete(pipe); } catch { /* no longer there */ }
+		pipe.Dispose();
 		log($"caja: {module} cerrada");
 	}
 }

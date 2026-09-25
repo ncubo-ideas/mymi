@@ -107,6 +107,18 @@
             StateHasChanged();
         });
         frames.RunJs = (module, js) => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.toFrame", module, js).AsTask());
+
+        // Y EL LADO DE LA PAGINA PARA LA SALA, si esta ventana la tiene. Son los mismos tres verbos
+        // que los de arriba -- montar, pasarle un mensaje, tirarla -- sobre un iframe OCULTO que no
+        // es la cara de nadie: adentro corre el sustrato de Gnothi. Ver PhotinoRoom.
+        if (SalaBridge.Current is { } sala)
+        {
+            sala.WireTo(
+                url => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.abrirSala", url).AsTask()),
+                (id, verbo, modulo, a, b) =>
+                    InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.aLaSala", id, verbo, modulo, a, b).AsTask()),
+                () => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.tirarSala").AsTask()));
+        }
         frames.EvalIn = (module, id, js) => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.evalIn", module, id, js).AsTask());
     }
 

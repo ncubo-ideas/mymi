@@ -118,3 +118,7 @@ Modulos.local/
 # El banco de la suite versiona solo su installation.json: el manifiesto lo proyecta el build
 # desde Modulos/, para que no haya dos copias que se desincronicen.
 Modulos.suite/*/manifest.json
+
+# wasmtime, bajado por Gnothi.Desktop/wasmtime.targets con la version fijada y el hash
+# comprobado. No se versiona: ver el comentario de ese archivo.
+.wasmtime/

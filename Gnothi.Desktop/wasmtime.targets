@@ -1,0 +1,128 @@
+<Project>
+
+  <!-- ===============================================================================================
+       TRAER wasmtime, CON LA VERSION FIJADA Y EL HASH COMPROBADO.
+
+       La caja necesita la libreria nativa de wasmtime. En Android esa libreria esta VERSIONADA en el
+       repo -`Gnothi.Mobile/lib/arm64-v8a/libwasmtime.so`, 26 MB- y aca no, a proposito.
+
+       POR QUE NO SE VERSIONA, y el motivo no es el tamaño:
+
+         1 · El escritorio es multiplataforma DE VERDAD. Android es UNA arquitectura -"el aparato que
+             hay"-; aca el camino completo son Windows, macOS arm64, macOS x64 y Linux. Cuatro
+             binarios de ~22 MB, para siempre en la historia de git, y otros cuatro cada vez que se
+             suba de version.
+
+         2 · Y EL REPO YA MOSTRO A DONDE LLEVA ESO. Hasta el 2026-09-24 tenia el MISMO libwasmtime.so
+             versionado DOS VECES -Gnothi.Mobile y Spikes/Lab.WasiCaja.Android, mismo md5-: 52 MB de
+             un artefacto de un tercero, duplicado, en un repo cuyo .git pesa 49. Nadie lo decidio;
+             se acumulo. Ese mismo dia el spike paso a referenciar el del producto y quedo uno.
+             Agregar el de Windows habria convertido eso en un patron en vez de un accidente.
+
+         3 · Un binario versionado es un binario que NADIE VUELVE A MIRAR. Uno que se baja con el hash
+             comprobado se audita en cada build.
+
+       QUE HACE ESTE ARCHIVO: baja el asset una vez por version, comprueba su SHA256 contra el que
+       esta fijado abajo, lo descomprime en una carpeta fuera del control de codigo, y copia la
+       libreria a la salida del build. Los builds siguientes no bajan nada.
+       =============================================================================================== -->
+
+  <PropertyGroup>
+    <!-- LA VERSION, FIJADA. Es la MISMA con la que F8 midio el Paso 0, y la que `Wasmtime.cs` conoce:
+         la C API del component model todavia cambia entre versiones, asi que subirla es un cambio que
+         hay que medir, no un numero que se actualiza. -->
+    <WasmtimeVersion>48.0.2</WasmtimeVersion>
+
+    <!-- FUERA DEL ARBOL DE GIT, y compartida por todos los proyectos que la necesiten. Por version,
+         para que subir de version no pise la anterior y se pueda volver. -->
+    <WasmtimeCache>$(MSBuildThisFileDirectory)..\.wasmtime\$(WasmtimeVersion)\</WasmtimeCache>
+  </PropertyGroup>
+
+  <!-- EL ASSET Y SU HASH, POR PLATAFORMA.
+
+       SOLO ESTA WINDOWS, y es a proposito: **el hash de abajo se calculo sobre el archivo bajado en
+       esta maquina el 2026-09-24**, no se copio de ninguna parte. Los otros tres se agregan el dia
+       que alguien los baje en la maquina que corresponde y calcule el suyo. Poner un hash que no se
+       verifico seria peor que no ponerlo: daria la apariencia de comprobacion sin la comprobacion.
+
+       Y UNA ADVERTENCIA SOBRE QUE ES ESTE HASH. bytecodealliance NO publica un .sha256 al lado del
+       asset -se busco, da 404-, asi que esto NO es una atestacion independiente del publicador: es
+       la huella de lo que habia en esa URL ese dia. Sirve para lo que tiene que servir -que los
+       bytes no cambien sin que nadie se entere- y no para mas que eso. -->
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <WasmtimeAsset>wasmtime-v$(WasmtimeVersion)-x86_64-windows-c-api.zip</WasmtimeAsset>
+    <WasmtimeSha256>0AAC55C8A8409A33920158F37F82A01AD1E8DE757369364BFBD48CD1B834754E</WasmtimeSha256>
+    <WasmtimeLib>wasmtime.dll</WasmtimeLib>
+    <WasmtimeLibInZip>wasmtime-v$(WasmtimeVersion)-x86_64-windows-c-api\lib\wasmtime.dll</WasmtimeLibInZip>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <WasmtimeUrl>https://github.com/bytecodealliance/wasmtime/releases/download/v$(WasmtimeVersion)/$(WasmtimeAsset)</WasmtimeUrl>
+    <WasmtimeZip>$(WasmtimeCache)$(WasmtimeAsset)</WasmtimeZip>
+    <WasmtimeReady>$(WasmtimeCache)$(WasmtimeLib)</WasmtimeReady>
+  </PropertyGroup>
+
+  <Target Name="TraerWasmtime"
+          BeforeTargets="Build"
+          Condition="'$(WasmtimeAsset)' != '' And !Exists('$(WasmtimeReady)')">
+
+    <MakeDir Directories="$(WasmtimeCache)" />
+
+    <!-- SE BAJA UNA VEZ POR VERSION. `ContinueOnError` porque un build sin red NO tiene por que
+         fallar: lo que se pierde es la caja, y eso se avisa abajo. -->
+    <Message Importance="high" Text="wasmtime: bajando $(WasmtimeAsset) (una vez por version)..." />
+    <DownloadFile SourceUrl="$(WasmtimeUrl)"
+                  DestinationFolder="$(WasmtimeCache)"
+                  DestinationFileName="$(WasmtimeAsset)"
+                  SkipUnchangedFiles="true"
+                  ContinueOnError="WarnAndContinue" />
+
+    <!-- EL HASH, ANTES DE ABRIR NADA. Un zip que no coincide no se descomprime: se borra y se para
+         el build. Acá SÍ es un error y no un aviso, y la diferencia importa — que no haya red es
+         una circunstancia; que los bytes no sean los que se fijaron es otra cosa. -->
+    <GetFileHash Files="$(WasmtimeZip)" Algorithm="SHA256" Condition="Exists('$(WasmtimeZip)')">
+      <Output TaskParameter="Items" ItemName="WasmtimeBajado" />
+    </GetFileHash>
+
+    <Delete Files="$(WasmtimeZip)"
+            Condition="Exists('$(WasmtimeZip)') And '%(WasmtimeBajado.FileHash)' != '$(WasmtimeSha256)'" />
+
+    <Error Condition="Exists('$(WasmtimeCache)') And '@(WasmtimeBajado)' != '' And '%(WasmtimeBajado.FileHash)' != '$(WasmtimeSha256)'"
+           Text="wasmtime: el SHA256 de $(WasmtimeAsset) NO coincide con el fijado.%0A  esperado: $(WasmtimeSha256)%0A  recibido: %(WasmtimeBajado.FileHash)%0ASe borro el archivo. Esto no es un problema de red: los bytes que hay en esa URL no son los que este repo fijo." />
+
+    <Unzip SourceFiles="$(WasmtimeZip)"
+           DestinationFolder="$(WasmtimeCache)unz"
+           Condition="Exists('$(WasmtimeZip)')" />
+
+    <Copy SourceFiles="$(WasmtimeCache)unz\$(WasmtimeLibInZip)"
+          DestinationFiles="$(WasmtimeReady)"
+          Condition="Exists('$(WasmtimeCache)unz\$(WasmtimeLibInZip)')" />
+
+    <Message Importance="high" Text="wasmtime: $(WasmtimeLib) listo en $(WasmtimeCache)" Condition="Exists('$(WasmtimeReady)')" />
+  </Target>
+
+  <!-- Y A LA SALIDA. Aparte del anterior porque tiene que correr TAMBIEN cuando ya estaba bajado, que
+       es el caso normal. -->
+  <Target Name="PonerWasmtime" AfterTargets="Build" Condition="'$(WasmtimeLib)' != ''">
+    <Copy SourceFiles="$(WasmtimeReady)"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(WasmtimeReady)')" />
+
+    <!-- SI NO ESTA, SE AVISA EN EL BUILD Y NO SOLO EN EL LOG DE ARRANQUE.
+         Esto es lo que mas importa de todo el archivo. Sin la libreria, la caja no se enciende y
+         **todo sigue funcionando**: los modulos corren, la ventana abre, nada falla. O sea que la
+         contencion se apaga Y SE VE IGUAL QUE EL EXITO — alguien clona, compila, corre, y cree que
+         el dll de la institucion esta contenido cuando esta corriendo con los permisos de Gnothi.
+         Un aviso del compilador es el unico lugar donde eso se ve antes de creerlo.
+
+         Aviso y no error: un build sin red tiene que seguir funcionando. Lo que no puede es seguir
+         funcionando EN SILENCIO. -->
+    <Warning Condition="!Exists('$(WasmtimeReady)') And '$(WasmtimeAsset)' != ''"
+             Text="wasmtime: no se pudo traer $(WasmtimeLib) -- LA CAJA NO SE VA A ENCENDER y la superficie de los modulos hibridos va a correr con los permisos de Gnothi, como antes. Ver Gnothi.Desktop/README.md." />
+
+    <Warning Condition="'$(WasmtimeAsset)' == ''"
+             Text="wasmtime: esta plataforma no tiene asset fijado en wasmtime.targets (hoy solo Windows) -- LA CAJA NO SE VA A ENCENDER. Ver el comentario de ese archivo para agregarla." />
+  </Target>
+
+</Project>

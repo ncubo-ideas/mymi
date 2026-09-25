@@ -153,6 +153,30 @@ internal static class WasmBox
 	// new cage.
 	private static bool? sang;
 
+	// THE CANARY, ASKED BEFORE ANYBODY NEEDS AN ANSWER — and it changes WHEN a broken cage is found,
+	// not whether.
+	//
+	// `Open` already refuses to hand out an instance over a cage that did not pass, so the property
+	// was never at risk. What was bad is the MOMENT: the canary ran on the first `Open`, which is a
+	// person opening a module. A cage that does not pass turned into a module that fails in her
+	// hands, on a path where nothing else was wrong.
+	//
+	// Calling this at start-up moves that to a line in the log and a box that simply is not used.
+	// Whoever assembles the platform can then decide not to register its factory at all, and every
+	// module runs the way it ran before — which is the honest outcome when the containment cannot be
+	// demonstrated.
+	//
+	// It shares `sang` with `Open` on purpose: it is the SAME verdict, cached once per substrate, not
+	// a second opinion. Two canaries could disagree, and then nobody would know which one to believe.
+	internal static bool Sings(string privateFolder)
+	{
+		lock (padlock)
+		{
+			if (component == 0) throw new InvalidOperationException("la caja no esta preparada");
+			return sang ??= Canary.Passes(engine, component, linker, privateFolder, Log);
+		}
+	}
+
 	// TO CHECK THAT THE CANARY SEES A BROKEN CAGE. Without this the canary is a boolean that always
 	// says true and nobody can tell it apart from one that works. It is switched on by whoever
 	// assembles the platform; on Android, by the same extra that switches the box on.

@@ -131,6 +131,77 @@
     <Compile Include="..\Gnothi.MobileShared\ModuleEnrollment.cs" Link="Movil\ModuleEnrollment.cs" />
   </ItemGroup>
 
+  <!-- LA CAJA DE WASM, Y ACA NO ES POR LA TIENDA.
+       ===============================================================================================
+       En el telefono la caja resuelve DOS cosas: que el modulo pese lo que de verdad pesa, y que
+       nadie tenga que confiar en que se porta bien. La primera se paga con el texto de Google Play;
+       la segunda no depende de ninguna tienda.
+
+       ACA APLICA LA SEGUNDA, Y APLICA IGUAL. Hoy en escritorio el dll de la institucion corre CON LOS
+       PERMISOS DE GNOTHI: puede abrir la carpeta de otro modulo, salir a la red, leer el journal del
+       laboratorio. Nada en el sistema se lo impide — lo unico que lo impide es que no lo hace.
+       Medido en el telefono: de nueve intentos de fuga, SIETE funcionan en proceso y OCHO DE OCHO
+       cierran en la caja. Ese numero no es de Android: es de wasm, que no tiene syscalls.
+
+       El stub que esto reemplaza decia que en escritorio la contencion se resuelve "con el proceso
+       hijo y el confinamiento del sistema operativo". Eso vale para la forma `stdio`; NO vale para
+       `in-process` ni para la superficie de la hibrida, que son las que corren adentro de este
+       proceso. Ahi el agujero es el mismo que en un telefono.
+
+       CORRE EN WINDOWS DESDE EL 2026-09-25, y hasta ese dia no: arrancaba entero —motor, sustrato,
+       canario 8 de 8— y moria al primer modulo con DllNotFoundException libc. El borde le hablaba
+       al invitado por un FIFO de POSIX (mkfifo(3)); ahora BorderPipe tiene las dos formas, FIFO y
+       named pipe, y las dos se abren POR RUTA, que es lo unico que set_stdin_file acepta.
+
+       ACA DECIA "LOS SEIS ARCHIVOS SON NEUTRALES DE PLATAFORMA, cero referencias a Android,
+       verificado" Y ESTABA MAL. Se busco una cosa —Android—, no se encontro, y se concluyo otra:
+       que no habia ninguna dependencia de plataforma. POSIX no es Android.
+
+       Y VALEN CS0436 IGUAL QUE LOS DE ARRIBA: `BoxShell` tambien existe como stub en el Host, y el
+       compilador prefiere esta copia, que es la de verdad. -->
+  <ItemGroup>
+    <Compile Include="..\Gnothi.MobileShared\BorderPipe.cs" Link="Caja\BorderPipe.cs" />
+    <Compile Include="..\Gnothi.MobileShared\Wasmtime.cs" Link="Caja\Wasmtime.cs" />
+    <Compile Include="..\Gnothi.MobileShared\WasmBox.cs" Link="Caja\WasmBox.cs" />
+    <Compile Include="..\Gnothi.MobileShared\BoxedInstance.cs" Link="Caja\BoxedInstance.cs" />
+    <Compile Include="..\Gnothi.MobileShared\Cage.cs" Link="Caja\Cage.cs" />
+    <Compile Include="..\Gnothi.MobileShared\Canary.cs" Link="Caja\Canary.cs" />
+    <Compile Include="..\Gnothi.MobileShared\BoxShell.cs" Link="Caja\BoxShell.cs" />
+
+    <!-- EL SUSTRATO, Y ES EL MISMO ARCHIVO QUE LLEVA EL TELEFONO, no una copia ni un build propio:
+         es wasm, no tiene nada de plataforma adentro. Son 11 MB en la salida del build.
+
+         Se referencia desde Gnothi.Mobile/Assets/ a proposito, para que no haya dos. El dia que el
+         sustrato cambie, cambia en un lugar; si esto fuera una copia, el escritorio se quedaria
+         corriendo el anterior y nadie lo notaria — que es exactamente el modo de falla que la huella
+         del .cwasm existe para atrapar. -->
+    <None Include="..\Gnothi.Mobile\Assets\sustrato.wasm" Link="sustrato.wasm"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- LA SALA. La cascara es EL MISMO ARCHIVO que compilan los dos telefonos, no una copia: lo que
+       decide -una llamada en vuelo, un modulo cargado por vez, y la identidad sacada del marco de la
+       llamada y nunca del mensaje- vive ahi y no puede divergir por plataforma. Lo unico que cambia
+       es quien implementa `IRoomHost`, y aca es DesktopRoom sobre WebView2.
+
+       Reemplaza a RoomShellStub del Host por el mismo CS0436 que los de arriba. -->
+  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
+    <Compile Include="..\Gnothi.MobileShared\RoomShell.cs" Link="Sala\RoomShell.cs" />
+
+    <!-- EL SUSTRATO DE LA SALA, publicado y POR REFERENCIA: igual que en los dos telefonos, no se
+         copia al repo. Van a `sala/` en la salida, que es de donde DesktopRoom los sirve por
+         https://sala.gnothi.local/.
+
+         Se excluyen .gz y .br porque aca los bytes salen de disco local y solo pesarian.
+
+         SI LA CARPETA NO ESTA, el build no falla y la sala dice por que al arrancar. Se regenera:
+           dotnet publish Spikes/Lab.Sala/Sustrato -c Release -o Spikes/Lab.Sala/Sustrato/publicado -->
+    <None Include="..\Spikes\Lab.Sala\Sustrato\publicado\wwwroot\**\*"
+          Exclude="..\Spikes\Lab.Sala\Sustrato\publicado\wwwroot\**\*.gz;..\Spikes\Lab.Sala\Sustrato\publicado\wwwroot\**\*.br"
+          Link="sala\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- APPLE INTELLIGENCE. El IModel del telefono es EL MISMO ARCHIVO que compila Gnothi.iOS, no
        una copia (mismo precedente que Gnothi.Assistant.Tests con Snapshot.cs). Sus DllImport
        apuntan a "__Internal"; AppleModel.Wire() los resuelve a la dylib. La dylib la deja
@@ -178,4 +249,8 @@
              CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+
+  <!-- wasmtime: la libreria nativa de la caja, bajada con la version fijada y el hash comprobado en
+       vez de versionada. El porque esta en ese archivo. -->
+  <Import Project="wasmtime.targets" />
 </Project>

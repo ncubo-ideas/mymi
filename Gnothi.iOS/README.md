@@ -86,6 +86,12 @@ red. Nada de eso es medible sin un aparato A17 Pro o superior.
 
 ## PARA CORRERLO
 
+> **ANTES QUE NADA, SI VENÍS A ABRIR LA MAC DESPUÉS DEL 2026-09-24:** leé
+> [`PENDIENTE-DE-PROBAR-EN-MAC.md`](PENDIENTE-DE-PROBAR-EN-MAC.md). Todo el trabajo del 22 al 24
+> —el renombrado de la sala, la costura de las cáscaras, cinco archivos de comentarios— se hizo
+> **desde Windows, sin compilar una sola vez**. Ese documento dice qué se tocó, qué mirar en cada
+> cosa, y en qué orden. Empieza por lo único que bloquea todo lo demás: que compile.
+
 ### 1 · Lo que hace falta antes
 
 ```

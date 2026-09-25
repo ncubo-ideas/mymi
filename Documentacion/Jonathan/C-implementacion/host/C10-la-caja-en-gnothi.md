@@ -1003,8 +1003,381 @@ protocolo.
 
 #### Lo que queda sin verificar
 
-`Gnothi.iOS` no se compila desde Windows, y acá el riesgo es mayor que con una traducción de
-comentarios. En su lugar se verificó **símbolo por símbolo** que los 27 nombres nuevos de `IosRoom.cs`
-tienen declaración y usos coherentes — y eso encontró un error real que el compilador habría atrapado
-solo: `ViewController` seguía llamando `sala.Calentar` cuando `IosRoom` ya exponía `WarmUp`. Está
-arreglado, pero **hay que pasarlo por la Mac antes de confiar en él**.
+Se verificó **símbolo por símbolo** que los 27 nombres nuevos de `IosRoom.cs` tienen declaración y
+usos coherentes — y eso encontró un error real: `ViewController` seguía llamando `sala.Calentar`
+cuando `IosRoom` ya exponía `WarmUp`.
+
+> **Y ese método manual sobraba · corregido 2026-09-25.** Se hizo porque este documento afirmaba que
+> «`Gnothi.iOS` no se compila desde Windows». **Se probó y compila**: `dotnet build Gnothi.iOS`
+> produce `net9.0-ios/iossimulator-x64/Gnothi.iOS.dll` en 12,7 s, y puesto a prueba rompiéndolo a
+> propósito da `CS0117`. **El compilador habría cantado el `Calentar`/`WarmUp` solo.**
+>
+> La afirmación nunca se había probado: se heredó, se repitió en dos documentos y sostuvo tres días
+> de verificación a mano. Lo que la Mac sí sigue necesitando es **enlazar, empaquetar y correr** —
+> compilar no es correr, igual que calentar no es cargar.
+
+---
+
+# Los tres anfitriones del mismo paquete, medidos el mismo día · 2026-09-25
+
+El mismo módulo (`compras`, híbrido, 87 compras desde febrero de 2025), el mismo journal, la misma
+máquina y la misma tarde, corrido tres veces: **en proceso, en la caja y en la sala.** Las tres
+pintaron la misma pantalla —mismo total, `₡3.174.606`—, que es lo que vuelve comparables los números.
+
+## Lo que hizo falta para poder correrla, y es el hallazgo
+
+**Dos de los tres no sabían contar.** `BoxedInstance.Ask` cronometra cada vuelta al borde desde el
+2026-09-18; `HybridShell` también. Pero:
+
+- **La sala no tenía contador.** Se escribió entera sin él.
+- **La híbrida lo tenía y nadie se lo cableaba en escritorio.** `HybridShell.Log` es un gancho que
+  la plataforma llena al arrancar: `MainActivity` lo hace desde el 2026-09-18, `Program.cs` nunca lo
+  hizo. La cáscara contaba, cronometraba, y se lo decía a un delegado vacío.
+
+Las dos son la misma forma de defecto: **un instrumento que existe y no está enchufado no se
+distingue de uno que no existe.** Y no se ve corriendo una forma sola —cada corrida se lee entera y
+razonable—; se ve al ponerlas al lado, cuando una imprime doce líneas y la otra ninguna.
+
+Se agregó `RoomShell.Log` + `trips` (con la misma forma de línea que las otras dos, para que los tres
+logs se lean y se grepeen igual), y se cablearon los tres ganchos en las tres plataformas.
+
+## Los números, medidos
+
+Vueltas al borde para pintar la portada de `compras`, en milisegundos:
+
+| vuelta | en proceso | caja (wasm) | sala (webview) |
+|---|---|---|---|
+| **primera pintada** ||||
+| arranque / `cargar` | — (hidrata en la 1.ª) | `arranqueMs` 39 | `ms` 125 · borde 962 |
+| cursor | 2803 | 447 | 8 |
+| las 6 vistas | 2851–2955 | 37–325 | 55–521 |
+| **reloj de pared** | ≈ **2955** (en paralelo) | **1757** (en serie) | **2186** (en serie) |
+| **segunda pintada (en caliente)** ||||
+| las 7 vueltas | 0–29 | 0–249 | 1–129 |
+| mediana por vuelta | **14** | **41** | **44** |
+| **reloj de pared** | ≈ **29** (en paralelo) | **566** (en serie) | **374** (en serie) |
+
+**Esa es UNA corrida, y repetirla la desarmó en parte.** Lo que sigue es lo que quedó en pie.
+
+Los dos números dicen cosas distintas y los dos hacen falta: **la mediana es lo que cuesta cruzar el
+borde una vez; el reloj de pared es lo que espera la persona**, y entre uno y otro está lo que la
+serialización agrega por sí sola.
+
+## Ninguna de las dos columnas de la híbrida se suma, que es el segundo hallazgo
+
+**La híbrida en proceso corre las siete consultas EN PARALELO; la caja y la sala las corren en
+serie.** Se ve en el log sin instrumentar nada más: los números de vuelta salen desordenados —`#6`
+antes que `#3`— y los siete tiempos son casi el mismo (2803–2955 ms en frío), porque los siete están
+esperando **la misma** hidratación del journal.
+
+Así que la columna «en proceso» **no se suma, ni en frío ni en caliente**: su reloj de pared es el
+máximo. Las otras dos sí se suman, porque `oneAtATime` las serializa: una pregunta a la vez, que es
+lo que exige un protocolo de una línea por pedido contra un invitado de un solo hilo.
+
+**Y en caliente esto estuvo escrito mal acá durante una hora**, con la columna sumada a 82 ms y el
+precio del borde dicho como «4,5× a 7×». La advertencia estaba escrita para la primera pintada
+—donde el solapamiento es imposible de no ver, tres cifras casi idénticas— y **no se aplicó a la
+segunda, donde los números son chicos y el solapamiento no salta a la vista**. Sigue estando ahí: las
+siete vueltas salen desordenadas y anidadas —`#11` dura 29 ms y adentro de esa ventana terminan `#12`
+en 1 ms y `#9` en 3—, y el orden en que terminan es casi exactamente el orden de sus duraciones, que
+es lo que pasa cuando arrancan todas juntas.
+
+La regla que queda: **una suma sólo es un reloj de pared si algo garantiza que no hubo solapamiento**,
+y acá ese algo tiene nombre y está en el código —`oneAtATime`—, así que se puede verificar en vez de
+suponerse. Donde no está, la suma es una cota superior y nada más.
+
+Conviene decir hacia dónde erraba: **el error era conservador**, favorecía a la caja y a la sala
+—ocultaba la mitad de su desventaja—, que es justamente por qué no molestaba al leerlo.
+
+Dicho de otra forma: **en frío la caja gana por hacer menos trabajo a la vez, no por ser más
+rápida.** Y en caliente, donde la hidratación ya está pagada en las tres, el orden se invierte y
+queda el precio real del borde.
+
+## Una trampa al leer los dos logs
+
+Los dos protocolos usan la palabra `consultar` para cosas distintas:
+
+| lo que se pide | caja | sala |
+|---|---|---|
+| una vista de la cara | `consultar/<vista>` | `vista/<vista>` |
+| una consulta del asistente | `preguntar/<consulta>` | `consultar/<consulta>` |
+
+Las líneas se ven iguales y **un `grep consultar` sobre los dos logs cuenta cosas diferentes**: en la
+caja son las seis vistas, en la sala es la única pregunta del asistente. No es un error de ninguno de
+los dos —cada protocolo se escribió aparte y cada uno es coherente—, pero es exactamente la clase de
+parecido que produce una tabla equivocada.
+
+## Lo que esto NO dice
+
+- **No dice nada de iOS.** Todo esto es Cranelift sobre este portátil. En iOS el motor es un
+  intérprete y el término que decide es justamente el de la columna del medio. Ver F8.
+- **No dice nada de un teléfono.** La caja en Android tiene sus propios números medidos; estos son
+  de escritorio y no se mezclan.
+- **Una corrida por forma.** Los números de la segunda pintada son estables entre sí en forma
+  —caliente contra frío— pero no se repitió la corrida: **tomar la tabla como precisión de
+  milisegundo sería leerla de más.** Lo que sostiene es el orden de magnitud y el orden entre las
+  tres.
+
+## Repetida tres veces, y la mitad de la tabla no aguantó · 2026-09-25
+
+Tres rondas de las tres formas, mismo módulo, mismo journal, misma máquina, la misma tarde.
+
+### Lo que NO se confirmó: los agregados y el frío
+
+**El frío no es reproducible, y por mucho.** La misma híbrida, el mismo trabajo:
+
+| primera pintada, reloj de pared | ronda A | ronda B | ronda C |
+|---|---|---|---|
+| en proceso | 2955 | 436 | 383 |
+| caja | 1757 | 2494 | 2719 |
+| sala | 2186 | 3157 | 3253 |
+
+**La híbrida se movió ×7,7 entre dos corridas de lo mismo.** Y se movió al revés que las otras dos:
+en la ronda A fue la más lenta de las tres y en B y C la más rápida por goleada. Dos formas que se
+mueven en direcciones opuestas entre rondas no se están midiendo a sí mismas: se está midiendo el
+primer contacto con algo —caché del sistema de archivos, JIT, el antivirus mirando un binario recién
+compilado—, y eso **no es una propiedad del anfitrión**. El journal no explica nada: tiene cuatro
+archivos, `materialization` está vacía y nadie escribió después del alta.
+
+**Las cifras de frío quedan retiradas.** No se usan para comparar nada.
+
+**Y en caliente los agregados tampoco se sostienen en un número.** Suma de las siete vueltas:
+
+| segunda pintada | A | B | C |
+|---|---|---|---|
+| en proceso (reloj = máximo) | 29 | 22 | 18 |
+| sala (suma) | 374 | 644 | 623 |
+| caja (suma) | 566 | 912 | 878 |
+
+El **orden** aguanta las tres veces —en proceso ≪ sala < caja— y el **orden de magnitud** también:
+**decenas de milisegundos contra centenas**. El cociente no: sale 13×/20× en A y 35×/49× en C.
+Decir «el borde cuesta 13× y 20×» era quedarse con la ronda más favorable **sin saber que lo era**,
+porque era la única que había.
+
+### Lo que SÍ se confirmó, y es mejor que lo que se perdió
+
+**Vuelta por vuelta, caja contra sala, las tres rondas:**
+
+| vista | caja (A/B/C) | sala (A/B/C) | caja ÷ sala |
+|---|---|---|---|
+| `portada` | 249 / 382 / 351 | 129 / 202 / 192 | **1,9× · 1,9× · 1,8×** |
+| `movimientos` | 192 / 339 / 307 | 104 / 173 / 183 | **1,8× · 2,0× · 1,7×** |
+| `cabecera` | 7 / 13 / 10 | 22 / 42 / 27 | **0,32× · 0,31× · 0,37×** |
+| `proxima` | 18 / 36 / 31 | 28 / 52 / 56 | 0,64× · 0,69× · 0,55× |
+| `cursor` | 0 / 1 / 1 | 1 / 7 / 15 | ≈0 |
+| `canasta` | 59 / 78 / 88 | 44 / 76 / 74 | 1,3× · 1,0× · 1,2× |
+| `compras` | 41 / 63 / 90 | 46 / 92 / 76 | 0,9× · 0,7× · 1,2× |
+
+**La caja es unas 3× más barata que la sala en las respuestas chicas y casi 2× más cara en las dos
+grandes** —`portada` y `movimientos`, las dos vistas pesadas—, y esos cocientes se repiten dentro de
+un ±10 % en las tres rondas. **Son mucho más estables que cualquier agregado**, porque cada uno
+compara dos números tomados en la misma corrida y bajo la misma carga de máquina: lo que se mueve
+entre rondas se mueve para los dos a la vez y se cancela al dividir.
+
+De ahí la regla, que es lo reusable: **comparar de a pares dentro de una corrida aguanta; comparar
+totales entre corridas, no.** Lo primero mide el anfitrión; lo segundo mide también el día.
+
+### Una hipótesis con nombre, para la vez que se quiera bajar ese 1,9×
+
+El patrón —barato en chico, caro en grande— tiene un candidato leíble en el código. En
+`BoxedInstance.Receive`, el ensamblado de la línea que llega por el borde hace esto por cada trozo:
+
+```csharp
+halfLine.Append(chunk);
+while ((cut = halfLine.ToString().IndexOf('\n')) >= 0)
+```
+
+`halfLine.ToString()` **materializa todo lo acumulado en cada trozo que llega**, o sea cuadrático en
+el tamaño de la respuesta. Una vista chica no lo nota; `portada` y `movimientos` son justamente las
+que llegan partidas en muchos trozos.
+
+**Esto es SUPUESTO, no medido**: la correlación está medida tres veces, la causa está leída. Se
+confirma o se descarta arreglando el ensamblado y volviendo a correr las mismas siete vistas — si el
+1,9× de `portada` no se mueve, la causa es otra y hay que buscarla en el marshalling de wasm.
+
+### Y hubo que arreglar el arnés otra vez, por tercera vez en dos días
+
+Dos de las tres corridas de la ronda B fallaron con
+`--abrir FALLÓ: la página de Gnothi todavía no está lista para mostrar un módulo`.
+
+**La espera existía y era de 10 s**, copiada en dos lugares. El defecto no era que esperara poco:
+**al agotarse seguía igual, sin decir nada**, y lo que llegaba al log era la excepción de más abajo
+—un mensaje verdadero sobre la página, que no dice que el problema fue la espera—. Media hora
+leyendo el síntoma equivocado.
+
+Ahora es una función con nombre, `WaitForThePage`, con 60 s y **una línea cuando el plazo se agota**.
+Lo segundo vale más que lo primero: 60 s tampoco alcanzarían en una máquina cargada, y lo que hace
+falta entonces es saber **que fue eso**.
+
+Y el primer arreglo introdujo otro defecto en dos minutos: la guarda era un `return` dentro del
+lambda, y **el `--auto` que cierra la ventana está después del bloque**, así que la corrida quedaba
+colgada con la ventana abierta. Quedó como `&&`. **Una guarda que se lleva puesto el cierre
+automático es peor que la espera que vino a arreglar.**
+
+Van tres en dos días —el contador de la sala que no existía, el `HybridShell.Log` que nadie
+enchufaba, y esta espera que se agotaba en silencio— y las tres son la misma familia: **el arnés
+falla callado y se lo confunde con lo medido.**
+
+## La hipótesis del `Receive` cuadrático, REFUTADA · 2026-09-25
+
+Se arregló y no movió nada. El criterio de refutación estaba escrito de antemano y se cumplió.
+
+### El arreglo
+
+`BoxedInstance.Receive` preguntaba `halfLine.ToString().IndexOf('\n')` en la condición del `while`:
+materializaba **todo lo acumulado** en cada trozo que llegaba, o sea N² en el número de trozos. Ahora
+el corte se busca en el trozo nuevo y el `StringBuilder` se materializa **una vez por línea
+completa**, no una por trozo.
+
+### La medida, y por qué es ésta y no la obvia
+
+Comparar «antes» contra «después» es comparar **totales entre corridas**, que es justo lo que se
+acaba de establecer que no aguanta. La medida buena es un cociente **dentro** de cada corrida:
+`portada` ÷ `cabecera` —la vista más pesada contra la más liviana, en la misma corrida y bajo la
+misma carga de máquina—. Si el costo fuera cuadrático en el tamaño, ese cociente tenía que bajar.
+
+| `portada` ÷ `cabecera`, segunda pintada | ronda 1 | ronda 2 | ronda 3 | media |
+|---|---|---|---|---|
+| **antes** del arreglo | 35,6 | 29,4 | 35,1 | **33,4** |
+| **después** del arreglo | 40,4 | 35,1 | 34,6 | **36,7** |
+
+**No bajó.** Lo mismo con `movimientos` ÷ `cabecera`: 28 antes, 33 después. **La causa es otra.**
+
+Y una de las tres corridas de después salió en una máquina cargadísima —`portada` en 4242 ms en vez
+de 350—, y **su cociente igual dio 35,1**, en la mitad de la tabla. Eso no es un detalle: es la regla
+de los pares funcionando a la vista. El ruido se llevó los absolutos por un factor de 12 y no tocó el
+cociente.
+
+### El arreglo se queda, y conviene decir por qué
+
+No compró lo que se fue a buscar, pero **quita un cuadrático real** y hace menos trabajo por trozo.
+Las tres corridas posteriores pintaron la misma pantalla de siempre (`₡3.174.606`), que es la
+comprobación de que el ensamblado de líneas sigue bien. Queda como mejora sin mérito medido, dicho
+así y no como «optimización».
+
+### Adónde apunta lo que quedó, que es más interesante que la hipótesis caída
+
+El cociente grande÷chico, en las tres formas:
+
+| | en proceso | sala | caja |
+|---|---|---|---|
+| `portada` ÷ `cabecera` | ≈3 | ≈6 | **≈35** |
+
+**La caja es la única que se dispara con el tamaño de la respuesta.** Y eso descarta la explicación
+cómoda —«es el módulo corriendo en wasm»—: la sala **también** corre el dll del módulo sobre wasm, y
+su cociente está del lado de la forma en proceso, no del de la caja. Lo caro no es computar adentro
+de un wasm: **es pasar bytes por ESTE borde.**
+
+Lo que queda por descartar es el otro lineal-pero-caro, que el arreglo de hoy no toca: `Receive` se
+llama desde `set_stdout_custom`, **una vez por trozo que wasmtime decida entregar**, y cada llamada
+cruza de nativo a manejado y hace `Marshal.Copy` + `Encoding.UTF8.GetString`. Si los trozos son
+chicos, el costo es el número de cruces y no el tamaño total.
+
+**Se mide con un instrumento de una línea**: contar trozos y bytes por vuelta. Si `portada` llega en
+cientos de trozos y `cabecera` en uno, está contestado. Es la próxima, y **esta vez el instrumento va
+antes que la hipótesis.**
+
+## Se borró una sala entera, porque era para un modo muerto · 2026-09-25
+
+En escritorio hubo dos salas por un día: la de Photino —un iframe oculto de la página de Gnothi,
+servido por loopback— y una segunda sobre WebView2, con documento propio y host virtual, **407
+líneas**. Esa segunda servía a `--cara ventana`, la forma vieja de Windows donde la cara de un
+módulo es una ventana de WebView2 aparte.
+
+**No la pasa nadie.** Ni un instalador, ni un script, ni un doc: sólo aparece si alguien la escribe a
+mano. Un `grep` por el repo, un minuto.
+
+Y con un módulo de verdad **ni siquiera cargaba**: timeout de 10 s en `cargar`, documento tirado, y
+otra vez, cinco veces seguidas.
+
+### Dos defectos, y el segundo es el que enseña
+
+1. **Construir para una bandera sin comprobar quién la pasa.** La bandera existía y compilaba, o sea
+   que todas las señales baratas decían que sí.
+
+2. **Dar por verificada una forma con el calentado.** El README decía «los dos motores, medidos el
+   2026-09-24». Lo medido era `--sala`: el sustrato levanta, la sonda P0 contesta. Todo cierto —y
+   **no dice nada de si un módulo carga**, que es para lo que existe una sala. Calentar y cargar se
+   parecen lo bastante en el log como para confundirlos, y **el calentado pasa en condiciones donde
+   la carga falla**: eso es exactamente lo que había.
+
+**Una forma sólo está probada por el escenario completo: un módulo de verdad pintando su pantalla.**
+
+### Y no se encontró corriéndola, que es lo incómodo
+
+Se encontró porque alguien preguntó «¿esto ya está terminado?». Las tres corridas de medición de esa
+tarde —cocientes, hipótesis, refutación— no lo habrían encontrado nunca: **medían la parte que
+andaba.** Un instrumento afinado sobre el camino bueno no dice nada del camino que nadie recorre.
+
+### Lo que quedó, verificado después de borrar
+
+| escenario | qué pasa |
+|---|---|
+| camino real (Photino) | caja encendida, la sala reclama `compras`, carga y pinta `₡3.174.606` |
+| `--cara ventana` | la sala **se aparta con una línea** y la caja corre `compras`; la pantalla se pinta igual |
+
+Lo segundo es lo que antes no pasaba: el modo muerto construía una sala rota. Ahora falla cerrada
+hacia lo que ya funcionaba, que es el mismo criterio de la caja.
+
+## Barrido por «¿qué más quedó a medias?» · 2026-09-25
+
+Después de la sala muerta, la pregunta obvia. El barrido encontró **dos cosas del mismo tamaño**, y
+las dos eran afirmaciones nunca probadas que sostenían trabajo.
+
+### 1 · Se tocó código compartido y se compiló UN solo consumidor
+
+`BoxedInstance`, `RoomShell`, `BorderPipe` y `WasmBox` los compilan **tres** proyectos: escritorio,
+Android e iOS. En toda la tarde se compiló sólo el escritorio — `MainActivity.cs` y
+`ViewController.cs` se editaron y no se pasaron por ningún compilador.
+
+**Corregido: los tres compilan.** Android, 0 errores. Escritorio, 0 errores. Las 274 pruebas pasan.
+
+### 2 · «`Gnothi.iOS` no se compila desde Windows» era falso
+
+Esa frase estaba en este documento y en `PENDIENTE-DE-PROBAR-EN-MAC.md`, y **sostuvo tres días de
+verificación símbolo por símbolo**. Se probó:
+
+```
+dotnet build Gnothi.iOS -c Debug
+Gnothi.iOS -> ...\bin\Debug\net9.0-ios\iossimulator-x64\Gnothi.iOS.dll
+0 Errores — 12,7 s
+```
+
+Y se comprobó que sirve, rompiéndolo a propósito: `RoomShell.LogQueNoExiste` da `CS0117` y
+desaparece al restaurar. **El `Calentar`/`WarmUp` que se cazó a mano lo cantaba el compilador en doce
+segundos.**
+
+La Mac sigue haciendo falta para **enlazar, empaquetar y correr** — compilar no es correr, igual que
+calentar no es cargar. Pero el trabajo manual sobraba entero.
+
+### Lo que tienen en común las tres cosas del día
+
+La sala muerta, el compilador de iOS y el calentado tomado por carga son **la misma forma**: una
+afirmación barata de comprobar que nadie comprobó, sosteniendo trabajo caro.
+
+- «nadie pasa esa bandera» — un `grep`, un minuto.
+- «no compila desde Windows» — un build, doce segundos.
+- «el calentado prueba que la sala anda» — una corrida con un módulo, un minuto.
+
+Ninguna se cayó midiendo con más finura. **Las tres se cayeron al preguntar si eran ciertas.**
+
+### Arreglado también: la línea que hizo posible el tercero
+
+`--sala` ahora dice lo que **no** prueba:
+
+```
+sala: arranco sin modulos -- esto NO prueba que un modulo cargue;
+      para eso  --sala-solo <modulo> --abrir <modulo>
+```
+
+Y se limpió un resto de la vuelta atrás del alta: `string tipo = forma;`, un alias que quedó cuando
+se revirtió el gancho de `"sala"` y que daba dos nombres al mismo valor.
+
+### Lo que queda pendiente, y está declarado
+
+| pendiente | por qué no se cierra acá |
+|---|---|
+| iOS **corriendo** (`.app`, simulador, `libGnothiIntents.a`) | hace falta una Mac |
+| Escritorio en **macOS y Linux** | el FIFO de POSIX de `BorderPipe` nunca corrió ahí |
+| Los otros tres assets de wasmtime | hay que bajarlos en cada máquina y fijar su hash; hoy sin asset la caja **falla cerrada** y todo corre como antes |
+| Caja **y** sala encendidas a la vez en el teléfono | leído del código, no medido |

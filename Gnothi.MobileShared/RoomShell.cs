@@ -57,6 +57,24 @@ internal sealed class RoomShell : IShell
 	// not know there is a WebView on the other side: it asks for text and receives text.
 	internal static IRoomHost? Host;
 
+	// THE SAME HOOK AS THE BOX AND THE HYBRID. It is set by the platform on start-up, not by this
+	// class.
+	internal static Action<string> Log { get; set; } = _ => { };
+
+	// AND THE SAME COUNTER, which is the point: `BoxedInstance.Ask` and `HybridShell.Counting` have
+	// counted and timed every round trip since 2026-09-18, and the room did not. So the room could
+	// not be COMPARED with either -- and comparing the three hosts of the same package is the only
+	// reason to have more than one.
+	//
+	// It was noticed on 2026-09-25, running the same module in the room and in the box back to back:
+	// the box printed twelve timed lines and the room printed none. A number measured on one side
+	// only is half a comparison, which is exactly the mistake the hybrid's counter was added to
+	// avoid -- and the room shipped without it anyway.
+	//
+	// Same shape of line as the other two, so the three logs can be read side by side and grepped
+	// the same.
+	private int trips;
+
 	// Shared by ALL instances, because the sala is one: the Dispatcher creates one Module -- and
 	// therefore one shell -- per module, but on the other side there is a single document.
 	private static readonly SemaphoreSlim OneAtATime = new(1, 1);
@@ -335,6 +353,9 @@ internal sealed class RoomShell : IShell
 	// sala.
 	private async Task<string> Ask(string verb, string module, string a, string b, CancellationToken ct)
 	{
+		long started = System.Diagnostics.Stopwatch.GetTimestamp();
+		int mine = ++trips;
+
 		try { return await TheHost().Ask(verb, module, a, b, ct).WaitAsync(Ceiling, ct); }
 		catch (TimeoutException)
 		{
@@ -349,6 +370,13 @@ internal sealed class RoomShell : IShell
 			throw new InvalidOperationException(
 				$"la sala no contesto a '{verb}' de '{module}' en {Ceiling.TotalSeconds:0} s; se tiro el "
 				+ "documento, y con el todo lo que ese modulo tenia montado");
+		}
+		finally
+		{
+			// EN EL `finally` Y NO EN EL CAMINO BUENO, igual que en las otras dos: lo que tarda un
+			// pedido que FALLA es justamente lo que hay que poder leer cuando algo va mal.
+			Log($"sala: {module} borde #{mine} {verb}/{a}"
+				+ $" {(System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000 / System.Diagnostics.Stopwatch.Frequency} ms");
 		}
 	}
 

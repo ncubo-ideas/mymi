@@ -986,13 +986,13 @@ internal sealed class ModuleEnrollment
 		Publicador? p = manifest.Publicador;
 		string endpoint = keptEndpoint ?? (p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}");
 
-		// WHICH SHELL, AND IT COMES OUT OF WHAT THE PACKAGE BROUGHT -- the same rule as the customs
+		// WHICH FORM, AND IT COMES OUT OF WHAT THE PACKAGE BROUGHT -- the same rule as the customs
 		// house: what it carries is what it is. Until now the phone wrote "webview" hardcoded, and
 		// that was not an oversight: on a phone no other form was possible. The hybrid adds one.
 		bool traeCara = Directory.Exists(Path.Combine(folder, "web"));
 		bool traeSuperficie = manifest.Load is not null && !string.IsNullOrWhiteSpace(manifest.Load.Entry);
 
-		string tipo = (traeSuperficie, traeCara) switch
+		string forma = (traeSuperficie, traeCara) switch
 		{
 			(true, true) => "hybrid",
 			(true, false) => "in-process",
@@ -1014,12 +1014,27 @@ internal sealed class ModuleEnrollment
 			: "";
 		string web = Path.Combine(folder, "web");
 
-		string[] argumentos = tipo switch
+		string[] argumentos = forma switch
 		{
 			"hybrid" => [web, endpoint, dll],
 			"in-process" => [dll],
 			_ => [web, endpoint],
 		};
+
+		// EL ALTA ESCRIBE LA FORMA Y NADA MAS, Y EL ANFITRION NO SE GUARDA. Suena a que falta algo y
+		// no falta: es la misma regla con la que funciona la caja, y el 2026-09-25 se volvio a ella
+		// despues de haber probado lo contrario.
+		//
+		// La caja NUNCA toca este archivo. Un modulo en caja sigue diciendo `"hybrid"`, y quien lo
+		// corre lo decide `Module.ShellFactory` en cada arranque. Eso no es un detalle de
+		// implementacion: **el anfitrion es una propiedad de ESTE Gnothi en ESTA maquina, no de la
+		// instalacion de la persona**. Si manana falta la libreria nativa, la fabrica no se registra
+		// y todo corre como antes -- su archivo nunca cambio, asi que no hay nada que deshacer.
+		//
+		// Guardarlo hace lo contrario, y se midio: con `"sala"` escrito aca y la sala no disponible,
+		// `ChooseShell` construye igual la cascara y al primer uso revienta. **El modulo no se
+		// degrada: se rompe.** La caja, por construccion, no le puede hacer eso a nadie.
+		// (no hay variable aparte: la forma ES lo que se guarda, y verlas iguales es el punto)
 
 		// THIS ENROLMENT'S RECORD. It was lost resolving merge 64bee72 -- the line that uses it stayed,
 		// the declaration did not, and the branch would not compile. Restored exactly as it was in
@@ -1035,7 +1050,7 @@ internal sealed class ModuleEnrollment
 		{
 			shell = new
 			{
-				type = tipo,
+				type = forma,
 				command = "",
 				arguments = argumentos,
 			},

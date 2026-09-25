@@ -1497,15 +1497,66 @@ C10, «Y los nombres de la sala pasaron a inglés».
 
 ### Decisión de producto, no de código
 
-**3 · Quién escribe `"type": "sala"` en el `installation.json`.** Hoy **nadie puede**:
-`ModuleEnrollment.WriteInstallation` deriva el tipo de lo que trae el paquete y sólo produce
-`hybrid`, `in-process` o `webview`. El PR de la sala anuncia ese tipo como la forma de activarla, y
-ese camino no tiene productor: la sala sólo se prende por el interruptor de laboratorio, que fuerza
-la cáscara **sin tocar el tipo**.
+**3 · Quién decide que un módulo corra en la sala.** **CERRADO el 2026-09-25 — y la respuesta era
+«como la caja».**
 
-Es la misma decisión que se tomó con la caja, y es del Host: **qué forma corre un paquete híbrido no
-lo elige el paquete**. Mientras no se tome, la sala no existe para nadie que no edite un archivo a
-mano en el aparato.
+> **LO QUE SIGUE ABAJO SE ESCRIBIÓ EL 24 Y SE DESHIZO EL 25.** Queda porque la vuelta atrás enseña
+> más que el resultado. El 24 se le enseñó al alta a escribir `"sala"` en el archivo de la persona,
+> con un gancho para que el Host eligiera el anfitrión. **Estaba mal por dos razones**, y las dos se
+> vieron recién al preguntarse cómo lo hacía la caja:
+>
+> 1. **La caja nunca toca ese archivo.** Un módulo en caja sigue diciendo `"hybrid"`, y quién lo
+>    corre lo decide `Module.ShellFactory` en cada arranque. El anfitrión es una propiedad de ESTE
+>    Gnothi en ESTA máquina, no de la instalación de la persona.
+> 2. **Y guardarlo la deja peor que antes.** Con `"sala"` escrito ahí y la sala no disponible,
+>    `ChooseShell` construye igual la cáscara y al primer uso revienta: *«no hay sala registrada»*.
+>    **El módulo no se degrada, se rompe.** La caja no le puede hacer eso a nadie: si falta la
+>    librería nativa, la fábrica no se registra y todo corre como antes.
+>
+> Hoy la sala reclama **híbridas por decisión de código**, con `--sala-solo <modulos>` en escritorio.
+> Por lista y no todas, que es lo único en que se aparta de la caja: la caja reclama todas, y si la
+> sala hiciera lo mismo **se las quedaría todas** —se registra después, y la costura le pregunta
+> primero a la última—, dejando la caja encendida en el log y apagada de hecho. Sería el defecto del
+> 2026-09-23 reintroducido por simetría mal entendida.
+>
+> **La lección, que es la reutilizable:** cuando una forma nueva necesita una decisión, la primera
+> pregunta no es «cómo la implemento» sino **«cómo la resolvió la anterior»**. La caja ya había
+> contestado ésta, y en su código estaba también el motivo.
+
+Lo que sigue es el registro de aquel día:
+
+Hasta ese día **nadie podía**: `ModuleEnrollment.WriteInstallation` derivaba el tipo de lo que trae
+el paquete y sólo producía `hybrid`, `in-process` o `webview`. El PR de la sala anuncia ese tipo como
+la forma de activarla, y **ese camino no tenía productor**: la sala se prendía forzando la cáscara
+con un interruptor de laboratorio, que **no sobrevive a un reinicio** porque no toca el archivo de la
+persona.
+
+Ahora el alta separa las dos cosas que tenía mezcladas en un campo:
+
+- **`forma`** es lo que el paquete ES — la regla de la aduana, lo que trae es lo que es.
+- **`type`** es **quién lo corre**, y lo elige el Host por `ModuleEnrollment.Anfitriona`.
+
+Pueden no ser lo mismo, porque **la caja y la sala no son formas del paquete: son anfitriones del
+mismo paquete** (C10 lo viene diciendo desde el principio).
+
+**Y la regla de qué puede cambiar de anfitrión vive en el Host, no en quien pone la preferencia:
+sólo una híbrida.** Una hospedada trae su propio motor y una cargo no tiene cara; dejarlas pasar
+escribiría una instalación que ninguna cáscara sabe abrir, y el error aparecería lejos de ahí — al
+abrir el módulo, en la pantalla de la persona.
+
+**Cuatro afirmaciones en `Enrollment.cs`**, y la que más vale es la tercera: que un `"sala"` conserva
+`Arguments[2]`. Los argumentos se derivan de la **forma**, nunca del anfitrión — escrito al revés, un
+`"sala"` caería en la rama por omisión y saldría `[web, endpoint]` **sin el dll**. Se instalaría bien,
+arrancaría bien, y no encontraría nunca el módulo. Comprobado poniendo el defecto a propósito:
+
+```
+[FAIL] y conserva el dll en Arguments[2], que es de donde la sala lo lee
+        argumentos: [...\Modulos\enlasala\web, ]
+```
+
+**Lo que sigue abierto es la política**, y es decisión de producto: qué módulos, en qué plataforma, y
+si la sala es el anfitrión por omisión de las híbridas o una elección. En escritorio se ejercita con
+`--sala-alta <modulos>`; en móvil todavía no hay quién ponga la preferencia.
 
 ### De antes, sin tocar
 
@@ -1535,3 +1586,66 @@ decidir si la frontera se rompió—, pero a los ojos de cualquier herramienta s
 **No hay nada en esa línea que diga «esto cruza».** Un renombrado automático de ese lado se los lleva
 puestos, y lo que se rompe es el chequeo de contención del otro — callado, porque el Host leería
 cero bytes y concluiría que la frontera está sana.
+
+---
+
+## P27 · Qué falta probar, y con qué criterio · 2026-09-24
+
+La suite tiene hoy **14 secciones y 274 afirmaciones**. Cubre bien lo que se construyó pensando en
+ella —las tres puertas, el consentimiento, el aislamiento entre journals, el alta, los textos, los
+dos invariantes de la sala— y **no cubre casi nada de lo que se fue agregando después**. Eso no es
+casual: lo que se agrega bajo presión se prueba a mano, en el teléfono, una vez.
+
+### El criterio, porque sin él la lista no sirve
+
+**Una prueba vale si se pone ROJA con el defecto puesto.** No es una obviedad: dos veces esta semana
+escribí una afirmación que pasaba igual con y sin el arreglo, y sólo se supo porque se volvió a meter
+el defecto a propósito para mirarla.
+
+- En la sala, «la consulta siguiente contesta en una sala nueva» pasaba **con y sin** el descarte del
+  documento. La que discrimina es «y se tira el documento», que se agregó después.
+- En la costura, con la asignación plana se pusieron rojas **dos** de ocho, y los mensajes decían qué
+  había pasado: `contesto 0: la segunda se comio a la primera`.
+
+Así que cada renglón de abajo se cierra igual: escribir la afirmación, **romper el código a
+propósito**, ver el rojo, restaurar.
+
+### Y una condición previa que apareció al cerrar el primero
+
+`ShellFactory` no se podía probar porque la regla estaba escrita **dos veces** —`MainActivity` y
+`ViewController`— y **ninguna de las dos la compila ningún proyecto que corra en una máquina
+cualquiera**. La prueba no necesitaba un lugar: la regla necesitaba un dueño. Se mudó a
+`Module.ChainShellFactory` y recién ahí hubo algo que probar.
+
+**Es probable que los otros dos pidan lo mismo.** Si un hueco no se puede probar, la primera pregunta
+no es «cómo lo pruebo» sino «por qué está escrito donde nadie lo compila».
+
+### La lista
+
+| flujo | por qué importa | evidencia |
+|---|---|---|
+| `WebModule.preguntona` / `Cablear` | decide si a la cara se le cablea el camino de la híbrida | **rompió en producción** el 2026-09-18: excepción a la vista de la persona, y el cartero volviendo a bajar el historial entero |
+| `Shell.Localizar` / `guardaSuCaraAlLado` | reancla las rutas del `installation.json` al contenedor de ESTE aparato | **mordió dos veces**, 2026-09-07 y 2026-09-21: pantalla en blanco, sin un solo error |
+| `Shell.RemoveModule` | «la app de la institución se va siempre; la bitácora es de la persona y se queda salvo que ella lo pida» | sin prueba, y es una garantía sobre el dato de la persona |
+| `Shell.Rehydrate` / `WarmUp` | calienta módulos antes de que alguien pregunte | riesgo bajo: el que falla se salta |
+
+**Cerrado el 2026-09-23:** `Module.ShellFactory` → `Gnothi.Assistant.Tests/Costura.cs`, ocho
+afirmaciones, comprobado que discrimina. Sirve de molde para los tres de arriba.
+
+### Lo que NO se va a poder probar acá, y hay que decirlo
+
+`WasmBox` y `BoxShell` necesitan `libwasmtime.so`: no hay forma de correrlos en una suite de
+escritorio sin arrastrar la librería nativa y su plataforma. **Lo que los cubre es el canario**, que
+corre en el aparato antes de abrir ningún módulo y afirma las 2 puertas que deben abrir y las 8 fugas
+que deben cerrar — y que tiene su propia prueba de que ve una jaula rota (`--ez jaulamala true`), que
+es lo que lo distingue de un booleano que siempre dice que sí.
+
+No es una excusa: es la diferencia entre **una propiedad sin verificar** y **una verificada en otro
+lado**. La primera hay que cerrarla; la segunda hay que saber dónde está.
+
+### Lo que este documento NO tiene todavía
+
+**El mapa completo contra las catorce funciones de `A6`.** Esta lista salió de mirar lo que se rompió
+y lo que se tocó en septiembre, o sea **de la memoria de los accidentes**. Un mapa contra A6 diría
+qué funciones del Host no tiene nadie mirando, incluidas las que nunca fallaron — que son
+justamente las que nadie recuerda.

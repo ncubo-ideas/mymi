@@ -164,6 +164,11 @@ public sealed class ViewController : UIViewController
 		var room = new IosRoom(Log);
 		Gnothi.Host.RoomShell.Host = room;
 
+		// Y EL MISMO CABLE QUE `HybridShell.Log`: sin el, el contador de vueltas al borde de la sala
+		// cuenta y no lo dice nadie. En iOS importa mas que en ningun lado -- es la plataforma donde
+		// el precio de una vuelta esta sin medir.
+		Gnothi.Host.RoomShell.Log = Log;
+
 		// THE SALA, FORCED IN ORDER TO MEASURE, without touching anybody's installation.json. The
 		// rest of the path is the usual one: Dispatcher, catalogue, consent. The only thing that
 		// changes is which shell builds the Module for those names.

@@ -246,6 +246,11 @@ public partial class MainActivity : Activity
 		Gnothi.Host.RoomShell.Host = new AndroidRoom(
 			this, s => global::Android.Util.Log.Info("gnothi", s));
 
+		// Y EL MISMO CABLE QUE `HybridShell.Log` unas lineas mas arriba: sin el, el contador de
+		// vueltas al borde de la sala cuenta y no lo dice nadie. Es lo que hace comparables los
+		// tres anfitriones del mismo paquete.
+		Gnothi.Host.RoomShell.Log = Log;
+
 		// THE SALA, FORCED IN ORDER TO MEASURE, without touching anybody's installation.json. The
 		// rest of the path is the usual one: Dispatcher, catalogue, consent. The only thing that
 		// changes is which shell builds the Module for those names.
