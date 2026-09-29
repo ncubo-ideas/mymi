@@ -74,7 +74,7 @@ internal sealed class ModelConfig
     /// <summary>What a provider is called ON THE SCREEN; what is stored and compared is still the
     /// preset name.</summary>
     public static string Display(string name) =>
-        name == AppleName ? Textos.T("ajustes.proveedor.apple") : name;
+        name == AppleName ? Texts.T("ajustes.proveedor.apple") : name;
 
     // The presets worth showing ON THIS MACHINE: Apple's only where the model generates. On
     // Windows, Linux or a Mac without the bridge, the list is the usual one.
@@ -176,7 +176,7 @@ internal sealed class ModelConfig
 
         string? key = KeyPresent ? File.ReadAllText(KeyPath).Trim() : null;
         if (NeedsKey && string.IsNullOrWhiteSpace(key))
-            return new ModelsResult(false, [], Textos.T("ajustes.error.sin-llave"));
+            return new ModelsResult(false, [], Texts.T("ajustes.error.sin-llave"));
 
         string endpoint = url.TrimEnd('/') + "/models";
 
@@ -199,11 +199,11 @@ internal sealed class ModelConfig
             string text = await res.Content.ReadAsStringAsync(ct);
 
             if (!res.IsSuccessStatusCode)
-                return new ModelsResult(false, [], Textos.T("ajustes.error.respondio", ("codigo", ((int)res.StatusCode).ToString())));
+                return new ModelsResult(false, [], Texts.T("ajustes.error.respondio", ("codigo", ((int)res.StatusCode).ToString())));
 
             JsonElement root = JsonSerializer.Deserialize<JsonElement>(text);
             if (!root.TryGetProperty("data", out JsonElement data) || data.ValueKind != JsonValueKind.Array)
-                return new ModelsResult(false, [], Textos.T("ajustes.error.ilegible"));
+                return new ModelsResult(false, [], Texts.T("ajustes.error.ilegible"));
 
             List<string> ids = [];
             foreach (JsonElement m in data.EnumerateArray())
@@ -213,7 +213,7 @@ internal sealed class ModelConfig
             ids.Sort(StringComparer.OrdinalIgnoreCase);
             return ids.Count > 0
                 ? new ModelsResult(true, ids, null)
-                : new ModelsResult(false, [], Textos.T("ajustes.error.vacia"));
+                : new ModelsResult(false, [], Texts.T("ajustes.error.vacia"));
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception e)

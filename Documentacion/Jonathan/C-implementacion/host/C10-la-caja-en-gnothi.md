@@ -82,7 +82,10 @@ tienda, ahí no lo prohíbe nadie.
 
 **El APK pasa de 24 a 53,2 MB.**
 
-> **Los nombres de esta tabla cambiaron el 2026-09-17**, cuando todo lo de Gnothi pasó a inglés:
+> **Los nombres de esta tabla cambiaron el 2026-09-17**, cuando los identificadores de Gnothi
+> pasaron a inglés (*esta línea decía «todo lo de Gnothi pasó a inglés» y **era falsa**: el
+> 2026-09-28 había 370 líneas de comentario en castellano en los `.cs`, ~250 escritas DESPUÉS.
+> Corregido — ver el capítulo final*):
 > `CajaDeWasm` → `WasmBox`, `InstanciaEnCaja` → `BoxedInstance`, `Jaula` → `Cage`, `ElCanario` →
 > `Canary`, `CajaShell` → `BoxShell`, `LaCaja` → `TheBox`. Y `examenes-en-caja.wasm` → `sustrato.wasm`,
 > que no es un renombre sino **otro archivo**: el anterior llevaba exámenes adentro.
@@ -1381,3 +1384,146 @@ se revirtió el gancho de `"sala"` y que daba dos nombres al mismo valor.
 | Escritorio en **macOS y Linux** | el FIFO de POSIX de `BorderPipe` nunca corrió ahí |
 | Los otros tres assets de wasmtime | hay que bajarlos en cada máquina y fijar su hash; hoy sin asset la caja **falla cerrada** y todo corre como antes |
 | Caja **y** sala encendidas a la vez en el teléfono | leído del código, no medido |
+
+---
+
+# «Todo lo de Gnothi pasó a inglés» era falso · 2026-09-28
+
+Este documento lo afirma en su línea 85, sobre el renombre del 2026-09-17. **Nadie lo volvió a
+comprobar**, que es la misma forma de los tres defectos de la semana pasada.
+
+## Lo que había
+
+**370 líneas de comentario en castellano** en los `.cs` de `Gnothi.*` — más ~334 en el js/razor/html
+propio. Y lo peor: **~250 de las 370 se escribieron DESPUÉS de la pasada**, en el código del
+escritorio de la semana del 22. La pasada se hizo y después se deshizo sola, archivo nuevo a archivo
+nuevo.
+
+## Lo corregido
+
+| | antes | después |
+|---|---|---|
+| comentarios en `.cs` de `Gnothi.*` | 370 | **99** |
+
+Los cinco archivos que nacieron en castellano —`PhotinoRoom`, `RoomFiles`, `BorderPipe`,
+`TheDesktopRoom`, `TheDesktopBox`— y los bloques agregados a `Program.cs`, `BoxedInstance.cs`,
+`ModuleEnrollment.cs`, `MainActivity.cs`, `ViewController.cs`, `RoomShell.cs` y `Costura.cs` están en
+inglés. `frames.js` también.
+
+Las 99 que quedan son **anteriores** y de otros frentes: `Gnothi.Assistant/Json.cs` (44),
+`Gnothi.Contract` (12), `Gnothi.iOS/AppDelegate.cs` (9), `Shell.cs` (7), `AgentLoop.cs` (7).
+
+## Identificadores: `SalaBridge` → `RoomBridge`, y el puente JS con él
+
+`SalaBridge`/`FromSala` → `RoomBridge`/`FromRoom`; `abrirSala`/`aLaSala`/`tirarSala` →
+`openRoom`/`toRoom`/`dropRoom`; `salaFrame` → `roomFrame`. **Se pueden renombrar porque los dos lados
+viajan juntos** en este repo, a diferencia de `SalaPuente` y `window.sala.pedido`, que son el
+contrato con un sustrato que se compila aparte y **no se tocan**.
+
+Verificado de punta a punta después: la sala carga `compras` y pinta `₡3.174.606`.
+
+### Y el renombre masivo volvió a pisar la misma trampa, en el mismo día
+
+`{ verbo: verbo, modulo: modulo }` quedó como `{ verbo: verb, modulo: module }`… pero el `sed` había
+convertido **las dos** mitades, dejando `verbo: verbo` apuntando a una variable que ya no existía.
+Son **campos del sobre** que el shim lee con `e.data.verbo`. Es exactamente la trampa que este
+documento registra del 2026-09-23 — *un campo de protocolo escrito como identificador es
+indistinguible de una variable para cualquier herramienta que no sepa qué es protocolo* — y se cayó
+en ella otra vez, con la lección escrita cinco párrafos más arriba. Queda dicho en `frames.js`, al
+lado del código.
+
+## Trazas muertas en los docs
+
+`Gnothi.iOS/HALLAZGOS-LA-SALA-EN-IOS.md` nombraba **11 veces** código que ya no existe:
+`SalaShell.Vecindario`, `SalaShell.Tope`, `SalaShell.Pedir`, `SalaShell.Cursor`, `ISalaHost`,
+`SalaShellStub`. Corregidas, con una tabla de equivalencias arriba y un párrafo que **queda con los
+nombres viejos a propósito** porque describe el estado de dos ramas de git ese día.
+
+### Y una traza muerta tapaba un mecanismo mal descrito
+
+`RoomShell.cs:93` decía, **en un comentario en inglés**, que `Ask` empieza con `await Arrancar(ct)`.
+Dos errores en una frase: `Arrancar` no existe desde el 2026-09-23 —en el archivo del propio
+renombre— y la llamada no está en `Ask` sino en cada verbo, un nivel más arriba. El camino real es
+`verbo → Ensure(ct) → Ask("cargar") → Ceiling`.
+
+**Ese es el daño de verdad de una traza muerta: no manda a buscar algo que no existe, manda a creer
+algo que no es.** El nombre viejo lo tapó cinco días.
+
+## Identificadores chicos y nombres de archivo · 2026-09-28
+
+### Renombrados
+
+| antes | ahora | dónde |
+|---|---|---|
+| `Cerrar` · `AbrirModulo` · `EntregarTraspaso` | `Close` · `OpenModule` · `DeliverHandover` | `MainActivity` |
+| `LeerTodo` · `LeerLoCompartido` · `LeerAperturaDe` · `LeerArchivoDeModulo` · `LeerTraspasoDe` | `ReadAll` · `ReadTheShared` · `ReadOpeningOf` · `ReadModuleFile` · `ReadHandoverOf` | `MainActivity` |
+| `Cerrar` · `Soltar` · `AbrirModulo` · `LeerDocumento` | `Close` · `Release` · `OpenModule` · `ReadDocument` | `ViewController` |
+| `Leer` · `crudo` | `Read` · `rawText` | `ModelFoundation` |
+| `Cablear` · `preguntona` · `Consultar` | `Wire` · `asksTheHost` · `Query` | `WebModule` |
+| `Asistente.razor` · `Ajustes.razor` | `Assistant.razor` · `Settings.razor` | + el `enum View` y los `<Tag/>` |
+| `idioma-interop.js` · `fijarIdioma` | `language-interop.js` · `setLanguage` | + su llamante en `Root.razor` |
+| `Costura.cs` · `Costura` | `Seam.cs` · `Seam` | + `Program.cs` de la suite |
+
+### Lo que NO se renombró, y el criterio es el mismo de siempre
+
+**`puente.js` se queda.** Es el shim que el escritorio sirve en `/__gnothi/puente.js` y que **el
+`index.html` de cada módulo pide por su nombre** (`<script src="puente.js">`). Los módulos son
+paquetes de las instituciones, empacados y firmados aparte: el nombre cruza esa frontera igual que
+`SalaPuente` y `window.sala.pedido`. Renombrarlo sería romper cada módulo ya entregado.
+
+**`Textos` se queda** (105 usos): el usuario lo dejó fuera de esta tanda, y renombrar `Textos.cs`
+sin renombrar la clase dejaría el archivo peleado con su tipo.
+
+### Una verificación que el compilador no daba
+
+El `import` de `language-interop.js` y la llamada a `setLanguage` **se resuelven en runtime**: un
+nombre mal puesto compila y falla en pantalla. Se comprobó en el log de una corrida —
+`import ./language-interop.js` seguido de `setLanguage ["es"]` — y no leyendo el código. Los
+componentes `.razor` sí los ata el compilador, así que ahí alcanzó con que compilara.
+
+**Verificado:** escritorio, Android e iOS compilan · 274 pruebas pasan · la sala carga `compras` y
+pinta `₡3.174.606`.
+
+## `Textos` → `Texts`, con su recurso · 2026-09-28
+
+El último identificador grande: **105 usos en 18 archivos**, más el recurso embebido.
+
+| antes | ahora |
+|---|---|
+| `Textos` · `Textos.cs` | `Texts` · `Texts.cs` |
+| `Idioma` · `Espanol` · `Ingles` | `Language` · `Spanish` · `English` |
+| `Faltantes` · `Discrepancias` · `Identicas` | `Missing` · `Mismatches` · `Identical` |
+| `DelAparato` · `Normalizar` · `Declarada` · `Marcadores` · `Frase` · `DelIdioma` · `Catalogo` · `Texto` | `FromTheDevice` · `Normalise` · `Declared` · `Placeholders` · `Phrase` · `OfTheLanguage` · `Catalogue` · `Text` |
+| `textos.json` · `gnothi.textos.json` | `texts.json` · `gnothi.texts.json` |
+
+`T(...)` se queda: es el nombre convencional de i18n y ya es neutro.
+
+### Lo que NO lo cubría el compilador, y por eso se probó rompiéndolo
+
+**El nombre del recurso se resuelve en ejecución.** `Texts.cs` lo busca por `gnothi.texts.json` y los
+tres `.csproj` lo declaran con ese `LogicalName`; si alguno no coincidiera, **compila igual y la
+pantalla sale sin texto**. El propio csproj lo dice desde antes: *«tocar una de las dos no rompe el
+build: rompe la pantalla, en ejecución»*.
+
+Así que se comprobó a la manera de siempre, rompiéndolo a propósito:
+
+| qué se rompió | resultado |
+|---|---|
+| `LogicalName` de `Gnothi.Mobile.csproj` | `[FAIL] Gnothi.Mobile declares the catalog with the shared LogicalName` |
+| el `const Resource` de `Texts.cs` | **8 pruebas en rojo** |
+| restaurado | 0 en rojo, 274 pasan |
+
+Ocho pruebas rojas al tocar una constante es exactamente lo que se quería saber: **la suite sí baja a
+leer el recurso**, no sólo a compilar contra él.
+
+### Y uno que se dejó a propósito
+
+`Shell.cs` tiene `"textos" => Texts.Json`: es el **op del puente entre `ui.html` y el Host**, no un
+identificador. Sus vecinos ya están en inglés (`modules`, `setTool`), así que renombrarlo sería
+coherente — **y no se hizo porque no se puede verificar acá**. Ese camino sólo corre en los
+teléfonos: el escritorio no pasa por ahí, lee `Texts.T` por referencia de proyecto. Un renombre en
+los dos lados compilaría, pasaría las pruebas, y **la pantalla del teléfono saldría sin texto** sin
+que nada lo dijera.
+
+Es la misma regla que dejó tres afirmaciones falsas esta semana, aplicada antes y no después: **no se
+da por hecho lo que no se puede correr.** Queda anotado para el día que haya un teléfono a mano.

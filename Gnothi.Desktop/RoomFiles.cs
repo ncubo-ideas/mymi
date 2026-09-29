@@ -3,51 +3,50 @@ using System.Text.Json;
 
 namespace Gnothi.Desktop;
 
-// LO QUE LA SALA SIRVE, EN UN SOLO LUGAR.
+// WHAT THE ROOM SERVES, IN ONE PLACE.
 //
-// `modulo/<m>/indice.json`, `modulo/<m>/dominio/<x>.dll`, `modulo/<m>/journal/...` y el sustrato.
-// Eso es **contrato con el sustrato**, no código de un motor: los nombres de esos campos y de esas
-// rutas los lee `Spikes/Lab.Sala/Sustrato/Sala.cs`, que se compila aparte y no se entera de nada.
+// `modulo/<m>/indice.json`, `modulo/<m>/dominio/<x>.dll`, `modulo/<m>/journal/...` and the
+// substrate. That is a **contract with the substrate**, not an engine's code: the names of those
+// fields and paths are read by `Spikes/Lab.Sala/Sustrato/Sala.cs`, which is compiled apart and
+// knows nothing of this.
 //
-// ── POR QUE ESTA CLASE EXISTE, Y POR QUE RECIEN AHORA ───────────────────────────────────────────
+// ── WHY THIS CLASS EXISTS, AND WHY ONLY NOW ───────────────────────────────────────────────────
 //
-// Nacio porque en el escritorio hubo DOS salas por un dia —una sobre WebView2 y `PhotinoRoom` sobre
-// un iframe oculto servido por loopback—, y escribir el mismo contrato dos veces en el mismo
-// ensamblado es el error que este repo pago dos veces esta semana: una regla escrita dos veces no
-// tiene dueño, y las dos copias divergen el dia que alguien toca una.
+// It was born because the desktop had TWO rooms for a day -- one over WebView2 and `PhotinoRoom`
+// over a hidden iframe served by loopback -- and writing the same contract twice in the same
+// assembly is the mistake this repo paid for twice in one week: a rule written twice has no owner,
+// and the two copies diverge the day somebody touches one.
 //
-// **LA DE WEBVIEW2 SE BORRO EL 2026-09-25**: servia a `--cara ventana`, que no la pasa nadie. Asi
-// que hoy esta clase tiene UN solo llamante en este ensamblado, y eso la deja sin la razon con la
-// que nacio. Se queda igual, por la de abajo: los otros dos llamantes son los telefonos.
+// **THE WEBVIEW2 ONE WAS DELETED ON 2026-09-25**: it served `--cara ventana`, which nobody passes.
+// So today this class has ONE caller in this assembly, which leaves it without the reason it was
+// born for. It stays anyway, for the one below: the other two callers are the phones.
 //
-// Y HAY DOS COPIAS MAS, en `AndroidRoom` y `IosRoom`, que **no se tocaron**. No es olvido: `IosRoom`
-// se renombro entero hace dos dias y **no lo compilo nadie todavia** -- no hay Mac. Refactorizarlo a
-// ciegas encima de un renombre que ningun compilador vio es como una rotura silenciosa se vuelve
-// dos. La extraccion de esas dos queda anotada para el dia que la Mac compile una vez. Ver F2 · P26.
+// AND THERE ARE TWO MORE COPIES, in `AndroidRoom` and `IosRoom`, that were **not touched**. Not an
+// oversight: `IosRoom` was renamed wholesale two days ago. (The note here used to add "and nobody
+// has compiled it yet -- there is no Mac"; that was wrong, and it was corrected on 2026-09-28:
+// `dotnet build Gnothi.iOS` compiles on Windows in 12,7 s. What still needs a Mac is linking,
+// packaging and RUNNING.) Extracting those two stays noted for the day iOS runs once. See F2 · P26.
 internal static class RoomFiles
 {
-	// LO QUE EL SUSTRATO PIDE Y LO QUE SE LE CONTESTA. El cuerpo, su tipo, el estado y -solo para el
-	// documento- la politica que BundleServer compone sobre su contenido.
+	// WHAT THE SUBSTRATE ASKS FOR AND WHAT IT IS ANSWERED. The body, its type, the status and -- only
+	// for the document -- the policy BundleServer composes over its content.
 	internal sealed record Served(byte[] Body, string Type, int Status, string? Csp);
 
-	// DONDE VIVEN LOS BYTES DE UN MODULO: la carpeta de sus dll, cual es la entrada, y su journal.
+	// WHERE A MODULE'S BYTES LIVE: the folder of its dlls, which one is the entry, and its journal.
 	internal sealed record Prepared(string Domain, string Entry, string Journal);
 
-	// EL SHIM, SERVIDO COMO ARCHIVO DEL MISMO ORIGEN y no incrustado en el documento.
+	// THE SHIM, SERVED AS A SAME-ORIGIN FILE and not embedded in the document.
 	//
-	// Es la solucion que este repo ya encontro para las caras: `script-src 'self'` admite un
-	// `<script src>` del propio origen SIN hash, mientras que un script en linea obligaria a
-	// recomponer la CSP que BundleServer ya calculo sobre el documento. Ver FrameWebModule.
-	//
-	// Solo lo usa la sala de Photino: la de WebView2 lo inyecta con
-	// `AddScriptToExecuteOnDocumentCreatedAsync`, que corre antes que el documento y no pasa por
-	// ninguna politica.
+	// It is the solution this repo already found for the faces: `script-src 'self'` admits a
+	// `<script src>` from its own origin WITHOUT a hash, whereas an inline script would force
+	// recomposing the CSP that BundleServer has already computed over the document. See
+	// FrameWebModule.
 	internal const string ShimPath = "__gnothi/sala.js";
 
-	// EL DOCUMENTO LO PIDE SOLO SI SE LO INYECTAN, porque `index.html` es EL MISMO ARCHIVO que
-	// publican los dos telefonos y ahi el shim entra por la plataforma. Aca se agrega la etiqueta al
-	// servirlo, antes de que BundleServer calcule la politica sobre el resultado -- si se calculara
-	// antes, la etiqueta quedaria fuera de lo permitido y el documento saldria en blanco.
+	// THE DOCUMENT ONLY ASKS FOR IT IF IT IS INJECTED, because `index.html` is THE SAME FILE the two
+	// phones publish, and there the shim comes in through the platform. Here the tag is added when
+	// serving it, before BundleServer computes the policy over the result -- computed earlier, the
+	// tag would fall outside what is allowed and the document would come out blank.
 	private const string ShimTag = "<script src=\"/" + ShimPath + "\"></script>";
 
 	internal static Served Serve(string substrate, string path, Func<string, Prepared?> servable, Action<string> log)
@@ -62,18 +61,18 @@ internal static class RoomFiles
 
 			if (parts[2] == "indice.json")
 			{
-				// SOLO LO QUE ES DEL MODULO. Todo lo demas lo presta el sustrato, y no es una
-				// optimizacion: un paquete del BCL viene compilado POR PLATAFORMA, y el que esta en
-				// la carpeta del modulo es el de esta maquina.
+				// ONLY WHAT BELONGS TO THE MODULE. Everything else the substrate lends, and that is
+				// not an optimisation: a BCL package is compiled PER PLATFORM, and the one in the
+				// module's folder is this machine's.
 				string[] files = [.. Directory.EnumerateFiles(p.Domain, "*.dll")
 					.Select(Path.GetFileNameWithoutExtension)
 					.Where(n => n is not null && !LentByTheRoom(n))
 					.Select(n => n!)
 					.OrderBy(n => string.Equals(n, p.Entry, StringComparison.Ordinal) ? 1 : 0)];
 
-				// `entrada` y `archivos` son CAMPOS DEL JSON, no propiedades de C#: los lee el
-				// sustrato con GetProperty. Van nombrados a proposito para que un renombrado
-				// automatico no se los lleve -- ya paso el 2026-09-23.
+				// `entrada` and `archivos` are JSON FIELDS, not C# properties: the substrate reads
+				// them with GetProperty. They are named explicitly so an automatic rename cannot
+				// carry them off -- which already happened on 2026-09-23.
 				return Text(JsonSerializer.Serialize(new { entrada = p.Entry, archivos = files }), "application/json");
 			}
 
@@ -106,8 +105,8 @@ internal static class RoomFiles
 		return FromSubstrate(substrate, path, log);
 	}
 
-	// EL SUSTRATO, Y EL DOCUMENTO CON SU POLITICA. El orden importa y esta explicado arriba: primero
-	// se agrega la etiqueta del shim, despues se calcula la CSP sobre el documento resultante.
+	// THE SUBSTRATE, AND THE DOCUMENT WITH ITS POLICY. The order matters and is explained above:
+	// first the shim's tag is added, then the CSP is computed over the resulting document.
 	private static Served FromSubstrate(string substrate, string path, Action<string> log)
 	{
 		string full = Path.Combine(substrate, path.Replace('/', Path.DirectorySeparatorChar));
@@ -121,8 +120,8 @@ internal static class RoomFiles
 		return new Served(body, MimeOf(path), 200, Gnothi.MobileShared.BundleServer.CspFor(body));
 	}
 
-	// EL MISMO DOCUMENTO, CON EL SHIM ADENTRO. Solo para la sala de Photino, donde no hay forma
-	// nativa de inyectar un script antes del documento.
+	// THE SAME DOCUMENT, WITH THE SHIM INSIDE. There is no native way here to inject a script
+	// before the document, so it travels in the markup.
 	internal static Served WithShim(string substrate, Action<string> log)
 	{
 		string full = Path.Combine(substrate, "index.html");
@@ -130,9 +129,9 @@ internal static class RoomFiles
 
 		string html = File.ReadAllText(full);
 
-		// ANTES DE CUALQUIER OTRO SCRIPT, porque el sustrato decide si esta hospedado mirando
-		// `window.SalaPuente` apenas arranca. Si el shim llegara despues, correria la barrida del
-		// laboratorio suelto en vez de quedarse esperando pedidos.
+		// BEFORE ANY OTHER SCRIPT, because the substrate decides whether it is hosted by looking at
+		// `window.SalaPuente` the moment it starts. If the shim arrived later, it would run the
+		// standalone laboratory sweep instead of sitting there waiting for requests.
 		int head = html.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
 		int close = head >= 0 ? html.IndexOf('>', head) : -1;
 
@@ -158,9 +157,9 @@ internal static class RoomFiles
 		return new Served([], "text/plain", 404, null);
 	}
 
-	// LA LISTA DE LO PRESTADO, la otra cara de la lista de prohibidos del instalador. **Tiene que
-	// seguir siendo la misma que la de AndroidRoom y IosRoom**: lo que esta aca lo pone el sustrato
-	// en su build de browser-wasm, y lo que no, viaja en el modulo.
+	// THE LIST OF WHAT IS LENT, the other face of the installer's forbidden list. **It has to stay
+	// the same as AndroidRoom's and IosRoom's**: what is here the substrate provides in its
+	// browser-wasm build, and what is not travels inside the module.
 	private static bool LentByTheRoom(string assembly) =>
 		assembly.StartsWith("System.", StringComparison.OrdinalIgnoreCase)
 		|| assembly.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase)

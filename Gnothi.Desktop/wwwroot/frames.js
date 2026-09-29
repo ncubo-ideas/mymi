@@ -21,26 +21,26 @@ window.gnothiFrames = (function () {
 
   function evalIn(module, id, js) { post(module, { gnothi: 'eval', id: id, js: js }); }
 
-  // ── LA SALA. Un iframe OCULTO Y PERMANENTE, que no es la cara de nadie.
+  // ── THE ROOM. A HIDDEN, PERMANENT iframe that is nobody's face.
   //
-  // Adentro corre el sustrato de Gnothi -- el runtime .NET compilado a wasm -- y los modulos entran
-  // ahi como bytes. Va fuera de la vista porque LA SALA NO TIENE PANTALLA: existe para contestar. La
-  // cara de la institucion sigue siendo su propio marco, en su propio origen, y se monta solo cuando
-  // la persona la abre.
+  // Inside it runs Gnothi's substrate -- the .NET runtime compiled to wasm -- and modules go in
+  // there as bytes. It sits out of sight because THE ROOM HAS NO SCREEN: it exists to answer. The
+  // institution's face is still its own frame, in its own origin, and is mounted only when the
+  // person opens it.
   //
-  // MISMA DISCIPLINA QUE LA DE ARRIBA, Y POR EL MISMO MOTIVO: se reconoce por su WINDOW y nunca por
-  // lo que el mensaje diga, y las dos direcciones van ancladas a su propio origen. Un documento que
-  // navego a otro lado deja de oir y de ser oido.
-  var SALA = 'sala-gnothi';
+  // SAME DISCIPLINE AS THE ONE ABOVE, AND FOR THE SAME REASON: it is recognised by its WINDOW and
+  // never by what the message says, and both directions are anchored to its own origin. A document
+  // that navigated elsewhere stops hearing and stops being heard.
+  var ROOM = 'room-gnothi';
 
-  function salaFrame() { return document.getElementById(SALA); }
+  function roomFrame() { return document.getElementById(ROOM); }
 
-  function abrirSala(url) {
-    var previo = salaFrame();
-    if (previo) previo.remove();
+  function openRoom(url) {
+    var earlier = roomFrame();
+    if (earlier) earlier.remove();
 
     var f = document.createElement('iframe');
-    f.id = SALA;
+    f.id = ROOM;
     f.src = url;
     f.style.display = 'none';
     f.setAttribute('aria-hidden', 'true');
@@ -48,32 +48,39 @@ window.gnothiFrames = (function () {
     document.body.appendChild(f);
   }
 
-  // UN PEDIDO A LA SALA. No viaja como javascript para evaluar -- que es lo que la cara de un modulo
-  // necesita y por lo que su CSP pide 'unsafe-eval' -- sino como DATO: el shim llama a
-  // `window.sala.pedido` con estos cinco campos. La sala no necesita esa concesion.
-  function aLaSala(id, verbo, modulo, a, b) {
-    var f = salaFrame();
+  // A REQUEST TO THE ROOM. It does not travel as javascript to evaluate -- which is what a module's
+  // face needs, and why its CSP asks for 'unsafe-eval' -- but as DATA: the shim calls
+  // `window.sala.pedido` with these five fields. The room needs no such concession.
+  //
+  // THE FIELD NAMES STAY IN SPANISH ON PURPOSE (`verbo`, `modulo`): they are the envelope the shim
+  // reads, and the shim hands them straight to the substrate's own API, which is compiled apart.
+  // Renaming the local variables around them is free; renaming the fields is a two-sided change --
+  // and on 2026-09-28 a bulk rename here turned `verbo: verbo` into a reference to a variable that
+  // no longer existed. Exactly the trap C10 records: a protocol field written as an identifier is
+  // indistinguishable from a variable to any tool that does not know which is which.
+  function toRoom(id, verb, module, a, b) {
+    var f = roomFrame();
     var origin = f ? originOf(f) : null;
     if (f && f.contentWindow && origin)
-      f.contentWindow.postMessage({ gnothi: 'sala', id: id, verbo: verbo, modulo: modulo, a: a, b: b }, origin);
+      f.contentWindow.postMessage({ gnothi: 'sala', id: id, verbo: verb, modulo: module, a: a, b: b }, origin);
   }
 
-  // TIRAR EL DOCUMENTO, que es lo unico que recupera una sala que no contesta. Sacar el iframe se
-  // lleva puesto lo que hubiera adentro, y con ello la frontera: lo que el modulo tenia montado vive
-  // en la memoria de ese documento, no en el disco.
-  function tirarSala() {
-    var f = salaFrame();
+  // THROW THE DOCUMENT AWAY, which is the only thing that recovers a room that does not answer.
+  // Removing the iframe takes whatever was inside with it, and with it the border: what the module
+  // had mounted lives in that document's memory, not on disk.
+  function dropRoom() {
+    var f = roomFrame();
     if (f) f.remove();
   }
 
   window.addEventListener('message', function (e) {
     if (!e.data || e.data.gnothi !== 'puente') return;
 
-    // La sala primero: es uno solo y no lleva nombre de modulo, porque el modulo del que habla sale
-    // del marco de la llamada que el Host abrio y nunca del mensaje.
-    var s = salaFrame();
+    // The room first: there is only one and it carries no module name, because which module it is
+    // talking about comes from the frame of the call the Host opened, never from the message.
+    var s = roomFrame();
     if (s && s.contentWindow === e.source && originOf(s) === e.origin) {
-      DotNet.invokeMethodAsync('Gnothi.Desktop', 'FromSala', e.data.m);
+      DotNet.invokeMethodAsync('Gnothi.Desktop', 'FromRoom', e.data.m);
       return;
     }
 
@@ -86,5 +93,5 @@ window.gnothiFrames = (function () {
     }
   });
 
-  return { toFrame: toFrame, evalIn: evalIn, abrirSala: abrirSala, aLaSala: aLaSala, tirarSala: tirarSala };
+  return { toFrame: toFrame, evalIn: evalIn, openRoom: openRoom, toRoom: toRoom, dropRoom: dropRoom };
 })();

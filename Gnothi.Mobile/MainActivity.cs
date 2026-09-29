@@ -5,7 +5,7 @@ using Android.Webkit;
 // declares a `Shell` -- installation.json's block -- and this file uses Gnothi.MobileShared's
 // `Shell` ten times. Importing both namespaces leaves the name ambiguous and Android stops
 // compiling; the alias brings the one thing needed from there.
-using Textos = Gnothi.Host.Textos;
+using Texts = Gnothi.Host.Texts;
 using Gnothi.MobileShared;
 using System.Text.Json;
 
@@ -139,10 +139,10 @@ public partial class MainActivity : Activity
 		// Or by a file -opened, shared- which is read now and enrolled once the Host is up. A
 		// share of text is the other thing a share can be: the handoff from the institution's
 		// standalone app, read below.
-		archivoPendiente = LeerArchivoDeModulo(Intent, strict: true);
-		if (archivoPendiente is null) LeerTraspasoDe(Intent);
+		archivoPendiente = ReadModuleFile(Intent, strict: true);
+		if (archivoPendiente is null) ReadHandoverOf(Intent);
 		// And the home-screen icon, which asks for a module to be opened by name.
-		LeerAperturaDe(Intent);
+		ReadOpeningOf(Intent);
 
 		web = new WebView(this);
 		web.Settings.JavaScriptEnabled = true;
@@ -196,7 +196,7 @@ public partial class MainActivity : Activity
 		// THE THREE LINES HERE -- the partial above, this hook and this call -- were lost by the
 		// merge of 2026-09-21 (83b68be) and restored on 2026-09-22. It is worth knowing why they
 		// matter TOGETHER: without `PrepareTheBox` the box does not exist, so a test of the hosted
-		// form would come out green WITHOUT TESTING ANYTHING -- not because the `preguntona` fix
+		// form would come out green WITHOUT TESTING ANYTHING -- not because the `asksTheHost` fix
 		// works, but because `BoxShell.Preferred` was never switched on. A false green.
 		PrepareTheBox();
 
@@ -246,9 +246,9 @@ public partial class MainActivity : Activity
 		Gnothi.Host.RoomShell.Host = new AndroidRoom(
 			this, s => global::Android.Util.Log.Info("gnothi", s));
 
-		// Y EL MISMO CABLE QUE `HybridShell.Log` unas lineas mas arriba: sin el, el contador de
-		// vueltas al borde de la sala cuenta y no lo dice nadie. Es lo que hace comparables los
-		// tres anfitriones del mismo paquete.
+		// AND THE SAME WIRE AS `HybridShell.Log` a few lines above: without it, the room's count of
+		// border trips counts and nobody says it. It is what makes the three hosts of the same
+		// package comparable.
 		Gnothi.Host.RoomShell.Log = Log;
 
 		// THE SALA, FORCED IN ORDER TO MEASURE, without touching anybody's installation.json. The
@@ -315,7 +315,7 @@ public partial class MainActivity : Activity
 		if (traspasoPendiente is { } t)
 		{
 			traspasoPendiente = null;
-			await EntregarTraspaso(t.Modulo, t.Aserciones, stop.Token);
+			await DeliverHandover(t.Modulo, t.Aserciones, stop.Token);
 		}
 
 		// THE ICON GOES LAST, and it is not a detail of ordering: if an enrolment or a handoff also
@@ -324,7 +324,7 @@ public partial class MainActivity : Activity
 		if (aperturaPendiente is { } cual)
 		{
 			aperturaPendiente = null;
-			AbrirModulo(cual);
+			OpenModule(cual);
 		}
 
 		await corriendo;
@@ -358,26 +358,26 @@ public partial class MainActivity : Activity
 		if (bundle is { Length: > 0 }) _ = shell?.Enroll(intento!.Data!.ToString()!, stop.Token);
 
 		// A file, with Mymi already open: the same reader as at launch.
-		if (LeerArchivoDeModulo(intento, strict: true) is { } archivo)
+		if (ReadModuleFile(intento, strict: true) is { } archivo)
 		{
 			_ = shell?.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
 			return;
 		}
 
-		LeerTraspasoDe(intento);
+		ReadHandoverOf(intento);
 		if (traspasoPendiente is { } t)
 		{
 			traspasoPendiente = null;
-			_ = EntregarTraspaso(t.Modulo, t.Aserciones, stop.Token);
+			_ = DeliverHandover(t.Modulo, t.Aserciones, stop.Token);
 		}
 
 		// The icon with Gnothi already open. Here the catalogue is ALREADY there, so it opens straight
 		// away.
-		LeerAperturaDe(intento);
+		ReadOpeningOf(intento);
 		if (aperturaPendiente is { } cual)
 		{
 			aperturaPendiente = null;
-			AbrirModulo(cual);
+			OpenModule(cual);
 		}
 	}
 
@@ -393,7 +393,7 @@ public partial class MainActivity : Activity
 	public override void OnBackPressed()
 	{
 		// Back out of a module puts the home on screen again: same question, same cap.
-		if (Cerrar()) { shell?.ReviewOriginsIfDue(); return; }
+		if (Close()) { shell?.ReviewOriginsIfDue(); return; }
 
 		web!.EvaluateJavascript("gn.back()", new BackAnswer(this));
 	}
@@ -422,7 +422,7 @@ public partial class MainActivity : Activity
 	//
 	// Today in Exámenes, Sonia's assertions are ONE -- the sex she declared -- and fit in the link with
 	// room to spare. The second door exists because other institutions are going to expect more.
-	private void LeerTraspasoDe(Android.Content.Intent? intento)
+	private void ReadHandoverOf(Android.Content.Intent? intento)
 	{
 		if (intento is null) return;
 
@@ -442,7 +442,7 @@ public partial class MainActivity : Activity
 
 		try
 		{
-			string? contenido = LeerLoCompartido(intento);
+			string? contenido = ReadTheShared(intento);
 			if (contenido is not { Length: > 0 }) return;
 
 			traspasoPendiente = (null, contenido);
@@ -454,7 +454,7 @@ public partial class MainActivity : Activity
 		}
 	}
 
-	private string? LeerLoCompartido(Android.Content.Intent intento)
+	private string? ReadTheShared(Android.Content.Intent intento)
 	{
 		// A share can bring the file or, if it was small, the bare text. Both are accepted.
 		if (intento.GetParcelableExtra(Android.Content.Intent.ExtraStream) is Android.Net.Uri archivo)
@@ -497,7 +497,7 @@ public partial class MainActivity : Activity
 		return null;
 	}
 
-	private async Task EntregarTraspaso(string? nombrado, string asercionesJson, CancellationToken ct)
+	private async Task DeliverHandover(string? nombrado, string asercionesJson, CancellationToken ct)
 	{
 		Gnothi.Host.Module? m = ADondeVan(nombrado, asercionesJson);
 		if (m is null || anfitrion is null)
@@ -518,13 +518,13 @@ public partial class MainActivity : Activity
 		}
 	}
 
-	// ── EL ALTA DESDE UN ENLACE ──────────────────────────────────────────────────────────
+	// ── ENROLMENT FROM A LINK ─────────────────────────────
 
 	// What the enrolment link brought, waiting for the catalogue to exist. It cannot be installed
 	// before that: the Host does not yet know where the modules live.
 	private string? altaPendiente;
 
-	// ── EL ALTA DESDE UN ARCHIVO ─────────────────────────────────────────────────────────
+	// ── ENROLMENT FROM A FILE ─────────────────────────────
 
 	// What a file brought, waiting for the catalog to exist -the same reason as altaPendiente.
 	private (byte[] Bytes, string Name)? archivoPendiente;
@@ -542,7 +542,7 @@ public partial class MainActivity : Activity
 	// are taken only when they look like a module, by mime or by name, so a shared text file still
 	// reaches the handoff below. A file the person picked herself is read whatever it looks like:
 	// she chose it, and the inspection is what tells her if it is not a module.
-	private (byte[] Bytes, string Name)? LeerArchivoDeModulo(Android.Content.Intent? intento, bool strict)
+	private (byte[] Bytes, string Name)? ReadModuleFile(Android.Content.Intent? intento, bool strict)
 	{
 		if (intento is null) return null;
 
@@ -558,7 +558,7 @@ public partial class MainActivity : Activity
 
 		try
 		{
-			byte[] bytes = LeerTodo(uri);
+			byte[] bytes = ReadAll(uri);
 			Log($"alta: archivo '{name}' ({bytes.Length} bytes, {type}) por {intento.Action}");
 			return (bytes, name);
 		}
@@ -572,7 +572,7 @@ public partial class MainActivity : Activity
 
 	// Through the ContentResolver, with the same ceiling as a download: a wrong file cannot fill
 	// the device either.
-	private byte[] LeerTodo(Android.Net.Uri uri)
+	private byte[] ReadAll(Android.Net.Uri uri)
 	{
 		using System.IO.Stream? content = ContentResolver!.OpenInputStream(uri)
 			?? throw new System.IO.IOException("the content resolver returned no stream");
@@ -658,7 +658,7 @@ public partial class MainActivity : Activity
 		{
 			var abrir = new Android.Content.Intent(Android.Content.Intent.ActionView);
 			abrir.SetDataAndType(uri, ContentResolver!.GetType(uri) ?? data!.Type);
-			if (LeerArchivoDeModulo(abrir, strict: false) is { } archivo) archivos.Add(archivo);
+			if (ReadModuleFile(abrir, strict: false) is { } archivo) archivos.Add(archivo);
 		}
 		if (archivos.Count == 0) return;
 		if (shell is null) archivosPendientes = archivos;
@@ -681,7 +681,7 @@ public partial class MainActivity : Activity
 	// What does NOT change is the containment: it still has no network, no service worker and no
 	// process of its own, and it stops existing when Gnothi evicts it. "It does not wake, does not
 	// notify, does not interrupt" holds by incapacity, not because the module behaves well.
-	private string AbrirModulo(string nombre)
+	private string OpenModule(string nombre)
 	{
 		Gnothi.Host.Module? m = shell?.Find(nombre);
 		if (m is null || anfitrion is null) return "{\"ok\":false}";
@@ -709,7 +709,7 @@ public partial class MainActivity : Activity
 		Android.Views.View? vista = vivo.View;
 		if (vista is null || raiz is null) return;
 
-		Cerrar();
+		Close();
 
 		enPantalla = vivo;
 		vivo.Visible = true;
@@ -719,7 +719,7 @@ public partial class MainActivity : Activity
 
 	// Taking it off the screen does NOT kill it: the module stays alive and goes on answering the
 	// assistant's questions. It just stops being visible, and becomes evictable again.
-	private bool Cerrar()
+	private bool Close()
 	{
 		if (enPantalla is null) return false;
 
@@ -755,7 +755,7 @@ public partial class MainActivity : Activity
 	// opening it there would find nothing to open.
 	private string? aperturaPendiente;
 
-	private void LeerAperturaDe(Android.Content.Intent? intento)
+	private void ReadOpeningOf(Android.Content.Intent? intento)
 	{
 		string? modulo = intento?.GetStringExtra(ExtraModulo);
 		if (modulo is { Length: > 0 }) aperturaPendiente = modulo;
@@ -1010,7 +1010,7 @@ public partial class MainActivity : Activity
 
 				result.Confirm(op switch
 				{
-					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
+					"abrir" => host.OpenModule(req.GetProperty("module").GetString() ?? ""),
 					// THE ICON ON THE HOME SCREEN. It needs this Activity because the intent being pinned
 					// points at IT, and because the dialogue Android shows is the system's and you have
 					// to be in the foreground to see it.

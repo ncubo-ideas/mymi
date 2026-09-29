@@ -160,14 +160,14 @@
     <Compile Include="..\Gnothi.MobileShared\*.cs" />
 
     <!-- LOS TEXTOS DEL HOST EN SUS DOS IDIOMAS. Va como EmbeddedResource y no como
-         BundleResource: no lo lee la pagina desde el bundle, lo lee Textos.cs desde el
+         BundleResource: no lo lee la pagina desde el bundle, lo lee Texts.cs desde el
          ensamblado. Eso ademas cubre los dos caminos de esta plataforma que NO pasan por un
          WebView - las dos etiquetas de UIKit de ViewController, y el porQueNo de la
          instantanea que Siri lee en voz alta.
 
          EL LogicalName TIENE QUE SER EXACTAMENTE ESTE, igual que en Gnothi.Host.csproj y en
          Gnothi.Mobile.csproj. Ver el comentario largo alla. -->
-    <EmbeddedResource Include="..\Gnothi.Host\textos.json" LogicalName="gnothi.textos.json" />
+    <EmbeddedResource Include="..\Gnothi.Host\texts.json" LogicalName="gnothi.texts.json" />
   </ItemGroup>
 
   <ItemGroup>

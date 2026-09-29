@@ -6,38 +6,38 @@ using Gnothi.Host;
 
 namespace Gnothi.Desktop;
 
-// LA SALA EN EL ESCRITORIO, Y ES LA UNICA. Vive como un iframe oculto de la pagina de Gnothi,
-// servido por loopback.
+// THE ROOM ON THE DESKTOP, AND IT IS THE ONLY ONE. It lives as a hidden iframe of Gnothi's page,
+// served over loopback.
 //
-// ── POR QUE ASI, Y NO CON UN DOCUMENTO PROPIO ──────────────────────────────────────────────────
+// ── WHY LIKE THIS, AND NOT WITH A DOCUMENT OF ITS OWN ─────────────────────────────────────────
 //
-// Hubo una segunda sala, sobre WebView2, que creaba su propio documento oculto y le servia por un
-// host virtual. **Se borro el 2026-09-25**: era para `--cara ventana`, una bandera que no pasa
-// ningun instalador, script ni doc. Lo que sigue explica por que ESTA forma no podia copiar
-// aquella, y son dos medidas y no gustos:
+// There was a second room, over WebView2, that created its own hidden document and served it
+// through a virtual host. **It was deleted on 2026-09-25**: it was for `--cara ventana`, a flag no
+// installer, script or doc passes. What follows explains why THIS form could not copy that one,
+// and they are two measurements, not tastes:
 //
-//   1 · **El esquema propio de Photino no llega a un marco.** El pedido de un frame a un segundo
-//       esquema nunca alcanzo al handler -- medido el 2026-09-14, cero llamadas. Por eso el
-//       escritorio ya sirve las caras de los modulos por un listener de loopback, y no por el
-//       esquema. La sala no puede vivir con eso sin examinarlo: Blazor baja `_framework/*` con
-//       fetch, y el sustrato pide los dll del modulo y su journal con HttpClient, que en wasm ES
+//   1 · **Photino's own scheme does not reach a frame.** A frame's request to a second scheme
+//       never reached the handler -- measured 2026-09-14, zero calls. That is why the desktop
+//       already serves modules' faces through a loopback listener and not through the scheme. The
+//       room cannot live with that unexamined: Blazor downloads `_framework/*` with fetch, and the
+//       substrate asks for the module's dlls and its journal with HttpClient, which in wasm IS
 //       fetch.
 //
-//   2 · **Una ventana de Photino es una ventana del sistema**, y la sala no tiene pantalla. Que una
-//       se pueda mantener oculta no esta medido, asi que construir sobre eso seria construir sobre
-//       una suposicion.
+//   2 · **A Photino window is a system window**, and the room has no screen. Whether one can be
+//       kept hidden is not measured, so building on that would be building on a supposition.
 //
-// LO QUE SI ESTA PROBADO son las dos piezas que usa esta clase: un listener de loopback -- con el
-// que el escritorio ya sirve las caras -- y un iframe con su puente por postMessage, que es el mismo
-// correo que ya lleva y trae lo de las caras. **Nada de esto es de una plataforma**: es HTTP, un
-// iframe y un mensaje. Por eso se puede verificar en Windows con `--cara marco` y creerle a macOS y
-// Linux, que es mas de lo que se puede decir de una ventana oculta.
 //
-// ── EL ORIGEN ES EL PUERTO ──────────────────────────────────────────────────────────────────────
+// WHAT IS PROVEN are the two pieces this class uses: a loopback listener -- the one the desktop
+// already serves faces with -- and an iframe with its postMessage bridge, the same post that
+// already carries the faces' traffic. **None of this belongs to a platform**: it is HTTP, an
+// iframe and a message. That is why it can be verified on Windows and believed on macOS and
+// Linux, which is more than can be said of a hidden window.
 //
-// `http://127.0.0.1:<puerto>/`. Un loopback es contexto seguro en Chromium y en WebKit, que es lo
-// que el runtime necesita; y una respuesta HTTP de verdad lleva cabeceras de verdad, asi que la CSP
-// que BundleServer compone SE APLICA -- cosa que el esquema de Photino nunca pudo.
+// ── THE ORIGIN IS THE PORT ────────────────────────────────────────────────────────────────────
+//
+// `http://127.0.0.1:<port>/`. A loopback is a secure context in Chromium and in WebKit, which is
+// what the runtime needs; and a real HTTP response carries real headers, so the CSP BundleServer
+// composes DOES APPLY -- something Photino's scheme never managed.
 internal sealed class PhotinoRoom : IRoomHost
 {
 	private readonly Action<string> log;
@@ -45,9 +45,9 @@ internal sealed class PhotinoRoom : IRoomHost
 	private readonly int port;
 	private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> waiting = new(StringComparer.Ordinal);
 
-	// UNA SOLA RANURA, la misma correccion y el mismo motivo que en los dos telefonos: si esto
-	// acumulara los modulos de la sesion, cualquier dominio adentro de la sala podria pedir por su
-	// propio origen el journal de OTRO modulo, directo del disco.
+	// ONE SLOT ONLY, the same correction and the same reason as on both phones: if this accumulated
+	// the session's modules, any domain inside the room could ask, from its own origin, for ANOTHER
+	// module's journal, straight off the disk.
 	private readonly object padlock = new();
 	private string inFlight = "";
 	private RoomFiles.Prepared? prepared;
@@ -56,22 +56,22 @@ internal sealed class PhotinoRoom : IRoomHost
 	private TaskCompletionSource<bool>? ready;
 	private int next;
 
-	// LO QUE LA PAGINA DE GNOTHI LLENA. Son el equivalente exacto de `frames.Show/RunJs/Hide`, y los
-	// cablea Root.razor: esta clase no sabe que hay un Blazor del otro lado, le pide que monte un
-	// documento y que le pase un mensaje.
+	// WHAT GNOTHI'S PAGE FILLS IN. They are the exact equivalent of `frames.Show/RunJs/Hide`, and
+	// Root.razor wires them: this class does not know there is a Blazor on the other side, it asks
+	// it to mount a document and to pass it a message.
 	private Func<string, Task>? mount;
 	private Func<string, string, string, string, string, Task>? post;
 	private Func<Task>? drop;
 
-	// Y SE ESPERA A QUE ESTEN, EN VEZ DE TIRAR SI NO LO ESTAN.
+	// AND IT WAITS FOR THEM, INSTEAD OF THROWING IF THEY ARE NOT THERE.
 	//
-	// La cara de un modulo puede darse el lujo de exigir que la pagina ya este -- se abre porque la
-	// persona toca algo, y para entonces hace rato que esta. La sala no: el primer pedido puede
-	// llegar del asistente, o del calentado de `--sala`, ANTES de que Blazor haya corrido su
-	// OnInitialized. Medido la primera vez que se corrio: `la pagina todavia no cableo la sala`.
+	// A module's face can afford to demand that the page already be there -- it opens because the
+	// person touches something, and by then it has been there a while. The room cannot: the first
+	// request may come from the assistant, or from `--sala`'s warm-up, BEFORE Blazor has run its
+	// OnInitialized. Measured the first time it ran: `la pagina todavia no cableo la sala`.
 	//
-	// Esperar y no fallar es lo correcto porque la espera es corta y cierta: la pagina se cablea al
-	// arrancar, siempre. Lo que no puede es esperar para siempre, y por eso el tope de abajo.
+	// Waiting and not failing is right because the wait is short and certain: the page is wired at
+	// start-up, always. What it cannot do is wait forever, hence the cap below.
 	private readonly TaskCompletionSource<bool> page = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	internal void WireTo(
@@ -94,7 +94,7 @@ internal sealed class PhotinoRoom : IRoomHost
 
 	internal string Origin => $"http://127.0.0.1:{port}/";
 
-	// ---------------------------------------------------------------- lo que RoomShell pide
+	// ---------------------------------------------------------------- what RoomShell asks for
 
 	public Task Prepare(string module, string entry, string grantedFolder, CancellationToken ct)
 	{
@@ -185,9 +185,9 @@ internal sealed class PhotinoRoom : IRoomHost
 			if (waiting.TryRemove(id, out TaskCompletionSource<string>? wait))
 				wait.TrySetException(new InvalidOperationException($"se tiro la sala: {reason}"));
 
-		// Y RECIEN AHORA se olvida el arranque, para que nadie se quede esperando un documento
-		// muerto. El proximo pedido monta uno nuevo; los pedidos vienen serializados por el
-		// `OneAtATime` de la cascara, asi que no hay dos montandolo a la vez.
+		// AND ONLY NOW is the start-up forgotten, so nobody is left waiting on a dead document. The
+		// next request mounts a new one; requests arrive serialised by the shell's `OneAtATime`, so
+		// there are never two mounting it at once.
 		ready = null;
 		_ = drop?.Invoke();
 
@@ -210,10 +210,10 @@ internal sealed class PhotinoRoom : IRoomHost
 		}
 
 		// LA PAGINA PRIMERO. Ver el comentario de `page` arriba: el primer pedido puede llegar antes
-		// de que Blazor haya corrido su OnInitialized.
-		await page.Task.WaitAsync(TimeSpan.FromSeconds(30), ct);
+		// THE PAGE FIRST. See the comment on `page` above: the first request can arrive before Blazor
+		// has run its OnInitialized.
 
-		// EL LISTENER PRIMERO Y EL DOCUMENTO DESPUES, porque el documento pide apenas se monta.
+		// THE LISTENER FIRST AND THE DOCUMENT AFTER, because the document asks as soon as it mounts.
 		if (listener is null)
 		{
 			var l = new HttpListener();
@@ -230,10 +230,11 @@ internal sealed class PhotinoRoom : IRoomHost
 		await starting.Task.WaitAsync(TimeSpan.FromSeconds(60), ct);
 	}
 
-	// ---------------------------------------------------------------- el puente, de vuelta
+	// ---------------------------------------------------------------- the bridge, coming back
 
-	// LO QUE LLEGA DEL IFRAME, ya relevado por la pagina. Mismo sobre que en los telefonos: {op, id, a}.
-	internal void FromSala(string raw)
+	// WHAT COMES FROM THE IFRAME, already relayed by the page. Same envelope as on the phones:
+	// {op, id, a}.
+	internal void FromRoom(string raw)
 	{
 		try
 		{
@@ -293,8 +294,8 @@ internal sealed class PhotinoRoom : IRoomHost
 
 		try
 		{
-			// EL SHIM Y EL DOCUMENTO SON LOS DOS CASOS ESPECIALES, y el orden importa: el documento
-			// sale con la etiqueta del shim adentro y su CSP calculada DESPUES de agregarla.
+			// THE SHIM AND THE DOCUMENT ARE THE TWO SPECIAL CASES, and the order matters: the document
+			// goes out with the shim's tag inside and its CSP computed AFTER adding it.
 			RoomFiles.Served served =
 				path == RoomFiles.ShimPath ? Shim() :
 				path == "index.html" ? RoomFiles.WithShim(substrate, log) :
@@ -310,8 +311,8 @@ internal sealed class PhotinoRoom : IRoomHost
 		}
 		catch (Exception ex)
 		{
-			// Un sustrato que no se puede servir NO puede fallar en silencio: el motor mostraria una
-			// pagina en blanco, que es el sintoma que ya costo una corrida entera en Android.
+			// A substrate that cannot be served MUST NOT fail silently: the engine would show a blank
+			// page, the symptom that already cost a whole run on Android.
 			log($"sala: 500 {path} -- {ex.GetType().Name}: {ex.Message}");
 			try { ctx.Response.StatusCode = 500; } catch { /* ya se fue */ }
 		}
@@ -321,16 +322,16 @@ internal sealed class PhotinoRoom : IRoomHost
 	private static RoomFiles.Served Shim() =>
 		new(Encoding.UTF8.GetBytes(TheShim), "text/javascript", 200, null);
 
-	// EL PUENTE, Y LO QUE NO TIENE. Dos verbos hacia afuera: «ya estoy» y «aca esta la respuesta». No
-	// hay leer, ni escribir, ni pedir nada -- el journal se lo pone Gnothi antes de preguntar, y lo
-	// que el modulo escriba se queda en memoria hasta que el desalojo lo devuelva.
+	// THE BRIDGE, AND WHAT IT DOES NOT HAVE. Two verbs outward: "I am here" and "here is the
+	// answer". No read, no write, nothing to ask for -- Gnothi puts the journal in place before
+	// asking, and whatever the module writes stays in memory until the eviction gives it back.
 	//
-	// Y ES LO QUE EL DOMINIO DE LA INSTITUCION NO ALCANZA: el modulo corre adentro del runtime .NET
-	// del sustrato, sin acceso a este objeto. Quien lo usa es el sustrato, que es de Gnothi.
+	// AND IT IS WHAT THE INSTITUTION'S DOMAIN CANNOT REACH: the module runs inside the substrate's
+	// .NET runtime, with no access to this object. Its user is the substrate, which is Gnothi's.
 	//
-	// VIAJA COMO ARCHIVO DEL MISMO ORIGEN, no en linea: asi `script-src 'self'` lo admite sin hash, y
-	// la CSP que BundleServer compuso sobre el documento no hay que recomponerla. Es la misma
-	// solucion que las caras de los modulos ya usan.
+	// IT TRAVELS AS A SAME-ORIGIN FILE, not inline: that way `script-src 'self'` admits it without a
+	// hash, and the CSP BundleServer composed over the document does not have to be recomposed. It
+	// is the same solution the modules' faces already use.
 	private const string TheShim = """
 		(function () {
 		  var padre = window.parent;
@@ -341,9 +342,9 @@ internal sealed class PhotinoRoom : IRoomHost
 		    contesta: function (id, json) { send({ op: 'contesta', id: id, a: json }); }
 		  };
 
-		  // LOS PEDIDOS LLEGAN COMO DATO Y NO COMO JAVASCRIPT. La cara de un modulo recibe codigo y
-		  // lo evalua, y por eso su politica pide 'unsafe-eval'; la sala no necesita esa concesion:
-		  // recibe cinco campos y llama a la funcion que el sustrato publico.
+		  // REQUESTS ARRIVE AS DATA AND NOT AS JAVASCRIPT. A module's face receives code and evaluates
+		  // it, which is why its policy asks for 'unsafe-eval'; the room needs no such concession: it
+		  // receives five fields and calls the function the substrate published.
 		  window.addEventListener('message', function (e) {
 		    if (!e.data || e.data.gnothi !== 'sala') return;
 		    if (e.source !== padre) return;
@@ -351,8 +352,8 @@ internal sealed class PhotinoRoom : IRoomHost
 		    catch (x) { send({ op: 'consola', a: 'error: el pedido no se pudo entregar: ' + x }); }
 		  });
 
-		  // LA SONDA, CONTESTADA POR LA APP Y NO POR UNA PERSONA. Sale antes de que corra una linea
-		  // del sustrato, asi que la respuesta llega INCLUSO SI EL SUSTRATO NO ARRANCA.
+		  // THE PROBE, ANSWERED BY THE APP AND NOT BY A PERSON. It goes out before a single line of the
+		  // substrate runs, so the answer arrives EVEN IF THE SUBSTRATE NEVER STARTS.
 		  try {
 		    send({ op: 'sonda', a:
 		      'secureContext=' + !!window.isSecureContext +
@@ -375,11 +376,11 @@ internal sealed class PhotinoRoom : IRoomHost
 		""";
 }
 
-// LA UNICA PUERTA DE LA PAGINA HACIA C# PARA LA SALA, gemela de `FrameBridge`.
-public static class SalaBridge
+// THE PAGE'S ONLY DOOR INTO C# FOR THE ROOM, twin of `FrameBridge`.
+public static class RoomBridge
 {
 	internal static PhotinoRoom? Current;
 
-	[Microsoft.JSInterop.JSInvokable("FromSala")]
-	public static void FromSala(string raw) => Current?.FromSala(raw);
+	[Microsoft.JSInterop.JSInvokable("FromRoom")]
+	public static void FromRoom(string raw) => Current?.FromRoom(raw);
 }

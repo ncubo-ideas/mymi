@@ -89,9 +89,18 @@ internal sealed class RoomShell : IShell
 	//
 	// ── KNOWN FRAGILITY (2026-09-21), AND IT BELONGS TO NO ONE PLATFORM ──────────────────────
 	//
-	// THIS CEILING ALSO WRAPS THE DOCUMENT'S START-UP: `Ask` in both salas begins with
-	// `await Arrancar(ct)`, so the first verb pays for how long THE ENGINE TAKES TO EXIST out of
-	// a budget that exists to measure how long THE MODULE takes to answer.
+	// THIS CEILING ALSO WRAPS THE DOCUMENT'S START-UP, and the path is worth naming exactly: every
+	// verb begins with `await Ensure(ct)`; `Ensure` mounts the module with `Ask("cargar", ...)`;
+	// and `Ask` is what wraps with `Ceiling`. So **the engine coming into existence is paid inside
+	// the ceiling of the `cargar` trip** -- a budget that exists to measure how long THE MODULE
+	// takes to answer ends up also paying for how long THE ENGINE TAKES TO EXIST.
+	//
+	// (Until 2026-09-28 this paragraph said `Ask` began with `await Arrancar(ct)`. Two things wrong
+	// with one sentence: `Arrancar` stopped existing with the rename of 2026-09-23 -- in the very
+	// file the rename was about -- and the call does not sit in `Ask`, it sits in each verb, one
+	// level above. A comment that names code by its old name does not go stale in a detail: it
+	// sends the reader looking for something that is not there, and the wrong name hid a wrong
+	// mechanism for five days.)
 	//
 	// IT DOES NOT PINCH TODAY. Measured on an iPhone 17 Pro simulator / iOS 26.5, five relaunches
 	// with the module already installed: the document starts in 0.86 to 1.41 s and `cargar`
@@ -333,10 +342,10 @@ internal sealed class RoomShell : IShell
 	// NO REQUEST TO THE SALA IS UNBOUNDED, AND THAT WAS THE HOLE.
 	//
 	// Inside the eviction runs code THE MODULE CHOSE: the substrate calls its Dispose(), its
-	// Cerrar(), its Close(). An infinite loop there cannot be interrupted from the inside -- the
-	// web engine is single-threaded, there is no other thread that could preempt it -- and the
-	// damage does not stay in the module: it also keeps `OneAtATime` taken, so EVERYBODY stops
-	// answering until somebody kills the app.
+	// `Cerrar()`, its `Close()` -- the module names it. An infinite loop there cannot be interrupted
+	// from the inside -- the web engine is single-threaded, there is no other thread that could
+	// preempt it -- and the damage does not stay in the module: it also keeps `OneAtATime` taken, so
+	// EVERYBODY stops answering until somebody kills the app.
 	//
 	// They are two different failure modes and they had to be fixed separately: the substrate's
 	// `finally` covers the one that THROWS, this one covers the one that DOES NOT COME BACK.
@@ -373,8 +382,8 @@ internal sealed class RoomShell : IShell
 		}
 		finally
 		{
-			// EN EL `finally` Y NO EN EL CAMINO BUENO, igual que en las otras dos: lo que tarda un
-			// pedido que FALLA es justamente lo que hay que poder leer cuando algo va mal.
+			// IN THE `finally` AND NOT ON THE HAPPY PATH, same as in the other two: how long a request
+			// that FAILS takes is precisely what has to be readable when something goes wrong.
 			Log($"sala: {module} borde #{mine} {verb}/{a}"
 				+ $" {(System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000 / System.Diagnostics.Stopwatch.Frequency} ms");
 		}

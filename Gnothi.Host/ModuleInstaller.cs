@@ -127,13 +127,13 @@ public static class ModuleInstaller
 	public static (bool ok, string message) Install(string package, string modulesRoot, string? grantBase = null)
 	{
 		if (!File.Exists(package))
-			return (false, Textos.T("instalar.no-existe", ("paquete", package)));
+			return (false, Texts.T("instalar.no-existe", ("paquete", package)));
 
 		using ZipArchive zip = ZipFile.OpenRead(package);
 
 		ZipArchiveEntry? manifestEntry = zip.GetEntry("manifest.json");
 		if (manifestEntry is null)
-			return (false, Textos.T("instalar.sin-manifiesto"));
+			return (false, Texts.T("instalar.sin-manifiesto"));
 
 		Manifest manifest;
 		try
@@ -141,12 +141,12 @@ public static class ModuleInstaller
 			using var reader = new StreamReader(manifestEntry.Open());
 			Manifest? m = JsonSerializer.Deserialize(reader.ReadToEnd(), HostJson.Default.Manifest);
 			if (m is null || string.IsNullOrWhiteSpace(m.Module))
-				return (false, Textos.T("instalar.manifiesto-ilegible"));
+				return (false, Texts.T("instalar.manifiesto-ilegible"));
 			manifest = m;
 		}
 		catch (JsonException e)
 		{
-			return (false, Textos.T("instalar.manifiesto-invalido", ("detalle", e.Message)));
+			return (false, Texts.T("instalar.manifiesto-invalido", ("detalle", e.Message)));
 		}
 
 		// Everything is checked BEFORE writing anything, by the inspection the phone runs too. It
@@ -158,21 +158,21 @@ public static class ModuleInstaller
 			// THE REFUSALS PASS STRAIGHT THROUGH, untranslated: they speak of manifest.json, of web/
 			// and of paths, and are diagnostics for whoever packages the module, not copy for whoever
 			// installs it. The FRAME is translated. It is the same the phone already does in alta.no-instalaria.
-			return (false, Textos.T("instalar.rechazado",
+			return (false, Texts.T("instalar.rechazado",
 				("detalle", string.Join("\n", inspection.Rejections.Select(r => "  x " + r)))));
 
 		// This installer runs cargo only: the Host lends the engine and loads the surface DLL. A
 		// hosted module -the institution's app under web/- needs a WebView shell, which is the
 		// phone's enrollment, not this path.
 		if (inspection.Form != PackageForm.Cargo)
-			return (false, Textos.T("instalar.hospedado"));
+			return (false, Texts.T("instalar.hospedado"));
 
 		// A signed package whose signature does not hold is not installed, whatever its manifest
 		// says: somebody touched it after it was signed. An unsigned one still installs, and the
 		// line below says so.
 		SignatureVerification signature = PackageSignature.Verify(zip);
 		if (signature.State == SignatureState.Invalid)
-			return (false, Textos.T("instalar.firma-no-sostiene", ("detalle", signature.Detail)));
+			return (false, Texts.T("instalar.firma-no-sostiene", ("detalle", signature.Detail)));
 
 		string moduleDir = Path.Combine(modulesRoot, manifest.Module);
 		string moduleRootFull = Path.GetFullPath(moduleDir);
@@ -189,7 +189,7 @@ public static class ModuleInstaller
 		}
 
 		if (rejects.Count > 0)
-			return (false, Textos.T("instalar.rechazado", ("detalle", string.Join("\n", rejects.Distinct().Select(r => "  x " + r)))));
+			return (false, Texts.T("instalar.rechazado", ("detalle", string.Join("\n", rejects.Distinct().Select(r => "  x " + r)))));
 
 		// A reinstall keeps the person's earlier consent decisions: reenabling on update would
 		// be a back door.
@@ -231,7 +231,7 @@ public static class ModuleInstaller
 			catch { /* unreadable prior manifest: compared as a first install */ }
 		}
 		if (update.Kind == UpdateKind.Collision)
-			return (false, Textos.T("instalar.colision",
+			return (false, Texts.T("instalar.colision",
 				("modulo", manifest.Module), ("instalada", update.InstalledInstitution ?? ""), ("entrante", update.IncomingInstitution ?? "")));
 
 		// On an update the person's switches are kept for the tools that survive; the ones that
@@ -292,41 +292,41 @@ public static class ModuleInstaller
 		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, InstallerJson.Default.InstallationFile));
 
 		string firma = signature.State == SignatureState.Valid
-			? Textos.T("instalar.firma.valida",
+			? Texts.T("instalar.firma.valida",
 					("llave", signature.KeyId ?? ""),
 					("huella", PackageSignature.Fingerprint(signature.Public)))
 				+ " — " + (priorSigner is null
-					? Textos.T("instalar.firma.primera")
+					? Texts.T("instalar.firma.primera")
 					: string.Equals(priorSigner.Public, signature.Public, StringComparison.Ordinal)
-						? Textos.T("instalar.firma.misma", ("desde", priorSigner.Since))
-						: Textos.T("instalar.firma.cambio",
+						? Texts.T("instalar.firma.misma", ("desde", priorSigner.Since))
+						: Texts.T("instalar.firma.cambio",
 							("llave", priorSigner.KeyId ?? ""),
 							("huella", PackageSignature.Fingerprint(priorSigner.Public))))
-			: Textos.T("instalar.firma.ninguna");
+			: Texts.T("instalar.firma.ninguna");
 
 		// LAS ETIQUETAS SE ALINEAN AL RENDER Y NO AL LITERAL. Antes el padding venia escrito a
 		// by hand inside each string -- «from     :», «checked  :» -- and that only lines up in one
 		// language: «signature» is nine and «firma» five. The longest of the labels about to be
 		// painted is measured and padded to that width, so the column lines up in both.
 		(string Rotulo, string Valor)[] campos = [
-			(Textos.T("instalar.campo.desde"), Path.GetFileName(package)),
-			(Textos.T("instalar.campo.en"), moduleDir),
-			(Textos.T("instalar.campo.revisado"), Textos.T("instalar.revisado",
+			(Texts.T("instalar.campo.desde"), Path.GetFileName(package)),
+			(Texts.T("instalar.campo.en"), moduleDir),
+			(Texts.T("instalar.campo.revisado"), Texts.T("instalar.revisado",
 				("archivos", inspection.Files.ToString()),
 				("kb", $"{inspection.Bytes / 1024.0:F1}"))),
-			(Textos.T("instalar.campo.firma"), firma),
-			(Textos.T("instalar.campo.actualizacion"), update.Describe()),
-			(Textos.T("instalar.campo.datos"), granted),
-			(Textos.T("instalar.campo.encendido"), enabled.ToString()),
+			(Texts.T("instalar.campo.firma"), firma),
+			(Texts.T("instalar.campo.actualizacion"), update.Describe()),
+			(Texts.T("instalar.campo.datos"), granted),
+			(Texts.T("instalar.campo.encendido"), enabled.ToString()),
 		];
 		int ancho = campos.Max(c => c.Rotulo.Length);
 
 		var line = new System.Text.StringBuilder();
-		line.Append(Textos.T("instalar.hecho", ("modulo", manifest.Module), ("titulo", manifest.Title)));
+		line.Append(Texts.T("instalar.hecho", ("modulo", manifest.Module), ("titulo", manifest.Title)));
 		foreach ((string rotulo, string valor) in campos)
 			line.Append($"\n  {rotulo.PadRight(ancho)}: {valor}");
 		if (!enabled)
-			line.Append("  " + Textos.T("instalar.apagado"));
+			line.Append("  " + Texts.T("instalar.apagado"));
 		return (true, line.ToString());
 	}
 

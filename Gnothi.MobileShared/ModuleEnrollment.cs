@@ -476,7 +476,7 @@ internal sealed class ModuleEnrollment
 			throw new ArgumentException($"the module's link is not a valid address: {url}");
 
 		log($"alta: bajando el bundle de {where.Host}");
-		string downloading = Textos.T("alta.paso.bajando", ("host", where.Host));
+		string downloading = Texts.T("alta.paso.bajando", ("host", where.Host));
 		progress?.Invoke(new EnrollmentProgress(downloading));
 
 		byte[] zip = await Download(where, ct, (bytes, total) => progress?.Invoke(new EnrollmentProgress(downloading, bytes, total)));
@@ -498,7 +498,7 @@ internal sealed class ModuleEnrollment
 	// `wellKnownJson` is what that origin publishes, if anything.
 	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, Uri? servedFrom, string? expectedSeal = null, string? wellKnownJson = null, Action<EnrollmentProgress>? progress = null)
 	{
-		progress?.Invoke(new EnrollmentProgress(Textos.T("alta.paso.revisando")));
+		progress?.Invoke(new EnrollmentProgress(Texts.T("alta.paso.revisando")));
 		(Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) = Open(zip);
 
 		if (expectedSeal is not null && !string.Equals(expectedSeal, seal, StringComparison.Ordinal))
@@ -532,7 +532,7 @@ internal sealed class ModuleEnrollment
 	// obtained: the network, or a stand-in for the suite.
 	internal async Task<EnrollmentProposal> ExamineFile(byte[] zip, string fileName, CancellationToken ct, Action<EnrollmentProgress>? progress = null, Func<Uri, CancellationToken, Task<string?>>? fetch = null)
 	{
-		progress?.Invoke(new EnrollmentProgress(Textos.T("alta.paso.revisando")));
+		progress?.Invoke(new EnrollmentProgress(Texts.T("alta.paso.revisando")));
 		(Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) = Open(zip);
 
 		OriginCheck origin = OriginCheck.NotDeclared;
@@ -542,7 +542,7 @@ internal sealed class ModuleEnrollment
 		{
 			var claimed = new Uri(declared + "/");
 			secure = claimed.Scheme == Uri.UriSchemeHttps;
-			progress?.Invoke(new EnrollmentProgress(Textos.T("alta.paso.preguntando", ("host", claimed.Host))));
+			progress?.Invoke(new EnrollmentProgress(Texts.T("alta.paso.preguntando", ("host", claimed.Host))));
 
 			published = await (fetch ?? FetchWellKnown)(claimed, ct);
 			origin = VerifyBySeal(seal, published);
@@ -684,7 +684,7 @@ internal sealed class ModuleEnrollment
 		// that would not be installed anyway. The reasons are written to be read, and they are
 		// what the person sees.
 		if (inspection.Rejected)
-			throw new InvalidOperationException(Textos.T("alta.rechazado", ("detalle", string.Join("; ", inspection.Rejections))));
+			throw new InvalidOperationException(Texts.T("alta.rechazado", ("detalle", string.Join("; ", inspection.Rejections))));
 
 		string temporary = Path.Combine(Path.GetTempPath(), "alta-" + Guid.NewGuid().ToString("N")[..8]);
 		try
@@ -1021,20 +1021,23 @@ internal sealed class ModuleEnrollment
 			_ => [web, endpoint],
 		};
 
-		// EL ALTA ESCRIBE LA FORMA Y NADA MAS, Y EL ANFITRION NO SE GUARDA. Suena a que falta algo y
-		// no falta: es la misma regla con la que funciona la caja, y el 2026-09-25 se volvio a ella
-		// despues de haber probado lo contrario.
+		// THE ENROLMENT WRITES THE FORM AND NOTHING ELSE, AND THE HOST IS NOT STORED. It sounds like
+		// something is missing and nothing is: it is the same rule the box works by, and on
+		// 2026-09-25 it was returned to after having tried the opposite.
 		//
-		// La caja NUNCA toca este archivo. Un modulo en caja sigue diciendo `"hybrid"`, y quien lo
-		// corre lo decide `Module.ShellFactory` en cada arranque. Eso no es un detalle de
-		// implementacion: **el anfitrion es una propiedad de ESTE Gnothi en ESTA maquina, no de la
-		// instalacion de la persona**. Si manana falta la libreria nativa, la fabrica no se registra
-		// y todo corre como antes -- su archivo nunca cambio, asi que no hay nada que deshacer.
+		// The box NEVER touches this file. A module in a box goes on saying `"hybrid"`, and who runs
+		// it is decided by `Module.ShellFactory` at every start-up. That is not an implementation
+		// detail: **the host is a property of THIS Gnothi on THIS machine, not of the person's
+		// installation**. If tomorrow the native library is missing, the factory is never registered
+		// and everything runs as before -- their file never changed, so there is nothing to undo.
 		//
-		// Guardarlo hace lo contrario, y se midio: con `"sala"` escrito aca y la sala no disponible,
-		// `ChooseShell` construye igual la cascara y al primer uso revienta. **El modulo no se
-		// degrada: se rompe.** La caja, por construccion, no le puede hacer eso a nadie.
-		// (no hay variable aparte: la forma ES lo que se guarda, y verlas iguales es el punto)
+		// Storing it does the opposite, and that was measured: with `"sala"` written here and the
+		// room unavailable, `ChooseShell` builds the shell anyway and it blows up on first use.
+		// **The module does not degrade: it breaks.** The box, by construction, cannot do that to
+		// anyone.
+		//
+		// (No separate variable: the form IS what gets stored, and seeing them be the same is the
+		// point.)
 
 		// THIS ENROLMENT'S RECORD. It was lost resolving merge 64bee72 -- the line that uses it stayed,
 		// the declaration did not, and the branch would not compile. Restored exactly as it was in

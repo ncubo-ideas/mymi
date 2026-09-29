@@ -207,14 +207,14 @@ public sealed record UpdatePlan
 	// show raw on the screen instead of hiding in an empty string.
 	public string Describe() => Kind switch
 	{
-		UpdateKind.Fresh => Textos.T("actualizacion.primera"),
-		UpdateKind.Same => Textos.T("actualizacion.misma", ("version", IncomingVersion ?? "")),
+		UpdateKind.Fresh => Texts.T("actualizacion.primera"),
+		UpdateKind.Same => Texts.T("actualizacion.misma", ("version", IncomingVersion ?? "")),
 		UpdateKind.Update => (Versioned
-			? Textos.T("actualizacion.sube", ("instalada", InstalledVersion ?? ""), ("entrante", IncomingVersion ?? ""))
-			: Textos.T("actualizacion.sube.sin-version")) + Changes(),
-		UpdateKind.Downgrade => Textos.T("actualizacion.baja", ("instalada", InstalledVersion ?? ""), ("entrante", IncomingVersion ?? "")) + Changes(),
-		UpdateKind.SameVersionOtherContent => Textos.T("actualizacion.otro-contenido", ("version", IncomingVersion ?? "")) + Changes(),
-		UpdateKind.Collision => Textos.T("actualizacion.colision", ("entrante", IncomingInstitution ?? ""), ("instalada", InstalledInstitution ?? "")),
+			? Texts.T("actualizacion.sube", ("instalada", InstalledVersion ?? ""), ("entrante", IncomingVersion ?? ""))
+			: Texts.T("actualizacion.sube.sin-version")) + Changes(),
+		UpdateKind.Downgrade => Texts.T("actualizacion.baja", ("instalada", InstalledVersion ?? ""), ("entrante", IncomingVersion ?? "")) + Changes(),
+		UpdateKind.SameVersionOtherContent => Texts.T("actualizacion.otro-contenido", ("version", IncomingVersion ?? "")) + Changes(),
+		UpdateKind.Collision => Texts.T("actualizacion.colision", ("entrante", IncomingInstitution ?? ""), ("instalada", InstalledInstitution ?? "")),
 		_ => Kind.ToString(),
 	};
 
@@ -222,19 +222,19 @@ public sealed record UpdatePlan
 	{
 		List<string> parts = [];
 		if (NewTools.Count > 0)
-			parts.Add(NewTools.Count == 1 ? Textos.T("actualizacion.cambio.nuevas.una")
-				: Textos.T("actualizacion.cambio.nuevas.varias", ("n", NewTools.Count.ToString())));
+			parts.Add(NewTools.Count == 1 ? Texts.T("actualizacion.cambio.nuevas.una")
+				: Texts.T("actualizacion.cambio.nuevas.varias", ("n", NewTools.Count.ToString())));
 		if (RemovedTools.Count > 0)
-			parts.Add(RemovedTools.Count == 1 ? Textos.T("actualizacion.cambio.quitadas.una")
-				: Textos.T("actualizacion.cambio.quitadas.varias", ("n", RemovedTools.Count.ToString())));
+			parts.Add(RemovedTools.Count == 1 ? Texts.T("actualizacion.cambio.quitadas.una")
+				: Texts.T("actualizacion.cambio.quitadas.varias", ("n", RemovedTools.Count.ToString())));
 		// THE CAPABILITIES PASS STRAIGHT THROUGH: they are protocol names, the same ones the
 		// manifest declares. Translating them would break the correspondence with what the institution wrote.
 		if (NewCapabilities.Count > 0)
-			parts.Add(Textos.T("actualizacion.cambio.pide", ("lista", string.Join(", ", NewCapabilities))));
-		if (PublisherChanged) parts.Add(Textos.T("actualizacion.cambio.editor"));
-		if (OriginChanged) parts.Add(Textos.T("actualizacion.cambio.origen"));
-		if (JournalChanged) parts.Add(Textos.T("actualizacion.cambio.journal"));
-		if (SubstrateChanged) parts.Add(Textos.T("actualizacion.cambio.sustrato"));
+			parts.Add(Texts.T("actualizacion.cambio.pide", ("lista", string.Join(", ", NewCapabilities))));
+		if (PublisherChanged) parts.Add(Texts.T("actualizacion.cambio.editor"));
+		if (OriginChanged) parts.Add(Texts.T("actualizacion.cambio.origen"));
+		if (JournalChanged) parts.Add(Texts.T("actualizacion.cambio.journal"));
+		if (SubstrateChanged) parts.Add(Texts.T("actualizacion.cambio.sustrato"));
 		return parts.Count == 0 ? "" : " (" + string.Join(", ", parts) + ")";
 	}
 }

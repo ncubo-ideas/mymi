@@ -4,30 +4,31 @@ namespace Gnothi.Desktop;
 
 // THE BOX ON THE DESKTOP. The twin of Gnothi.Mobile/TheBox.cs, and the same files underneath.
 //
-// ── DOS COSAS CAMBIAN ENTRE PLATAFORMAS, Y LA SEGUNDA COSTO ENCONTRARLA · 2026-09-25 ────────────
+// ── TWO THINGS CHANGE BETWEEN PLATFORMS, AND THE SECOND ONE WAS COSTLY TO FIND · 2026-09-25 ─────
 //
-// El binario nativo, que era la conocida — `libwasmtime.so` en Android, `wasmtime.dll` aca — y **el
-// TRANSPORTE DEL BORDE**, que no lo era.
+// The native binary, which was the known one -- `libwasmtime.so` on Android, `wasmtime.dll` here --
+// and **THE BORDER'S TRANSPORT**, which was not.
 //
-// El dia que la caja llego al escritorio arrancaba entera —motor, sustrato, `.cwasm` reusado, el
-// canario cantando 8 de 8— y **moria al primer modulo** con
-// `DllNotFoundException: Unable to load DLL 'libc'`. El `0x8007007E` del mensaje es un HRESULT de
-// WINDOWS y no un error de wasm: eso delato que el P/Invoke se intentaba EN EL PROCESO y no adentro
-// de la caja. Era `BoxedInstance` hablandole al invitado por un FIFO de POSIX (`mkfifo(3)`).
+// The day the box reached the desktop it came up whole -- engine, substrate, reused `.cwasm`, the
+// canary singing 8 of 8 -- and **died on the first module** with
+// `DllNotFoundException: Unable to load DLL 'libc'`. The `0x8007007E` in the message is a WINDOWS
+// HRESULT and not a wasm error: that gave away that the P/Invoke was being attempted IN THE PROCESS
+// and not inside the box. It was `BoxedInstance` talking to the guest over a POSIX FIFO
+// (`mkfifo(3)`).
 //
-// Hoy `BorderPipe` tiene las dos formas —FIFO en POSIX, named pipe en Windows— y las dos se abren
-// POR RUTA, que es lo unico que `set_stdin_file` acepta, asi que el invitado no se entera.
+// Today `BorderPipe` has both forms -- FIFO on POSIX, named pipe on Windows -- and both open BY
+// PATH, which is the only thing `set_stdin_file` accepts, so the guest notices nothing.
 //
-// DOS COSAS QUE VALE GUARDAR DE COMO APARECIO:
+// TWO THINGS WORTH KEEPING ABOUT HOW IT SHOWED UP:
 //
-//   1 · **Se vio comparando, no corriendo la caja sola.** El mismo modulo y el mismo journal en la
-//       sala y en la caja: la sala lo corrio, la caja no. Una corrida de cada una por separado no lo
-//       habria mostrado — la de la caja «arrancaba bien».
+//   1 · **It was seen by comparing, not by running the box alone.** The same module and the same
+//       journal in the room and in the box: the room ran it, the box did not. One run of each on
+//       its own would not have shown it -- the box's "started up fine".
 //
-//   2 · **Y antes se habia afirmado lo contrario**, con una verificacion que no verificaba eso: se
-//       reviso que los seis archivos no tuvieran referencias a **Android**, no se encontraron, y de
-//       ahi se concluyo «neutrales de plataforma». **POSIX no es Android.** Buscar una cosa y no
-//       encontrarla no dice nada de las demas.
+//   2 · **And the opposite had been asserted beforehand**, on a check that did not check that: the
+//       six files were reviewed for references to **Android**, none were found, and from there the
+//       conclusion was "platform-neutral". **POSIX is not Android.** Looking for one thing and not
+//       finding it says nothing about the others.
 //
 // ── WHY IT IS HERE, BECAUSE IT IS NOT THE REASON IT IS ON THE PHONE ─────────────────────────────
 //

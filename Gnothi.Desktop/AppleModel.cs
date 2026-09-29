@@ -57,20 +57,20 @@ internal static class AppleModel
 	/// writes for a phone, and its text cannot be adapted to a Mac by replacing words.
 	public static string Diagnosis()
 	{
-		if (!OperatingSystem.IsMacOS()) return Textos.T("ajustes.apple.solo-mac");
-		if (!File.Exists(Path)) return Textos.T("ajustes.apple.sin-puente");
+		if (!OperatingSystem.IsMacOS()) return Texts.T("ajustes.apple.solo-mac");
+		if (!File.Exists(Path)) return Texts.T("ajustes.apple.sin-puente");
 		try
 		{
 			return ModelFoundation.State() switch
 			{
-				2 => Textos.T("ajustes.apple.contesta"),
-				1 => Textos.T("ajustes.apple.no-genera"),
-				_ => Textos.T("ajustes.apple.sin-modelo"),
+				2 => Texts.T("ajustes.apple.contesta"),
+				1 => Texts.T("ajustes.apple.no-genera"),
+				_ => Texts.T("ajustes.apple.sin-modelo"),
 			};
 		}
 		catch (Exception e)
 		{
-			return Textos.T("ajustes.apple.fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
+			return Texts.T("ajustes.apple.fallo", ("detalle", $"{e.GetType().Name}: {e.Message}"));
 		}
 	}
 

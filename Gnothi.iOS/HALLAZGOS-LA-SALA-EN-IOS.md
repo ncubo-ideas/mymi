@@ -7,6 +7,26 @@ no hay workload de .NET 9 que acepte Xcode 27).
 
 Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]**, **[NO MEDIDO]**.
 
+---
+
+> ## ⚠️ Los nombres de código de este documento son de antes del renombre · aviso agregado 2026-09-28
+>
+> Este documento se escribió el **2026-09-21**. El **2026-09-23** los identificadores de la sala
+> pasaron a inglés, y las citas de abajo quedaron nombrando código que **ya no existe**: mandan a
+> buscar algo que no se encuentra. Se corrigieron las citas en presente; esta tabla queda para leer
+> el resto y para cualquier cita que se haya escapado.
+>
+> | decía | se llama hoy |
+> |---|---|
+> | `SalaShell` · `ISalaHost` · `SalaShellStub` | `RoomShell` · `IRoomHost` · `RoomShellStub` |
+> | `Gnothi.MobileShared/SalaShell.cs` | `Gnothi.MobileShared/RoomShell.cs` |
+> | `Pedir` · `Tope` · `Vecindario` · `Descartar` | `Ask` · `Ceiling` · `Neighbourhood` · `Discard` |
+> | `Arrancar` | `Ensure` (y no es sólo el nombre: hoy lo llama **cada verbo**, no `Ask`) |
+>
+> **Lo que NO cambió, y no es olvido:** los verbos del protocolo —`cargar`, `vista`, `consultar`,
+> `entregar`, `cursor`, `repertorio`— siguen en castellano. No son código: son el contrato con un
+> sustrato que se compila aparte. Ver C10.
+
 > **Lo que hay que llevarse, en dos renglones.** La sala **corre** en iOS y un módulo real carga y
 > contesta por ella, con el arranque del documento en **~0,9 s** y `cargar` en **53 a 102 ms**.
 > Queda anotada una **fragilidad latente**, no una falla: el arranque vive dentro del presupuesto
@@ -106,7 +126,7 @@ Tres cosas que vale separar:
 - **506 ms para cargar** el `.dll` de la institución en el runtime que ya estaba vivo, con el
   motor prestado (`"borde":"prestado"`).
 - **`"vecinos":[]` y `"retenidos":0`** — la frontera entre journals se sostiene. Es la condición
-  que `SalaShell.Vecindario` convierte en error, y acá reportó cero bytes.
+  que `RoomShell.Neighbourhood` convierte en error, y acá reportó cero bytes.
 - **`matches:true` en la PRIMERA instalación.** En la forma hospedada eso era imposible en este
   mismo simulador: el wasm del módulo tardaba ~64 s en frío y la comprobación se rendía a los 60
   (`HALLAZGOS-CORRIENDO-EL-GUION.md` §11.4). Con la sala el runtime ya está arrancado, así que lo
@@ -154,7 +174,7 @@ Cinco relanzamientos seguidos, con el módulo **ya instalado**, que es el camino
 | 4 | 0,92 s | 79 ms | 0 |
 | 5 | 0,86 s | 53 ms | 0 |
 
-Contra los 10 s de `SalaShell.Tope` hay **un orden de magnitud de aire**. Y `cargar` bajó de los
+Contra los 10 s de `RoomShell.Ceiling` hay **un orden de magnitud de aire**. Y `cargar` bajó de los
 506 ms de la primera corrida a 53-102 ms, por el mismo motivo.
 
 ### Lo medido con la máquina cargada **[MEDIDO]**, y por qué se deja anotado
@@ -183,28 +203,34 @@ plausible. Nadie midió CPU ni memoria mientras fallaba.
 
 Independiente de qué tan rápida sea la máquina, esto es cierto por construcción:
 
-- `SalaShell.Pedir` envuelve **cada verbo** con `Tope`, y `Arrancar` corre **adentro** del primero,
-  porque `Pedir` de las dos salas empieza con `await Arrancar(ct)`. O sea que el presupuesto que
-  existe para medir **lo que tarda el módulo** está pagando también **lo que tarda el motor en
-  existir**.
-- Si el arranque pasa de 10 s, `Descartar` tira el documento — **y el reintento arranca en frío**.
+- `RoomShell.Ask` envuelve **cada verbo** con `Ceiling`, y el arranque del motor cae **adentro** de
+  ese tope. El camino exacto, revisado el 2026-09-28: cada verbo empieza con `await Ensure(ct)`;
+  `Ensure` monta el módulo con `Ask("cargar", …)`; y `Ask` es quien aplica `Ceiling`. O sea que el
+  presupuesto que existe para medir **lo que tarda el módulo** está pagando también **lo que tarda
+  el motor en existir**.
+
+  > Esta viñeta decía que `Ask` empezaba con `await Arrancar(ct)`. Dos errores en una frase: el
+  > nombre viejo, y el lugar —la llamada no está en `Ask` sino en cada verbo, un nivel más arriba—.
+  > **El nombre viejo tapó un mecanismo mal descrito**, que es el daño de verdad de una traza
+  > muerta: no manda a buscar algo que no existe, manda a creer algo que no es.
+- Si el arranque pasa de 10 s, `Discard` tira el documento — **y el reintento arranca en frío**.
   No hay un intento que herede un documento tibio, así que el modo de falla es estable, no
   transitorio. Eso es lo que se vio arriba.
 
-`Descartar` existe por una razón buena y escrita: un módulo puede colgar su propio desalojo, que
+`Discard` existe por una razón buena y escrita: un módulo puede colgar su propio desalojo, que
 es código que eligió la institución. **Pero un documento que todavía no cargó ningún módulo no
 puede estar colgado en eso** — es el sustrato de Gnothi arrancando —, así que descartarlo no
 recupera nada.
 
-Dos formas, las dos sobre **código compartido** (`Gnothi.MobileShared/SalaShell.cs` y el contrato
-`ISalaHost`):
+Dos formas, las dos sobre **código compartido** (`Gnothi.MobileShared/RoomShell.cs` y el contrato
+`IRoomHost`):
 
-1. **No descartar un documento que todavía está arrancando.** Chica, conserva `Tope` como está, y
+1. **No descartar un documento que todavía está arrancando.** Chica, conserva `Ceiling` como está, y
    el descarte sigue aplicando en cuanto haya un módulo cargado, que es el caso que lo motivó.
 2. **Sacar el arranque del presupuesto por verbo.** De fondo: separar «esperar a que la sala esté»
    de «pedirle algo».
 
-Subir `Tope` no es salida: acomoda el contrato al aparato más lento probado y deja la
+Subir `Ceiling` no es salida: acomoda el contrato al aparato más lento probado y deja la
 retroalimentación en pie.
 
 **Con qué urgencia.** Con la máquina sana hay 10x de aire, así que esto **no bloquea**. Es deuda
@@ -241,7 +267,7 @@ Cuatro cosas quedan medidas de un saque, y conviene separarlas:
   total 212 mg/dL con su `182 → 212`, cetonas negativo en 2 pruebas, y 9 analitos en «merece
   atención». Eso sale de los `[View]` de la superficie, que corre adentro de la sala.
 - **`entregar`.** `leidos=18 aplicados=18 descartados=0 rechazados=0` — el sobre que el cartero
-  bajó entró por `SalaShell.Deliver` y la superficie lo asentó entero.
+  bajó entró por `RoomShell.Deliver` y la superficie lo asentó entero.
 - **`guardar`, o sea el viaje de vuelta.** Adentro de la sala no hay disco: el módulo escribió en
   memoria y lo escrito volvió por la respuesta a la carpeta de la persona. 48 bytes de `meta.bin`
   y 4.520 del primer segmento del journal, anclados por el anfitrión.
@@ -332,7 +358,7 @@ asentado se evaporaría al vaciarle la carpeta.
 
 **`vecinos: []` en las dos cargas.** Ninguno de los dos ve un byte del otro, y el `barrido` dice que
 lo que quedó de la carga anterior fueron carpetas de **cero bytes** — el residuo conocido y acotado
-que `SalaShell.Vecindario` deja pasar a propósito.
+que `RoomShell.Neighbourhood` deja pasar a propósito.
 
 **Y el journal sobrevivió al desalojo:** `examenes` vuelve con sus 3 archivos y 4.708 bytes, los
 mismos que se vaciaron al salir.
@@ -345,7 +371,7 @@ mismos que se vaciaron al salir.
 ```
 
 La superficie recordó dónde iba **a través del desalojo**, así que el cartero pidió 159 bytes en vez
-de bajar el historial entero. Eso es `SalaShell.Cursor` andando, y es lo que hace que un refresco no
+de bajar el historial entero. Eso es `RoomShell.Cursor` andando, y es lo que hace que un refresco no
 cueste lo mismo que una instalación.
 
 ### Lo que NO es gratis, y conviene mirarlo
@@ -387,11 +413,15 @@ stubs y arregló la mitad que existía allá:
 0031cd8 fix(ios): el glob no excluia el stub del hibrido, y master no compilaba
 ```
 
-No podía excluir `SalaShellStub` porque **`master` no tiene ni `Gnothi.Host/SalaShellStub.cs` ni
-`Gnothi.MobileShared/SalaShell.cs`** — la sala vive solo acá. Comprobado: la línea de master es
+No podía excluir `SalaShellStub` porque **`master` no tenía ni `Gnothi.Host/SalaShellStub.cs` ni
+`Gnothi.MobileShared/SalaShell.cs`** — la sala vivía solo acá. Comprobado: la línea de master es
 exactamente la de este branch menos esa entrada, y en el árbol fusionado existen los dos stubs,
 así que hacen falta las dos exclusiones. Quedarse con la de master deja iOS sin compilar, con el
 `CS0101` sobre `SalaShell`.
+
+> **Este párrafo queda con los nombres viejos a propósito**: describe el estado de dos ramas de git
+> el 2026-09-21, y cambiarlo falsificaría lo que se comprobó ese día. Hoy los archivos son
+> `RoomShellStub.cs` y `RoomShell.cs`, y están en `master`.
 
 **`master` NO toca `Localizar`.** Es lo primero que se revisó, porque `Gnothi.MobileShared/Shell.cs`
 sí aparece en el merge y es donde vive el arreglo de `89db2ae`. Git lo fusiona limpio y además es

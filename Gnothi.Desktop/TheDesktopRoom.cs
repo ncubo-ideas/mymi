@@ -14,8 +14,8 @@ internal static class TheDesktopRoom
 	// same name. If those three stop matching, the three rooms stop being the same room.
 	private const string Folder = "sala";
 
-	// Y DEVUELVE ALGO QUE SE PUEDE CALENTAR. `Func<CancellationToken, Task>` y no el cuarto entero:
-	// lo unico que el llamante necesita de el es esto.
+	// AND IT RETURNS SOMETHING THAT CAN BE WARMED UP. `Func<CancellationToken, Task>` and not the
+	// room itself: that is the only thing the caller needs from it.
 	private static string[] theOnesInTheRoom = [];
 
 	internal static Func<CancellationToken, Task>? Prepare(Action<string> log, bool ventana, string? only)
@@ -36,20 +36,20 @@ internal static class TheDesktopRoom
 			return null;
 		}
 
-		// LA SALA VIVE EN LA PAGINA DE GNOTHI, Y POR ESO NO HAY SALA SIN ELLA. Es un iframe oculto de
-		// esa pagina, servido por loopback, y habla por el puente de los marcos. Con `--cara ventana`
-		// —la forma vieja, de Windows, donde la cara es una ventana de WebView2 aparte— esa pagina no
-		// esta, asi que no hay donde poner la sala.
+		// THE ROOM LIVES IN GNOTHI'S PAGE, AND SO THERE IS NO ROOM WITHOUT IT. It is a hidden iframe
+		// of that page, served over loopback, and it speaks through the frames' bridge. With
+		// `--cara ventana` -- the old Windows-only shape, where a face is a separate WebView2 window
+		// -- that page is not there, so there is nowhere to put the room.
 		//
-		// HUBO UNA SEGUNDA SALA PARA ESE MODO Y SE BORRO · 2026-09-25. 407 lineas sobre WebView2 con
-		// documento propio y host virtual. **Nadie pasa `--cara ventana`**: no la pasa ningun
-		// instalador, ni un script, ni un doc — solo aparece si alguien la escribe a mano. Era una
-		// sala para un modo muerto, y con un modulo de verdad ni siquiera cargaba: se descubrio al
-		// preguntar «esto ya esta terminado?», no corriendola.
+		// THERE WAS A SECOND ROOM FOR THAT MODE AND IT WAS DELETED · 2026-09-25. 407 lines over
+		// WebView2 with its own document and a virtual host. **Nobody passes `--cara ventana`**: not
+		// an installer, not a script, not a doc -- it only shows up if somebody types it by hand. It
+		// was a room for a dead mode, and with a real module it did not even load: it was found by
+		// asking "is this finished?", not by running it.
 		//
-		// La leccion, que es la unica razon de que esto quede escrito: **construir para una bandera
-		// sin comprobar quien la pasa.** La bandera existia y compilaba, o sea que todas las senales
-		// baratas decian que si.
+		// The lesson, which is the only reason this stays written: **building for a flag without
+		// checking who passes it.** The flag existed and compiled, so every cheap signal said yes.
+
 		if (ventana)
 		{
 			log("sala: con `--cara ventana` la cara es una ventana de WebView2 y no hay pagina de "
@@ -57,45 +57,45 @@ internal static class TheDesktopRoom
 			return null;
 		}
 
-		// EL MISMO CABLE QUE `HybridShell.Log` Y `WasmBox.Log`, y va aca por el mismo motivo: la
-		// cascara no sabe escribir en el log de nadie, se lo dan al arrancar. Sin esta linea el
-		// contador de `RoomShell` cuenta y no lo dice nadie, que es como estuvo hasta el 2026-09-25.
+		// THE SAME WIRE AS `HybridShell.Log` AND `WasmBox.Log`, and it goes here for the same reason:
+		// the shell does not know how to write to anybody's log, it is handed one at start-up.
+		// Without this line `RoomShell`'s counter counts and nobody says it -- as it was until 2026-09-25.
 		RoomShell.Log = log;
 
 		var theRoom = new PhotinoRoom(substrate, log);
 		RoomShell.Host = theRoom;
-		SalaBridge.Current = theRoom;
+		RoomBridge.Current = theRoom;
 		Func<CancellationToken, Task> warm = theRoom.WarmUp;
 
-		// LA COSTURA, Y RECLAMA HIBRIDAS POR DECISION DE CODIGO — COMO LA CAJA.
+		// THE SEAM, AND IT CLAIMS HYBRIDS BY A DECISION OF CODE -- LIKE THE BOX.
 		//
-		// ESTO ESTUVO ESCRITO AL REVES Y DURO UN DIA. La primera version reclamaba los modulos que
-		// **declaran** `"sala"` en su installation.json, y para que eso sirviera de algo hubo que
-		// ensenarle al alta a escribir ese tipo. Las dos cosas estaban mal:
+		// THIS WAS WRITTEN BACK TO FRONT AND LASTED A DAY. The first version claimed the modules that
+		// **declare** `"sala"` in their installation.json, and for that to be worth anything the
+		// enrolment had to be taught to write that type. Both things were wrong:
 		//
-		//   1 · La fabrica no aportaba NADA. El `switch` de `ChooseShell` ya mapea `"sala"` a
-		//       `RoomShell`, asi que registrar una fabrica que reclama lo mismo es una capa que no
-		//       decide nada. La decision seguia entera en el tipo guardado.
+		//   1 · The factory contributed NOTHING. `ChooseShell`'s `switch` already maps `"sala"` to
+		//       `RoomShell`, so registering a factory that claims the same thing is a layer that
+		//       decides nothing. The decision stayed entirely in the stored type.
 		//
-		//   2 · Y guardar el anfitrion en el archivo de la persona es lo que la caja NO hace, por un
-		//       motivo que se midio: con `"sala"` escrito ahi y la sala no disponible, el `switch`
-		//       construye igual la cascara y al primer uso revienta. **El modulo no se degrada: se
-		//       rompe.** Un modulo EN CAJA, en cambio, sigue diciendo `"hybrid"`; si manana falta la
-		//       libreria nativa, la fabrica no se registra y todo corre como antes.
+		//   2 · And storing the host in the person's file is what the box does NOT do, for a measured
+		//       reason: with `"sala"` written there and the room unavailable, the `switch` builds the
+		//       shell anyway and it blows up on first use. **The module does not degrade: it
+		//       breaks.** A module IN A BOX, by contrast, goes on saying `"hybrid"`; if tomorrow the
+		//       native library is missing, the factory is never registered and everything runs as
+		//       before.
 		//
-		// El anfitrion es una propiedad de ESTE Gnothi en ESTA maquina, no de la instalacion de la
-		// persona. Asi que se decide en codigo, en cada arranque, y su archivo no se toca.
+		// The host is a property of THIS Gnothi on THIS machine, not of the person's installation. So
+		// it is decided in code, at every start-up, and their file is not touched.
 		//
-		// ── Y POR QUE POR LISTA Y NO TODAS, que es lo unico en que se aparta de la caja ──────────
+		// ── AND WHY BY LIST AND NOT ALL, which is the only place it departs from the box ─────────
 		//
-		// La caja de escritorio reclama TODAS las hibridas, porque su trabajo es contenerlas y no hay
-		// nada que elegir. Si la sala hiciera lo mismo **se las quedaria todas**: se registra DESPUES,
-		// y `ChainShellFactory` le pregunta primero a la ultima. La caja quedaria encendida en el log
-		// y apagada de hecho -- exactamente el defecto del 2026-09-23, reintroducido por simetria mal
-		// entendida.
+		// The desktop box claims ALL the hybrids, because its job is to contain them and there is
+		// nothing to choose. If the room did the same it would **take them all**: it registers
+		// AFTER, and `ChainShellFactory` asks the last one first. The box would be on in the log and
+		// off in fact -- exactly the defect of 2026-09-23, reintroduced by misread symmetry.
 		//
-		// Con la lista vacia no reclama nada, que es lo correcto: en escritorio la contencion ya la
-		// da la caja, y la sala existe aca para poder compararlas en una maquina.
+		// With an empty list it claims nothing, which is right: on the desktop the containment is
+		// already the box's, and the room exists here so the two can be compared on one machine.
 		if (theOnesInTheRoom.Length == 0)
 		{
 			log("sala: lista sobre Photino, y sin modulos asignados "

@@ -74,9 +74,9 @@ public sealed class AgentLoop
 		// Los numeros van en digitos pelados y no con separador de miles: son conteos de una traza
 		// tecnica -- cuantas consultas, cuantos caracteres --, no cantidades en prosa.
 		Say(tools.Count == 1
-			? Textos.T("traza.catalogo.una")
-			: Textos.T("traza.catalogo.varias", ("n", tools.Count.ToString())));
-		if (tools.Count == 0) return Textos.T("asistente.sin-consultas");
+			? Texts.T("traza.catalogo.una")
+			: Texts.T("traza.catalogo.varias", ("n", tools.Count.ToString())));
+		if (tools.Count == 0) return Texts.T("asistente.sin-consultas");
 
 		List<Exchange> conversation = [new Asked(question)];
 
@@ -88,18 +88,18 @@ public sealed class AgentLoop
 			// No calls means the model is done: this step IS the composition. The facts are the
 			// modules'; the sentence is the assistant's.
 			if (said.Calls.Count == 0)
-				return said.Text ?? Textos.T("asistente.sin-respuesta");
+				return said.Text ?? Texts.T("asistente.sin-respuesta");
 
 			Say(said.Calls.Count == 1
-				? Textos.T("traza.vuelta.una", ("vuelta", round.ToString()))
-				: Textos.T("traza.vuelta.varias", ("vuelta", round.ToString()), ("n", said.Calls.Count.ToString())));
+				? Texts.T("traza.vuelta.una", ("vuelta", round.ToString()))
+				: Texts.T("traza.vuelta.varias", ("vuelta", round.ToString()), ("n", said.Calls.Count.ToString())));
 
 			// EVERY call of the round. This is the line the cross lives on.
 			foreach (ToolCall call in said.Calls)
 				conversation.Add(await Run(index, call, Say, ct));
 		}
 
-		return Textos.T("asistente.no-termino");
+		return Texts.T("asistente.no-termino");
 	}
 
 	// ONE CALL. A failure is handed BACK TO THE MODEL as a result, not thrown: if one of the two
@@ -113,7 +113,7 @@ public sealed class AgentLoop
 		// called 'mi_super' -- and nothing enforces that.
 		if (!index.TryFind(call.PublicName, out ToolIndex.Entry e))
 		{
-			say("  " + Textos.T("traza.no-existe", ("consulta", call.PublicName)));
+			say("  " + Texts.T("traza.no-existe", ("consulta", call.PublicName)));
 			// ESTO NO VA AL CATALOGO. Es lo que se le devuelve al MODELO como resultado de la tool,
 			// para que sepa que esa consulta no existe y siga. No lo lee un ojo: lo lee el modelo, que
 			// despues le contesta a la persona en SU idioma. Traducirlo cambiaria lo que el modelo
@@ -125,7 +125,7 @@ public sealed class AgentLoop
 
 		if (!r.Authorized)
 		{
-			say("  " + Textos.T("traza.denegada", ("consulta", call.PublicName)));
+			say("  " + Texts.T("traza.denegada", ("consulta", call.PublicName)));
 			return new Returned(call.Id, r.Reason, Failed: true);
 		}
 
@@ -134,8 +134,8 @@ public sealed class AgentLoop
 		// escaped inside a string, 525 characters where in-process sent 126.
 		string json = Json.Write(r.Content);
 		say("  " + (json.Length == 1
-			? Textos.T("traza.caracteres.uno", ("consulta", call.PublicName))
-			: Textos.T("traza.caracteres.varios", ("consulta", call.PublicName), ("n", json.Length.ToString()))));
+			? Texts.T("traza.caracteres.uno", ("consulta", call.PublicName))
+			: Texts.T("traza.caracteres.varios", ("consulta", call.PublicName), ("n", json.Length.ToString()))));
 		return new Returned(call.Id, json, Failed: false);
 	}
 }

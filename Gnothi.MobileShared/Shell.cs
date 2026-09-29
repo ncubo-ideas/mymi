@@ -326,7 +326,7 @@ public sealed class Shell : IDisposable
 			foreach (string w in catalog.Load()) log($"warning: {w}");
 			PushState();
 			foreach (string module in rolledBack)
-				PushEnrollment("error", Textos.T("alta.volvio-la-anterior", ("titulo", TitleOf(module))));
+				PushEnrollment("error", Texts.T("alta.volvio-la-anterior", ("titulo", TitleOf(module))));
 		}
 	}
 
@@ -549,8 +549,8 @@ public sealed class Shell : IDisposable
 		{
 			PackagePeek peek = p.Peek;
 			string problem = pickedProblems.TryGetValue(i, out string? refused) ? refused
-				: peek.Manifest is null ? Textos.T("alta.sin-manifiesto")
-				: peek.Inspection is { Rejected: true } inspection ? Textos.T("alta.no-instalaria", ("detalle", string.Join("; ", inspection.Rejections)))
+				: peek.Manifest is null ? Texts.T("alta.sin-manifiesto")
+				: peek.Inspection is { Rejected: true } inspection ? Texts.T("alta.no-instalaria", ("detalle", string.Join("; ", inspection.Rejections)))
 				: "";
 			return new
 			{
@@ -616,7 +616,7 @@ public sealed class Shell : IDisposable
 	/// platform shell wrote screen text, and therefore the only one that would have to be
 	/// translated twice. The sentence is composed here, once, out of the catalogue.
 	public void ReportUnreadableFile(string fileName) =>
-		PushEnrollment("error", Textos.T("alta.no-se-pudo-leer", ("archivo", fileName)));
+		PushEnrollment("error", Texts.T("alta.no-se-pudo-leer", ("archivo", fileName)));
 
 	private Task Enroll(string bundle, EnrollmentSource source, string? seal, CancellationToken ct)
 		=> Propose(e => e.Examine(bundle, source, seal, ct, PushEnrollment), bundle);
@@ -695,7 +695,7 @@ public sealed class Shell : IDisposable
 			foreach (string w in ReloadAfterInstall()) log($"warning: {w}");
 			log($"alta: '{module}' quedó instalado; {ModuleCount} módulos");
 
-			PushEnrollment("listo", Textos.T("alta.listo", ("titulo", TitleOf(module))));
+			PushEnrollment("listo", Texts.T("alta.listo", ("titulo", TitleOf(module))));
 			PickedResolved(installed: true);
 		}
 		catch (Exception ex)
@@ -734,7 +734,7 @@ public sealed class Shell : IDisposable
 		EnrollmentLink link = ModuleEnrollment.ParseLink(text);
 		if (link.Bundle.Length == 0)
 		{
-			PushEnrollment("error", scanned ? Textos.T("alta.codigo-sin-enlace") : Textos.T("alta.pega-el-enlace"));
+			PushEnrollment("error", scanned ? Texts.T("alta.codigo-sin-enlace") : Texts.T("alta.pega-el-enlace"));
 			return "\"ok\"";
 		}
 
@@ -924,34 +924,34 @@ public sealed class Shell : IDisposable
 	private static string InPlainWords(Exception ex) => ex switch
 	{
 		HttpRequestException http when http.StatusCode == System.Net.HttpStatusCode.NotFound =>
-			Textos.T("alta.error.no-esta"),
+			Texts.T("alta.error.no-esta"),
 
-		HttpRequestException => Textos.T("alta.error.sin-conexion"),
+		HttpRequestException => Texts.T("alta.error.sin-conexion"),
 
-		TaskCanceledException or OperationCanceledException => Textos.T("alta.error.tardo"),
+		TaskCanceledException or OperationCanceledException => Texts.T("alta.error.tardo"),
 
-		ArgumentException => Textos.T("alta.error.enlace-invalido"),
+		ArgumentException => Texts.T("alta.error.enlace-invalido"),
 
 		// The link carried the seal of the manifest it was made for, and the package served now
 		// does not hash to it: what the address serves changed after the code was made. Before
 		// the InvalidOperationException arm on purpose: it derives from it.
-		PackageSealMismatchException => Textos.T("alta.error.sello"),
+		PackageSealMismatchException => Texts.T("alta.error.sello"),
 
 		// Signed, and the signature does not hold: somebody touched the package after it was
 		// signed. Not "broken": tampered, and that is the word.
-		PackageSignatureInvalidException => Textos.T("alta.error.firma"),
+		PackageSignatureInvalidException => Texts.T("alta.error.firma"),
 
 		// The institution retired the key this package is signed with. Not installed, no sheet.
-		PackageKeyRevokedException => Textos.T("alta.error.llave-retirada"),
+		PackageKeyRevokedException => Texts.T("alta.error.llave-retirada"),
 
 		// Another institution's package under the name of a module she has: refused, no sheet.
-		PackageCollisionException col => Textos.T("alta.error.colision",
+		PackageCollisionException col => Texts.T("alta.error.colision",
 			("modulo", col.Module),
 			("instalada", UnaInstitucion(col.InstalledInstitution)),
 			("entrante", UnaInstitucion(col.IncomingInstitution))),
 
 		// The origin contradicts the package: refused, no sheet. Which contradiction, in her words.
-		PackageNotBackedException nb => Textos.T(nb.Origin == OriginCheck.DeclaresAnother
+		PackageNotBackedException nb => Texts.T(nb.Origin == OriginCheck.DeclaresAnother
 			? "alta.error.otro-origen"
 			: "alta.error.no-reconocido"),
 
@@ -967,7 +967,7 @@ public sealed class Shell : IDisposable
 	/// THE INSTITUTION'S VOICE and passes straight through untranslated; the only thing that comes
 	/// out of the catalogue is the gap.
 	private static string UnaInstitucion(string nombre) =>
-		nombre.Length > 0 ? nombre : Textos.T("alta.error.otra-institucion");
+		nombre.Length > 0 ? nombre : Texts.T("alta.error.otra-institucion");
 
 	/// A module from the catalogue by name, or null. It is needed by the screen that puts a web module
 	/// on screen, which is the only part of this that is still the platform's.
@@ -1061,12 +1061,12 @@ public sealed class Shell : IDisposable
 				//
 				// Nor can it go and fetch the file: ui.html loads as file:// on both platforms, and
 				// a fetch to another file:// is refused by the browser. The desktop does not come
-				// through here: it reads Textos.T directly, by project reference.
+				// through here: it reads Texts.T directly, by project reference.
 				//
 				// THIS BRANCH WAS DUPLICATED for a few hours, with the same name and the same body:
 				// Geaninna added it for the empty home screen the same day this branch was adding it
 				// for the whole page. It is the same need, and now it is one.
-				"textos" => Textos.Json,
+				"textos" => Texts.Json,
 
 				"modules" => StateJson(),
 				"setTool" => SetConsent(

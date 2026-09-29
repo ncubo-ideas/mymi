@@ -206,12 +206,12 @@ Gnothi.Tests.Room.Run(Assert);
 // ============================================================================================
 // Y LA COSTURA QUE ELIGE LA CASCARA ADMITE MAS DE UN DUEÑO SIN QUE NINGUNO DESAPAREZCA. Es un
 // campo estatico con dos platformas escribiendole; hasta el 2026-09-23 la segunda borraba a la
-// primera EN SILENCIO. Ver Costura.cs.
+// primera EN SILENCIO. Ver Seam.cs.
 // ============================================================================================
 
 Console.WriteLine();
 Console.WriteLine("=== DOS FABRICAS DE CASCARAS CONVIVEN, Y SE DICE QUE CONVIVEN ===");
-Gnothi.Tests.Costura.Run(Assert);
+Gnothi.Tests.Seam.Run(Assert);
 
 // ============================================================================================
 // --install WRITES THE CODEX TABLE WITHOUT TOUCHING THE REST OF config.toml.
@@ -399,10 +399,10 @@ Console.WriteLine("=== THE RECORD'S LANGUAGE RIDES ON FREE-TEXT PARAMETERS ===")
 
 // THE CATALOG OF TEXTS IS THERE, IN BOTH LANGUAGES.
 //
-// This is the assertion that pays for itself. textos.json is an EmbeddedResource declared in
+// This is the assertion that pays for itself. texts.json is an EmbeddedResource declared in
 // THREE csproj with the same LogicalName -- Gnothi.Host for the desktop, Gnothi.Mobile and
 // Gnothi.iOS because the phones compile the Host's sources by glob instead of referencing it.
-// Forgetting one of the three does NOT break the build: Textos returns each key as its own text,
+// Forgetting one of the three does NOT break the build: Texts returns each key as its own text,
 // so the symptom is a screen that says 'instituciones.titulo', found on a phone.
 //
 // What this can check is the assembly it runs in, which is the desktop's. The two phone csproj
@@ -410,34 +410,34 @@ Console.WriteLine("=== THE RECORD'S LANGUAGE RIDES ON FREE-TEXT PARAMETERS ===")
 Console.WriteLine();
 Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 {
-	Gnothi.Host.Textos.Idioma = "es";
-	string es = Gnothi.Host.Textos.T("instituciones.titulo");
-	Gnothi.Host.Textos.Idioma = "en";
-	string en = Gnothi.Host.Textos.T("instituciones.titulo");
+	Gnothi.Host.Texts.Language = "es";
+	string es = Gnothi.Host.Texts.T("instituciones.titulo");
+	Gnothi.Host.Texts.Language = "en";
+	string en = Gnothi.Host.Texts.T("instituciones.titulo");
 
 	Assert("the embedded catalog loads: a known key is not its own name",
 		es != "instituciones.titulo", $"got '{es}' -- the EmbeddedResource is missing from this csproj");
 	Assert("the two languages are different phrases",
 		es == "Mis conexiones" && en == "My Connections", $"es='{es}' en='{en}'");
 
-	Gnothi.Host.Textos.Idioma = "es";
+	Gnothi.Host.Texts.Language = "es";
 	Assert("a value travels by name, not by position",
-		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")) == "3 consultas",
-		Gnothi.Host.Textos.T("instituciones.consultas.varias", ("n", "3")));
+		Gnothi.Host.Texts.T("instituciones.consultas.varias", ("n", "3")) == "3 consultas",
+		Gnothi.Host.Texts.T("instituciones.consultas.varias", ("n", "3")));
 
 	// A missing key has to be UGLY, not blank: a blank looks like a design decision and ships.
 	Assert("a key that does not exist renders as itself",
-		Gnothi.Host.Textos.T("no.existe.esta.clave") == "no.existe.esta.clave",
-		Gnothi.Host.Textos.T("no.existe.esta.clave"));
+		Gnothi.Host.Texts.T("no.existe.esta.clave") == "no.existe.esta.clave",
+		Gnothi.Host.Texts.T("no.existe.esta.clave"));
 
-	string[] faltantes = [.. Gnothi.Host.Textos.Faltantes()];
+	string[] faltantes = [.. Gnothi.Host.Texts.Missing()];
 	Assert("no key is missing one of its two languages",
 		faltantes.Length == 0, string.Join(" | ", faltantes));
 
 	// THE ONE A COMPILER CANNOT SEE. A translator drops a {titulo} or writes {title}, and the
 	// phrase ships either with a raw marker on screen or -worse- without the datum and looking
 	// fine. Sets, not order: order is exactly why the values travel by name.
-	string[] discrepancias = [.. Gnothi.Host.Textos.Discrepancias()];
+	string[] discrepancias = [.. Gnothi.Host.Texts.Mismatches()];
 	Assert("the two languages of a key ask for the same values",
 		discrepancias.Length == 0, string.Join(" | ", discrepancias));
 
@@ -445,17 +445,17 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 	// happened while writing this very catalog: the English went into both columns and only one
 	// got translated. Neither of the two checks above sees it -- both columns are full and no
 	// marker is missing -- so the phrase ships in the wrong language looking finished.
-	string[] identicas = [.. Gnothi.Host.Textos.Identicas()];
+	string[] identicas = [.. Gnothi.Host.Texts.Identical()];
 	Assert("no key says exactly the same in both languages",
 		identicas.Length == 0, string.Join(" | ", identicas));
 
 	// THE ENROLLMENT PHRASE WITH THE MOST SUBSTITUTION, end to end: three values, and one of
 	// them is itself a phrase from the catalog (what an institution with no declared name is
 	// called). Nothing may be left raw.
-	Gnothi.Host.Textos.Idioma = "es";
-	string colision = Gnothi.Host.Textos.T("alta.error.colision",
+	Gnothi.Host.Texts.Language = "es";
+	string colision = Gnothi.Host.Texts.T("alta.error.colision",
 		("modulo", "compras"), ("instalada", "La Guaria"),
-		("entrante", Gnothi.Host.Textos.T("alta.error.otra-institucion")));
+		("entrante", Gnothi.Host.Texts.T("alta.error.otra-institucion")));
 	Assert("a phrase with three values leaves no marker raw",
 		!colision.Contains('{') && colision.Contains("compras")
 			&& colision.Contains("La Guaria") && colision.Contains("otra institución"),
@@ -512,8 +512,8 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			.Matches(html, @"data-i18n=""([^""]+)""")
 			.Select(m => m.Groups[1].Value).Distinct().Order()];
 
-		Gnothi.Host.Textos.Idioma = "es";
-		string[] sinCatalogo = [.. claves.Where(c => Gnothi.Host.Textos.T(c) == c)];
+		Gnothi.Host.Texts.Language = "es";
+		string[] sinCatalogo = [.. claves.Where(c => Gnothi.Host.Texts.T(c) == c)];
 
 		Assert("ui.html tags at least the static markup",
 			claves.Length >= 40, $"only {claves.Length} data-i18n keys found in {pagina}");
@@ -538,7 +538,7 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			.Matches(html, @"\bT\('([a-z0-9.-]+)'|\bnota:\s*'([a-z0-9.-]+)'")
 			.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value)
 			.Distinct().Order()];
-		string[] huerfanas = [.. pedidas.Where(c => Gnothi.Host.Textos.T(c) == c)];
+		string[] huerfanas = [.. pedidas.Where(c => Gnothi.Host.Texts.T(c) == c)];
 
 		Assert("ui.html asks the catalog for a good number of phrases",
 			pedidas.Length >= 60, $"only {pedidas.Length} T() call sites found");
@@ -549,7 +549,7 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 	// AND EVERY KEY THE C# ASKS FOR, which is the third surface and the least looked at.
 	//
 	// The reader returns the key when it does not find it -- ugly on purpose -- so a
-	// `Textos.T("ajustes.carpta")` compiles, runs, and paints «ajustes.carpta» on the screen of
+	// `Texts.T("ajustes.carpta")` compiles, runs, and paints «ajustes.carpta» on the screen of
 	// whoever has that branch. The compiler sees nothing: it is a string. The two assertions above
 	// cover ui.html; this one covers the .cs and the .razor, which are the other two faces.
 	{
@@ -561,7 +561,7 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 			.Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
 			         && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))];
 
-		// `Textos.T("x")` in the .cs, and `T("x")` in the .razor, which call it through the helper.
+		// `Texts.T("x")` in the .cs, and `T("x")` in the .razor, which call it through the helper.
 		// WITHOUT COMMENTS: `_Imports.razor` documents the helper by writing T("clave") in a
 		// comment, and reading that as a call site fails the assertion over a key nobody asks for.
 		// Razor's @* *@ blocks and C#'s // lines are stripped.
@@ -579,11 +579,11 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 				.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value))
 			.Distinct().Order()];
 
-		Gnothi.Host.Textos.Idioma = "es";
-		string[] sinFrase = [.. pedidasCs.Where(c => Gnothi.Host.Textos.T(c) == c)];
+		Gnothi.Host.Texts.Language = "es";
+		string[] sinFrase = [.. pedidasCs.Where(c => Gnothi.Host.Texts.T(c) == c)];
 
 		Assert("the C# and .razor faces ask the catalog for a good number of phrases",
-			pedidasCs.Length >= 60, $"only {pedidasCs.Length} Textos.T() call sites found");
+			pedidasCs.Length >= 60, $"only {pedidasCs.Length} Texts.T() call sites found");
 		Assert("every key the C# and .razor faces ask for exists in the catalog",
 			sinFrase.Length == 0, $"keys with no phrase: {string.Join(", ", sinFrase)}");
 	}
@@ -648,9 +648,9 @@ Console.WriteLine("=== THE HOST'S TEXTS ARE THERE, IN BOTH LANGUAGES ===");
 		string csproj = Path.Combine(raiz, cara, cara + ".csproj");
 		string texto = File.Exists(csproj) ? File.ReadAllText(csproj) : "";
 		Assert($"{cara} declares the catalog with the shared LogicalName",
-			texto.Contains("gnothi.textos.json", StringComparison.Ordinal),
+			texto.Contains("gnothi.texts.json", StringComparison.Ordinal),
 			File.Exists(csproj)
-				? $"{cara}.csproj has no EmbeddedResource for textos.json: that face would start with no catalog"
+				? $"{cara}.csproj has no EmbeddedResource for texts.json: that face would start with no catalog"
 				: $"could not read {csproj}");
 	}
 }

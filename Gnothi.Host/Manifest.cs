@@ -92,7 +92,7 @@ public sealed record Manifest
 	// That it is a list and not a bool is the part that matters: a ceiling that cannot be named
 	// cannot be fixed, and the one who has to fix it is the institution, which does not see this process.
 	//
-	// THESE MESSAGES GO IN ENGLISH AND DO NOT PASS THROUGH Textos.cs, and it is a decision, not an
+	// THESE MESSAGES GO IN ENGLISH AND DO NOT PASS THROUGH Texts.cs, and it is a decision, not an
 	// oversight. They speak of 'brand.shortName' and 'about.category': they are diagnostics for
 	// WHOEVER PACKAGES THE MODULE, not copy for the person who uses it. Translating them would be
 	// compilador.

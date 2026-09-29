@@ -25,8 +25,8 @@
     </header>
     <nav class="tabs">
         <button class="@Cls(View.Modules)" @onclick="() => Go(View.Modules)">@T("nav.instituciones")</button>
-        <button class="@Cls(View.Asistente)" @onclick="() => Go(View.Asistente)">@T("nav.asistente")</button>
-        <button class="@Cls(View.Ajustes)" @onclick="() => Go(View.Ajustes)">@T("nav.ajustes")</button>
+        <button class="@Cls(View.Assistant)" @onclick="() => Go(View.Assistant)">@T("nav.asistente")</button>
+        <button class="@Cls(View.Settings)" @onclick="() => Go(View.Settings)">@T("nav.ajustes")</button>
     </nav>
 }
 @switch (view)
@@ -49,11 +49,11 @@
             }
         </main>
         break;
-    case View.Asistente:
-        <main><Asistente GoToSettings="() => view = View.Ajustes" /></main>
+    case View.Assistant:
+        <main><Assistant GoToSettings="() => view = View.Settings" /></main>
         break;
-    case View.Ajustes:
-        <main><Ajustes /></main>
+    case View.Settings:
+        <main><Settings /></main>
         break;
 }
 
@@ -68,12 +68,12 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        await using IJSObjectReference modulo =
-            await JS.InvokeAsync<IJSObjectReference>("import", "./idioma-interop.js");
-        await modulo.InvokeVoidAsync("fijarIdioma", Textos.Idioma);
+        await using IJSObjectReference langModule =
+            await JS.InvokeAsync<IJSObjectReference>("import", "./language-interop.js");
+        await langModule.InvokeVoidAsync("setLanguage", Texts.Language);
     }
 
-    private enum View { Modules, Asistente, Ajustes, Cara }
+    private enum View { Modules, Assistant, Settings, Cara }
 
     private View view = View.Modules;
     private View before = View.Modules;
@@ -111,13 +111,13 @@
         // Y EL LADO DE LA PAGINA PARA LA SALA, si esta ventana la tiene. Son los mismos tres verbos
         // que los de arriba -- montar, pasarle un mensaje, tirarla -- sobre un iframe OCULTO que no
         // es la cara de nadie: adentro corre el sustrato de Gnothi. Ver PhotinoRoom.
-        if (SalaBridge.Current is { } sala)
+        if (RoomBridge.Current is { } room)
         {
-            sala.WireTo(
-                url => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.abrirSala", url).AsTask()),
-                (id, verbo, modulo, a, b) =>
-                    InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.aLaSala", id, verbo, modulo, a, b).AsTask()),
-                () => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.tirarSala").AsTask()));
+            room.WireTo(
+                url => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.openRoom", url).AsTask()),
+                (id, verb, module, a, b) =>
+                    InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.toRoom", id, verb, module, a, b).AsTask()),
+                () => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.dropRoom").AsTask()));
         }
         frames.EvalIn = (module, id, js) => InvokeAsync(() => JS.InvokeVoidAsync("gnothiFrames.evalIn", module, id, js).AsTask());
     }

@@ -23,7 +23,7 @@ namespace Gnothi.Tests;
 // Android needs a workload and iOS an exact version of Xcode. Two copies of a rule, zero tests. So
 // the rule moved into `Module.ChainShellFactory`, which this suite does compile. That is the point
 // of the move: it is not that the test needed a place, it is that a rule written twice has no owner.
-internal static class Costura
+internal static class Seam
 {
 	public static void Run(Action<string, bool, string> assert)
 	{
@@ -57,19 +57,19 @@ internal static class Costura
 				CursorOf("ajeno", "hybrid") == 1,
 				$"contesto {CursorOf("ajeno", "hybrid")}: la segunda se comio a la primera");
 
-			// ── 3 · Y LO DICE, que es lo que faltaba para que no fuera silencioso ───────────
+			// ── 3 · AND IT SAYS SO, which is what was missing for it not to be silent ─────────
 			//
-			// Encadenar callado devuelve el defecto en una forma mas tranquila: dos laboratorios
-			// prendidos sin que ninguno de los dos logs lo mencione.
+			// Chaining quietly brings the defect back in a calmer shape: two laboratories switched on
+			// without either log mentioning it.
 			assert("y avisa que habia una antes, para que la plataforma pueda decirlo",
 				Module.ChainShellFactory((_, _) => null),
 				"dijo que no habia ninguna, y habia dos");
 
 			// ── 4 · EL ORDEN: la ultima registrada pregunta primero ─────────────────────────
 			//
-			// No es un detalle de implementacion. La de la caja reclama una FORMA -toda hibrida-
-			// y la de la sala una LISTA DE NOMBRES. Si la ancha contestara primero, la angosta no
-			// ganaria un solo modulo nunca.
+			// Not an implementation detail. The box's claims a FORM -- every hybrid -- and the room's
+			// claims a LIST OF NAMES. If the wide one answered first, the narrow one would never win
+			// a single module.
 			Module.ShellFactory = null;
 			Module.ChainShellFactory((_, _) => new ShellThatSays(10));   // la ancha, primero
 			Module.ChainShellFactory((name, _) => name == "mio" ? new ShellThatSays(20) : null);
@@ -78,11 +78,11 @@ internal static class Costura
 				CursorOf("mio", "hybrid") == 20,
 				$"contesto {CursorOf("mio", "hybrid")}: la ancha se quedo con el modulo de la angosta");
 
-			// ── 5 · NADIE OPINA: cae al switch, que es el camino normal ─────────────────────
+			// ── 5 · NOBODY CLAIMS IT: it falls through to the switch, the normal path ────────
 			//
-			// Se afirma que las dos fueron consultadas y que ninguna reclamo, sin mirar que
-			// cascara sale: eso lo decide el `switch` y es de la forma declarada, no de esta
-			// costura. Un `in-process` con un dll que no existe no se arranca al construirse.
+			// What is asserted is that both were consulted and neither claimed, without looking at
+			// which shell comes out: that is the `switch`'s call and belongs to the declared form, not
+			// to this seam. An `in-process` with a dll that does not exist is not started on construction.
 			int consultas = 0;
 			Module.ShellFactory = null;
 			Module.ChainShellFactory((_, _) => { consultas++; return null; });
@@ -95,8 +95,8 @@ internal static class Costura
 
 			// ── 6 · LA FORMA LLEGA ENTERA a quien decide ────────────────────────────────────
 			//
-			// El porton de la caja filtra por `installation.Shell.Type`, no por el nombre. Si la
-			// costura le pasara otra cosa, el porton decidiria sobre un dato que no es el suyo.
+			// The box's gate filters on `installation.Shell.Type`, not on the name. If the seam handed
+			// it something else, the gate would be deciding on data that is not its own.
 			string vioLaForma = "";
 			Module.ShellFactory = null;
 			Module.ChainShellFactory((_, installation) => { vioLaForma = installation.Shell.Type; return null; });
@@ -109,9 +109,10 @@ internal static class Costura
 		finally { Module.ShellFactory = before; }
 	}
 
-	// EL OBSERVABLE, y es el unico que hay: `Module.IsRunning` y `Module.Cursor` son lo que sale de
-	// la cascara sin pasar por nada mas. El cursor sirve mejor porque es un numero: cada cascara
-	// falsa devuelve el suyo y se sabe CUAL contesto, no solo que alguna lo hizo.
+	// THE OBSERVABLE, and it is the only one there is: `Module.IsRunning` and `Module.Cursor` are
+	// what comes out of the shell without passing through anything else. The cursor serves better
+	// because it is a number: each fake shell returns its own, so you know WHICH answered, not
+	// merely that one did.
 	private static long CursorOf(string name, string type) =>
 		ModuleOf(name, type).Cursor(CancellationToken.None).GetAwaiter().GetResult();
 
@@ -125,8 +126,8 @@ internal static class Costura
 		},
 		"/Modulos/" + name);
 
-	// Una cascara que solo sabe decir quien es. No abre nada, no arranca nada: lo que se prueba es
-	// CUAL salio de la costura, no que haga su trabajo.
+	// A shell that only knows how to say who it is. It opens nothing and starts nothing: what is
+	// proved is WHICH one came out of the seam, not that it does its job.
 	private sealed class ShellThatSays(long id) : IShell
 	{
 		public bool IsRunning => true;

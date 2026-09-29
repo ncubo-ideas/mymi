@@ -37,7 +37,7 @@ internal static class Program
 		// It goes before HostState.Reload() because from that moment there is text being composed.
 		// And it goes in ONE place per face: two resolvers are two sources of truth, which is
 		// exactly what the shared catalogue exists to avoid.
-		Textos.Idioma = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+		Texts.Language = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		// THE HYBRID FORM ON THE DESKTOP. Before the catalog
 		// loads -ChooseShell runs in Module's constructor- the window registers the two shells the
@@ -61,11 +61,11 @@ internal static class Program
 #endif
 		Gnothi.Host.WebViewShell.Host = (Gnothi.Host.IWebModuleHost)faces;
 
-		// EL CONTADOR DE LA HIBRIDA, CABLEADO — lo hace `MainActivity` desde el 2026-09-18 y el
-		// escritorio no lo hacia. La cascara cuenta y cronometra cada vuelta al borde, pero no sabe
-		// escribir en el log de nadie: se lo dan al arrancar. Sin esta linea, la forma que corre EN
-		// PROCESO —la que es el punto de comparacion de las otras dos— era la unica de las tres que
-		// no se podia medir en esta maquina.
+		// THE HYBRID'S COUNTER, WIRED -- `MainActivity` has done this since 2026-09-18 and the desktop
+		// did not. The shell counts and times every border trip, but it does not know how to write to
+		// anybody's log: it is handed one at start-up. Without this line, the form that runs IN
+		// PROCESS -- the one that is the point of comparison for the other two -- was the only one of
+		// the three that could not be measured on this machine.
 		Gnothi.Host.HybridShell.Log = HostState.Log;
 
 		// IT CHAINS, LIKE THE TWO PHONES DO, even though on the desktop this is the only factory
@@ -91,14 +91,14 @@ internal static class Program
 		// one line in the log says why.
 		TheDesktopBox.Prepare(HostState.Log);
 
-		// Y LA SALA, que vive como un iframe oculto de esta página servido por loopback -y no por un
-		// esquema propio, porque el de Photino NO recibe los pedidos de un frame: medido el
-		// 2026-09-14, cero llamadas-. Ver PhotinoRoom.
+		// AND THE ROOM, which lives as a hidden iframe of this page served over loopback -- and not
+		// through a scheme of its own, because Photino's does NOT receive a frame's requests: measured
+		// 2026-09-14, zero calls. See PhotinoRoom.
 		//
-		// Registra la cáscara siempre que el sustrato esté; sin él, una línea en el log y los
-		// módulos corren como siempre. No hay bandera, por el mismo criterio que la caja.
-		// Se lee aca y no con las demas ayudas de prueba porque la fabrica tiene que quedar
-		// registrada ANTES de que el catalogo abra un modulo, y eso pasa antes de ese bloque.
+		// It registers the shell whenever the substrate is there; without it, one line in the log and
+		// modules run as always. There is no flag, by the same criterion as the box.
+		// It is read here and not with the other test aids because the factory has to be registered
+		// BEFORE the catalogue opens a module, and that happens before that block.
 		string? salaSolo = null;
 		for (int i = 0; i < args.Length - 1; i++)
 			if (args[i] == "--sala-solo") salaSolo = args[i + 1];
@@ -132,21 +132,21 @@ internal static class Program
 			if (args[i] == "--auto" && int.TryParse(args[i + 1], out int s)) auto = s;
 		}
 
-		// EL CALENTADO DE LA SALA, SIN NINGUN MODULO. Va fuera del bucle porque no lleva valor, y
-		// `args.Length - 1` lo dejaría afuera si fuera el último argumento.
+		// WARMING THE ROOM UP, WITH NO MODULE AT ALL. It sits outside the loop because it carries no
+		// value, and `args.Length - 1` would leave it out if it were the last argument.
 		//
-		// No tumba nada si falla: lo que se busca es que el log diga si el sustrato levanta bajo
-		// este motor, que es la pregunta que decide la forma. Ver PhotinoRoom.
+		// It brings nothing down if it fails: what is wanted is for the log to say whether the
+		// substrate comes up under this engine, which is the question that decides the form. See PhotinoRoom.
 		//
-		// Y CALENTAR NO ES CARGAR UN MODULO, que es justo lo que confundió el 2026-09-25: con esto
-		// solo se sabe que el sustrato levanta. La sala de WebView2 pasaba esta prueba y **no cargaba
-		// un módulo de verdad**, y se dio por verificada igual. Ver `--sala-solo`.
+		// AND WARMING UP IS NOT LOADING A MODULE, which is exactly what was confused on 2026-09-25:
+		// this only tells you the substrate comes up. The WebView2 room passed this test and **did not
+		// load a real module**, and was taken as verified anyway. See `--sala-solo`.
 		if (sala is not null && Array.Exists(args, a => a == "--sala"))
 			_ = Task.Run(async () =>
 			{
-				// LA LINEA DICE LO QUE **NO** PRUEBA, y eso es el arreglo de un defecto real: esta
-				// misma línea se leyó como «la sala anda» y con ella se dio por verificada una sala
-				// que no cargaba un módulo ni una vez. Ver TheDesktopRoom.
+				// THE LINE SAYS WHAT IT DOES **NOT** PROVE, and that is the fix for a real defect: this
+				// very line was read as "the room works", and on it a room was taken as verified that
+				// never loaded a module once. See TheDesktopRoom.
 				try
 				{
 					await sala(CancellationToken.None);
@@ -166,7 +166,7 @@ internal static class Program
 		PhotinoBlazorAppBuilder builder = PhotinoBlazorAppBuilder.CreateDefault(args);
 		builder.Services.AddSingleton(state);
 		// The assistant's provider + BYOK key, read from the person's private area. One instance:
-		// Ajustes writes it, Asistente reads it. The key never rides through here.
+		// Settings writes it, Assistant reads it. The key never rides through here.
 		builder.Services.AddSingleton<ModelConfig>();
 
 		// NO autostart="false" in index.html. That attribute belongs to the Blazor WASM
@@ -275,10 +275,10 @@ internal static class Program
 						foreach (string line in await state.VerifyNewModules(CancellationToken.None)) HostState.Log($"--alta: {line}");
 					}
 
-					// EL `&&` Y NO UN `return` ADENTRO, que es lo que había acá por un rato: este lambda
-					// tiene el `--auto` DESPUÉS del bloque, así que salir temprano dejaba la ventana
-					// abierta para siempre y la corrida colgada. Una guarda que se lleva puesto el
-					// cierre automático es peor que la espera que vino a arreglar.
+					// THE `&&` AND NOT A `return` INSIDE, which is what was here for a while: this lambda
+					// has the `--auto` AFTER the block, so leaving early left the window open forever and
+					// the run hanging. A guard that takes the automatic close down with it is worse than
+					// the wait it came to fix.
 					if (abrir is not null && await WaitForThePage(frames, "--abrir", TimeSpan.FromSeconds(2)))
 					{
 						Gnothi.Host.Module? m = state.Catalog.Modules.FirstOrDefault(x => x.Name == abrir);
@@ -332,19 +332,19 @@ internal static class Program
 
 		app.Run();
 	}
-	// ESPERAR A QUE LA PAGINA ESTE, Y DECIRLO SI NO LLEGA. Las dos ayudas de prueba que abren una
-	// cara —`--abrir` y `--modulo`— necesitan que Root haya cableado el puente de los marcos; antes
-	// de eso `OpenFace` tira «la página de Gnothi todavía no está lista».
+	// WAIT FOR THE PAGE TO BE THERE, AND SAY SO IF IT NEVER IS. The two test aids that open a face
+	// -- `--abrir` and `--modulo` -- need Root to have wired the frames' bridge; before that
+	// `OpenFace` throws «la página de Gnothi todavía no está lista».
 	//
-	// ESTABA COMO UN BUCLE DE 10 s COPIADO EN DOS LADOS, Y SE COBRO EL 2026-09-25: al repetir una
-	// medición, dos de las tres corridas fallaron ahí. **No porque esperara poco, sino porque al
-	// agotarse SEGUIA IGUAL**, sin decir nada, y lo que llegaba al log era la excepción de más
-	// abajo — un mensaje verdadero sobre la página que no dice que el problema fue la espera. Media
-	// hora de corridas leyendo el síntoma equivocado.
+	// IT WAS A 10 s LOOP COPIED IN TWO PLACES, AND IT CHARGED FOR IT ON 2026-09-25: repeating a
+	// measurement, two of the three runs failed there. **Not because it waited too little, but
+	// because on running out it CARRIED ON REGARDLESS**, saying nothing, and what reached the log
+	// was the exception below -- a true message about the page that does not say the problem was
+	// the wait. Half an hour of runs reading the wrong symptom.
 	//
-	// Dos cosas cambian: la paciencia sube a 60 s, y **un plazo agotado se dice**. Lo segundo vale
-	// más que lo primero: 60 s tampoco alcanzarían en una máquina cargada, y lo que hace falta
-	// entonces es saber QUE fue eso.
+	// Two things change: the patience goes up to 60 s, and **an expired deadline is said out loud**.
+	// The second is worth more than the first: 60 s would not be enough on a loaded machine either,
+	// and what is needed then is to know THAT is what happened.
 	private static async Task<bool> WaitForThePage(FrameWebModuleHost? frames, string who, TimeSpan settle = default)
 	{
 		if (settle > TimeSpan.Zero) await Task.Delay(settle);

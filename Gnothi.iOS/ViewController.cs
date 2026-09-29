@@ -6,7 +6,7 @@ using Gnothi.Assistant;
 // the SAME mistake 898edec fixed in MainActivity, and it survived here because the iOS SDK
 // demands an exact version of Xcode and the build does not even start: it needs
 // -p:ValidateXcodeVersion=false, which lives in the team recipe and not in anybody path.
-using Textos = Gnothi.Host.Textos;
+using Texts = Gnothi.Host.Texts;
 using Gnothi.MobileShared;
 using UIKit;
 using WebKit;
@@ -120,7 +120,7 @@ public sealed class ViewController : UIViewController
 		//
 		// And the page does NOT resolve it on its own: the shell tells it. Two resolvers would be two
 		// sources of truth.
-		Textos.Idioma = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+		Texts.Language = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
 		shell = new Shell(
 			// ReescribirRutas: true, and it is mandatory here. The package is assembled by
@@ -164,9 +164,9 @@ public sealed class ViewController : UIViewController
 		var room = new IosRoom(Log);
 		Gnothi.Host.RoomShell.Host = room;
 
-		// Y EL MISMO CABLE QUE `HybridShell.Log`: sin el, el contador de vueltas al borde de la sala
-		// cuenta y no lo dice nadie. En iOS importa mas que en ningun lado -- es la plataforma donde
-		// el precio de una vuelta esta sin medir.
+		// AND THE SAME WIRE AS `HybridShell.Log`: without it, the room's count of border trips counts
+		// and nobody says it. On iOS it matters more than anywhere else -- it is the platform where
+		// the price of a trip is unmeasured.
 		Gnothi.Host.RoomShell.Log = Log;
 
 		// THE SALA, FORCED IN ORDER TO MEASURE, without touching anybody's installation.json. The
@@ -325,14 +325,14 @@ public sealed class ViewController : UIViewController
 	//     log stream --predicate 'processImagePath CONTAINS "Gnothi"' --style compact
 	// ── OPENING A MODULE AND SEEING IT ───────────────────────────────────────────────────
 	//
-	// The mirror of AbrirModulo/Mostrar/Cerrar in Gnothi.Mobile/MainActivity.cs, and deliberately with
+	// The mirror of OpenModule/Mostrar/Close in Gnothi.Mobile/MainActivity.cs, and deliberately with
 	// the same names: they are the three pieces that cannot be shared, so the only thing that can keep
 	// them together is that they read the same.
 
 	// IT ANSWERS NOW AND OPENS AFTERWARDS. Bringing a module up means hydrating its actor, which takes
 	// time; if this waited, prompt() on the page's side would be blocked and the face would freeze. The
 	// page receives "ok" and the view appears when it is ready.
-	private string AbrirModulo(string nombre)
+	private string OpenModule(string nombre)
 	{
 		Gnothi.Host.Module? m = shell?.Find(nombre);
 		if (m is null || moduleHost is null) { Log($"abrir: no conozco '{nombre}'"); return "{\"ok\":false}"; }
@@ -390,7 +390,7 @@ public sealed class ViewController : UIViewController
 		UIView? vista = vivo.View;
 		if (vista is null) return;
 
-		Cerrar();
+		Close();
 
 		enPantalla = vivo;
 		enPantallaNombre = nombre;
@@ -410,17 +410,17 @@ public sealed class ViewController : UIViewController
 		// what the person recognises.
 		var quien = new UILabel
 		{
-			Text = Textos.T("ios.adentro-de", ("titulo", shell?.TitleOf(nombre) ?? nombre)),
+			Text = Texts.T("ios.adentro-de", ("titulo", shell?.TitleOf(nombre) ?? nombre)),
 			Font = UIFont.SystemFontOfSize(13, UIFontWeight.Medium),
 			TextColor = UIColor.FromRGB(0x3B, 0x2E, 0x63),
 			TranslatesAutoresizingMaskIntoConstraints = false,
 		};
 
 		var listo = UIButton.FromType(UIButtonType.System);
-		listo.SetTitle(Textos.T("general.listo"), UIControlState.Normal);
+		listo.SetTitle(Texts.T("general.listo"), UIControlState.Normal);
 		listo.TitleLabel!.Font = UIFont.SystemFontOfSize(15, UIFontWeight.Semibold);
 		listo.TranslatesAutoresizingMaskIntoConstraints = false;
-		listo.TouchUpInside += (_, _) => Cerrar();
+		listo.TouchUpInside += (_, _) => Close();
 
 		franja.AddSubview(quien);
 		franja.AddSubview(listo);
@@ -468,21 +468,21 @@ public sealed class ViewController : UIViewController
 
 	// Taking it off the screen does NOT kill it: the module stays alive and goes on answering the
 	// asistente. Solo deja de verse, y vuelve a ser desalojable.
-	private bool Cerrar()
+	private bool Close()
 	{
 		if (enPantalla is null) return false;
 
 		if (enPantallaVc is { } vc && PresentedViewController == vc)
 			DismissViewController(animated: true, completionHandler: null);
 
-		Soltar();
+		Release();
 		return true;
 	}
 
-	// What has to be undone whatever happens, whether it comes from Cerrar() or from the gesture. The
+	// What has to be undone whatever happens, whether it comes from Close() or from the gesture. The
 	// module's view is taken out of the sheet's hierarchy so that a later Mostrar() can put it back:
 	// the WKWebView belongs to the module and outlives the screen.
-	private void Soltar()
+	private void Release()
 	{
 		if (enPantalla is null) return;
 
@@ -498,13 +498,13 @@ public sealed class ViewController : UIViewController
 		shell?.ReviewOriginsIfDue();
 	}
 
-	// The gesture of dragging the sheet downwards does not go through Cerrar(): it arrives here.
+	// The gesture of dragging the sheet downwards does not go through Close(): it arrives here.
 	private sealed class AlDescartar : UIAdaptivePresentationControllerDelegate
 	{
 		private readonly ViewController host;
 		public AlDescartar(ViewController host) => this.host = host;
 
-		public override void DidDismiss(UIPresentationController presentationController) => host.Soltar();
+		public override void DidDismiss(UIPresentationController presentationController) => host.Release();
 	}
 
 	private static void Log(string s) => Console.WriteLine($"GNOTHI: {s}");
@@ -530,7 +530,7 @@ public sealed class ViewController : UIViewController
 	/// opened under its scope and read at once; nothing of it is kept but the bytes.
 	internal void HandleFile(NSUrl url)
 	{
-		(byte[] Bytes, string Name)? archivo = LeerDocumento(url);
+		(byte[] Bytes, string Name)? archivo = ReadDocument(url);
 		if (archivo is null) return;
 
 		if (shell is null) { (pendingFiles ??= []).Add(archivo.Value); Log("alta: el Host todavia no levanto; el archivo queda pendiente"); return; }
@@ -559,7 +559,7 @@ public sealed class ViewController : UIViewController
 		{
 			var archivos = new List<(byte[] Bytes, string Name)>();
 			foreach (NSUrl url in e.Urls)
-				if (LeerDocumento(url) is { } archivo) archivos.Add(archivo);
+				if (ReadDocument(url) is { } archivo) archivos.Add(archivo);
 
 			if (archivos.Count == 0) { Log("alta: la persona no eligió ningún archivo"); return; }
 			if (shell is null) pendingFiles = archivos;
@@ -572,7 +572,7 @@ public sealed class ViewController : UIViewController
 
 	// Read whole, under the url's security scope when it has one, with the ceiling enforced
 	// while it reads. The name is what Archivos shows: the last path component.
-	private (byte[] Bytes, string Name)? LeerDocumento(NSUrl url)
+	private (byte[] Bytes, string Name)? ReadDocument(NSUrl url)
 	{
 		string name = url.LastPathComponent ?? "archivo";
 		bool scoped = url.StartAccessingSecurityScopedResource();
@@ -677,7 +677,7 @@ public sealed class ViewController : UIViewController
 				System.Text.Json.JsonElement req = Json.Parse(defaultText);
 				respuesta = req.GetProperty("op").GetString() switch
 				{
-					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
+					"abrir" => host.OpenModule(req.GetProperty("module").GetString() ?? ""),
 					"altaArchivo" => host.PickModuleFiles(),
 					_ => host.shell?.Handle(defaultText) ?? "{}",
 				};

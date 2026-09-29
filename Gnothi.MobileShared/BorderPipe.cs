@@ -3,37 +3,37 @@ using System.Runtime.InteropServices;
 
 namespace Gnothi.Host;
 
-// LA TUBERIA POR LA QUE GNOTHI LE HABLA AL INVITADO, y el unico lugar donde la caja sabe en que
-// sistema operativo esta.
+// THE PIPE GNOTHI TALKS TO THE GUEST THROUGH, and the only place where the box knows which
+// operating system it is on.
 //
-// ── POR QUE HACE FALTA UNA TUBERIA, Y NO UN CALLBACK ────────────────────────────────────────────
+// ── WHY A PIPE IS NEEDED, AND NOT A CALLBACK ───────────────────────────────────────────────────
 //
-// La C API de wasmtime es asimetrica: OIR es facil -- `set_stdout_custom` entrega cada escritura del
-// invitado a codigo nuestro -- pero HABLAR no tiene callback. Lo unico que ofrece es una RUTA
-// (`set_stdin_file`) o un buffer fijo. Un archivo comun no sirve: se termina. Hace falta algo que se
-// abra por ruta y **no se acabe**, que es exactamente lo que es una tuberia con nombre.
+// wasmtime's C API is asymmetric: HEARING is easy -- `set_stdout_custom` hands every guest write to
+// code of ours -- but SPEAKING has no callback. All it offers is a PATH (`set_stdin_file`) or a
+// fixed buffer. An ordinary file will not do: it ends. What is needed is something that opens BY
+// PATH and **does not run out**, which is exactly what a named pipe is.
 //
-// ── Y HASTA EL 2026-09-25 ESO ERA UN FIFO DE POSIX, EN LAS TRES PLATAFORMAS ─────────────────────
+// ── AND UNTIL 2026-09-25 THAT WAS A POSIX FIFO, ON ALL THREE PLATFORMS ─────────────────────────
 //
-// `mkfifo(3)` por `DllImport("libc")`. En Android anda; **en Windows no hay ni `libc` ni `mkfifo`**,
-// asi que la caja arrancaba entera -- motor, sustrato, canario cantando 8 de 8 -- y moria al primer
-// modulo con `DllNotFoundException: Unable to load DLL 'libc'` (0x8007007E, un HRESULT de Windows y
-// no un error de wasm, que es lo que delato donde estaba pasando).
+// `mkfifo(3)` through `DllImport("libc")`. On Android it works; **on Windows there is neither
+// `libc` nor `mkfifo`**, so the box came up whole -- engine, substrate, canary singing 8 of 8 --
+// and died on the first module with `DllNotFoundException: Unable to load DLL 'libc'` (0x8007007E,
+// a WINDOWS HRESULT and not a wasm error, which is what gave away where it was happening).
 //
-// Se vio comparando la caja con la sala sobre el MISMO modulo y el MISMO journal. Ninguna de las dos
-// corridas por separado lo habria mostrado: la de la sala andaba, y la de la caja arrancaba bien.
+// It was seen comparing the box against the room over the SAME module and the SAME journal. Neither
+// run on its own would have shown it: the room's worked, and the box's started up fine.
 //
-// EN WINDOWS LA PIEZA EQUIVALENTE ES UN NAMED PIPE, y encaja sin tocar al invitado porque **tambien
-// se abre por ruta**: `\\.\pipe\<nombre>`. El invitado no se entera de nada -- sigue leyendo su
-// stdin --, y wasmtime lo abre con el mismo `set_stdin_file` de siempre.
+// ON WINDOWS THE EQUIVALENT PIECE IS A NAMED PIPE, and it fits without touching the guest because
+// it **also opens by path**: `\\.\pipe\<name>`. The guest notices nothing -- it goes on reading its
+// stdin -- and wasmtime opens it with the same old `set_stdin_file`.
 //
-// ── EL ORDEN IMPORTA, LITERALMENTE, Y EN LAS DOS FORMAS ─────────────────────────────────────────
+// ── THE ORDER MATTERS, LITERALLY, AND IN BOTH FORMS ────────────────────────────────────────────
 //
-// Abrir un FIFO para leer bloquea hasta que haya alguien escribiendo, y al reves. Con un named pipe
-// pasa lo mismo con otros nombres: el servidor espera en `WaitForConnection` hasta que un cliente se
-// conecta. En los dos casos **los dos lados tienen que estar en vuelo a la vez**, y por eso esta
-// clase parte la apertura en dos: `BeginOpening` antes de darle la ruta a wasmtime, y `FinishOpening`
-// despues. Si se hiciera en un solo paso, el hilo se cuelga y no hay error que leer.
+// Opening a FIFO for reading blocks until there is a writer, and the other way round. With a named
+// pipe the same happens under other names: the server waits in `WaitForConnection` until a client
+// connects. In both cases **both ends have to be in flight at once**, and that is why this class
+// splits the opening in two: `BeginOpening` before handing the path to wasmtime, and
+// `FinishOpening` after. Done in one step, the thread hangs and there is no error to read.
 internal sealed class BorderPipe : IDisposable
 {
 	private readonly string guestPath;
@@ -44,8 +44,8 @@ internal sealed class BorderPipe : IDisposable
 	private StreamWriter? opened;
 	private Exception? failed;
 
-	// LO QUE SE LE DA A `set_stdin_file`. En POSIX es el archivo del FIFO; en Windows, la ruta del
-	// named pipe, que NO es un archivo del disco y por eso no se borra al cerrar.
+	// WHAT IS HANDED TO `set_stdin_file`. On POSIX it is the FIFO's file; on Windows, the named
+	// pipe's path, which is NOT a file on disk and therefore is not deleted on close.
 	internal string GuestPath => guestPath;
 
 	private BorderPipe(string guestPath, string? fifoOnDisk, NamedPipeServerStream? server)
@@ -59,20 +59,20 @@ internal sealed class BorderPipe : IDisposable
 	{
 		if (OperatingSystem.IsWindows())
 		{
-			// EL NOMBRE LLEVA EL PID, y no es adorno: dos Gnothi abiertos a la vez -- una ventana y
-			// una prueba, por ejemplo -- pedirian el mismo nombre y el segundo fallaria con
-			// «ya existe». Un FIFO no tiene ese problema porque vive en la carpeta privada, que ya
-			// es distinta por instalacion; el espacio de nombres de los named pipes es de la MAQUINA.
+			// THE NAME CARRIES THE PID, and that is not decoration: two Gnothis open at once -- a
+			// window and a test, say -- would ask for the same name and the second would fail with
+			// «already exists». A FIFO does not have that problem because it lives in the private
+			// folder, already per-installation; the named-pipe namespace belongs to the MACHINE.
 			string name = $"gnothi-caja-{module}-{Environment.ProcessId}";
 
-			// UNA SOLA INSTANCIA Y DE SALIDA. `PipeDirection.Out` es desde el servidor: Gnothi
-			// escribe, el invitado lee. Es el mismo sentido que el FIFO.
+			// ONE INSTANCE, AND OUTBOUND. `PipeDirection.Out` is from the server: Gnothi writes, the
+			// guest reads. Same direction as the FIFO.
 			var s = new NamedPipeServerStream(name, PipeDirection.Out, 1);
 			return new BorderPipe($@"\\.\pipe\{name}", null, s);
 		}
 
 		string path = Path.Combine(privateFolder, "caja-" + module + ".fifo");
-		try { File.Delete(path); } catch { /* no estaba */ }
+		try { File.Delete(path); } catch { /* it was not there */ }
 
 		if (Wasmtime.mkfifo(path, 384) != 0)   // 0600
 			throw new InvalidOperationException(
@@ -81,7 +81,7 @@ internal sealed class BorderPipe : IDisposable
 		return new BorderPipe(path, path, null);
 	}
 
-	// EL LADO DE GNOTHI, PUESTO EN VUELO. Vuelve enseguida; lo que bloquea queda en el hilo.
+	// GNOTHI'S SIDE, PUT IN FLIGHT. It returns at once; what blocks stays on the thread.
 	internal void BeginOpening(string module)
 	{
 		opening = new Thread(() =>
@@ -90,8 +90,8 @@ internal sealed class BorderPipe : IDisposable
 			{
 				if (server is not null)
 				{
-					// Espera a que wasmtime abra el otro extremo. `leaveOpen: false` no hace falta:
-					// el StreamWriter es dueno del stream y lo cierra al cerrarse.
+					// Waits for wasmtime to open the other end. `leaveOpen: false` is not needed: the
+					// StreamWriter owns the stream and closes it when it closes.
 					server.WaitForConnection();
 					opened = new StreamWriter(server) { AutoFlush = true };
 				}
@@ -120,11 +120,11 @@ internal sealed class BorderPipe : IDisposable
 
 	public void Dispose()
 	{
-		// EL NAMED PIPE NO DEJA NADA EN EL DISCO -- vive en el espacio de nombres de la maquina y se
-		// va con el proceso --, asi que solo hay que soltarlo. El FIFO SI es un archivo, y ese se
-		// borra, que es lo que se venia haciendo.
-		try { server?.Dispose(); } catch { /* ya se fue */ }
+		// THE NAMED PIPE LEAVES NOTHING ON DISK -- it lives in the machine's namespace and goes
+		// with the process -- so it only has to be released. The FIFO IS a file, and that one is
+		// deleted, which is what was already being done.
+		try { server?.Dispose(); } catch { /* already gone */ }
 		if (fifoOnDisk is not null)
-			try { File.Delete(fifoOnDisk); } catch { /* ya no esta */ }
+			try { File.Delete(fifoOnDisk); } catch { /* no longer there */ }
 	}
 }

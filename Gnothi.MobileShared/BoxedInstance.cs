@@ -59,9 +59,9 @@ internal sealed class BoxedInstance : IDisposable
 
 		Directory.CreateDirectory(grantedFolder);
 
-		// LA TUBERIA, Y ES EL UNICO LUGAR DONDE LA CAJA SABE EN QUE SISTEMA ESTA. En POSIX es un
-		// FIFO; en Windows, un named pipe. Las dos se abren POR RUTA, que es lo unico que
-		// `set_stdin_file` acepta, asi que el invitado no se entera de la diferencia. Ver BorderPipe.
+		// THE PIPE, AND IT IS THE ONLY PLACE WHERE THE BOX KNOWS WHICH SYSTEM IT IS ON. On POSIX a
+		// FIFO; on Windows, a named pipe. Both open BY PATH, which is the only thing
+		// `set_stdin_file` accepts, so the guest never notices the difference. See BorderPipe.
 		pipe = BorderPipe.Create(privateFolder, module);
 
 		// THE CAGE IS BUILT BY `Cage`, not by this file: what the guest can reach has to be the SAME
@@ -165,21 +165,33 @@ internal sealed class BoxedInstance : IDisposable
 		finally { oneAtATime.Release(); }
 	}
 
-	// ARMAR LA LINEA QUE LLEGA, Y SE BUSCA EL CORTE EN EL TROZO NUEVO Y NO EN LO ACUMULADO.
+	// ASSEMBLING THE LINE THAT ARRIVES, AND THE CUT IS LOOKED FOR IN THE NEW CHUNK, NOT IN WHAT HAS
+	// PILED UP.
 	//
-	// ESTO ERA CUADRATICO Y SE VEIA EN LOS NUMEROS · 2026-09-25. La version anterior preguntaba
-	// `halfLine.ToString().IndexOf('\n')` en la condicion del `while`: **materializaba TODO lo
-	// acumulado como string cada vez que llegaba un trozo**, y volvia a recorrerlo entero desde el
-	// principio. Una respuesta que llega partida en N trozos costaba N² en vez de N.
+	// THIS WAS QUADRATIC AND IT SHOWED IN THE NUMBERS · 2026-09-25. The previous version asked
+	// `halfLine.ToString().IndexOf(newline)` in the `while` condition: it **materialised EVERYTHING
+	// accumulated as a string every time a chunk arrived**, and walked it all again from the start.
+	// An answer arriving in N chunks cost N² instead of N.
 	//
-	// El invitado escribe por stdout y wasmtime entrega lo que hay, asi que N crece con el tamaño de
-	// la respuesta: las vistas chicas no lo notaban y las dos grandes —`portada` y `movimientos`—
-	// pagaban casi 2× lo que paga la sala por las mismas vistas, con el resto de las vueltas siendo
-	// la caja unas 3× MAS BARATA. Ese patron cruzado —barata en chico, cara en grande— es lo que
-	// llevo a mirar aca.
+	// The guest writes to stdout and wasmtime delivers whatever is there, so N grows with the size
+	// of the answer: the small views did not notice, and the two big ones -- `portada` and
+	// `movimientos` -- paid almost 2× what the room pays for the same views, while on every other
+	// trip the box was some 3× CHEAPER. That crossed pattern -- cheap when small, dear when big --
+	// is what led to looking here.
 	//
-	// Ahora el trozo nuevo se recorre una sola vez, y el `StringBuilder` solo se materializa **cuando
-	// hay una linea completa**, que es una vez por respuesta y no una vez por trozo.
+	// Now the new chunk is walked once, and the `StringBuilder` is materialised **only when there
+	// is a complete line**, which is once per answer and not once per chunk.
+	//
+	// AND IT DID NOT BUY WHAT IT WENT LOOKING FOR. REFUTED the same day, against the criterion
+	// written before the change: `portada` ÷ `cabecera` WITHIN one run gave 35,6 · 29,4 · 35,1
+	// before and 40,4 · 35,1 · 34,6 after. The cause of the big-payload penalty is somewhere else --
+	// the next candidate is the number of native→managed crossings, since this callback fires once
+	// per chunk wasmtime decides to deliver, each one a `Marshal.Copy` plus a
+	// `Encoding.UTF8.GetString`.
+	//
+	// This stays because it removes a real quadratic and the screen came out right three times over.
+	// It is a fix with no measured merit, and calling it an optimisation would be the third time
+	// this month something unverified got written down as settled.
 	private void Receive(string chunk)
 	{
 		lock (halfLine)
@@ -196,9 +208,9 @@ internal sealed class BoxedInstance : IDisposable
 				aLineIsReady.Release();
 			}
 
-			// Lo que quedo despues del ultimo salto —o el trozo entero si no traia ninguno— espera al
-			// proximo. Es el mismo estado que antes; lo que cambio es que nadie lo vuelve a leer hasta
-			// que se cierre la linea.
+			// What is left after the last newline -- or the whole chunk if it carried none -- waits for
+			// the next one. Same state as before; what changed is that nobody reads it again until the
+			// line closes.
 			halfLine.Append(chunk, from, chunk.Length - from);
 		}
 	}

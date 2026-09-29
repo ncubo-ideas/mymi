@@ -1,5 +1,5 @@
 {
-  "//": "LO QUE EL HOST LE DICE A LA PERSONA, EN SUS DOS IDIOMAS. Lo lee Textos.cs y lo levantan las tres caras: el escritorio por referencia de proyecto, los dos telefonos porque compilan Gnothi.Host/*.cs por glob y declaran este archivo como EmbeddedResource con el mismo LogicalName. Las reglas de que entra y que no estan en Metodologia/Guias/reglas-de-localizacion.md.",
+  "//": "LO QUE EL HOST LE DICE A LA PERSONA, EN SUS DOS IDIOMAS. Lo lee Texts.cs y lo levantan las tres caras: el escritorio por referencia de proyecto, los dos telefonos porque compilan Gnothi.Host/*.cs por glob y declaran este archivo como EmbeddedResource con el mismo LogicalName. Las reglas de que entra y que no estan en Metodologia/Guias/reglas-de-localizacion.md.",
 
   "//que-no-va-aca": "Nada que haya escrito la institucion -su nombre, su slogan, el titulo y la descripcion de sus tools-, nada que salga del journal de la persona, y nada escrito para el modelo en vez de para el ojo. Tampoco los warnings del catalogo: esos hablan de 'brand.shortName' y son diagnostico para quien empaqueta un modulo, no copy.",
 

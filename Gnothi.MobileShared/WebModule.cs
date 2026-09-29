@@ -210,7 +210,7 @@ internal abstract class WebModule : IWebModule
 	// has its own actor and sends its cursor, which is correct because there it DOES know.
 	internal Func<CancellationToken, Task<long>>? Cursor { get; set; }
 
-	private Task<string> Consultar(string tool, string argsJson)
+	private Task<string> Query(string tool, string argsJson)
 	{
 		if (Surface is null)
 			throw new InvalidOperationException(
@@ -270,7 +270,7 @@ internal abstract class WebModule : IWebModule
 			// belongs to. A `module` parameter here would let a face ask about somebody else's
 			// journal, and no rule downstream would stop it -- the Host would see a legitimate
 			// question from a legitimate module.
-			case "consultar": AttendAsync(id, () => Consultar(a ?? "", b ?? "{}")); return;
+			case "consultar": AttendAsync(id, () => Query(a ?? "", b ?? "{}")); return;
 
 			// NOT PART OF THE MODULE'S API, even though it arrives by the same door. No bundle
 			// calls this: it is the watchdog Gnothi injects into the document (BundleServer)
@@ -540,7 +540,7 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 		// installation.json -the box is the host, not a form of the package, see C10- so the first
 		// clause already covered it.
 		// AND `sala` IS HERE FOR THE SAME REASON AS `caja` AND NOT AS A FAVOUR: RoomShell implements
-		// View, Deliver and Cursor -- the three things `Cablear` wires -- and its own comment says
+		// View, Deliver and Cursor -- the three things `Wire` wires -- and its own comment says
 		// that without them "la pantalla no abre", because the default of `IShell.View` throws. A
 		// module that declares `"type": "sala"` reaches ChooseShell's case (Module.cs) and would have
 		// got the hosted wiring: its face asks and gets the exception, on the person's screen.
@@ -551,21 +551,21 @@ internal abstract class WebModuleHost<TModule> : IWebModuleHost where TModule : 
 		// is settled by Shell.cs, which DOES name `sala` alongside webview and hybrid in
 		// `guardaSuCaraAlLado`: the file that saves the face knew, the file that wires it did not.
 		string forma = m.Installation.Shell.Type;
-		bool preguntona = forma.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
+		bool asksTheHost = forma.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
 			|| forma.Equals("caja", StringComparison.OrdinalIgnoreCase)
 			|| forma.Equals("sala", StringComparison.OrdinalIgnoreCase);
 
 		// IT IS WIRED BEFORE STARTING, not after: a hybrid face says `listo()` and asks in the same tick,
 		// because it has no actor to hydrate. See Live.
 		await Live(m.Manifest.Module, bundle, m.Installation.GrantedFolder, publisher, ct,
-			fresco => { if (preguntona) Cablear(fresco, m); });
+			fresco => { if (asksTheHost) Wire(fresco, m); });
 
 		return live[m.Manifest.Module];
 	}
 
 	// WHAT A HYBRID FACE MAY ASK THE HOST FOR, and they are two different things with different rules:
 	// asking for its views, and asking the postman to bring what is new.
-	private static void Cablear(TModule abierto, Gnothi.Host.Module m)
+	private static void Wire(TModule abierto, Gnothi.Host.Module m)
 	{
 		abierto.Surface = async (vista, argsJson, c) =>
 			{

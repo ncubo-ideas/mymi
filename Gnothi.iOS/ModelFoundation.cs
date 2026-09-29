@@ -65,8 +65,8 @@ internal sealed class ModelFoundation : IModel
 			try
 			{
 				p = NativeStep(Conversacion(conversation), Catalogo(tools), instrucciones);
-				string crudo = Marshal.PtrToStringUTF8(p) ?? "{}";
-				return Leer(crudo, conversation);
+				string rawText = Marshal.PtrToStringUTF8(p) ?? "{}";
+				return Read(rawText, conversation);
 			}
 			finally
 			{
@@ -176,9 +176,9 @@ internal sealed class ModelFoundation : IModel
 	// and not written into the sentence so the catalogue does not repeat it in two languages.
 	private const string Tope = "4096";
 
-	private static Said Leer(string crudo, IReadOnlyList<Exchange> conversation)
+	private static Said Read(string rawText, IReadOnlyList<Exchange> conversation)
 	{
-		JsonElement r = Json.Parse(crudo);
+		JsonElement r = Json.Parse(rawText);
 
 		if (r.TryGetProperty("error", out JsonElement error))
 		{
@@ -203,12 +203,12 @@ internal sealed class ModelFoundation : IModel
 			{
 				string? consulta = UltimaConsulta(conversation);
 				throw new InvalidOperationException(consulta is null
-					? Textos.T("asistente.modelo.no-entra.catalogo", ("tope", Tope), ("detalle", e))
-					: Textos.T("asistente.modelo.no-entra.respuesta",
+					? Texts.T("asistente.modelo.no-entra.catalogo", ("tope", Tope), ("detalle", e))
+					: Texts.T("asistente.modelo.no-entra.respuesta",
 						("consulta", consulta), ("tope", Tope), ("detalle", e)));
 			}
 
-			throw new InvalidOperationException(Textos.T("asistente.modelo.fallo", ("detalle", e)));
+			throw new InvalidOperationException(Texts.T("asistente.modelo.fallo", ("detalle", e)));
 		}
 
 		var llamadas = new List<ToolCall>();
@@ -246,7 +246,7 @@ internal sealed class ModelFoundation : IModel
 		// there is nothing to diagnose with. It really happened -- an expired ceiling returned {} -- and
 		// it cost a test and half an hour. Let it blow up here, with a name.
 		if (texto is null && llamadas.Count == 0)
-			throw new InvalidOperationException(Textos.T("asistente.modelo.paso-vacio"));
+			throw new InvalidOperationException(Texts.T("asistente.modelo.paso-vacio"));
 
 		return new Said(texto, llamadas);
 	}

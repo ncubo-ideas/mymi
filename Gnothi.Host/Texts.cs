@@ -27,15 +27,15 @@ namespace Gnothi.Host;
 // nothing that came out of the person's journal, and nothing that is written for the model
 // rather than for the eye. Also not the catalog warnings: those speak of 'brand.shortName' and
 // 'about.category', and they are diagnostics for whoever packages a module.
-public static class Textos
+public static class Texts
 {
 	// THE TWO LANGUAGES, AND ONLY TWO. The scope is a decision, not a limitation of this code:
 	// several of the rules in the guide are written for exactly two, and a third one would
 	// reopen them. English is the fallback because it is the one that never has to guess.
-	public const string Espanol = "es";
-	public const string Ingles = "en";
+	public const string Spanish = "es";
+	public const string English = "en";
 
-	private static string? elegido;
+	private static string? chosen;
 
 	// THE LANGUAGE, RESOLVED ONCE. Every face sets it at startup from the DEVICE -that is the
 	// decision: no selector inside Gnothi- and everything downstream reads it from here.
@@ -46,19 +46,19 @@ public static class Textos
 	// The page does NOT resolve its own language with navigator.language. It is told. Two
 	// resolvers would be two sources of truth, which is the thing this whole file exists to
 	// avoid.
-	public static string Idioma
+	public static string Language
 	{
-		get => elegido ??= DelAparato();
-		set => elegido = Normalizar(value);
+		get => chosen ??= FromTheDevice();
+		set => chosen = Normalise(value);
 	}
 
-	private static string DelAparato() =>
-		Normalizar(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+	private static string FromTheDevice() =>
+		Normalise(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
-	private static string Normalizar(string? tag) =>
-		tag is not null && tag.StartsWith(Espanol, StringComparison.OrdinalIgnoreCase)
-			? Espanol
-			: Ingles;
+	private static string Normalise(string? tag) =>
+		tag is not null && tag.StartsWith(Spanish, StringComparison.OrdinalIgnoreCase)
+			? Spanish
+			: English;
 
 	// ONE PHRASE, WHOLE, WITH ITS VALUES PUT IN.
 	//
@@ -68,13 +68,13 @@ public static class Textos
 	//
 	// A key that is not in the catalog RETURNS THE KEY. That is on purpose: a missing phrase has
 	// to be ugly on screen, because a blank looks like a design decision and gets shipped.
-	public static string T(string clave, params (string Nombre, string Valor)[] valores)
+	public static string T(string key, params (string Name, string Value)[] values)
 	{
-		string frase = Frase(clave);
-		if (valores.Length == 0) return frase;
+		string phrase = Phrase(key);
+		if (values.Length == 0) return phrase;
 
-		StringBuilder sb = new(frase);
-		foreach ((string nombre, string valor) in valores)
+		StringBuilder sb = new(phrase);
+		foreach ((string nombre, string valor) in values)
 			sb.Replace("{" + nombre + "}", valor);
 		return sb.ToString();
 	}
@@ -91,14 +91,14 @@ public static class Textos
 			// THE FIRST KEY IS THE LANGUAGE ITSELF. The page needs it for what is NOT a sentence
 			// -- how a date and a number are written -- and asking the catalogue for it stops the
 			// page guessing on its own, which would be two truths about the same thing.
-			StringBuilder sb = new("{\"idioma\":");
-			sb.Append(JsonSerializer.Serialize(Idioma)).Append(',');
+			StringBuilder sb = new("{\"language\":");
+			sb.Append(JsonSerializer.Serialize(Language)).Append(',');
 			bool primera = true;
-			foreach ((string clave, string frase) in DelIdioma())
+			foreach ((string key, string phrase) in OfTheLanguage())
 			{
 				if (!primera) sb.Append(',');
 				primera = false;
-				sb.Append(JsonSerializer.Serialize(clave)).Append(':').Append(JsonSerializer.Serialize(frase));
+				sb.Append(JsonSerializer.Serialize(key)).Append(':').Append(JsonSerializer.Serialize(phrase));
 			}
 			return sb.Append('}').ToString();
 		}
@@ -107,12 +107,12 @@ public static class Textos
 	// EVERY KEY THAT IS MISSING A LANGUAGE. Nothing calls this in production: it is for the
 	// suite and for whoever does a copy pass, so that an untranslated key is something a build
 	// can point at instead of something a person finds on a phone.
-	public static IEnumerable<string> Faltantes()
+	public static IEnumerable<string> Missing()
 	{
-		foreach ((string clave, (string es, string en)) in Catalogo())
+		foreach ((string key, (string es, string en)) in Catalogue())
 		{
-			if (es.Length == 0) yield return $"{clave}: falta 'es'";
-			if (en.Length == 0) yield return $"{clave}: falta 'en'";
+			if (es.Length == 0) yield return $"{key}: falta 'es'";
+			if (en.Length == 0) yield return $"{key}: falta 'en'";
 		}
 	}
 
@@ -124,17 +124,17 @@ public static class Textos
 	//
 	// It compares SETS and not order: that the order changes between languages is precisely why
 	// the values travel by name.
-	public static IEnumerable<string> Discrepancias()
+	public static IEnumerable<string> Mismatches()
 	{
-		foreach ((string clave, (string es, string en)) in Catalogo())
+		foreach ((string key, (string es, string en)) in Catalogue())
 		{
-			var enEs = Marcadores(es);
-			var enEn = Marcadores(en);
+			var enEs = Placeholders(es);
+			var enEn = Placeholders(en);
 			if (enEs.SetEquals(enEn)) continue;
 
 			string faltanEnIngles = string.Join(", ", enEs.Except(enEn));
 			string faltanEnEspanol = string.Join(", ", enEn.Except(enEs));
-			yield return $"{clave}: "
+			yield return $"{key}: "
 				+ (faltanEnIngles.Length > 0 ? $"'en' no usa {faltanEnIngles}. " : "")
 				+ (faltanEnEspanol.Length > 0 ? $"'es' no usa {faltanEnEspanol}." : "");
 		}
@@ -143,16 +143,16 @@ public static class Textos
 	// EVERY KEY WHOSE TWO LANGUAGES SAY EXACTLY THE SAME THING.
 	//
 	// Almost always a half-finished copy-paste: somebody pasted the English sentence into both
-	// columns and translated only one. Neither Faltantes() nor Discrepancias() sees it -- both
+	// columns and translated only one. Neither Missing() nor Mismatches() sees it -- both
 	// columns are full and neither is short of placeholders -- so the sentence comes out in the
 	// wrong language looking finished. It happened while writing this very catalogue.
 	//
 	// It is not automatically a mistake: a proper noun or a symbol can be identical in both. That
 	// is why it RETURNS THE LIST and not a bool: whoever reads it decides.
-	public static IEnumerable<string> Identicas()
+	public static IEnumerable<string> Identical()
 	{
-		foreach ((string clave, (string es, string en)) in Catalogo())
-			if (es.Length > 0 && es == en && !Declarada(clave)) yield return clave;
+		foreach ((string key, (string es, string en)) in Catalogue())
+			if (es.Length > 0 && es == en && !Declared(key)) yield return key;
 	}
 
 	// A KEY MAY DECLARE THAT ITS TWO LANGUAGES ARE THE SAME ON PURPOSE, and it does so with an
@@ -161,81 +161,81 @@ public static class Textos
 	// exceptions go stale without anybody finding out.
 	//
 	// A bare `true` would have been enough for the compiler and not for whoever reads it in a year.
-	private static bool Declarada(string clave) => igualAProposito.Contains(clave);
+	private static bool Declared(string key) => sameOnPurpose.Contains(key);
 
-	private static readonly HashSet<string> igualAProposito = new(StringComparer.Ordinal);
+	private static readonly HashSet<string> sameOnPurpose = new(StringComparer.Ordinal);
 
-	private static HashSet<string> Marcadores(string frase)
+	private static HashSet<string> Placeholders(string phrase)
 	{
 		HashSet<string> nombres = new(StringComparer.Ordinal);
 		foreach (System.Text.RegularExpressions.Match m in
-			System.Text.RegularExpressions.Regex.Matches(frase, @"\{([A-Za-z][A-Za-z0-9]*)\}"))
+			System.Text.RegularExpressions.Regex.Matches(phrase, @"\{([A-Za-z][A-Za-z0-9]*)\}"))
 			nombres.Add(m.Groups[1].Value);
 		return nombres;
 	}
 
-	private static string Frase(string clave) =>
-		DelIdioma().TryGetValue(clave, out string? frase) && frase.Length > 0 ? frase : clave;
+	private static string Phrase(string key) =>
+		OfTheLanguage().TryGetValue(key, out string? phrase) && phrase.Length > 0 ? phrase : key;
 
-	private static Dictionary<string, string>? plano;
-	private static string? planoDe;
+	private static Dictionary<string, string>? flat;
+	private static string? flatOf;
 
-	private static Dictionary<string, string> DelIdioma()
+	private static Dictionary<string, string> OfTheLanguage()
 	{
-		string idioma = Idioma;
-		if (plano is not null && planoDe == idioma) return plano;
+		string language = Language;
+		if (flat is not null && flatOf == language) return flat;
 
 		Dictionary<string, string> d = new(StringComparer.Ordinal);
-		foreach ((string clave, (string es, string en)) in Catalogo())
+		foreach ((string key, (string es, string en)) in Catalogue())
 		{
 			// A key with no phrase in this language falls back to the other one rather than
 			// disappearing: half-translated is a state this catalog will be in for a while, and
 			// a missing sentence is worse than a sentence in the wrong language.
-			string frase = idioma == Espanol ? es : en;
-			d[clave] = frase.Length > 0 ? frase : (idioma == Espanol ? en : es);
+			string phrase = language == Spanish ? es : en;
+			d[key] = phrase.Length > 0 ? phrase : (language == Spanish ? en : es);
 		}
 
-		planoDe = idioma;
-		return plano = d;
+		flatOf = language;
+		return flat = d;
 	}
 
-	private static Dictionary<string, (string Es, string En)>? catalogo;
+	private static Dictionary<string, (string Es, string En)>? catalogue;
 
 	// READ WITH JsonDocument AND NOT Deserialize<T>, and that is not a style choice. Reflection
 	// based deserialisation does not survive NativeAOT, which is the documented path for
 	// embedding the Host in a Swift app -the whole reason HostJson.cs exists. JsonDocument walks
 	// the tree without reflection, so the trimmer cannot take anything this needs.
-	private static Dictionary<string, (string, string)> Catalogo()
+	private static Dictionary<string, (string, string)> Catalogue()
 	{
-		if (catalogo is not null) return catalogo;
+		if (catalogue is not null) return catalogue;
 
 		Dictionary<string, (string, string)> d = new(StringComparer.Ordinal);
-		using Stream? s = typeof(Textos).Assembly.GetManifestResourceStream(Recurso);
+		using Stream? s = typeof(Texts).Assembly.GetManifestResourceStream(Resource);
 
 		// A face whose csproj forgot the EmbeddedResource arrives here. It does not throw: every
 		// key would then render as itself, which is a screen full of 'instituciones.titulo' --
 		// unmistakable, and better than a Host that will not start because of a text file.
-		if (s is null) return catalogo = d;
+		if (s is null) return catalogue = d;
 
 		using JsonDocument doc = JsonDocument.Parse(s);
-		foreach (JsonProperty entrada in doc.RootElement.EnumerateObject())
+		foreach (JsonProperty entry in doc.RootElement.EnumerateObject())
 		{
 			// The '//' notes of the file, same convention as every other json in this repo.
-			if (entrada.Name.StartsWith("//", StringComparison.Ordinal)) continue;
-			d[entrada.Name] = (Texto(entrada.Value, Espanol), Texto(entrada.Value, Ingles));
-			if (Texto(entrada.Value, "igual").Length > 0) igualAProposito.Add(entrada.Name);
+			if (entry.Name.StartsWith("//", StringComparison.Ordinal)) continue;
+			d[entry.Name] = (Text(entry.Value, Spanish), Text(entry.Value, English));
+			if (Text(entry.Value, "igual").Length > 0) sameOnPurpose.Add(entry.Name);
 		}
 
-		return catalogo = d;
+		return catalogue = d;
 	}
 
-	private static string Texto(JsonElement entrada, string idioma) =>
-		entrada.ValueKind == JsonValueKind.Object && entrada.TryGetProperty(idioma, out JsonElement v)
+	private static string Text(JsonElement entry, string language) =>
+		entry.ValueKind == JsonValueKind.Object && entry.TryGetProperty(language, out JsonElement v)
 			? v.GetString() ?? ""
 			: "";
 
 	// THE SAME NAME IN THE THREE ASSEMBLIES. Declared with LogicalName in Gnothi.Host.csproj,
 	// Gnothi.Mobile.csproj and Gnothi.iOS.csproj; without the fixed name each one would compute
 	// its own from its RootNamespace and this lookup would need three cases.
-	private const string Recurso = "gnothi.textos.json";
+	private const string Resource = "gnothi.texts.json";
 }
