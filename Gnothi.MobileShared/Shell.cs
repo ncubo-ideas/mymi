@@ -298,8 +298,11 @@ public sealed class Shell : IDisposable
 				if (first is not null)
 				{
 					Response answer = await dispatcher.Serve(new Request(m.Manifest.Module, first.Name, null), ct);
+					// ONLY ITS SIZE. The answer is the person's data -- a summary of their exams, their
+					// spending -- and the log is the system's, not theirs. That it answered at all is
+					// what this step checks, and the size says so.
 					string text = JsonSerializer.Serialize(answer.Content);
-					log($"  {first.Name} contestó {text.Length} bytes: {text[..Math.Min(160, text.Length)]}");
+					log($"  {first.Name} contestó {text.Length} bytes");
 				}
 
 				File.WriteAllText(mark, JsonSerializer.Serialize(new { cuando = DateTime.UtcNow.ToString("O") }));

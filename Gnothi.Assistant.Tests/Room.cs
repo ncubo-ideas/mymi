@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Gnothi.Host;
 
@@ -241,6 +242,25 @@ internal static class Room
 			assert("pero carpetas vacias de cargas anteriores no impiden cargar",
 				host.Sequence is ["preparar:compras", "cargar:compras", "consultar:compras"],
 				host.How());
+
+			// ── 10 · THE LOG SEES THE BORDER, NOT THE JOURNAL ───────────────────────────────
+			//
+			// Both platforms log the eviction's answer, and that answer carries the journal the
+			// module wrote. Measured on 2026-09-24 on iOS 27: Sonia's analytes could be read in the
+			// system log. What goes out is the conformance and the size of each write.
+			string journal = Convert.ToBase64String(Encoding.UTF8.GetBytes("GlucosaEnAyunas(fecha,88,'mg/dL')"));
+			string forTheLog = RoomShell.ForTheLog(
+				$$"""{"ok":true,"vaciada":true,"escrituras":[{"ruta":"examenes/journal/journal_000001.bin","contenido":"{{journal}}"}],"vecinos":[]}""");
+
+			assert("el log de la sala no lleva el journal de la persona",
+				!forTheLog.Contains(journal, StringComparison.Ordinal) && !forTheLog.Contains("Glucosa", StringComparison.Ordinal),
+				forTheLog);
+
+			assert("pero si lo que prueba la frontera, y la ruta y el tamaño de cada escritura",
+				forTheLog.Contains("\"vaciada\":true", StringComparison.Ordinal)
+					&& forTheLog.Contains("\"vecinos\":[]", StringComparison.Ordinal)
+					&& forTheLog.Contains("\"ruta\":\"examenes/journal/journal_000001.bin\",\"bytes\":33", StringComparison.Ordinal),
+				forTheLog);
 		}
 		finally { RoomShell.Host = null; }
 	}

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 
 namespace Gnothi.Host;
@@ -320,6 +321,41 @@ internal sealed class RoomShell : IShell
 			throw new InvalidOperationException(
 				$"no se carga '{module}': quedaron {bytes} bytes de cargas anteriores montados en la sala, "
 				+ $"y eso es la frontera rota -- {neighbours.GetRawText()}");
+	}
+
+	// WHAT OF AN ANSWER MAY GO TO THE LOG, which is not all of it. The platforms log `cargar` and
+	// `desalojar` whole because that is where conformance is seen -- `vecinos`, `barrido`,
+	// `vaciada` -- but the eviction also carries `escrituras`, and each `contenido` there IS the
+	// person's journal in base64. Logged whole, Sonia's exams ended up in the system log (os_log
+	// on iOS, logcat on Android), readable from a sysdiagnose or a bug report. Measured on
+	// 2026-09-24: the analytes and their values could be read in the line.
+	//
+	// So each write is left as its path and its size, which is what a person reading the log
+	// needs to see that the round trip happened. Everything else stays as it came. ONE copy for
+	// both platforms, for the same reason as `BundleServer.CspFor`.
+	internal static string ForTheLog(string answer)
+	{
+		JsonNode? root;
+		try { root = JsonNode.Parse(answer); }
+		catch (JsonException) { return $"({answer.Length} caracteres que no son json)"; }
+
+		if (root is JsonObject o && o["escrituras"] is JsonArray writes)
+		{
+			var summary = new JsonArray();
+			foreach (JsonNode? w in writes)
+			{
+				string content = w?["contenido"]?.GetValue<string>() ?? "";
+				var buffer = new byte[content.Length];
+				summary.Add(new JsonObject
+				{
+					["ruta"] = w?["ruta"]?.GetValue<string>() ?? "",
+					["bytes"] = Convert.TryFromBase64String(content, buffer, out int n) ? n : -1,
+				});
+			}
+			o["escrituras"] = summary;
+		}
+
+		return root?.ToJsonString() ?? "";
 	}
 
 	// The sala's answer is always {ok, content} or {ok:false, reason}. A single place that
