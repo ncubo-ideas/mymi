@@ -1527,3 +1527,129 @@ que nada lo dijera.
 
 Es la misma regla que dejó tres afirmaciones falsas esta semana, aplicada antes y no después: **no se
 da por hecho lo que no se puede correr.** Queda anotado para el día que haya un teléfono a mano.
+
+---
+
+# La híbrida en escritorio: andaba en la ventana y fallaba en todo lo demás · 2026-10-09
+
+## Lo medido, antes de tocar nada
+
+Mismo paquete híbrido (`compras`: `web/` + `dominio/Compras.App.dll`), los dos consumidores que tiene
+hoy el escritorio:
+
+| consumidor | antes |
+|---|---|
+| **la ventana** (`Gnothi.Desktop`), en caja · en proceso · en sala | ✅ las tres pintan la pantalla |
+| **el Host sin ventana** (frente MCP, `--query`) | ❌ `PlatformNotSupportedException` |
+
+Y el fallo era peor de lo que parecía: **el catálogo MCP sale del manifiesto, no de la cáscara**, así
+que el servidor arrancaba bien, **publicaba las tools de la híbrida**, y recién al llamarlas fallaban.
+Publicaba lo que no podía cumplir. Por el camino de consola el mismo defecto salía como **excepción no
+capturada** que mata el proceso.
+
+El mensaje, además, le pedía a la persona que editara su `installation.json` a `in-process`: un
+archivo que es suyo, para arreglar algo que no es su problema — el paquete híbrido es lo que la
+institución entregó.
+
+## La causa: había DOS clases con el mismo nombre
+
+`Gnothi.MobileShared/HybridShell.cs` es la real. `Gnothi.Host/HybridShellStub.cs` era una segunda que
+tiraba en todo. La ventana se quedaba con la buena, porque la registra por `Module.ShellFactory`
+antes de abrir el catálogo; **cualquier otro consumidor del Host se quedaba con la que tira.**
+
+**El stub se escribió cuando el escritorio tenía UN consumidor.** Apareció un segundo —el frente
+MCP— y la frase que justificaba el stub («en escritorio el módulo se carga en proceso y el Host
+pinta») dejó de ser cierta sin que nadie la volviera a mirar. Es la misma forma de defecto que esta
+semana apareció tres veces: una afirmación que fue verdadera, que nadie volvió a comprobar.
+
+### Y el compilador lo venía avisando
+
+En `Gnothi.Desktop.csproj` estaba escrito, textual:
+
+> `CS0436: WebViewShell and HybridShell also exist as stubs in the Host; the compiler prefers this
+> project's copy, which is the real one.`
+
+y debajo un `<NoWarn>$(NoWarn);CS0436</NoWarn>`. **El aviso describía la duplicación con precisión y
+se silenció en vez de resolverla.** Decía la verdad —la ventana se queda con la buena— y esa verdad
+era exactamente el problema: *la ventana*, y nadie más.
+
+## El arreglo: una sola implementación, no una segunda copia
+
+`Gnothi.Host` compila ahora la cáscara real (`HybridShell.cs` + `WebViewShell.cs`), los dos stubs se
+borraron, `Gnothi.Desktop` dejó de compilarlos —los toma del Host por `ProjectReference`, con el
+`InternalsVisibleTo` que ya estaba— y **el `NoWarn` se fue**: si alguien vuelve a duplicarla, el
+compilador lo dirá otra vez.
+
+**Por qué la real funciona sin ventana, y por eso no hacía falta una versión recortada:** en esa
+clase `Invoke`, `ActualTools`, `Deliver`, `Cursor` y **`View`** van TODOS a la superficie. La cara no
+implementa ninguno — los **pide**. Sin ventana la cara se construye (su constructor son rutas),
+nadie la abre, `WebViewShell.Host` queda nulo, `IsRunning` da `false` y `Dispose` no hace nada.
+
+> Esto descarta de paso el arreglo a medias que se había intentado: delegar en la superficie **salvo
+> `View`**, que seguiría tirando «no hay cara que las pida». La cáscara real contesta `View` desde la
+> superficie. Reimplementarlo como excepción habría roto algo que ya funcionaba.
+
+## Lo verificado
+
+| | resultado |
+|---|---|
+| frente MCP, `--tools` sobre la híbrida | `lista_de_compras`, `resumen` |
+| frente MCP, `--query compras resumen` | json real (`hayDatos:false`, journal vacío) |
+| ventana + caja | `dijo listo()`, 15 vueltas, pantalla |
+| ventana en proceso | `dijo listo()`, 14 vueltas, pantalla |
+| ventana + sala | `dijo listo()`, 16 vueltas, pantalla |
+| Host · Desktop · Mobile · iOS | 0 errores |
+| suite | 276 pasan |
+
+## La prueba que lo fija, y el verde que no probaba nada
+
+`Seam.cs` gana dos aserciones. La suite **es** un Host sin ventana —no registra `ShellFactory`—, así
+que reproduce al frente MCP sin montar nada.
+
+El diseño: una híbrida con un dll que no existe **tiene** que fallar, pero **en el dll y nunca en la
+forma**. `PlatformNotSupportedException` es la huella de un Host que rechaza la forma; cualquier otra
+cosa significa que lo intentó.
+
+**La primera versión preguntaba por `Cursor` y daba VERDE con el stub puesto a propósito.**
+`IShell.Cursor` tiene cuerpo por omisión (`Task.FromResult(0L)`) y el stub nunca lo sobrescribía. Se
+cambió a `ActualToolNames`, que **no** tiene cuerpo por omisión: una cáscara lo implementa o no
+compila.
+
+**La lección es del método, no del código: la aserción se escribió, dio verde, y sólo la corrida en
+rojo mostró que el verde no valía nada.** Hoy: roja con el stub reintroducido, verde sin él.
+
+Y una tercera, del fixture: la primera corrida falló con «The path is empty» porque le pasaba UN
+argumento a una híbrida, que lleva tres (`[bundle, endpoint, dll]`). **Una forma que no puede existir
+no demuestra nada sobre la que sí.**
+
+## Y probado por MCP de verdad, no por la consola que dice compartir camino
+
+`--query` lleva escrito que «va POR el Dispatcher, así que el consentimiento y la medición aplican
+exactamente como para el frente MCP: es un llamante más del mismo camino». **Eso es una afirmación en
+un comentario**, de la misma clase que las tres que se cayeron esta semana. Así que se habló con el
+servidor como habla Claude: JSON-RPC sobre stdio.
+
+```
+→ initialize · notifications/initialized
+→ tools/list
+←  compras_resumen, compras_lista_de_compras  (+ las gnothi_*)
+→ tools/call compras_resumen
+←  {"hayDatos":true,"totalGastado":3174606,"cantidadDeCompras":87,"ultimoEventoLeido":387}
+→ tools/call compras_lista_de_compras
+←  {"hayDatos":true,"compras":[{"numero":"T-88101",...,"total":19070.0}, ...]}
+```
+
+**Un paquete híbrido contestándole al asistente con el registro de la persona, en escritorio y sin
+ventana.** Es lo que no se podía antes.
+
+### Dos cosas del fixture, porque sin ellas la prueba no valía
+
+1. **El manifiesto tiene que ser el del paquete que se prueba.** La primera corrida emparejaba el
+   paquete HÍBRIDO con el manifiesto del módulo IN-PROCESS: el servidor publicaba **20 tools** que la
+   superficie híbrida no tiene (ésa expone dos, `resumen` y `lista_de_compras`). Habría dado un fallo
+   real en `tools/call` y la lectura fácil era «la híbrida no anda». **Era el fixture.**
+
+2. **Un journal vacío contesta `hayDatos:false`, y eso no prueba lo mismo.** La primera pasada
+   terminó ahí: es una respuesta legítima del módulo, pero sólo demuestra que el camino no tira. Con
+   un journal real —87 compras, ₡3.174.606— se ve al módulo contestando **con los datos de la
+   persona**, que es la pregunta de verdad.

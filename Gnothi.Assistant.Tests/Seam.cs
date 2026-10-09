@@ -105,6 +105,52 @@ internal static class Seam
 
 			assert("la fabrica ve la forma declarada en el installation.json",
 				vioLaForma == "sala", $"vio '{vioLaForma}'");
+
+			// ── 7 · UN HOST SIN VENTANA SABE CORRER UNA HIBRIDA ─────────────────────────────
+			//
+			// THIS SUITE IS A HOST WITH NO WINDOW, which is what makes the assertion worth
+			// anything: it registers no ShellFactory, so `ChooseShell` falls to its switch, exactly
+			// as the MCP front does.
+			//
+			// WHAT IT PINS. Until 2026-10-09 the Host carried a SECOND `HybridShell` -- a stub that
+			// threw PlatformNotSupportedException saying «la cascara 'hybrid' solo existe en movil
+			// ... En escritorio usa "type": "in-process"». The window never saw it, because it
+			// substitutes the real one through ShellFactory; every other consumer got the stub. The
+			// MCP catalogue is built from the MANIFEST, so the server published a hybrid module's
+			// tools and only failed when they were called: ten published, two called, two failed.
+			//
+			// And the compiler had been saying so: CS0436, two types with the same name, silenced
+			// with a NoWarn in Gnothi.Desktop.csproj. The warning named the duplication exactly.
+			//
+			// HOW IT TELLS THEM APART, and this is the whole design of the assertion: a hybrid with
+			// a dll that does not exist HAS to fail -- but at the DLL, like any in-process shell,
+			// and never at the FORM. `PlatformNotSupportedException` is the fingerprint of a Host
+			// refusing the shape; anything else means it tried and the path was the problem. So the
+			// test needs no real package and still cannot be satisfied by a stub.
+			//
+			// AND IT ASKS THROUGH `ActualToolNames`, NOT `Cursor`, which cost a green that proved
+			// nothing. The first version used `Cursor` -- the observable the rest of this file uses,
+			// because it returns a number that says WHICH shell answered. But `IShell.Cursor` has a
+			// DEFAULT BODY (`Task.FromResult(0L)`), and the stub never overrode it: with the stub
+			// deliberately put back, the assertion stayed GREEN. It was caught by running the red
+			// check, not by reading it.
+			//
+			// `ActualTools` has no default: a shell either implements it or does not compile. That
+			// is what makes it the observable here -- the question is not what the shell returns,
+			// it is whether it REFUSES, and only a method everybody must implement can show that.
+			Module.ShellFactory = null;
+			Exception? seQuejo = null;
+			try { _ = ModuleOf("hibrido", "hybrid").ActualToolNames(CancellationToken.None).GetAwaiter().GetResult(); }
+			catch (Exception e) { seQuejo = e is AggregateException a ? a.GetBaseException() : e; }
+
+			assert("un Host sin ventana NO rechaza la hibrida por ser hibrida",
+				seQuejo is not PlatformNotSupportedException,
+				$"tiro PlatformNotSupportedException: {seQuejo?.Message}");
+
+			assert("la hibrida sin ventana llega a su superficie: falla por el dll, no por la forma",
+				seQuejo is null || seQuejo.Message.Contains("existe.dll", StringComparison.OrdinalIgnoreCase)
+					|| seQuejo is FileNotFoundException or DirectoryNotFoundException or BadImageFormatException,
+				$"fallo con {seQuejo?.GetType().Name}: {seQuejo?.Message}");
 		}
 		finally { Module.ShellFactory = before; }
 	}
@@ -120,11 +166,23 @@ internal static class Seam
 		new Manifest { Module = name },
 		new Installation
 		{
-			Shell = new Shell { Type = type, Command = "dotnet", Arguments = ["/no/existe.dll"] },
+			Shell = new Shell { Type = type, Command = "dotnet", Arguments = ArgumentsFor(type) },
 			GrantedFolder = "/journals/" + name,
 			Enabled = true,
 		},
 		"/Modulos/" + name);
+
+	// THE ARGUMENTS ARE NOT THE SAME FOR EVERY FORM, and a fixture that ignores that proves nothing.
+	//
+	// A hybrid's are `[bundle, endpoint, dll]` -- the dll LAST, because [0] and [1] are read by the
+	// whole web side and `WebModuleHost.Open` would otherwise try to serve a .dll as a folder. The
+	// first version of the assertion below handed it one argument, and it failed with «The path is
+	// empty»: true, and about the fixture, not about the Host. A shape that cannot exist cannot
+	// demonstrate anything about the shape that can.
+	private static string[] ArgumentsFor(string type) =>
+		type.Equals("hybrid", StringComparison.OrdinalIgnoreCase)
+			? ["/no/existe/web", "http://127.0.0.1:0/|x|1", "/no/existe.dll"]
+			: ["/no/existe.dll"];
 
 	// A shell that only knows how to say who it is. It opens nothing and starts nothing: what is
 	// proved is WHICH one came out of the seam, not that it does its job.

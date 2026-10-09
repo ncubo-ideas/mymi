@@ -113,16 +113,24 @@
        the Host through InternalsVisibleTo). What the window writes of its own is the adapter to
        the web engine -FrameWebModule.cs, and WebView2WebModule.cs on Windows- and the enrollment
        screen, Alta.razor.
-       CS0436: WebViewShell and HybridShell also exist as stubs in the Host; the compiler prefers
-       this project's copy, which is the real one. -->
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);CS0436</NoWarn>
-  </PropertyGroup>
+
+       HybridShell.cs Y WebViewShell.cs YA NO ESTAN EN ESTA LISTA - 2026-10-09. Vienen del Host,
+       por ProjectReference y el InternalsVisibleTo que ya estaba.
+
+       Y LO QUE LOS SACO DE ACA ES UN DEFECTO QUE EL COMPILADOR VENIA AVISANDO. Esta misma linea
+       decia: «CS0436: WebViewShell and HybridShell also exist as stubs in the Host; the compiler
+       prefers this project's copy, which is the real one», y debajo iba un <NoWarn>CS0436</NoWarn>.
+       Era cierto Y era el problema: habia DOS clases con el mismo nombre, esta real y una que tiraba
+       PlatformNotSupportedException en el Host. La ventana se quedaba con la buena -por eso andaba-
+       y CUALQUIER OTRO CONSUMIDOR DEL HOST se quedaba con la que tira. El frente MCP es ese otro
+       consumidor, y por eso todo modulo hibrido le fallaba.
+
+       El aviso describia la duplicacion con precision y se silencio en vez de resolverla. Ahora hay
+       una sola clase, el NoWarn se fue, y si alguien vuelve a duplicarla el compilador lo dira otra
+       vez, que es para lo que servia. -->
   <ItemGroup>
     <Compile Include="..\Gnothi.MobileShared\WebModule.cs" Link="Movil\WebModule.cs" />
     <Compile Include="..\Gnothi.MobileShared\BundleServer.cs" Link="Movil\BundleServer.cs" />
-    <Compile Include="..\Gnothi.MobileShared\HybridShell.cs" Link="Movil\HybridShell.cs" />
-    <Compile Include="..\Gnothi.MobileShared\WebViewShell.cs" Link="Movil\WebViewShell.cs" />
     <Compile Include="..\Gnothi.MobileShared\GnothiCourier.cs" Link="Movil\GnothiCourier.cs" />
     <Compile Include="..\Gnothi.MobileShared\GnothiCredential.cs" Link="Movil\GnothiCredential.cs" />
     <!-- EL ALTA, la misma del telefono: bajar o leer el paquete, inspeccionarlo, firma, respaldo de

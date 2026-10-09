@@ -76,4 +76,31 @@
     <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
   </ItemGroup>
 
+
+  <!-- LA HIBRIDA, Y ES LA MISMA CLASE QUE CORRE EN LOS TELEFONOS Y EN LA VENTANA - 2026-10-09.
+       Antes habia DOS: la real en Gnothi.MobileShared y un HybridShellStub.cs aca que tiraba
+       PlatformNotSupportedException. El stub se escribio cuando el escritorio tenia UN consumidor
+       -la ventana- que registra la real por Module.ShellFactory y por eso nunca lo alcanzaba.
+       El frente MCP es un SEGUNDO consumidor y no tiene ventana: todo modulo hibrido caia en el
+       stub, y el asistente recibia ese texto en vez de una respuesta. El catalogo MCP sale del
+       manifiesto, asi que el servidor PUBLICABA sus tools y recien al llamarlas fallaban.
+
+       POR QUE LA REAL FUNCIONA SIN VENTANA, y no hace falta una version recortada: un paquete
+       hibrido son dos mitades -la cara en web/ y la superficie en un dll-, y esta clase ya las
+       tiene separadas. Invoke, ActualTools, Deliver, Cursor y View van TODOS a la superficie;
+       la cara no implementa ninguno, los PIDE. Sin ventana la cara se construye -su constructor
+       son rutas, nada mas-, nadie la abre, y WebViewShell.Host se queda nulo: IsRunning da false
+       y Dispose no hace nada. La superficie no se entera.
+
+       Y WebViewShell.cs entra con ella porque es su dependencia directa, lo que ademas borra el
+       otro stub. Una hospedada sin ventana sigue sin poder contestar -su motor ES la pagina- y
+       ahora lo dice la clase real, con un mensaje que no manda a la persona a editar su
+       installation.json.
+
+       La ventana ya no los compila: los toma de este ensamblado por ProjectReference, con el
+       InternalsVisibleTo que ya estaba. Una implementacion, un dueno. -->
+  <ItemGroup>
+    <Compile Include="..\Gnothi.MobileShared\HybridShell.cs" Link="Movil\HybridShell.cs" />
+    <Compile Include="..\Gnothi.MobileShared\WebViewShell.cs" Link="Movil\WebViewShell.cs" />
+  </ItemGroup>
 </Project>
