@@ -213,7 +213,8 @@ internal sealed class IosRoom : IRoomHost
 		// CONFORMANCE IS LEFT IN THE LOG, not in a comment. Loading and evicting report what was
 		// left of the OTHER modules in memory; if it ever says more than zero bytes, the border
 		// between journals broke and this shouts it where it can be seen.
-		if (verb is "cargar" or "desalojar") log($"sala/{verb} {module}: {answer}");
+		// Not whole: the eviction carries the journal itself, see RoomShell.ForTheLog.
+		if (verb is "cargar" or "desalojar") log($"sala/{verb} {module}: {Gnothi.Host.RoomShell.ForTheLog(answer)}");
 
 		return answer;
 	}
