@@ -1,110 +1,107 @@
-# Gnothi
+# Mymi
 
-El universo de datos de una persona, en su propio dispositivo. Cada institución le entrega un
-**módulo** con el registro de ella —su laboratorio, su supermercado—, **Gnothi.Host** los junta
-en una sola superficie para su IA, y **ella** decide qué se ve.
+**English** · [Español](README.es.md)
 
-Un directorio por negocio, nombres en español adentro. La excepción es `Gnothi.Host/`, que está
-en inglés: no entiende de dominio, así que tampoco tenía por qué hablar el idioma del negocio.
+A person's data universe, on their own device. Each institution hands them a **module** with
+their record —their lab, their supermarket—, **Gnothi.Host** brings them together into a single
+surface for their AI, and **they** decide what is visible.
 
-## Qué hay acá
+> Gnothi is the project's working name, and the code still uses it (`Gnothi.Host`,
+> `Gnothi.slnx`). Mymi is the product.
 
-| Carpeta | Qué es |
+One directory per business, with Spanish names inside. The exception is `Gnothi.Host/`, which is
+in English: it knows nothing about any domain, so it had no reason to speak the business's
+language.
+
+## What's here
+
+| Folder | What it is |
 |---|---|
-| `Gnothi.Host/` | **El Host.** Servidor MCP hacia el asistente y cliente MCP hacia cada módulo. Un proxy que **agrega**: junta las tools de N módulos en una sola lista |
-| `Modulos/` | Un directorio por módulo instalado, con su `manifest.json` (lo escribe la **institución**) y su `installation.json` (lo escribe el **Host**) |
-| `Examenes/` | El negocio del laboratorio clínico → [Examenes/README.md](Examenes/README.md) |
-| `Compras/` | El negocio del supermercado |
-| `HolaMundo/` | El ejemplo de referencia (`Facturas`). **No se lista en `Gnothi.slnx`** a propósito: nuestro dominio está basado en él, pero no es parte de él |
-| `.githooks/` | El hook de Conventional Commits |
-| `.mcp.json` | Un servidor MCP **por negocio**, para que una IA vea varios a la vez |
+| `Gnothi.Host/` | **The Host.** An MCP server toward the assistant and an MCP client toward each module. A proxy that **aggregates**: it gathers the tools of N modules into a single list |
+| `Modulos/` | One directory per installed module, with its `manifest.json` (written by the **institution**) and its `installation.json` (written by the **Host**) |
+| `Examenes/` | The clinical lab business (*exámenes*: lab tests) → [Examenes/README.md](Examenes/README.md), in Spanish |
+| `Compras/` | The supermarket business (*compras*: purchases) |
+| `HolaMundo/` | The reference example (`Facturas`, invoices). **Deliberately left out of `Gnothi.slnx`**: our domain is based on it, but it is not part of it |
+| `.githooks/` | The Conventional Commits hook |
+| `.mcp.json` | One MCP server **per business**, so an AI can see several at once |
 
 ---
 
-## Setup por clon
+## Setup after cloning
 
-Dos líneas, una sola vez, después de clonar. Ninguna de las dos es opcional.
+Two lines, once, after cloning. Neither one is optional.
 
 ```bash
 git config core.hooksPath .githooks
 git config core.longpaths true
 ```
 
-**La primera** activa el hook que verifica Conventional Commits antes de que el commit exista.
-Va como hook y no como norma escrita porque una norma que nadie verifica se cumple las primeras
-dos semanas. El formato está explicado en `.githooks/commit-msg`.
+**The first one** enables the hook that checks Conventional Commits before the commit exists.
+It is a hook and not a written rule because a rule nobody checks only gets followed for the
+first two weeks. The format is explained in `.githooks/commit-msg`.
 
-**La segunda** es por las rutas largas de Windows, y merece su propia sección.
+**The second one** is for Windows long paths, and it deserves its own section.
 
 ---
 
-## Clonar en Windows
+## Cloning on Windows
 
-Windows corta las rutas en **260 caracteres**. La ruta más larga de este repo mide **85**, así
-que el límite solo muerde cuando la **raíz del clone** es profunda —un `OneDrive - <nombre largo
-de la empresa>` con carpetas anidadas se come 150 sin esfuerzo. El checkout falla con
-`Filename too long`, normalmente señalando el `wwwroot/lib/` de un Blazor WASM, que es donde
-viven las rutas más largas.
+Windows cuts paths off at **260 characters**. The longest path in this repo is **85**, so the
+limit only bites when the **clone root** is deep —a `OneDrive - <long company name>` with nested
+folders eats 150 without trying. The checkout fails with `Filename too long`, usually pointing
+at the `wwwroot/lib/` of a Blazor WASM app, which is where the longest paths live.
 
-**La forma barata de que no pase: cloná en una raíz corta.** `C:\src\Gnothi` deja 240
-caracteres de margen y el problema no existe.
+**The cheap way to avoid it: clone into a short root.** `C:\src\mymi` leaves about 240
+characters of headroom and the problem doesn't exist.
 
-### Si ya falló
+### If it already failed
 
-`core.longpaths` sirve igual después del fallo: el clone quedó a medias, no roto.
-
-```bash
-git -C Gnothi config core.longpaths true
-git -C Gnothi reset --hard
-```
-
-Y para que no falle de entrada, se puede pasar en el propio clone:
+`core.longpaths` still works after the failure: the clone is half done, not broken.
 
 ```bash
-git clone -c core.longpaths=true https://ncubo.visualstudio.com/Gnothi/_git/Gnothi
+git -C mymi config core.longpaths true
+git -C mymi reset --hard
 ```
 
-### Lo que `core.longpaths` NO arregla
+And to keep it from failing in the first place, pass it to the clone itself:
 
-Ese flag le habla **a git**. No le habla a MSBuild, ni a Visual Studio, ni al SDK de .NET, que
-siguen atados a 260. En un Blazor WASM eso importa, porque el build genera rutas bastante más
-profundas que las del repo:
+```bash
+git clone -c core.longpaths=true https://github.com/ncubo-ideas/mymi.git
+```
+
+### What `core.longpaths` does NOT fix
+
+That flag talks **to git**. It doesn't talk to MSBuild, Visual Studio or the .NET SDK, which are
+still tied to 260. In a Blazor WASM app that matters, because the build generates paths much
+deeper than the repo's own:
 
 ```
 obj/Debug/net9.0/compressed/<hash>/wwwroot/lib/bootstrap/dist/css/bootstrap.min.css.br
 ```
 
-O sea que con solo `longpaths` el fallo se muda del checkout al build. Lo único que destraba
-también las herramientas es habilitarlo en Windows, **como administrador y por máquina**:
+So with `longpaths` alone the failure just moves from the checkout to the build. The only thing
+that also unblocks the tools is enabling it in Windows, **as administrator and per machine**:
 
 ```bash
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
 ```
 
-### Y por eso no versionamos librerías enteras
+### And that's why we don't version whole libraries
 
-`index.html` de cada WASM referencia **un** archivo de Bootstrap:
+Each WASM app's `index.html` references **one** Bootstrap file:
 
 ```html
 <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
 ```
 
-Así que es el único que se versiona. Traer el `dist/` completo son 44 archivos y 8.4 MB de
-output de build de un tercero —variantes RTL, source maps, `bootstrap-grid`,
-`bootstrap-reboot`, `bootstrap-utilities`, el bundle de JS— que nadie referencia, y son además
-las rutas más largas del repo. Si hace falta otro archivo de la librería, se agrega **ese**.
+So that's the only one under version control. Bringing in the whole `dist/` means 44 files and
+8.4 MB of third-party build output —RTL variants, source maps, `bootstrap-grid`,
+`bootstrap-reboot`, `bootstrap-utilities`, the JS bundle— that nobody references, and they are
+also the longest paths in the repo. If another file from the library is needed, add **that one**.
 
 ---
 
-## Licencia
+## License
 
-**MIT** — ver [LICENSE](LICENSE). Se puede usar, modificar, distribuir y **vender**;
-lo único que se pide es conservar el aviso de copyright.
-
-> **MIT no impide el uso comercial, y conviene no confundirlo**: ninguna licencia de
-> código abierto lo impide. Si alguna vez hiciera falta impedirlo, haría falta una
-> licencia que *no* es de código abierto, y entonces tampoco se podría llamar así.
-
-Los componentes de terceros cuyos bytes viajan en este repositorio conservan su propia
-licencia: ver [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), que además anota los
-huecos de atribución que hoy existen y hay que cerrar.
+[MIT](LICENSE). Third-party components keep their own licenses: see
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
