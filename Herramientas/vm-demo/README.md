@@ -1,8 +1,12 @@
 # La VM que se descarga
 
-Una máquina virtual Linux con **Mymi**, los **cinco módulos ya dados de alta** y **Claude
-Desktop** conectado por MCP. La persona la baja, la abre, y encuentra sus instituciones puestas
-como si se las hubieran entregado.
+Una máquina virtual Linux con **Mymi**, los **cinco paquetes de las instituciones**, sus
+publicadores corriendo adentro y **Claude Desktop** conectado por MCP. La persona la baja, la
+abre, y da de alta sus instituciones como si se las hubieran entregado.
+
+> **Este archivo es para quien CONSTRUYE la imagen.** Si lo que querés es correrla, andá a
+> [`COMO-CORRERLA.md`](COMO-CORRERLA.md): tiene VirtualBox, VMware, QEMU/KVM y WSL2+noVNC, qué
+> hacer adentro, y lo que se ve raro sin estar roto.
 
 Es el escalón de más peso de los tres que hay para la demo, y ahora es viable por una razón
 concreta: **es Linux**. La objeción que la mataba era Windows, que no se puede redistribuir.

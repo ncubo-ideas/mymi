@@ -178,7 +178,7 @@ Desde el equipo se planteó: *¿al instalar la app, si no detecta Gnothi, instal
 ---
 
 ## 10 · Estado práctico dejado andando
-- **Examenes servido por HTTPS en la LAN** para probar en el teléfono: `https://192.168.100.95:8453/app/`
+- **Examenes servido por HTTPS en la LAN** para probar en el teléfono: `https://<ip-lan>:8453/app/`
   (contenedor docker `examenes-wasm-host`). Se **regeneró el cert** incluyendo la IP de LAN en el SAN.
 - **`generar-certificado.sh` corregido para Windows** (era Mac-only): prioridad a `LAN_IP` por entorno,
   archivo real en vez de `<(...)`, y correr con `MSYS_NO_PATHCONV=1`. Regenerar tras cambio de IP:

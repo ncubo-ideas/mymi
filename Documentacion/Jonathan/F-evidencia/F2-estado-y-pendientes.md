@@ -618,7 +618,7 @@ token. Dos causas candidatas, sin decidir:
 | latencia del loopback, comparable con los 153 ms | el ANR |
 | la reja de CORS (`/gnothi/ping` contra `/gnothi/sincors`) | el ANR |
 | token e identidad del llamador | el ANR |
-| contenido mixto sobre `ws://`, y el cruce de espacios de direcciones | el origen de la WebAPK: hace falta reinstalarla desde `https://192.168.100.95:8453` |
+| contenido mixto sobre `ws://`, y el cruce de espacios de direcciones | el origen de la WebAPK: hace falta reinstalarla desde `https://<ip-lan>:8453` |
 | el **prompt** de Local Network Access | **imposible en este aparato**: Chrome 133, y llega en 142 |
 | supervivencia del proceso (Doze, gestores de fabricante) | sin construir, y **el emulador no sirve**: requiere el A54 |
 | `DocumentsProvider` de Gnothi en el picker de Chrome | sin construir. **La única fila que podría abrir un camino nuevo**: está medido que el picker abre DocumentsUI (`F1`), y ese picker lista proveedores de terceros |

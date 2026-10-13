@@ -1247,7 +1247,7 @@ desde `https://…`.
 
 Para que esas filas valgan hay que reinstalar la PWA desde un origen **https y no-loopback**. El
 certificado de `Examenes/PaginaDeDescarga/certs` **ya tiene el SAN necesario** (`DNS:localhost`,
-`IP:127.0.0.1`, `IP:192.168.100.95`): falta servir el `8453` e instalar la CA en el aparato. Eso mide
+`IP:127.0.0.1`, `IP:<ip-lan>`): falta servir el `8453` e instalar la CA en el aparato. Eso mide
 el cruce `local → loopback`; el `public → loopback` de producción pediría un dominio de verdad.
 **Ojo: reinstalar cambia la WebAPK**, y con ella el paquete que estas mediciones citan.
 

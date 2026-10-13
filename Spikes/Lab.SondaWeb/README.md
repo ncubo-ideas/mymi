@@ -47,7 +47,7 @@ en **142**. Este emulador no puede medirlo nunca — hace falta una imagen con C
 
 Para que esas filas valgan hay que reinstalar la PWA desde un origen **https y no-loopback**. El
 certificado de `PaginaDeDescarga/certs` **ya tiene el SAN necesario** (`DNS:localhost`,
-`IP:127.0.0.1`, `IP:192.168.100.95`), así que no hay que regenerarlo: hace falta servir el `8453`
+`IP:127.0.0.1`, `IP:<ip-lan>`), así que no hay que regenerarlo: hace falta servir el `8453`
 —nginx por docker, hoy apagado— e instalar la CA en el aparato. Eso mide el cruce
 `local → loopback`; el `public → loopback` de producción necesitaría un dominio de verdad.
 

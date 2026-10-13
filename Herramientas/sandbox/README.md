@@ -89,7 +89,7 @@ libre es un relay abierto saliendo por la IP del servidor.
 
 ## Publicarlo en el sitio
 
-El sitio es `ncubo.com` y el servidor sale por `nimbus.la`. Un `<iframe>` cross-domain
+El sitio es `ncubo.com` y el servidor sale por otro dominio. Un `<iframe>` cross-domain
 funciona; hay tres cosas que configurar y una que evitar:
 
 1. **`frame-ancestors`, no `X-Frame-Options`.** En el ingress del sandbox:
@@ -97,14 +97,14 @@ funciona; hay tres cosas que configurar y una que evitar:
    **quitar** `X-Frame-Options` — no admite listas y en varios navegadores gana sobre el CSP.
 2. **Cookies `SameSite=None; Secure`** en el gateway de sesiones. Es la causa número uno de
    "en pestaña nueva anda, en el iframe no".
-3. **Un solo hostname, sesiones por path** — `https://{alias}-demo.nimbus.la/s/<token>`.
+3. **Un solo hostname, sesiones por path** — `https://{alias}-demo.<dominio>/s/<token>`.
    El Universal SSL de Cloudflare cubre un solo nivel de wildcard (de ahí el formato DASH de
    los stages): un hostname por sesión te deja sin certificado.
-4. **Evitar WebRTC.** El proxy de Cloudflare no transporta UDP, y el MikroTik sólo natea 80 y
+4. **Evitar WebRTC.** El proxy de Cloudflare no transporta UDP, y el router sólo natea 80 y
    443. Por eso la imagen usa VNC sobre WSS y no Selkies.
 
 Lo más corto es un **Cloudflare Tunnel** desde el servidor: publica el hostname sin depender
-del NAT ni abrir puertos, y no toca el `stageN-wildcard-ingress` que ya funciona.
+del NAT ni abrir puertos, y no toca el ingress de los stages, que ya funciona.
 
 ## Todavía falta
 

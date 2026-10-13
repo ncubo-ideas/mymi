@@ -93,3 +93,18 @@ Así que es el único que se versiona. Traer el `dist/` completo son 44 archivos
 output de build de un tercero —variantes RTL, source maps, `bootstrap-grid`,
 `bootstrap-reboot`, `bootstrap-utilities`, el bundle de JS— que nadie referencia, y son además
 las rutas más largas del repo. Si hace falta otro archivo de la librería, se agrega **ese**.
+
+---
+
+## Licencia
+
+**MIT** — ver [LICENSE](LICENSE). Se puede usar, modificar, distribuir y **vender**;
+lo único que se pide es conservar el aviso de copyright.
+
+> **MIT no impide el uso comercial, y conviene no confundirlo**: ninguna licencia de
+> código abierto lo impide. Si alguna vez hiciera falta impedirlo, haría falta una
+> licencia que *no* es de código abierto, y entonces tampoco se podría llamar así.
+
+Los componentes de terceros cuyos bytes viajan en este repositorio conservan su propia
+licencia: ver [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), que además anota los
+huecos de atribución que hoy existen y hay que cerrar.
